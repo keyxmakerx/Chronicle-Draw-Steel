@@ -1,0 +1,125 @@
+{
+  "id": "drawsteel",
+  "name": "Draw Steel",
+  "description": "Reference data and entity presets for the Draw Steel RPG by MCDM Productions. Content sourced from publicly available CC-BY-4.0 material.",
+  "version": "0.1.0",
+  "author": "Chronicle Team",
+  "license": "CC-BY-4.0",
+  "icon": "fa-swords",
+  "api_version": "1",
+  "status": "available",
+  "foundry_system_id": "draw-steel",
+
+  "categories": [
+    {
+      "slug": "abilities",
+      "name": "Abilities",
+      "icon": "fa-bolt",
+      "fields": [
+        { "key": "type", "label": "Type", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "distance", "label": "Distance", "type": "string" },
+        { "key": "target", "label": "Target", "type": "string" }
+      ]
+    },
+    {
+      "slug": "ancestries",
+      "name": "Ancestries",
+      "icon": "fa-dna",
+      "fields": [
+        { "key": "size", "label": "Size", "type": "string" },
+        { "key": "speed", "label": "Speed", "type": "string" },
+        { "key": "traits", "label": "Traits", "type": "string" }
+      ]
+    },
+    {
+      "slug": "kits",
+      "name": "Kits",
+      "icon": "fa-toolbox",
+      "fields": [
+        { "key": "type", "label": "Type", "type": "string" },
+        { "key": "armor", "label": "Armor", "type": "string" },
+        { "key": "weapon", "label": "Weapon", "type": "string" },
+        { "key": "stamina_bonus", "label": "Stamina Bonus", "type": "number" },
+        { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" }
+      ]
+    },
+    {
+      "slug": "creatures",
+      "name": "Creatures",
+      "icon": "fa-paw",
+      "fields": [
+        { "key": "level", "label": "Level", "type": "number" },
+        { "key": "role", "label": "Role", "type": "string" },
+        { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "stamina", "label": "Stamina", "type": "string" }
+      ]
+    }
+  ],
+
+  "entity_presets": [
+    {
+      "slug": "drawsteel-character",
+      "name": "Hero",
+      "name_plural": "Heroes",
+      "icon": "fa-shield-halved",
+      "color": "#7C3AED",
+      "category": "character",
+      "foundry_actor_type": "hero",
+      "fields": [
+        { "key": "class", "label": "Class", "type": "string" },
+        { "key": "ancestry", "label": "Ancestry", "type": "string" },
+        { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
+        { "key": "kit", "label": "Kit", "type": "string" },
+        { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
+        { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
+        { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
+        { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition" },
+        { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
+        { "key": "stamina_max", "label": "Max Stamina", "type": "number", "foundry_path": "system.stamina.max" },
+        { "key": "stamina_current", "label": "Current Stamina", "type": "number", "foundry_path": "system.stamina.value" },
+        { "key": "recoveries", "label": "Recoveries", "type": "number", "foundry_path": "system.recoveries.value" },
+        { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed", "foundry_writable": false },
+        { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value", "foundry_writable": false },
+        { "key": "wealth", "label": "Wealth", "type": "number" }
+      ]
+    },
+    {
+      "slug": "drawsteel-creature",
+      "name": "Creature",
+      "name_plural": "Creatures",
+      "icon": "fa-paw",
+      "color": "#DC2626",
+      "category": "creature",
+      "fields": [
+        { "key": "level", "label": "Level", "type": "number" },
+        { "key": "role", "label": "Role", "type": "string" },
+        { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "stamina", "label": "Stamina", "type": "number" },
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "stability", "label": "Stability", "type": "number" },
+        { "key": "might", "label": "Might", "type": "number" },
+        { "key": "agility", "label": "Agility", "type": "number" },
+        { "key": "reason", "label": "Reason", "type": "number" },
+        { "key": "intuition", "label": "Intuition", "type": "number" },
+        { "key": "presence", "label": "Presence", "type": "number" }
+      ]
+    }
+  ],
+
+  "relation_presets": [
+    { "slug": "ally", "name": "Ally", "reverse_name": "Ally" },
+    { "slug": "enemy", "name": "Enemy", "reverse_name": "Enemy" },
+    { "slug": "patron", "name": "Patron", "reverse_name": "Agent" },
+    { "slug": "mentor", "name": "Mentor", "reverse_name": "Student" },
+    {
+      "slug": "has-item",
+      "name": "Has Item",
+      "reverse_name": "In Inventory Of",
+      "metadata_schema": {
+        "quantity": { "type": "number", "default": 1 },
+        "equipped": { "type": "boolean", "default": false }
+      }
+    }
+  ]
+}
