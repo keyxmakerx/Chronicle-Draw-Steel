@@ -2,7 +2,7 @@
   "id": "drawsteel",
   "name": "Draw Steel",
   "description": "Reference data and entity presets for the Draw Steel RPG by MCDM Productions. Content sourced from publicly available CC-BY-4.0 material.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Chronicle Team",
   "license": "CC-BY-4.0",
   "icon": "fa-swords",
@@ -50,9 +50,30 @@
       "icon": "fa-paw",
       "fields": [
         { "key": "level", "label": "Level", "type": "number" },
+        { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "role", "label": "Role", "type": "string" },
         { "key": "ev", "label": "EV", "type": "number" },
-        { "key": "stamina", "label": "Stamina", "type": "string" }
+        { "key": "stamina", "label": "Stamina", "type": "number" },
+        { "key": "keywords", "label": "Keywords", "type": "string" }
+      ]
+    },
+    {
+      "slug": "creature-abilities",
+      "name": "Creature Abilities",
+      "icon": "fa-burst",
+      "fields": [
+        { "key": "type", "label": "Type", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "distance", "label": "Distance", "type": "string" },
+        { "key": "target", "label": "Target", "type": "string" },
+        { "key": "power_roll", "label": "Power Roll", "type": "string" },
+        { "key": "tier1", "label": "Tier 1 (11-)", "type": "string" },
+        { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect", "label": "Effect", "type": "string" },
+        { "key": "spend_vp", "label": "VP Cost", "type": "number" },
+        { "key": "trigger", "label": "Trigger", "type": "string" },
+        { "key": "villain_action_order", "label": "VA Order", "type": "string" }
       ]
     }
   ],
@@ -91,18 +112,29 @@
       "icon": "fa-paw",
       "color": "#DC2626",
       "category": "creature",
+      "foundry_actor_type": "npc",
       "fields": [
-        { "key": "level", "label": "Level", "type": "number" },
-        { "key": "role", "label": "Role", "type": "string" },
-        { "key": "ev", "label": "EV", "type": "number" },
-        { "key": "stamina", "label": "Stamina", "type": "number" },
-        { "key": "speed", "label": "Speed", "type": "number" },
-        { "key": "stability", "label": "Stability", "type": "number" },
-        { "key": "might", "label": "Might", "type": "number" },
-        { "key": "agility", "label": "Agility", "type": "number" },
-        { "key": "reason", "label": "Reason", "type": "number" },
-        { "key": "intuition", "label": "Intuition", "type": "number" },
-        { "key": "presence", "label": "Presence", "type": "number" }
+        { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
+        { "key": "organization", "label": "Organization", "type": "string", "foundry_path": "system.details.organization" },
+        { "key": "role", "label": "Role", "type": "string", "foundry_path": "system.details.role" },
+        { "key": "ev", "label": "EV", "type": "number", "foundry_path": "system.details.ev" },
+        { "key": "size", "label": "Size", "type": "string", "foundry_path": "system.details.size" },
+        { "key": "keywords", "label": "Keywords", "type": "string", "foundry_path": "system.details.keywords" },
+        { "key": "faction", "label": "Faction", "type": "string" },
+        { "key": "stamina", "label": "Stamina", "type": "number", "foundry_path": "system.stamina.max" },
+        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.winded" },
+        { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed" },
+        { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value" },
+        { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
+        { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
+        { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
+        { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition" },
+        { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string", "foundry_path": "system.combat.freeStrike" },
+        { "key": "traits", "label": "Traits", "type": "string" },
+        { "key": "abilities_json", "label": "Abilities Data", "type": "string" },
+        { "key": "villain_actions_json", "label": "Villain Actions Data", "type": "string" }
       ]
     }
   ],
@@ -120,6 +152,32 @@
         "quantity": { "type": "number", "default": 1 },
         "equipped": { "type": "boolean", "default": false }
       }
+    }
+  ],
+
+  "widgets": [
+    {
+      "slug": "monster-builder",
+      "name": "Monster Builder",
+      "description": "Fully automated creature authoring tool with Draw Steel mechanical intelligence",
+      "icon": "fa-dragon",
+      "file": "widgets/monster-builder.js",
+      "config": [
+        { "key": "entity_id", "label": "Entity ID", "type": "string" },
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
+        { "key": "editable", "label": "Editable", "type": "boolean", "default": true }
+      ]
+    },
+    {
+      "slug": "statblock-renderer",
+      "name": "Statblock Renderer",
+      "description": "Formatted creature statblock display",
+      "icon": "fa-scroll",
+      "file": "widgets/statblock-renderer.js",
+      "config": [
+        { "key": "entity_id", "label": "Entity ID", "type": "string" },
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+      ]
     }
   ]
 }
