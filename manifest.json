@@ -178,6 +178,18 @@
         { "key": "entity_id", "label": "Entity ID", "type": "string" },
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
       ]
+    },
+    {
+      "slug": "bestiary-browser",
+      "name": "Bestiary Browser",
+      "description": "D&D Beyond-style creature catalog with filtering, search, and popup statblocks",
+      "icon": "fa-book-skull",
+      "file": "widgets/bestiary-browser.js",
+      "config": [
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
+        { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
+        { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 }
+      ]
     }
   ]
 }
