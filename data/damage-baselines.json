@@ -1,0 +1,12 @@
+{
+  "description": "Damage baselines per tier per organization at level 1. Scale by multiplying with level. T1 = roll of 11 or less, T2 = 12-16, T3 = 17+.",
+  "baselines": {
+    "minion": { "tier1": 2, "tier2": 3, "tier3": 4, "per_level": 1 },
+    "horde": { "tier1": 3, "tier2": 5, "tier3": 7, "per_level": 1.5 },
+    "platoon": { "tier1": 4, "tier2": 7, "tier3": 10, "per_level": 2 },
+    "elite": { "tier1": 6, "tier2": 10, "tier3": 14, "per_level": 3 },
+    "leader": { "tier1": 6, "tier2": 10, "tier3": 14, "per_level": 3 },
+    "solo": { "tier1": 8, "tier2": 14, "tier3": 20, "per_level": 4 },
+    "swarm": { "tier1": 4, "tier2": 7, "tier3": 10, "per_level": 2 }
+  }
+}

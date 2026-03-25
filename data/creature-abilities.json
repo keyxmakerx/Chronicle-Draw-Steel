@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Crushing Blow",
+    "type": "signature",
+    "keywords": ["Attack", "Melee", "Weapon"],
+    "distance": "Melee 1",
+    "target": "1 creature",
+    "power_roll": "Might vs. Agility",
+    "tier1": "3 damage",
+    "tier2": "6 damage",
+    "tier3": "9 damage; push 2",
+    "description": "A powerful melee strike. Good signature ability for Brute creatures."
+  },
+  {
+    "name": "Mind Lash",
+    "type": "signature",
+    "keywords": ["Attack", "Ranged", "Psionic"],
+    "distance": "Ranged 10",
+    "target": "1 creature",
+    "power_roll": "Reason vs. Intuition",
+    "tier1": "2 psychic damage",
+    "tier2": "5 psychic damage; slowed (EoT)",
+    "tier3": "7 psychic damage; dazed (EoT)",
+    "description": "A ranged psionic attack. Good signature ability for Controller or Hexer creatures."
+  },
+  {
+    "name": "Shield Wall",
+    "type": "maneuver",
+    "keywords": ["Resistance"],
+    "distance": "Self",
+    "target": "Self",
+    "effect": "The creature gains damage resistance 3 until the start of its next turn. Each ally adjacent to the creature also gains damage resistance 1.",
+    "description": "A defensive maneuver. Good for Defender creatures."
+  },
+  {
+    "name": "Quick Strike",
+    "type": "signature",
+    "keywords": ["Attack", "Melee", "Weapon"],
+    "distance": "Melee 1",
+    "target": "1 creature",
+    "power_roll": "Agility vs. Agility",
+    "tier1": "2 damage",
+    "tier2": "5 damage; the creature can shift 1",
+    "tier3": "7 damage; the creature can shift 3",
+    "description": "A fast melee strike with repositioning. Good signature ability for Harrier creatures."
+  },
+  {
+    "name": "Hex Bolt",
+    "type": "signature",
+    "keywords": ["Attack", "Ranged", "Magic"],
+    "distance": "Ranged 10",
+    "target": "1 creature",
+    "power_roll": "Reason vs. Intuition",
+    "tier1": "2 corruption damage",
+    "tier2": "5 corruption damage; weakened (EoT)",
+    "tier3": "7 corruption damage; weakened (save ends)",
+    "description": "A debilitating magical bolt. Good signature ability for Hexer creatures."
+  },
+  {
+    "name": "Retaliating Strike",
+    "type": "triggered",
+    "keywords": ["Attack", "Melee", "Weapon"],
+    "distance": "Melee 1",
+    "target": "Triggering creature",
+    "trigger": "A creature adjacent to this creature attacks one of its allies.",
+    "power_roll": "Might vs. Agility",
+    "tier1": "2 damage",
+    "tier2": "4 damage",
+    "tier3": "6 damage; taunted (EoT)",
+    "description": "A reactive strike when allies are threatened. Good triggered ability for Defender creatures."
+  },
+  {
+    "name": "Rallying Cry",
+    "type": "villain-action",
+    "keywords": ["Area"],
+    "distance": "Aura 5",
+    "target": "All allies in aura",
+    "villain_action_order": "opener",
+    "effect": "Each target gains 10 temporary stamina and can shift 2.",
+    "description": "A villain action opener that buffs allies. Good for Leader creatures."
+  }
+]
