@@ -1,5 +1,31 @@
 [
   {
+    "slug": "ambusher",
+    "name": "Ambusher",
+    "description": "Strikes from concealment with devastating opening attacks. High burst damage.",
+    "primary_stat": "agility",
+    "characteristics": {
+      "might": 1,
+      "agility": 3,
+      "reason": 0,
+      "intuition": 1,
+      "presence": -2
+    }
+  },
+  {
+    "slug": "artillery",
+    "name": "Artillery",
+    "description": "Deals heavy damage at range but vulnerable in melee. Stays behind the front line.",
+    "primary_stat": "reason",
+    "characteristics": {
+      "might": -2,
+      "agility": 1,
+      "reason": 3,
+      "intuition": 0,
+      "presence": 1
+    }
+  },
+  {
     "slug": "brute",
     "name": "Brute",
     "description": "High damage, tough, but slow or predictable. Frontline powerhouse.",
@@ -62,6 +88,32 @@
       "reason": 2,
       "intuition": 0,
       "presence": 2
+    }
+  },
+  {
+    "slug": "mount",
+    "name": "Mount",
+    "description": "Designed to carry a rider, granting enhanced mobility and synergy bonuses.",
+    "primary_stat": "might",
+    "characteristics": {
+      "might": 2,
+      "agility": 1,
+      "reason": -2,
+      "intuition": 1,
+      "presence": -1
+    }
+  },
+  {
+    "slug": "support",
+    "name": "Support",
+    "description": "Heals, buffs, or repositions allies rather than dealing direct damage.",
+    "primary_stat": "presence",
+    "characteristics": {
+      "might": -1,
+      "agility": 0,
+      "reason": 1,
+      "intuition": 1,
+      "presence": 3
     }
   }
 ]
