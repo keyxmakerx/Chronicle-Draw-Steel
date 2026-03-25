@@ -1,0 +1,11 @@
+[
+  { "name": "Area", "description": "Affects an area rather than individual targets." },
+  { "name": "Attack", "description": "An offensive action that involves a power roll against a target." },
+  { "name": "Charge", "description": "The creature moves and attacks in a single action." },
+  { "name": "Magic", "description": "The ability is magical in nature." },
+  { "name": "Melee", "description": "Requires the creature to be adjacent or within reach." },
+  { "name": "Psionic", "description": "The ability is psionic in nature." },
+  { "name": "Ranged", "description": "Can target creatures at a distance." },
+  { "name": "Resistance", "description": "Provides damage resistance or damage reduction." },
+  { "name": "Weapon", "description": "Uses a physical weapon for the attack." }
+]

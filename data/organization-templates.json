@@ -1,0 +1,88 @@
+[
+  {
+    "slug": "minion",
+    "name": "Minion",
+    "description": "Weak individually but dangerous in squads. 8:1 hero ratio.",
+    "ev_multiplier": 1,
+    "stamina_base": 5,
+    "stamina_per_level": 2,
+    "default_speed": 5,
+    "default_stability": 0,
+    "villain_action_count": 0,
+    "hero_ratio": "8:1",
+    "notes": "Squad mechanics. Minions share a squad stamina pool. When a minion takes damage equal to its individual stamina, it drops and the next minion in the squad steps up."
+  },
+  {
+    "slug": "horde",
+    "name": "Horde",
+    "description": "Slightly tougher than minions, fight in pairs. 2:1 hero ratio.",
+    "ev_multiplier": 2,
+    "stamina_base": 8,
+    "stamina_per_level": 3,
+    "default_speed": 5,
+    "default_stability": 0,
+    "villain_action_count": 0,
+    "hero_ratio": "2:1"
+  },
+  {
+    "slug": "platoon",
+    "name": "Platoon",
+    "description": "Standard enemies, one-for-one against heroes. 1:1 hero ratio.",
+    "ev_multiplier": 4,
+    "stamina_base": 20,
+    "stamina_per_level": 6,
+    "default_speed": 5,
+    "default_stability": 1,
+    "villain_action_count": 0,
+    "hero_ratio": "1:1"
+  },
+  {
+    "slug": "elite",
+    "name": "Elite",
+    "description": "Powerful enemies worth two heroes. 1:2 hero ratio.",
+    "ev_multiplier": 8,
+    "stamina_base": 40,
+    "stamina_per_level": 10,
+    "default_speed": 5,
+    "default_stability": 2,
+    "villain_action_count": 0,
+    "hero_ratio": "1:2"
+  },
+  {
+    "slug": "leader",
+    "name": "Leader",
+    "description": "Powerful enemies with villain actions. 1:2 hero ratio + VA.",
+    "ev_multiplier": 8,
+    "stamina_base": 40,
+    "stamina_per_level": 10,
+    "default_speed": 5,
+    "default_stability": 2,
+    "villain_action_count": 3,
+    "hero_ratio": "1:2"
+  },
+  {
+    "slug": "solo",
+    "name": "Solo",
+    "description": "A single enemy designed to fight an entire party. 1:6 hero ratio.",
+    "ev_multiplier": 24,
+    "stamina_base": 80,
+    "stamina_per_level": 20,
+    "default_speed": 5,
+    "default_stability": 3,
+    "villain_action_count": 3,
+    "hero_ratio": "1:6"
+  },
+  {
+    "slug": "swarm",
+    "name": "Swarm",
+    "description": "A multi-creature unit that acts as one. 1:1 hero ratio.",
+    "ev_multiplier": 4,
+    "stamina_base": 20,
+    "stamina_per_level": 6,
+    "default_speed": 5,
+    "default_stability": 0,
+    "villain_action_count": 0,
+    "hero_ratio": "1:1",
+    "notes": "Swarm creatures should have area-based abilities and typically occupy a larger space."
+  }
+]
