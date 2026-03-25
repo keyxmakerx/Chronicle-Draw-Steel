@@ -122,7 +122,7 @@
         { "key": "keywords", "label": "Keywords", "type": "string", "foundry_path": "system.details.keywords" },
         { "key": "faction", "label": "Faction", "type": "string" },
         { "key": "stamina", "label": "Stamina", "type": "number", "foundry_path": "system.stamina.max" },
-        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.wpiunded" },
+        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.winded" },
         { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed" },
         { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value" },
         { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
@@ -177,6 +177,18 @@
       "config": [
         { "key": "entity_id", "label": "Entity ID", "type": "string" },
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+      ]
+    },
+    {
+      "slug": "bestiary-browser",
+      "name": "Bestiary Browser",
+      "description": "D&D Beyond-style creature catalog with filtering, search, and popup statblocks",
+      "icon": "fa-book-skull",
+      "file": "widgets/bestiary-browser.js",
+      "config": [
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
+        { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
+        { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 }
       ]
     }
   ]
