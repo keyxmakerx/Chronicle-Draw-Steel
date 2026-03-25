@@ -246,6 +246,13 @@ Chronicle.register('monster-builder', {
       b.appendChild(next);
     }
 
+    // Preview button
+    var preview = document.createElement('button');
+    preview.className = 'btn btn-secondary';
+    preview.textContent = 'Preview Statblock';
+    preview.addEventListener('click', function () { self._showPreview(); });
+    b.appendChild(preview);
+
     // Save button always visible
     var save = document.createElement('button');
     save.className = 'btn btn-success';
@@ -522,6 +529,7 @@ Chronicle.register('monster-builder', {
             '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeHtml(ability.tier2 || '') + '"></label>' +
             '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeHtml(ability.tier3 || '') + '"></label>' +
           '</div>' +
+          '<div class="mb-damage-hints" style="font-size:0.8em;color:#888;font-style:italic;margin:-4px 0 6px;">' + self._getDamageHints() + '</div>' +
           '<label>Effect<textarea class="mb-input mb-ab-effect" rows="2">' + Chronicle.escapeHtml(ability.effect || '') + '</textarea></label>' +
           '<div class="mb-field-row">' +
             '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeHtml(ability.trigger || '') + '"></label>' +
@@ -585,8 +593,9 @@ Chronicle.register('monster-builder', {
     this.templateAbilities.forEach(function (tmpl) {
       var btn = document.createElement('button');
       btn.className = 'mb-template-btn';
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid #ddd;border-radius:4px;background:#f9f9f9;cursor:pointer;';
       btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + tmpl.type + ']' +
-        '<br><small>' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
+        '<br><small style="color:#666">' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
       btn.addEventListener('click', function () {
         var copy = JSON.parse(JSON.stringify(tmpl));
         delete copy.description;
@@ -611,11 +620,18 @@ Chronicle.register('monster-builder', {
       this.creature.stability = org.default_stability;
     }
     if (role) {
-      this.creature.might = role.characteristics.might;
-      this.creature.agility = role.characteristics.agility;
-      this.creature.reason = role.characteristics.reason;
-      this.creature.intuition = role.characteristics.intuition;
-      this.creature.presence = role.characteristics.presence;
+      var lvl = this.creature.level;
+      var primaryBonuses = [4, 8, 12, 16, 20].filter(function (l) { return lvl >= l; }).length;
+      var secondaryBonuses = [6, 12, 18].filter(function (l) { return lvl >= l; }).length;
+      var secondaryStat = this._getSecondaryStat(role);
+      var stats = ['might', 'agility', 'reason', 'intuition', 'presence'];
+      for (var i = 0; i < stats.length; i++) {
+        var s = stats[i];
+        var base = role.characteristics[s];
+        if (s === role.primary_stat) base += primaryBonuses;
+        else if (s === secondaryStat) base += secondaryBonuses;
+        this.creature[s] = base;
+      }
     }
     // Auto free strike
     var primaryStat = role ? this.creature[role.primary_stat] : 0;
@@ -637,6 +653,32 @@ Chronicle.register('monster-builder', {
       if (this.roleTemplates[i].slug === slug) return this.roleTemplates[i];
     }
     return null;
+  },
+
+  _getSecondaryStat: function (role) {
+    var chars = role.characteristics;
+    var primary = role.primary_stat;
+    var best = null;
+    var bestVal = -Infinity;
+    var stats = ['might', 'agility', 'reason', 'intuition', 'presence'];
+    for (var i = 0; i < stats.length; i++) {
+      if (stats[i] !== primary && chars[stats[i]] > bestVal) {
+        bestVal = chars[stats[i]];
+        best = stats[i];
+      }
+    }
+    return best;
+  },
+
+  _getDamageHints: function () {
+    var org = this._getOrgTemplate();
+    if (!org || !this.damageBaselines[org.slug]) return '';
+    var bl = this.damageBaselines[org.slug];
+    var lvl = this.creature.level;
+    var t1 = Math.round(bl.tier1 + (bl.per_level * (lvl - 1)));
+    var t2 = Math.round(bl.tier2 + (bl.per_level * (lvl - 1)));
+    var t3 = Math.round(bl.tier3 + (bl.per_level * (lvl - 1)));
+    return 'Damage baseline: T1 ~' + t1 + ' &middot; T2 ~' + t2 + ' &middot; T3 ~' + t3;
   },
 
   _getSuggestedStats: function () {
@@ -815,6 +857,50 @@ Chronicle.register('monster-builder', {
     });
 
     v.appendChild(panel);
+
+    // Encounter budget calculator
+    this._renderEncounterCalc(v);
+  },
+
+  _renderEncounterCalc: function (container) {
+    var self = this;
+    var cr = this.creature;
+    if (!cr.ev || cr.ev <= 0) return;
+
+    var calc = document.createElement('div');
+    calc.className = 'mb-encounter-calc';
+    calc.style.cssText = 'margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:6px;background:#f9fafb;';
+
+    var partySize = 4;
+    var partyLevel = cr.level;
+
+    var renderCalcContent = function () {
+      var budget = partySize * partyLevel;
+      var count = Math.max(1, Math.round(budget / cr.ev));
+      var totalEV = count * cr.ev;
+      calc.innerHTML =
+        '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Calculator</h4>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+          '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + partySize + '" min="1" max="10" style="width:50px"></label>' +
+          '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + partyLevel + '" min="1" max="20" style="width:50px"></label>' +
+        '</div>' +
+        '<div style="font-size:0.9em">' +
+          '<strong>Budget:</strong> ' + budget + ' EV (' + partySize + ' heroes \u00d7 level ' + partyLevel + ')<br>' +
+          '<strong>Use ~' + count + '</strong> of this ' + (cr.organization || 'creature') + ' (EV ' + cr.ev + ' each = ' + totalEV + ' total EV)' +
+        '</div>';
+
+      calc.querySelector('.mb-ec-party').addEventListener('change', function () {
+        partySize = Math.max(1, Math.min(10, parseInt(this.value) || 4));
+        renderCalcContent();
+      });
+      calc.querySelector('.mb-ec-level').addEventListener('change', function () {
+        partyLevel = Math.max(1, Math.min(20, parseInt(this.value) || cr.level));
+        renderCalcContent();
+      });
+    };
+
+    renderCalcContent();
+    container.appendChild(calc);
   },
 
   _validate: function () {
@@ -882,6 +968,159 @@ Chronicle.register('monster-builder', {
     }
 
     return rules;
+  },
+
+  // ── Preview ──────────────────────────────────────────────
+
+  _showPreview: function () {
+    var self = this;
+    var c = this._contentEl;
+    c.innerHTML = '';
+
+    // Hide step nav, show preview
+    this._navEl.style.display = 'none';
+
+    var previewWrap = document.createElement('div');
+    previewWrap.className = 'mb-preview';
+    previewWrap.style.cssText = 'border:2px solid #7c3aed;border-radius:8px;padding:20px;background:#faf9ff;';
+
+    previewWrap.innerHTML = this._buildPreviewHtml(this.creature);
+    c.appendChild(previewWrap);
+
+    // Action buttons
+    var actions = document.createElement('div');
+    actions.style.cssText = 'margin-top:12px;display:flex;gap:8px;';
+
+    var backBtn = document.createElement('button');
+    backBtn.className = 'btn btn-secondary';
+    backBtn.textContent = 'Back to Editor';
+    backBtn.addEventListener('click', function () {
+      self._navEl.style.display = '';
+      self._renderCurrentStep();
+    });
+    actions.appendChild(backBtn);
+
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn-secondary';
+    copyBtn.textContent = 'Copy to Clipboard';
+    copyBtn.addEventListener('click', function () {
+      var text = previewWrap.innerText;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function () { copyBtn.textContent = 'Copy to Clipboard'; }, 2000);
+        });
+      }
+    });
+    actions.appendChild(copyBtn);
+
+    c.appendChild(actions);
+
+    // Update buttons to only show back + save
+    this._buttonsEl.innerHTML = '';
+  },
+
+  _buildPreviewHtml: function (cr) {
+    var h = Chronicle.escapeHtml;
+    var html = '';
+
+    html += '<div class="sb-header">';
+    html += '<h2 class="sb-name">' + h(cr.name || 'Unnamed') + '</h2>';
+    html += '<div class="sb-subtitle">Level ' + cr.level + ' ';
+    if (cr.size) html += cr.size + ' ';
+    if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
+    if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
+    html += '</div>';
+    if (cr.keywords && cr.keywords.length > 0) {
+      html += '<div class="sb-keywords" style="font-style:italic;color:#555">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+    }
+    if (cr.faction) html += '<div class="sb-faction" style="color:#888">' + h(cr.faction) + '</div>';
+    html += '<div class="sb-ev" style="font-weight:bold;margin-top:4px">EV ' + cr.ev + '</div>';
+    html += '</div>';
+
+    html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0">';
+    html += '<span><strong>STM</strong> ' + cr.stamina + '</span>';
+    html += '<span><strong>Winded</strong> ' + cr.winded + '</span>';
+    html += '<span><strong>SPD</strong> ' + cr.speed + '</span>';
+    html += '<span><strong>Stability</strong> ' + cr.stability + '</span>';
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">';
+    var chars = ['might', 'agility', 'reason', 'intuition', 'presence'];
+    chars.forEach(function (stat) {
+      var val = cr[stat];
+      var sign = val >= 0 ? '+' : '';
+      html += '<span><strong>' + stat.charAt(0).toUpperCase() + stat.slice(1, 3).toUpperCase() + '</strong> ' + sign + val + '</span>';
+    });
+    html += '</div>';
+
+    if (cr.immunities && cr.immunities.length > 0) {
+      html += '<div style="margin:6px 0"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(typeof i === 'string' ? i : i.type + ' ' + i.value); }).join(', ') + '</div>';
+    }
+
+    html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+
+    if (cr.free_strike) {
+      html += '<div style="margin:6px 0"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
+    }
+
+    if (cr.abilities && cr.abilities.length > 0) {
+      cr.abilities.forEach(function (ab) {
+        var typeLabel = ab.type === 'signature' ? '\u2605 ' : '';
+        html += '<div style="margin:8px 0;padding:6px 0;border-bottom:1px solid #e0e0e0">';
+        html += '<div style="font-weight:bold">' + typeLabel + h(ab.name || '') + ' <span style="font-weight:normal;color:#888;font-size:0.85em">[' + h(ab.type || '') + ']</span></div>';
+        if (ab.keywords && ab.keywords.length > 0) {
+          html += '<div style="font-style:italic;color:#666;font-size:0.85em">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+        }
+        var meta = [];
+        if (ab.distance) meta.push(h(ab.distance));
+        if (ab.target) meta.push(h(ab.target));
+        if (ab.power_roll) meta.push(h(ab.power_roll));
+        if (meta.length > 0) html += '<div style="color:#555;font-size:0.85em">' + meta.join(' \u2022 ') + '</div>';
+        if (ab.trigger) html += '<div style="font-size:0.9em"><strong>Trigger:</strong> ' + h(ab.trigger) + '</div>';
+        if (ab.tier1 || ab.tier2 || ab.tier3) {
+          html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
+          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + h(ab.tier1) + '</div>';
+          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + h(ab.tier2) + '</div>';
+          if (ab.tier3) html += '<div><strong>17+:</strong> ' + h(ab.tier3) + '</div>';
+          html += '</div>';
+        }
+        if (ab.effect) html += '<div style="font-size:0.9em"><strong>Effect:</strong> ' + h(ab.effect) + '</div>';
+        if (ab.spend_vp && ab.spend_vp > 0) html += '<div style="font-size:0.9em;color:#7c3aed"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        html += '</div>';
+      });
+    }
+
+    var va = cr.villain_actions ? cr.villain_actions.filter(function (v) { return v.name && v.name.trim(); }) : [];
+    if (va.length > 0) {
+      html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+      html += '<h3 style="font-size:1.05em;margin:0 0 6px">Villain Actions</h3>';
+      var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
+      va.forEach(function (v) {
+        html += '<div style="margin:6px 0"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name);
+        if (v.description) html += ' &mdash; ' + h(v.description);
+        html += '</div>';
+        if (v.tier1 || v.tier2 || v.tier3) {
+          html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
+          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + h(v.tier1) + '</div>';
+          if (v.tier2) html += '<div><strong>12-16:</strong> ' + h(v.tier2) + '</div>';
+          if (v.tier3) html += '<div><strong>17+:</strong> ' + h(v.tier3) + '</div>';
+          html += '</div>';
+        }
+      });
+    }
+
+    if (cr.traits && cr.traits.length > 0) {
+      html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+      html += '<h3 style="font-size:1.05em;margin:0 0 6px">Traits</h3>';
+      cr.traits.forEach(function (t) {
+        html += '<div style="margin:4px 0"><strong>' + h(t.name || '') + '.</strong> ' + h(t.description || '') + '</div>';
+      });
+    }
+
+    return html;
   },
 
   // ── Save ────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 # Monster Builder & Community Bestiary — Implementation Checklist
 
-> **Status:** Draft
-> **Last Updated:** 2026-03-24
-> **Branches:** `claude/fix-unifi-timeout-YxMXa` on all repos
+> **Status:** Phase 2 Complete
+> **Last Updated:** 2026-03-25
+> **Branches:** `claude/consolidate-repos-AVzyM` on Chronicle-Draw-Steel
 
 This is the sprint-by-sprint implementation guide. If work is interrupted, pick up from the first unchecked item in the current phase. Each item is atomic and can be committed independently.
 
@@ -16,67 +16,67 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
 
 ### 1.1 Manifest & Data Expansion
 
-- [ ] **1.1.1** Update `drawsteel-creature` entity preset in `manifest.json`
+- [x] **1.1.1** Update `drawsteel-creature` entity preset in `manifest.json`
   - Add fields: organization, keywords, faction, size, winded, immunities, free_strike, traits, abilities_json, villain_actions_json
   - Add `foundry_actor_type: "npc"`
   - Add `foundry_path` annotations for all flat fields
   - **File:** `manifest.json` lines 88–107
   - **Test:** Run manifest validation (if available) or manually verify JSON
 
-- [ ] **1.1.2** Add `creature-abilities` reference category to manifest
+- [x] **1.1.2** Add `creature-abilities` reference category to manifest
   - Fields: type, keywords, distance, target, power_roll, tier results, effect, vp_cost, trigger, villain_action_order
   - **File:** `manifest.json` categories array
 
-- [ ] **1.1.3** Create `data/organization-templates.json`
+- [x] **1.1.3** Create `data/organization-templates.json`
   - 7 organization entries (minion, horde, platoon, elite, leader, solo, swarm)
   - Each with: ev_multiplier, stamina_base, stamina_per_level, default_speed, default_stability, villain_action_count, hero_ratio description
   - **File:** `data/organization-templates.json` (new)
 
-- [ ] **1.1.4** Create `data/role-templates.json`
+- [x] **1.1.4** Create `data/role-templates.json`
   - 5 role entries (brute, controller, defender, harrier, hexer)
   - Each with: characteristic suggestions, primary_stat, description
   - **File:** `data/role-templates.json` (new)
 
-- [ ] **1.1.5** Create `data/creature-keywords.json`
+- [x] **1.1.5** Create `data/creature-keywords.json`
   - All creature keywords from §2.3 of monster-builder.md
   - Each with: name, description, special_rules (if any)
   - **File:** `data/creature-keywords.json` (new)
 
-- [ ] **1.1.6** Create `data/ability-keywords.json`
+- [x] **1.1.6** Create `data/ability-keywords.json`
   - Ability keywords: Attack, Magic, Psionic, Ranged, Area, Melee, Weapon, etc.
   - Each with: name, description
   - **File:** `data/ability-keywords.json` (new)
 
-- [ ] **1.1.7** Create `data/damage-baselines.json`
+- [x] **1.1.7** Create `data/damage-baselines.json`
   - Damage multipliers per tier per organization (from monster-builder.md §4.6)
   - **File:** `data/damage-baselines.json` (new)
 
-- [ ] **1.1.8** Populate `data/creature-abilities.json` with example abilities
+- [x] **1.1.8** Populate `data/creature-abilities.json` with example abilities
   - At least 5 template abilities (one per role archetype)
   - Signature abilities, a maneuver, a triggered action
   - **File:** `data/creature-abilities.json` (currently empty)
 
 ### 1.2 Builder Widget
 
-- [ ] **1.2.1** Create `widgets/monster-builder.js` — scaffold and registration
+- [x] **1.2.1** Create `widgets/monster-builder.js` — scaffold and registration
   - Chronicle.register() boilerplate
   - Widget container HTML structure
   - Step navigation (7 steps)
   - **File:** `widgets/monster-builder.js` (new)
 
-- [ ] **1.2.2** Implement Step 1: Identity
+- [x] **1.2.2** Implement Step 1: Identity
   - Name input, level number input (1–20), size enum dropdown, faction text input
   - Keyword multi-select from creature-keywords reference data
   - **Depends on:** 1.1.5
 
-- [ ] **1.2.3** Implement Step 2: Organization & Role
+- [x] **1.2.3** Implement Step 2: Organization & Role
   - Radio card selectors for organization (7 options) and role (5 options)
   - Description text and hero ratio shown per selection
   - Auto-calculate EV on selection change
   - Load templates from organization-templates.json
   - **Depends on:** 1.1.3, 1.1.4
 
-- [ ] **1.2.4** Implement Step 3: Statistics
+- [x] **1.2.4** Implement Step 3: Statistics
   - Auto-fill stamina, speed, stability from organization template
   - Auto-fill characteristics from role template
   - Winded auto-calculated from stamina
@@ -84,7 +84,7 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
   - Editable — user can override all auto-filled values
   - Immunities multi-entry (type + value pairs)
 
-- [ ] **1.2.5** Implement Step 4: Abilities
+- [x] **1.2.5** Implement Step 4: Abilities
   - Add/edit/remove ability sub-form
   - Fields: name, type (dropdown), keywords (multi-select), distance, target
   - Power roll field: characteristic vs. characteristic
@@ -95,50 +95,50 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
   - Damage baseline hints shown per tier
   - **Depends on:** 1.1.6, 1.1.7
 
-- [ ] **1.2.6** Implement Step 5: Free Strike
+- [x] **1.2.6** Implement Step 5: Free Strike
   - Auto-calculated default: level + primary stat modifier
   - Editable override text field
   - **Depends on:** 1.2.3 (needs organization + role context)
 
-- [ ] **1.2.7** Implement Step 6: Villain Actions (conditional)
+- [x] **1.2.7** Implement Step 6: Villain Actions (conditional)
   - Only shown when organization is "leader" or "solo"
   - Three fixed slots: Opener, Crowd Control, Ultimate
   - Each slot: name, description textarea, optional power roll + tiers
   - **Depends on:** 1.2.3
 
-- [ ] **1.2.8** Implement Step 7: Traits
+- [x] **1.2.8** Implement Step 7: Traits
   - Dynamic list of name + description pairs
   - Add/remove trait buttons
   - Markdown support in description
 
-- [ ] **1.2.9** Implement validation panel
+- [x] **1.2.9** Implement validation panel
   - Real-time validation against all E-rules and W-rules from monster-builder.md §5
   - Error/warning/info icons with messages
   - Block save on E-rule violations
 
-- [ ] **1.2.10** Implement save/load
+- [x] **1.2.10** Implement save/load
   - Save creature data to entity custom fields via Chronicle entity API
   - Serialize abilities to `abilities_json` string field
   - Serialize villain actions to `villain_actions_json` string field
   - Load existing creature data when editing
 
-- [ ] **1.2.11** Register widget in manifest.json
+- [x] **1.2.11** Register widget in manifest.json
   - Add monster-builder to widgets array
   - **File:** `manifest.json`
 
 ### 1.3 Statblock Renderer Widget
 
-- [ ] **1.3.1** Create `widgets/statblock-renderer.js`
+- [x] **1.3.1** Create `widgets/statblock-renderer.js`
   - Read-only statblock display widget
   - Reads from entity custom fields
   - Renders formatted statblock card (see monster-builder.md §6.4)
   - **File:** `widgets/statblock-renderer.js` (new)
 
-- [ ] **1.3.2** Register statblock-renderer widget in manifest.json
+- [x] **1.3.2** Register statblock-renderer widget in manifest.json
   - **File:** `manifest.json`
 
 ### Phase 1 Commit Checkpoint
-- [ ] **1.C** Commit all Phase 1 changes, push to `claude/fix-unifi-timeout-YxMXa`
+- [x] **1.C** Commit all Phase 1 changes, push to `claude/fix-unifi-timeout-YxMXa`
 
 ---
 
@@ -148,7 +148,7 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
 **Repo:** `Chronicle-Draw-Steel`
 **Depends on:** Phase 1
 
-- [ ] **2.1** Implement full auto-calculation engine in builder widget
+- [x] **2.1** Implement full auto-calculation engine in builder widget
   - EV calculation with all organization formulas
   - Stamina suggestion with level scaling
   - Characteristic scaling by level (+1 at levels 4,8,12,16,20 primary; 6,12,18 secondary)
@@ -156,29 +156,29 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
   - Ability damage baseline suggestions per tier
   - Winded auto-calculation
 
-- [ ] **2.2** Implement ability template library
+- [x] **2.2** Implement ability template library
   - "Use Template" button in ability editor
   - Browse ability templates from creature-abilities reference data
   - Copy template into ability, user can modify
   - **Depends on:** 1.1.8
 
-- [ ] **2.3** Implement statblock preview mode
+- [x] **2.3** Implement statblock preview mode
   - Toggle between builder form and formatted statblock preview
   - Preview updates live as user edits
   - Copy-to-clipboard for statblock text
 
-- [ ] **2.4** Add encounter budget calculator panel
+- [x] **2.4** Add encounter budget calculator panel
   - Shows EV of current creature
   - "How many of these vs. X heroes at level Y?" calculator
   - Uses EV formulas from organization-templates
 
-- [ ] **2.5** Populate `data/creatures.json` with official example creatures
+- [x] **2.5** Populate `data/creatures.json` with official example creatures
   - At least 7 examples (one per organization type)
   - Sourced from CC-BY-4.0 Draw Steel content only
   - **File:** `data/creatures.json`
 
 ### Phase 2 Commit Checkpoint
-- [ ] **2.C** Commit all Phase 2 changes, push
+- [x] **2.C** Commit all Phase 2 changes, push
 
 ---
 
