@@ -2,123 +2,163 @@
   {
     "name": "Crushing Blow",
     "type": "signature",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "1 creature",
     "power_roll": "Might vs. Agility",
     "tier1": "3 damage",
     "tier2": "6 damage",
-    "tier3": "9 damage; push 2",
+    "tier3": "9 damage; {@movement push} 2",
     "description": "A powerful melee strike. Good signature ability for Brute creatures."
   },
   {
     "name": "Mind Lash",
     "type": "signature",
-    "keywords": ["Attack", "Ranged", "Psionic"],
+    "keywords": [
+      "Attack",
+      "Ranged",
+      "Psionic"
+    ],
     "distance": "Ranged 10",
     "target": "1 creature",
     "power_roll": "Reason vs. Intuition",
     "tier1": "2 psychic damage",
-    "tier2": "5 psychic damage; slowed (EoT)",
-    "tier3": "7 psychic damage; dazed (EoT)",
+    "tier2": "5 psychic damage; {@condition slowed} ({@duration eot})",
+    "tier3": "7 psychic damage; {@condition dazed} ({@duration eot})",
     "description": "A ranged psionic attack. Good signature ability for Controller or Hexer creatures."
   },
   {
     "name": "Shield Wall",
     "type": "maneuver",
-    "keywords": ["Resistance"],
+    "keywords": [
+      "Resistance"
+    ],
     "distance": "Self",
     "target": "Self",
-    "effect": "The creature gains damage resistance 3 until the start of its next turn. Each ally adjacent to the creature also gains damage resistance 1.",
+    "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1.",
     "description": "A defensive maneuver. Good for Defender creatures."
   },
   {
     "name": "Quick Strike",
     "type": "signature",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "1 creature",
     "power_roll": "Agility vs. Agility",
     "tier1": "2 damage",
-    "tier2": "5 damage; the creature can shift 1",
-    "tier3": "7 damage; the creature can shift 3",
+    "tier2": "5 damage; the creature can {@movement shift} 1",
+    "tier3": "7 damage; the creature can {@movement shift} 3",
     "description": "A fast melee strike with repositioning. Good signature ability for Harrier creatures."
   },
   {
     "name": "Hex Bolt",
     "type": "signature",
-    "keywords": ["Attack", "Ranged", "Magic"],
+    "keywords": [
+      "Attack",
+      "Ranged",
+      "Magic"
+    ],
     "distance": "Ranged 10",
     "target": "1 creature",
     "power_roll": "Reason vs. Intuition",
     "tier1": "2 corruption damage",
-    "tier2": "5 corruption damage; weakened (EoT)",
-    "tier3": "7 corruption damage; weakened (save ends)",
+    "tier2": "5 corruption damage; {@condition weakened} ({@duration eot})",
+    "tier3": "7 corruption damage; {@condition weakened} ({@duration save-ends})",
     "description": "A debilitating magical bolt. Good signature ability for Hexer creatures."
   },
   {
     "name": "Retaliating Strike",
     "type": "triggered",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "Triggering creature",
     "trigger": "A creature adjacent to this creature attacks one of its allies.",
     "power_roll": "Might vs. Agility",
     "tier1": "2 damage",
     "tier2": "4 damage",
-    "tier3": "6 damage; taunted (EoT)",
+    "tier3": "6 damage; {@condition taunted} ({@duration eot})",
     "description": "A reactive strike when allies are threatened. Good triggered ability for Defender creatures."
   },
   {
     "name": "Rallying Cry",
     "type": "villain-action",
-    "keywords": ["Area"],
+    "keywords": [
+      "Area"
+    ],
     "distance": "Aura 5",
     "target": "All allies in aura",
     "villain_action_order": "opener",
-    "effect": "Each target gains 10 temporary stamina and can shift 2.",
+    "effect": "Each target gains 10 {@resource temporary-stamina} and can {@movement shift} 2.",
     "description": "A villain action opener that buffs allies. Good for Leader creatures."
   },
   {
     "name": "Longbow Volley",
     "type": "signature",
-    "keywords": ["Attack", "Ranged", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Ranged",
+      "Weapon"
+    ],
     "distance": "Ranged 15",
     "target": "1 creature",
     "power_roll": "Reason vs. Agility",
     "tier1": "2 damage",
     "tier2": "5 damage",
-    "tier3": "8 damage; bleeding (EoT)",
+    "tier3": "8 damage; {@condition bleeding} ({@duration eot})",
     "description": "A long-range precision shot. Good signature ability for Artillery creatures."
   },
   {
     "name": "Ambush Strike",
     "type": "signature",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "1 creature",
     "power_roll": "Agility vs. Agility",
     "tier1": "3 damage",
     "tier2": "6 damage",
-    "tier3": "9 damage; if the creature was hidden, deal an extra 4 damage",
+    "tier3": "9 damage; if the creature was {@condition hidden}, deal an extra 4 damage",
     "description": "A devastating first strike from concealment. Good signature ability for Ambusher creatures."
   },
   {
     "name": "Trampling Charge",
     "type": "signature",
-    "keywords": ["Attack", "Melee", "Weapon", "Charge"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon",
+      "Charge"
+    ],
     "distance": "Melee 1",
     "target": "1 creature",
     "power_roll": "Might vs. Might",
     "tier1": "3 damage",
-    "tier2": "6 damage; push 2",
-    "tier3": "9 damage; push 3 and the target falls prone",
+    "tier2": "6 damage; {@movement push} 2",
+    "tier3": "9 damage; {@movement push} 3 and the target falls {@condition prone}",
     "description": "A charging attack that knocks enemies aside. Good signature ability for Mount creatures."
   },
   {
     "name": "Healing Word",
     "type": "signature",
-    "keywords": ["Area", "Magic"],
+    "keywords": [
+      "Area",
+      "Magic"
+    ],
     "distance": "Ranged 5",
     "target": "1 ally",
     "effect": "The target regains stamina equal to their recovery value.",
@@ -127,58 +167,75 @@
   {
     "name": "Venom Bite",
     "type": "signature",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "1 creature",
     "power_roll": "Might vs. Agility",
     "tier1": "2 poison damage",
-    "tier2": "5 poison damage; 3 poison damage (EoT)",
-    "tier3": "8 poison damage; 5 poison damage (EoT, save ends)",
+    "tier2": "5 poison damage; 3 poison damage ({@duration eot})",
+    "tier3": "8 poison damage; 5 poison damage ({@duration eot}, {@duration save-ends})",
     "description": "A venomous bite that deals ongoing poison damage. Versatile melee signature."
   },
   {
     "name": "Breath Weapon",
     "type": "action",
-    "keywords": ["Attack", "Area", "Magic"],
+    "keywords": [
+      "Attack",
+      "Area",
+      "Magic"
+    ],
     "distance": "3 cube within 1",
     "target": "All creatures in area",
     "power_roll": "Might vs. Agility",
     "tier1": "3 fire damage",
     "tier2": "6 fire damage",
-    "tier3": "10 fire damage; burning (EoT)",
+    "tier3": "10 fire damage; {@condition burning} ({@duration eot})",
     "description": "A devastating area breath attack. Damage type varies by creature (fire, cold, poison, etc.)."
   },
   {
     "name": "Web Shot",
     "type": "action",
-    "keywords": ["Attack", "Ranged"],
+    "keywords": [
+      "Attack",
+      "Ranged"
+    ],
     "distance": "Ranged 10",
     "target": "1 creature",
     "power_roll": "Agility vs. Agility",
-    "tier1": "Slowed (EoT)",
-    "tier2": "Restrained (EoT)",
-    "tier3": "Restrained (save ends)",
+    "tier1": "{@condition slowed} ({@duration eot})",
+    "tier2": "{@condition restrained} ({@duration eot})",
+    "tier3": "{@condition restrained} ({@duration save-ends})",
     "description": "A sticky web projectile that immobilizes targets. Good for spider-type creatures."
   },
   {
     "name": "Psychic Scream",
     "type": "action",
-    "keywords": ["Attack", "Area", "Psionic"],
+    "keywords": [
+      "Attack",
+      "Area",
+      "Psionic"
+    ],
     "distance": "2 burst",
     "target": "All enemies in area",
     "power_roll": "Reason vs. Intuition",
     "tier1": "2 psychic damage",
-    "tier2": "5 psychic damage; dazed (EoT)",
-    "tier3": "8 psychic damage; dazed (save ends)",
+    "tier2": "5 psychic damage; {@condition dazed} ({@duration eot})",
+    "tier3": "8 psychic damage; {@condition dazed} ({@duration save-ends})",
     "description": "A burst of psychic energy that disrupts nearby enemies. Good for Controller creatures."
   },
   {
     "name": "Rally",
     "type": "maneuver",
-    "keywords": ["Area"],
+    "keywords": [
+      "Area"
+    ],
     "distance": "Aura 5",
     "target": "All allies in aura",
-    "effect": "Each target gains 5 temporary stamina.",
+    "effect": "Each target gains 5 {@resource temporary-stamina}.",
     "description": "A supportive maneuver that bolsters nearby allies. Good for Support creatures."
   },
   {
@@ -187,35 +244,43 @@
     "keywords": [],
     "distance": "Self",
     "target": "Self",
-    "effect": "The creature becomes hidden and can shift up to their speed. They gain concealment until the end of their next turn.",
+    "effect": "The creature becomes {@condition hidden} and can {@movement shift} up to their speed. They gain concealment until the end of their next turn.",
     "description": "A stealth maneuver that grants concealment and repositioning. Good for Ambusher creatures."
   },
   {
     "name": "Defensive Stance",
     "type": "maneuver",
-    "keywords": ["Resistance"],
+    "keywords": [
+      "Resistance"
+    ],
     "distance": "Self",
     "target": "Self",
-    "effect": "The creature gains damage resistance 5 and taunts all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
+    "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
     "description": "A tanking maneuver that draws attacks and reduces damage. Good for Defender creatures."
   },
   {
     "name": "Intercept",
     "type": "triggered",
-    "keywords": ["Melee", "Weapon"],
+    "keywords": [
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "Triggering creature",
     "trigger": "An enemy within reach moves away from the creature.",
     "power_roll": "Might vs. Agility",
     "tier1": "2 damage",
-    "tier2": "4 damage; the target's speed becomes 0 (EoT)",
-    "tier3": "6 damage; the target's speed becomes 0 (EoT) and is taunted (EoT)",
+    "tier2": "4 damage; the target's speed becomes 0 ({@duration eot})",
+    "tier3": "6 damage; the target's speed becomes 0 ({@duration eot}) and is {@condition taunted} ({@duration eot})",
     "description": "A reactive strike that prevents enemies from escaping. Good triggered ability for Defender creatures."
   },
   {
     "name": "Death Burst",
     "type": "triggered",
-    "keywords": ["Area", "Magic"],
+    "keywords": [
+      "Area",
+      "Magic"
+    ],
     "distance": "1 burst",
     "target": "All creatures in area",
     "trigger": "The creature is reduced to 0 stamina.",
@@ -225,20 +290,26 @@
   {
     "name": "Terrifying Roar",
     "type": "villain-action",
-    "keywords": ["Area", "Fear"],
+    "keywords": [
+      "Area",
+      "Fear"
+    ],
     "distance": "5 burst",
     "target": "All enemies in area",
     "villain_action_order": "closer",
     "power_roll": "Presence vs. Intuition",
-    "tier1": "Frightened (EoT)",
-    "tier2": "Frightened (save ends); the target must use their next move action to move away",
-    "tier3": "Frightened (save ends); the target is also dazed (EoT)",
+    "tier1": "{@condition frightened} ({@duration eot})",
+    "tier2": "{@condition frightened} ({@duration save-ends}); the target must use their next move action to move away",
+    "tier3": "{@condition frightened} ({@duration save-ends}); the target is also {@condition dazed} ({@duration eot})",
     "description": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures."
   },
   {
     "name": "Summon Minions",
     "type": "villain-action",
-    "keywords": ["Area", "Summoning"],
+    "keywords": [
+      "Area",
+      "Summoning"
+    ],
     "distance": "Ranged 10",
     "target": "Special",
     "villain_action_order": "escalation",
@@ -248,14 +319,18 @@
   {
     "name": "Focused Assault",
     "type": "villain-action",
-    "keywords": ["Attack", "Melee", "Weapon"],
+    "keywords": [
+      "Attack",
+      "Melee",
+      "Weapon"
+    ],
     "distance": "Melee 1",
     "target": "Up to 3 creatures",
     "villain_action_order": "escalation",
     "power_roll": "Might vs. Agility",
     "tier1": "4 damage per target",
     "tier2": "8 damage per target",
-    "tier3": "12 damage per target; push 3",
+    "tier3": "12 damage per target; {@movement push} 3",
     "description": "A villain action escalation featuring a flurry of devastating melee attacks."
   }
 ]

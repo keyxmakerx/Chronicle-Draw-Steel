@@ -1,0 +1,156 @@
+{
+  "version": "1.0",
+  "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+  "entries": [
+    {
+      "id": "frightened",
+      "name": "Frightened",
+      "category": "condition",
+      "description": "A frightened creature takes a bane on all power rolls against the source of their fear. The creature can't willingly move closer to the source of their fear."
+    },
+    {
+      "id": "dazed",
+      "name": "Dazed",
+      "category": "condition",
+      "description": "A dazed creature can only do one thing on their turn: take an action, take a maneuver, or take a move action. They also can't take triggered actions or free triggered actions."
+    },
+    {
+      "id": "slowed",
+      "name": "Slowed",
+      "category": "condition",
+      "description": "A slowed creature's speed is reduced to 2 and they can't benefit from bonuses to speed. They also can't shift."
+    },
+    {
+      "id": "restrained",
+      "name": "Restrained",
+      "category": "condition",
+      "description": "A restrained creature's speed is 0 and they can't benefit from bonuses to speed. Attacks against a restrained creature gain an edge."
+    },
+    {
+      "id": "weakened",
+      "name": "Weakened",
+      "category": "condition",
+      "description": "A weakened creature's power rolls and damage are halved."
+    },
+    {
+      "id": "bleeding",
+      "name": "Bleeding",
+      "category": "condition",
+      "description": "A bleeding creature takes damage at the start of each of their turns equal to the bleeding value."
+    },
+    {
+      "id": "burning",
+      "name": "Burning",
+      "category": "condition",
+      "description": "A burning creature takes fire damage at the start of each of their turns equal to the burning value."
+    },
+    {
+      "id": "taunted",
+      "name": "Taunted",
+      "category": "condition",
+      "description": "A taunted creature takes a bane on attacks that don't include the source of the taunt as a target."
+    },
+    {
+      "id": "prone",
+      "name": "Prone",
+      "category": "condition",
+      "description": "A prone creature is flat on the ground. They must spend half their movement to stand up. Melee attacks against them gain an edge; ranged attacks take a bane."
+    },
+    {
+      "id": "charmed",
+      "name": "Charmed",
+      "category": "condition",
+      "description": "A charmed creature can't attack the source of the charm and the source gains an edge on social interactions with the charmed creature."
+    },
+    {
+      "id": "poisoned",
+      "name": "Poisoned",
+      "category": "condition",
+      "description": "A poisoned creature takes a bane on all power rolls."
+    },
+    {
+      "id": "grabbed",
+      "name": "Grabbed",
+      "category": "condition",
+      "description": "A grabbed creature's speed is 0. The grabber can move the grabbed creature with them when they move. The grabbed creature can use an action to attempt to escape."
+    },
+    {
+      "id": "hidden",
+      "name": "Hidden",
+      "category": "condition",
+      "description": "A hidden creature can't be seen or detected by the creatures they are hidden from. Attacks against a hidden creature take a bane; attacks by a hidden creature gain an edge."
+    },
+    {
+      "id": "shift",
+      "name": "Shift",
+      "category": "movement",
+      "description": "A shift is a special movement that doesn't provoke opportunity attacks or free strikes. The creature moves the indicated number of squares."
+    },
+    {
+      "id": "push",
+      "name": "Push",
+      "category": "movement",
+      "description": "Forced movement that moves the target the indicated number of squares away from the source. The target doesn't provoke opportunity attacks from this movement."
+    },
+    {
+      "id": "pull",
+      "name": "Pull",
+      "category": "movement",
+      "description": "Forced movement that moves the target the indicated number of squares toward the source. The target doesn't provoke opportunity attacks from this movement."
+    },
+    {
+      "id": "eot",
+      "name": "EoT",
+      "category": "duration",
+      "description": "End of Turn. The effect lasts until the end of the affected creature's next turn, then ends automatically."
+    },
+    {
+      "id": "save-ends",
+      "name": "Save Ends",
+      "category": "duration",
+      "description": "The effect persists until the affected creature succeeds on a resistance roll at the end of their turn (roll 2d10; 10+ ends the effect)."
+    },
+    {
+      "id": "temporary-stamina",
+      "name": "Temporary Stamina",
+      "category": "resource",
+      "description": "Extra stamina layered on top of current stamina. Damage reduces temporary stamina first. Temporary stamina doesn't stack; use the higher value. It expires at the end of the encounter."
+    },
+    {
+      "id": "damage-resistance",
+      "name": "Damage Resistance",
+      "category": "resource",
+      "description": "Reduces incoming damage by the indicated amount. Applied after all damage calculations. Multiple sources of damage resistance stack."
+    },
+    {
+      "id": "free-strike",
+      "name": "Free Strike",
+      "category": "action",
+      "description": "A quick, automatic attack a creature can make outside their turn. Typically triggered by an enemy moving out of reach or as part of certain abilities."
+    },
+    {
+      "id": "forced-movement",
+      "name": "Forced Movement",
+      "category": "combat",
+      "description": "Movement imposed on a creature by an outside force (push, pull, slide). Forced movement doesn't provoke opportunity attacks or free strikes."
+    },
+    {
+      "id": "power-roll",
+      "name": "Power Roll",
+      "category": "combat",
+      "description": "Roll 2d10 + characteristic vs. target's characteristic. Results: 11 or lower (Tier 1), 12-16 (Tier 2), 17+ (Tier 3). Edges add +2; banes subtract -2."
+    },
+    {
+      "id": "stability",
+      "name": "Stability",
+      "category": "combat",
+      "description": "Reduces forced movement. When a creature would be force-moved, reduce the distance by their stability value (minimum 0)."
+    },
+    {
+      "id": "winded",
+      "name": "Winded",
+      "category": "combat",
+      "description": "A creature is winded when their stamina drops to their winded value (half their maximum stamina) or below. Some abilities trigger or change when the creature is winded."
+    }
+  ]
+}

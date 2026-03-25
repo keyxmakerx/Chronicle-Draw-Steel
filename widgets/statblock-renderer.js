@@ -8,8 +8,13 @@ Chronicle.register('statblock-renderer', {
     this.el = el;
     this.config = config;
     this.creature = null;
+    var base = config.campaignId
+      ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
+      : '/extensions/drawsteel/assets/';
+    this._ref = new DrawSteelRefRenderer(base);
 
-    this._loadEntity().then(function () {
+    Promise.all([this._loadEntity(), this._ref.load()]).then(function () {
+      self._ref.injectStyles();
       self._render();
     });
   },
@@ -82,6 +87,7 @@ Chronicle.register('statblock-renderer', {
 
     var cr = this.creature;
     var h = Chronicle.escapeHtml;
+    var ref = this._ref;
     var html = '';
 
     // Header
@@ -155,17 +161,17 @@ Chronicle.register('statblock-renderer', {
           html += '<div class="sb-ability-meta">' + meta.join(' &bull; ') + '</div>';
         }
         if (ab.trigger) {
-          html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + h(ab.trigger) + '</div>';
+          html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
         }
         if (ab.tier1 || ab.tier2 || ab.tier3) {
           html += '<div class="sb-ability-tiers">';
-          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + h(ab.tier1) + '</div>';
-          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + h(ab.tier2) + '</div>';
-          if (ab.tier3) html += '<div><strong>17+:</strong> ' + h(ab.tier3) + '</div>';
+          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
+          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
+          if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
           html += '</div>';
         }
         if (ab.effect) {
-          html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + h(ab.effect) + '</div>';
+          html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
         }
         if (ab.spend_vp && ab.spend_vp > 0) {
           html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
@@ -186,13 +192,13 @@ Chronicle.register('statblock-renderer', {
         var label = orderLabels[va.order] || va.order;
         html += '<div class="sb-va">';
         html += '<div class="sb-va-name"><strong>' + h(label) + ':</strong> ' + h(va.name) + '</div>';
-        if (va.description) html += '<div class="sb-va-desc">' + h(va.description) + '</div>';
+        if (va.description) html += '<div class="sb-va-desc">' + ref.renderText(h(va.description)) + '</div>';
         if (va.power_roll) html += '<div class="sb-va-roll">' + h(va.power_roll) + '</div>';
         if (va.tier1 || va.tier2 || va.tier3) {
           html += '<div class="sb-va-tiers">';
-          if (va.tier1) html += '<div><strong>11 or lower:</strong> ' + h(va.tier1) + '</div>';
-          if (va.tier2) html += '<div><strong>12-16:</strong> ' + h(va.tier2) + '</div>';
-          if (va.tier3) html += '<div><strong>17+:</strong> ' + h(va.tier3) + '</div>';
+          if (va.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(va.tier1)) + '</div>';
+          if (va.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(va.tier2)) + '</div>';
+          if (va.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(va.tier3)) + '</div>';
           html += '</div>';
         }
         html += '</div>';
@@ -206,7 +212,7 @@ Chronicle.register('statblock-renderer', {
       html += '<div class="sb-traits">';
       html += '<h3>Traits</h3>';
       cr.traits.forEach(function (trait) {
-        html += '<div class="sb-trait"><strong>' + h(trait.name) + '.</strong> ' + h(trait.description) + '</div>';
+        html += '<div class="sb-trait"><strong>' + h(trait.name) + '.</strong> ' + ref.renderText(h(trait.description)) + '</div>';
       });
       html += '</div>';
     }

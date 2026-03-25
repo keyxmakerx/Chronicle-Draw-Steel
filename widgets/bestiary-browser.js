@@ -29,7 +29,13 @@ Chronicle.register('bestiary-browser', {
     };
     document.addEventListener('keydown', this._escHandler);
 
-    this._loadData().then(function () {
+    var base = config.campaignId
+      ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
+      : '/extensions/drawsteel/assets/';
+    this._ref = new DrawSteelRefRenderer(base);
+
+    Promise.all([this._loadData(), this._ref.load()]).then(function () {
+      self._ref.injectStyles();
       return self._fetchCreatures();
     }).then(function () {
       self.state.loading = false;
@@ -750,6 +756,7 @@ Chronicle.register('bestiary-browser', {
   _buildStatblockHtml: function (creature) {
     var cr = creature;
     var h = Chronicle.escapeHtml;
+    var ref = this._ref;
     var html = '';
 
     // Header
@@ -814,15 +821,15 @@ Chronicle.register('bestiary-browser', {
         if (ab.target) meta.push(h(ab.target));
         if (ab.power_roll) meta.push(h(ab.power_roll));
         if (meta.length > 0) html += '<div class="sb-ability-meta">' + meta.join(' &bull; ') + '</div>';
-        if (ab.trigger) html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + h(ab.trigger) + '</div>';
+        if (ab.trigger) html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
         if (ab.tier1 || ab.tier2 || ab.tier3) {
           html += '<div class="sb-ability-tiers">';
-          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + h(ab.tier1) + '</div>';
-          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + h(ab.tier2) + '</div>';
-          if (ab.tier3) html += '<div><strong>17+:</strong> ' + h(ab.tier3) + '</div>';
+          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
+          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
+          if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
           html += '</div>';
         }
-        if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + h(ab.effect) + '</div>';
+        if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
         if (ab.spend_vp && ab.spend_vp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
@@ -838,13 +845,13 @@ Chronicle.register('bestiary-browser', {
       va.forEach(function (v) {
         html += '<div class="sb-va">';
         html += '<div class="sb-va-name"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name) + '</div>';
-        if (v.description) html += '<div class="sb-va-desc">' + h(v.description) + '</div>';
+        if (v.description) html += '<div class="sb-va-desc">' + ref.renderText(h(v.description)) + '</div>';
         if (v.power_roll) html += '<div class="sb-va-roll">' + h(v.power_roll) + '</div>';
         if (v.tier1 || v.tier2 || v.tier3) {
           html += '<div class="sb-va-tiers">';
-          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + h(v.tier1) + '</div>';
-          if (v.tier2) html += '<div><strong>12-16:</strong> ' + h(v.tier2) + '</div>';
-          if (v.tier3) html += '<div><strong>17+:</strong> ' + h(v.tier3) + '</div>';
+          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(v.tier1)) + '</div>';
+          if (v.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(v.tier2)) + '</div>';
+          if (v.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(v.tier3)) + '</div>';
           html += '</div>';
         }
         html += '</div>';
@@ -857,7 +864,7 @@ Chronicle.register('bestiary-browser', {
       html += '<div class="sb-divider"></div>';
       html += '<div class="sb-traits"><h3>Traits</h3>';
       cr.traits.forEach(function (t) {
-        html += '<div class="sb-trait"><strong>' + h(t.name || '') + '.</strong> ' + h(t.description || '') + '</div>';
+        html += '<div class="sb-trait"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
       });
       html += '</div>';
     }

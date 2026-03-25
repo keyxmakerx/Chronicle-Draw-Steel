@@ -58,6 +58,15 @@
       ]
     },
     {
+      "slug": "rules-glossary",
+      "name": "Rules Glossary",
+      "icon": "fa-book",
+      "fields": [
+        { "key": "category", "label": "Category", "type": "string" },
+        { "key": "description", "label": "Description", "type": "string" }
+      ]
+    },
+    {
       "slug": "creature-abilities",
       "name": "Creature Abilities",
       "icon": "fa-burst",
@@ -190,6 +199,16 @@
         { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
         { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 }
       ]
+    }
+  ],
+
+  "text_renderers": [
+    {
+      "slug": "rules-reference",
+      "name": "Rules References",
+      "file": "widgets/reference-renderer.js",
+      "entry_point": "DrawSteelRefRenderer",
+      "description": "Resolves {@category term} syntax to styled tooltips with Draw Steel rule definitions. Requires Chronicle platform text_renderers support for campaign-wide coverage."
     }
   ]
 }

@@ -47,7 +47,13 @@ Chronicle.register('monster-builder', {
       traits: []
     };
 
-    this._loadData().then(function () {
+    var base = config.campaignId
+      ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
+      : '/extensions/drawsteel/assets/';
+    this._ref = new DrawSteelRefRenderer(base);
+
+    Promise.all([this._loadData(), this._ref.load()]).then(function () {
+      self._ref.injectStyles();
       self._loadExistingEntity().then(function () {
         self._render();
       });
@@ -1022,6 +1028,7 @@ Chronicle.register('monster-builder', {
 
   _buildPreviewHtml: function (cr) {
     var h = Chronicle.escapeHtml;
+    var ref = this._ref;
     var html = '';
 
     html += '<div class="sb-header">';
@@ -1079,15 +1086,15 @@ Chronicle.register('monster-builder', {
         if (ab.target) meta.push(h(ab.target));
         if (ab.power_roll) meta.push(h(ab.power_roll));
         if (meta.length > 0) html += '<div style="color:#555;font-size:0.85em">' + meta.join(' \u2022 ') + '</div>';
-        if (ab.trigger) html += '<div style="font-size:0.9em"><strong>Trigger:</strong> ' + h(ab.trigger) + '</div>';
+        if (ab.trigger) html += '<div style="font-size:0.9em"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
         if (ab.tier1 || ab.tier2 || ab.tier3) {
           html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
-          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + h(ab.tier1) + '</div>';
-          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + h(ab.tier2) + '</div>';
-          if (ab.tier3) html += '<div><strong>17+:</strong> ' + h(ab.tier3) + '</div>';
+          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
+          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
+          if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
           html += '</div>';
         }
-        if (ab.effect) html += '<div style="font-size:0.9em"><strong>Effect:</strong> ' + h(ab.effect) + '</div>';
+        if (ab.effect) html += '<div style="font-size:0.9em"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
         if (ab.spend_vp && ab.spend_vp > 0) html += '<div style="font-size:0.9em;color:#7c3aed"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
@@ -1100,13 +1107,13 @@ Chronicle.register('monster-builder', {
       var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
       va.forEach(function (v) {
         html += '<div style="margin:6px 0"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name);
-        if (v.description) html += ' &mdash; ' + h(v.description);
+        if (v.description) html += ' &mdash; ' + ref.renderText(h(v.description));
         html += '</div>';
         if (v.tier1 || v.tier2 || v.tier3) {
           html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
-          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + h(v.tier1) + '</div>';
-          if (v.tier2) html += '<div><strong>12-16:</strong> ' + h(v.tier2) + '</div>';
-          if (v.tier3) html += '<div><strong>17+:</strong> ' + h(v.tier3) + '</div>';
+          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(v.tier1)) + '</div>';
+          if (v.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(v.tier2)) + '</div>';
+          if (v.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(v.tier3)) + '</div>';
           html += '</div>';
         }
       });
@@ -1116,7 +1123,7 @@ Chronicle.register('monster-builder', {
       html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
       html += '<h3 style="font-size:1.05em;margin:0 0 6px">Traits</h3>';
       cr.traits.forEach(function (t) {
-        html += '<div style="margin:4px 0"><strong>' + h(t.name || '') + '.</strong> ' + h(t.description || '') + '</div>';
+        html += '<div style="margin:4px 0"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
       });
     }
 
