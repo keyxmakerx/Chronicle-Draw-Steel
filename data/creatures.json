@@ -92,7 +92,7 @@
       "intuition": 0,
       "presence": 1,
       "free_strike": "3 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Longbow Volley\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -163,7 +163,7 @@
       "intuition": 0,
       "presence": 1,
       "free_strike": "4 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -199,7 +199,7 @@
       "intuition": 0,
       "presence": 1,
       "free_strike": "3 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -695,7 +695,7 @@
       "intuition": 0,
       "presence": 2,
       "free_strike": "24 damage",
-      "traits": "Construct: Immune to poison damage, psychic damage, and the charmed and frightened conditions.",
+      "traits": "Construct: Immune to poison damage, psychic damage, and the {@condition charmed} and {@condition frightened} conditions.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Shield Wall\"}, {\"name\": \"Intercept\"}]",
       "villain_actions_json": "",
       "immunities": "Poison, Psychic"
@@ -733,7 +733,7 @@
       "free_strike": "12 damage",
       "traits": "",
       "abilities_json": "[{\"name\": \"Quick Strike\"}, {\"name\": \"Rally\"}]",
-      "villain_actions_json": "[{\"name\": \"War Cry\", \"order\": \"opener\", \"effect\": \"All goblin allies within 10 gain 8 temporary stamina and can shift 2.\"}, {\"name\": \"Goblin Reinforcements\", \"order\": \"escalation\", \"effect\": \"The War Chief summons a squad of 4 Goblin Sniper minions in unoccupied spaces within 10.\"}, {\"name\": \"Desperate Gambit\", \"order\": \"closer\", \"effect\": \"The War Chief and all allies within 5 can immediately make a free strike against an enemy within reach.\"}]"
+      "villain_actions_json": "[{\"name\": \"War Cry\", \"order\": \"opener\", \"effect\": \"All goblin allies within 10 gain 8 {@resource temporary-stamina} and can {@movement shift} 2.\"}, {\"name\": \"Goblin Reinforcements\", \"order\": \"escalation\", \"effect\": \"The War Chief summons a squad of 4 Goblin Sniper minions in unoccupied spaces within 10.\"}, {\"name\": \"Desperate Gambit\", \"order\": \"closer\", \"effect\": \"The War Chief and all allies within 5 can immediately make a {@action free-strike} against an enemy within reach.\"}]"
     },
     "tags": [
       "leader",
@@ -768,7 +768,7 @@
       "free_strike": "15 damage",
       "traits": "",
       "abilities_json": "[{\"name\": \"Mind Lash\"}, {\"name\": \"Shield Wall\"}]",
-      "villain_actions_json": "[{\"name\": \"Formation Advance\", \"order\": \"opener\", \"effect\": \"All allies within 10 can shift 3. Until the end of the round, allies adjacent to another ally gain +2 to all defenses.\"}, {\"name\": \"Coordinated Strike\", \"order\": \"escalation\", \"effect\": \"Each ally within 10 can immediately make a free strike against an enemy within reach. If two or more allies target the same enemy, each attack deals +3 damage.\"}, {\"name\": \"Break Their Spirits\", \"order\": \"closer\", \"effect\": \"The Warlord makes a Reason vs. Intuition attack against all enemies within 5. Tier 1: 4 psychic damage. Tier 2: 8 psychic damage; weakened (EoT). Tier 3: 12 psychic damage; weakened (save ends).\"}]"
+      "villain_actions_json": "[{\"name\": \"Formation Advance\", \"order\": \"opener\", \"effect\": \"All allies within 10 can {@movement shift} 3. Until the end of the round, allies adjacent to another ally gain +2 to all defenses.\"}, {\"name\": \"Coordinated Strike\", \"order\": \"escalation\", \"effect\": \"Each ally within 10 can immediately make a {@action free-strike} against an enemy within reach. If two or more allies target the same enemy, each attack deals +3 damage.\"}, {\"name\": \"Break Their Spirits\", \"order\": \"closer\", \"effect\": \"The Warlord makes a Reason vs. Intuition attack against all enemies within 5. Tier 1: 4 psychic damage. Tier 2: 8 psychic damage; {@condition weakened} ({@duration eot}). Tier 3: 12 psychic damage; {@condition weakened} ({@duration save-ends}).\"}]"
     },
     "tags": [
       "leader",
@@ -801,9 +801,9 @@
       "intuition": 0,
       "presence": 2,
       "free_strike": "18 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Hex Bolt\"}, {\"name\": \"Venom Bite\"}]",
-      "villain_actions_json": "[{\"name\": \"Charming Gaze\", \"order\": \"opener\", \"effect\": \"The Vampire Lord targets one enemy within 10 (Presence vs. Intuition). Tier 1: Slowed (EoT). Tier 2: Dazed (EoT). Tier 3: Charmed (save ends); the target treats the Vampire Lord as an ally.\"}, {\"name\": \"Life Drain Wave\", \"order\": \"escalation\", \"effect\": \"Each enemy within 3 takes 8 necrotic damage. The Vampire Lord regains stamina equal to the total damage dealt.\"}, {\"name\": \"Rise, My Servants\", \"order\": \"closer\", \"effect\": \"The Vampire Lord summons 2 Skeleton Warrior hordes in unoccupied spaces within 10. Each existing undead ally within 10 regains 10 stamina.\"}]",
+      "villain_actions_json": "[{\"name\": \"Charming Gaze\", \"order\": \"opener\", \"effect\": \"The Vampire Lord targets one enemy within 10 (Presence vs. Intuition). Tier 1: {@condition slowed} ({@duration eot}). Tier 2: Dazed ({@duration eot}). Tier 3: Charmed ({@duration save-ends}); the target treats the Vampire Lord as an ally.\"}, {\"name\": \"Life Drain Wave\", \"order\": \"escalation\", \"effect\": \"Each enemy within 3 takes 8 necrotic damage. The Vampire Lord regains stamina equal to the total damage dealt.\"}, {\"name\": \"Rise, My Servants\", \"order\": \"closer\", \"effect\": \"The Vampire Lord summons 2 Skeleton Warrior hordes in unoccupied spaces within 10. Each existing undead ally within 10 regains 10 stamina.\"}]",
       "immunities": "Poison"
     },
     "tags": [
@@ -839,7 +839,7 @@
       "free_strike": "24 damage",
       "traits": "",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Breath Weapon\"}]",
-      "villain_actions_json": "[{\"name\": \"Volcanic Stomp\", \"order\": \"opener\", \"effect\": \"Each creature within 3 must make an Agility check. Tier 1: 8 fire damage and prone. Tier 2: 5 fire damage. Tier 3: No damage. The ground within 3 becomes difficult terrain.\"}, {\"name\": \"Molten Barrage\", \"order\": \"escalation\", \"effect\": \"The Champion hurls 3 molten boulders at different targets within 15. Each target: Might vs. Agility. Tier 1: 6 fire damage. Tier 2: 10 fire damage. Tier 3: 14 fire damage; burning (EoT).\"}, {\"name\": \"Inferno\", \"order\": \"closer\", \"effect\": \"A 5-cube zone of fire erupts centered on the Champion. All creatures in the zone take 12 fire damage. The zone persists until the end of the encounter, dealing 6 fire damage to any creature that enters or starts its turn there.\"}]",
+      "villain_actions_json": "[{\"name\": \"Volcanic Stomp\", \"order\": \"opener\", \"effect\": \"Each creature within 3 must make an Agility check. Tier 1: 8 fire damage and {@condition prone}. Tier 2: 5 fire damage. Tier 3: No damage. The ground within 3 becomes difficult terrain.\"}, {\"name\": \"Molten Barrage\", \"order\": \"escalation\", \"effect\": \"The Champion hurls 3 molten boulders at different targets within 15. Each target: Might vs. Agility. Tier 1: 6 fire damage. Tier 2: 10 fire damage. Tier 3: 14 fire damage; {@condition burning} ({@duration eot}).\"}, {\"name\": \"Inferno\", \"order\": \"closer\", \"effect\": \"A 5-cube zone of fire erupts centered on the Champion. All creatures in the zone take 12 fire damage. The zone persists until the end of the encounter, dealing 6 fire damage to any creature that enters or starts its turn there.\"}]",
       "immunities": "Fire"
     },
     "tags": [
@@ -874,9 +874,9 @@
       "intuition": 1,
       "presence": 0,
       "free_strike": "27 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Mind Lash\"}, {\"name\": \"Psychic Scream\"}, {\"name\": \"Hex Bolt\"}]",
-      "villain_actions_json": "[{\"name\": \"Necrotic Pulse\", \"order\": \"opener\", \"effect\": \"Each enemy within 5 takes 10 necrotic damage and is slowed (EoT). Each undead ally within 10 regains 8 stamina.\"}, {\"name\": \"Dominate Undead\", \"order\": \"escalation\", \"effect\": \"The Lich Overlord summons a squad of 4 Skeleton Warrior hordes in unoccupied spaces within 15. All undead allies within 10 can immediately shift 3 and make a free strike.\"}, {\"name\": \"Soul Harvest\", \"order\": \"closer\", \"effect\": \"The Lich targets all enemies within 10 (Reason vs. Intuition). Tier 1: 10 necrotic damage. Tier 2: 16 necrotic damage; weakened (save ends). Tier 3: 22 necrotic damage; weakened and dazed (save ends). The Lich regains stamina equal to half the total damage dealt.\"}]",
+      "villain_actions_json": "[{\"name\": \"Necrotic Pulse\", \"order\": \"opener\", \"effect\": \"Each enemy within 5 takes 10 necrotic damage and is {@condition slowed} ({@duration eot}). Each undead ally within 10 regains 8 stamina.\"}, {\"name\": \"Dominate Undead\", \"order\": \"escalation\", \"effect\": \"The Lich Overlord summons a squad of 4 Skeleton Warrior hordes in unoccupied spaces within 15. All undead allies within 10 can immediately {@movement shift} 3 and make a {@action free-strike}.\"}, {\"name\": \"Soul Harvest\", \"order\": \"closer\", \"effect\": \"The Lich targets all enemies within 10 (Reason vs. Intuition). Tier 1: 10 necrotic damage. Tier 2: 16 necrotic damage; {@condition weakened} ({@duration save-ends}). Tier 3: 22 necrotic damage; {@condition weakened} and {@condition dazed} ({@duration save-ends}). The Lich regains stamina equal to half the total damage dealt.\"}]",
       "immunities": "Poison"
     },
     "tags": [
@@ -910,9 +910,9 @@
       "intuition": 0,
       "presence": 1,
       "free_strike": "24 damage",
-      "traits": "Draconic Resilience: The creature has damage resistance 5 against all damage except its vulnerability.",
+      "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Breath Weapon\"}]",
-      "villain_actions_json": "[{\"name\": \"Wing Buffet\", \"order\": \"opener\", \"effect\": \"Each creature within 3 must make an Agility check. Tier 1: 12 damage and push 3, prone. Tier 2: 8 damage and push 2. Tier 3: No effect. The drake then flies up to its speed.\"}, {\"name\": \"Flame Torrent\", \"order\": \"escalation\", \"effect\": \"The drake breathes a 5-cube line of fire. All creatures in the area: Might vs. Agility. Tier 1: 10 fire damage. Tier 2: 18 fire damage. Tier 3: 26 fire damage; burning 5 (save ends).\"}, {\"name\": \"Volcanic Fury\", \"order\": \"closer\", \"effect\": \"The drake makes a Crushing Blow attack against up to 3 targets, then uses Breath Weapon. Until the start of the drake's next turn, any creature that hits the drake with a melee attack takes 8 fire damage.\"}]",
+      "villain_actions_json": "[{\"name\": \"Wing Buffet\", \"order\": \"opener\", \"effect\": \"Each creature within 3 must make an Agility check. Tier 1: 12 damage and {@movement push} 3, {@condition prone}. Tier 2: 8 damage and {@movement push} 2. Tier 3: No effect. The drake then flies up to its speed.\"}, {\"name\": \"Flame Torrent\", \"order\": \"escalation\", \"effect\": \"The drake breathes a 5-cube line of fire. All creatures in the area: Might vs. Agility. Tier 1: 10 fire damage. Tier 2: 18 fire damage. Tier 3: 26 fire damage; {@condition burning} 5 ({@duration save-ends}).\"}, {\"name\": \"Volcanic Fury\", \"order\": \"closer\", \"effect\": \"The drake makes a Crushing Blow attack against up to 3 targets, then uses Breath Weapon. Until the start of the drake's next turn, any creature that hits the drake with a melee attack takes 8 fire damage.\"}]",
       "immunities": "Fire"
     },
     "tags": [
@@ -949,7 +949,7 @@
       "free_strike": "28 damage",
       "traits": "",
       "abilities_json": "[{\"name\": \"Longbow Volley\"}, {\"name\": \"Psychic Scream\"}, {\"name\": \"Mind Lash\"}]",
-      "villain_actions_json": "[{\"name\": \"Antimagic Cone\", \"order\": \"opener\", \"effect\": \"The Beholder projects an antimagic cone in a 5-cube zone. All magical effects in the zone are suppressed. Creatures in the zone cannot use abilities with the Magic keyword until the start of the Beholder's next turn.\"}, {\"name\": \"Eye Ray Barrage\", \"order\": \"escalation\", \"effect\": \"The Beholder fires 3 eye rays at up to 3 different targets within 15. Each ray: Reason vs. appropriate defense. Ray 1 (Fire): Tier 1: 6 fire damage. Tier 2: 12 fire. Tier 3: 18 fire; burning (EoT). Ray 2 (Telekinetic): Push 5 and prone. Ray 3 (Petrification): Tier 1: Slowed. Tier 2: Restrained (EoT). Tier 3: Petrified (save ends).\"}, {\"name\": \"Disintegration Ray\", \"order\": \"closer\", \"effect\": \"The Beholder targets one creature within 15 (Reason vs. Agility). Tier 1: 15 damage. Tier 2: 30 damage. Tier 3: 45 damage. If this reduces the target to 0 stamina, they are disintegrated.\"}]"
+      "villain_actions_json": "[{\"name\": \"Antimagic Cone\", \"order\": \"opener\", \"effect\": \"The Beholder projects an antimagic cone in a 5-cube zone. All magical effects in the zone are suppressed. Creatures in the zone cannot use abilities with the Magic keyword until the start of the Beholder's next turn.\"}, {\"name\": \"Eye Ray Barrage\", \"order\": \"escalation\", \"effect\": \"The Beholder fires 3 eye rays at up to 3 different targets within 15. Each ray: Reason vs. appropriate defense. Ray 1 (Fire): Tier 1: 6 fire damage. Tier 2: 12 fire. Tier 3: 18 fire; {@condition burning} ({@duration eot}). Ray 2 (Telekinetic): Push 5 and {@condition prone}. Ray 3 (Petrification): Tier 1: {@condition slowed}. Tier 2: {@condition restrained} ({@duration eot}). Tier 3: Petrified ({@duration save-ends}).\"}, {\"name\": \"Disintegration Ray\", \"order\": \"closer\", \"effect\": \"The Beholder targets one creature within 15 (Reason vs. Agility). Tier 1: 15 damage. Tier 2: 30 damage. Tier 3: 45 damage. If this reduces the target to 0 stamina, they are disintegrated.\"}]"
     },
     "tags": [
       "solo",
@@ -982,9 +982,9 @@
       "intuition": 1,
       "presence": 0,
       "free_strike": "32 damage",
-      "traits": "Draconic Resilience: The creature has damage resistance 5 against all damage except its vulnerability.",
+      "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Mind Lash\"}, {\"name\": \"Breath Weapon\"}, {\"name\": \"Crushing Blow\"}]",
-      "villain_actions_json": "[{\"name\": \"Frightful Presence\", \"order\": \"opener\", \"effect\": \"All enemies within 10: Presence vs. Intuition. Tier 1: Frightened (EoT). Tier 2: Frightened (save ends); the target must move away on their next turn. Tier 3: Frightened (save ends); dazed (EoT). This effect can only be used once per encounter.\"}, {\"name\": \"Elemental Tempest\", \"order\": \"escalation\", \"effect\": \"The dragon creates a 4-cube storm zone within 15. All creatures in the zone: Reason vs. Agility. Tier 1: 10 elemental damage. Tier 2: 18 elemental damage; slowed (EoT). Tier 3: 26 elemental damage; restrained (EoT). The zone persists for 1 round, dealing 8 damage to creatures entering or starting their turn in it.\"}, {\"name\": \"Cataclysmic Breath\", \"order\": \"closer\", \"effect\": \"The dragon uses an empowered breath weapon in a 7-cube line. All creatures in area: Might vs. Agility. Tier 1: 14 elemental damage. Tier 2: 24 elemental damage; prone. Tier 3: 36 elemental damage; prone and dazed (save ends). The dragon then flies up to its speed without provoking free strikes.\"}]"
+      "villain_actions_json": "[{\"name\": \"Frightful Presence\", \"order\": \"opener\", \"effect\": \"All enemies within 10: Presence vs. Intuition. Tier 1: {@condition frightened} ({@duration eot}). Tier 2: {@condition frightened} ({@duration save-ends}); the target must move away on their next turn. Tier 3: {@condition frightened} ({@duration save-ends}); {@condition dazed} ({@duration eot}). This effect can only be used once per encounter.\"}, {\"name\": \"Elemental Tempest\", \"order\": \"escalation\", \"effect\": \"The dragon creates a 4-cube storm zone within 15. All creatures in the zone: Reason vs. Agility. Tier 1: 10 elemental damage. Tier 2: 18 elemental damage; {@condition slowed} ({@duration eot}). Tier 3: 26 elemental damage; {@condition restrained} ({@duration eot}). The zone persists for 1 round, dealing 8 damage to creatures entering or starting their turn in it.\"}, {\"name\": \"Cataclysmic Breath\", \"order\": \"closer\", \"effect\": \"The dragon uses an empowered breath weapon in a 7-cube line. All creatures in area: Might vs. Agility. Tier 1: 14 elemental damage. Tier 2: 24 elemental damage; {@condition prone}. Tier 3: 36 elemental damage; {@condition prone} and {@condition dazed} ({@duration save-ends}). The dragon then flies up to its speed without provoking free strikes.\"}]"
     },
     "tags": [
       "solo",
@@ -1017,9 +1017,9 @@
       "intuition": 0,
       "presence": 2,
       "free_strike": "36 damage",
-      "traits": "Undead: Immune to poison damage and the poisoned condition.",
+      "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Shield Wall\"}, {\"name\": \"Retaliating Strike\"}, {\"name\": \"Intercept\"}]",
-      "villain_actions_json": "[{\"name\": \"Abyssal Challenge\", \"order\": \"opener\", \"effect\": \"All enemies within 5 are taunted (save ends). The Death Knight gains damage resistance 5 until the start of its next turn. Any taunted creature that attacks a target other than the Death Knight takes 8 necrotic damage.\"}, {\"name\": \"Unholy Smite\", \"order\": \"escalation\", \"effect\": \"The Death Knight makes a melee attack against up to 3 targets within reach. Each: Might vs. Agility. Tier 1: 10 necrotic damage. Tier 2: 18 necrotic damage; weakened (EoT). Tier 3: 26 necrotic damage; weakened (save ends). The Death Knight regains 10 stamina for each target hit.\"}, {\"name\": \"Army of the Dead\", \"order\": \"closer\", \"effect\": \"The Death Knight raises all dead creatures within 10 as Zombie Shambler minions (up to 8). Each undead ally within 10 gains 15 temporary stamina and can immediately make a free strike.\"}]",
+      "villain_actions_json": "[{\"name\": \"Abyssal Challenge\", \"order\": \"opener\", \"effect\": \"All enemies within 5 are {@condition taunted} ({@duration save-ends}). The Death Knight gains {@resource damage-resistance} 5 until the start of its next turn. Any {@condition taunted} creature that attacks a target other than the Death Knight takes 8 necrotic damage.\"}, {\"name\": \"Unholy Smite\", \"order\": \"escalation\", \"effect\": \"The Death Knight makes a melee attack against up to 3 targets within reach. Each: Might vs. Agility. Tier 1: 10 necrotic damage. Tier 2: 18 necrotic damage; {@condition weakened} ({@duration eot}). Tier 3: 26 necrotic damage; {@condition weakened} ({@duration save-ends}). The Death Knight regains 10 stamina for each target hit.\"}, {\"name\": \"Army of the Dead\", \"order\": \"closer\", \"effect\": \"The Death Knight raises all dead creatures within 10 as Zombie Shambler minions (up to 8). Each undead ally within 10 gains 15 {@resource temporary-stamina} and can immediately make a {@action free-strike}.\"}]",
       "immunities": "Poison"
     },
     "tags": [
@@ -1053,9 +1053,9 @@
       "intuition": 0,
       "presence": 1,
       "free_strike": "44 damage",
-      "traits": "Draconic Resilience: The creature has damage resistance 5 against all damage except its vulnerability.",
+      "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Breath Weapon\"}, {\"name\": \"Trampling Charge\"}]",
-      "villain_actions_json": "[{\"name\": \"Cataclysmic Landing\", \"order\": \"opener\", \"effect\": \"The Wyrm crashes down. All creatures within 5: Might vs. Agility. Tier 1: 16 damage, push 3, prone. Tier 2: 10 damage, push 2. Tier 3: No effect. The ground within 5 becomes difficult terrain.\"}, {\"name\": \"Primordial Storm\", \"order\": \"escalation\", \"effect\": \"The Wyrm unleashes elemental devastation in a 6-cube zone within 20. All creatures: Might vs. Agility. Tier 1: 20 damage. Tier 2: 36 damage; burning 10 (EoT). Tier 3: 52 damage; burning 10 (save ends) and prone. The zone persists for 2 rounds.\"}, {\"name\": \"World Breaker\", \"order\": \"closer\", \"effect\": \"The Wyrm makes Crushing Blow against up to 4 targets, then breathes in a 10-cube line. Breath: Might vs. Agility. Tier 1: 22 damage. Tier 2: 40 damage. Tier 3: 60 damage; prone and dazed (save ends). The Wyrm regains 40 stamina.\"}]",
+      "villain_actions_json": "[{\"name\": \"Cataclysmic Landing\", \"order\": \"opener\", \"effect\": \"The Wyrm crashes down. All creatures within 5: Might vs. Agility. Tier 1: 16 damage, {@movement push} 3, {@condition prone}. Tier 2: 10 damage, {@movement push} 2. Tier 3: No effect. The ground within 5 becomes difficult terrain.\"}, {\"name\": \"Primordial Storm\", \"order\": \"escalation\", \"effect\": \"The Wyrm unleashes elemental devastation in a 6-cube zone within 20. All creatures: Might vs. Agility. Tier 1: 20 damage. Tier 2: 36 damage; {@condition burning} 10 ({@duration eot}). Tier 3: 52 damage; {@condition burning} 10 ({@duration save-ends}) and {@condition prone}. The zone persists for 2 rounds.\"}, {\"name\": \"World Breaker\", \"order\": \"closer\", \"effect\": \"The Wyrm makes Crushing Blow against up to 4 targets, then breathes in a 10-cube line. Breath: Might vs. Agility. Tier 1: 22 damage. Tier 2: 40 damage. Tier 3: 60 damage; {@condition prone} and {@condition dazed} ({@duration save-ends}). The Wyrm regains 40 stamina.\"}]",
       "immunities": "Fire"
     },
     "tags": [
