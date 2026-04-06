@@ -170,7 +170,7 @@
       "name": "Monster Builder",
       "description": "Fully automated creature authoring tool with Draw Steel mechanical intelligence",
       "icon": "fa-dragon",
-      "file": "widgets/monster-builder.js",
+      "script_file": "widgets/monster-builder.js",
       "config": [
         { "key": "entity_id", "label": "Entity ID", "type": "string" },
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
@@ -182,7 +182,7 @@
       "name": "Statblock Renderer",
       "description": "Formatted creature statblock display",
       "icon": "fa-scroll",
-      "file": "widgets/statblock-renderer.js",
+      "script_file": "widgets/statblock-renderer.js",
       "config": [
         { "key": "entity_id", "label": "Entity ID", "type": "string" },
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
@@ -193,7 +193,7 @@
       "name": "Bestiary Browser",
       "description": "D&D Beyond-style creature catalog with filtering, search, and popup statblocks",
       "icon": "fa-book-skull",
-      "file": "widgets/bestiary-browser.js",
+      "script_file": "widgets/bestiary-browser.js",
       "config": [
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
         { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
