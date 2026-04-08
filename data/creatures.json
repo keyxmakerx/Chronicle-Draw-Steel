@@ -1,6 +1,5 @@
 [
   {
-    "id": "goblin-sniper",
     "name": "Goblin Sniper",
     "summary": "L1 Artillery Minion",
     "description": "A small, cunning goblin that pelts enemies with arrows from cover, relying on numbers rather than individual strength.",
@@ -32,10 +31,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "goblin-sniper"
   },
   {
-    "id": "kobold-torchbearer",
     "name": "Kobold Torchbearer",
     "summary": "L1 Support Minion",
     "description": "A skittish kobold that carries alchemical torches, providing light and minor healing salves to its allies.",
@@ -67,10 +66,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "kobold-torchbearer"
   },
   {
-    "id": "skeleton-archer",
     "name": "Skeleton Archer",
     "summary": "L2 Artillery Minion",
     "description": "An animated skeleton armed with a longbow, firing with eerie precision despite its lack of living eyes.",
@@ -103,10 +102,10 @@
       "level-2",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "skeleton-archer"
   },
   {
-    "id": "cultist-acolyte",
     "name": "Cultist Acolyte",
     "summary": "L2 Hexer Minion",
     "description": "A fanatical low-ranking cultist who channels minor hexes and curses to weaken the enemies of their dark patron.",
@@ -138,10 +137,10 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "cultist-acolyte"
   },
   {
-    "id": "zombie-shambler",
     "name": "Zombie Shambler",
     "summary": "L3 Brute Minion",
     "description": "A rotting corpse animated by dark magic, slow but relentless in its pursuit of the living.",
@@ -174,10 +173,10 @@
       "level-3",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "zombie-shambler"
   },
   {
-    "id": "skeleton-warrior",
     "name": "Skeleton Warrior",
     "summary": "L1 Brute Horde",
     "description": "An animated skeleton wielding a rusted sword and battered shield, dangerous in numbers.",
@@ -210,10 +209,10 @@
       "level-1",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "skeleton-warrior"
   },
   {
-    "id": "goblin-skirmisher",
     "name": "Goblin Skirmisher",
     "summary": "L1 Harrier Horde",
     "description": "A quick and dirty-fighting goblin that darts in with a shiv, stabs, and retreats before retaliation.",
@@ -245,10 +244,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "goblin-skirmisher"
   },
   {
-    "id": "wolf",
     "name": "Wolf",
     "summary": "L2 Ambusher Horde",
     "description": "A cunning predator that hunts in packs, circling prey and striking when they sense weakness.",
@@ -281,10 +280,10 @@
       "animal",
       "beast"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "wolf"
   },
   {
-    "id": "bandit-thug",
     "name": "Bandit Thug",
     "summary": "L3 Brute Horde",
     "description": "A brutish outlaw who relies on intimidation and crude weapons to overwhelm travelers.",
@@ -316,10 +315,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "bandit-thug"
   },
   {
-    "id": "orc-raider",
     "name": "Orc Raider",
     "summary": "L4 Harrier Horde",
     "description": "A fast-moving orc warrior that charges into battle with reckless aggression, striking hard and moving on.",
@@ -351,10 +350,10 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "orc-raider"
   },
   {
-    "id": "radenwight-reaver",
     "name": "Radenwight Reaver",
     "summary": "L2 Harrier Platoon",
     "description": "A vicious rat-folk pirate who fights with twin blades and acrobatic ferocity.",
@@ -386,10 +385,10 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "radenwight-reaver"
   },
   {
-    "id": "hobgoblin-soldier",
     "name": "Hobgoblin Soldier",
     "summary": "L3 Defender Platoon",
     "description": "A disciplined hobgoblin warrior trained in formation fighting, wielding a longsword and heavy shield.",
@@ -421,10 +420,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "hobgoblin-soldier"
   },
   {
-    "id": "ogre",
     "name": "Ogre",
     "summary": "L4 Brute Platoon",
     "description": "A massive, dim-witted giant-kin that crushes foes with an enormous club.",
@@ -456,10 +455,10 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "ogre"
   },
   {
-    "id": "dark-elf-ranger",
     "name": "Dark Elf Ranger",
     "summary": "L4 Ambusher Platoon",
     "description": "A stealthy dark elf who strikes from the shadows with poisoned blades, vanishing before the enemy can respond.",
@@ -492,10 +491,10 @@
       "humanoid",
       "fey"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "dark-elf-ranger"
   },
   {
-    "id": "minotaur-warrior",
     "name": "Minotaur Warrior",
     "summary": "L5 Brute Platoon",
     "description": "A towering bull-headed warrior that charges headlong into battle, goring enemies with its massive horns.",
@@ -527,10 +526,10 @@
       "level-5",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "minotaur-warrior"
   },
   {
-    "id": "shadow-assassin",
     "name": "Shadow Assassin",
     "summary": "L3 Ambusher Elite",
     "description": "A deadly killer who steps between shadows, appearing behind victims for lethal strikes before melting back into darkness.",
@@ -563,10 +562,10 @@
       "humanoid",
       "shadow"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "shadow-assassin"
   },
   {
-    "id": "troll",
     "name": "Troll",
     "summary": "L4 Brute Elite",
     "description": "A towering regenerating monster with massive claws. Only fire and acid can stop its relentless healing.",
@@ -598,10 +597,10 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "troll"
   },
   {
-    "id": "medusa-archer",
     "name": "Medusa Archer",
     "summary": "L5 Artillery Elite",
     "description": "A serpent-haired archer whose petrifying gaze can turn victims to stone, while picking off distant foes with enchanted arrows.",
@@ -634,10 +633,10 @@
       "humanoid",
       "monstrosity"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "medusa-archer"
   },
   {
-    "id": "mind-flayer-adept",
     "name": "Mind Flayer Adept",
     "summary": "L6 Controller Elite",
     "description": "A tentacled aberration from the deep places of the world, dominating minds and feeding on the psychic energy of sentient beings.",
@@ -670,10 +669,10 @@
       "aberration",
       "psionic"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "mind-flayer-adept"
   },
   {
-    "id": "iron-golem",
     "name": "Iron Golem",
     "summary": "L7 Defender Elite",
     "description": "A massive construct of enchanted iron, created to guard ancient vaults. Immune to most magic and nearly indestructible.",
@@ -706,10 +705,10 @@
       "level-7",
       "construct"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "iron-golem"
   },
   {
-    "id": "goblin-war-chief",
     "name": "Goblin War Chief",
     "summary": "L3 Support Leader",
     "description": "A surprisingly cunning goblin who leads through a mix of intimidation and tactical brilliance, directing goblin hordes with barked commands.",
@@ -741,10 +740,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "goblin-war-chief"
   },
   {
-    "id": "hobgoblin-warlord",
     "name": "Hobgoblin Warlord",
     "summary": "L4 Controller Leader",
     "description": "A tactical mastermind who coordinates disciplined hobgoblin forces with iron-fisted precision.",
@@ -776,10 +775,10 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "hobgoblin-warlord"
   },
   {
-    "id": "vampire-lord",
     "name": "Vampire Lord",
     "summary": "L5 Hexer Leader",
     "description": "An ancient undead noble who drains the life force of the living while commanding lesser undead servants.",
@@ -812,10 +811,10 @@
       "level-5",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "vampire-lord"
   },
   {
-    "id": "fire-giant-champion",
     "name": "Fire Giant Champion",
     "summary": "L7 Brute Leader",
     "description": "A towering giant wreathed in flames who leads fire giant war parties with brutal strength and volcanic fury.",
@@ -849,10 +848,10 @@
       "giant",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "fire-giant-champion"
   },
   {
-    "id": "lich-overlord",
     "name": "Lich Overlord",
     "summary": "L8 Controller Leader",
     "description": "An ancient spellcaster who transcended death through forbidden rituals, now commanding vast armies of undead with terrifying arcane power.",
@@ -885,10 +884,10 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "lich-overlord"
   },
   {
-    "id": "young-fire-drake",
     "name": "Young Fire Drake",
     "summary": "L5 Brute Solo",
     "description": "A juvenile dragon brimming with volcanic fury. Though not yet fully grown, it can immolate an entire adventuring party.",
@@ -922,10 +921,10 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "young-fire-drake"
   },
   {
-    "id": "beholder-tyrant",
     "name": "Beholder Tyrant",
     "summary": "L6 Artillery Solo",
     "description": "A floating orb of nightmares with a central eye and numerous eyestalks, each capable of unleashing a different devastating ray.",
@@ -957,10 +956,10 @@
       "level-6",
       "aberration"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "beholder-tyrant"
   },
   {
-    "id": "adult-dragon",
     "name": "Adult Dragon",
     "summary": "L7 Controller Solo",
     "description": "A fully mature dragon of immense intellect and power, capable of reshaping the battlefield with elemental devastation and cunning tactics.",
@@ -992,10 +991,10 @@
       "level-7",
       "dragon"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "adult-dragon"
   },
   {
-    "id": "death-knight",
     "name": "Death Knight",
     "summary": "L8 Defender Solo",
     "description": "A fallen champion raised as an undead horror, combining devastating martial skill with dark necromantic power. It fights with grim purpose, shielding its undead forces.",
@@ -1028,10 +1027,10 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "death-knight"
   },
   {
-    "id": "ancient-wyrm",
     "name": "Ancient Wyrm",
     "summary": "L10 Brute Solo",
     "description": "The apex of dragonkind \u2014 a primordial being of catastrophic power whose mere presence warps reality. Entire kingdoms tremble at the sound of its wings.",
@@ -1065,10 +1064,10 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "ancient-wyrm"
   },
   {
-    "id": "rat-swarm",
     "name": "Rat Swarm",
     "summary": "L1 Harrier Swarm",
     "description": "A writhing mass of disease-carrying rats that overwhelms prey through sheer numbers, flowing around obstacles like a living tide.",
@@ -1101,10 +1100,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "rat-swarm"
   },
   {
-    "id": "bat-swarm",
     "name": "Bat Swarm",
     "summary": "L2 Ambusher Swarm",
     "description": "A cloud of shrieking bats that descends from the darkness, disorienting prey with echolocation screams and razor-sharp claws.",
@@ -1137,10 +1136,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "bat-swarm"
   },
   {
-    "id": "spider-swarm",
     "name": "Spider Swarm",
     "summary": "L3 Controller Swarm",
     "description": "Hundreds of venomous spiders moving as one seething carpet, trailing sticky webs and injecting paralytic venom.",
@@ -1173,10 +1172,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "spider-swarm"
   },
   {
-    "id": "locust-swarm",
     "name": "Locust Swarm",
     "summary": "L4 Artillery Swarm",
     "description": "A buzzing cloud of razor-winged locusts that strips flesh from bone at range, each insect carrying a tiny spark of elemental fury.",
@@ -1210,10 +1209,10 @@
       "swarm",
       "elemental"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "locust-swarm"
   },
   {
-    "id": "shadow-swarm",
     "name": "Shadow Swarm",
     "summary": "L5 Hexer Swarm",
     "description": "A coiling mass of living darkness that feeds on fear, draining warmth and hope from all it touches.",
@@ -1246,6 +1245,7 @@
       "shadow",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
+    "slug": "shadow-swarm"
   }
 ]

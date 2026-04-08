@@ -82,7 +82,7 @@ Chronicle.register('monster-builder', {
       self.roleTemplates = results[1];
       self.creatureKeywords = results[2];
       self.abilityKeywords = results[3];
-      self.damageBaselines = results[4].baselines || {};
+      self.damageBaselines = results[4][0].properties.baselines || {};
       self.templateAbilities = results[5];
     }).catch(function (err) {
       console.error('Monster Builder: failed to load reference data', err);
@@ -597,15 +597,16 @@ Chronicle.register('monster-builder', {
     var self = this;
     container.innerHTML = '<h4>Ability Templates</h4>';
     this.templateAbilities.forEach(function (tmpl) {
+      var p = tmpl.properties || {};
       var btn = document.createElement('button');
       btn.className = 'mb-template-btn';
       btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid #ddd;border-radius:4px;background:#f9f9f9;cursor:pointer;';
-      btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + tmpl.type + ']' +
+      btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + (p.type || '') + ']' +
         '<br><small style="color:#666">' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
       btn.addEventListener('click', function () {
-        var copy = JSON.parse(JSON.stringify(tmpl));
-        delete copy.description;
-        self.creature.abilities.push(copy);
+        var ability = JSON.parse(JSON.stringify(p));
+        ability.name = tmpl.name;
+        self.creature.abilities.push(ability);
         self._renderAbilitiesList(self._contentEl.querySelector('#mb-abilities-list'));
         container.style.display = 'none';
       });

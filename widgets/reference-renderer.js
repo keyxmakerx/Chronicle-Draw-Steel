@@ -37,9 +37,9 @@ var DrawSteelRefRenderer = (function () {
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var map = {};
-        var entries = data.entries || [];
+        var entries = Array.isArray(data) ? data : (data.entries || []);
         for (var i = 0; i < entries.length; i++) {
-          map[entries[i].id] = entries[i];
+          map[entries[i].slug || entries[i].id] = entries[i];
         }
         _glossaryCache = map;
         self._glossary = map;

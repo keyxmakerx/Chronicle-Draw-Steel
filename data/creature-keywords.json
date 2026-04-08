@@ -1,25 +1,117 @@
 [
-  { "name": "Abyssal", "description": "Connected to abyssal planes or demonic forces." },
-  { "name": "Accursed", "description": "Afflicted by or radiating a supernatural curse." },
-  { "name": "Animal", "description": "A natural animal with no supernatural abilities." },
-  { "name": "Beast", "description": "A large or monstrous creature with animal-like traits." },
-  { "name": "Construct", "description": "An artificial creature animated by magic or technology." },
-  { "name": "Devil", "description": "A fiendish creature from infernal planes." },
-  { "name": "Dragon", "description": "A draconic creature, typically with breath weapons and flight." },
-  { "name": "Dwarf", "description": "Of dwarven ancestry or origin." },
-  { "name": "Elemental", "description": "A creature composed of or powered by elemental forces." },
-  { "name": "Elf", "description": "Of elven ancestry or origin." },
-  { "name": "Fey", "description": "Connected to the fey realms or faerie courts." },
-  { "name": "Giant", "description": "An enormous humanoid creature." },
-  { "name": "Goblin", "description": "A small, cunning creature of goblinoid ancestry." },
-  { "name": "Humanoid", "description": "A creature of roughly human shape and intelligence." },
-  { "name": "Infernal", "description": "Connected to infernal planes." },
-  { "name": "Insect", "description": "A creature with insectoid features." },
-  { "name": "Monstrous", "description": "A creature that defies natural categorization." },
-  { "name": "Orc", "description": "Of orcish ancestry or origin." },
-  { "name": "Plant", "description": "A creature with plant-like biology." },
-  { "name": "Planar", "description": "Native to or strongly connected to another plane." },
-  { "name": "Revenant", "description": "A creature returned from death with purpose." },
-  { "name": "Shapechanger", "description": "A creature that can alter its physical form." },
-  { "name": "Undead", "description": "An animated corpse or spirit of a deceased creature." }
+  {
+    "slug": "abyssal",
+    "name": "Abyssal",
+    "description": "Connected to abyssal planes or demonic forces."
+  },
+  {
+    "slug": "accursed",
+    "name": "Accursed",
+    "description": "Afflicted by or radiating a supernatural curse."
+  },
+  {
+    "slug": "animal",
+    "name": "Animal",
+    "description": "A natural animal with no supernatural abilities."
+  },
+  {
+    "slug": "beast",
+    "name": "Beast",
+    "description": "A large or monstrous creature with animal-like traits."
+  },
+  {
+    "slug": "construct",
+    "name": "Construct",
+    "description": "An artificial creature animated by magic or technology."
+  },
+  {
+    "slug": "devil",
+    "name": "Devil",
+    "description": "A fiendish creature from infernal planes."
+  },
+  {
+    "slug": "dragon",
+    "name": "Dragon",
+    "description": "A draconic creature, typically with breath weapons and flight."
+  },
+  {
+    "slug": "dwarf",
+    "name": "Dwarf",
+    "description": "Of dwarven ancestry or origin."
+  },
+  {
+    "slug": "elemental",
+    "name": "Elemental",
+    "description": "A creature composed of or powered by elemental forces."
+  },
+  {
+    "slug": "elf",
+    "name": "Elf",
+    "description": "Of elven ancestry or origin."
+  },
+  {
+    "slug": "fey",
+    "name": "Fey",
+    "description": "Connected to the fey realms or faerie courts."
+  },
+  {
+    "slug": "giant",
+    "name": "Giant",
+    "description": "An enormous humanoid creature."
+  },
+  {
+    "slug": "goblin",
+    "name": "Goblin",
+    "description": "A small, cunning creature of goblinoid ancestry."
+  },
+  {
+    "slug": "humanoid",
+    "name": "Humanoid",
+    "description": "A creature of roughly human shape and intelligence."
+  },
+  {
+    "slug": "infernal",
+    "name": "Infernal",
+    "description": "Connected to infernal planes."
+  },
+  {
+    "slug": "insect",
+    "name": "Insect",
+    "description": "A creature with insectoid features."
+  },
+  {
+    "slug": "monstrous",
+    "name": "Monstrous",
+    "description": "A creature that defies natural categorization."
+  },
+  {
+    "slug": "orc",
+    "name": "Orc",
+    "description": "Of orcish ancestry or origin."
+  },
+  {
+    "slug": "plant",
+    "name": "Plant",
+    "description": "A creature with plant-like biology."
+  },
+  {
+    "slug": "planar",
+    "name": "Planar",
+    "description": "Native to or strongly connected to another plane."
+  },
+  {
+    "slug": "revenant",
+    "name": "Revenant",
+    "description": "A creature returned from death with purpose."
+  },
+  {
+    "slug": "shapechanger",
+    "name": "Shapechanger",
+    "description": "A creature that can alter its physical form."
+  },
+  {
+    "slug": "undead",
+    "name": "Undead",
+    "description": "An animated corpse or spirit of a deceased creature."
+  }
 ]
