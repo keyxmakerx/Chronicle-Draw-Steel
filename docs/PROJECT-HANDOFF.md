@@ -1,8 +1,8 @@
 # Chronicle-Draw-Steel — Project Handoff Document
 
-> **Date:** 2026-03-25
+> **Date:** 2026-04-12 (updated)
 > **Repo:** `keyxmakerx/Chronicle-Draw-Steel`
-> **Branch:** `claude/consolidate-repos-AVzyM` (all work is here, up to date with remote)
+> **Branch:** `main` (all work merged)
 > **GitHub:** `keyxmakerx/chronicle-draw-steel`
 
 ---
@@ -28,7 +28,10 @@ Draw Steel is a tabletop RPG. This package lets Chronicle users create, browse, 
 |-------|--------|-------------|
 | **Phase 1** | ✅ Complete | Foundation — manifest, data files, monster builder, statblock renderer |
 | **Phase 2** | ✅ Complete | Polish — level scaling, damage hints, preview, encounter calc, example creatures |
-| **Bestiary Browser** | ✅ Complete | Added as bonus widget (not in original checklist) |
+| **Bestiary Browser** | ✅ Complete | Filterable creature catalog widget |
+| **Bestiary Expansion** | ✅ Complete | 35 creatures (from 7), 23 abilities (from 7), 9 roles (from 5) |
+| **@References** | ✅ Complete | Rules glossary (25 entries) + reference-renderer.js + all data annotated |
+| **ReferenceItem Format** | ✅ Complete | All data/*.json converted to Chronicle's expected format |
 
 ### Phases Remaining (require OTHER repos)
 
@@ -55,30 +58,36 @@ Draw Steel is a tabletop RPG. This package lets Chronicle users create, browse, 
 ### `widgets/` — Interactive Widgets (all ES5 JavaScript)
 | File | Lines | Purpose |
 |------|-------|---------|
-| `monster-builder.js` | 1190 | 7-step creature authoring form with auto-calculation, validation, preview, encounter calculator |
-| `bestiary-browser.js` | 867 | D&D Beyond-style browsable creature catalog with filtering, search, card grid, modal statblocks |
-| `statblock-renderer.js` | 216 | Read-only formatted creature statblock display |
+| `monster-builder.js` | ~1200 | 7-step creature authoring form with auto-calculation, validation, preview, encounter calculator |
+| `bestiary-browser.js` | ~870 | D&D Beyond-style browsable creature catalog with filtering, search, card grid, modal statblocks |
+| `statblock-renderer.js` | ~220 | Read-only formatted creature statblock display |
+| `reference-renderer.js` | ~115 | Shared @reference parsing utility (DrawSteelRefRenderer) |
 
 ### `data/` — Reference JSON Data
 | File | Lines | Purpose |
 |------|-------|---------|
 | `organization-templates.json` | 88 | 7 organization types (minion, horde, platoon, elite, leader, solo, swarm) with EV/stamina/speed formulas |
-| `role-templates.json` | 67 | 5 roles (brute, controller, defender, harrier, hexer) with characteristic baselines |
-| `creature-keywords.json` | 25 | 23 creature keywords (Undead, Dragon, Humanoid, etc.) |
-| `ability-keywords.json` | 11 | 9 ability keywords (Attack, Melee, Ranged, Magic, etc.) |
-| `damage-baselines.json` | 12 | Damage per tier per organization for ability suggestions |
-| `creature-abilities.json` | 82 | 7 template abilities (signature, maneuver, triggered, villain-action) |
-| `creatures.json` | 187 | 7 example creatures (one per organization type) |
-| `abilities.json` | 1 | Stub (empty array) |
-| `ancestries.json` | 1 | Stub (empty array) |
-| `kits.json` | 1 | Stub (empty array) |
+| `role-templates.json` | ~100 | 9 roles (ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support) with characteristic baselines |
+| `creature-keywords.json` | ~140 | 23 creature keywords with slug/name/description |
+| `ability-keywords.json` | ~60 | 9 ability keywords with slug/name/description |
+| `damage-baselines.json` | ~20 | Damage per tier per organization (wrapped in ReferenceItem) |
+| `creature-abilities.json` | ~600 | 23 template abilities with @reference annotations |
+| `creatures.json` | ~2800 | 35 creatures with full stat blocks and @references |
+| `rules-glossary.json` | ~200 | 25 rules definitions for @reference tooltip system |
+| `abilities.json` | 1 | Stub (empty array — future hero abilities) |
+| `ancestries.json` | 1 | Stub (empty array — future ancestry data) |
+| `kits.json` | 1 | Stub (empty array — future kit data) |
 
 ### `docs/` — Design Documents
 | File | Purpose |
 |------|---------|
+| `DATA-SCHEMA.md` | ReferenceItem format and data file schemas |
+| `WIDGET-GUIDE.md` | Widget configuration guide for Chronicle customizer |
+| `PROJECT-HANDOFF.md` | This file — architecture and status overview |
 | `monster-builder.md` | Full Monster Builder design doc — mechanics reference, formulas, validation rules |
 | `foundry-creature-sync.md` | Foundry VTT sync specification — field mappings, statblock assembly |
-| `implementation-checklist.md` | 5-phase implementation roadmap with atomic tasks (Phase 1-2 checked off) |
+| `implementation-checklist.md` | 5-phase implementation roadmap with atomic tasks |
+| `SECURITY.md` | Security audit findings and remediations |
 
 ---
 
@@ -107,7 +116,18 @@ Chronicle.register('widget-slug', {
 ### Key APIs
 - `Chronicle.apiFetch(url, options)` — Authenticated fetch wrapper
 - `Chronicle.escapeHtml(string)` — XSS-safe HTML escaping
+- `Chronicle.markClean()` — Marks entity as saved (clears dirty flag)
 - `fetch(base + 'data/filename.json')` — Load extension asset data
+
+### @Reference System
+All three widgets integrate `reference-renderer.js` for rule term cross-linking:
+1. Widget loads `DrawSteelRefRenderer(basePath)` and calls `.load()` to fetch `rules-glossary.json`
+2. After HTML escaping, text passes through `ref.renderText(escapedHtml)` which replaces `{@category term}` with styled `<span>` tooltips
+3. CSS tooltips appear on hover via `::after` pseudo-elements — no JS event handlers needed
+4. The manifest declares a `text_renderers` entry for future Chronicle platform-wide integration
+
+### Data Format
+All `data/*.json` files use the Chronicle **ReferenceItem** format: arrays of objects with `slug` (required), `name` (required), `description`, and `properties`. See `docs/DATA-SCHEMA.md` for full schemas.
 
 ### Extension Asset Base Path
 ```javascript
