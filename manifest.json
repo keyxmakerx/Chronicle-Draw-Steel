@@ -2,7 +2,7 @@
   "id": "drawsteel",
   "name": "Draw Steel",
   "description": "Reference data and entity presets for the Draw Steel RPG by MCDM Productions. Content sourced from publicly available CC-BY-4.0 material.",
-  "version": "0.2.0",
+  "version": "0.0.2",
   "author": "Chronicle Team",
   "license": "CC-BY-4.0",
   "icon": "fa-swords",
