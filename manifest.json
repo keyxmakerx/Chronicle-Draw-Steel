@@ -196,7 +196,8 @@
       "config": [
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
         { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
-        { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 }
+        { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 },
+        { "key": "editable", "label": "Allow Create/Edit/Delete", "type": "boolean", "default": true }
       ]
     }
   ],

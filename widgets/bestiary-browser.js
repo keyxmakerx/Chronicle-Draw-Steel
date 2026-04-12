@@ -281,6 +281,17 @@ Chronicle.register('bestiary-browser', {
     });
     toolbar.appendChild(filterToggle);
 
+    if (this.config.editable !== false && this.config.campaignId) {
+      var createBtn = document.createElement('button');
+      createBtn.className = 'btn btn-primary';
+      createBtn.textContent = '+ Create Creature';
+      createBtn.style.cssText = 'margin-left:auto; padding:6px 12px; font-size:0.85em;';
+      createBtn.addEventListener('click', function () {
+        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/new?preset=drawsteel-creature';
+      });
+      toolbar.appendChild(createBtn);
+    }
+
     el.appendChild(toolbar);
 
     // Pills
@@ -332,58 +343,58 @@ Chronicle.register('bestiary-browser', {
     var style = document.createElement('style');
     style.className = 'bb-styles';
     style.textContent = [
-      '.bb-root { font-family: inherit; }',
+      '.bb-root { font-family: inherit; color: var(--color-text-primary, #333); }',
       '.bb-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }',
-      '.bb-search { flex:1; min-width:200px; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:0.95em; }',
-      '.bb-sort { padding:8px; border:1px solid #ccc; border-radius:4px; font-size:0.9em; }',
-      '.bb-results-count { font-size:0.85em; color:#666; white-space:nowrap; }',
-      '.bb-filter-toggle { padding:6px 12px; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:#f9f9f9; font-size:0.85em; }',
+      '.bb-search { flex:1; min-width:200px; padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.95em; background:var(--color-input-bg, #fff); color:inherit; }',
+      '.bb-sort { padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.9em; background:var(--color-input-bg, #fff); color:inherit; }',
+      '.bb-results-count { font-size:0.85em; color:var(--color-text-secondary, #666); white-space:nowrap; }',
+      '.bb-filter-toggle { padding:6px 12px; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; background:var(--color-bg-tertiary, #f9f9f9); font-size:0.85em; color:inherit; }',
       '.bb-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }',
-      '.bb-pill { background:#e8f0fe; border-radius:12px; padding:3px 10px; font-size:0.8em; display:inline-flex; align-items:center; gap:4px; }',
-      '.bb-pill-x { cursor:pointer; font-weight:bold; opacity:0.6; border:none; background:none; padding:0; font-size:1em; }',
+      '.bb-pill { background:var(--color-bg-tertiary, #e8f0fe); border-radius:12px; padding:3px 10px; font-size:0.8em; display:inline-flex; align-items:center; gap:4px; }',
+      '.bb-pill-x { cursor:pointer; font-weight:bold; opacity:0.6; border:none; background:none; padding:0; font-size:1em; color:inherit; }',
       '.bb-pill-x:hover { opacity:1; }',
       '.bb-body { display:flex; gap:16px; }',
       '.bb-sidebar { width:220px; flex-shrink:0; }',
       '.bb-sidebar.collapsed { display:none; }',
       '.bb-grid-area { flex:1; min-width:0; }',
       '.bb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }',
-      '.bb-card { border:1px solid #ddd; border-radius:6px; padding:12px; cursor:pointer; transition:box-shadow 0.15s; border-left:4px solid #999; }',
+      '.bb-card { border:1px solid var(--color-border, #ddd); border-radius:6px; padding:12px; cursor:pointer; transition:box-shadow 0.15s; border-left:4px solid #999; background:var(--color-bg-secondary, #fff); }',
       '.bb-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.12); }',
       '.bb-card-header { display:flex; justify-content:space-between; align-items:center; }',
       '.bb-card-name { font-weight:bold; font-size:1.05em; }',
-      '.bb-card-level { background:#eee; border-radius:4px; padding:2px 6px; font-size:0.85em; white-space:nowrap; }',
-      '.bb-card-subtitle { color:#666; font-size:0.9em; margin:4px 0; }',
+      '.bb-card-level { background:var(--color-bg-tertiary, #eee); border-radius:4px; padding:2px 6px; font-size:0.85em; white-space:nowrap; }',
+      '.bb-card-subtitle { color:var(--color-text-secondary, #666); font-size:0.9em; margin:4px 0; }',
       '.bb-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0; }',
-      '.bb-tag { background:#f0f0f0; border-radius:10px; padding:2px 8px; font-size:0.75em; }',
-      '.bb-card-stats { font-size:0.85em; color:#444; margin-top:6px; }',
-      '.bb-card-chars { font-size:0.8em; color:#555; margin-top:4px; }',
+      '.bb-tag { background:var(--color-bg-tertiary, #f0f0f0); border-radius:10px; padding:2px 8px; font-size:0.75em; }',
+      '.bb-card-stats { font-size:0.85em; color:var(--color-text-body, #444); margin-top:6px; }',
+      '.bb-card-chars { font-size:0.8em; color:var(--color-text-body, #555); margin-top:4px; }',
       '.bb-filter-section { margin-bottom:12px; }',
       '.bb-filter-section h4 { cursor:pointer; margin:0 0 6px; font-size:0.9em; user-select:none; }',
-      '.bb-filter-btn { display:inline-block; padding:3px 8px; margin:2px; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.8em; background:white; }',
-      '.bb-filter-btn.active { background:#4a90d9; color:white; border-color:#4a90d9; }',
+      '.bb-filter-btn { display:inline-block; padding:3px 8px; margin:2px; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; font-size:0.8em; background:var(--color-bg-secondary, #fff); color:inherit; }',
+      '.bb-filter-btn.active { background:var(--color-accent, #6366f1); color:#fff; border-color:var(--color-accent, #6366f1); }',
       '.bb-level-inputs { display:flex; gap:6px; align-items:center; }',
-      '.bb-level-input { width:55px; padding:4px; border:1px solid #ccc; border-radius:4px; font-size:0.85em; }',
-      '.bb-clear-btn { margin-top:8px; padding:4px 10px; font-size:0.8em; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:#f9f9f9; }',
+      '.bb-level-input { width:55px; padding:4px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.85em; background:var(--color-input-bg, #fff); color:inherit; }',
+      '.bb-clear-btn { margin-top:8px; padding:4px 10px; font-size:0.8em; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; background:var(--color-bg-tertiary, #f9f9f9); color:inherit; }',
       '.bb-pagination { display:flex; gap:4px; justify-content:center; margin-top:12px; }',
-      '.bb-page-btn { padding:4px 10px; border:1px solid #ccc; border-radius:4px; cursor:pointer; background:white; font-size:0.85em; }',
-      '.bb-page-btn.active { background:#4a90d9; color:white; border-color:#4a90d9; }',
-      '.bb-page-btn:hover:not(.active) { background:#f0f0f0; }',
+      '.bb-page-btn { padding:4px 10px; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; background:var(--color-bg-secondary, #fff); font-size:0.85em; color:inherit; }',
+      '.bb-page-btn.active { background:var(--color-accent, #6366f1); color:#fff; border-color:var(--color-accent, #6366f1); }',
+      '.bb-page-btn:hover:not(.active) { background:var(--color-bg-tertiary, #f0f0f0); }',
       '.bb-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000; }',
-      '.bb-modal { background:white; border-radius:8px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3); }',
-      '.bb-modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #eee; }',
+      '.bb-modal { background:var(--color-bg-secondary, #fff); border-radius:8px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3); }',
+      '.bb-modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--color-border-light, #eee); }',
       '.bb-modal-header h2 { margin:0; font-size:1.3em; }',
-      '.bb-modal-close { background:none; border:none; font-size:24px; cursor:pointer; padding:0; line-height:1; color:#666; }',
-      '.bb-modal-close:hover { color:#000; }',
+      '.bb-modal-close { background:none; border:none; font-size:24px; cursor:pointer; padding:0; line-height:1; color:var(--color-text-secondary, #666); }',
+      '.bb-modal-close:hover { color:var(--color-text-primary, #000); }',
       '.bb-modal-body { padding:20px; }',
-      '.bb-modal-actions { padding:12px 20px; border-top:1px solid #eee; display:flex; gap:8px; }',
-      '.bb-empty { text-align:center; padding:40px; color:#999; }',
-      '.bb-loading { text-align:center; padding:40px; color:#666; }',
-      // Statblock fallback styles (in case platform sb-* styles not loaded)
+      '.bb-modal-actions { padding:12px 20px; border-top:1px solid var(--color-border-light, #eee); display:flex; gap:8px; }',
+      '.bb-empty { text-align:center; padding:40px; color:var(--color-text-secondary, #999); }',
+      '.bb-loading { text-align:center; padding:40px; color:var(--color-text-secondary, #666); }',
+      // Statblock styles
       '.sb-header { margin-bottom:8px; }',
       '.sb-name { margin:0 0 4px; font-size:1.3em; }',
-      '.sb-subtitle { color:#666; font-size:0.95em; }',
-      '.sb-keywords { font-style:italic; color:#555; font-size:0.9em; }',
-      '.sb-faction { color:#888; font-size:0.9em; }',
+      '.sb-subtitle { color:var(--color-text-secondary, #666); font-size:0.95em; }',
+      '.sb-keywords { font-style:italic; color:var(--color-text-body, #555); font-size:0.9em; }',
+      '.sb-faction { color:var(--color-text-secondary, #888); font-size:0.9em; }',
       '.sb-ev { font-weight:bold; margin-top:4px; }',
       '.sb-divider { border-top:2px solid #7c3aed; margin:10px 0; }',
       '.sb-stats { margin:8px 0; }',
@@ -393,11 +404,11 @@ Chronicle.register('bestiary-browser', {
       '.sb-char { font-size:0.95em; }',
       '.sb-immunities { margin:6px 0; font-size:0.9em; }',
       '.sb-free-strike { margin:6px 0; font-size:0.9em; }',
-      '.sb-ability { margin:8px 0; padding:6px 0; border-bottom:1px solid #f0f0f0; }',
+      '.sb-ability { margin:8px 0; padding:6px 0; border-bottom:1px solid var(--color-border-light, #f0f0f0); }',
       '.sb-ability-name { font-weight:bold; font-size:0.95em; }',
-      '.sb-ability-type { font-weight:normal; color:#888; font-size:0.85em; }',
-      '.sb-ability-kw { font-style:italic; color:#666; font-size:0.85em; }',
-      '.sb-ability-meta { color:#555; font-size:0.85em; margin:2px 0; }',
+      '.sb-ability-type { font-weight:normal; color:var(--color-text-secondary, #888); font-size:0.85em; }',
+      '.sb-ability-kw { font-style:italic; color:var(--color-text-secondary, #666); font-size:0.85em; }',
+      '.sb-ability-meta { color:var(--color-text-body, #555); font-size:0.85em; margin:2px 0; }',
       '.sb-ability-trigger { font-size:0.9em; margin:2px 0; }',
       '.sb-ability-tiers { margin:4px 0 4px 12px; font-size:0.9em; }',
       '.sb-ability-effect { font-size:0.9em; margin:2px 0; }',
@@ -714,18 +725,33 @@ Chronicle.register('bestiary-browser', {
 
     var actions = document.createElement('div');
     actions.className = 'bb-modal-actions';
-    var importBtn = document.createElement('button');
-    importBtn.className = 'btn btn-primary';
-    importBtn.textContent = 'Import to Campaign';
-    importBtn.addEventListener('click', function () {
-      if (!self.config.campaignId) { alert('No campaign selected.'); return; }
-      var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
-      var payload = { name: creature.name, preset: 'drawsteel-creature', custom_fields: creature };
-      Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(function () { importBtn.textContent = 'Imported!'; importBtn.disabled = true; })
-        .catch(function () { alert('Import failed.'); });
-    });
-    actions.appendChild(importBtn);
+    var isOwnedEntity = creature.id && self.config.campaignId;
+    var editable = self.config.editable !== false;
+
+    if (isOwnedEntity && editable) {
+      // Edit button — links to entity page
+      var editBtn = document.createElement('button');
+      editBtn.className = 'btn btn-primary';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function () {
+        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/' + creature.id;
+      });
+      actions.appendChild(editBtn);
+    } else if (!isOwnedEntity) {
+      // Import button — for bestiary creatures not yet in campaign
+      var importBtn = document.createElement('button');
+      importBtn.className = 'btn btn-primary';
+      importBtn.textContent = 'Import to Campaign';
+      importBtn.addEventListener('click', function () {
+        if (!self.config.campaignId) { alert('No campaign selected.'); return; }
+        var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
+        var payload = { name: creature.name, preset: 'drawsteel-creature', custom_fields: creature };
+        Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+          .then(function () { importBtn.textContent = 'Imported!'; importBtn.disabled = true; })
+          .catch(function () { alert('Import failed.'); });
+      });
+      actions.appendChild(importBtn);
+    }
 
     var exportBtn = document.createElement('button');
     exportBtn.className = 'btn btn-secondary';
@@ -739,6 +765,29 @@ Chronicle.register('bestiary-browser', {
       URL.revokeObjectURL(a.href);
     });
     actions.appendChild(exportBtn);
+
+    if (isOwnedEntity && editable) {
+      // Delete button
+      var deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn btn-danger';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.style.cssText = 'margin-left:auto;';
+      deleteBtn.addEventListener('click', function () {
+        if (!confirm('Delete "' + creature.name + '"? This cannot be undone.')) return;
+        var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities/' + creature.id;
+        Chronicle.apiFetch(url, { method: 'DELETE' })
+          .then(function () {
+            self.state.creatures = self.state.creatures.filter(function (c) { return c.id !== creature.id; });
+            self._closeModal();
+            self._applyFilters();
+            self._renderGrid();
+            self._renderCount();
+            self._renderPagination();
+          })
+          .catch(function () { alert('Delete failed.'); });
+      });
+      actions.appendChild(deleteBtn);
+    }
 
     modal.appendChild(actions);
     overlay.innerHTML = '';
