@@ -24,3 +24,27 @@ This applies to any file: widgets, modules, large configs, etc.
 - Use `Chronicle.escapeHtml()` for XSS safety
 - Reference data loaded via `fetch(base + 'data/...')` where base is the extension asset path
 - Styles injected as `<style>` tag (no separate CSS files for widgets)
+- Use CSS custom properties with fallbacks for dark mode: `var(--bg-primary, #fff)`
+
+## Data Format
+
+- All `data/*.json` files MUST be JSON arrays of ReferenceItem objects
+- Required fields: `slug` (string, unique), `name` (string)
+- Optional fields: `description` (string), `properties` (object)
+- Domain-specific fields go inside `properties`, not at root level
+- See `docs/DATA-SCHEMA.md` for full schemas
+
+## @Reference Syntax
+
+- Use `{@category term}` in text fields for rule cross-references
+- Categories: `condition`, `movement`, `duration`, `resource`, `action`, `combat`
+- Every term must have a matching entry in `data/rules-glossary.json`
+- Display override: `{@condition taunted|taunts}` renders as "taunts"
+- The shared utility `widgets/reference-renderer.js` handles parsing/rendering
+
+## Manifest
+
+- No `"version"` field — version comes from GitHub release tags
+- `"api_version": "1"` is the API compatibility version (separate concept)
+- Widget entries use `"script_file"` (not `"file"`) for JS paths
+- `"text_renderers"` section is forward-compatible (Chronicle platform support pending)
