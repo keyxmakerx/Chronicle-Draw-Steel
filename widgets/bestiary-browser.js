@@ -363,6 +363,7 @@ Chronicle.register('bestiary-browser', {
       '.bb-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }',
       '.bb-search { flex:1; min-width:200px; padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.95em; background:var(--color-input-bg, #fff); color:inherit; }',
       '.bb-sort { padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.9em; background:var(--color-input-bg, #fff); color:inherit; }',
+      '.bb-sort option { background:var(--color-bg-secondary, #fff); color:var(--color-text-primary, #333); }',
       '.bb-results-count { font-size:0.85em; color:var(--color-text-secondary, #666); white-space:nowrap; }',
       '.bb-filter-toggle { padding:6px 12px; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; background:var(--color-bg-tertiary, #f9f9f9); font-size:0.85em; color:inherit; }',
       '.bb-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }',
