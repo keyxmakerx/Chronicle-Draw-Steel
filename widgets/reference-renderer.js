@@ -4,7 +4,7 @@
  * Compatible with Chronicle.escapeHtml() — parse AFTER escaping.
  *
  * Usage in widgets:
- *   var ref = new DrawSteelRefRenderer(basePath);
+ *   var ref = new DrawSteelRefRenderer(basePath, campaignId);
  *   ref.load().then(function () {
  *     var html = ref.renderText(Chronicle.escapeHtml(someText));
  *   });
@@ -19,8 +19,9 @@ var DrawSteelRefRenderer = (function () {
   var _glossaryCache = null;
   var _stylesInjected = false;
 
-  function RefRenderer(basePath) {
+  function RefRenderer(basePath, campaignId) {
     this._basePath = basePath || '';
+    this._campaignId = campaignId || '';
     this._glossary = null;
     this._loaded = false;
   }
@@ -32,12 +33,17 @@ var DrawSteelRefRenderer = (function () {
       self._loaded = true;
       return Promise.resolve();
     }
-    var url = self._basePath + 'data/rules-glossary.json';
-    return fetch(url)
+    var url = this._campaignId
+      ? '/api/v1/campaigns/' + this._campaignId + '/systems/drawsteel/rules-glossary'
+      : this._basePath + 'data/rules-glossary.json';
+    var fetchFn = this._campaignId && typeof Chronicle !== 'undefined' && Chronicle.apiFetch
+      ? Chronicle.apiFetch
+      : fetch;
+    return fetchFn(url)
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var map = {};
-        var entries = Array.isArray(data) ? data : (data.entries || []);
+        var entries = Array.isArray(data) ? data : (data.results || data.entries || []);
         for (var i = 0; i < entries.length; i++) {
           map[entries[i].slug || entries[i].id] = entries[i];
         }
@@ -67,7 +73,7 @@ var DrawSteelRefRenderer = (function () {
       var tip = entry.description || '';
       tip = tip.replace(/"/g, '&quot;');
       return '<span class="ds-ref ds-ref--' + _safeClass(category) + '"' +
-        ' data-ref-id="' + _safeAttr(entry.id) + '"' +
+        ' data-ref-id="' + _safeAttr(entry.slug || entry.id || termId) + '"' +
         ' data-ref-tip="' + tip + '">' +
         label + '</span>';
     });

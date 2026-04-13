@@ -11,7 +11,7 @@ Chronicle.register('statblock-renderer', {
     var base = config.campaignId
       ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
       : '/extensions/drawsteel/assets/';
-    this._ref = new DrawSteelRefRenderer(base);
+    this._ref = new DrawSteelRefRenderer(base, config.campaignId);
 
     Promise.all([this._loadEntity(), this._ref.load()]).then(function () {
       self._ref.injectStyles();
