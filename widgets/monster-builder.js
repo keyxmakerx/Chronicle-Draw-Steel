@@ -198,16 +198,104 @@ Chronicle.register('monster-builder', {
     var style = document.createElement('style');
     style.className = 'mb-styles';
     style.textContent = [
-      '.monster-builder { font-family:inherit; color:var(--color-text-primary,#333); }',
-      '.mb-input { padding:6px 8px; border:1px solid var(--color-input-border,#ccc); border-radius:4px; font-size:0.9em; background:var(--color-input-bg,#fff); color:var(--color-text-primary,#333); }',
-      '.mb-input:focus { outline:2px solid var(--color-accent,#6366f1); outline-offset:-1px; }',
-      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }',
-      '.mb-step-tab { padding:6px 12px; border:1px solid var(--color-border,#ccc); border-radius:4px; cursor:pointer; font-size:0.85em; background:var(--color-bg-secondary,#fff); color:inherit; }',
+      // ── Root container ──
+      '.monster-builder { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); background:var(--color-card-bg,#fff); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid var(--color-border,#e5e7eb); padding:20px; }',
+      // ── Header ─��
+      '.mb-header h2 { font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 16px; }',
+      '.mb-header h2 i { margin-right:8px; color:var(--color-accent,#6366f1); }',
+      // ── Step navigation ──
+      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--color-border,#e5e7eb); }',
+      '.mb-step-tab { padding:6px 14px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 200ms ease; }',
       '.mb-step-tab.active { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      '.mb-step-tab:hover:not(.active) { background:var(--color-bg-tertiary,#f0f0f0); }',
-      '.mb-tag { display:inline-block; padding:3px 8px; margin:2px; border:1px solid var(--color-border,#ccc); border-radius:4px; cursor:pointer; font-size:0.8em; background:var(--color-bg-secondary,#fff); color:inherit; }',
+      '.mb-step-tab:hover:not(.active) { background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.mb-step-tab:active { transform:scale(0.98); }',
+      // ── Step content & sections ──
+      '.mb-step-content { min-height:200px; }',
+      '.mb-section { background:var(--color-bg-primary,#f9fafb); border-radius:8px; padding:16px; margin-bottom:16px; border:1px solid var(--color-border-light,#f3f4f6); }',
+      '.mb-section h3 { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 12px; }',
+      // ── Form fields ──
+      '.mb-field-row { margin-bottom:12px; }',
+      '.mb-field-row label { display:block; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:4px; }',
+      '.mb-input { width:100%; padding:8px 12px; border-radius:8px; font-size:14px; background:var(--color-input-bg,#fff); border:1px solid var(--color-input-border,#d1d5db); color:var(--color-text-primary,#111827); transition:all 200ms ease; box-sizing:border-box; }',
+      '.mb-input:focus { outline:none; box-shadow:0 0 0 2px rgba(99,102,241,0.3); border-color:var(--color-accent,#6366f1); }',
+      'select.mb-input option { background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); }',
+      '.mb-hint { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-top:4px; font-style:italic; }',
+      '.mb-suggestion { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:2px; }',
+      // ── Tags/Keywords ──
+      '.mb-keyword-list { display:flex; flex-wrap:wrap; gap:4px; }',
+      '.mb-tag { display:inline-block; padding:4px 10px; margin:0; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 150ms ease; }',
+      '.mb-tag:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
       '.mb-tag.selected { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      'select.mb-input option { background:var(--color-bg-secondary,#fff); color:var(--color-text-primary,#333); }'
+      // ── Radio cards (org/role selection) ──
+      '.mb-card-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }',
+      '.mb-card-col { display:flex; flex-direction:column; gap:8px; }',
+      '.mb-card-col h4 { font-size:14px; font-weight:600; color:var(--color-text-secondary,#6b7280); text-transform:uppercase; letter-spacing:0.05em; margin:0; }',
+      '.mb-radio-card { display:block; width:100%; text-align:left; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; background:var(--color-card-bg,#fff); transition:all 200ms ease; }',
+      '.mb-radio-card:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.mb-radio-card.selected { border:2px solid var(--color-accent,#6366f1); background:rgba(99,102,241,0.05); box-shadow:0 0 0 2px rgba(99,102,241,0.15); }',
+      '.mb-radio-card strong { font-size:14px; color:var(--color-text-primary,#111827); }',
+      '.mb-radio-card small { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
+      '.mb-ev-display { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(99,102,241,0.1); color:var(--color-accent,#6366f1); }',
+      // ── Abilities ──
+      '.mb-ability-actions { display:flex; gap:8px; margin-bottom:12px; }',
+      '.mb-ability-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:8px; padding:12px; margin-bottom:8px; transition:all 200ms ease; }',
+      '.mb-ability-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; }',
+      '.mb-ability-type { display:inline-block; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      '.mb-ability-summary { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:4px; }',
+      '.mb-ability-detail { overflow:hidden; transition:max-height 300ms ease-out; }',
+      '.mb-tiers { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }',
+      '.mb-damage-hints { font-size:12px; color:var(--color-text-muted,#9ca3af); font-style:italic; margin:-4px 0 6px; }',
+      // ── Template picker ──
+      '.mb-template-btn { display:block; width:100%; text-align:left; padding:10px 12px; margin:4px 0; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-card-bg,#fff); cursor:pointer; transition:all 150ms ease; color:inherit; }',
+      '.mb-template-btn:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.mb-template-btn strong { font-size:14px; color:var(--color-text-primary,#111827); }',
+      '.mb-template-btn small { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
+      // ── Villain actions ──
+      '.mb-va-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-left:3px solid var(--color-accent,#6366f1); border-radius:8px; padding:12px; margin-bottom:8px; }',
+      '.mb-va-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }',
+      '.mb-va-num { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:9999px; background:var(--color-accent,#6366f1); color:#fff; font-size:12px; font-weight:600; }',
+      // ── Traits ─��
+      '.mb-trait-row { display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.mb-trait-row:last-child { border-bottom:none; }',
+      '.mb-empty { text-align:center; padding:24px; color:var(--color-text-muted,#9ca3af); font-size:14px; }',
+      // ── Validation ──
+      '.mb-validation-panel { border-radius:8px; border:1px solid var(--color-border,#e5e7eb); overflow:hidden; margin-top:12px; }',
+      '.mb-validation-item { display:flex; align-items:flex-start; gap:8px; padding:8px 12px; font-size:12px; }',
+      '.mb-v-error { background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
+      '.mb-v-warning { background:rgba(245,158,11,0.05); border-left:3px solid #d97706; color:#92400e; }',
+      '.mb-v-info { background:rgba(59,130,246,0.05); border-left:3px solid #2563eb; color:#1e40af; }',
+      '.mb-v-icon { flex-shrink:0; }',
+      // ── Encounter calculator ──
+      '.mb-encounter-calc { margin-top:12px; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-bg-primary,#f9fafb); }',
+      // ── Preview ──
+      '.mb-preview { border:2px solid var(--color-accent,#6366f1); border-radius:12px; overflow:hidden; background:var(--color-card-bg,#fff); }',
+      // ── Buttons ──
+      '.mb-buttons { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--color-border,#e5e7eb); }',
+      // ── Statblock styles (for preview) ──
+      '.mb-preview .sb-header { background:var(--color-accent,#6366f1); padding:16px 20px; }',
+      '.mb-preview .sb-name { margin:0 0 4px; font-size:20px; font-weight:700; color:#fff; }',
+      '.mb-preview .sb-subtitle { color:rgba(255,255,255,0.85); font-size:14px; }',
+      '.mb-preview .sb-keywords { font-style:italic; color:rgba(255,255,255,0.7); font-size:12px; margin-top:4px; }',
+      '.mb-preview .sb-faction { color:rgba(255,255,255,0.7); font-size:12px; }',
+      '.mb-preview .sb-ev { display:inline-block; margin-top:6px; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; background:rgba(255,255,255,0.2); color:#fff; }',
+      '.mb-preview .sb-content { padding:16px 20px; }',
+      '.mb-preview .sb-divider { border:none; border-top:2px solid var(--color-accent,#6366f1); margin:12px 0; opacity:0.3; }',
+      '.mb-preview .sb-stat { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.mb-preview .sb-stat strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
+      '.mb-preview .sb-char { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; }',
+      '.mb-preview .sb-char strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
+      '.mb-preview .sb-char.positive { background:rgba(16,185,129,0.1); color:#047857; }',
+      '.mb-preview .sb-char.negative { background:rgba(239,68,68,0.1); color:#b91c1c; }',
+      '.mb-preview .sb-char.zero { background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      '.mb-preview .sb-ability { padding:10px 0; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.mb-preview .sb-ability-name { font-weight:600; font-size:14px; }',
+      '.mb-preview .sb-ability-type { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      '.mb-preview .sb-ability-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
+      '.mb-preview .sb-ability-vp { color:var(--color-accent,#6366f1); font-weight:600; }',
+      '.mb-preview .sb-section-title { font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; }',
+      '.mb-preview .sb-va { margin:8px 0; }',
+      '.mb-preview .sb-va-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
+      '.mb-preview .sb-trait { margin:6px 0; font-size:14px; color:var(--color-text-body,#374151); }'
     ].join('\n');
     this.el.insertBefore(style, this.el.firstChild);
   },
@@ -608,7 +696,7 @@ Chronicle.register('monster-builder', {
             '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeHtml(ability.tier2 || '') + '"></label>' +
             '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeHtml(ability.tier3 || '') + '"></label>' +
           '</div>' +
-          '<div class="mb-damage-hints" style="font-size:0.8em;color:var(--color-text-secondary,#888);font-style:italic;margin:-4px 0 6px;">' + self._getDamageHints() + '</div>' +
+          '<div class="mb-damage-hints">' + self._getDamageHints() + '</div>' +
           '<label>Effect<textarea class="mb-input mb-ab-effect" rows="2">' + Chronicle.escapeHtml(ability.effect || '') + '</textarea></label>' +
           '<div class="mb-field-row">' +
             '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeHtml(ability.trigger || '') + '"></label>' +
@@ -673,9 +761,8 @@ Chronicle.register('monster-builder', {
       var p = tmpl.properties || {};
       var btn = document.createElement('button');
       btn.className = 'mb-template-btn';
-      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid var(--color-border,#ddd);border-radius:4px;background:var(--color-bg-tertiary,#f9f9f9);cursor:pointer;color:inherit;';
       btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + (p.type || '') + ']' +
-        '<br><small style="color:var(--color-text-secondary,#666)">' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
+        '<br><small>' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
       btn.addEventListener('click', function () {
         var ability = JSON.parse(JSON.stringify(p));
         ability.name = tmpl.name;
@@ -949,7 +1036,7 @@ Chronicle.register('monster-builder', {
 
     var calc = document.createElement('div');
     calc.className = 'mb-encounter-calc';
-    calc.style.cssText = 'margin-top:12px;padding:12px;border:1px solid var(--color-border,#ddd);border-radius:6px;background:var(--color-bg-tertiary,#f9fafb);';
+    // Styled via .mb-encounter-calc class
 
     var partySize = 4;
     var partyLevel = cr.level;
@@ -1062,7 +1149,7 @@ Chronicle.register('monster-builder', {
 
     var previewWrap = document.createElement('div');
     previewWrap.className = 'mb-preview';
-    previewWrap.style.cssText = 'border:2px solid var(--color-accent,#7c3aed);border-radius:8px;padding:20px;background:var(--color-bg-secondary,#faf9ff);';
+    // Styled via .mb-preview class
 
     previewWrap.innerHTML = this._buildPreviewHtml(this.creature);
     c.appendChild(previewWrap);
@@ -1113,93 +1200,97 @@ Chronicle.register('monster-builder', {
     if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
     html += '</div>';
     if (cr.keywords && cr.keywords.length > 0) {
-      html += '<div class="sb-keywords" style="font-style:italic;color:var(--color-text-body,#555)">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+      html += '<div class="sb-keywords">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
     }
-    if (cr.faction) html += '<div class="sb-faction" style="color:var(--color-text-secondary,#888)">' + h(cr.faction) + '</div>';
-    html += '<div class="sb-ev" style="font-weight:bold;margin-top:4px">EV ' + cr.ev + '</div>';
+    if (cr.faction) html += '<div class="sb-faction">' + h(cr.faction) + '</div>';
+    html += '<span class="sb-ev">EV ' + cr.ev + '</span>';
     html += '</div>';
 
-    html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
+    html += '<div class="sb-content">';
 
-    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0">';
-    html += '<span><strong>STM</strong> ' + cr.stamina + '</span>';
-    html += '<span><strong>Winded</strong> ' + cr.winded + '</span>';
-    html += '<span><strong>SPD</strong> ' + cr.speed + '</span>';
-    html += '<span><strong>Stability</strong> ' + cr.stability + '</span>';
-    html += '</div>';
+    html += '<div class="sb-stats"><div class="sb-stat-row">';
+    html += '<span class="sb-stat"><strong>STM</strong> ' + cr.stamina + '</span>';
+    html += '<span class="sb-stat"><strong>Winded</strong> ' + cr.winded + '</span>';
+    html += '<span class="sb-stat"><strong>SPD</strong> ' + cr.speed + '</span>';
+    html += '<span class="sb-stat"><strong>Stability</strong> ' + cr.stability + '</span>';
+    html += '</div></div>';
 
-    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">';
+    html += '<div class="sb-characteristics">';
     var chars = ['might', 'agility', 'reason', 'intuition', 'presence'];
     chars.forEach(function (stat) {
       var val = cr[stat];
       var sign = val >= 0 ? '+' : '';
-      html += '<span><strong>' + stat.charAt(0).toUpperCase() + stat.slice(1, 3).toUpperCase() + '</strong> ' + sign + val + '</span>';
+      var cls = val > 0 ? 'positive' : (val < 0 ? 'negative' : 'zero');
+      html += '<span class="sb-char ' + cls + '"><strong>' + stat.charAt(0).toUpperCase() + stat.slice(1, 3).toUpperCase() + '</strong> ' + sign + val + '</span>';
     });
     html += '</div>';
 
     if (cr.immunities && cr.immunities.length > 0) {
-      html += '<div style="margin:6px 0"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(typeof i === 'string' ? i : i.type + ' ' + i.value); }).join(', ') + '</div>';
+      html += '<div class="sb-immunities"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(typeof i === 'string' ? i : i.type + ' ' + i.value); }).join(', ') + '</div>';
     }
 
-    html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
+    html += '<div class="sb-divider"></div>';
 
     if (cr.free_strike) {
-      html += '<div style="margin:6px 0"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
+      html += '<div class="sb-free-strike"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
     }
 
     if (cr.abilities && cr.abilities.length > 0) {
       cr.abilities.forEach(function (ab) {
         var typeLabel = ab.type === 'signature' ? '\u2605 ' : '';
-        html += '<div style="margin:8px 0;padding:6px 0;border-bottom:1px solid var(--color-border-light,#e0e0e0)">';
-        html += '<div style="font-weight:bold">' + typeLabel + h(ab.name || '') + ' <span style="font-weight:normal;color:var(--color-text-secondary,#888);font-size:0.85em">[' + h(ab.type || '') + ']</span></div>';
+        html += '<div class="sb-ability">';
+        html += '<div class="sb-ability-name">' + typeLabel + h(ab.name || '') + ' <span class="sb-ability-type">' + h(ab.type || '') + '</span></div>';
         if (ab.keywords && ab.keywords.length > 0) {
-          html += '<div style="font-style:italic;color:var(--color-text-secondary,#666);font-size:0.85em">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+          html += '<div class="sb-ability-kw">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
         }
         var meta = [];
         if (ab.distance) meta.push(h(ab.distance));
         if (ab.target) meta.push(h(ab.target));
         if (ab.power_roll) meta.push(h(ab.power_roll));
-        if (meta.length > 0) html += '<div style="color:var(--color-text-body,#555);font-size:0.85em">' + meta.join(' \u2022 ') + '</div>';
-        if (ab.trigger) html += '<div style="font-size:0.9em"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
+        if (meta.length > 0) html += '<div class="sb-ability-meta">' + meta.join(' \u2022 ') + '</div>';
+        if (ab.trigger) html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
         if (ab.tier1 || ab.tier2 || ab.tier3) {
-          html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
+          html += '<div class="sb-ability-tiers">';
           if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
           if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
           if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
           html += '</div>';
         }
-        if (ab.effect) html += '<div style="font-size:0.9em"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        if (ab.spend_vp && ab.spend_vp > 0) html += '<div style="font-size:0.9em;color:var(--color-accent,#7c3aed)"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
+        if (ab.spend_vp && ab.spend_vp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
     }
 
     var va = cr.villain_actions ? cr.villain_actions.filter(function (v) { return v.name && v.name.trim(); }) : [];
     if (va.length > 0) {
-      html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
-      html += '<h3 style="font-size:1.05em;margin:0 0 6px">Villain Actions</h3>';
+      html += '<div class="sb-divider"></div>';
+      html += '<h3 class="sb-section-title">Villain Actions</h3>';
       var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
       va.forEach(function (v) {
-        html += '<div style="margin:6px 0"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name);
-        if (v.description) html += ' &mdash; ' + ref.renderText(h(v.description));
-        html += '</div>';
+        html += '<div class="sb-va">';
+        html += '<div class="sb-va-name"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name) + '</div>';
+        if (v.description) html += '<div class="sb-va-desc">' + ref.renderText(h(v.description)) + '</div>';
         if (v.tier1 || v.tier2 || v.tier3) {
-          html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
+          html += '<div class="sb-va-tiers">';
           if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(v.tier1)) + '</div>';
           if (v.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(v.tier2)) + '</div>';
           if (v.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(v.tier3)) + '</div>';
           html += '</div>';
         }
+        html += '</div>';
       });
     }
 
     if (cr.traits && cr.traits.length > 0) {
-      html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
-      html += '<h3 style="font-size:1.05em;margin:0 0 6px">Traits</h3>';
+      html += '<div class="sb-divider"></div>';
+      html += '<h3 class="sb-section-title">Traits</h3>';
       cr.traits.forEach(function (t) {
-        html += '<div style="margin:4px 0"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
+        html += '<div class="sb-trait"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
       });
     }
+
+    html += '</div>'; // close sb-content
 
     return html;
   },
