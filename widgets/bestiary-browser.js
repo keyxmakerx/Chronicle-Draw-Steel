@@ -7,8 +7,26 @@ Chronicle.register('bestiary-browser', {
     var self = this;
     this.el = el;
     this.config = config;
-    this.orgTemplates = [];
-    this.roleTemplates = [];
+    this.orgTemplates = [
+      { slug: 'minion', name: 'Minion' },
+      { slug: 'horde', name: 'Horde' },
+      { slug: 'platoon', name: 'Platoon' },
+      { slug: 'elite', name: 'Elite' },
+      { slug: 'leader', name: 'Leader' },
+      { slug: 'solo', name: 'Solo' },
+      { slug: 'swarm', name: 'Swarm' }
+    ];
+    this.roleTemplates = [
+      { slug: 'ambusher', name: 'Ambusher' },
+      { slug: 'artillery', name: 'Artillery' },
+      { slug: 'brute', name: 'Brute' },
+      { slug: 'controller', name: 'Controller' },
+      { slug: 'defender', name: 'Defender' },
+      { slug: 'harrier', name: 'Harrier' },
+      { slug: 'hexer', name: 'Hexer' },
+      { slug: 'mount', name: 'Mount' },
+      { slug: 'support', name: 'Support' }
+    ];
     this.creatureKeywords = [];
     this.state = {
       source: config.source || 'campaign',
@@ -32,12 +50,11 @@ Chronicle.register('bestiary-browser', {
     var base = config.campaignId
       ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
       : '/extensions/drawsteel/assets/';
-    this._ref = new DrawSteelRefRenderer(base);
+    this._ref = new DrawSteelRefRenderer(base, config.campaignId);
 
-    Promise.all([this._loadData(), this._ref.load()]).then(function () {
+    Promise.all([this._ref.load(), this._fetchCreatures()]).then(function () {
       self._ref.injectStyles();
-      return self._fetchCreatures();
-    }).then(function () {
+      self._deriveKeywords();
       self.state.loading = false;
       self._applyFilters();
       self._render();
@@ -55,20 +72,19 @@ Chronicle.register('bestiary-browser', {
 
   // ── Data Loading ──
 
-  _loadData: function () {
-    var self = this;
-    var base = this.config.campaignId
-      ? '/api/v1/campaigns/' + this.config.campaignId + '/extensions/drawsteel/assets/'
-      : '/extensions/drawsteel/assets/';
-    return Promise.all([
-      fetch(base + 'data/organization-templates.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/role-templates.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/creature-keywords.json').then(function (r) { return r.json(); })
-    ]).then(function (results) {
-      self.orgTemplates = results[0];
-      self.roleTemplates = results[1];
-      self.creatureKeywords = results[2];
+  _deriveKeywords: function () {
+    var seen = {};
+    var list = [];
+    this.state.creatures.forEach(function (cr) {
+      cr.keywords.forEach(function (kw) {
+        if (!seen[kw]) {
+          seen[kw] = true;
+          list.push({ slug: kw.toLowerCase().replace(/\s+/g, '-'), name: kw });
+        }
+      });
     });
+    list.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    this.creatureKeywords = list;
   },
 
   _fetchCreatures: function () {
@@ -347,6 +363,7 @@ Chronicle.register('bestiary-browser', {
       '.bb-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }',
       '.bb-search { flex:1; min-width:200px; padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.95em; background:var(--color-input-bg, #fff); color:inherit; }',
       '.bb-sort { padding:8px; border:1px solid var(--color-input-border, #ccc); border-radius:4px; font-size:0.9em; background:var(--color-input-bg, #fff); color:inherit; }',
+      '.bb-sort option { background:var(--color-bg-secondary, #fff); color:var(--color-text-primary, #333); }',
       '.bb-results-count { font-size:0.85em; color:var(--color-text-secondary, #666); white-space:nowrap; }',
       '.bb-filter-toggle { padding:6px 12px; border:1px solid var(--color-border, #ccc); border-radius:4px; cursor:pointer; background:var(--color-bg-tertiary, #f9f9f9); font-size:0.85em; color:inherit; }',
       '.bb-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }',
@@ -396,7 +413,7 @@ Chronicle.register('bestiary-browser', {
       '.sb-keywords { font-style:italic; color:var(--color-text-body, #555); font-size:0.9em; }',
       '.sb-faction { color:var(--color-text-secondary, #888); font-size:0.9em; }',
       '.sb-ev { font-weight:bold; margin-top:4px; }',
-      '.sb-divider { border-top:2px solid #7c3aed; margin:10px 0; }',
+      '.sb-divider { border-top:2px solid var(--color-accent, #7c3aed); margin:10px 0; }',
       '.sb-stats { margin:8px 0; }',
       '.sb-stat-row { display:flex; gap:16px; flex-wrap:wrap; }',
       '.sb-stat { font-size:0.95em; }',
@@ -412,7 +429,7 @@ Chronicle.register('bestiary-browser', {
       '.sb-ability-trigger { font-size:0.9em; margin:2px 0; }',
       '.sb-ability-tiers { margin:4px 0 4px 12px; font-size:0.9em; }',
       '.sb-ability-effect { font-size:0.9em; margin:2px 0; }',
-      '.sb-ability-vp { font-size:0.9em; color:#7c3aed; }',
+      '.sb-ability-vp { font-size:0.9em; color:var(--color-accent, #7c3aed); }',
       '.sb-villain-actions h3 { font-size:1.05em; margin:0 0 6px; }',
       '.sb-va { margin:6px 0; }',
       '.sb-va-name { font-weight:bold; font-size:0.95em; }',

@@ -9,11 +9,71 @@ Chronicle.register('monster-builder', {
     this.config = config;
     this.currentStep = 0;
     this.steps = ['Identity', 'Organization & Role', 'Statistics', 'Abilities', 'Free Strike', 'Villain Actions', 'Traits'];
-    this.orgTemplates = [];
-    this.roleTemplates = [];
-    this.creatureKeywords = [];
-    this.abilityKeywords = [];
-    this.damageBaselines = {};
+    this.orgTemplates = [
+      { slug: 'minion', name: 'Minion', ev_multiplier: 1, stamina_base: 5, stamina_per_level: 2, default_speed: 5, default_stability: 0, villain_action_count: 0 },
+      { slug: 'horde', name: 'Horde', ev_multiplier: 2, stamina_base: 8, stamina_per_level: 3, default_speed: 5, default_stability: 0, villain_action_count: 0 },
+      { slug: 'platoon', name: 'Platoon', ev_multiplier: 4, stamina_base: 20, stamina_per_level: 6, default_speed: 5, default_stability: 1, villain_action_count: 0 },
+      { slug: 'elite', name: 'Elite', ev_multiplier: 8, stamina_base: 40, stamina_per_level: 10, default_speed: 5, default_stability: 2, villain_action_count: 0 },
+      { slug: 'leader', name: 'Leader', ev_multiplier: 8, stamina_base: 40, stamina_per_level: 10, default_speed: 5, default_stability: 2, villain_action_count: 3 },
+      { slug: 'solo', name: 'Solo', ev_multiplier: 24, stamina_base: 80, stamina_per_level: 20, default_speed: 5, default_stability: 3, villain_action_count: 3 },
+      { slug: 'swarm', name: 'Swarm', ev_multiplier: 4, stamina_base: 20, stamina_per_level: 6, default_speed: 5, default_stability: 0, villain_action_count: 0 }
+    ];
+    this.roleTemplates = [
+      { slug: 'ambusher', name: 'Ambusher', primary_stat: 'agility', characteristics: { might: 1, agility: 3, reason: 0, intuition: 1, presence: -2 } },
+      { slug: 'artillery', name: 'Artillery', primary_stat: 'reason', characteristics: { might: -2, agility: 1, reason: 3, intuition: 0, presence: 1 } },
+      { slug: 'brute', name: 'Brute', primary_stat: 'might', characteristics: { might: 3, agility: 0, reason: -1, intuition: 0, presence: 1 } },
+      { slug: 'controller', name: 'Controller', primary_stat: 'reason', characteristics: { might: -1, agility: 0, reason: 3, intuition: 1, presence: 0 } },
+      { slug: 'defender', name: 'Defender', primary_stat: 'might', characteristics: { might: 2, agility: -1, reason: 0, intuition: 0, presence: 2 } },
+      { slug: 'harrier', name: 'Harrier', primary_stat: 'agility', characteristics: { might: 0, agility: 3, reason: 0, intuition: 1, presence: -1 } },
+      { slug: 'hexer', name: 'Hexer', primary_stat: 'reason', characteristics: { might: -1, agility: 0, reason: 2, intuition: 0, presence: 2 } },
+      { slug: 'mount', name: 'Mount', primary_stat: 'might', characteristics: { might: 2, agility: 1, reason: -2, intuition: 1, presence: -1 } },
+      { slug: 'support', name: 'Support', primary_stat: 'presence', characteristics: { might: -1, agility: 0, reason: 1, intuition: 1, presence: 3 } }
+    ];
+    this.creatureKeywords = [
+      { slug: 'abyssal', name: 'Abyssal', description: 'Connected to abyssal planes or demonic forces.' },
+      { slug: 'accursed', name: 'Accursed', description: 'Afflicted by or radiating a supernatural curse.' },
+      { slug: 'animal', name: 'Animal', description: 'A natural animal with no supernatural abilities.' },
+      { slug: 'beast', name: 'Beast', description: 'A large or monstrous creature with animal-like traits.' },
+      { slug: 'construct', name: 'Construct', description: 'An artificial creature animated by magic or technology.' },
+      { slug: 'devil', name: 'Devil', description: 'A fiendish creature from infernal planes.' },
+      { slug: 'dragon', name: 'Dragon', description: 'A draconic creature, typically with breath weapons and flight.' },
+      { slug: 'dwarf', name: 'Dwarf', description: 'Of dwarven ancestry or origin.' },
+      { slug: 'elemental', name: 'Elemental', description: 'A creature composed of or powered by elemental forces.' },
+      { slug: 'elf', name: 'Elf', description: 'Of elven ancestry or origin.' },
+      { slug: 'fey', name: 'Fey', description: 'Connected to the fey realms or faerie courts.' },
+      { slug: 'giant', name: 'Giant', description: 'An enormous humanoid creature.' },
+      { slug: 'goblin', name: 'Goblin', description: 'A small, cunning creature of goblinoid ancestry.' },
+      { slug: 'humanoid', name: 'Humanoid', description: 'A creature of roughly human shape and intelligence.' },
+      { slug: 'infernal', name: 'Infernal', description: 'Connected to infernal planes.' },
+      { slug: 'insect', name: 'Insect', description: 'A creature with insectoid features.' },
+      { slug: 'monstrous', name: 'Monstrous', description: 'A creature that defies natural categorization.' },
+      { slug: 'orc', name: 'Orc', description: 'Of orcish ancestry or origin.' },
+      { slug: 'plant', name: 'Plant', description: 'A creature with plant-like biology.' },
+      { slug: 'planar', name: 'Planar', description: 'Native to or strongly connected to another plane.' },
+      { slug: 'revenant', name: 'Revenant', description: 'A creature returned from death with purpose.' },
+      { slug: 'shapechanger', name: 'Shapechanger', description: 'A creature that can alter its physical form.' },
+      { slug: 'undead', name: 'Undead', description: 'An animated corpse or spirit of a deceased creature.' }
+    ];
+    this.abilityKeywords = [
+      { slug: 'area', name: 'Area', description: 'Affects an area rather than individual targets.' },
+      { slug: 'attack', name: 'Attack', description: 'An offensive action that involves a power roll against a target.' },
+      { slug: 'charge', name: 'Charge', description: 'The creature moves and attacks in a single action.' },
+      { slug: 'magic', name: 'Magic', description: 'The ability is magical in nature.' },
+      { slug: 'melee', name: 'Melee', description: 'Requires the creature to be adjacent or within reach.' },
+      { slug: 'psionic', name: 'Psionic', description: 'The ability is psionic in nature.' },
+      { slug: 'ranged', name: 'Ranged', description: 'Can target creatures at a distance.' },
+      { slug: 'resistance', name: 'Resistance', description: 'Provides damage resistance or damage reduction.' },
+      { slug: 'weapon', name: 'Weapon', description: 'Uses a physical weapon for the attack.' }
+    ];
+    this.damageBaselines = {
+      minion: { tier1: 2, tier2: 3, tier3: 4, per_level: 1 },
+      horde: { tier1: 3, tier2: 5, tier3: 7, per_level: 1.5 },
+      platoon: { tier1: 4, tier2: 7, tier3: 10, per_level: 2 },
+      elite: { tier1: 6, tier2: 10, tier3: 14, per_level: 3 },
+      leader: { tier1: 6, tier2: 10, tier3: 14, per_level: 3 },
+      solo: { tier1: 8, tier2: 14, tier3: 20, per_level: 4 },
+      swarm: { tier1: 4, tier2: 7, tier3: 10, per_level: 2 }
+    };
     this.templateAbilities = [];
 
     // Creature state
@@ -50,13 +110,16 @@ Chronicle.register('monster-builder', {
     var base = config.campaignId
       ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
       : '/extensions/drawsteel/assets/';
-    this._ref = new DrawSteelRefRenderer(base);
+    this._ref = new DrawSteelRefRenderer(base, config.campaignId);
 
-    Promise.all([this._loadData(), this._ref.load()]).then(function () {
+    Promise.all([this._loadTemplateAbilities(), this._ref.load()]).then(function () {
       self._ref.injectStyles();
-      self._loadExistingEntity().then(function () {
-        self._render();
-      });
+      return self._loadExistingEntity();
+    }).then(function () {
+      self._render();
+    }).catch(function (err) {
+      console.error('Monster Builder: init failed', err);
+      self._render();
     });
   },
 
@@ -64,29 +127,19 @@ Chronicle.register('monster-builder', {
     el.innerHTML = '';
   },
 
-  _loadData: function () {
+  _loadTemplateAbilities: function () {
     var self = this;
-    var base = this.config.campaignId
-      ? '/api/v1/campaigns/' + this.config.campaignId + '/extensions/drawsteel/assets/'
-      : '/extensions/drawsteel/assets/';
-
-    return Promise.all([
-      fetch(base + 'data/organization-templates.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/role-templates.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/creature-keywords.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/ability-keywords.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/damage-baselines.json').then(function (r) { return r.json(); }),
-      fetch(base + 'data/creature-abilities.json').then(function (r) { return r.json(); })
-    ]).then(function (results) {
-      self.orgTemplates = results[0];
-      self.roleTemplates = results[1];
-      self.creatureKeywords = results[2];
-      self.abilityKeywords = results[3];
-      self.damageBaselines = results[4][0].properties.baselines || {};
-      self.templateAbilities = results[5];
-    }).catch(function (err) {
-      console.error('Monster Builder: failed to load reference data', err);
-    });
+    if (!this.config.campaignId) return Promise.resolve();
+    var url = '/api/v1/campaigns/' + this.config.campaignId + '/systems/drawsteel/creature-abilities';
+    return Chronicle.apiFetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var items = Array.isArray(data) ? data : (data.results || data.entries || []);
+        self.templateAbilities = items;
+      })
+      .catch(function () {
+        self.templateAbilities = [];
+      });
   },
 
   _loadExistingEntity: function () {
@@ -140,10 +193,30 @@ Chronicle.register('monster-builder', {
 
   // ── Rendering ──────────────────────────────────────────────
 
+  _injectStyles: function () {
+    if (this.el.querySelector('style.mb-styles')) return;
+    var style = document.createElement('style');
+    style.className = 'mb-styles';
+    style.textContent = [
+      '.monster-builder { font-family:inherit; color:var(--color-text-primary,#333); }',
+      '.mb-input { padding:6px 8px; border:1px solid var(--color-input-border,#ccc); border-radius:4px; font-size:0.9em; background:var(--color-input-bg,#fff); color:var(--color-text-primary,#333); }',
+      '.mb-input:focus { outline:2px solid var(--color-accent,#6366f1); outline-offset:-1px; }',
+      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:12px; }',
+      '.mb-step-tab { padding:6px 12px; border:1px solid var(--color-border,#ccc); border-radius:4px; cursor:pointer; font-size:0.85em; background:var(--color-bg-secondary,#fff); color:inherit; }',
+      '.mb-step-tab.active { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
+      '.mb-step-tab:hover:not(.active) { background:var(--color-bg-tertiary,#f0f0f0); }',
+      '.mb-tag { display:inline-block; padding:3px 8px; margin:2px; border:1px solid var(--color-border,#ccc); border-radius:4px; cursor:pointer; font-size:0.8em; background:var(--color-bg-secondary,#fff); color:inherit; }',
+      '.mb-tag.selected { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
+      'select.mb-input option { background:var(--color-bg-secondary,#fff); color:var(--color-text-primary,#333); }'
+    ].join('\n');
+    this.el.insertBefore(style, this.el.firstChild);
+  },
+
   _render: function () {
     var el = this.el;
     el.innerHTML = '';
     el.className = 'monster-builder';
+    this._injectStyles();
 
     // Header
     var header = document.createElement('div');
@@ -535,7 +608,7 @@ Chronicle.register('monster-builder', {
             '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeHtml(ability.tier2 || '') + '"></label>' +
             '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeHtml(ability.tier3 || '') + '"></label>' +
           '</div>' +
-          '<div class="mb-damage-hints" style="font-size:0.8em;color:#888;font-style:italic;margin:-4px 0 6px;">' + self._getDamageHints() + '</div>' +
+          '<div class="mb-damage-hints" style="font-size:0.8em;color:var(--color-text-secondary,#888);font-style:italic;margin:-4px 0 6px;">' + self._getDamageHints() + '</div>' +
           '<label>Effect<textarea class="mb-input mb-ab-effect" rows="2">' + Chronicle.escapeHtml(ability.effect || '') + '</textarea></label>' +
           '<div class="mb-field-row">' +
             '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeHtml(ability.trigger || '') + '"></label>' +
@@ -600,9 +673,9 @@ Chronicle.register('monster-builder', {
       var p = tmpl.properties || {};
       var btn = document.createElement('button');
       btn.className = 'mb-template-btn';
-      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid #ddd;border-radius:4px;background:#f9f9f9;cursor:pointer;';
+      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;margin:4px 0;border:1px solid var(--color-border,#ddd);border-radius:4px;background:var(--color-bg-tertiary,#f9f9f9);cursor:pointer;color:inherit;';
       btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + (p.type || '') + ']' +
-        '<br><small style="color:#666">' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
+        '<br><small style="color:var(--color-text-secondary,#666)">' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
       btn.addEventListener('click', function () {
         var ability = JSON.parse(JSON.stringify(p));
         ability.name = tmpl.name;
@@ -876,7 +949,7 @@ Chronicle.register('monster-builder', {
 
     var calc = document.createElement('div');
     calc.className = 'mb-encounter-calc';
-    calc.style.cssText = 'margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:6px;background:#f9fafb;';
+    calc.style.cssText = 'margin-top:12px;padding:12px;border:1px solid var(--color-border,#ddd);border-radius:6px;background:var(--color-bg-tertiary,#f9fafb);';
 
     var partySize = 4;
     var partyLevel = cr.level;
@@ -989,7 +1062,7 @@ Chronicle.register('monster-builder', {
 
     var previewWrap = document.createElement('div');
     previewWrap.className = 'mb-preview';
-    previewWrap.style.cssText = 'border:2px solid #7c3aed;border-radius:8px;padding:20px;background:#faf9ff;';
+    previewWrap.style.cssText = 'border:2px solid var(--color-accent,#7c3aed);border-radius:8px;padding:20px;background:var(--color-bg-secondary,#faf9ff);';
 
     previewWrap.innerHTML = this._buildPreviewHtml(this.creature);
     c.appendChild(previewWrap);
@@ -1040,13 +1113,13 @@ Chronicle.register('monster-builder', {
     if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
     html += '</div>';
     if (cr.keywords && cr.keywords.length > 0) {
-      html += '<div class="sb-keywords" style="font-style:italic;color:#555">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+      html += '<div class="sb-keywords" style="font-style:italic;color:var(--color-text-body,#555)">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
     }
-    if (cr.faction) html += '<div class="sb-faction" style="color:#888">' + h(cr.faction) + '</div>';
+    if (cr.faction) html += '<div class="sb-faction" style="color:var(--color-text-secondary,#888)">' + h(cr.faction) + '</div>';
     html += '<div class="sb-ev" style="font-weight:bold;margin-top:4px">EV ' + cr.ev + '</div>';
     html += '</div>';
 
-    html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+    html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
 
     html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0">';
     html += '<span><strong>STM</strong> ' + cr.stamina + '</span>';
@@ -1068,7 +1141,7 @@ Chronicle.register('monster-builder', {
       html += '<div style="margin:6px 0"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(typeof i === 'string' ? i : i.type + ' ' + i.value); }).join(', ') + '</div>';
     }
 
-    html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+    html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
 
     if (cr.free_strike) {
       html += '<div style="margin:6px 0"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
@@ -1077,16 +1150,16 @@ Chronicle.register('monster-builder', {
     if (cr.abilities && cr.abilities.length > 0) {
       cr.abilities.forEach(function (ab) {
         var typeLabel = ab.type === 'signature' ? '\u2605 ' : '';
-        html += '<div style="margin:8px 0;padding:6px 0;border-bottom:1px solid #e0e0e0">';
-        html += '<div style="font-weight:bold">' + typeLabel + h(ab.name || '') + ' <span style="font-weight:normal;color:#888;font-size:0.85em">[' + h(ab.type || '') + ']</span></div>';
+        html += '<div style="margin:8px 0;padding:6px 0;border-bottom:1px solid var(--color-border-light,#e0e0e0)">';
+        html += '<div style="font-weight:bold">' + typeLabel + h(ab.name || '') + ' <span style="font-weight:normal;color:var(--color-text-secondary,#888);font-size:0.85em">[' + h(ab.type || '') + ']</span></div>';
         if (ab.keywords && ab.keywords.length > 0) {
-          html += '<div style="font-style:italic;color:#666;font-size:0.85em">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
+          html += '<div style="font-style:italic;color:var(--color-text-secondary,#666);font-size:0.85em">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
         }
         var meta = [];
         if (ab.distance) meta.push(h(ab.distance));
         if (ab.target) meta.push(h(ab.target));
         if (ab.power_roll) meta.push(h(ab.power_roll));
-        if (meta.length > 0) html += '<div style="color:#555;font-size:0.85em">' + meta.join(' \u2022 ') + '</div>';
+        if (meta.length > 0) html += '<div style="color:var(--color-text-body,#555);font-size:0.85em">' + meta.join(' \u2022 ') + '</div>';
         if (ab.trigger) html += '<div style="font-size:0.9em"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
         if (ab.tier1 || ab.tier2 || ab.tier3) {
           html += '<div style="margin:4px 0 4px 12px;font-size:0.9em">';
@@ -1096,14 +1169,14 @@ Chronicle.register('monster-builder', {
           html += '</div>';
         }
         if (ab.effect) html += '<div style="font-size:0.9em"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        if (ab.spend_vp && ab.spend_vp > 0) html += '<div style="font-size:0.9em;color:#7c3aed"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        if (ab.spend_vp && ab.spend_vp > 0) html += '<div style="font-size:0.9em;color:var(--color-accent,#7c3aed)"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
     }
 
     var va = cr.villain_actions ? cr.villain_actions.filter(function (v) { return v.name && v.name.trim(); }) : [];
     if (va.length > 0) {
-      html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+      html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
       html += '<h3 style="font-size:1.05em;margin:0 0 6px">Villain Actions</h3>';
       var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
       va.forEach(function (v) {
@@ -1121,7 +1194,7 @@ Chronicle.register('monster-builder', {
     }
 
     if (cr.traits && cr.traits.length > 0) {
-      html += '<hr style="border:none;border-top:2px solid #7c3aed;margin:10px 0">';
+      html += '<hr style="border:none;border-top:2px solid var(--color-accent,#7c3aed);margin:10px 0">';
       html += '<h3 style="font-size:1.05em;margin:0 0 6px">Traits</h3>';
       cr.traits.forEach(function (t) {
         html += '<div style="margin:4px 0"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
