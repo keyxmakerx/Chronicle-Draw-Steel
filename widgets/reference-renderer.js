@@ -34,7 +34,7 @@ var DrawSteelRefRenderer = (function () {
       return Promise.resolve();
     }
     var url = this._campaignId
-      ? '/api/v1/campaigns/' + this._campaignId + '/systems/drawsteel/rules-glossary'
+      ? '/campaigns/' + this._campaignId + '/systems/drawsteel/rules-glossary'
       : this._basePath + 'data/rules-glossary.json';
     var fetchFn = this._campaignId && typeof Chronicle !== 'undefined' && Chronicle.apiFetch
       ? Chronicle.apiFetch
