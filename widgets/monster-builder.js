@@ -111,6 +111,7 @@ Chronicle.register('monster-builder', {
       ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
       : '/extensions/drawsteel/assets/';
     this._ref = new DrawSteelRefRenderer(base, config.campaignId);
+    this._saveStatus = 'clean';
 
     Promise.all([this._loadTemplateAbilities(), this._ref.load()]).then(function () {
       self._ref.injectStyles();
@@ -127,17 +128,25 @@ Chronicle.register('monster-builder', {
     el.innerHTML = '';
   },
 
+  _apiError: function (res, fallback) {
+    return res.json().then(
+      function (body) { return body && body.message ? body.message : fallback; },
+      function () { return fallback; }
+    );
+  },
+
   _loadTemplateAbilities: function () {
     var self = this;
     if (!this.config.campaignId) return Promise.resolve();
-    var url = '/api/v1/campaigns/' + this.config.campaignId + '/systems/drawsteel/creature-abilities';
+    var url = '/campaigns/' + this.config.campaignId + '/systems/drawsteel/creature-abilities';
     return Chronicle.apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var items = Array.isArray(data) ? data : (data.results || data.entries || []);
         self.templateAbilities = items;
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.warn('Monster Builder: ability templates unavailable', err);
         self.templateAbilities = [];
       });
   },
@@ -188,7 +197,9 @@ Chronicle.register('monster-builder', {
           }
         }
       })
-      .catch(function () { /* new creature, use defaults */ });
+      .catch(function (err) {
+        console.warn('Monster Builder: existing entity load failed; using defaults', err);
+      });
   },
 
   // ── Rendering ──────────────────────────────────────────────
@@ -201,23 +212,25 @@ Chronicle.register('monster-builder', {
       // ── Root container ──
       '.monster-builder { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); background:var(--color-card-bg,#fff); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid var(--color-border,#e5e7eb); padding:20px; }',
       // ── Header ─��
-      '.mb-header h2 { font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 16px; }',
+      '.mb-header h2 { font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 16px; font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
       '.mb-header h2 i { margin-right:8px; color:var(--color-accent,#6366f1); }',
       // ── Step navigation ──
-      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--color-border,#e5e7eb); }',
-      '.mb-step-tab { padding:6px 14px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 200ms ease; }',
-      '.mb-step-tab.active { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      '.mb-step-tab:hover:not(.active) { background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:0; margin-bottom:16px; border-bottom:1px solid var(--color-border,#e5e7eb); }',
+      '.mb-step-tab { padding:8px 14px; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:var(--color-text-body,#374151); transition:all 150ms ease; margin-bottom:-1px; }',
+      '.mb-step-tab.active { color:var(--color-accent,#6366f1); border-bottom-color:var(--color-accent,#6366f1); }',
+      '.mb-step-tab:hover:not(.active) { background:rgba(var(--color-accent-rgb,99,102,241),0.05); color:var(--color-accent,#6366f1); }',
       '.mb-step-tab:active { transform:scale(0.98); }',
       // ── Step content & sections ──
       '.mb-step-content { min-height:200px; }',
       '.mb-section { background:var(--color-bg-primary,#f9fafb); border-radius:8px; padding:16px; margin-bottom:16px; border:1px solid var(--color-border-light,#f3f4f6); }',
-      '.mb-section h3 { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 12px; }',
+      '.mb-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border-light,#f3f4f6); border-radius:6px; padding:12px 14px; margin:8px 0; }',
+      '.mb-card h4 { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-secondary,#6b7280); margin:0 0 10px; }',
+      '.mb-section h3 { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 12px; font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
       // ── Form fields ──
       '.mb-field-row { margin-bottom:12px; }',
       '.mb-field-row label { display:block; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:4px; }',
       '.mb-input { width:100%; padding:8px 12px; border-radius:8px; font-size:14px; background:var(--color-input-bg,#fff); border:1px solid var(--color-input-border,#d1d5db); color:var(--color-text-primary,#111827); transition:all 200ms ease; box-sizing:border-box; }',
-      '.mb-input:focus { outline:none; box-shadow:0 0 0 2px rgba(99,102,241,0.3); border-color:var(--color-accent,#6366f1); }',
+      '.mb-input:focus { outline:none; box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.3); border-color:var(--color-accent,#6366f1); }',
       'select.mb-input option { background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); }',
       '.mb-hint { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-top:4px; font-style:italic; }',
       '.mb-suggestion { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:2px; }',
@@ -232,10 +245,10 @@ Chronicle.register('monster-builder', {
       '.mb-card-col h4 { font-size:14px; font-weight:600; color:var(--color-text-secondary,#6b7280); text-transform:uppercase; letter-spacing:0.05em; margin:0; }',
       '.mb-radio-card { display:block; width:100%; text-align:left; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; background:var(--color-card-bg,#fff); transition:all 200ms ease; }',
       '.mb-radio-card:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.mb-radio-card.selected { border:2px solid var(--color-accent,#6366f1); background:rgba(99,102,241,0.05); box-shadow:0 0 0 2px rgba(99,102,241,0.15); }',
+      '.mb-radio-card.selected { border:2px solid var(--color-accent,#6366f1); background:rgba(var(--color-accent-rgb,99,102,241),0.05); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.15); }',
       '.mb-radio-card strong { font-size:14px; color:var(--color-text-primary,#111827); }',
       '.mb-radio-card small { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      '.mb-ev-display { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(99,102,241,0.1); color:var(--color-accent,#6366f1); }',
+      '.mb-ev-display { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); }',
       // ── Abilities ──
       '.mb-ability-actions { display:flex; gap:8px; margin-bottom:12px; }',
       '.mb-ability-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:8px; padding:12px; margin-bottom:8px; transition:all 200ms ease; }',
@@ -265,6 +278,7 @@ Chronicle.register('monster-builder', {
       '.mb-v-warning { background:rgba(245,158,11,0.05); border-left:3px solid #d97706; color:#92400e; }',
       '.mb-v-info { background:rgba(59,130,246,0.05); border-left:3px solid #2563eb; color:#1e40af; }',
       '.mb-v-icon { flex-shrink:0; }',
+      '.mb-inline-warn { display:flex; align-items:center; gap:8px; padding:8px 12px; margin:0 0 12px; border-radius:6px; font-size:13px; background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
       // ── Encounter calculator ──
       '.mb-encounter-calc { margin-top:12px; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-bg-primary,#f9fafb); }',
       // ── Preview ──
@@ -295,7 +309,18 @@ Chronicle.register('monster-builder', {
       '.mb-preview .sb-section-title { font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; }',
       '.mb-preview .sb-va { margin:8px 0; }',
       '.mb-preview .sb-va-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
-      '.mb-preview .sb-trait { margin:6px 0; font-size:14px; color:var(--color-text-body,#374151); }'
+      '.mb-preview .sb-trait { margin:6px 0; font-size:14px; color:var(--color-text-body,#374151); }',
+      // ── Sticky save bar ──
+      '.mb-save-bar { position:sticky; bottom:0; display:flex; align-items:center; gap:12px; padding:12px 16px; margin:16px -20px -20px; background:var(--color-card-bg,#fff); border-top:1px solid var(--color-border,#e5e7eb); z-index:10; }',
+      '.mb-save-status { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--color-text-secondary,#6b7280); }',
+      '.mb-save-status::before { content:""; display:inline-block; width:8px; height:8px; border-radius:9999px; background:var(--color-text-muted,#9ca3af); }',
+      '.mb-save-status.clean::before { background:var(--color-text-muted,#9ca3af); }',
+      '.mb-save-status.unsaved::before { background:#d97706; }',
+      '.mb-save-status.saving::before { background:var(--color-accent,#6366f1); animation:mb-pulse 1s ease-in-out infinite; }',
+      '.mb-save-status.saved::before { background:#10b981; }',
+      '.mb-save-status.error::before { background:#dc2626; }',
+      '@keyframes mb-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }',
+      '.mb-save-bar-actions { margin-left:auto; display:flex; gap:8px; }'
     ].join('\n');
     this.el.insertBefore(style, this.el.firstChild);
   },
@@ -325,17 +350,29 @@ Chronicle.register('monster-builder', {
     el.appendChild(content);
     this._contentEl = content;
 
-    // Navigation buttons
-    var buttons = document.createElement('div');
-    buttons.className = 'mb-buttons';
-    el.appendChild(buttons);
-    this._buttonsEl = buttons;
-
     // Validation panel
     var validation = document.createElement('div');
     validation.className = 'mb-validation';
     el.appendChild(validation);
     this._validationEl = validation;
+
+    // Sticky save bar (status + nav buttons)
+    var saveBar = document.createElement('div');
+    saveBar.className = 'mb-save-bar';
+    el.appendChild(saveBar);
+    this._saveBarEl = saveBar;
+    this._buttonsEl = saveBar; // back-compat: existing _renderButtons writes here
+
+    // Mark step content as the unsaved-detection scope
+    var self = this;
+    content.addEventListener('input', function () {
+      if (self._saveStatus === 'clean' || self._saveStatus === 'saved') {
+        self._setSaveStatus('unsaved');
+      }
+    });
+    content.addEventListener('change', function () {
+      self._refreshInlineValidation();
+    });
 
     this._renderCurrentStep();
   },
@@ -376,12 +413,37 @@ Chronicle.register('monster-builder', {
 
     this._renderButtons();
     this._renderValidation();
+    this._refreshInlineValidation();
+  },
+
+  _saveStatusLabels: {
+    clean: 'No unsaved changes',
+    unsaved: 'Unsaved changes',
+    saving: 'Saving…',
+    saved: 'Saved',
+    error: 'Save failed'
+  },
+
+  _setSaveStatus: function (status) {
+    this._saveStatus = status;
+    if (this._saveBarEl) this._renderButtons();
   },
 
   _renderButtons: function () {
     var self = this;
-    var b = this._buttonsEl;
+    var b = this._saveBarEl || this._buttonsEl;
+    if (!b) return;
     b.innerHTML = '';
+
+    var status = this._saveStatus || 'clean';
+    var statusEl = document.createElement('span');
+    statusEl.className = 'mb-save-status ' + status;
+    statusEl.textContent = this._saveStatusLabels[status] || '';
+    b.appendChild(statusEl);
+
+    var actions = document.createElement('div');
+    actions.className = 'mb-save-bar-actions';
+    b.appendChild(actions);
 
     if (this.currentStep > 0) {
       var prev = document.createElement('button');
@@ -389,13 +451,12 @@ Chronicle.register('monster-builder', {
       prev.textContent = 'Previous';
       prev.addEventListener('click', function () {
         self.currentStep--;
-        // Skip villain actions if not leader/solo
         if (self.currentStep === 5 && self.creature.organization !== 'leader' && self.creature.organization !== 'solo') {
           self.currentStep--;
         }
         self._renderCurrentStep();
       });
-      b.appendChild(prev);
+      actions.appendChild(prev);
     }
 
     if (this.currentStep < this.steps.length - 1) {
@@ -404,28 +465,26 @@ Chronicle.register('monster-builder', {
       next.textContent = 'Next';
       next.addEventListener('click', function () {
         self.currentStep++;
-        // Skip villain actions if not leader/solo
         if (self.currentStep === 5 && self.creature.organization !== 'leader' && self.creature.organization !== 'solo') {
           self.currentStep++;
         }
         self._renderCurrentStep();
       });
-      b.appendChild(next);
+      actions.appendChild(next);
     }
 
-    // Preview button
     var preview = document.createElement('button');
     preview.className = 'btn btn-secondary';
     preview.textContent = 'Preview Statblock';
     preview.addEventListener('click', function () { self._showPreview(); });
-    b.appendChild(preview);
+    actions.appendChild(preview);
 
-    // Save button always visible
     var save = document.createElement('button');
     save.className = 'btn btn-success';
     save.textContent = 'Save Creature';
+    save.disabled = (status === 'saving');
     save.addEventListener('click', function () { self._save(); });
-    b.appendChild(save);
+    actions.appendChild(save);
   },
 
   // ── Step 1: Identity ──────────────────────────────────────
@@ -438,6 +497,7 @@ Chronicle.register('monster-builder', {
     c.innerHTML =
       '<div class="mb-section">' +
       '<h3>Step 1: Identity</h3>' +
+      '<div id="mb-step1-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<div class="mb-field-row">' +
         '<label>Name<input type="text" class="mb-input" id="mb-name" value="' + h(this.creature.name) + '" placeholder="Creature name"></label>' +
         '<label>Level (1-20)<input type="number" class="mb-input" id="mb-level" min="1" max="20" value="' + this.creature.level + '"></label>' +
@@ -487,6 +547,7 @@ Chronicle.register('monster-builder', {
     var c = this._contentEl;
 
     var orgHtml = '<div class="mb-section"><h3>Step 2: Organization & Role</h3>' +
+      '<div id="mb-step2-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
     this.orgTemplates.forEach(function (o) {
       var sel = self.creature.organization === o.slug ? ' selected' : '';
@@ -541,6 +602,7 @@ Chronicle.register('monster-builder', {
     c.innerHTML =
       '<div class="mb-section"><h3>Step 3: Statistics</h3>' +
       '<p class="mb-hint">Values auto-filled from organization and role templates. Edit to customize.</p>' +
+      '<div class="mb-card"><h4>Vitals</h4>' +
       '<div class="mb-field-row">' +
         '<label>Stamina<input type="number" class="mb-input" id="mb-stamina" value="' + cr.stamina + '">' +
         '<small class="mb-suggestion">suggested: ' + suggested.stamina + '</small></label>' +
@@ -550,18 +612,19 @@ Chronicle.register('monster-builder', {
         '<small class="mb-suggestion">suggested: ' + suggested.speed + '</small></label>' +
         '<label>Stability<input type="number" class="mb-input" id="mb-stability" value="' + cr.stability + '">' +
         '<small class="mb-suggestion">suggested: ' + suggested.stability + '</small></label>' +
-      '</div>' +
-      '<h4>Characteristics</h4>' +
+      '</div></div>' +
+      '<div class="mb-card"><h4>Characteristics</h4>' +
       '<div class="mb-field-row">' +
         '<label>Might<input type="number" class="mb-input" id="mb-might" value="' + cr.might + '"></label>' +
         '<label>Agility<input type="number" class="mb-input" id="mb-agility" value="' + cr.agility + '"></label>' +
         '<label>Reason<input type="number" class="mb-input" id="mb-reason" value="' + cr.reason + '"></label>' +
         '<label>Intuition<input type="number" class="mb-input" id="mb-intuition" value="' + cr.intuition + '"></label>' +
         '<label>Presence<input type="number" class="mb-input" id="mb-presence" value="' + cr.presence + '"></label>' +
-      '</div>' +
-      '<h4>Immunities</h4>' +
+      '</div></div>' +
+      '<div class="mb-card"><h4>Immunities</h4>' +
       '<div id="mb-immunities-list" class="mb-list-editor"></div>' +
       '<button class="btn btn-sm btn-secondary" id="mb-add-immunity">+ Add Immunity</button>' +
+      '</div>' +
       '</div>';
 
     // Bind stat inputs
@@ -613,6 +676,7 @@ Chronicle.register('monster-builder', {
 
     c.innerHTML =
       '<div class="mb-section"><h3>Step 4: Abilities</h3>' +
+      '<div id="mb-signature-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<div id="mb-abilities-list"></div>' +
       '<div class="mb-ability-actions">' +
         '<button class="btn btn-primary" id="mb-add-ability">+ Add Ability</button>' +
@@ -652,12 +716,69 @@ Chronicle.register('monster-builder', {
     });
   },
 
+  _setInlineWarn: function (id, message) {
+    if (!this._contentEl) return;
+    var el = this._contentEl.querySelector('#' + id);
+    if (!el) return;
+    if (message) {
+      el.style.display = 'flex';
+      el.innerHTML = '<span>&#9888;</span><span>' + message + '</span>';
+    } else {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    }
+  },
+
+  _refreshInlineValidation: function () {
+    if (!this._contentEl) return;
+    var rules = this._validate();
+    var pickError = function (substring) {
+      for (var i = 0; i < rules.length; i++) {
+        if (rules[i].severity === 'error' && rules[i].message.indexOf(substring) !== -1) {
+          return Chronicle.escapeHtml(rules[i].message);
+        }
+      }
+      return '';
+    };
+
+    this._setInlineWarn('mb-step1-warn', pickError('name'));
+
+    var orgErr = pickError('Organization is required');
+    var roleErr = pickError('Role is required');
+    var step2Msg = '';
+    if (orgErr && roleErr) step2Msg = 'Both organization and role are required.';
+    else if (orgErr) step2Msg = orgErr;
+    else if (roleErr) step2Msg = roleErr;
+    this._setInlineWarn('mb-step2-warn', step2Msg);
+
+    var hasSignature = this.creature.abilities.some(function (a) { return a.type === 'signature'; });
+    var sigWarn = this._contentEl.querySelector('#mb-signature-warn');
+    if (sigWarn) {
+      if (hasSignature) {
+        sigWarn.style.display = 'none';
+        sigWarn.innerHTML = '';
+      } else {
+        sigWarn.style.display = 'flex';
+        sigWarn.innerHTML = '<span>&#9888;</span><span>Every creature must have at least 1 <strong>signature</strong> ability. Add one, or change an existing ability\'s type to <em>signature</em>.</span>';
+      }
+    }
+
+    this._setInlineWarn('mb-step6-warn', pickError('villain actions'));
+
+    this._renderValidation();
+  },
+
+  _refreshAbilityValidation: function () {
+    this._refreshInlineValidation();
+  },
+
   _renderAbilitiesList: function (container) {
     var self = this;
     container.innerHTML = '';
 
     if (this.creature.abilities.length === 0) {
       container.innerHTML = '<p class="mb-empty">No abilities yet. Add one or use a template.</p>';
+      self._refreshAbilityValidation();
       return;
     }
 
@@ -722,6 +843,7 @@ Chronicle.register('monster-builder', {
       card.querySelector('.mb-ab-type').addEventListener('change', function () {
         ability.type = this.value;
         card.querySelector('.mb-ability-type').textContent = '[' + this.value.charAt(0).toUpperCase() + this.value.slice(1) + ']';
+        self._refreshAbilityValidation();
       });
       card.querySelector('.mb-ab-distance').addEventListener('change', function () { ability.distance = this.value; });
       card.querySelector('.mb-ab-target').addEventListener('change', function () { ability.target = this.value; });
@@ -752,6 +874,8 @@ Chronicle.register('monster-builder', {
 
       container.appendChild(card);
     });
+
+    self._refreshAbilityValidation();
   },
 
   _renderTemplatePicker: function (container) {
@@ -905,6 +1029,7 @@ Chronicle.register('monster-builder', {
     ];
 
     var html = '<div class="mb-section"><h3>Step 6: Villain Actions</h3>' +
+      '<div id="mb-step6-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<p class="mb-hint">Leaders and Solos get exactly 3 villain actions, used once each per encounter in order.</p>';
 
     labels.forEach(function (slot, i) {
@@ -1342,21 +1467,24 @@ Chronicle.register('monster-builder', {
       }
     };
 
+    self._setSaveStatus('saving');
     Chronicle.apiFetch(url, {
       method: 'PATCH',
       body: JSON.stringify(payload)
     }).then(function (res) {
-      if (!res.ok) throw new Error('Save failed: ' + res.status);
-      Chronicle.markClean('monster-builder');
-      var btn = self._buttonsEl.querySelector('.btn-success');
-      if (btn) {
-        var orig = btn.textContent;
-        btn.textContent = 'Saved!';
-        btn.disabled = true;
-        setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 2000);
+      if (!res.ok) {
+        return self._apiError(res, 'Could not save creature. Please try again.').then(function (msg) {
+          throw new Error(msg);
+        });
       }
+      Chronicle.markClean('monster-builder');
+      self._setSaveStatus('saved');
+      setTimeout(function () {
+        if (self._saveStatus === 'saved') self._setSaveStatus('clean');
+      }, 2000);
     }).catch(function (err) {
-      alert('Failed to save creature: ' + err.message);
+      self._setSaveStatus('error');
+      alert(err && err.message ? err.message : 'Could not save creature. Please try again.');
     });
   }
 });
