@@ -70,6 +70,13 @@ Chronicle.register('bestiary-browser', {
     el.innerHTML = '';
   },
 
+  _apiError: function (res, fallback) {
+    return res.json().then(
+      function (body) { return body && body.message ? body.message : fallback; },
+      function () { return fallback; }
+    );
+  },
+
   // ── Data Loading ──
 
   _deriveKeywords: function () {
@@ -105,7 +112,8 @@ Chronicle.register('bestiary-browser', {
         var items = Array.isArray(data) ? data : (data.results || []);
         self.state.creatures = items.map(function (e) { return self._normalizeEntity(e); });
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.warn('Bestiary Browser: bestiary fetch failed; falling back to unavailable panel', err);
         self.state.creatures = [];
         self._bestiaryUnavailable = true;
       });
@@ -815,8 +823,15 @@ Chronicle.register('bestiary-browser', {
         var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
         var payload = { name: creature.name, preset: 'drawsteel-creature', custom_fields: creature };
         Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-          .then(function () { importBtn.textContent = 'Imported!'; importBtn.disabled = true; })
-          .catch(function () { alert('Import failed.'); });
+          .then(function (res) {
+            if (!res.ok) {
+              return self._apiError(res, 'Could not import this creature. Please try again.').then(function (msg) {
+                throw new Error(msg);
+              });
+            }
+            importBtn.textContent = 'Imported!'; importBtn.disabled = true;
+          })
+          .catch(function (err) { alert(err && err.message ? err.message : 'Could not import this creature. Please try again.'); });
       });
       actions.appendChild(importBtn);
     }
@@ -844,7 +859,12 @@ Chronicle.register('bestiary-browser', {
         if (!confirm('Delete "' + creature.name + '"? This cannot be undone.')) return;
         var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities/' + creature.id;
         Chronicle.apiFetch(url, { method: 'DELETE' })
-          .then(function () {
+          .then(function (res) {
+            if (res && res.ok === false) {
+              return self._apiError(res, 'Could not delete this creature. Please try again.').then(function (msg) {
+                throw new Error(msg);
+              });
+            }
             self.state.creatures = self.state.creatures.filter(function (c) { return c.id !== creature.id; });
             self._closeModal();
             self._applyFilters();
@@ -852,7 +872,7 @@ Chronicle.register('bestiary-browser', {
             self._renderCount();
             self._renderPagination();
           })
-          .catch(function () { alert('Delete failed.'); });
+          .catch(function (err) { alert(err && err.message ? err.message : 'Could not delete this creature. Please try again.'); });
       });
       actions.appendChild(deleteBtn);
     }

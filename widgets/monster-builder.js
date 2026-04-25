@@ -127,6 +127,13 @@ Chronicle.register('monster-builder', {
     el.innerHTML = '';
   },
 
+  _apiError: function (res, fallback) {
+    return res.json().then(
+      function (body) { return body && body.message ? body.message : fallback; },
+      function () { return fallback; }
+    );
+  },
+
   _loadTemplateAbilities: function () {
     var self = this;
     if (!this.config.campaignId) return Promise.resolve();
@@ -137,7 +144,8 @@ Chronicle.register('monster-builder', {
         var items = Array.isArray(data) ? data : (data.results || data.entries || []);
         self.templateAbilities = items;
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.warn('Monster Builder: ability templates unavailable', err);
         self.templateAbilities = [];
       });
   },
@@ -188,7 +196,9 @@ Chronicle.register('monster-builder', {
           }
         }
       })
-      .catch(function () { /* new creature, use defaults */ });
+      .catch(function (err) {
+        console.warn('Monster Builder: existing entity load failed; using defaults', err);
+      });
   },
 
   // ── Rendering ──────────────────────────────────────────────
@@ -265,6 +275,7 @@ Chronicle.register('monster-builder', {
       '.mb-v-warning { background:rgba(245,158,11,0.05); border-left:3px solid #d97706; color:#92400e; }',
       '.mb-v-info { background:rgba(59,130,246,0.05); border-left:3px solid #2563eb; color:#1e40af; }',
       '.mb-v-icon { flex-shrink:0; }',
+      '.mb-inline-warn { display:flex; align-items:center; gap:8px; padding:8px 12px; margin:0 0 12px; border-radius:6px; font-size:13px; background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
       // ── Encounter calculator ──
       '.mb-encounter-calc { margin-top:12px; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-bg-primary,#f9fafb); }',
       // ── Preview ──
@@ -613,6 +624,7 @@ Chronicle.register('monster-builder', {
 
     c.innerHTML =
       '<div class="mb-section"><h3>Step 4: Abilities</h3>' +
+      '<div id="mb-signature-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<div id="mb-abilities-list"></div>' +
       '<div class="mb-ability-actions">' +
         '<button class="btn btn-primary" id="mb-add-ability">+ Add Ability</button>' +
@@ -652,12 +664,29 @@ Chronicle.register('monster-builder', {
     });
   },
 
+  _refreshAbilityValidation: function () {
+    if (!this._contentEl) return;
+    var warn = this._contentEl.querySelector('#mb-signature-warn');
+    if (warn) {
+      var hasSignature = this.creature.abilities.some(function (a) { return a.type === 'signature'; });
+      if (hasSignature) {
+        warn.style.display = 'none';
+        warn.innerHTML = '';
+      } else {
+        warn.style.display = 'flex';
+        warn.innerHTML = '<span>&#9888;</span><span>Every creature must have at least 1 <strong>signature</strong> ability. Add one, or change an existing ability\'s type to <em>signature</em>.</span>';
+      }
+    }
+    this._renderValidation();
+  },
+
   _renderAbilitiesList: function (container) {
     var self = this;
     container.innerHTML = '';
 
     if (this.creature.abilities.length === 0) {
       container.innerHTML = '<p class="mb-empty">No abilities yet. Add one or use a template.</p>';
+      self._refreshAbilityValidation();
       return;
     }
 
@@ -722,6 +751,7 @@ Chronicle.register('monster-builder', {
       card.querySelector('.mb-ab-type').addEventListener('change', function () {
         ability.type = this.value;
         card.querySelector('.mb-ability-type').textContent = '[' + this.value.charAt(0).toUpperCase() + this.value.slice(1) + ']';
+        self._refreshAbilityValidation();
       });
       card.querySelector('.mb-ab-distance').addEventListener('change', function () { ability.distance = this.value; });
       card.querySelector('.mb-ab-target').addEventListener('change', function () { ability.target = this.value; });
@@ -752,6 +782,8 @@ Chronicle.register('monster-builder', {
 
       container.appendChild(card);
     });
+
+    self._refreshAbilityValidation();
   },
 
   _renderTemplatePicker: function (container) {
@@ -1346,7 +1378,11 @@ Chronicle.register('monster-builder', {
       method: 'PATCH',
       body: JSON.stringify(payload)
     }).then(function (res) {
-      if (!res.ok) throw new Error('Save failed: ' + res.status);
+      if (!res.ok) {
+        return self._apiError(res, 'Could not save creature. Please try again.').then(function (msg) {
+          throw new Error(msg);
+        });
+      }
       Chronicle.markClean('monster-builder');
       var btn = self._buttonsEl.querySelector('.btn-success');
       if (btn) {
@@ -1356,7 +1392,7 @@ Chronicle.register('monster-builder', {
         setTimeout(function () { btn.textContent = orig; btn.disabled = false; }, 2000);
       }
     }).catch(function (err) {
-      alert('Failed to save creature: ' + err.message);
+      alert(err && err.message ? err.message : 'Could not save creature. Please try again.');
     });
   }
 });
