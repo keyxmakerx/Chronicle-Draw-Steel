@@ -358,6 +358,7 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
 - [ ] **4.5.6** Add "Publish to Bestiary" button to Monster Builder widget
   - Opens publish dialog with description, tags, visibility
   - Calls POST /bestiary with statblock from current entity
+  - **Payload requirement:** must include `"system_id": "drawsteel"` explicitly. The Chronicle host no longer defaults `system_id` for bestiary inserts — the SQL-level `DEFAULT 'drawsteel'` was removed in migration `002_drop_system_id_default.up.sql` (host commit `7297221` on `claude/disable-package-auto-fetch-aGkB2`). Host derivation order is now: explicit input → source campaign's `settings.system_id` → empty string. Relying on campaign derivation would silently produce empty `system_id` rows for campaigns without a system selected.
   - **File:** `widgets/monster-builder.js` (modify)
   - **Depends on:** Phase 1, 4.3.1
 
