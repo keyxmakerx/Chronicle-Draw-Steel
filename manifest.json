@@ -97,9 +97,12 @@
       "foundry_actor_type": "hero",
       "fields": [
         { "key": "class", "label": "Class", "type": "string" },
+        { "key": "subclass", "label": "Subclass", "type": "string", "foundry_path": "system.details.subclass" },
         { "key": "ancestry", "label": "Ancestry", "type": "string" },
         { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
         { "key": "kit", "label": "Kit", "type": "string" },
+        { "key": "faction", "label": "Faction", "type": "string", "foundry_path": "system.details.faction" },
+        { "key": "portrait_url", "label": "Portrait URL", "type": "string", "foundry_path": "prototypeToken.texture.src" },
         { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
         { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
         { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
@@ -107,10 +110,21 @@
         { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
         { "key": "stamina_max", "label": "Max Stamina", "type": "number", "foundry_path": "system.stamina.max" },
         { "key": "stamina_current", "label": "Current Stamina", "type": "number", "foundry_path": "system.stamina.value" },
+        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.winded" },
         { "key": "recoveries", "label": "Recoveries", "type": "number", "foundry_path": "system.recoveries.value" },
+        { "key": "recoveries_max", "label": "Max Recoveries", "type": "number", "foundry_path": "system.recoveries.max" },
         { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed", "foundry_writable": false },
         { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value", "foundry_writable": false },
-        { "key": "wealth", "label": "Wealth", "type": "number" }
+        { "key": "wealth", "label": "Wealth", "type": "number" },
+        { "key": "heroic_resource_name", "label": "Heroic Resource Name", "type": "string", "foundry_path": "system.hero.resource.name" },
+        { "key": "heroic_resource_current", "label": "Heroic Resource (current)", "type": "number", "foundry_path": "system.hero.resource.value" },
+        { "key": "heroic_resource_max", "label": "Heroic Resource (max)", "type": "number", "foundry_path": "system.hero.resource.max" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "weaknesses", "label": "Weaknesses", "type": "string" },
+        { "key": "abilities_json", "label": "Abilities Data", "type": "string" },
+        { "key": "class_features_json", "label": "Class Features Data", "type": "string" },
+        { "key": "ancestry_features_json", "label": "Ancestry Features Data", "type": "string" },
+        { "key": "kit_features_json", "label": "Kit Features Data", "type": "string" }
       ]
     },
     {
@@ -199,8 +213,26 @@
         { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 },
         { "key": "editable", "label": "Allow Create/Edit/Delete", "type": "boolean", "default": true }
       ]
+    },
+    {
+      "slug": "character-sheet",
+      "name": "Character Sheet",
+      "description": "Full Draw Steel character renderer for hero entities. Auto-mounts on drawsteel-character pages once Chronicle CH4.5 (manifest-driven renderer registration) ships.",
+      "icon": "fa-shield-halved",
+      "script_file": "widgets/character-sheet.js",
+      "config": [
+        { "key": "entity_id", "label": "Entity ID", "type": "string" },
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+      ]
     }
   ],
+
+  "_renderers_pending_ch4_5": {
+    "_note": "Placeholder for the page-level entity-show renderer registration. Rename this key to 'renderers' once Chronicle CH4.5 (manifest-driven renderer registration) ships on main. Underscore prefix keeps current chronicle hosts from erroring on an unknown manifest field.",
+    "renderers": {
+      "drawsteel-character": { "widget": "character-sheet" }
+    }
+  },
 
   "text_renderers": [
     {
