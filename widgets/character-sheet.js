@@ -7,6 +7,25 @@
  *
  * Pre-CH4.5: this widget can also be embedded as a normal Chronicle widget
  * with entity_id + campaign_id config and will fall back to apiFetch.
+ *
+ * LAYOUT CONTRACT (Option C, 2026-04-30)
+ *
+ * This renderer owns system-flavored sections — header, vitals,
+ * characteristics, heroic resource, movement, damage, abilities, features,
+ * progression, notes. These are Draw Steel-specific and should not be
+ * forced through generic Chronicle blocks.
+ *
+ * Cross-system surfaces mount as Chronicle blocks at the bottom of the
+ * page via slot points emitted by _renderBlockSlots(). Three slots are
+ * reserved:
+ *   - character_skills           (manifest-driven via skill_fields)
+ *   - character_inventory        (reads fields_data inventory_fields)
+ *   - character_purchase_history (reads armory/transactions by entity)
+ *
+ * The data-attribute names on those slot divs are PLACEHOLDERS — the
+ * concrete mount-by-data-attr contract lands once Chronicle's block
+ * registry surfaces a stable hydration path. Coordinate with the
+ * Chronicle dev when Phase 3 widgets ship before relying on the names.
  */
 Chronicle.register('character-sheet', {
   init: function (el, config) {
@@ -134,7 +153,8 @@ Chronicle.register('character-sheet', {
       this._renderFeatures(),
       this._renderProgression(),
       this._renderInventory(),
-      this._renderNotes()
+      this._renderNotes(),
+      this._renderBlockSlots()
     ];
     this.el.innerHTML = sections.filter(function (s) { return s; }).join('');
 
@@ -466,6 +486,24 @@ Chronicle.register('character-sheet', {
     '</section>';
   },
 
+  // Phase 3 / Option C slot points. Emits inert mount divs for Chronicle's
+  // generic character_* block widgets. Hydrated by Chronicle's block registry
+  // once it surfaces a stable mount-by-data-attr path; until then these stay
+  // empty and are hidden by the .cs-slot:empty rule. Attribute names are
+  // placeholders — see file header.
+  _renderBlockSlots: function () {
+    if (!this._entityId || !this._campaignId) return '';
+    var h = Chronicle.escapeHtml;
+    var eid = h(String(this._entityId));
+    var cid = h(String(this._campaignId));
+    return '<div class="cs-slot" data-block="character_skills"' +
+        ' data-entity-id="' + eid + '" data-campaign-id="' + cid + '"></div>' +
+      '<div class="cs-slot" data-block="character_inventory"' +
+        ' data-entity-id="' + eid + '" data-campaign-id="' + cid + '"></div>' +
+      '<div class="cs-slot" data-block="character_purchase_history"' +
+        ' data-entity-id="' + eid + '" data-campaign-id="' + cid + '"></div>';
+  },
+
   // ── Styles (filled in below) ───────────────────────────────────
 
   _injectStyles: function () {
@@ -558,6 +596,8 @@ Chronicle.register('character-sheet', {
       '.cs-inventory-link:hover { text-decoration:underline; }',
       // ── Notes ──
       '.cs-notes-body { font-size:13px; color:var(--color-text-body,#374151); white-space:pre-wrap; line-height:1.6; }',
+      // ── Block slots (Phase 3 / Option C) — hidden until Chronicle hydrates ──
+      '.cs-slot:empty { display:none; }',
       // ── Empty / error ──
       '.cs-empty { text-align:center; padding:48px 16px; }',
       '.cs-empty-icon { width:48px; height:48px; border-radius:9999px; background:var(--color-bg-tertiary,#f3f4f6); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:20px; color:var(--color-text-muted,#9ca3af); }',
