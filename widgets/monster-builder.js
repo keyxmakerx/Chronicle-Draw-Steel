@@ -9,78 +9,23 @@ Chronicle.register('monster-builder', {
     this.config = config;
     this.currentStep = 0;
     this.steps = ['Identity', 'Organization & Role', 'Statistics', 'Abilities', 'Free Strike', 'Villain Actions', 'Traits'];
-    this.orgTemplates = [
-      { slug: 'minion', name: 'Minion', ev_multiplier: 1, stamina_base: 5, stamina_per_level: 2, default_speed: 5, default_stability: 0, villain_action_count: 0 },
-      { slug: 'horde', name: 'Horde', ev_multiplier: 2, stamina_base: 8, stamina_per_level: 3, default_speed: 5, default_stability: 0, villain_action_count: 0 },
-      { slug: 'platoon', name: 'Platoon', ev_multiplier: 4, stamina_base: 20, stamina_per_level: 6, default_speed: 5, default_stability: 1, villain_action_count: 0 },
-      { slug: 'elite', name: 'Elite', ev_multiplier: 8, stamina_base: 40, stamina_per_level: 10, default_speed: 5, default_stability: 2, villain_action_count: 0 },
-      { slug: 'leader', name: 'Leader', ev_multiplier: 8, stamina_base: 40, stamina_per_level: 10, default_speed: 5, default_stability: 2, villain_action_count: 3 },
-      { slug: 'solo', name: 'Solo', ev_multiplier: 24, stamina_base: 80, stamina_per_level: 20, default_speed: 5, default_stability: 3, villain_action_count: 3 },
-      { slug: 'swarm', name: 'Swarm', ev_multiplier: 4, stamina_base: 20, stamina_per_level: 6, default_speed: 5, default_stability: 0, villain_action_count: 0 }
-    ];
-    this.roleTemplates = [
-      { slug: 'ambusher', name: 'Ambusher', primary_stat: 'agility', characteristics: { might: 1, agility: 3, reason: 0, intuition: 1, presence: -2 } },
-      { slug: 'artillery', name: 'Artillery', primary_stat: 'reason', characteristics: { might: -2, agility: 1, reason: 3, intuition: 0, presence: 1 } },
-      { slug: 'brute', name: 'Brute', primary_stat: 'might', characteristics: { might: 3, agility: 0, reason: -1, intuition: 0, presence: 1 } },
-      { slug: 'controller', name: 'Controller', primary_stat: 'reason', characteristics: { might: -1, agility: 0, reason: 3, intuition: 1, presence: 0 } },
-      { slug: 'defender', name: 'Defender', primary_stat: 'might', characteristics: { might: 2, agility: -1, reason: 0, intuition: 0, presence: 2 } },
-      { slug: 'harrier', name: 'Harrier', primary_stat: 'agility', characteristics: { might: 0, agility: 3, reason: 0, intuition: 1, presence: -1 } },
-      { slug: 'hexer', name: 'Hexer', primary_stat: 'reason', characteristics: { might: -1, agility: 0, reason: 2, intuition: 0, presence: 2 } },
-      { slug: 'mount', name: 'Mount', primary_stat: 'might', characteristics: { might: 2, agility: 1, reason: -2, intuition: 1, presence: -1 } },
-      { slug: 'support', name: 'Support', primary_stat: 'presence', characteristics: { might: -1, agility: 0, reason: 1, intuition: 1, presence: 3 } }
-    ];
-    this.creatureKeywords = [
-      { slug: 'abyssal', name: 'Abyssal', description: 'Connected to abyssal planes or demonic forces.' },
-      { slug: 'accursed', name: 'Accursed', description: 'Afflicted by or radiating a supernatural curse.' },
-      { slug: 'animal', name: 'Animal', description: 'A natural animal with no supernatural abilities.' },
-      { slug: 'beast', name: 'Beast', description: 'A large or monstrous creature with animal-like traits.' },
-      { slug: 'construct', name: 'Construct', description: 'An artificial creature animated by magic or technology.' },
-      { slug: 'devil', name: 'Devil', description: 'A fiendish creature from infernal planes.' },
-      { slug: 'dragon', name: 'Dragon', description: 'A draconic creature, typically with breath weapons and flight.' },
-      { slug: 'dwarf', name: 'Dwarf', description: 'Of dwarven ancestry or origin.' },
-      { slug: 'elemental', name: 'Elemental', description: 'A creature composed of or powered by elemental forces.' },
-      { slug: 'elf', name: 'Elf', description: 'Of elven ancestry or origin.' },
-      { slug: 'fey', name: 'Fey', description: 'Connected to the fey realms or faerie courts.' },
-      { slug: 'giant', name: 'Giant', description: 'An enormous humanoid creature.' },
-      { slug: 'goblin', name: 'Goblin', description: 'A small, cunning creature of goblinoid ancestry.' },
-      { slug: 'humanoid', name: 'Humanoid', description: 'A creature of roughly human shape and intelligence.' },
-      { slug: 'infernal', name: 'Infernal', description: 'Connected to infernal planes.' },
-      { slug: 'insect', name: 'Insect', description: 'A creature with insectoid features.' },
-      { slug: 'monstrous', name: 'Monstrous', description: 'A creature that defies natural categorization.' },
-      { slug: 'orc', name: 'Orc', description: 'Of orcish ancestry or origin.' },
-      { slug: 'plant', name: 'Plant', description: 'A creature with plant-like biology.' },
-      { slug: 'planar', name: 'Planar', description: 'Native to or strongly connected to another plane.' },
-      { slug: 'revenant', name: 'Revenant', description: 'A creature returned from death with purpose.' },
-      { slug: 'shapechanger', name: 'Shapechanger', description: 'A creature that can alter its physical form.' },
-      { slug: 'undead', name: 'Undead', description: 'An animated corpse or spirit of a deceased creature.' }
-    ];
-    this.abilityKeywords = [
-      { slug: 'area', name: 'Area', description: 'Affects an area rather than individual targets.' },
-      { slug: 'attack', name: 'Attack', description: 'An offensive action that involves a power roll against a target.' },
-      { slug: 'charge', name: 'Charge', description: 'The creature moves and attacks in a single action.' },
-      { slug: 'magic', name: 'Magic', description: 'The ability is magical in nature.' },
-      { slug: 'melee', name: 'Melee', description: 'Requires the creature to be adjacent or within reach.' },
-      { slug: 'psionic', name: 'Psionic', description: 'The ability is psionic in nature.' },
-      { slug: 'ranged', name: 'Ranged', description: 'Can target creatures at a distance.' },
-      { slug: 'resistance', name: 'Resistance', description: 'Provides damage resistance or damage reduction.' },
-      { slug: 'weapon', name: 'Weapon', description: 'Uses a physical weapon for the attack.' }
-    ];
-    this.damageBaselines = {
-      minion: { tier1: 2, tier2: 3, tier3: 4, per_level: 1 },
-      horde: { tier1: 3, tier2: 5, tier3: 7, per_level: 1.5 },
-      platoon: { tier1: 4, tier2: 7, tier3: 10, per_level: 2 },
-      elite: { tier1: 6, tier2: 10, tier3: 14, per_level: 3 },
-      leader: { tier1: 6, tier2: 10, tier3: 14, per_level: 3 },
-      solo: { tier1: 8, tier2: 14, tier3: 20, per_level: 4 },
-      swarm: { tier1: 4, tier2: 7, tier3: 10, per_level: 2 }
-    };
+    // Reference data is loaded from data/*.json at init (see _loadReferenceData),
+    // never hard-coded inline. The data files are the single source of truth, so
+    // updating a file is enough — there is no second copy to keep in sync (B-8).
+    // These start empty and are populated before the first render.
+    this.orgTemplates = [];
+    this.roleTemplates = [];
+    this.creatureKeywords = [];
+    this.abilityKeywords = [];
+    this.damageBaselines = {};
     this.templateAbilities = [];
+    this._dataError = false;
 
     // Creature state
     this.creature = {
       name: '',
       level: 1,
-      size: 'M',
+      size: '1M',
       faction: '',
       keywords: [],
       organization: '',
@@ -110,10 +55,21 @@ Chronicle.register('monster-builder', {
     var base = config.campaignId
       ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
       : '/extensions/drawsteel/assets/';
+    this._assetBase = base;
     this._ref = new DrawSteelRefRenderer(base, config.campaignId);
     this._saveStatus = 'clean';
 
-    Promise.all([this._loadTemplateAbilities(), this._ref.load()]).then(function () {
+    // Encounter-calculator state lives on the instance so it survives step
+    // navigation instead of resetting every time Step 3 re-renders (B-7).
+    this._encounterState = { partySize: 4, partyLevel: this.creature.level };
+
+    // Bestiary publish state: the "Publish to Bestiary" button is enabled only
+    // after a successful entity save, and defaults to a private (draft) listing.
+    this._entityIsPrivate = false;
+    this._canPublish = false;
+    this._publishVisibility = 'draft';
+
+    Promise.all([this._loadReferenceData(), this._ref.load()]).then(function () {
       self._ref.injectStyles();
       return self._loadExistingEntity();
     }).then(function () {
@@ -135,20 +91,65 @@ Chronicle.register('monster-builder', {
     );
   },
 
-  _loadTemplateAbilities: function () {
+  // _fetchData loads a single reference JSON file from the extension's asset
+  // path. Draw Steel ships its reference data as data/*.json (CLAUDE.md
+  // "Widget Patterns"); these are static package assets, not campaign data, so
+  // they are fetched directly rather than through the entity API. We try the
+  // configured asset base first, then fall back to the instance-global
+  // /extensions/drawsteel/assets/ path so the data resolves whether or not the
+  // current context exposes a campaign-scoped asset route.
+  _fetchData: function (file) {
+    var candidates = [];
+    if (this._assetBase) candidates.push(this._assetBase + 'data/' + file);
+    var globalPath = '/extensions/drawsteel/assets/data/' + file;
+    if (candidates.indexOf(globalPath) === -1) candidates.push(globalPath);
+
+    var tryNext = function (i) {
+      if (i >= candidates.length) {
+        return Promise.reject(new Error('could not load data/' + file));
+      }
+      return fetch(candidates[i], { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error(candidates[i] + ' -> ' + r.status);
+          return r.json();
+        })
+        .catch(function () { return tryNext(i + 1); });
+    };
+    return tryNext(0);
+  },
+
+  // _loadReferenceData populates every reference collection from data/*.json.
+  // Organization and role templates are required for the builder to function
+  // (without them there is nothing to pick and no stats to derive), so failing
+  // to load them flips this._dataError and the UI shows a clear diagnostic
+  // instead of silently rendering empty pickers.
+  _loadReferenceData: function () {
     var self = this;
-    if (!this.config.campaignId) return Promise.resolve();
-    var url = '/campaigns/' + this.config.campaignId + '/systems/drawsteel/creature-abilities';
-    return Chronicle.apiFetch(url)
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var items = Array.isArray(data) ? data : (data.results || data.entries || []);
-        self.templateAbilities = items;
-      })
-      .catch(function (err) {
-        console.warn('Monster Builder: ability templates unavailable', err);
-        self.templateAbilities = [];
-      });
+    var load = function (file, assign) {
+      return self._fetchData(file)
+        .then(function (data) { assign(data); })
+        .catch(function (err) { console.warn('Monster Builder: failed to load ' + file, err); });
+    };
+    return Promise.all([
+      load('organization-templates.json', function (d) { self.orgTemplates = Array.isArray(d) ? d : []; }),
+      load('role-templates.json', function (d) { self.roleTemplates = Array.isArray(d) ? d : []; }),
+      load('creature-keywords.json', function (d) { self.creatureKeywords = Array.isArray(d) ? d : []; }),
+      load('ability-keywords.json', function (d) { self.abilityKeywords = Array.isArray(d) ? d : []; }),
+      load('damage-baselines.json', function (d) { self.damageBaselines = self._extractBaselines(d); }),
+      load('creature-abilities.json', function (d) { self.templateAbilities = Array.isArray(d) ? d : []; })
+    ]).then(function () {
+      self._dataError = (self.orgTemplates.length === 0 || self.roleTemplates.length === 0);
+    });
+  },
+
+  // _extractBaselines normalizes damage-baselines.json (a single ReferenceItem
+  // whose properties.baselines holds the per-organization damage table) into a
+  // slug -> { tier1, tier2, tier3, per_level } map. See docs/DATA-SCHEMA.md.
+  _extractBaselines: function (data) {
+    if (Array.isArray(data) && data[0] && data[0].properties && data[0].properties.baselines) {
+      return data[0].properties.baselines;
+    }
+    return {};
   },
 
   _loadExistingEntity: function () {
@@ -159,9 +160,16 @@ Chronicle.register('monster-builder', {
     return Chronicle.apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (entity) {
-        if (!entity || !entity.custom_fields) return;
-        var f = entity.custom_fields;
+        if (!entity) return;
+        // An existing entity is already persisted, so publishing is allowed.
+        // Preserve its privacy flag so a later save (PUT) doesn't flip it.
+        self._entityIsPrivate = !!entity.is_private;
+        self._canPublish = true;
         self.creature.name = entity.name || '';
+        // Chronicle returns custom fields under the `fields_data` key; earlier
+        // code read the wrong key (B-2), so every saved creature loaded blank.
+        var f = entity.fields_data;
+        if (!f) return;
         var numFields = ['level', 'ev', 'stamina', 'winded', 'speed', 'stability',
           'might', 'agility', 'reason', 'intuition', 'presence', 'free_strike_damage'];
         numFields.forEach(function (k) {
@@ -171,6 +179,9 @@ Chronicle.register('monster-builder', {
         strFields.forEach(function (k) {
           if (f[k] !== undefined) self.creature[k] = f[k];
         });
+        // Normalize legacy single-letter sizes (T/S/M/L/H/G) saved by earlier
+        // builds to the DATA-SCHEMA multi-hex notation (1T/1S/1M/1L/2/3) (B-6).
+        self.creature.size = self._normalizeSize(self.creature.size);
         // Parse JSON fields
         if (f.keywords && typeof f.keywords === 'string') {
           try { self.creature.keywords = JSON.parse(f.keywords); } catch (e) {
@@ -200,6 +211,36 @@ Chronicle.register('monster-builder', {
       .catch(function (err) {
         console.warn('Monster Builder: existing entity load failed; using defaults', err);
       });
+  },
+
+  // Canonical Draw Steel size notation (docs/DATA-SCHEMA.md) paired with
+  // friendly display labels. The notation string is what gets stored on the
+  // entity; the label is only for the dropdown (B-6).
+  _sizeOptions: [
+    { value: '1T', label: '1T — Tiny' },
+    { value: '1S', label: '1S — Small' },
+    { value: '1M', label: '1M — Medium' },
+    { value: '1L', label: '1L — Large' },
+    { value: '2', label: '2 — Huge' },
+    { value: '3', label: '3 — Gargantuan' }
+  ],
+
+  // _normalizeSize maps legacy single-letter sizes (T/S/M/L/H/G) to the
+  // DATA-SCHEMA notation and leaves already-canonical values untouched.
+  _normalizeSize: function (size) {
+    var legacy = { T: '1T', S: '1S', M: '1M', L: '1L', H: '2', G: '3' };
+    if (legacy[size]) return legacy[size];
+    return size || '1M';
+  },
+
+  // _dataErrorBanner renders a visible diagnostic when the reference data files
+  // failed to load, so an empty org/role picker is never a silent mystery.
+  _dataErrorBanner: function () {
+    if (!this._dataError) return '';
+    return '<div class="mb-inline-warn" style="display:flex">' +
+      '<span>&#9888;</span><span>Reference data could not be loaded from the Draw Steel ' +
+      'package (<code>data/*.json</code>). Organization and role options are unavailable — ' +
+      'check that the package assets are being served.</span></div>';
   },
 
   // ── Rendering ──────────────────────────────────────────────
@@ -320,7 +361,11 @@ Chronicle.register('monster-builder', {
       '.mb-save-status.saved::before { background:#10b981; }',
       '.mb-save-status.error::before { background:#dc2626; }',
       '@keyframes mb-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }',
-      '.mb-save-bar-actions { margin-left:auto; display:flex; gap:8px; }'
+      '.mb-save-bar-actions { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }',
+      '.mb-save-bar-actions .mb-publish-vis { width:auto; padding:6px 8px; font-size:12px; }',
+      '.mb-publish-msg { padding:8px 12px; margin:8px 0 0; border-radius:6px; font-size:13px; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-body,#374151); }',
+      '.mb-publish-msg.mb-publish-ok { background:rgba(16,185,129,0.1); color:#047857; }',
+      '.mb-publish-msg.mb-publish-error { background:rgba(239,68,68,0.08); color:#991b1b; }'
     ].join('\n');
     this.el.insertBefore(style, this.el.firstChild);
   },
@@ -485,6 +530,28 @@ Chronicle.register('monster-builder', {
     save.disabled = (status === 'saving');
     save.addEventListener('click', function () { self._save(); });
     actions.appendChild(save);
+
+    // Bestiary publish controls — visibility toggle + publish button. Both are
+    // disabled until a successful save exists, since publishing references the
+    // saved entity (B-9). Default visibility is private (draft).
+    var vis = document.createElement('select');
+    vis.className = 'mb-input mb-publish-vis';
+    vis.title = 'Bestiary visibility';
+    vis.innerHTML =
+      '<option value="draft">Private (only me)</option>' +
+      '<option value="published">Public (shared)</option>';
+    vis.value = this._publishVisibility || 'draft';
+    vis.disabled = !this._canPublish;
+    vis.addEventListener('change', function () { self._publishVisibility = this.value; });
+    actions.appendChild(vis);
+
+    var publish = document.createElement('button');
+    publish.className = 'btn btn-secondary';
+    publish.textContent = 'Publish to Bestiary';
+    publish.disabled = !this._canPublish || status === 'saving';
+    publish.title = this._canPublish ? 'Publish this creature to the community bestiary' : 'Save the creature first';
+    publish.addEventListener('click', function () { self._publishToBestiary(); });
+    actions.appendChild(publish);
   },
 
   // ── Step 1: Identity ──────────────────────────────────────
@@ -502,8 +569,8 @@ Chronicle.register('monster-builder', {
         '<label>Name<input type="text" class="mb-input" id="mb-name" value="' + h(this.creature.name) + '" placeholder="Creature name"></label>' +
         '<label>Level (1-20)<input type="number" class="mb-input" id="mb-level" min="1" max="20" value="' + this.creature.level + '"></label>' +
         '<label>Size<select class="mb-input" id="mb-size">' +
-          ['T', 'S', 'M', 'L', 'H', 'G'].map(function (s) {
-            return '<option value="' + s + '"' + (self.creature.size === s ? ' selected' : '') + '>' + s + '</option>';
+          this._sizeOptions.map(function (s) {
+            return '<option value="' + s.value + '"' + (self.creature.size === s.value ? ' selected' : '') + '>' + Chronicle.escapeHtml(s.label) + '</option>';
           }).join('') +
         '</select></label>' +
         '<label>Faction<input type="text" class="mb-input" id="mb-faction" value="' + h(this.creature.faction) + '" placeholder="e.g. Goblin, Dragon"></label>' +
@@ -548,19 +615,20 @@ Chronicle.register('monster-builder', {
 
     var orgHtml = '<div class="mb-section"><h3>Step 2: Organization & Role</h3>' +
       '<div id="mb-step2-warn" class="mb-inline-warn" style="display:none"></div>' +
+      this._dataErrorBanner() +
       '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
     this.orgTemplates.forEach(function (o) {
       var sel = self.creature.organization === o.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-org="' + o.slug + '">' +
-        '<strong>' + Chronicle.escapeHtml(o.name) + '</strong> (' + o.ev_multiplier + ' EV/level)' +
-        '<br><small>' + Chronicle.escapeHtml(o.description) + '</small></button>';
+      orgHtml += '<button class="mb-radio-card' + sel + '" data-org="' + Chronicle.escapeHtml(o.slug) + '">' +
+        '<strong>' + Chronicle.escapeHtml(o.name) + '</strong> (' + Chronicle.escapeHtml(String(o.ev_multiplier)) + ' EV/level)' +
+        '<br><small>' + Chronicle.escapeHtml(o.description || '') + '</small></button>';
     });
     orgHtml += '</div><div class="mb-card-col"><h4>Role</h4>';
     this.roleTemplates.forEach(function (r) {
       var sel = self.creature.role === r.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-role="' + r.slug + '">' +
+      orgHtml += '<button class="mb-radio-card' + sel + '" data-role="' + Chronicle.escapeHtml(r.slug) + '">' +
         '<strong>' + Chronicle.escapeHtml(r.name) + '</strong>' +
-        '<br><small>' + Chronicle.escapeHtml(r.description) + '</small></button>';
+        '<br><small>' + Chronicle.escapeHtml(r.description || '') + '</small></button>';
     });
     orgHtml += '</div></div>';
     orgHtml += '<div class="mb-ev-display">EV: <strong id="mb-ev-value">' + this.creature.ev + '</strong></div>';
@@ -1155,43 +1223,48 @@ Chronicle.register('monster-builder', {
   },
 
   _renderEncounterCalc: function (container) {
-    var self = this;
     var cr = this.creature;
     if (!cr.ev || cr.ev <= 0) return;
 
+    // Party size/level persist on the instance so they survive step navigation
+    // and validation re-renders instead of resetting to defaults (B-7).
+    var st = this._encounterState;
+    st.partySize = Math.max(1, Math.min(10, st.partySize || 4));
+    st.partyLevel = Math.max(1, Math.min(20, st.partyLevel || cr.level));
+
     var calc = document.createElement('div');
     calc.className = 'mb-encounter-calc';
-    // Styled via .mb-encounter-calc class
+    // The structure is built once; only .mb-ec-output is rewritten on input, so
+    // the number fields keep focus while typing instead of losing it every
+    // keystroke to a full innerHTML rebuild (B-7).
+    calc.innerHTML =
+      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Calculator</h4>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+        '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + st.partySize + '" min="1" max="10" style="width:50px"></label>' +
+        '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + st.partyLevel + '" min="1" max="20" style="width:50px"></label>' +
+      '</div>' +
+      '<div style="font-size:0.9em" class="mb-ec-output"></div>';
 
-    var partySize = 4;
-    var partyLevel = cr.level;
-
-    var renderCalcContent = function () {
-      var budget = partySize * partyLevel;
+    var output = calc.querySelector('.mb-ec-output');
+    var refresh = function () {
+      var budget = st.partySize * st.partyLevel;
       var count = Math.max(1, Math.round(budget / cr.ev));
       var totalEV = count * cr.ev;
-      calc.innerHTML =
-        '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Calculator</h4>' +
-        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
-          '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + partySize + '" min="1" max="10" style="width:50px"></label>' +
-          '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + partyLevel + '" min="1" max="20" style="width:50px"></label>' +
-        '</div>' +
-        '<div style="font-size:0.9em">' +
-          '<strong>Budget:</strong> ' + budget + ' EV (' + partySize + ' heroes \u00d7 level ' + partyLevel + ')<br>' +
-          '<strong>Use ~' + count + '</strong> of this ' + (cr.organization || 'creature') + ' (EV ' + cr.ev + ' each = ' + totalEV + ' total EV)' +
-        '</div>';
-
-      calc.querySelector('.mb-ec-party').addEventListener('change', function () {
-        partySize = Math.max(1, Math.min(10, parseInt(this.value) || 4));
-        renderCalcContent();
-      });
-      calc.querySelector('.mb-ec-level').addEventListener('change', function () {
-        partyLevel = Math.max(1, Math.min(20, parseInt(this.value) || cr.level));
-        renderCalcContent();
-      });
+      output.innerHTML =
+        '<strong>Budget:</strong> ' + budget + ' EV (' + st.partySize + ' heroes \u00d7 level ' + st.partyLevel + ')<br>' +
+        '<strong>Use ~' + count + '</strong> of this ' + Chronicle.escapeHtml(cr.organization || 'creature') + ' (EV ' + cr.ev + ' each = ' + totalEV + ' total EV)';
     };
 
-    renderCalcContent();
+    calc.querySelector('.mb-ec-party').addEventListener('input', function () {
+      st.partySize = Math.max(1, Math.min(10, parseInt(this.value) || 4));
+      refresh();
+    });
+    calc.querySelector('.mb-ec-level').addEventListener('input', function () {
+      st.partyLevel = Math.max(1, Math.min(20, parseInt(this.value) || cr.level));
+      refresh();
+    });
+
+    refresh();
     container.appendChild(calc);
   },
 
@@ -1422,69 +1495,257 @@ Chronicle.register('monster-builder', {
 
   // ── Save ────────────────────────────────────────────────
 
+  // _buildFieldsData assembles the fields_data map persisted on the entity.
+  // Chronicle reads custom fields under the `fields_data` key (B-2/B-3); the old
+  // key was silently dropped on write. free_strike_damage is included so a manual
+  // free-strike override round-trips instead of being recomputed on reload (B-10).
+  _buildFieldsData: function () {
+    var cr = this.creature;
+    return {
+      level: cr.level,
+      organization: cr.organization,
+      role: cr.role,
+      ev: cr.ev,
+      size: cr.size,
+      keywords: JSON.stringify(cr.keywords),
+      faction: cr.faction,
+      stamina: cr.stamina,
+      winded: cr.winded,
+      speed: cr.speed,
+      stability: cr.stability,
+      might: cr.might,
+      agility: cr.agility,
+      reason: cr.reason,
+      intuition: cr.intuition,
+      presence: cr.presence,
+      immunities: JSON.stringify(cr.immunities),
+      free_strike: cr.free_strike,
+      free_strike_damage: cr.free_strike_damage,
+      traits: JSON.stringify(cr.traits),
+      abilities_json: JSON.stringify(cr.abilities),
+      villain_actions_json: JSON.stringify(cr.villain_actions)
+    };
+  },
+
   _save: function () {
     var self = this;
-    var cr = this.creature;
 
-    // Check for blocking errors
     var errors = this._validate().filter(function (r) { return r.severity === 'error'; });
     if (errors.length > 0) {
       alert('Cannot save: ' + errors[0].message);
       return;
     }
-
-    if (!this.config.entityId || !this.config.campaignId) {
-      alert('No entity context. Save is not available in preview mode.');
+    if (!this.config.campaignId) {
+      alert('No campaign context. Saving a creature requires a campaign.');
       return;
     }
 
+    var fieldsData = this._buildFieldsData();
+    this._setSaveStatus('saving');
+
+    // PUT updates an existing entity; POST creates one when none is configured
+    // (B-4). Chronicle has no partial-update route for entities (B-3) — the old
+    // request method never matched a handler, so saves silently no-op'd.
+    var promise = this.config.entityId
+      ? this._updateEntity(fieldsData)
+      : this._createEntity(fieldsData);
+
+    promise.then(function () {
+      self._onSaveSuccess();
+    }).catch(function (err) {
+      self._setSaveStatus('error');
+      alert(err && err.message ? err.message : 'Could not save creature. Please try again.');
+    });
+  },
+
+  _updateEntity: function (fieldsData) {
+    var self = this;
     var url = '/api/v1/campaigns/' + this.config.campaignId + '/entities/' + this.config.entityId;
-
-    var payload = {
-      name: cr.name,
-      custom_fields: {
-        level: cr.level,
-        organization: cr.organization,
-        role: cr.role,
-        ev: cr.ev,
-        size: cr.size,
-        keywords: JSON.stringify(cr.keywords),
-        faction: cr.faction,
-        stamina: cr.stamina,
-        winded: cr.winded,
-        speed: cr.speed,
-        stability: cr.stability,
-        might: cr.might,
-        agility: cr.agility,
-        reason: cr.reason,
-        intuition: cr.intuition,
-        presence: cr.presence,
-        immunities: JSON.stringify(cr.immunities),
-        free_strike: cr.free_strike,
-        traits: JSON.stringify(cr.traits),
-        abilities_json: JSON.stringify(cr.abilities),
-        villain_actions_json: JSON.stringify(cr.villain_actions)
-      }
-    };
-
-    self._setSaveStatus('saving');
-    Chronicle.apiFetch(url, {
-      method: 'PATCH',
-      body: JSON.stringify(payload)
+    return Chronicle.apiFetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: this.creature.name,
+        type_label: 'drawsteel-creature',
+        is_private: this._entityIsPrivate,
+        fields_data: fieldsData
+      })
     }).then(function (res) {
       if (!res.ok) {
         return self._apiError(res, 'Could not save creature. Please try again.').then(function (msg) {
           throw new Error(msg);
         });
       }
-      Chronicle.markClean('monster-builder');
-      self._setSaveStatus('saved');
-      setTimeout(function () {
-        if (self._saveStatus === 'saved') self._setSaveStatus('clean');
-      }, 2000);
-    }).catch(function (err) {
-      self._setSaveStatus('error');
-      alert(err && err.message ? err.message : 'Could not save creature. Please try again.');
     });
+  },
+
+  // _createEntity resolves the Draw Steel creature entity type, POSTs a new
+  // entity, and stores the returned id so later saves switch to PUT (B-4).
+  _createEntity: function (fieldsData) {
+    var self = this;
+    return this._resolveEntityTypeId().then(function (typeId) {
+      var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
+      return Chronicle.apiFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: self.creature.name,
+          entity_type_id: typeId,
+          type_label: 'drawsteel-creature',
+          is_private: self._entityIsPrivate,
+          fields_data: fieldsData
+        })
+      });
+    }).then(function (res) {
+      if (!res.ok) {
+        return self._apiError(res, 'Could not create creature. Please try again.').then(function (msg) {
+          throw new Error(msg);
+        });
+      }
+      return res.json();
+    }).then(function (entity) {
+      if (entity && entity.id) self.config.entityId = entity.id;
+    });
+  },
+
+  // _resolveEntityTypeId looks up the numeric entity_type_id for Draw Steel
+  // creatures. type_label is display-only on Chronicle and does NOT select the
+  // type — without an explicit id the create handler defaults to the campaign's
+  // first type. We match the `drawsteel-creature` slug (falling back to the
+  // "Creature" name) and error clearly if the type isn't installed.
+  _resolveEntityTypeId: function () {
+    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entity-types';
+    return Chronicle.apiFetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('Could not load entity types for this campaign.');
+        return r.json();
+      })
+      .then(function (data) {
+        var types = (data && data.data) || (Array.isArray(data) ? data : []);
+        var match = null, i;
+        for (i = 0; i < types.length; i++) {
+          if (types[i].slug === 'drawsteel-creature') { match = types[i]; break; }
+        }
+        if (!match) {
+          for (i = 0; i < types.length; i++) {
+            if ((types[i].name || '').toLowerCase() === 'creature') { match = types[i]; break; }
+          }
+        }
+        if (!match) {
+          throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign. Install the Draw Steel package, then try again.');
+        }
+        return match.id;
+      });
+  },
+
+  // _onSaveSuccess marks the form clean and unlocks bestiary publishing.
+  _onSaveSuccess: function () {
+    var self = this;
+    Chronicle.markClean('monster-builder');
+    this._canPublish = true;
+    this._setSaveStatus('saved');
+    this._renderButtons();
+    setTimeout(function () {
+      if (self._saveStatus === 'saved') self._setSaveStatus('clean');
+    }, 2000);
+  },
+
+  // ── Bestiary publish (B-9) ───────────────────────────────
+
+  // _buildStatblock produces the freeform statblock object stored on the
+  // bestiary publication. It MUST include a top-level `name` (the server rejects
+  // a statblock without one) and carries level/organization/role so the bestiary
+  // can index and filter the publication.
+  _buildStatblock: function () {
+    var cr = this.creature;
+    return {
+      name: cr.name,
+      level: cr.level,
+      size: cr.size,
+      organization: cr.organization,
+      role: cr.role,
+      ev: cr.ev,
+      keywords: cr.keywords,
+      faction: cr.faction,
+      stamina: cr.stamina,
+      winded: cr.winded,
+      speed: cr.speed,
+      stability: cr.stability,
+      might: cr.might,
+      agility: cr.agility,
+      reason: cr.reason,
+      intuition: cr.intuition,
+      presence: cr.presence,
+      immunities: cr.immunities,
+      free_strike: cr.free_strike,
+      free_strike_damage: cr.free_strike_damage,
+      abilities: cr.abilities,
+      villain_actions: cr.villain_actions,
+      traits: cr.traits
+    };
+  },
+
+  // _publishToBestiary publishes the saved creature to the instance-level
+  // community bestiary (POST /bestiary — not under /campaigns). We omit
+  // system_id and send source_campaign_id/source_entity_id so the server stamps
+  // the campaign's real system slug authoritatively. visibility defaults to
+  // draft (private to the creator); the toggle switches it to published.
+  _publishToBestiary: function () {
+    var self = this;
+    if (!this._canPublish) {
+      alert('Save the creature before publishing it to the bestiary.');
+      return;
+    }
+    if (!this.creature.name || !this.creature.name.trim()) {
+      alert('The creature needs a name before it can be published.');
+      return;
+    }
+
+    var body = {
+      name: this.creature.name,
+      statblock_json: this._buildStatblock(),
+      visibility: this._publishVisibility || 'draft'
+    };
+    if (this.config.campaignId) body.source_campaign_id = this.config.campaignId;
+    if (this.config.entityId) body.source_entity_id = this.config.entityId;
+
+    this._setPublishMsg('Publishing…', '');
+    Chronicle.apiFetch('/bestiary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.status === 429) {
+        self._setPublishMsg('Bestiary publish limit reached (10 per hour). Please try again later.', 'error');
+        return null;
+      }
+      if (!res.ok) {
+        return self._apiError(res, 'Could not publish to the bestiary.').then(function (msg) {
+          self._setPublishMsg(msg, 'error');
+          return null;
+        });
+      }
+      return res.json().then(function (pub) {
+        var where = self._publishVisibility === 'published' ? 'the public bestiary' : 'My Creations (private)';
+        var name = (pub && pub.name) ? pub.name : self.creature.name;
+        self._setPublishMsg('Published "' + name + '" to ' + where + '.', 'ok');
+      });
+    }).catch(function (err) {
+      self._setPublishMsg(err && err.message ? err.message : 'Could not publish to the bestiary.', 'error');
+    });
+  },
+
+  // _setPublishMsg shows publish feedback just above the save bar. textContent
+  // keeps it XSS-safe regardless of the creature/publication name.
+  _setPublishMsg: function (msg, kind) {
+    if (!this._saveBarEl || !this._saveBarEl.parentNode) return;
+    var el = this.el.querySelector('.mb-publish-msg');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'mb-publish-msg';
+      this._saveBarEl.parentNode.insertBefore(el, this._saveBarEl);
+    }
+    el.className = 'mb-publish-msg' + (kind ? ' mb-publish-' + kind : '');
+    el.textContent = msg;
   }
 });
