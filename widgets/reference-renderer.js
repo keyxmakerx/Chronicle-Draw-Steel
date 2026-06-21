@@ -79,6 +79,17 @@ var DrawSteelRefRenderer = (function () {
     });
   };
 
+  // applyToContainer resolves every {@category term} reference inside an
+  // already-rendered DOM element, in place, swapping the tokens for ref spans.
+  // Callers (e.g. the character sheet) build escaped HTML, insert it, then call
+  // this to light up references. Guarded: a no-op until the glossary has loaded
+  // (and renderText itself re-checks _loaded), so a failed load degrades to
+  // plain tokens rather than throwing.
+  RefRenderer.prototype.applyToContainer = function (el) {
+    if (!el || !this._loaded) return;
+    el.innerHTML = this.renderText(el.innerHTML);
+  };
+
   function _safeClass(str) {
     return str.replace(/[^a-z0-9-]/g, '');
   }

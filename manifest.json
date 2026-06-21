@@ -227,12 +227,13 @@
     }
   ],
 
-  "_renderers_pending_ch4_5": {
-    "_note": "Placeholder for the page-level entity-show renderer registration. Rename this key to 'renderers' once Chronicle CH4.5 (manifest-driven renderer registration) ships on main. Underscore prefix keeps current chronicle hosts from erroring on an unknown manifest field.",
-    "renderers": {
-      "drawsteel-character": { "widget": "character-sheet" }
+  "renderers": [
+    {
+      "slug": "drawsteel-character",
+      "widget": "character-sheet",
+      "description": "Full Draw Steel hero character sheet on the Hero entity show page."
     }
-  },
+  ],
 
   "text_renderers": [
     {
