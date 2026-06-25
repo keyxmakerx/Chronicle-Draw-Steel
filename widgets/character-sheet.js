@@ -77,14 +77,22 @@
     return v;
   }
 
+  // scalar unwraps Foundry's power-roll object shape to a plain value. The
+  // Foundry sync writes characteristics as { value, dice, edges, banes } objects
+  // (not bare numbers), so num()/isNum() must read .value or every stat reads 0.
+  function scalar(v) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && v.value !== undefined) return v.value;
+    return v;
+  }
+
   function num(data, key, fallback) {
-    var v = f(data, key, fallback);
+    var v = scalar(f(data, key, fallback));
     var n = Number(v);
     return isNaN(n) ? fallback : n;
   }
 
   function isNum(data, key) {
-    var v = f(data, key, null);
+    var v = scalar(f(data, key, null));
     if (v == null) return false;
     return !isNaN(Number(v));
   }
