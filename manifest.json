@@ -231,7 +231,12 @@
     {
       "slug": "drawsteel-character",
       "widget": "character-sheet",
-      "description": "Full Draw Steel hero character sheet on the Hero entity show page."
+      "description": "Full Draw Steel hero character sheet on the Hero entity show page (bespoke drawsteel-character slug)."
+    },
+    {
+      "preset_category": "character",
+      "widget": "character-sheet",
+      "description": "System-agnostic binding: render the Draw Steel hero sheet on ANY entity type whose preset_category is 'character' (e.g. a 'hero' or 'character' slug type adopted by the player-character addon), not only the bespoke drawsteel-character slug."
     }
   ],
 
