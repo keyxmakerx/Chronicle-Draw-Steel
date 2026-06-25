@@ -785,15 +785,15 @@
       '.cs-bg__read { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; cursor:pointer; font:inherit; font-size:13px; font-weight:600; color:var(--color-accent,#6366f1); }',
       '.cs-bg__read:hover { text-decoration:underline; }',
       // ── Background reading view (overlay) — typeset lore page, theme-aware ──
-      '.cs-overlay__panel--reading { max-width:min(94vw,720px); width:100%; max-height:90vh; padding:30px 44px 38px; background:radial-gradient(120% 90% at 50% 0%,#fbf7ee,#f1e9db); border:1px solid #e7ddc7; color:#2c271e; }',
+      '.cs-overlay__panel--reading { max-width:min(96vw,1080px); width:100%; max-height:94vh; min-height:min(88vh,600px); padding:44px clamp(24px,7vw,110px) 56px; background:radial-gradient(120% 80% at 50% 0%,#fbf7ee,#f1e9db); border:1px solid #e7ddc7; color:#2c271e; }',
       '.cs-overlay__panel--reading.cs-reading-dark { background:#16191f; border-color:#232831; color:#ece7da; }',
       '.cs-reading__back { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; margin-bottom:16px; cursor:pointer; font:inherit; font-size:12px; font-weight:600; color:#7c3aed; }',
       '.cs-reading-dark .cs-reading__back { color:#bda6f4; }',
       '.cs-reading__eyebrow { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#b0915c; text-align:center; }',
       '.cs-reading-dark .cs-reading__eyebrow { color:#cdb06b; }',
-      '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:28px; font-weight:700; text-align:center; margin:3px 0 20px; color:#211c14; }',
+      '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:32px; font-weight:700; text-align:center; margin:4px 0 24px; color:#211c14; }',
       '.cs-reading-dark .cs-reading__title { color:#f7f1e3; }',
-      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:16px; line-height:1.9; max-width:520px; margin:0 auto; white-space:pre-wrap; }',
+      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; }',
       '.cs-reading__body::first-letter { float:left; font-family:Georgia,serif; font-weight:700; font-size:52px; line-height:0.72; padding:7px 10px 0 0; color:#7c3aed; }',
       '.cs-reading-dark .cs-reading__body::first-letter { color:#bda6f4; }',
       // ── Reserved Option-C block slots — hidden until Chronicle hydrates ──
