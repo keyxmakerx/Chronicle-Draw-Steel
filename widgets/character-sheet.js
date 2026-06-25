@@ -328,10 +328,70 @@
     return '<ul class="cs-inventory-list">' + rows + '</ul>';
   }
 
+  // rNotes renders the Background section as a TEASER + "Read full story" — the
+  // full prose opens in the reading-view overlay (openReadingView). Large lore
+  // shouldn't accordion-shove the sheet; it gets its own typeset page instead.
   function rNotes(def, data) {
     var notes = f(data, 'notes', '');
     if (!notes) return '';
-    return '<div class="cs-notes-body">' + refText(notes) + '</div>';
+    return '<div class="cs-bg">' +
+      '<p class="cs-bg__teaser">' + esc(teaser(notes, 180)) + '</p>' +
+      '<button type="button" class="cs-bg__read" data-cs-read-story>Read full story &rsaquo;</button>' +
+    '</div>';
+  }
+
+  // teaser flattens {@cat term|disp} tokens to plain words, collapses whitespace,
+  // and trims to ~n chars on a word boundary for the Background preview line.
+  function teaser(s, n) {
+    s = String(s).replace(/\{@\w+\s+([^|}]+)(?:\|([^}]+))?\}/g, function (_m, term, disp) { return (disp || term).trim(); });
+    s = s.replace(/\s+/g, ' ').trim();
+    if (s.length <= n) return s;
+    var cut = s.slice(0, n), sp = cut.lastIndexOf(' ');
+    if (sp > n * 0.6) cut = cut.slice(0, sp);
+    return cut + '…';
+  }
+
+  // readingIsDark picks the reading-view palette (parchment vs ink-blue) by the
+  // page background's luminance, so the lore page tracks Chronicle's light/dark
+  // theme without needing to know the theme toggle's mechanism.
+  function readingIsDark() {
+    var c = (Chronicle.surface && Chronicle.surface.cssVar) ? Chronicle.surface.cssVar('--color-bg-primary', '') : '';
+    if (!c) { try { c = getComputedStyle(document.body).backgroundColor; } catch (e) { c = ''; } }
+    c = String(c).trim();
+    var r, g, b, m;
+    if (c.charAt(0) === '#') {
+      if (c.length === 4) { r = parseInt(c.charAt(1) + c.charAt(1), 16); g = parseInt(c.charAt(2) + c.charAt(2), 16); b = parseInt(c.charAt(3) + c.charAt(3), 16); }
+      else { r = parseInt(c.substr(1, 2), 16); g = parseInt(c.substr(3, 2), 16); b = parseInt(c.substr(5, 2), 16); }
+    } else if ((m = c.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/))) { r = +m[1]; g = +m[2]; b = +m[3]; }
+    else { return false; }
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.45;
+  }
+
+  // renderReadingView builds the lore page node (eyebrow + serif title + drop-cap
+  // body) with its Back control wired to pop the overlay.
+  function renderReadingView(title, prose) {
+    var node = document.createElement('div');
+    node.className = 'cs-reading';
+    node.innerHTML =
+      '<button type="button" class="cs-reading__back" data-cs-reading-back>&lsaquo; Back to sheet</button>' +
+      '<div class="cs-reading__eyebrow">Background</div>' +
+      '<h1 class="cs-reading__title">' + esc(title || 'Background') + '</h1>' +
+      '<div class="cs-reading__body">' + refText(prose) + '</div>';
+    var back = node.querySelector('[data-cs-reading-back]');
+    if (back) back.addEventListener('click', function () { Chronicle.surface.overlay.pop(); });
+    return node;
+  }
+
+  // openReadingView pushes the lore page as a full overlay, themed light/dark.
+  // The page dims behind it; Escape / backdrop / Back all return to the sheet.
+  function openReadingView(title, prose) {
+    if (!prose || !Chronicle.surface || !Chronicle.surface.overlay) return;
+    Chronicle.surface.overlay.push(renderReadingView(title, prose), {
+      transition: 'scale-fade',
+      label: title || 'Background',
+      panelClass: 'cs-overlay__panel--reading' + (readingIsDark() ? ' cs-reading-dark' : '')
+    });
   }
 
   // abilityRow — the in-box ONE-LINER: star (signature) + name + a muted glance
@@ -490,9 +550,10 @@
     if (hasInventory(data)) row3.push({ width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] });
     if (row3.length) rows.push({ columns: row3 });
 
-    // Row 4 — notes (12).
+    // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
+    // "Read full story" that opens the reading-view overlay (not an accordion).
     if (hasNotes(data)) {
-      rows.push({ columns: [ { width: 12, boxes: [ boxDef('ds-notes', 'Notes', 'ds-notes', 'collapsed') ] } ] });
+      rows.push({ columns: [ { width: 12, boxes: [ boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true }) ] } ] });
     }
 
     return { provider: { key: 'drawsteel:entity:' + (data.entityId || 'anon'), seed: data }, rows: rows };
@@ -554,7 +615,11 @@
       });
       return true;
     }
-    inst._onAbilityClick = function (e) { if (openFrom(e.target)) e.preventDefault(); };
+    inst._onAbilityClick = function (e) {
+      var rs = (e.target && e.target.closest) ? e.target.closest('[data-cs-read-story]') : null;
+      if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'notes', '')); return; }
+      if (openFrom(e.target)) e.preventDefault();
+    };
     inst._onAbilityKey = function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var node = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
@@ -715,8 +780,22 @@
       '.cs-inventory-item { padding:8px 10px; background:var(--color-bg-primary,#f9fafb); border-radius:6px; font-size:13px; }',
       '.cs-inventory-link { color:var(--color-accent,#6366f1); text-decoration:none; }',
       '.cs-inventory-link:hover { text-decoration:underline; }',
-      // ── Notes ──
-      '.cs-notes-body { font-size:13px; color:var(--color-text-body,#374151); white-space:pre-wrap; line-height:1.6; }',
+      // ── Background (teaser in the box) ──
+      '.cs-bg__teaser { font-size:13px; line-height:1.6; color:var(--color-text-secondary,#6b7280); margin:0 0 10px; }',
+      '.cs-bg__read { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; cursor:pointer; font:inherit; font-size:13px; font-weight:600; color:var(--color-accent,#6366f1); }',
+      '.cs-bg__read:hover { text-decoration:underline; }',
+      // ── Background reading view (overlay) — typeset lore page, theme-aware ──
+      '.cs-overlay__panel--reading { max-width:min(94vw,720px); width:100%; max-height:90vh; padding:30px 44px 38px; background:radial-gradient(120% 90% at 50% 0%,#fbf7ee,#f1e9db); border:1px solid #e7ddc7; color:#2c271e; }',
+      '.cs-overlay__panel--reading.cs-reading-dark { background:#16191f; border-color:#232831; color:#ece7da; }',
+      '.cs-reading__back { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; margin-bottom:16px; cursor:pointer; font:inherit; font-size:12px; font-weight:600; color:#7c3aed; }',
+      '.cs-reading-dark .cs-reading__back { color:#bda6f4; }',
+      '.cs-reading__eyebrow { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#b0915c; text-align:center; }',
+      '.cs-reading-dark .cs-reading__eyebrow { color:#cdb06b; }',
+      '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:28px; font-weight:700; text-align:center; margin:3px 0 20px; color:#211c14; }',
+      '.cs-reading-dark .cs-reading__title { color:#f7f1e3; }',
+      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:16px; line-height:1.9; max-width:520px; margin:0 auto; white-space:pre-wrap; }',
+      '.cs-reading__body::first-letter { float:left; font-family:Georgia,serif; font-weight:700; font-size:52px; line-height:0.72; padding:7px 10px 0 0; color:#7c3aed; }',
+      '.cs-reading-dark .cs-reading__body::first-letter { color:#bda6f4; }',
       // ── Reserved Option-C block slots — hidden until Chronicle hydrates ──
       '.cs-slot:empty { display:none; }',
       // ── Empty / error ──
