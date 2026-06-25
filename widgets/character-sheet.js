@@ -253,10 +253,10 @@
     function groupHtml(t) {
       if (!groups[t] || !groups[t].length) return '';
       var label = ABILITY_TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1));
-      var cards = groups[t].map(function (g) { return abilityCardCompact(g.a, g.idx); }).join('');
+      var rows = groups[t].map(function (g) { return abilityRow(g.a, g.idx); }).join('');
       return '<div class="cs-ability-group">' +
         '<h4 class="cs-ability-group-title">' + esc(label) + '</h4>' +
-        '<div class="cs-ability-grid">' + cards + '</div>' +
+        '<div class="cs-ability-list">' + rows + '</div>' +
       '</div>';
     }
 
@@ -328,47 +328,105 @@
     return '<ul class="cs-inventory-list">' + rows + '</ul>';
   }
 
+  // rNotes renders the Background section as a TEASER + "Read full story" — the
+  // full prose opens in the reading-view overlay (openReadingView). Large lore
+  // shouldn't accordion-shove the sheet; it gets its own typeset page instead.
   function rNotes(def, data) {
     var notes = f(data, 'notes', '');
     if (!notes) return '';
-    return '<div class="cs-notes-body">' + refText(notes) + '</div>';
+    return '<div class="cs-bg">' +
+      '<p class="cs-bg__teaser">' + esc(teaser(notes, 180)) + '</p>' +
+      '<button type="button" class="cs-bg__read" data-cs-read-story>Read full story &rsaquo;</button>' +
+    '</div>';
   }
 
-  // abilityCardCompact — the in-box card: identity + keywords + a short meta
-  // line. Clicking it opens the full power-roll overlay (delegated handler).
-  function abilityCardCompact(a, idx) {
+  // teaser flattens {@cat term|disp} tokens to plain words, collapses whitespace,
+  // and trims to ~n chars on a word boundary for the Background preview line.
+  function teaser(s, n) {
+    s = String(s).replace(/\{@\w+\s+([^|}]+)(?:\|([^}]+))?\}/g, function (_m, term, disp) { return (disp || term).trim(); });
+    s = s.replace(/\s+/g, ' ').trim();
+    if (s.length <= n) return s;
+    var cut = s.slice(0, n), sp = cut.lastIndexOf(' ');
+    if (sp > n * 0.6) cut = cut.slice(0, sp);
+    return cut + '…';
+  }
+
+  // readingIsDark picks the reading-view palette (parchment vs ink-blue) by the
+  // page background's luminance, so the lore page tracks Chronicle's light/dark
+  // theme without needing to know the theme toggle's mechanism.
+  function readingIsDark() {
+    var c = (Chronicle.surface && Chronicle.surface.cssVar) ? Chronicle.surface.cssVar('--color-bg-primary', '') : '';
+    if (!c) { try { c = getComputedStyle(document.body).backgroundColor; } catch (e) { c = ''; } }
+    c = String(c).trim();
+    var r, g, b, m;
+    if (c.charAt(0) === '#') {
+      if (c.length === 4) { r = parseInt(c.charAt(1) + c.charAt(1), 16); g = parseInt(c.charAt(2) + c.charAt(2), 16); b = parseInt(c.charAt(3) + c.charAt(3), 16); }
+      else { r = parseInt(c.substr(1, 2), 16); g = parseInt(c.substr(3, 2), 16); b = parseInt(c.substr(5, 2), 16); }
+    } else if ((m = c.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/))) { r = +m[1]; g = +m[2]; b = +m[3]; }
+    else { return false; }
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.45;
+  }
+
+  // renderReadingView builds the lore page node (eyebrow + serif title + drop-cap
+  // body) with its Back control wired to pop the overlay.
+  function renderReadingView(title, prose) {
+    var node = document.createElement('div');
+    node.className = 'cs-reading';
+    node.innerHTML =
+      '<button type="button" class="cs-reading__back" data-cs-reading-back>&lsaquo; Back to sheet</button>' +
+      '<div class="cs-reading__eyebrow">Background</div>' +
+      '<h1 class="cs-reading__title">' + esc(title || 'Background') + '</h1>' +
+      '<div class="cs-reading__body">' + refText(prose) + '</div>';
+    var back = node.querySelector('[data-cs-reading-back]');
+    if (back) back.addEventListener('click', function () { Chronicle.surface.overlay.pop(); });
+    return node;
+  }
+
+  // openReadingView pushes the lore page as a full overlay, themed light/dark.
+  // The page dims behind it; Escape / backdrop / Back all return to the sheet.
+  function openReadingView(title, prose) {
+    if (!prose || !Chronicle.surface || !Chronicle.surface.overlay) return;
+    Chronicle.surface.overlay.push(renderReadingView(title, prose), {
+      transition: 'scale-fade',
+      label: title || 'Background',
+      panelClass: 'cs-overlay__panel--reading' + (readingIsDark() ? ' cs-reading-dark' : '')
+    });
+  }
+
+  // abilityRow — one accordion item: a ONE-LINER button (star + name + a muted
+  // glance of distance / power-roll + a chevron) and a collapsed detail panel
+  // below it. Clicking the row expands the detail IN PLACE (no overlay); the
+  // panel is filled lazily on first open by attachInteractions. Native <button>
+  // so Enter/Space activate it for free.
+  function abilityRow(a, idx) {
     var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ability-star">&#9733;</span>' : '';
-    var keywords = (a.keywords && a.keywords.length)
-      ? '<div class="cs-ability-keywords">' + a.keywords.map(function (k) { return '<span class="cs-tag">' + esc(String(k)) + '</span>'; }).join('') + '</div>'
+    var star = a.type === 'signature' ? '<span class="cs-ability-row__star" aria-hidden="true">&#9733;</span>' : '';
+    var glance = [];
+    if (a.distance) glance.push(esc(String(a.distance)));
+    if (a.power_roll) glance.push(esc(String(a.power_roll)));
+    var glanceHtml = glance.length
+      ? '<span class="cs-ability-row__meta">' + glance.join(' &middot; ') + '</span>'
       : '';
-    var meta = [];
-    if (a.distance) meta.push(esc(String(a.distance)));
-    if (a.target) meta.push(esc(String(a.target)));
-    if (a.power_roll) meta.push(esc(String(a.power_roll)));
-    var metaHtml = meta.length ? '<div class="cs-ability-meta">' + meta.join(' &bull; ') + '</div>' : '';
 
-    return '<article class="cs-ability cs-ability--clickable" data-ds-ability="' + idx + '"' +
-        ' role="button" tabindex="0" aria-label="' + name + ' — view details">' +
-      '<header class="cs-ability-header">' + star +
-        '<span class="cs-ability-name">' + name + '</span>' +
-        '<span class="cs-ability-more" aria-hidden="true">Details &rsaquo;</span>' +
-      '</header>' +
-      keywords + metaHtml +
-    '</article>';
+    return '<div class="cs-ability-item">' +
+      '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
+          ' aria-expanded="false" aria-label="' + name + ' — toggle details">' +
+        star +
+        '<span class="cs-ability-row__name">' + name + '</span>' +
+        glanceHtml +
+        '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
+      '</button>' +
+      '<div class="cs-ability-acc" data-ds-acc></div>' +
+    '</div>';
   }
 
-  // renderAbilityDetail — the zoom DESTINATION: a full, expansive read of one
-  // ability. The card zooms (container-transform) into this over the dimmed
-  // sheet, so the content sits in a comfortable centered measure that reads
-  // well whether the ability is data-rich or sparse — never a tiny card lost
-  // in the wide panel, never stretched thin. Text fields (tiers / trigger /
-  // effect) run through refText so {@…} tokens light up. READ-ONLY: no controls
-  // that write (Foundry is the source of truth).
-  function renderAbilityDetail(a) {
-    var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ad__star" aria-hidden="true">&#9733;</span>' : '';
-    var typeTag = a.type ? '<span class="cs-ad__type">' + esc(String(a.type)) + '</span>' : '';
+  // renderAbilityBody — the inline accordion detail for one ability: keywords +
+  // a stat rail (distance / target / spend) + the power-roll band + the tinted
+  // miss→partial→hit tier ladder + trigger / effect. No banner — the one-liner
+  // row above already shows the name. Text fields run through refText so {@…}
+  // tokens light up. READ-ONLY (Foundry is the source of truth).
+  function renderAbilityBody(a) {
     var keywords = (a.keywords && a.keywords.length)
       ? '<div class="cs-ad__keywords">' + a.keywords.map(function (k) {
           return '<span class="cs-tag">' + esc(String(k)) + '</span>';
@@ -405,15 +463,9 @@
     var trigger = a.trigger ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Trigger</span><div class="cs-ad__block-v">' + refText(a.trigger) + '</div></div>' : '';
     var effect = a.effect ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Effect</span><div class="cs-ad__block-v">' + refText(a.effect) + '</div></div>' : '';
 
-    return '<div class="cs-ad">' +
-      '<header class="cs-ad__banner">' +
-        '<div class="cs-ad__title">' + star + '<span class="cs-ad__name">' + name + '</span>' + typeTag + '</div>' +
-        keywords +
-      '</header>' +
-      '<div class="cs-ad__body">' +
-        statRail + prHtml + ladder + trigger + effect +
-      '</div>' +
-    '</div>';
+    return '<div class="cs-ad cs-ad--inline"><div class="cs-ad__body">' +
+      keywords + statRail + prHtml + ladder + trigger + effect +
+    '</div></div>';
   }
 
   // ── content predicates (decide which optional boxes the schema includes) ──
@@ -490,9 +542,10 @@
     if (hasInventory(data)) row3.push({ width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] });
     if (row3.length) rows.push({ columns: row3 });
 
-    // Row 4 — notes (12).
+    // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
+    // "Read full story" that opens the reading-view overlay (not an accordion).
     if (hasNotes(data)) {
-      rows.push({ columns: [ { width: 12, boxes: [ boxDef('ds-notes', 'Notes', 'ds-notes', 'collapsed') ] } ] });
+      rows.push({ columns: [ { width: 12, boxes: [ boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true }) ] } ] });
     }
 
     return { provider: { key: 'drawsteel:entity:' + (data.entityId || 'anon'), seed: data }, rows: rows };
@@ -534,34 +587,71 @@
     });
   }
 
-  // attachAbilityOverlay wires ONE delegated click/keydown listener on the
-  // mounted root: a click on a [data-ds-ability] card pushes the power-roll
-  // overlay. No per-card listeners (cards are re-rendered by the frame).
-  function attachAbilityOverlay(inst, el, data) {
+  // reduced reflects the OS reduce-motion preference (via the frame, with a
+  // direct fallback) so the accordion snaps instead of animating when asked.
+  function reduced() {
+    if (Chronicle.surface && Chronicle.surface.reducedMotion) return Chronicle.surface.reducedMotion();
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  // expandAcc / collapseAcc animate a panel's height (0 ↔ content) with the inner
+  // detail fading in. After opening, height is set to auto so the content can
+  // reflow; on close it stays at 0 but the content is kept for an instant reopen.
+  function expandAcc(row, acc) {
+    row.setAttribute('aria-expanded', 'true');
+    var inner = acc.firstChild;
+    if (reduced()) { acc.style.height = 'auto'; if (inner) inner.style.opacity = '1'; return; }
+    var h = inner ? inner.offsetHeight : acc.scrollHeight;
+    acc.style.height = '0px';
+    acc.style.transition = 'height 240ms cubic-bezier(.4,0,.2,1)';
+    if (inner) { inner.style.opacity = '0'; inner.style.transition = 'opacity 220ms ease 40ms'; }
+    requestAnimationFrame(function () { acc.style.height = h + 'px'; if (inner) inner.style.opacity = '1'; });
+    var done = function (e) {
+      if (e && (e.target !== acc || e.propertyName !== 'height')) return;
+      acc.style.height = 'auto'; acc.style.transition = '';
+      acc.removeEventListener('transitionend', done);
+    };
+    acc.addEventListener('transitionend', done);
+  }
+  function collapseAcc(row, acc) {
+    row.setAttribute('aria-expanded', 'false');
+    var inner = acc.firstChild;
+    if (reduced()) { acc.style.height = '0px'; return; }
+    acc.style.height = acc.offsetHeight + 'px';
+    acc.style.transition = 'height 220ms cubic-bezier(.4,0,.2,1)';
+    if (inner) inner.style.opacity = '0';
+    requestAnimationFrame(function () { acc.style.height = '0px'; });
+  }
+
+  // attachInteractions wires ONE delegated click listener on the mounted root:
+  //   • a [data-ds-ability] one-liner row toggles its inline accordion detail
+  //     (the detail body is built lazily on first open)
+  //   • the [data-cs-read-story] button opens the backstory reading view
+  // Rows are native <button>s, so Enter/Space activate them without a separate
+  // keydown handler. No per-card listeners (the frame re-renders box bodies).
+  function attachInteractions(inst, el, data) {
     var abilities = parseAbilities(data);
-    function openFrom(target) {
-      var node = (target && target.closest) ? target.closest('[data-ds-ability]') : null;
-      if (!node) return false;
-      var idx = parseInt(node.getAttribute('data-ds-ability'), 10);
-      var a = abilities[idx];
-      if (!a) return false;
-      // launch() grows the overlay FROM the clicked card (container-transform /
-      // FLIP) over the dimmed sheet, rather than a context-free scale-fade. The
-      // mini card and the full panel are the same ability, so the zoom reads as
-      // "this card opened up". Reduced-motion is handled inside the frame.
-      Chronicle.surface.launch(node, renderAbilityDetail(a), {
-        label: (a.name || 'Ability'), panelClass: 'cs-overlay__panel--full'
-      });
-      return true;
+    function toggleAbility(row) {
+      var item = row.parentNode;
+      var acc = item ? item.querySelector('[data-ds-acc]') : null;
+      var a = abilities[parseInt(row.getAttribute('data-ds-ability'), 10)];
+      if (!acc || !a) return;
+      if (row.getAttribute('aria-expanded') === 'true') { collapseAcc(row, acc); return; }
+      if (!acc.firstChild) {
+        var inner = document.createElement('div');
+        inner.className = 'cs-ability-acc__inner';
+        inner.innerHTML = renderAbilityBody(a);
+        acc.appendChild(inner);
+      }
+      expandAcc(row, acc);
     }
-    inst._onAbilityClick = function (e) { if (openFrom(e.target)) e.preventDefault(); };
-    inst._onAbilityKey = function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      var node = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
-      if (node && openFrom(e.target)) e.preventDefault();
+    inst._onAbilityClick = function (e) {
+      var rs = (e.target && e.target.closest) ? e.target.closest('[data-cs-read-story]') : null;
+      if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'notes', '')); return; }
+      var row = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
+      if (row) { e.preventDefault(); toggleAbility(row); }
     };
     el.addEventListener('click', inst._onAbilityClick);
-    el.addEventListener('keydown', inst._onAbilityKey);
   }
 
   function mountSheet(inst, el, data) {
@@ -576,7 +666,7 @@
     el.innerHTML = '';
     Chronicle.surface.mount(el, buildSchema(data));
     appendBlockSlots(el, data);
-    attachAbilityOverlay(inst, el, data);
+    attachInteractions(inst, el, data);
   }
 
   // ── API fetch fallback (pre-CH4.5 embed without data attributes) ───
@@ -655,27 +745,27 @@
       '.cs-damage-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); width:100px; flex-shrink:0; padding-top:4px; }',
       '.cs-damage-list { display:flex; flex-wrap:wrap; gap:6px; flex:1; }',
       // ── Abilities ──
-      '.cs-ability-group { margin-top:12px; }',
+      '.cs-ability-group { margin-top:14px; }',
       '.cs-ability-group:first-child { margin-top:0; }',
-      '.cs-ability-group-title { font-size:13px; font-weight:600; color:var(--color-accent,#6366f1); margin:0 0 8px; padding-bottom:4px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ability-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }',
-      '.cs-ability { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:10px 12px; }',
-      '.cs-ability--clickable { cursor:pointer; transition:box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease; }',
-      '.cs-ability--clickable:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); transform:translateY(-1px); border-color:var(--color-accent,#6366f1); }',
-      '.cs-ability--clickable:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
-      '.cs-ability-header { display:flex; align-items:center; gap:6px; margin-bottom:4px; }',
-      '.cs-ability-star { color:var(--color-accent,#6366f1); font-size:14px; }',
-      '.cs-ability-name { font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.cs-ability-more { margin-left:auto; font-size:12px; font-weight:500; color:var(--color-text-muted,#9ca3af); flex-shrink:0; }',
-      '.cs-ability--clickable:hover .cs-ability-more { color:var(--color-accent,#6366f1); }',
-      '.cs-ability-keywords { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }',
-      '.cs-ability-meta { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      '.cs-ability-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:10px; margin:6px 0; }',
-      '.cs-tier { font-size:13px; line-height:1.5; }',
-      '.cs-tier-label { display:inline-block; min-width:38px; font-weight:600; color:var(--color-text-secondary,#6b7280); font-variant-numeric:tabular-nums; }',
-      '.cs-ability-effect { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
-      '.cs-ability-trigger { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
-      '.cs-ability-spend { font-size:12px; font-weight:600; color:var(--color-accent,#6366f1); margin-top:4px; }',
+      '.cs-ability-group-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin:0 0 6px; }',
+      // One-liner ability rows: name + muted glance + chevron; click zooms the full card.
+      '.cs-ability-list { display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ability-item { border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ability-list .cs-ability-item:last-child { border-bottom:0; }',
+      '.cs-ability-row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; background:var(--color-bg-primary,#f9fafb); border:0; font:inherit; cursor:pointer; transition:background 120ms ease; }',
+      '.cs-ability-row:hover { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
+      '.cs-ability-row[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
+      '.cs-ability-row:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:-2px; }',
+      '.cs-ability-row__star { flex:none; color:var(--color-accent,#6366f1); font-size:13px; }',
+      '.cs-ability-row__name { flex:none; font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
+      '.cs-ability-row__meta { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.cs-ability-row__more { flex:none; margin-left:auto; font-size:18px; line-height:1; color:var(--color-text-muted,#9ca3af); transition:color 150ms ease, transform 200ms cubic-bezier(.4,0,.2,1); }',
+      '.cs-ability-row:not([aria-expanded="true"]):hover .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:translateX(2px); }',
+      '.cs-ability-row[aria-expanded="true"] .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:rotate(90deg); }',
+      '.cs-ability-acc { height:0; overflow:hidden; }',
+      '.cs-ability-acc__inner { opacity:0; }',
+      '.cs-ad--inline { max-width:none; margin:0; padding:12px 14px 16px; border-top:1px solid var(--color-border-light,#f3f4f6); background:rgba(var(--color-accent-rgb,99,102,241),0.03); }',
+      '.cs-ad--inline .cs-ad__keywords { margin-top:0; }',
       // ── Ability detail overlay — the zoom destination (expansive, centered) ──
       '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
       '.cs-ad__banner { padding:22px 26px; border-radius:14px; margin-bottom:18px; background:linear-gradient(135deg,rgba(var(--color-accent-rgb,99,102,241),0.14),rgba(var(--color-accent-rgb,99,102,241),0.03)); border:1px solid rgba(var(--color-accent-rgb,99,102,241),0.18); }',
@@ -722,8 +812,22 @@
       '.cs-inventory-item { padding:8px 10px; background:var(--color-bg-primary,#f9fafb); border-radius:6px; font-size:13px; }',
       '.cs-inventory-link { color:var(--color-accent,#6366f1); text-decoration:none; }',
       '.cs-inventory-link:hover { text-decoration:underline; }',
-      // ── Notes ──
-      '.cs-notes-body { font-size:13px; color:var(--color-text-body,#374151); white-space:pre-wrap; line-height:1.6; }',
+      // ── Background (teaser in the box) ──
+      '.cs-bg__teaser { font-size:13px; line-height:1.6; color:var(--color-text-secondary,#6b7280); margin:0 0 10px; }',
+      '.cs-bg__read { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; cursor:pointer; font:inherit; font-size:13px; font-weight:600; color:var(--color-accent,#6366f1); }',
+      '.cs-bg__read:hover { text-decoration:underline; }',
+      // ── Background reading view (overlay) — typeset lore page, theme-aware ──
+      '.cs-overlay__panel--reading { max-width:min(96vw,1080px); width:100%; max-height:94vh; min-height:min(88vh,600px); padding:44px clamp(24px,7vw,110px) 56px; background:radial-gradient(120% 80% at 50% 0%,#fbf7ee,#f1e9db); border:1px solid #e7ddc7; color:#2c271e; }',
+      '.cs-overlay__panel--reading.cs-reading-dark { background:#16191f; border-color:#232831; color:#ece7da; }',
+      '.cs-reading__back { display:inline-flex; align-items:center; gap:5px; background:none; border:0; padding:0; margin-bottom:16px; cursor:pointer; font:inherit; font-size:12px; font-weight:600; color:#7c3aed; }',
+      '.cs-reading-dark .cs-reading__back { color:#bda6f4; }',
+      '.cs-reading__eyebrow { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#b0915c; text-align:center; }',
+      '.cs-reading-dark .cs-reading__eyebrow { color:#cdb06b; }',
+      '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:32px; font-weight:700; text-align:center; margin:4px 0 24px; color:#211c14; }',
+      '.cs-reading-dark .cs-reading__title { color:#f7f1e3; }',
+      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; }',
+      '.cs-reading__body::first-letter { float:left; font-family:Georgia,serif; font-weight:700; font-size:52px; line-height:0.72; padding:7px 10px 0 0; color:#7c3aed; }',
+      '.cs-reading-dark .cs-reading__body::first-letter { color:#bda6f4; }',
       // ── Reserved Option-C block slots — hidden until Chronicle hydrates ──
       '.cs-slot:empty { display:none; }',
       // ── Empty / error ──
@@ -738,7 +842,6 @@
       '  .cs-stat-value { font-size:18px; }',
       '  .cs-header { flex-direction:column; align-items:flex-start; }',
       '  .cs-portrait { width:64px; height:64px; }',
-      '  .cs-ability-grid { grid-template-columns:1fr; }',
       '  .cs-damage-row { flex-direction:column; gap:4px; }',
       '  .cs-damage-label { width:auto; padding-top:0; }',
       '}'
