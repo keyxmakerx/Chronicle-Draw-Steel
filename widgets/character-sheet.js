@@ -358,45 +358,61 @@
     '</article>';
   }
 
-  // renderAbilityDetail — the overlay body: the full power-roll card. Text
-  // fields (tiers / trigger / effect) run through refText so {@…} tokens light up.
+  // renderAbilityDetail — the zoom DESTINATION: a full, expansive read of one
+  // ability. The card zooms (container-transform) into this over the dimmed
+  // sheet, so the content sits in a comfortable centered measure that reads
+  // well whether the ability is data-rich or sparse — never a tiny card lost
+  // in the wide panel, never stretched thin. Text fields (tiers / trigger /
+  // effect) run through refText so {@…} tokens light up. READ-ONLY: no controls
+  // that write (Foundry is the source of truth).
   function renderAbilityDetail(a) {
     var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ability-star">&#9733;</span>' : '';
-    var typeTag = a.type ? '<span class="cs-tag cs-tag-level">' + esc(String(a.type)) + '</span>' : '';
+    var star = a.type === 'signature' ? '<span class="cs-ad__star" aria-hidden="true">&#9733;</span>' : '';
+    var typeTag = a.type ? '<span class="cs-ad__type">' + esc(String(a.type)) + '</span>' : '';
     var keywords = (a.keywords && a.keywords.length)
-      ? '<div class="cs-ability-keywords">' + a.keywords.map(function (k) { return '<span class="cs-tag">' + esc(String(k)) + '</span>'; }).join('') + '</div>'
+      ? '<div class="cs-ad__keywords">' + a.keywords.map(function (k) {
+          return '<span class="cs-tag">' + esc(String(k)) + '</span>';
+        }).join('') + '</div>'
       : '';
 
-    var meta = [];
-    if (a.distance) meta.push('<span><strong>Distance:</strong> ' + esc(String(a.distance)) + '</span>');
-    if (a.target) meta.push('<span><strong>Target:</strong> ' + esc(String(a.target)) + '</span>');
-    var metaHtml = meta.length ? '<div class="cs-ability-detail-meta">' + meta.join('') + '</div>' : '';
+    // Stat rail — distance / target / spend as compact cards. Omitted when empty.
+    var stats = [];
+    if (a.distance) stats.push('<div class="cs-ad__stat"><span class="cs-ad__stat-k">Distance</span><span class="cs-ad__stat-v">' + esc(String(a.distance)) + '</span></div>');
+    if (a.target) stats.push('<div class="cs-ad__stat"><span class="cs-ad__stat-k">Target</span><span class="cs-ad__stat-v">' + esc(String(a.target)) + '</span></div>');
+    var spendTxt = a.spend_vp || a.spend_resource;
+    if (spendTxt) stats.push('<div class="cs-ad__stat cs-ad__stat--spend"><span class="cs-ad__stat-k">Spend</span><span class="cs-ad__stat-v">' + esc(String(spendTxt)) + '</span></div>');
+    var statRail = stats.length ? '<div class="cs-ad__stats">' + stats.join('') + '</div>' : '';
 
+    // Power roll band.
     var prHtml = a.power_roll
-      ? '<div class="cs-ability-detail-pr"><span class="cs-pr-label">Power Roll</span>' + esc(String(a.power_roll)) + '</div>'
+      ? '<div class="cs-ad__pr"><span class="cs-ad__pr-k">Power Roll</span><span class="cs-ad__pr-v">' + esc(String(a.power_roll)) + '</span></div>'
       : '';
 
-    var tiers = '';
+    // Tier ladder — the centerpiece. Each rung shows its band + outcome, tinted
+    // miss→partial→hit for an at-a-glance read.
+    var ladder = '';
     if (a.tier1 || a.tier2 || a.tier3) {
-      tiers = '<div class="cs-ability-tiers">' +
-        (a.tier1 ? '<div class="cs-tier"><span class="cs-tier-label">11-</span> ' + refText(a.tier1) + '</div>' : '') +
-        (a.tier2 ? '<div class="cs-tier"><span class="cs-tier-label">12-16</span> ' + refText(a.tier2) + '</div>' : '') +
-        (a.tier3 ? '<div class="cs-tier"><span class="cs-tier-label">17+</span> ' + refText(a.tier3) + '</div>' : '') +
+      var rung = function (band, txt) {
+        if (!txt) return '';
+        return '<div class="cs-ad__tier"><span class="cs-ad__tier-band">' + band + '</span>' +
+          '<span class="cs-ad__tier-text">' + refText(txt) + '</span></div>';
+      };
+      ladder = '<div class="cs-ad__ladder">' +
+        rung('&le;11', a.tier1) + rung('12&ndash;16', a.tier2) + rung('17+', a.tier3) +
       '</div>';
     }
 
-    var trigger = a.trigger ? '<div class="cs-ability-trigger"><strong>Trigger:</strong> ' + refText(a.trigger) + '</div>' : '';
-    var effect = a.effect ? '<div class="cs-ability-effect">' + refText(a.effect) + '</div>' : '';
-    var spend = (a.spend_vp || a.spend_resource)
-      ? '<div class="cs-ability-spend">Spend ' + esc(String(a.spend_vp || a.spend_resource)) + '</div>'
-      : '';
+    var trigger = a.trigger ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Trigger</span><div class="cs-ad__block-v">' + refText(a.trigger) + '</div></div>' : '';
+    var effect = a.effect ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Effect</span><div class="cs-ad__block-v">' + refText(a.effect) + '</div></div>' : '';
 
-    return '<div class="cs-ability-detail">' +
-      '<header class="cs-ability-detail-head">' + star +
-        '<span class="cs-ability-detail-name">' + name + '</span>' + typeTag +
+    return '<div class="cs-ad">' +
+      '<header class="cs-ad__banner">' +
+        '<div class="cs-ad__title">' + star + '<span class="cs-ad__name">' + name + '</span>' + typeTag + '</div>' +
+        keywords +
       '</header>' +
-      keywords + metaHtml + prHtml + tiers + trigger + effect + spend +
+      '<div class="cs-ad__body">' +
+        statRail + prHtml + ladder + trigger + effect +
+      '</div>' +
     '</div>';
   }
 
@@ -529,8 +545,12 @@
       var idx = parseInt(node.getAttribute('data-ds-ability'), 10);
       var a = abilities[idx];
       if (!a) return false;
-      Chronicle.surface.overlay.push(renderAbilityDetail(a), {
-        transition: 'scale-fade', label: (a.name || 'Ability')
+      // launch() grows the overlay FROM the clicked card (container-transform /
+      // FLIP) over the dimmed sheet, rather than a context-free scale-fade. The
+      // mini card and the full panel are the same ability, so the zoom reads as
+      // "this card opened up". Reduced-motion is handled inside the frame.
+      Chronicle.surface.launch(node, renderAbilityDetail(a), {
+        label: (a.name || 'Ability'), panelClass: 'cs-overlay__panel--full'
       });
       return true;
     }
@@ -656,13 +676,34 @@
       '.cs-ability-effect { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
       '.cs-ability-trigger { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
       '.cs-ability-spend { font-size:12px; font-weight:600; color:var(--color-accent,#6366f1); margin-top:4px; }',
-      // ── Ability detail overlay ──
-      '.cs-ability-detail { padding:20px 22px; }',
-      '.cs-ability-detail-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }',
-      '.cs-ability-detail-name { font-size:20px; font-weight:700; line-height:1.15; color:var(--color-text-primary,#111827); }',
-      '.cs-ability-detail-meta { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--color-text-body,#374151); margin-bottom:10px; }',
-      '.cs-ability-detail-pr { font-size:14px; margin-bottom:10px; padding:8px 10px; background:var(--color-bg-tertiary,#f3f4f6); border-radius:8px; }',
-      '.cs-pr-label { font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:0.05em; color:var(--color-accent,#6366f1); margin-right:8px; }',
+      // ── Ability detail overlay — the zoom destination (expansive, centered) ──
+      '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
+      '.cs-ad__banner { padding:22px 26px; border-radius:14px; margin-bottom:18px; background:linear-gradient(135deg,rgba(var(--color-accent-rgb,99,102,241),0.14),rgba(var(--color-accent-rgb,99,102,241),0.03)); border:1px solid rgba(var(--color-accent-rgb,99,102,241),0.18); }',
+      '.cs-ad__title { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }',
+      '.cs-ad__star { color:var(--color-accent,#6366f1); font-size:20px; }',
+      '.cs-ad__name { font-size:26px; font-weight:800; line-height:1.1; letter-spacing:-0.01em; color:var(--color-text-primary,#111827); font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
+      '.cs-ad__type { padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; background:var(--color-accent,#6366f1); color:#fff; }',
+      '.cs-ad__keywords { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }',
+      '.cs-ad__body { display:flex; flex-direction:column; gap:16px; }',
+      '.cs-ad__stats { display:flex; flex-wrap:wrap; gap:10px; }',
+      '.cs-ad__stat { display:flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:10px; background:var(--color-bg-tertiary,#f3f4f6); min-width:120px; flex:1; }',
+      '.cs-ad__stat--spend { background:rgba(var(--color-accent-rgb,99,102,241),0.10); }',
+      '.cs-ad__stat-k { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-ad__stat-v { font-size:16px; font-weight:600; color:var(--color-text-primary,#111827); }',
+      '.cs-ad__pr { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:12px; background:var(--color-accent,#6366f1); color:#fff; }',
+      '.cs-ad__pr-k { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; opacity:0.85; }',
+      '.cs-ad__pr-v { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }',
+      '.cs-ad__ladder { display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--color-border,#e5e7eb); }',
+      '.cs-ad__tier { display:flex; gap:14px; align-items:flex-start; padding:13px 16px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ad__tier:last-child { border-bottom:none; }',
+      '.cs-ad__tier:nth-child(1) { background:rgba(220,38,38,0.05); }',
+      '.cs-ad__tier:nth-child(2) { background:rgba(245,158,11,0.06); }',
+      '.cs-ad__tier:nth-child(3) { background:rgba(16,185,129,0.06); }',
+      '.cs-ad__tier-band { flex-shrink:0; min-width:58px; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-ad__tier-text { font-size:14px; line-height:1.5; color:var(--color-text-body,#374151); }',
+      '.cs-ad__block { padding:12px 16px; border-radius:10px; background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ad__block-k { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin-bottom:4px; }',
+      '.cs-ad__block-v { font-size:14px; line-height:1.55; color:var(--color-text-body,#374151); }',
       // ── Tags ──
       '.cs-tag { display:inline-block; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-tag-level { background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); }',
