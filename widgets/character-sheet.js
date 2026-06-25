@@ -394,11 +394,11 @@
     });
   }
 
-  // abilityRow — the in-box ONE-LINER: star (signature) + name + a muted glance
-  // (distance / power-roll) + a chevron, on a single line. Clicking it zooms the
-  // full ability card open (delegated handler). Keywords / tiers / effect live
-  // in the zoom, not here — the row stays scannable. Native <button> so Enter/
-  // Space activate it for free.
+  // abilityRow — one accordion item: a ONE-LINER button (star + name + a muted
+  // glance of distance / power-roll + a chevron) and a collapsed detail panel
+  // below it. Clicking the row expands the detail IN PLACE (no overlay); the
+  // panel is filled lazily on first open by attachInteractions. Native <button>
+  // so Enter/Space activate it for free.
   function abilityRow(a, idx) {
     var name = esc(a.name || 'Untitled Ability');
     var star = a.type === 'signature' ? '<span class="cs-ability-row__star" aria-hidden="true">&#9733;</span>' : '';
@@ -409,26 +409,24 @@
       ? '<span class="cs-ability-row__meta">' + glance.join(' &middot; ') + '</span>'
       : '';
 
-    return '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
-        ' aria-label="' + name + ' — view details">' +
-      star +
-      '<span class="cs-ability-row__name">' + name + '</span>' +
-      glanceHtml +
-      '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
-    '</button>';
+    return '<div class="cs-ability-item">' +
+      '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
+          ' aria-expanded="false" aria-label="' + name + ' — toggle details">' +
+        star +
+        '<span class="cs-ability-row__name">' + name + '</span>' +
+        glanceHtml +
+        '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
+      '</button>' +
+      '<div class="cs-ability-acc" data-ds-acc></div>' +
+    '</div>';
   }
 
-  // renderAbilityDetail — the zoom DESTINATION: a full, expansive read of one
-  // ability. The card zooms (container-transform) into this over the dimmed
-  // sheet, so the content sits in a comfortable centered measure that reads
-  // well whether the ability is data-rich or sparse — never a tiny card lost
-  // in the wide panel, never stretched thin. Text fields (tiers / trigger /
-  // effect) run through refText so {@…} tokens light up. READ-ONLY: no controls
-  // that write (Foundry is the source of truth).
-  function renderAbilityDetail(a) {
-    var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ad__star" aria-hidden="true">&#9733;</span>' : '';
-    var typeTag = a.type ? '<span class="cs-ad__type">' + esc(String(a.type)) + '</span>' : '';
+  // renderAbilityBody — the inline accordion detail for one ability: keywords +
+  // a stat rail (distance / target / spend) + the power-roll band + the tinted
+  // miss→partial→hit tier ladder + trigger / effect. No banner — the one-liner
+  // row above already shows the name. Text fields run through refText so {@…}
+  // tokens light up. READ-ONLY (Foundry is the source of truth).
+  function renderAbilityBody(a) {
     var keywords = (a.keywords && a.keywords.length)
       ? '<div class="cs-ad__keywords">' + a.keywords.map(function (k) {
           return '<span class="cs-tag">' + esc(String(k)) + '</span>';
@@ -465,15 +463,9 @@
     var trigger = a.trigger ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Trigger</span><div class="cs-ad__block-v">' + refText(a.trigger) + '</div></div>' : '';
     var effect = a.effect ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Effect</span><div class="cs-ad__block-v">' + refText(a.effect) + '</div></div>' : '';
 
-    return '<div class="cs-ad">' +
-      '<header class="cs-ad__banner">' +
-        '<div class="cs-ad__title">' + star + '<span class="cs-ad__name">' + name + '</span>' + typeTag + '</div>' +
-        keywords +
-      '</header>' +
-      '<div class="cs-ad__body">' +
-        statRail + prHtml + ladder + trigger + effect +
-      '</div>' +
-    '</div>';
+    return '<div class="cs-ad cs-ad--inline"><div class="cs-ad__body">' +
+      keywords + statRail + prHtml + ladder + trigger + effect +
+    '</div></div>';
   }
 
   // ── content predicates (decide which optional boxes the schema includes) ──
@@ -595,38 +587,71 @@
     });
   }
 
-  // attachAbilityOverlay wires ONE delegated click/keydown listener on the
-  // mounted root: a click on a [data-ds-ability] card pushes the power-roll
-  // overlay. No per-card listeners (cards are re-rendered by the frame).
-  function attachAbilityOverlay(inst, el, data) {
+  // reduced reflects the OS reduce-motion preference (via the frame, with a
+  // direct fallback) so the accordion snaps instead of animating when asked.
+  function reduced() {
+    if (Chronicle.surface && Chronicle.surface.reducedMotion) return Chronicle.surface.reducedMotion();
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  // expandAcc / collapseAcc animate a panel's height (0 ↔ content) with the inner
+  // detail fading in. After opening, height is set to auto so the content can
+  // reflow; on close it stays at 0 but the content is kept for an instant reopen.
+  function expandAcc(row, acc) {
+    row.setAttribute('aria-expanded', 'true');
+    var inner = acc.firstChild;
+    if (reduced()) { acc.style.height = 'auto'; if (inner) inner.style.opacity = '1'; return; }
+    var h = inner ? inner.offsetHeight : acc.scrollHeight;
+    acc.style.height = '0px';
+    acc.style.transition = 'height 240ms cubic-bezier(.4,0,.2,1)';
+    if (inner) { inner.style.opacity = '0'; inner.style.transition = 'opacity 220ms ease 40ms'; }
+    requestAnimationFrame(function () { acc.style.height = h + 'px'; if (inner) inner.style.opacity = '1'; });
+    var done = function (e) {
+      if (e && (e.target !== acc || e.propertyName !== 'height')) return;
+      acc.style.height = 'auto'; acc.style.transition = '';
+      acc.removeEventListener('transitionend', done);
+    };
+    acc.addEventListener('transitionend', done);
+  }
+  function collapseAcc(row, acc) {
+    row.setAttribute('aria-expanded', 'false');
+    var inner = acc.firstChild;
+    if (reduced()) { acc.style.height = '0px'; return; }
+    acc.style.height = acc.offsetHeight + 'px';
+    acc.style.transition = 'height 220ms cubic-bezier(.4,0,.2,1)';
+    if (inner) inner.style.opacity = '0';
+    requestAnimationFrame(function () { acc.style.height = '0px'; });
+  }
+
+  // attachInteractions wires ONE delegated click listener on the mounted root:
+  //   • a [data-ds-ability] one-liner row toggles its inline accordion detail
+  //     (the detail body is built lazily on first open)
+  //   • the [data-cs-read-story] button opens the backstory reading view
+  // Rows are native <button>s, so Enter/Space activate them without a separate
+  // keydown handler. No per-card listeners (the frame re-renders box bodies).
+  function attachInteractions(inst, el, data) {
     var abilities = parseAbilities(data);
-    function openFrom(target) {
-      var node = (target && target.closest) ? target.closest('[data-ds-ability]') : null;
-      if (!node) return false;
-      var idx = parseInt(node.getAttribute('data-ds-ability'), 10);
-      var a = abilities[idx];
-      if (!a) return false;
-      // launch() grows the overlay FROM the clicked card (container-transform /
-      // FLIP) over the dimmed sheet, rather than a context-free scale-fade. The
-      // mini card and the full panel are the same ability, so the zoom reads as
-      // "this card opened up". Reduced-motion is handled inside the frame.
-      Chronicle.surface.launch(node, renderAbilityDetail(a), {
-        label: (a.name || 'Ability'), panelClass: 'cs-overlay__panel--full'
-      });
-      return true;
+    function toggleAbility(row) {
+      var item = row.parentNode;
+      var acc = item ? item.querySelector('[data-ds-acc]') : null;
+      var a = abilities[parseInt(row.getAttribute('data-ds-ability'), 10)];
+      if (!acc || !a) return;
+      if (row.getAttribute('aria-expanded') === 'true') { collapseAcc(row, acc); return; }
+      if (!acc.firstChild) {
+        var inner = document.createElement('div');
+        inner.className = 'cs-ability-acc__inner';
+        inner.innerHTML = renderAbilityBody(a);
+        acc.appendChild(inner);
+      }
+      expandAcc(row, acc);
     }
     inst._onAbilityClick = function (e) {
       var rs = (e.target && e.target.closest) ? e.target.closest('[data-cs-read-story]') : null;
       if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'notes', '')); return; }
-      if (openFrom(e.target)) e.preventDefault();
-    };
-    inst._onAbilityKey = function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      var node = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
-      if (node && openFrom(e.target)) e.preventDefault();
+      var row = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
+      if (row) { e.preventDefault(); toggleAbility(row); }
     };
     el.addEventListener('click', inst._onAbilityClick);
-    el.addEventListener('keydown', inst._onAbilityKey);
   }
 
   function mountSheet(inst, el, data) {
@@ -641,7 +666,7 @@
     el.innerHTML = '';
     Chronicle.surface.mount(el, buildSchema(data));
     appendBlockSlots(el, data);
-    attachAbilityOverlay(inst, el, data);
+    attachInteractions(inst, el, data);
   }
 
   // ── API fetch fallback (pre-CH4.5 embed without data attributes) ───
@@ -725,15 +750,22 @@
       '.cs-ability-group-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin:0 0 6px; }',
       // One-liner ability rows: name + muted glance + chevron; click zooms the full card.
       '.cs-ability-list { display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ability-row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; background:var(--color-bg-primary,#f9fafb); border:0; border-bottom:1px solid var(--color-border-light,#f3f4f6); font:inherit; cursor:pointer; transition:background 120ms ease; }',
-      '.cs-ability-list .cs-ability-row:last-child { border-bottom:0; }',
+      '.cs-ability-item { border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ability-list .cs-ability-item:last-child { border-bottom:0; }',
+      '.cs-ability-row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; background:var(--color-bg-primary,#f9fafb); border:0; font:inherit; cursor:pointer; transition:background 120ms ease; }',
       '.cs-ability-row:hover { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
+      '.cs-ability-row[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
       '.cs-ability-row:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:-2px; }',
       '.cs-ability-row__star { flex:none; color:var(--color-accent,#6366f1); font-size:13px; }',
       '.cs-ability-row__name { flex:none; font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
       '.cs-ability-row__meta { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
-      '.cs-ability-row__more { flex:none; margin-left:auto; font-size:18px; line-height:1; color:var(--color-text-muted,#9ca3af); transition:color 120ms ease, transform 120ms ease; }',
-      '.cs-ability-row:hover .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:translateX(2px); }',
+      '.cs-ability-row__more { flex:none; margin-left:auto; font-size:18px; line-height:1; color:var(--color-text-muted,#9ca3af); transition:color 150ms ease, transform 200ms cubic-bezier(.4,0,.2,1); }',
+      '.cs-ability-row:not([aria-expanded="true"]):hover .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:translateX(2px); }',
+      '.cs-ability-row[aria-expanded="true"] .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:rotate(90deg); }',
+      '.cs-ability-acc { height:0; overflow:hidden; }',
+      '.cs-ability-acc__inner { opacity:0; }',
+      '.cs-ad--inline { max-width:none; margin:0; padding:12px 14px 16px; border-top:1px solid var(--color-border-light,#f3f4f6); background:rgba(var(--color-accent-rgb,99,102,241),0.03); }',
+      '.cs-ad--inline .cs-ad__keywords { margin-top:0; }',
       // ── Ability detail overlay — the zoom destination (expansive, centered) ──
       '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
       '.cs-ad__banner { padding:22px 26px; border-radius:14px; margin-bottom:18px; background:linear-gradient(135deg,rgba(var(--color-accent-rgb,99,102,241),0.14),rgba(var(--color-accent-rgb,99,102,241),0.03)); border:1px solid rgba(var(--color-accent-rgb,99,102,241),0.18); }',
