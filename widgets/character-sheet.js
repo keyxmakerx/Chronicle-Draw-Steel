@@ -253,10 +253,10 @@
     function groupHtml(t) {
       if (!groups[t] || !groups[t].length) return '';
       var label = ABILITY_TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1));
-      var cards = groups[t].map(function (g) { return abilityCardCompact(g.a, g.idx); }).join('');
+      var rows = groups[t].map(function (g) { return abilityRow(g.a, g.idx); }).join('');
       return '<div class="cs-ability-group">' +
         '<h4 class="cs-ability-group-title">' + esc(label) + '</h4>' +
-        '<div class="cs-ability-grid">' + cards + '</div>' +
+        '<div class="cs-ability-list">' + rows + '</div>' +
       '</div>';
     }
 
@@ -334,28 +334,28 @@
     return '<div class="cs-notes-body">' + refText(notes) + '</div>';
   }
 
-  // abilityCardCompact — the in-box card: identity + keywords + a short meta
-  // line. Clicking it opens the full power-roll overlay (delegated handler).
-  function abilityCardCompact(a, idx) {
+  // abilityRow — the in-box ONE-LINER: star (signature) + name + a muted glance
+  // (distance / power-roll) + a chevron, on a single line. Clicking it zooms the
+  // full ability card open (delegated handler). Keywords / tiers / effect live
+  // in the zoom, not here — the row stays scannable. Native <button> so Enter/
+  // Space activate it for free.
+  function abilityRow(a, idx) {
     var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ability-star">&#9733;</span>' : '';
-    var keywords = (a.keywords && a.keywords.length)
-      ? '<div class="cs-ability-keywords">' + a.keywords.map(function (k) { return '<span class="cs-tag">' + esc(String(k)) + '</span>'; }).join('') + '</div>'
+    var star = a.type === 'signature' ? '<span class="cs-ability-row__star" aria-hidden="true">&#9733;</span>' : '';
+    var glance = [];
+    if (a.distance) glance.push(esc(String(a.distance)));
+    if (a.power_roll) glance.push(esc(String(a.power_roll)));
+    var glanceHtml = glance.length
+      ? '<span class="cs-ability-row__meta">' + glance.join(' &middot; ') + '</span>'
       : '';
-    var meta = [];
-    if (a.distance) meta.push(esc(String(a.distance)));
-    if (a.target) meta.push(esc(String(a.target)));
-    if (a.power_roll) meta.push(esc(String(a.power_roll)));
-    var metaHtml = meta.length ? '<div class="cs-ability-meta">' + meta.join(' &bull; ') + '</div>' : '';
 
-    return '<article class="cs-ability cs-ability--clickable" data-ds-ability="' + idx + '"' +
-        ' role="button" tabindex="0" aria-label="' + name + ' — view details">' +
-      '<header class="cs-ability-header">' + star +
-        '<span class="cs-ability-name">' + name + '</span>' +
-        '<span class="cs-ability-more" aria-hidden="true">Details &rsaquo;</span>' +
-      '</header>' +
-      keywords + metaHtml +
-    '</article>';
+    return '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
+        ' aria-label="' + name + ' — view details">' +
+      star +
+      '<span class="cs-ability-row__name">' + name + '</span>' +
+      glanceHtml +
+      '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
+    '</button>';
   }
 
   // renderAbilityDetail — the zoom DESTINATION: a full, expansive read of one
@@ -655,27 +655,20 @@
       '.cs-damage-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); width:100px; flex-shrink:0; padding-top:4px; }',
       '.cs-damage-list { display:flex; flex-wrap:wrap; gap:6px; flex:1; }',
       // ── Abilities ──
-      '.cs-ability-group { margin-top:12px; }',
+      '.cs-ability-group { margin-top:14px; }',
       '.cs-ability-group:first-child { margin-top:0; }',
-      '.cs-ability-group-title { font-size:13px; font-weight:600; color:var(--color-accent,#6366f1); margin:0 0 8px; padding-bottom:4px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ability-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }',
-      '.cs-ability { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:10px 12px; }',
-      '.cs-ability--clickable { cursor:pointer; transition:box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease; }',
-      '.cs-ability--clickable:hover { box-shadow:0 4px 12px rgba(0,0,0,0.08); transform:translateY(-1px); border-color:var(--color-accent,#6366f1); }',
-      '.cs-ability--clickable:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
-      '.cs-ability-header { display:flex; align-items:center; gap:6px; margin-bottom:4px; }',
-      '.cs-ability-star { color:var(--color-accent,#6366f1); font-size:14px; }',
-      '.cs-ability-name { font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.cs-ability-more { margin-left:auto; font-size:12px; font-weight:500; color:var(--color-text-muted,#9ca3af); flex-shrink:0; }',
-      '.cs-ability--clickable:hover .cs-ability-more { color:var(--color-accent,#6366f1); }',
-      '.cs-ability-keywords { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }',
-      '.cs-ability-meta { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      '.cs-ability-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:10px; margin:6px 0; }',
-      '.cs-tier { font-size:13px; line-height:1.5; }',
-      '.cs-tier-label { display:inline-block; min-width:38px; font-weight:600; color:var(--color-text-secondary,#6b7280); font-variant-numeric:tabular-nums; }',
-      '.cs-ability-effect { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
-      '.cs-ability-trigger { font-size:13px; color:var(--color-text-body,#374151); margin-top:4px; }',
-      '.cs-ability-spend { font-size:12px; font-weight:600; color:var(--color-accent,#6366f1); margin-top:4px; }',
+      '.cs-ability-group-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin:0 0 6px; }',
+      // One-liner ability rows: name + muted glance + chevron; click zooms the full card.
+      '.cs-ability-list { display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-ability-row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; background:var(--color-bg-primary,#f9fafb); border:0; border-bottom:1px solid var(--color-border-light,#f3f4f6); font:inherit; cursor:pointer; transition:background 120ms ease; }',
+      '.cs-ability-list .cs-ability-row:last-child { border-bottom:0; }',
+      '.cs-ability-row:hover { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
+      '.cs-ability-row:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:-2px; }',
+      '.cs-ability-row__star { flex:none; color:var(--color-accent,#6366f1); font-size:13px; }',
+      '.cs-ability-row__name { flex:none; font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
+      '.cs-ability-row__meta { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.cs-ability-row__more { flex:none; margin-left:auto; font-size:18px; line-height:1; color:var(--color-text-muted,#9ca3af); transition:color 120ms ease, transform 120ms ease; }',
+      '.cs-ability-row:hover .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:translateX(2px); }',
       // ── Ability detail overlay — the zoom destination (expansive, centered) ──
       '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
       '.cs-ad__banner { padding:22px 26px; border-radius:14px; margin-bottom:18px; background:linear-gradient(135deg,rgba(var(--color-accent-rgb,99,102,241),0.14),rgba(var(--color-accent-rgb,99,102,241),0.03)); border:1px solid rgba(var(--color-accent-rgb,99,102,241),0.18); }',
@@ -738,7 +731,6 @@
       '  .cs-stat-value { font-size:18px; }',
       '  .cs-header { flex-direction:column; align-items:flex-start; }',
       '  .cs-portrait { width:64px; height:64px; }',
-      '  .cs-ability-grid { grid-template-columns:1fr; }',
       '  .cs-damage-row { flex-direction:column; gap:4px; }',
       '  .cs-damage-label { width:auto; padding-top:0; }',
       '}'
