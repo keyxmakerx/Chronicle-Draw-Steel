@@ -662,6 +662,54 @@
     el.addEventListener('click', inst._onAbilityClick);
   }
 
+  // ── entrance motion ────────────────────────────────────────────────
+  // countUp animates a single integer-bearing node from 0 → its value, keeping
+  // any surrounding text (a leading sign, a " / max"). Restores the exact
+  // original string on finish so signs/zeroes stay pixel-correct.
+  function countUp(node) {
+    var raw = node.textContent;
+    var m = raw && raw.match(/-?\d+/);
+    if (!m) return;
+    var target = parseInt(m[0], 10);
+    if (!target) return; // 0 / NaN — nothing to count toward
+    var pre = raw.slice(0, m.index), post = raw.slice(m.index + m[0].length);
+    var dur = 500, t0 = null;
+    function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      var v = Math.round(target * (1 - Math.pow(1 - p, 3))); // easeOutCubic
+      node.textContent = pre + v + post;
+      if (p < 1) requestAnimationFrame(step);
+      else node.textContent = raw;
+    }
+    requestAnimationFrame(step);
+  }
+
+  // playEntrance choreographs the sheet's reveal: a staggered box rise, bars that
+  // fill from empty, and characteristic values that count up. The box stagger is
+  // CSS (class + per-box delay), so it collapses cleanly under reduce-motion via
+  // the @media guard; the bar/number motion is JS and is skipped outright when
+  // reduce-motion is set (the final values are already in the DOM). Called once
+  // per mount, synchronously — the seeded surface renders box bodies before this
+  // runs, so the 0-state is set before first paint (no flash of full values).
+  function playEntrance(el) {
+    var boxes = el.querySelectorAll('.cs-box');
+    Array.prototype.forEach.call(boxes, function (box, i) {
+      box.style.animationDelay = (Math.min(i, 9) * 50) + 'ms';
+      box.classList.add('ds-anim-in');
+    });
+    if (reduced()) return;
+    Array.prototype.forEach.call(el.querySelectorAll('.cs-bar-fill'), function (bar) {
+      var target = bar.style.width;
+      if (!target) return;
+      bar.style.width = '0%';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { bar.style.width = target; });
+      });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('.cs-stat-value'), countUp);
+  }
+
   function mountSheet(inst, el, data) {
     // The dynamic-surface frame is a core widget loaded before system widgets,
     // so this is belt-and-suspenders — degrade gracefully rather than throw if
@@ -675,6 +723,7 @@
     Chronicle.surface.mount(el, buildSchema(data));
     appendBlockSlots(el, data);
     attachInteractions(inst, el, data);
+    playEntrance(el);
   }
 
   // ── API fetch fallback (pre-CH4.5 embed without data attributes) ───
@@ -852,6 +901,35 @@
       '  .cs-portrait { width:64px; height:64px; }',
       '  .cs-damage-row { flex-direction:column; gap:4px; }',
       '  .cs-damage-label { width:auto; padding-top:0; }',
+      '}',
+      // ── Motion / animation layer (entrance + ambient; reduce-motion aware) ──
+      // 1. Staggered box entrance (class + per-box delay set in playEntrance).
+      '@keyframes ds-box-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }',
+      '.ds-sheet .cs-box.ds-anim-in { animation:ds-box-in 380ms cubic-bezier(.2,.7,.2,1) both; }',
+      // 2. Low-stamina danger pulse on the stamina bar.
+      // (box-shadow would be clipped by .cs-bar overflow:hidden — pulse brightness instead)
+      '@keyframes ds-pulse { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.35); } }',
+      '.cs-bar-fill.cs-bar-danger { animation:ds-pulse 1.5s ease-in-out infinite; }',
+      // 3. Heroic-resource accent shimmer.
+      '@keyframes ds-shimmer { 0% { background-position:-120% 0; } 100% { background-position:220% 0; } }',
+      '.cs-bar-fill.cs-bar-accent { background-image:linear-gradient(100deg,transparent 30%,rgba(255,255,255,0.38) 50%,transparent 70%); background-size:220% 100%; animation:ds-shimmer 2.8s linear infinite; }',
+      // 4. Level-badge sheen sweep.
+      '.cs-level-badge { position:relative; overflow:hidden; }',
+      '.cs-level-badge::after { content:""; position:absolute; top:0; left:-60%; width:45%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,0.55),transparent); transform:skewX(-18deg); animation:ds-sheen 4.5s ease-in-out infinite; }',
+      '@keyframes ds-sheen { 0%,72% { left:-60%; } 100% { left:170%; } }',
+      // 5. Stat-card hover lift + 6. portrait hover zoom.
+      '.cs-stat { transition:transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease; }',
+      '.cs-stat:hover { transform:translateY(-2px); box-shadow:0 5px 14px -6px rgba(0,0,0,0.22); border-color:rgba(var(--color-accent-rgb,99,102,241),0.35); }',
+      '.cs-portrait { transition:transform 220ms cubic-bezier(.2,.7,.2,1); }',
+      '.cs-header:hover .cs-portrait { transform:scale(1.04); }',
+      // Respect the OS reduce-motion setting: kill ambient + entrance motion.
+      '@media (prefers-reduced-motion: reduce) {',
+      '  .ds-sheet .cs-box.ds-anim-in { animation:none; }',
+      '  .cs-bar-fill.cs-bar-danger, .cs-bar-fill.cs-bar-accent { animation:none; }',
+      '  .cs-bar-fill.cs-bar-accent { background-image:none; }',
+      '  .cs-level-badge::after { display:none; }',
+      '  .cs-stat:hover { transform:none; box-shadow:none; }',
+      '  .cs-header:hover .cs-portrait { transform:none; }',
       '}'
     ].join('\n');
     var style = document.createElement('style');
