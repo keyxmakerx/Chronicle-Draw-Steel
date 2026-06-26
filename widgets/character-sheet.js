@@ -887,7 +887,11 @@
       var self = this;
       function finish(entity) {
         var data = {
-          fields: (entity && entity.custom_fields) || {},
+          // Chronicle serializes the field bundle as `fields_data` (the platform-wide
+          // key — entity API and the mount seed both use it). Earlier payloads used
+          // `custom_fields`; read fields_data first, fall back for compatibility.
+          // Reading the wrong key here is what rendered every stat as 0.
+          fields: (entity && (entity.fields_data || entity.custom_fields)) || {},
           name: (entity && entity.name) || 'Unnamed Hero',
           campaignId: campaignId,
           entityId: entityId,
@@ -900,7 +904,7 @@
         });
       }
 
-      if (entityObj && entityObj.custom_fields) {
+      if (entityObj && (entityObj.fields_data || entityObj.custom_fields)) {
         finish(entityObj);
       } else if (entityId && campaignId) {
         fetchEntity(campaignId, entityId).then(finish).catch(function (err) {
