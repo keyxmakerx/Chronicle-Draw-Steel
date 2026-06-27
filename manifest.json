@@ -125,7 +125,12 @@
         { "key": "backstory", "label": "Backstory", "type": "markdown", "foundry_path": "system.biography.value" },
         { "key": "class_features_json", "label": "Class Features Data", "type": "string" },
         { "key": "ancestry_features_json", "label": "Ancestry Features Data", "type": "string" },
-        { "key": "kit_features_json", "label": "Kit Features Data", "type": "string" }
+        { "key": "kit_features_json", "label": "Kit Features Data", "type": "string" },
+        { "key": "initiative", "label": "Initiative", "type": "number" },
+        { "key": "in_combat", "label": "In Combat", "type": "number" },
+        { "key": "combat_round", "label": "Combat Round", "type": "number" },
+        { "key": "conditions_json", "label": "Conditions Data", "type": "string" },
+        { "key": "gm_notes", "label": "GM Notes", "type": "markdown" }
       ]
     },
     {
