@@ -134,6 +134,23 @@
       ? '<img class="cs-portrait" src="' + esc(portrait) + '" alt="' + esc(name) + '">'
       : '<div class="cs-portrait cs-portrait-placeholder"><i class="fa-solid fa-shield-halved"></i></div>';
 
+    // Status pills (claimed / visibility) — only when the host supplied context.
+    var pills = '';
+    if (data.claimed) {
+      pills += '<span class="cs-pill cs-pill--claim"><i class="fa-solid fa-circle-check"></i> Claimed by you</span>';
+    }
+    if (data.visibility) {
+      pills += '<span class="cs-pill">Visibility: ' + esc(String(data.visibility)) + '</span>';
+    }
+
+    // v3 action affordances + live dot (display-first; behavior is a follow-up).
+    var actions = '<div class="cs-header-actions">' +
+      '<button type="button" class="cs-act cs-act--primary" data-cs-act="roll"><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
+      '<button type="button" class="cs-act" data-cs-act="levelup"><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
+      '<button type="button" class="cs-act" data-cs-act="share"><i class="fa-solid fa-share-nodes"></i> Share</button>' +
+      '<span class="cs-live" title="Live"><span class="cs-live-dot"></span> live</span>' +
+    '</div>';
+
     return '<div class="cs-header">' +
       portraitHtml +
       '<div class="cs-header-text">' +
@@ -143,7 +160,9 @@
           (subtitle ? '<span class="cs-header-subtitle">' + subtitle + '</span>' : '') +
           (faction ? '<span class="cs-header-faction">' + esc(faction) + '</span>' : '') +
         '</div>' +
+        (pills ? '<div class="cs-header-pills">' + pills + '</div>' : '') +
       '</div>' +
+      actions +
     '</div>';
   }
 
@@ -214,6 +233,43 @@
       '</div>';
   }
 
+  // rCombat is the v3 COMBAT panel: an in-combat/round status line, the
+  // Initiative / Speed / Stability chips, and condition pills. Always rendered
+  // (placeholders when empty); combat state + conditions populate via sync later.
+  function rCombat(def, data) {
+    var inCombat = num(data, 'in_combat', 0);
+    var round = num(data, 'combat_round', 0);
+    var status = inCombat
+      ? '<div class="cs-combat-status cs-combat-status--active"><span class="cs-combat-dot"></span> In combat' +
+          (round ? ' &mdash; round ' + esc(String(round)) : '') + '</div>'
+      : '<div class="cs-combat-status">Not in combat</div>';
+
+    var chip = function (label, key) {
+      var v = f(data, key, null);
+      var val = (v == null || v === '') ? '–' : esc(String(scalar(v)));
+      return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
+        '<span class="cs-chip-value">' + val + '</span></div>';
+    };
+    var chips = '<div class="cs-chip-row">' +
+      chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability') +
+    '</div>';
+
+    var conds = parseJson(f(data, 'conditions_json', ''), []);
+    var pills;
+    if (conds && conds.length) {
+      pills = '<div class="cs-cond-row">' + conds.map(function (c) {
+        var name = (c && (c.name || c)) || '';
+        var sev = (c && c.severity) || '';
+        var cls = 'cs-cond';
+        if (/bleed|burn|dam|poison/i.test(name + ' ' + sev)) cls += ' cs-cond--danger';
+        else if (/slow|weak|daz|frighten|restrain/i.test(name + ' ' + sev)) cls += ' cs-cond--warn';
+        return '<span class="' + cls + '">' + esc(String(name)) + '</span>';
+      }).join('') + '</div>';
+    } else {
+      pills = ph('No conditions.');
+    }
+    return status + chips + pills;
+  }
   function rDamage(def, data) {
     var imm = parseJson(f(data, 'immunities', ''), []);
     var weak = parseJson(f(data, 'weaknesses', ''), []);
@@ -342,12 +398,22 @@
   // full prose opens in the reading-view overlay (openReadingView). Large lore
   // shouldn't accordion-shove the sheet; it gets its own typeset page instead.
   function rNotes(def, data) {
-    var notes = f(data, 'notes', '');
+    // Backstory is stored under `backstory` (the manifest field synced from Foundry
+    // system.biography.value); older payloads used `notes`, so fall back to it.
+    var notes = f(data, 'backstory', '') || f(data, 'notes', '');
     if (!notes) return ph('No backstory yet.');
     return '<div class="cs-bg">' +
       '<p class="cs-bg__teaser">' + esc(teaser(notes, 180)) + '</p>' +
       '<button type="button" class="cs-bg__read" data-cs-read-story>Read full story &rsaquo;</button>' +
     '</div>';
+  }
+
+  // rGmLore renders GM-only notes. Scheduled ONLY when data.isGm (the buildSchema
+  // gate), so it never reaches a player; rendered inline (not the reading overlay).
+  function rGmLore(def, data) {
+    var notes = f(data, 'gm_notes', '');
+    if (!notes) return ph('No GM notes.');
+    return '<div class="cs-gmlore">' + refText(notes) + '</div>';
   }
 
   // teaser flattens {@cat term|disp} tokens to plain words, collapses whitespace,
@@ -517,7 +583,7 @@
     ];
     var side = [
       boxDef('ds-heroic-resource', hrLabel, 'ds-heroic-resource', 'expanded', { pinned: true }),
-      boxDef('ds-movement', 'Movement', 'ds-movement', 'expanded'),
+      boxDef('ds-combat', 'Combat', 'ds-combat', 'expanded', { pinned: true }),
       boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
       boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
     ];
@@ -535,6 +601,14 @@
       boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true })
     ] } ] });
 
+    // Row 5 — GM Lore (12), GM ONLY. Scheduled solely when the viewer is a GM so
+    // DM-only content never reaches a player (a permission gate, not a data gate).
+    if (data.isGm) {
+      rows.push({ columns: [ { width: 12, boxes: [
+        boxDef('ds-gmlore', 'GM Lore', 'ds-gmlore', 'collapsed')
+      ] } ] });
+    }
+
     return { provider: { key: 'drawsteel:entity:' + (data.entityId || 'anon'), seed: data }, rows: rows };
   }
 
@@ -548,12 +622,14 @@
     s.registerBox('ds-characteristics', rCharacteristics);
     s.registerBox('ds-heroic-resource', rHeroicResource);
     s.registerBox('ds-movement', rMovement);
+    s.registerBox('ds-combat', rCombat);
     s.registerBox('ds-damage', rDamage);
     s.registerBox('ds-abilities', rAbilities);
     s.registerBox('ds-features', rFeatures);
     s.registerBox('ds-progression', rProgression);
     s.registerBox('ds-inventory', rInventory);
     s.registerBox('ds-notes', rNotes);
+    s.registerBox('ds-gmlore', rGmLore);
   }
 
   // ── mount + ability overlay ────────────────────────────────────────
@@ -874,6 +950,26 @@
       // v3: muted placeholder shown by a section that has no data yet, so the
       // sheet always shows its full structure instead of collapsing.
       '.cs-placeholder { color:var(--color-text-muted,#9ca3af); font-size:13px; font-style:italic; padding:6px 2px; }',
+      // ── v3 Combat panel ──
+      '.cs-combat-status { font-size:13px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:8px; display:flex; align-items:center; gap:6px; }',
+      '.cs-combat-status--active { color:#dc2626; }',
+      '.cs-combat-dot { width:8px; height:8px; border-radius:9999px; background:#dc2626; box-shadow:0 0 0 0 rgba(220,38,38,0.5); animation:ds-pulse 1.5s ease-in-out infinite; }',
+      '.cs-cond-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }',
+      '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
+      '.cs-cond--warn { background:rgba(217,119,6,0.14); color:#b45309; }',
+      // ── v3 GM Lore ──
+      '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
+      // ── v3 Header: status pills + actions + live dot ──
+      '.cs-header-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }',
+      '.cs-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      '.cs-pill--claim { background:rgba(16,185,129,0.14); color:#059669; }',
+      '.cs-header-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-left:auto; align-self:flex-start; }',
+      '.cs-act { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--color-border,#e5e7eb); background:var(--color-bg-primary,#f9fafb); color:var(--color-text-secondary,#6b7280); transition:background 150ms ease, border-color 150ms ease, transform 150ms ease; }',
+      '.cs-act:hover { transform:translateY(-1px); border-color:rgba(var(--color-accent-rgb,99,102,241),0.4); }',
+      '.cs-act--primary { background:var(--color-accent,#6366f1); color:#fff; border-color:transparent; }',
+      '.cs-live { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#059669; }',
+      '.cs-live-dot { width:8px; height:8px; border-radius:9999px; background:#10b981; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
@@ -955,7 +1051,13 @@
           name: (entity && entity.name) || 'Unnamed Hero',
           campaignId: campaignId,
           entityId: entityId,
-          children: Array.isArray(children) ? children : []
+          children: Array.isArray(children) ? children : [],
+          // Viewer/permission context passed by the Chronicle mount (data-* attrs).
+          // isGm gates the GM-only lore box; visibility/claimed drive the header
+          // pills. All default to safe/empty when the host doesn't supply them.
+          isGm: ds.isGm === 'true' || ds.isGm === '1',
+          visibility: (entity && entity.visibility) || ds.visibility || '',
+          claimed: ds.claimed === 'true' || ds.claimed === '1'
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
         loadRef.then(function () {
