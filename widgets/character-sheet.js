@@ -898,6 +898,16 @@
       '.cs-box[data-box-key="ds-header"] > .cs-box__body { padding:16px; }',
       '.cs-box[data-box-pinned] .cs-box__caret { display:none; }',
       '.cs-box[data-box-pinned] .cs-box__toggle { cursor:default; }',
+      // v3.2 dynamic affordance: collapsible boxes read as clickable (DDB-style).
+      // A subtle accent lift on hover + a pointer/clickable head signal "open me";
+      // pinned boxes (always-open) are exempt. Purely additive over the frame chrome.
+      '.cs-box:not([data-box-pinned]) { transition:box-shadow 160ms ease, border-color 160ms ease; }',
+      '.cs-box:not([data-box-pinned]):hover { box-shadow:0 2px 16px rgba(var(--color-accent-rgb,168,85,247),0.10); border-color:rgba(var(--color-accent-rgb,168,85,247),0.28); }',
+      '.cs-box:not([data-box-pinned]) > .cs-box__head { cursor:pointer; transition:background 140ms ease; }',
+      '.cs-box:not([data-box-pinned]) > .cs-box__head:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); }',
+      '.cs-box:not([data-box-pinned]) > .cs-box__head:hover .cs-box__caret { color:var(--color-accent,#a855f7); }',
+      '.cs-box__caret { transition:transform 200ms cubic-bezier(.4,0,.2,1), color 140ms ease; }',
+      '.cs-ability-row:active { transform:translateY(0.5px); }',
       // ── Header ──
       '.cs-header { display:flex; gap:16px; align-items:center; }',
       '.cs-portrait { width:88px; height:88px; border-radius:12px; object-fit:cover; flex-shrink:0; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
