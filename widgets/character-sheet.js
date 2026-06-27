@@ -237,7 +237,7 @@
         '</div></div>'
       : '';
 
-    return immHtml + weakHtml;
+    return (immHtml + weakHtml) || ph('No immunities or weaknesses.');
   }
   var ABILITY_TYPE_ORDER = ['signature', 'action', 'maneuver', 'triggered', 'free-strike', 'trait'];
   var ABILITY_TYPE_LABELS = {
@@ -247,7 +247,7 @@
 
   function rAbilities(def, data) {
     var abilities = parseAbilities(data);
-    if (!abilities.length) return '';
+    if (!abilities.length) return ph('No abilities yet.');
 
     // Group by type while preserving each ability's ORIGINAL flat index — the
     // index is what the overlay handler looks up, so the two must agree.
@@ -297,7 +297,8 @@
       '</div>';
     };
 
-    return groupHtml('Class', classFt) + groupHtml('Ancestry', ancestryFt) + groupHtml('Kit', kitFt);
+    var out = groupHtml('Class', classFt) + groupHtml('Ancestry', ancestryFt) + groupHtml('Kit', kitFt);
+    return out || ph('No features yet.');
   }
 
   function rProgression(def, data) {
@@ -308,19 +309,20 @@
       { label: 'Project Points', key: 'project_points' },
       { label: 'Wealth', key: 'wealth' }
     ];
+    // v3: always render all five chips; unset values show "–" so the section's
+    // structure is visible even on a fresh hero.
     var chips = entries.map(function (e) {
       var v = f(data, e.key, null);
-      if (v == null) return '';
+      var val = (v == null || v === '') ? '–' : esc(String(v));
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(e.label) + '</span>' +
-        '<span class="cs-chip-value">' + esc(String(v)) + '</span></div>';
-    }).filter(function (s) { return s; }).join('');
-    if (!chips) return '';
+        '<span class="cs-chip-value">' + val + '</span></div>';
+    }).join('');
     return '<div class="cs-chip-row">' + chips + '</div>';
   }
 
   function rInventory(def, data) {
     var items = invItems(data);
-    if (!items.length) return '';
+    if (!items.length) return ph('Empty.');
     var cid = data.campaignId;
     var rows = items.map(function (it) {
       var entity = it.entity || it;
@@ -341,7 +343,7 @@
   // shouldn't accordion-shove the sheet; it gets its own typeset page instead.
   function rNotes(def, data) {
     var notes = f(data, 'notes', '');
-    if (!notes) return '';
+    if (!notes) return ph('No backstory yet.');
     return '<div class="cs-bg">' +
       '<p class="cs-bg__teaser">' + esc(teaser(notes, 180)) + '</p>' +
       '<button type="button" class="cs-bg__read" data-cs-read-story>Read full story &rsaquo;</button>' +
@@ -476,31 +478,11 @@
     '</div></div>';
   }
 
-  // ── content predicates (decide which optional boxes the schema includes) ──
-
-  function hasHeroicResource(data) {
-    return !!f(data, 'heroic_resource_name', '') || isNum(data, 'heroic_resource_current') || isNum(data, 'heroic_resource_max');
-  }
-  function hasMovement(data) { return !!num(data, 'speed', 0) || !!num(data, 'stability', 0); }
-  function hasDamage(data) {
-    var i = parseJson(f(data, 'immunities', ''), []);
-    var w = parseJson(f(data, 'weaknesses', ''), []);
-    return !!((i && i.length) || (w && w.length));
-  }
-  function hasAbilities(data) { return parseAbilities(data).length > 0; }
-  function hasFeatures(data) {
-    var c = parseJson(f(data, 'class_features_json', ''), []);
-    var a = parseJson(f(data, 'ancestry_features_json', ''), []);
-    var k = parseJson(f(data, 'kit_features_json', ''), []);
-    return !!((c && c.length) || (a && a.length) || (k && k.length));
-  }
-  function hasProgression(data) {
-    var keys = ['xp', 'victories', 'renown', 'project_points', 'wealth'];
-    for (var i = 0; i < keys.length; i++) { if (f(data, keys[i], null) != null) return true; }
-    return false;
-  }
-  function hasInventory(data) { return invItems(data).length > 0; }
-  function hasNotes(data) { return !!f(data, 'notes', ''); }
+  // ── empty-state placeholder ──────────────────────────────────────────────
+  // v3: every section ALWAYS renders (no content gating) so the sheet's
+  // structure, spacing, and chrome are visible even on a sparse hero. A section
+  // with no data shows this muted placeholder instead of vanishing.
+  function ph(text) { return '<div class="cs-placeholder">' + esc(text) + '</div>'; }
 
   // ── schema builder ─────────────────────────────────────────────────
 
@@ -524,37 +506,34 @@
       boxDef('ds-header', '', 'ds-header', 'expanded', { pinned: true })
     ] } ] });
 
-    // Row 2 — main column (8) + side column (4).
+    // Row 2 — main column (8) + side column (4). v3: ALL sections always render;
+    // each box's renderer shows a placeholder when its data is absent, so the
+    // sheet's full structure is visible even on a fresh/unsynced hero.
+    var hrLabel = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var main = [
       boxDef('ds-vitals', 'Vitals', 'ds-vitals', 'expanded', { pinned: true }),
-      boxDef('ds-characteristics', 'Characteristics', 'ds-characteristics', 'expanded', { pinned: true })
+      boxDef('ds-characteristics', 'Characteristics', 'ds-characteristics', 'expanded', { pinned: true }),
+      boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded')
     ];
-    if (hasAbilities(data)) main.push(boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded'));
+    var side = [
+      boxDef('ds-heroic-resource', hrLabel, 'ds-heroic-resource', 'expanded', { pinned: true }),
+      boxDef('ds-movement', 'Movement', 'ds-movement', 'expanded'),
+      boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
+      boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
+    ];
+    rows.push({ columns: [ { width: 8, boxes: main }, { width: 4, boxes: side } ] });
 
-    var side = [];
-    if (hasHeroicResource(data)) {
-      var hrLabel = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
-      side.push(boxDef('ds-heroic-resource', hrLabel, 'ds-heroic-resource', 'expanded', { pinned: true }));
-    }
-    if (hasMovement(data)) side.push(boxDef('ds-movement', 'Movement', 'ds-movement', 'expanded'));
-    if (hasDamage(data)) side.push(boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'));
-    if (hasProgression(data)) side.push(boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed'));
-
-    var row2 = [ { width: 8, boxes: main } ];
-    if (side.length) row2.push({ width: 4, boxes: side });
-    rows.push({ columns: row2 });
-
-    // Row 3 — features (6) + inventory (6); skip empties, skip the row if both gone.
-    var row3 = [];
-    if (hasFeatures(data)) row3.push({ width: 6, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] });
-    if (hasInventory(data)) row3.push({ width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] });
-    if (row3.length) rows.push({ columns: row3 });
+    // Row 3 — Features (6) + Inventory (6), always present.
+    rows.push({ columns: [
+      { width: 6, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
+      { width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
+    ] });
 
     // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
     // "Read full story" that opens the reading-view overlay (not an accordion).
-    if (hasNotes(data)) {
-      rows.push({ columns: [ { width: 12, boxes: [ boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true }) ] } ] });
-    }
+    rows.push({ columns: [ { width: 12, boxes: [
+      boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true })
+    ] } ] });
 
     return { provider: { key: 'drawsteel:entity:' + (data.entityId || 'anon'), seed: data }, rows: rows };
   }
@@ -892,6 +871,9 @@
       '.cs-empty-icon { width:48px; height:48px; border-radius:9999px; background:var(--color-bg-tertiary,#f3f4f6); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:20px; color:var(--color-text-muted,#9ca3af); }',
       '.cs-empty-title { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 4px; }',
       '.cs-empty-desc { font-size:14px; color:var(--color-text-secondary,#6b7280); max-width:24rem; margin:0 auto; }',
+      // v3: muted placeholder shown by a section that has no data yet, so the
+      // sheet always shows its full structure instead of collapsing.
+      '.cs-placeholder { color:var(--color-text-muted,#9ca3af); font-size:13px; font-style:italic; padding:6px 2px; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
