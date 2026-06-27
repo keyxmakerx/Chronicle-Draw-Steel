@@ -814,6 +814,16 @@
       });
     });
     Array.prototype.forEach.call(el.querySelectorAll('.cs-stat-value'), countUp);
+    // v3.1: the recovery dots + heroic-resource pips fade/rise in just after the
+    // bars, so the new Vitals glyphs reveal intentionally rather than snapping in.
+    Array.prototype.forEach.call(el.querySelectorAll('.cs-dots, .cs-hr-pips'), function (n, i) {
+      n.style.opacity = '0';
+      n.style.transform = 'translateY(3px)';
+      n.style.transition = 'opacity 300ms ease ' + (120 + i * 80) + 'ms, transform 300ms ease ' + (120 + i * 80) + 'ms';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { n.style.opacity = '1'; n.style.transform = 'none'; });
+      });
+    });
   }
 
   function mountSheet(inst, el, data) {
@@ -870,8 +880,8 @@
       // v3.1 Vitals composite: stamina/recoveries/HR/roll on the left, the
       // characteristics grid on the right (stacks on narrow widths).
       '.cs-vitals { display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-start; }',
-      '.cs-vitals-main { flex:1 1 220px; min-width:200px; display:flex; flex-direction:column; gap:10px; }',
-      '.cs-vitals-stats { flex:1 1 280px; min-width:240px; }',
+      '.cs-vitals-main { flex:1 1 180px; min-width:170px; display:flex; flex-direction:column; gap:10px; }',
+      '.cs-vitals-stats { flex:1.5 1 300px; min-width:260px; }',
       '.cs-subhead { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); margin-bottom:8px; }',
       '.cs-statline { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; }',
       '.cs-statline-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-secondary,#6b7280); }',
@@ -902,7 +912,7 @@
       '.cs-bar-label { display:flex; justify-content:space-between; align-items:baseline; font-size:13px; font-weight:600; color:var(--color-text-body,#374151); }',
       '.cs-bar-value { font-variant-numeric:tabular-nums; color:var(--color-text-primary,#111827); }',
       '.cs-bar { position:relative; height:10px; background:var(--color-bg-tertiary,#f3f4f6); border-radius:9999px; overflow:hidden; }',
-      '.cs-bar-fill { height:100%; background:#10b981; border-radius:9999px; transition:width 200ms ease; }',
+      '.cs-bar-fill { height:100%; background:linear-gradient(90deg,#059669,#10b981); border-radius:9999px; transition:width 200ms ease; }',
       '.cs-bar-fill.cs-bar-danger { background:#dc2626; }',
       '.cs-bar-fill.cs-bar-accent { background:var(--color-accent,#6366f1); }',
       '.cs-bar-threshold { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--color-text-muted,#9ca3af); }',
@@ -916,10 +926,10 @@
       '.cs-chip-pill { display:inline-flex; flex-direction:row; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); }',
       '.cs-chip-warn { background:rgba(239,68,68,0.1); color:#b91c1c; }',
       // ── Characteristics ──
-      '.cs-stat-row { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }',
-      '.cs-stat { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 6px; border-radius:8px; border:1px solid var(--color-border-light,#f3f4f6); background:var(--color-bg-primary,#f9fafb); }',
-      '.cs-stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); }',
-      '.cs-stat-value { font-size:22px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }',
+      '.cs-stat-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }',
+      '.cs-stat { display:flex; flex-direction:column; align-items:center; gap:4px; padding:9px 3px; border-radius:9px; border:1px solid var(--color-border-light,#f3f4f6); background:var(--color-bg-primary,#f9fafb); }',
+      '.cs-stat-label { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.01em; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-stat-value { font-size:19px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }',
       '.cs-stat-positive .cs-stat-value { color:#047857; }',
       '.cs-stat-negative .cs-stat-value { color:#b91c1c; }',
       '.cs-stat-zero .cs-stat-value { color:var(--color-text-secondary,#6b7280); }',
@@ -1053,6 +1063,13 @@
       '  .cs-damage-label { width:auto; padding-top:0; }',
       '}',
       // ── Motion / animation layer (entrance + ambient; reduce-motion aware) ──
+      // Inventory (see playEntrance for the JS-driven ones):
+      //   1. staggered box entrance   2. low-stamina stamina-bar pulse
+      //   3. (retired in v3.1 — was the heroic-resource BAR shimmer; HR is now
+      //      pips, so this rule is inert and kept only as a no-op)
+      //   4. level-badge sheen   5. stat-card hover lift   6. portrait hover zoom
+      //   7. v3.1: stamina-bar fill + characteristic count-up + recovery-dot /
+      //      heroic-pip fade-rise reveal (all in playEntrance, skipped on reduce-motion)
       // 1. Staggered box entrance (class + per-box delay set in playEntrance).
       '@keyframes ds-box-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }',
       '.ds-sheet .cs-box.ds-anim-in { animation:ds-box-in 380ms cubic-bezier(.2,.7,.2,1) both; }',
