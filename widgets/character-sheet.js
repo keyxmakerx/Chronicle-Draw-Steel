@@ -166,6 +166,23 @@
     '</div>';
   }
 
+  // renderPips draws filled/empty glyphs for a small pool (recoveries, heroic
+  // resource) capped so a large pool doesn't blow out the row, with a trailing
+  // count. Returns a muted dash when there's nothing to show.
+  function renderPips(cur, max, fullCh, emptyCh, cls) {
+    var n = max || cur;
+    if (!n) return '<span class="cs-pips-empty">–</span>';
+    if (n > 12) n = 12;
+    var out = '';
+    for (var i = 0; i < n; i++) out += (i < cur) ? fullCh : emptyCh;
+    return '<span class="' + cls + '">' + out + '</span>' +
+      '<span class="cs-pips-count">' + cur + (max ? '/' + max : '') + '</span>';
+  }
+
+  // rVitals is the v3 composite "top stats" box: stamina bar + recoveries (dots)
+  // + heroic resource (pips) + a Roll Might button on the left, and the
+  // characteristics grid on the right. Folds in the former Characteristics and
+  // Heroic-Resource boxes so the layout matches the reference.
   function rVitals(def, data) {
     var current = num(data, 'stamina_current', 0);
     var max = num(data, 'stamina_max', 0);
@@ -177,20 +194,32 @@
     var windedPct = max > 0 ? (winded / max) * 100 : 0;
     var dangerClass = (current <= winded) ? ' cs-bar-danger' : '';
 
-    var recChips = '';
-    if (recoveriesMax > 0 || recoveries > 0) {
-      recChips = '<div class="cs-chip"><span class="cs-chip-label">Recoveries</span>' +
-        '<span class="cs-chip-value">' + recoveries + (recoveriesMax > 0 ? ' / ' + recoveriesMax : '') + '</span></div>';
-    }
+    var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
+    var hrCur = num(data, 'heroic_resource_current', 0);
+    var hrMax = num(data, 'heroic_resource_max', 0);
 
-    return '<div class="cs-bar-wrap">' +
+    var left =
+      '<div class="cs-bar-wrap">' +
         '<div class="cs-bar-label">Stamina <span class="cs-bar-value">' + current + ' / ' + max + '</span></div>' +
         '<div class="cs-bar"><div class="cs-bar-fill' + dangerClass + '" style="width:' + pct + '%"></div>' +
           (winded > 0 ? '<div class="cs-bar-threshold" style="left:' + windedPct + '%" title="Winded"></div>' : '') +
         '</div>' +
         (winded > 0 ? '<div class="cs-bar-sub">Winded at ' + winded + '</div>' : '') +
       '</div>' +
-      (recChips ? '<div class="cs-chip-row">' + recChips + '</div>' : '');
+      '<div class="cs-statline"><span class="cs-statline-label">Recoveries</span>' +
+        renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
+      '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
+        renderPips(hrCur, hrMax, '◆', '◇', 'cs-hr-pips') + '</div>' +
+      '<button type="button" class="cs-act cs-act--primary cs-roll-might" data-cs-act="roll-might">' +
+        '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
+
+    var right =
+      '<div class="cs-vitals-stats">' +
+        '<div class="cs-subhead">Characteristics</div>' +
+        rCharacteristics(def, data) +
+      '</div>';
+
+    return '<div class="cs-vitals"><div class="cs-vitals-main">' + left + '</div>' + right + '</div>';
   }
 
   function rCharacteristics(def, data) {
@@ -475,6 +504,13 @@
   // below it. Clicking the row expands the detail IN PLACE (no overlay); the
   // panel is filled lazily on first open by attachInteractions. Native <button>
   // so Enter/Space activate it for free.
+  // abilityTypeLabel returns the singular badge label for an ability type
+  // (ABILITY_TYPE_LABELS holds the plural group headings).
+  function abilityTypeLabel(t) {
+    var map = { signature: 'Signature', action: 'Action', maneuver: 'Maneuver', triggered: 'Triggered', 'free-strike': 'Free Strike', trait: 'Trait' };
+    return map[t] || (t.charAt(0).toUpperCase() + t.slice(1));
+  }
+
   function abilityRow(a, idx) {
     var name = esc(a.name || 'Untitled Ability');
     var star = a.type === 'signature' ? '<span class="cs-ability-row__star" aria-hidden="true">&#9733;</span>' : '';
@@ -485,12 +521,27 @@
       ? '<span class="cs-ability-row__meta">' + glance.join(' &middot; ') + '</span>'
       : '';
 
+    // v3.1 right-aligned badges: a cost pill (e.g. "3 Heroic") + a type label
+    // (Signature / Triggered / …).
+    var cost = a.spend_resource || a.spend_vp || a.cost;
+    var costPill = cost ? '<span class="cs-ability-cost">' + esc(String(cost)) + '</span>' : '';
+    var typeBadge = '';
+    if (a.type) {
+      var t = String(a.type);
+      var tcls = (t === 'signature') ? ' cs-ability-badge--sig' : (t === 'triggered') ? ' cs-ability-badge--trig' : '';
+      typeBadge = '<span class="cs-ability-badge' + tcls + '">' + esc(abilityTypeLabel(t)) + '</span>';
+    }
+    var badges = (costPill || typeBadge)
+      ? '<span class="cs-ability-row__badges">' + costPill + typeBadge + '</span>'
+      : '';
+
     return '<div class="cs-ability-item">' +
       '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
           ' aria-expanded="false" aria-label="' + name + ' — toggle details">' +
         star +
         '<span class="cs-ability-row__name">' + name + '</span>' +
         glanceHtml +
+        badges +
         '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
       '</button>' +
       '<div class="cs-ability-acc" data-ds-acc></div>' +
@@ -575,14 +626,14 @@
     // Row 2 — main column (8) + side column (4). v3: ALL sections always render;
     // each box's renderer shows a placeholder when its data is absent, so the
     // sheet's full structure is visible even on a fresh/unsynced hero.
-    var hrLabel = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
+    // v3.1: Vitals is now a composite box (stamina + recoveries + heroic
+    // resource + Roll Might + characteristics), so the standalone Characteristics
+    // and Heroic-Resource boxes are folded in and dropped here.
     var main = [
       boxDef('ds-vitals', 'Vitals', 'ds-vitals', 'expanded', { pinned: true }),
-      boxDef('ds-characteristics', 'Characteristics', 'ds-characteristics', 'expanded', { pinned: true }),
       boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded')
     ];
     var side = [
-      boxDef('ds-heroic-resource', hrLabel, 'ds-heroic-resource', 'expanded', { pinned: true }),
       boxDef('ds-combat', 'Combat', 'ds-combat', 'expanded', { pinned: true }),
       boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
       boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
@@ -811,6 +862,27 @@
     var css = [
       // ── Base (the frame's .cs-surface owns layout; we only set type/color) ──
       '.ds-sheet { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); }',
+      // v3.1 sheet ACCENT (the "highlight"). Scoped to the sheet and driven by an
+      // overridable var so a future owner-page setting can recolor it (and add
+      // highlight 2/3) by setting --ds-accent / --ds-accent-rgb on .ds-sheet —
+      // no CSS change needed. Default = violet.
+      '.ds-sheet { --color-accent: var(--ds-accent, #a855f7); --color-accent-rgb: var(--ds-accent-rgb, 168,85,247); }',
+      // v3.1 Vitals composite: stamina/recoveries/HR/roll on the left, the
+      // characteristics grid on the right (stacks on narrow widths).
+      '.cs-vitals { display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-start; }',
+      '.cs-vitals-main { flex:1 1 220px; min-width:200px; display:flex; flex-direction:column; gap:10px; }',
+      '.cs-vitals-stats { flex:1 1 280px; min-width:240px; }',
+      '.cs-subhead { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); margin-bottom:8px; }',
+      '.cs-statline { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; }',
+      '.cs-statline-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-dots, .cs-hr-pips { letter-spacing:2px; font-size:13px; color:var(--color-accent,#a855f7); }',
+      '.cs-pips-count { margin-left:8px; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); letter-spacing:normal; font-variant-numeric:tabular-nums; }',
+      '.cs-pips-empty { color:var(--color-text-muted,#9ca3af); }',
+      '.cs-roll-might { align-self:flex-start; margin-top:2px; }',
+      // v3.1 ability badges (right-aligned: cost pill + type label).
+      '.cs-ability-row__badges { margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex:none; }',
+      '.cs-ability-badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; background:rgba(var(--color-accent-rgb,168,85,247),0.14); color:var(--color-accent,#a855f7); }',
+      '.cs-ability-cost { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:600; background:var(--color-accent,#a855f7); color:#fff; }',
       // ── Headless identity banner + clean pinned boxes (frame box hooks) ──
       '.cs-box[data-box-key="ds-header"] > .cs-box__head { display:none; }',
       '.cs-box[data-box-key="ds-header"] > .cs-box__body { padding:16px; }',
@@ -876,7 +948,7 @@
       '.cs-ability-row[aria-expanded="true"] .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:rotate(90deg); }',
       '.cs-ability-acc { height:0; overflow:hidden; }',
       '.cs-ability-acc__inner { opacity:0; }',
-      '.cs-ad--inline { max-width:none; margin:0; padding:12px 14px 16px; border-top:1px solid var(--color-border-light,#f3f4f6); background:rgba(var(--color-accent-rgb,99,102,241),0.03); }',
+      '.cs-ad--inline { max-width:none; margin:0; padding:12px 14px 16px; border-top:3px solid var(--color-accent,#a855f7); background:rgba(var(--color-accent-rgb,168,85,247),0.05); }',
       '.cs-ad--inline .cs-ad__keywords { margin-top:0; }',
       // ── Ability detail overlay — the zoom destination (expansive, centered) ──
       '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
