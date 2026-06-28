@@ -48,6 +48,26 @@
   // single shared renderer (and its glossary cache) backs every box renderer.
   var refRenderer = null;
 
+  // Skill catalog (slug → {name, description, group}) from data/skills.json,
+  // loaded once at mount so skill chips can show a definition tooltip. Module
+  // singleton like the reference renderer (one DS system per page).
+  var skillDefs = null;
+  function loadSkillDefs(base, campaignId) {
+    if (skillDefs) return Promise.resolve();
+    var url = campaignId
+      ? '/campaigns/' + campaignId + '/extensions/drawsteel/assets/data/skills.json'
+      : base + 'data/skills.json';
+    var fetchFn = (campaignId && Chronicle.apiFetch) ? Chronicle.apiFetch : fetch;
+    return fetchFn(url)
+      .then(function (r) { return r.json(); })
+      .then(function (arr) {
+        var m = {};
+        (Array.isArray(arr) ? arr : []).forEach(function (s) { if (s && s.slug) m[String(s.slug).toLowerCase()] = s; });
+        skillDefs = m;
+      })
+      .catch(function () { skillDefs = {}; });
+  }
+
   // ── primitive helpers ──────────────────────────────────────────────
 
   function esc(s) {
@@ -426,11 +446,15 @@
         var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
         (buckets[gk] = buckets[gk] || []).push(id);
       });
+      var skillTip = function (id) {
+        var d = skillDefs && skillDefs[String(id).toLowerCase()];
+        return (d && d.description) ? ' data-tip="' + esc(d.description) + '" tabindex="0"' : '';
+      };
       var groupOut = function (key, label, cls) {
         var list = buckets[key];
         if (!list || !list.length) return '';
         var chips = list.map(function (id) {
-          return '<span class="cs-skill' + (cls || '') + '">' + esc(humanizeId(id)) + '</span>';
+          return '<span class="cs-skill' + (cls || '') + '"' + skillTip(id) + '>' + esc(humanizeId(id)) + '</span>';
         }).join('');
         return '<div class="cs-skill-grp"><div class="cs-skill-grp__label">' + esc(label) + '</div>' +
           '<div class="cs-skill-list">' + chips + '</div></div>';
@@ -1123,7 +1147,11 @@
     var star = g === 'signature' ? '★ ' : '';
     var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
     var kw = (Array.isArray(a.keywords) && a.keywords.length)
-      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) { return '<span>' + esc(String(k)) + '</span>'; }).join('') + '</div>' : '';
+      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
+          var en = (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(k) : null;
+          var tip = (en && en.description) ? ' data-tip="' + esc(en.description) + '" tabindex="0"' : '';
+          return '<span' + tip + '>' + esc(String(k)) + '</span>';
+        }).join('') + '</div>' : '';
     var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(cleanFoundryText(a.effectBefore)) + '</div>' : '';
     var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(cleanFoundryText(a.trigger)) + '</span></div>' : '';
     var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
@@ -1790,6 +1818,10 @@
       '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
       '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
       '.cs-skill--lang { background:var(--color-bg-tertiary,#f3f4f6); border-color:var(--color-border-light,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      // generic definition tooltip (skill chips, ability-keyword badges) — a small
+      // floating card with the rule text. Hover (desktop) + keyboard focus.
+      '.ds-sheet [data-tip] { cursor:help; position:relative; }',
+      '.ds-sheet [data-tip]:hover::after, .ds-sheet [data-tip]:focus-visible::after { content:attr(data-tip); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:7px; z-index:9999; width:max-content; max-width:240px; white-space:normal; padding:8px 11px; border-radius:8px; font-size:11.5px; font-weight:500; line-height:1.45; text-transform:none; letter-spacing:normal; color:#f1f5f9; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.45); box-shadow:0 10px 28px -8px rgba(0,0,0,0.55); pointer-events:none; }',
       // movement modes (Combat) — DM-relevant non-walk movement.
       '.cs-move-modes { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }',
       '.cs-move-mode { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:rgba(var(--color-accent-rgb,168,85,247),0.12); color:var(--color-accent,#a855f7); }',
@@ -1920,7 +1952,7 @@
           claimed: ds.claimed === 'true' || ds.claimed === '1'
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
-        loadRef.then(function () {
+        Promise.all([loadRef, loadSkillDefs(base, campaignId)]).then(function () {
           if (refRenderer) refRenderer.injectStyles();
           mountSheet(self, el, data);
         });

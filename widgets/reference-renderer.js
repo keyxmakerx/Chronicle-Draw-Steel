@@ -58,6 +58,14 @@ var DrawSteelRefRenderer = (function () {
       });
   };
 
+  // getEntry looks up a glossary entry by slug/term (case-insensitive). Used to
+  // attach a definition tooltip to a bare term (e.g. an ability keyword badge)
+  // that isn't wrapped in {@…} syntax. Returns null until the glossary loads.
+  RefRenderer.prototype.getEntry = function (termId) {
+    if (!this._glossary || termId == null) return null;
+    return this._glossary[String(termId).toLowerCase().trim()] || null;
+  };
+
   RefRenderer.prototype.renderText = function (escapedHtml) {
     if (!this._loaded || !escapedHtml) return escapedHtml || '';
     var glossary = this._glossary;
