@@ -122,10 +122,15 @@
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var kit = f(data, 'kit', '');
+    var culture = f(data, 'culture', '');
+    var career = f(data, 'career', '');
     var faction = f(data, 'faction', '');
 
+    // Origin line: ancestry · culture · career · class (subclass) · kit.
     var parts = [];
     if (ancestry) parts.push(esc(ancestry));
+    if (culture) parts.push(esc(culture));
+    if (career) parts.push(esc(career));
     if (className) parts.push(esc(className) + (subclass ? ' (' + esc(subclass) + ')' : ''));
     if (kit) parts.push(esc(kit) + ' kit');
     var subtitle = parts.join(' &bull; ');
@@ -210,6 +215,10 @@
         renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
       '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
         renderPips(hrCur, hrMax, '◆', '◇', 'cs-hr-pips') + '</div>' +
+      (isNum(data, 'surges')
+        ? '<div class="cs-statline"><span class="cs-statline-label">Surges</span>' +
+            '<span class="cs-pips-count">' + num(data, 'surges', 0) + '</span></div>'
+        : '') +
       '<button type="button" class="cs-act cs-act--primary cs-roll-might" data-cs-act="roll-might">' +
         '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
 
@@ -279,25 +288,40 @@
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
         '<span class="cs-chip-value">' + val + '</span></div>';
     };
-    var chips = '<div class="cs-chip-row">' +
-      chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability') +
-    '</div>';
+    // chips: combat-relevant scalars. Size/Disengage render only when synced.
+    var chipList = chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability');
+    if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') chipList += chip('Disengage', 'disengage');
+    if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
+    var chips = '<div class="cs-chip-row">' + chipList + '</div>';
 
+    // Potency strip (weak / average / strong) — the derived thresholds an
+    // ability's potency checks compare against. Compact, only when present.
+    var potency = '';
+    if (isNum(data, 'potency_weak') || isNum(data, 'potency_average') || isNum(data, 'potency_strong')) {
+      var pot = function (lbl, key) {
+        return '<span class="cs-pot"><span class="cs-pot__k">' + lbl + '</span>' +
+          '<span class="cs-pot__v">' + (isNum(data, key) ? num(data, key, 0) : '–') + '</span></span>';
+      };
+      potency = '<div class="cs-pot-strip"><span class="cs-pot-strip__label">Potency</span>' +
+        pot('Weak', 'potency_weak') + pot('Avg', 'potency_average') + pot('Strong', 'potency_strong') + '</div>';
+    }
+
+    // conditions: status ids from actor.statuses (or {name,severity} objects).
     var conds = parseJson(f(data, 'conditions_json', ''), []);
     var pills;
-    if (conds && conds.length) {
+    if (Array.isArray(conds) && conds.length) {
       pills = '<div class="cs-cond-row">' + conds.map(function (c) {
-        var name = (c && (c.name || c)) || '';
+        var raw = (c && (c.name || c)) || '';
         var sev = (c && c.severity) || '';
         var cls = 'cs-cond';
-        if (/bleed|burn|dam|poison/i.test(name + ' ' + sev)) cls += ' cs-cond--danger';
-        else if (/slow|weak|daz|frighten|restrain/i.test(name + ' ' + sev)) cls += ' cs-cond--warn';
-        return '<span class="' + cls + '">' + esc(String(name)) + '</span>';
+        if (/bleed|burn|dam|poison/i.test(raw + ' ' + sev)) cls += ' cs-cond--danger';
+        else if (/slow|weak|daz|frighten|restrain|prone|grab|taunt/i.test(raw + ' ' + sev)) cls += ' cs-cond--warn';
+        return '<span class="' + cls + '">' + esc(humanizeId(raw)) + '</span>';
       }).join('') + '</div>';
     } else {
       pills = ph('No conditions.');
     }
-    return status + chips + pills;
+    return status + chips + potency + pills;
   }
   function rDamage(def, data) {
     var imm = parseJson(f(data, 'immunities', ''), []);
@@ -323,6 +347,102 @@
       : '';
 
     return (immHtml + weakHtml) || ph('No immunities or weaknesses.');
+  }
+
+  // humanizeId turns a Foundry id ("handleAnimals", "criminalUnderworld",
+  // "pickLock") into a display label ("Handle Animals", …): split camelCase,
+  // then Title-case each word. Used for skills, conditions, and damage types.
+  function humanizeId(id) {
+    var s = String(id == null ? '' : id).replace(/[_-]+/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+    return s.replace(/\b\w/g, function (m) { return m.toUpperCase(); }).trim();
+  }
+
+  // ── Skills (grouped by the five Draw Steel skill groups, like the sheet) ──
+  var SKILL_GROUPS = [
+    { key: 'crafting', label: 'Crafting', ids: ['alchemy', 'architecture', 'blacksmithing', 'carpentry', 'cooking', 'fletching', 'forgery', 'jewelry', 'mechanics', 'tailoring'] },
+    { key: 'exploration', label: 'Exploration', ids: ['climb', 'drive', 'endurance', 'gymnastics', 'heal', 'jump', 'lift', 'navigate', 'ride', 'swim'] },
+    { key: 'interpersonal', label: 'Interpersonal', ids: ['brag', 'empathize', 'flirt', 'gamble', 'handleAnimals', 'interrogate', 'intimidate', 'lead', 'lie', 'music', 'perform', 'persuade', 'readPerson'] },
+    { key: 'intrigue', label: 'Intrigue', ids: ['alertness', 'concealObject', 'disguise', 'eavesdrop', 'escapeArtist', 'hide', 'pickLock', 'pickPocket', 'sabotage', 'search', 'sneak', 'track'] },
+    { key: 'lore', label: 'Lore', ids: ['culture', 'criminalUnderworld', 'history', 'magic', 'monsters', 'nature', 'psionics', 'religion', 'rumors', 'society', 'strategy', 'timescape'] }
+  ];
+  // group lookup: skill id → group key (so a skill the catalog doesn't know still
+  // lands in an "Other" bucket rather than vanishing).
+  var SKILL_TO_GROUP = (function () {
+    var m = {};
+    SKILL_GROUPS.forEach(function (g) { g.ids.forEach(function (id) { m[id.toLowerCase()] = g.key; }); });
+    return m;
+  })();
+
+  // rSkills renders the hero's trained skills as compact chips grouped by the
+  // five DS skill groups — the official sheet's organization, not a flat dump.
+  // A skill is a plain id string in skills_json (a Foundry Set → array).
+  function rSkills(def, data) {
+    var skills = parseJson(f(data, 'skills_json', ''), []);
+    if (!Array.isArray(skills) || !skills.length) return ph('No trained skills.');
+
+    var buckets = {};
+    skills.forEach(function (s) {
+      var id = String(s == null ? '' : s);
+      var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
+      (buckets[gk] = buckets[gk] || []).push(id);
+    });
+
+    var groupOut = function (key, label) {
+      var list = buckets[key];
+      if (!list || !list.length) return '';
+      var chips = list.map(function (id) {
+        return '<span class="cs-skill">' + esc(humanizeId(id)) + '</span>';
+      }).join('');
+      return '<div class="cs-skill-grp">' +
+        '<div class="cs-skill-grp__label">' + esc(label) + '</div>' +
+        '<div class="cs-skill-list">' + chips + '</div>' +
+      '</div>';
+    };
+
+    var html = SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
+    if (buckets.other) html += groupOut('other', 'Other');
+    return html || ph('No trained skills.');
+  }
+
+  // rKit renders the equipped kit's mechanical bonuses as a compact stat box:
+  // the melee/ranged damage tier mini-ladder + the flat bonus chips. Reads the
+  // single kit projection (kit_details_json → a one-element array). Distinct from
+  // the ability cards — a kit is reference stats, not a clickable action.
+  function rKit(def, data) {
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
+    if (!k) return ph('No kit equipped.');
+
+    var has = function (v) { return v != null && v !== '' && v !== 0; };
+    var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : String(v)); };
+
+    // damage tier mini-ladder (melee / ranged rows × T1/T2/T3) — only if any set.
+    var dmgRows = '';
+    [['Melee', 'melee'], ['Ranged', 'ranged']].forEach(function (pair) {
+      var p = pair[1];
+      var t1 = k[p + 'DamageT1'], t2 = k[p + 'DamageT2'], t3 = k[p + 'DamageT3'];
+      var dist = k[p + 'Distance'];
+      if (!(has(t1) || has(t2) || has(t3) || has(dist))) return;
+      dmgRows += '<div class="cs-kit-row">' +
+        '<span class="cs-kit-row__k">' + pair[0] + (has(dist) ? ' <span class="cs-kit-dist">' + esc(String(dist)) + '</span>' : '') + '</span>' +
+        '<span class="cs-kit-tiers"><span>' + fmt(t1) + '</span><span>' + fmt(t2) + '</span><span>' + fmt(t3) + '</span></span>' +
+      '</div>';
+    });
+    var dmg = dmgRows
+      ? '<div class="cs-kit-dmg"><div class="cs-kit-dmg__head"><span>Damage</span><span class="cs-kit-tierhead"><span>≤11</span><span>12–16</span><span>17+</span></span></div>' + dmgRows + '</div>'
+      : '';
+
+    // flat bonus chips (stability / speed / stamina / disengage).
+    var bonuses = [['Stability', 'stability'], ['Speed', 'speed'], ['Stamina', 'stamina'], ['Disengage', 'disengage']]
+      .filter(function (b) { return has(k[b[1]]); })
+      .map(function (b) {
+        return '<div class="cs-chip"><span class="cs-chip-label">' + b[0] + '</span>' +
+          '<span class="cs-chip-value">' + fmt(k[b[1]]) + '</span></div>';
+      }).join('');
+    var bonusHtml = bonuses ? '<div class="cs-chip-row">' + bonuses + '</div>' : '';
+
+    var name = k.name ? '<div class="cs-kit-name">' + esc(String(k.name)) + '</div>' : '';
+    return name + dmg + bonusHtml || ph('No kit details.');
   }
   // ── Abilities: bare "Option D" master–detail (the locked design) ──────────
   // A grouped list (master rail) + a detail pane. Clicking a row fills the pane
@@ -840,15 +960,17 @@
     ];
     var side = [
       boxDef('ds-combat', 'Combat', 'ds-combat', 'expanded', { pinned: true }),
+      boxDef('ds-kit', 'Kit', 'ds-kit', 'collapsed'),
       boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
       boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
     ];
     rows.push({ columns: [ { width: 8, boxes: main }, { width: 4, boxes: side } ] });
 
-    // Row 3 — Features (6) + Inventory (6), always present.
+    // Row 3 — Skills + Features + Inventory (three list sections, always present).
     rows.push({ columns: [
-      { width: 6, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
-      { width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
+      { width: 4, boxes: [ boxDef('ds-skills', 'Skills', 'ds-skills', 'collapsed') ] },
+      { width: 4, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
+      { width: 4, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
     ] });
 
     // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
@@ -879,8 +1001,10 @@
     s.registerBox('ds-heroic-resource', rHeroicResource);
     s.registerBox('ds-movement', rMovement);
     s.registerBox('ds-combat', rCombat);
+    s.registerBox('ds-kit', rKit);
     s.registerBox('ds-damage', rDamage);
     s.registerBox('ds-abilities', rAbilities);
+    s.registerBox('ds-skills', rSkills);
     s.registerBox('ds-features', rFeatures);
     s.registerBox('ds-progression', rProgression);
     s.registerBox('ds-inventory', rInventory);
@@ -1314,6 +1438,29 @@
       '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
       '.cs-cond--warn { background:rgba(217,119,6,0.14); color:#b45309; }',
+      // Potency strip (weak / avg / strong thresholds).
+      '.cs-pot-strip { display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }',
+      '.cs-pot-strip__label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-pot { display:inline-flex; align-items:center; gap:5px; }',
+      '.cs-pot__k { font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-pot__v { font-size:13px; font-weight:700; color:var(--color-text-primary,#111827); font-variant-numeric:tabular-nums; }',
+      // ── Skills (grouped chips) ──
+      '.cs-skill-grp { margin-top:10px; }',
+      '.cs-skill-grp:first-child { margin-top:0; }',
+      '.cs-skill-grp__label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted,#9ca3af); margin-bottom:5px; }',
+      '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
+      '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      // ── Kit (stat box: damage tier mini-ladder + bonus chips) ──
+      '.cs-kit-name { font-size:14px; font-weight:700; color:var(--color-text-primary,#111827); margin-bottom:8px; }',
+      '.cs-kit-dmg { border:1px solid var(--color-border-light,#f3f4f6); border-radius:9px; overflow:hidden; margin-bottom:10px; }',
+      '.cs-kit-dmg__head, .cs-kit-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; font-size:12px; }',
+      '.cs-kit-dmg__head { background:var(--color-bg-tertiary,#f3f4f6); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-kit-row { border-top:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-kit-row__k { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-kit-dist { font-weight:500; color:var(--color-text-muted,#9ca3af); font-size:11px; }',
+      '.cs-kit-tiers, .cs-kit-tierhead { display:flex; gap:6px; }',
+      '.cs-kit-tiers span, .cs-kit-tierhead span { display:inline-block; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }',
+      '.cs-kit-tiers span { font-weight:700; color:var(--color-text-primary,#111827); }',
       // ── v3 GM Lore ──
       '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
       // ── v3 Header: status pills + actions + live dot ──
