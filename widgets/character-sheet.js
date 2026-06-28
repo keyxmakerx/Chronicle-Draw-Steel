@@ -1186,7 +1186,8 @@
   // bodies, so per-node listeners would leak):
   //   • a [data-ds-ability] rail row → SELECT it (fill the pane with the small card)
   //   • the small [data-ds-expand] card (or Enter/Space on it) → GROW to the big card
-  //   • the big card's [data-ds-collapse-btn] → shrink back to the small card
+  //   • clicking anywhere on the big [data-ds-collapse] card (the ✕, or Escape)
+  //     → shrink back to the small card (glossary refs / text selection excepted)
   //   • [data-cs-read-story] → open the backstory reading view
   // The pane is filled here (not in rAbilities) so selection state lives in the
   // DOM while the box renderer stays a pure function. On mount the first ability
@@ -1256,10 +1257,18 @@
         }
         return;
       }
-      var collapseBtn = t.closest('[data-ds-collapse-btn]');
-      if (collapseBtn) {
-        var big = t.closest('[data-ds-collapse]');
-        if (big) { e.preventDefault(); selectAbility(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
+      // Clicking anywhere on the big card returns to the small card (symmetric
+      // with the small card being wholly clickable to expand). Guarded: don't
+      // hijack a glossary ref / link, and don't collapse on the click that ends
+      // a text selection (so the rules text stays readable/selectable).
+      var big = t.closest('[data-ds-collapse]');
+      if (big) {
+        if (t.closest('.ds-ref') || t.closest('a')) return;
+        var sel = '';
+        try { sel = window.getSelection ? String(window.getSelection()) : ''; } catch (e2) {}
+        if (sel) return;
+        e.preventDefault();
+        selectAbility(parseInt(big.getAttribute('data-ds-collapse'), 10));
         return;
       }
       var card = t.closest('[data-ds-expand]');
@@ -1272,8 +1281,15 @@
     // The small card is a div[role=button]; rail rows are native <button>s, so
     // only the card needs an explicit Enter/Space handler.
     inst._onAbilityKey = function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var t = e.target;
+      // Escape on the big card → shrink back to the small card.
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        var openBig = (t && t.closest) ? t.closest('[data-ds-collapse]') : null;
+        if (!openBig) { var p0 = pane(); openBig = p0 ? p0.querySelector('[data-ds-collapse]') : null; }
+        if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
+        return;
+      }
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var card = (t && t.closest) ? t.closest('[data-ds-expand]') : null;
       if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); }
     };
@@ -1530,7 +1546,9 @@
       '.ds-card:hover .ds-card__hint, .ds-card:focus-visible .ds-card__hint { opacity:0.9; }',
       // the grown BIG card — two sections, width-constrained
       '.ds-big { max-width:520px; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.4); border-radius:12px; overflow:hidden; background:var(--color-bg-primary,#f9fafb); box-shadow:0 18px 44px -26px rgba(var(--color-accent-rgb,168,85,247),0.55); }',
-      '.ds-big__h { display:flex; align-items:center; gap:9px; padding:11px 15px; background:linear-gradient(90deg,var(--color-accent,#a855f7),#7c3aed); color:#fff; }',
+      '.ds-big__h { display:flex; align-items:center; gap:9px; padding:11px 15px; background:linear-gradient(90deg,var(--color-accent,#a855f7),#7c3aed); color:#fff; cursor:pointer; }',
+      '.ds-big__h:hover .ds-big__x { opacity:1; transform:scale(1.08); }',
+      '.ds-big__x { transition:opacity 140ms ease, transform 140ms ease; }',
       '.ds-big__nm { font-size:16px; font-weight:800; }',
       '.ds-big__meta { margin-left:auto; font-size:11px; font-weight:700; opacity:0.92; }',
       '.ds-big__x { flex:none; background:none; border:0; color:#fff; opacity:0.8; cursor:pointer; font:inherit; font-size:13px; line-height:1; padding:2px 0 2px 4px; }',
