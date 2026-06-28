@@ -199,22 +199,29 @@ State of the manifest **today**.
 | Heroic resource name | `system.hero.resource.name` | `class` item → `system.class.system.primary` |
 | Heroic resource max | *(nonexistent path)* | No actor field — current is `system.hero.primary.value`; "max" is not a stored scalar |
 
-### ⚠️ Missing today (not declared in manifest)
+### ✅ Declared in Phase C (manifest, branch `claude/chronicle-sheet-sync-j2m9s4`)
 
-| Concept | Where to read it |
+These require the Foundry adapter's `normalizeFoundryValue` (Set/Collection → JSON)
+to land too — Sets serialize to `{}` without it.
+
+| Concept | Manifest declaration |
 |---|---|
-| Skills | `system.skills.value` (Set) |
-| Kit details (damage tiers, distance, bonuses) | `kit` item → `system.bonuses.*` |
-| Culture | `culture` item → `name` |
-| Career | `career` item → `name` |
-| Conditions from effects | `actor.statuses` + `effects` collection |
-| Surges | `system.hero.surges` |
-| Size | `system.combat.size.value` |
-| Disengage | `system.movement.disengage` |
-| Potency | `system.potency.{weak,average,strong}` (pull-only, derived) |
-| Victories | `system.hero.victories` |
-| Renown | `system.hero.renown` |
-| XP | `system.hero.xp` |
+| Skills | `skills_json` ← `system.skills.value` (Set → JSON array) |
+| Kit details (damage tiers, distance, bonuses) | `kit_details_json` ← `kit` item projection of `system.bonuses.*` |
+| Culture | `culture` ← `culture` item name (single) |
+| Career | `career` ← `career` item name (single) |
+| Conditions | `conditions_json` ← `actor.statuses` (Set → JSON array, pull-only) |
+| Potency | `potency_{weak,average,strong}` ← `system.potency.*` (pull-only, derived) |
+| Ability keywords | `abilities_json.keywords` ← `system.keywords` (Set → array) |
+| Ability power-roll characteristics | `abilities_json.powerRollChars` ← `system.power.roll.characteristics` (Set → array) |
+| Ability tier ladder | `abilities_json.tiers` ← `system.power.effects` (pseudo-doc collection → array) |
+| Ability effect/trigger/story text | `abilities_json.{effectBefore,effectAfter,trigger,story}` |
+
+### ✅ Declared in Phase A (already shipped)
+
+Surges (`system.hero.surges`), Size (`system.combat.size.value`), Disengage
+(`system.movement.disengage`), Victories/Renown/XP (`system.hero.*`),
+Temporary stamina (`system.stamina.temporary`).
 
 ---
 
