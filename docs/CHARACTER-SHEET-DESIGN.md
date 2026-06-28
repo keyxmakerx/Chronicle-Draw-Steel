@@ -4,6 +4,18 @@
 > (`widgets/character-sheet.js`). Read this before redesigning anything so we
 > don't relitigate settled decisions. Updated as decisions are made.
 
+## 🧪 Testing (no live client needed)
+
+The widget's pure logic — the "For \<hero>" odds (`tierOdds`), damage-formula
+resolution (`substituteFormula`/`tierFragments`), ability grouping (`groupOf`), the
+feature-origin classifier (`classifyFeature`), skill grouping, and the label
+humanizers — is unit-tested in `tools/test-character-sheet.mjs`
+(`node --test tools/test-character-sheet.mjs`). The widget is a browser IIFE that
+exports these helpers via `module.exports` off-browser (the `Chronicle.register`
+side-effects are guarded on a null `Chronicle`), so Node can import and test them
+with zero change to runtime behavior. Visuals are checked by rendering the **real**
+widget headlessly against mock data (see the scratch `ability-harness`).
+
 ## 📸 Reference renders
 
 Headless renders of the **real widget** (not mockups) against mock Phase-C data —

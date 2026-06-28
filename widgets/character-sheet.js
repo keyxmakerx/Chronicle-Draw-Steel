@@ -36,8 +36,10 @@
 (function () {
   'use strict';
 
-  if (typeof window === 'undefined' || !window.Chronicle) return;
-  var Chronicle = window.Chronicle;
+  // In a browser this is window.Chronicle; in Node (the unit tests below) it's
+  // null — the register/registerBoxes side-effects are guarded on it, while the
+  // pure helpers are exported for testing. Browser behavior is unchanged.
+  var Chronicle = (typeof window !== 'undefined' && window.Chronicle) ? window.Chronicle : null;
 
   // Module-singleton reference renderer. One Draw Steel system per page, so a
   // single shared renderer (and its glossary cache) backs every box renderer.
@@ -1687,7 +1689,7 @@
 
   // ── widget ─────────────────────────────────────────────────────────
 
-  Chronicle.register('character-sheet', {
+  if (Chronicle) Chronicle.register('character-sheet', {
     init: function (el, config) {
       config = config || {};
       var ds = el.dataset || {};
@@ -1759,5 +1761,18 @@
     }
   });
 
-  registerBoxes();
+  if (Chronicle) registerBoxes();
+
+  // Test seam: expose the pure helpers for Node unit tests. Inert in a browser
+  // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
+      humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
+      targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
+      substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
+      classifyFeature: classifyFeature, htmlToText: htmlToText,
+      SKILL_TO_GROUP: SKILL_TO_GROUP
+    };
+  }
 })();
