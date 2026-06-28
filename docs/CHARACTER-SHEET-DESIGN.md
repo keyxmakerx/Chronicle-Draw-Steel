@@ -257,14 +257,22 @@ DM building a monster:**
    9. Triggered reactions called out as a group + reach as a top-line stat.
 
 **Execution batches:**
-- **Step 2 (done in this batch):** dead-button toast; drop combat-tracker placeholders;
-  HR as a bare count (DS HR has no max); `rDamage` tolerant of CSV/object/number shapes;
-  removed dead `project_points` chip + dead box registrations (`ds-characteristics`/
-  `-heroic-resource`/`-movement`) + dead `heroic_resource_max`; stale-docstring + doc fix.
-- **Step 3:** the DM-reference completeness projections + renders (1–9 above).
-- **Step 4:** generate `data/rules-glossary.json` + `data/skills.json` from Steel
-  Compendium (+ DSCL `NOTICE`), the enricher-aware term-scanner (#48), and the per-skill
-  definition cards (#49).
+- **Step 2 ✅:** dead-button toast; drop combat-tracker placeholders; HR as a bare count
+  (DS HR has no max); `rDamage` tolerant of CSV/object/number; removed dead
+  `project_points` chip + dead box registrations + dead `heroic_resource_max`;
+  stale-docstring + doc fixes.
+- **Step 3 ✅:** DM-reference completeness — movement modes, `combat.save`, per-type
+  damage immunity/weakness VALUES, status immunities, Treasures (grouped by category),
+  Perks + Titles (Features), Languages (Skills).
+- **Step 4 ✅:** `data/skills.json` (57 skills) + ability-keyword entries in
+  `data/rules-glossary.json`, both from the Steel Compendium under the DSCL
+  (`data/NOTICE.md`). Skill chips + keyword badges show definition tooltips;
+  `reference-renderer.scanText()` + `refSynced()` wrap bare condition names in synced
+  prose so the glossary fires on real heroes (#48 + #49 done).
+
+**Remaining (smaller, deferred):** mobile bottom-drawer for abilities; glossary keyboard/
+touch a11y (tooltips are hover/focus today); movement-glossary terms (only conditions are
+auto-scanned in prose by design); the **write-back epic** (future).
 
 ## 🛠️ WANT TO DO (planned, not yet built)
 
