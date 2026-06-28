@@ -36,8 +36,10 @@
 (function () {
   'use strict';
 
-  if (typeof window === 'undefined' || !window.Chronicle) return;
-  var Chronicle = window.Chronicle;
+  // In a browser this is window.Chronicle; in Node (the unit tests below) it's
+  // null — the register/registerBoxes side-effects are guarded on it, while the
+  // pure helpers are exported for testing. Browser behavior is unchanged.
+  var Chronicle = (typeof window !== 'undefined' && window.Chronicle) ? window.Chronicle : null;
 
   // Module-singleton reference renderer. One Draw Steel system per page, so a
   // single shared renderer (and its glossary cache) backs every box renderer.
@@ -122,10 +124,15 @@
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var kit = f(data, 'kit', '');
+    var culture = f(data, 'culture', '');
+    var career = f(data, 'career', '');
     var faction = f(data, 'faction', '');
 
+    // Origin line: ancestry · culture · career · class (subclass) · kit.
     var parts = [];
     if (ancestry) parts.push(esc(ancestry));
+    if (culture) parts.push(esc(culture));
+    if (career) parts.push(esc(career));
     if (className) parts.push(esc(className) + (subclass ? ' (' + esc(subclass) + ')' : ''));
     if (kit) parts.push(esc(kit) + ' kit');
     var subtitle = parts.join(' &bull; ');
@@ -210,6 +217,10 @@
         renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
       '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
         renderPips(hrCur, hrMax, '◆', '◇', 'cs-hr-pips') + '</div>' +
+      (isNum(data, 'surges')
+        ? '<div class="cs-statline"><span class="cs-statline-label">Surges</span>' +
+            '<span class="cs-pips-count">' + num(data, 'surges', 0) + '</span></div>'
+        : '') +
       '<button type="button" class="cs-act cs-act--primary cs-roll-might" data-cs-act="roll-might">' +
         '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
 
@@ -279,25 +290,40 @@
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
         '<span class="cs-chip-value">' + val + '</span></div>';
     };
-    var chips = '<div class="cs-chip-row">' +
-      chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability') +
-    '</div>';
+    // chips: combat-relevant scalars. Size/Disengage render only when synced.
+    var chipList = chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability');
+    if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') chipList += chip('Disengage', 'disengage');
+    if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
+    var chips = '<div class="cs-chip-row">' + chipList + '</div>';
 
+    // Potency strip (weak / average / strong) — the derived thresholds an
+    // ability's potency checks compare against. Compact, only when present.
+    var potency = '';
+    if (isNum(data, 'potency_weak') || isNum(data, 'potency_average') || isNum(data, 'potency_strong')) {
+      var pot = function (lbl, key) {
+        return '<span class="cs-pot"><span class="cs-pot__k">' + lbl + '</span>' +
+          '<span class="cs-pot__v">' + (isNum(data, key) ? num(data, key, 0) : '–') + '</span></span>';
+      };
+      potency = '<div class="cs-pot-strip"><span class="cs-pot-strip__label">Potency</span>' +
+        pot('Weak', 'potency_weak') + pot('Avg', 'potency_average') + pot('Strong', 'potency_strong') + '</div>';
+    }
+
+    // conditions: status ids from actor.statuses (or {name,severity} objects).
     var conds = parseJson(f(data, 'conditions_json', ''), []);
     var pills;
-    if (conds && conds.length) {
+    if (Array.isArray(conds) && conds.length) {
       pills = '<div class="cs-cond-row">' + conds.map(function (c) {
-        var name = (c && (c.name || c)) || '';
+        var raw = (c && (c.name || c)) || '';
         var sev = (c && c.severity) || '';
         var cls = 'cs-cond';
-        if (/bleed|burn|dam|poison/i.test(name + ' ' + sev)) cls += ' cs-cond--danger';
-        else if (/slow|weak|daz|frighten|restrain/i.test(name + ' ' + sev)) cls += ' cs-cond--warn';
-        return '<span class="' + cls + '">' + esc(String(name)) + '</span>';
+        if (/bleed|burn|dam|poison/i.test(raw + ' ' + sev)) cls += ' cs-cond--danger';
+        else if (/slow|weak|daz|frighten|restrain|prone|grab|taunt/i.test(raw + ' ' + sev)) cls += ' cs-cond--warn';
+        return '<span class="' + cls + '">' + esc(humanizeId(raw)) + '</span>';
       }).join('') + '</div>';
     } else {
       pills = ph('No conditions.');
     }
-    return status + chips + pills;
+    return status + chips + potency + pills;
   }
   function rDamage(def, data) {
     var imm = parseJson(f(data, 'immunities', ''), []);
@@ -324,65 +350,295 @@
 
     return (immHtml + weakHtml) || ph('No immunities or weaknesses.');
   }
-  var ABILITY_TYPE_ORDER = ['signature', 'action', 'maneuver', 'triggered', 'free-strike', 'trait'];
-  var ABILITY_TYPE_LABELS = {
-    'signature': 'Signature', 'action': 'Actions', 'maneuver': 'Maneuvers',
-    'triggered': 'Triggered', 'free-strike': 'Free Strikes', 'trait': 'Traits'
-  };
+
+  // humanizeId turns a Foundry id ("handleAnimals", "criminalUnderworld",
+  // "pickLock") into a display label ("Handle Animals", …): split camelCase,
+  // then Title-case each word. Used for skills, conditions, and damage types.
+  function humanizeId(id) {
+    var s = String(id == null ? '' : id).replace(/[_-]+/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+    return s.replace(/\b\w/g, function (m) { return m.toUpperCase(); }).trim();
+  }
+
+  // ── Skills (grouped by the five Draw Steel skill groups, like the sheet) ──
+  var SKILL_GROUPS = [
+    { key: 'crafting', label: 'Crafting', ids: ['alchemy', 'architecture', 'blacksmithing', 'carpentry', 'cooking', 'fletching', 'forgery', 'jewelry', 'mechanics', 'tailoring'] },
+    { key: 'exploration', label: 'Exploration', ids: ['climb', 'drive', 'endurance', 'gymnastics', 'heal', 'jump', 'lift', 'navigate', 'ride', 'swim'] },
+    { key: 'interpersonal', label: 'Interpersonal', ids: ['brag', 'empathize', 'flirt', 'gamble', 'handleAnimals', 'interrogate', 'intimidate', 'lead', 'lie', 'music', 'perform', 'persuade', 'readPerson'] },
+    { key: 'intrigue', label: 'Intrigue', ids: ['alertness', 'concealObject', 'disguise', 'eavesdrop', 'escapeArtist', 'hide', 'pickLock', 'pickPocket', 'sabotage', 'search', 'sneak', 'track'] },
+    { key: 'lore', label: 'Lore', ids: ['culture', 'criminalUnderworld', 'history', 'magic', 'monsters', 'nature', 'psionics', 'religion', 'rumors', 'society', 'strategy', 'timescape'] }
+  ];
+  // group lookup: skill id → group key (so a skill the catalog doesn't know still
+  // lands in an "Other" bucket rather than vanishing).
+  var SKILL_TO_GROUP = (function () {
+    var m = {};
+    SKILL_GROUPS.forEach(function (g) { g.ids.forEach(function (id) { m[id.toLowerCase()] = g.key; }); });
+    return m;
+  })();
+
+  // rSkills renders the hero's trained skills as compact chips grouped by the
+  // five DS skill groups — the official sheet's organization, not a flat dump.
+  // A skill is a plain id string in skills_json (a Foundry Set → array).
+  function rSkills(def, data) {
+    var skills = parseJson(f(data, 'skills_json', ''), []);
+    if (!Array.isArray(skills) || !skills.length) return ph('No trained skills.');
+
+    var buckets = {};
+    skills.forEach(function (s) {
+      var id = String(s == null ? '' : s);
+      var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
+      (buckets[gk] = buckets[gk] || []).push(id);
+    });
+
+    var groupOut = function (key, label) {
+      var list = buckets[key];
+      if (!list || !list.length) return '';
+      var chips = list.map(function (id) {
+        return '<span class="cs-skill">' + esc(humanizeId(id)) + '</span>';
+      }).join('');
+      return '<div class="cs-skill-grp">' +
+        '<div class="cs-skill-grp__label">' + esc(label) + '</div>' +
+        '<div class="cs-skill-list">' + chips + '</div>' +
+      '</div>';
+    };
+
+    var html = SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
+    if (buckets.other) html += groupOut('other', 'Other');
+    return html || ph('No trained skills.');
+  }
+
+  // rKit renders the equipped kit's mechanical bonuses as a compact stat box:
+  // the melee/ranged damage tier mini-ladder + the flat bonus chips. Reads the
+  // single kit projection (kit_details_json → a one-element array). Distinct from
+  // the ability cards — a kit is reference stats, not a clickable action.
+  function rKit(def, data) {
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
+    if (!k) return ph('No kit equipped.');
+
+    var has = function (v) { return v != null && v !== '' && v !== 0; };
+    var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : String(v)); };
+
+    // damage tier mini-ladder (melee / ranged rows × T1/T2/T3) — only if any set.
+    var dmgRows = '';
+    [['Melee', 'melee'], ['Ranged', 'ranged']].forEach(function (pair) {
+      var p = pair[1];
+      var t1 = k[p + 'DamageT1'], t2 = k[p + 'DamageT2'], t3 = k[p + 'DamageT3'];
+      var dist = k[p + 'Distance'];
+      if (!(has(t1) || has(t2) || has(t3) || has(dist))) return;
+      dmgRows += '<div class="cs-kit-row">' +
+        '<span class="cs-kit-row__k">' + pair[0] + (has(dist) ? ' <span class="cs-kit-dist">' + esc(String(dist)) + '</span>' : '') + '</span>' +
+        '<span class="cs-kit-tiers"><span>' + fmt(t1) + '</span><span>' + fmt(t2) + '</span><span>' + fmt(t3) + '</span></span>' +
+      '</div>';
+    });
+    var dmg = dmgRows
+      ? '<div class="cs-kit-dmg"><div class="cs-kit-dmg__head"><span>Damage</span><span class="cs-kit-tierhead"><span>≤11</span><span>12–16</span><span>17+</span></span></div>' + dmgRows + '</div>'
+      : '';
+
+    // flat bonus chips (stability / speed / stamina / disengage).
+    var bonuses = [['Stability', 'stability'], ['Speed', 'speed'], ['Stamina', 'stamina'], ['Disengage', 'disengage']]
+      .filter(function (b) { return has(k[b[1]]); })
+      .map(function (b) {
+        return '<div class="cs-chip"><span class="cs-chip-label">' + b[0] + '</span>' +
+          '<span class="cs-chip-value">' + fmt(k[b[1]]) + '</span></div>';
+      }).join('');
+    var bonusHtml = bonuses ? '<div class="cs-chip-row">' + bonuses + '</div>' : '';
+
+    var name = k.name ? '<div class="cs-kit-name">' + esc(String(k.name)) + '</div>' : '';
+    return name + dmg + bonusHtml || ph('No kit details.');
+  }
+  // ── Abilities: bare "Option D" master–detail (the locked design) ──────────
+  // A grouped list (master rail) + a detail pane. Clicking a row fills the pane
+  // with an even-smaller BARE card; hovering the card lifts+glows; clicking it
+  // grows the two-section big card (① rules ② "For <hero>" odds). Monochrome
+  // with a single violet accent. See docs/CHARACTER-SHEET-DESIGN.md.
+  //
+  // rAbilities emits ONLY the static shell (rail rows + a resting pane). The
+  // pane is populated imperatively by attachInteractions (which closes over the
+  // ability array + entity data), so selection state lives in the DOM and the
+  // box renderer stays a pure function of (def, data).
+
+  var GROUP_ORDER = ['signature', 'heroic', 'maneuver'];
+  var GROUP_LABELS = { signature: 'Signature', heroic: 'Heroic', maneuver: 'Maneuvers' };
+  var CHAR_LABELS = { might: 'Might', agility: 'Agility', reason: 'Reason', intuition: 'Intuition', presence: 'Presence' };
+
+  // groupOf buckets a Draw Steel ability into the three list groups. Categories
+  // (signature/heroic/freeStrike/villain) and a heroic-resource cost decide it;
+  // everything else (maneuvers, free strikes, moves, utility actions) is the
+  // dimmed "Maneuvers" bucket. Defensive for sparse pre-Phase-C data.
+  function groupOf(a) {
+    var c = String((a && a.category) || '').toLowerCase();
+    if (c === 'signature') return 'signature';
+    if (c === 'heroic') return 'heroic';
+    if (Number(a && a.cost) > 0) return 'heroic';
+    return 'maneuver';
+  }
+
+  function charLabel(k) {
+    var key = String(k || '').toLowerCase();
+    return CHAR_LABELS[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : '');
+  }
+
+  function firstName(name) {
+    return String(name || '').split(/[\s,]+/)[0] || 'this hero';
+  }
 
   function rAbilities(def, data) {
     var abilities = parseAbilities(data);
     if (!abilities.length) return ph('No abilities yet.');
 
-    // Group by type while preserving each ability's ORIGINAL flat index — the
-    // index is what the overlay handler looks up, so the two must agree.
-    var groups = {};
-    abilities.forEach(function (a, idx) {
-      var t = (a && a.type) || 'action';
-      if (!groups[t]) groups[t] = [];
-      groups[t].push({ a: a, idx: idx });
-    });
+    var groups = { signature: [], heroic: [], maneuver: [] };
+    abilities.forEach(function (a, idx) { groups[groupOf(a)].push({ a: a, idx: idx }); });
 
-    function groupHtml(t) {
-      if (!groups[t] || !groups[t].length) return '';
-      var label = ABILITY_TYPE_LABELS[t] || (t.charAt(0).toUpperCase() + t.slice(1));
-      var rows = groups[t].map(function (g) { return abilityRow(g.a, g.idx); }).join('');
-      return '<div class="cs-ability-group">' +
-        '<h4 class="cs-ability-group-title">' + esc(label) + '</h4>' +
-        '<div class="cs-ability-list">' + rows + '</div>' +
+    // "Tons in the list" handling: on a long list (≥10, e.g. a full kit + all the
+    // universal maneuvers) show a sticky filter and collapse the dimmed Maneuvers
+    // group by default, so the rail stays short. The rail itself is a capped
+    // scroll area (CSS) so it never shoves the pane down regardless of count.
+    var many = abilities.length >= 10;
+
+    var rail = GROUP_ORDER.map(function (g) {
+      var list = groups[g];
+      if (!list.length) return '';
+      // within a group, order by heroic-resource cost ascending (the flat index
+      // stays attached to each entry, so selection lookups are unaffected).
+      list.sort(function (x, y) { return (Number(x.a.cost) || 0) - (Number(y.a.cost) || 0); });
+      var rows = list.map(function (it) { return railRow(it.a, it.idx, g); }).join('');
+      var collapsed = (g === 'maneuver' && many); // long list → fold maneuvers
+      return '<div class="ds-ab-grp ds-ab-grp--' + g + (collapsed ? ' ds-ab-grp--collapsed' : '') + '">' +
+        '<button type="button" class="ds-ab-grp__label" data-ds-grp aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
+          '<span class="ds-ab-grp__caret" aria-hidden="true">&#9662;</span>' +
+          esc(GROUP_LABELS[g]) +
+          '<span class="ds-ab-grp__count">' + list.length + '</span>' +
+        '</button>' +
+        '<div class="ds-ab-grp__rows">' + rows + '</div>' +
       '</div>';
+    }).join('');
+
+    var tools = many
+      ? '<div class="ds-rail__tools"><input type="text" class="ds-rail__filter" data-ds-filter' +
+          ' placeholder="Filter abilities…" aria-label="Filter abilities" autocomplete="off"></div>'
+      : '';
+
+    return '<div class="ds-md">' +
+      '<div class="ds-rail" role="listbox" aria-label="Abilities">' +
+        tools + rail +
+        '<div class="ds-rail__empty" data-ds-no-match hidden>No matching abilities.</div>' +
+      '</div>' +
+      '<div class="ds-pane" data-ds-pane>' + paneEmptyHtml() + '</div>' +
+    '</div>';
+  }
+
+  // railRow — one plain master-list entry: name + (heroic) cost number. A native
+  // <button> so Enter/Space select it for free. Maneuvers are dimmed.
+  function railRow(a, idx, g) {
+    var costN = Number(a && a.cost);
+    var cost = (g !== 'maneuver' && costN > 0)
+      ? '<span class="ds-li__c">' + esc(String(costN)) + '</span>' : '';
+    return '<button type="button" class="ds-li' + (g === 'maneuver' ? ' ds-li--dim' : '') + '"' +
+        ' role="option" aria-selected="false" data-ds-ability="' + idx + '">' +
+      '<span class="ds-li__nm">' + esc((a && a.name) || 'Untitled') + '</span>' + cost +
+    '</button>';
+  }
+
+  function paneEmptyHtml() {
+    return '<div class="ds-pane__empty">' +
+      '<div class="ds-pane__empty-t">Select an ability</div>' +
+      '<div class="ds-pane__empty-d">Pick one on the left to see its card and tiers.</div>' +
+    '</div>';
+  }
+  // slugify normalizes a name to a comparable slug ("Sword and Board" →
+  // "sword-and-board") for matching a feature against its origin.
+  function slugify(s) {
+    return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  // FEATURES FRAMEWORK
+  // ------------------
+  // Draw Steel stores class/ancestry/kit/culture/career features all as generic
+  // `feature` items, and a feature does NOT record which item granted it
+  // (system.source is the publication book, not the origin). So we can't trust a
+  // single field. Instead we classify defensively: match each feature's rules-id
+  // (_dsid) / name against the hero's KNOWN origin names (class/ancestry/kit/…,
+  // which we already sync) and bucket it there; anything we can't place lands in
+  // a generic group. If nothing classifies, we render ONE flat "Features" list
+  // rather than fake groups. When live data shows which signal actually carries
+  // the origin, the classifier tightens — but it already works, ungrouped at worst.
+  var FEATURE_ORIGINS = [
+    { key: 'class', label: 'Class', field: 'class' },
+    { key: 'subclass', label: 'Subclass', field: 'subclass' },
+    { key: 'ancestry', label: 'Ancestry', field: 'ancestry' },
+    { key: 'culture', label: 'Culture', field: 'culture' },
+    { key: 'career', label: 'Career', field: 'career' },
+    { key: 'kit', label: 'Kit', field: 'kit' }
+  ];
+  var FEATURE_GROUP_ORDER = ['class', 'subclass', 'ancestry', 'culture', 'career', 'kit', 'other'];
+  var FEATURE_GROUP_LABELS = { class: 'Class', subclass: 'Subclass', ancestry: 'Ancestry', culture: 'Culture', career: 'Career', kit: 'Kit', other: 'Features' };
+
+  // classifyFeature picks an origin key by looking for an origin's slug or name
+  // inside the feature's _dsid + name. Specific origins are tried first.
+  function classifyFeature(ft, origins) {
+    var hay = (String((ft && ft.dsid) || '') + ' ' + String((ft && ft.name) || '')).toLowerCase();
+    for (var i = 0; i < origins.length; i++) {
+      var o = origins[i];
+      if ((o.slug && hay.indexOf(o.slug) !== -1) || (o.lname && hay.indexOf(o.lname) !== -1)) return o.key;
+    }
+    return 'other';
+  }
+
+  // renderFeature — a native <details> accordion (name + level → description on
+  // expand) so a long feature list collapses with zero JS. Flat row when there's
+  // no description to reveal.
+  function renderFeature(ft) {
+    var name = esc((ft && ft.name) || 'Feature');
+    var lvl = (ft && ft.level) ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
+    var descTxt = htmlToText(ft && ft.description);
+    if (descTxt) {
+      return '<details class="cs-feature"><summary class="cs-feature__sum">' +
+        '<span class="cs-feature-name">' + name + '</span>' + lvl +
+        '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span>' +
+      '</summary><div class="cs-feature-desc">' + refText(descTxt) + '</div></details>';
+    }
+    return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + lvl + '</div>';
+  }
+
+  function featureGroupHtml(label, list) {
+    if (!list || !list.length) return '';
+    return '<div class="cs-feature-group">' +
+      '<h4 class="cs-feature-group-title">' + esc(label) + '</h4>' +
+      '<div class="cs-feature-list">' + list.map(renderFeature).join('') + '</div>' +
+    '</div>';
+  }
+
+  function rFeatures(def, data) {
+    var feats = parseJson(f(data, 'features_json', ''), []);
+
+    if (Array.isArray(feats) && feats.length) {
+      // build the origin matchers from the hero's known identity.
+      var origins = FEATURE_ORIGINS.map(function (o) {
+        var nm = f(data, o.field, '');
+        return { key: o.key, lname: String(nm).toLowerCase(), slug: slugify(nm) };
+      }).filter(function (o) { return o.lname; });
+
+      var buckets = {};
+      feats.forEach(function (ft) {
+        var g = classifyFeature(ft, origins);
+        (buckets[g] = buckets[g] || []).push(ft);
+      });
+
+      // If we couldn't confidently place ANY feature, show one flat list instead
+      // of a misleading lone "Features" group header.
+      var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
+      if (!placed.length) {
+        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>';
+      }
+      return FEATURE_GROUP_ORDER.map(function (k) {
+        return featureGroupHtml(FEATURE_GROUP_LABELS[k], buckets[k]);
+      }).join('') || ph('No features yet.');
     }
 
-    var html = ABILITY_TYPE_ORDER.map(groupHtml).join('');
-    Object.keys(groups).forEach(function (t) {
-      if (ABILITY_TYPE_ORDER.indexOf(t) === -1) html += groupHtml(t);
-    });
-    return html;
-  }
-  function rFeatures(def, data) {
-    var classFt = parseJson(f(data, 'class_features_json', ''), []);
-    var ancestryFt = parseJson(f(data, 'ancestry_features_json', ''), []);
-    var kitFt = parseJson(f(data, 'kit_features_json', ''), []);
-
-    var renderFt = function (ft) {
-      var name = esc(ft.name || 'Feature');
-      var levelTag = ft.level ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
-      var desc = ft.description ? '<div class="cs-feature-desc">' + refText(ft.description) + '</div>' : '';
-      var source = ft.source ? '<div class="cs-feature-source">' + esc(String(ft.source)) + '</div>' : '';
-      return '<article class="cs-feature"><header class="cs-feature-header">' +
-        '<span class="cs-feature-name">' + name + '</span>' + levelTag +
-      '</header>' + source + desc + '</article>';
-    };
-
-    var groupHtml = function (label, list) {
-      if (!list || !list.length) return '';
-      return '<div class="cs-feature-group">' +
-        '<h4 class="cs-feature-group-title">' + esc(label) + '</h4>' +
-        '<div class="cs-feature-list">' + list.map(renderFt).join('') + '</div>' +
-      '</div>';
-    };
-
-    var out = groupHtml('Class', classFt) + groupHtml('Ancestry', ancestryFt) + groupHtml('Kit', kitFt);
+    // Legacy fallback — the old pre-split fields, if ever populated.
+    var out = featureGroupHtml('Class', parseJson(f(data, 'class_features_json', ''), [])) +
+      featureGroupHtml('Ancestry', parseJson(f(data, 'ancestry_features_json', ''), [])) +
+      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), []));
     return out || ph('No features yet.');
   }
 
@@ -499,100 +755,261 @@
     });
   }
 
-  // abilityRow — one accordion item: a ONE-LINER button (star + name + a muted
-  // glance of distance / power-roll + a chevron) and a collapsed detail panel
-  // below it. Clicking the row expands the detail IN PLACE (no overlay); the
-  // panel is filled lazily on first open by attachInteractions. Native <button>
-  // so Enter/Space activate it for free.
-  // abilityTypeLabel returns the singular badge label for an ability type
-  // (ABILITY_TYPE_LABELS holds the plural group headings).
-  function abilityTypeLabel(t) {
-    var map = { signature: 'Signature', action: 'Action', maneuver: 'Maneuver', triggered: 'Triggered', 'free-strike': 'Free Strike', trait: 'Trait' };
-    return map[t] || (t.charAt(0).toUpperCase() + t.slice(1));
+  // ── ability text/label helpers ────────────────────────────────────────────
+
+  // htmlToText flattens Foundry HTML fields (effect.before/after) to plain text:
+  // strips tags, decodes the common entities, collapses whitespace. The result
+  // is then re-escaped + {@…}-resolved by refText, so it's render-safe.
+  function htmlToText(h) {
+    if (!h) return '';
+    return String(h)
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+      .replace(/\s+/g, ' ').trim();
   }
 
-  function abilityRow(a, idx) {
-    var name = esc(a.name || 'Untitled Ability');
-    var star = a.type === 'signature' ? '<span class="cs-ability-row__star" aria-hidden="true">&#9733;</span>' : '';
-    var glance = [];
-    if (a.distance) glance.push(esc(String(a.distance)));
-    if (a.power_roll) glance.push(esc(String(a.power_roll)));
-    var glanceHtml = glance.length
-      ? '<span class="cs-ability-row__meta">' + glance.join(' &middot; ') + '</span>'
-      : '';
+  function powerRollChars(a) {
+    var cs = a && a.powerRollChars;
+    return Array.isArray(cs) ? cs.filter(Boolean) : [];
+  }
+  function powerRollLabel(a) {
+    var cs = powerRollChars(a).map(charLabel).filter(Boolean);
+    return cs.length ? cs.join(' or ') : '';
+  }
 
-    // v3.1 right-aligned badges: a cost pill (e.g. "3 Heroic") + a type label
-    // (Signature / Triggered / …).
-    var cost = a.spend_resource || a.spend_vp || a.cost;
-    var costPill = cost ? '<span class="cs-ability-cost">' + esc(String(cost)) + '</span>' : '';
-    var typeBadge = '';
-    if (a.type) {
-      var t = String(a.type);
-      var tcls = (t === 'signature') ? ' cs-ability-badge--sig' : (t === 'triggered') ? ' cs-ability-badge--trig' : '';
-      typeBadge = '<span class="cs-ability-badge' + tcls + '">' + esc(abilityTypeLabel(t)) + '</span>';
+  // distanceLabel / targetLabel humanize the Foundry distance/target shapes into
+  // a short phrase (e.g. "Ranged 10", "1 creature"). Best-effort + defensive.
+  function distanceLabel(a) {
+    if (!a) return '';
+    var t = String(a.distanceType || '').toLowerCase();
+    var d = (a.distance != null && a.distance !== '') ? a.distance : '';
+    if (!t && d === '') return '';
+    if (t === 'self') return 'Self';
+    var label = t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+    if (d !== '') label += (label ? ' ' : '') + d;
+    if (a.distanceSecondary) label += ' × ' + a.distanceSecondary;
+    return label.trim();
+  }
+  function targetLabel(a) {
+    if (!a) return '';
+    if (a.targetCustom) return String(a.targetCustom);
+    var t = String(a.targetType || '');
+    var v = (a.target != null && a.target !== '') ? a.target : '';
+    if (!t && v === '') return '';
+    var human = t.replace(/([A-Z])/g, ' $1').replace(/^./, function (m) { return m.toUpperCase(); }).trim();
+    return (v !== '') ? (v + ' ' + human).trim() : human;
+  }
+
+  function costLabel(a, data) {
+    var c = Number(a && a.cost);
+    if (!(c > 0)) return '';
+    var hr = f(data, 'heroic_resource_name', '');
+    return hr ? c + ' ' + hr : c + '';
+  }
+
+  // ── power-roll math (the "For <hero>" section) ─────────────────────────────
+
+  // safeEvalArith evaluates a pure-arithmetic string ("2 + 3") after @chr was
+  // substituted. The input is regex-restricted to digits/space/+-*/() so the
+  // Function constructor can't reach any identifier or call — no eval risk.
+  function safeEvalArith(s) {
+    s = String(s == null ? '' : s).trim();
+    if (s === '' || !/^[0-9+\-*/(). ]+$/.test(s)) return null;
+    try {
+      var v = Function('"use strict";return (' + s + ');')();
+      return (typeof v === 'number' && isFinite(v)) ? v : null;
+    } catch (e) { return null; }
+  }
+
+  // substituteFormula resolves a tier damage formula. With subVal (a hero's
+  // characteristic value) it substitutes @chr and evaluates to a number; without
+  // it (the generic card) it shows @chr as the characteristic letter(s).
+  function substituteFormula(formula, subVal, a) {
+    var s = String(formula == null ? '' : formula);
+    if (s === '') return '';
+    if (subVal == null) {
+      var cs = powerRollChars(a).map(function (k) { return charLabel(k).charAt(0); });
+      var letter = cs.length ? cs.join('/') : 'M';
+      return s.replace(/@chr/gi, letter);
     }
-    var badges = (costPill || typeBadge)
-      ? '<span class="cs-ability-row__badges">' + costPill + typeBadge + '</span>'
-      : '';
+    var ev = safeEvalArith(s.replace(/@chr/gi, String(subVal)));
+    return ev != null ? String(ev) : s.replace(/@chr/gi, String(subVal));
+  }
 
-    return '<div class="cs-ability-item">' +
-      '<button type="button" class="cs-ability-row" data-ds-ability="' + idx + '"' +
-          ' aria-expanded="false" aria-label="' + name + ' — toggle details">' +
-        star +
-        '<span class="cs-ability-row__name">' + name + '</span>' +
-        glanceHtml +
-        badges +
-        '<span class="cs-ability-row__more" aria-hidden="true">&rsaquo;</span>' +
-      '</button>' +
-      '<div class="cs-ability-acc" data-ds-acc></div>' +
+  // tierFragments builds the outcome text for one tier (1..3) from the ability's
+  // power-roll effects (system.power.effects, normalized to an array). Handles
+  // the damage-effect shape well; degrades to '' for effect types we don't model
+  // (the caller then falls back to the ability's effect text). subVal substitutes
+  // the hero's characteristic into damage formulas (null = generic).
+  function tierFragments(a, n, subVal) {
+    var tiers = a && a.tiers;
+    if (!Array.isArray(tiers) || !tiers.length) return '';
+    var frags = [];
+    tiers.forEach(function (eff) {
+      if (!eff || typeof eff !== 'object') return;
+      var key = 'tier' + n;
+      // damage effect: { damage: { tier1: { value, types[] }, … } }
+      if (eff.damage && eff.damage[key]) {
+        var td = eff.damage[key];
+        var val = substituteFormula(td.value, subVal, a);
+        if (val === '' || val === '0') return;
+        var types = Array.isArray(td.types) ? td.types.filter(Boolean) : [];
+        frags.push(val + (types.length ? ' ' + types.join('/') : '') + ' damage');
+        return;
+      }
+      // generic per-tier text shapes (applied/other effects): a display/text/value
+      var tt = eff[key];
+      if (tt && typeof tt === 'object') {
+        var disp = tt.display || tt.text || tt.description;
+        if (disp) frags.push(htmlToText(disp));
+      } else if (typeof tt === 'string' && tt) {
+        frags.push(htmlToText(tt));
+      }
+    });
+    return frags.join('; ');
+  }
+
+  // tierOdds returns [T1%, T2%, T3%] for a 2d10 + mod power roll, folding in the
+  // natural-19/20 → auto Tier 3 rule. Exact (enumerates all 100 outcomes).
+  function tierOdds(mod) {
+    var t = [0, 0, 0];
+    for (var d1 = 1; d1 <= 10; d1++) {
+      for (var d2 = 1; d2 <= 10; d2++) {
+        var nat = d1 + d2, tier;
+        if (nat >= 19) tier = 3; // natural 19-20 auto Tier 3
+        else { var tot = nat + mod; tier = tot <= 11 ? 1 : (tot <= 16 ? 2 : 3); }
+        t[tier - 1]++;
+      }
+    }
+    return t; // counts out of 100 == percentages
+  }
+
+  // ── the cards ──────────────────────────────────────────────────────────────
+
+  // tierLinesHtml — the three plain tier lines for the SMALL card (no tint, no
+  // glyphs). Returns '' when no tier text is derivable (caller shows a fallback).
+  function tierLinesHtml(a, subVal) {
+    var bands = ['≤11', '12–16', '17+'];
+    var any = false, rows = '';
+    for (var n = 1; n <= 3; n++) {
+      var txt = tierFragments(a, n, subVal);
+      if (txt) any = true;
+      rows += '<div class="ds-tr"><span class="ds-tr__b">' + bands[n - 1] + '</span>' +
+        '<span class="ds-tr__t">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
+    }
+    return any ? rows : '';
+  }
+
+  // fallbackBodyHtml — when an ability has no derivable tier ladder (a non-damage
+  // effect, or pre-Phase-C data), show a power-roll line + a teaser of its effect.
+  function fallbackBodyHtml(a) {
+    var bits = '';
+    var pr = powerRollLabel(a);
+    if (pr) bits += '<div class="ds-card__line"><span class="ds-card__k">Power Roll</span><span>2d10 + ' + esc(pr) + '</span></div>';
+    var eff = htmlToText(a.effectAfter) || (a.story ? String(a.story) : '') || htmlToText(a.effectBefore);
+    if (eff) bits += '<div class="ds-card__eff">' + refText(teaser(eff, 170)) + '</div>';
+    if (!bits) bits = '<div class="ds-card__eff ds-muted">No detail synced yet.</div>';
+    return bits;
+  }
+
+  // smallCardHtml — the EVEN-SMALLER bare card (the default detail). Header line
+  // (name · Sig · cost) + three plain tier lines (or a fallback), glossary terms
+  // in accent. The whole card is the click target; hover lifts+glows (CSS).
+  function smallCardHtml(a, idx, data) {
+    var sig = groupOf(a) === 'signature' ? '<span class="ds-card__sig">Sig</span>' : '';
+    var cost = costLabel(a, data);
+    var costHtml = cost ? '<span class="ds-card__cost">' + esc(cost) + '</span>' : '';
+    var body = tierLinesHtml(a, null) || fallbackBodyHtml(a);
+    return '<div class="ds-card" data-ds-expand="' + idx + '" role="button" tabindex="0"' +
+        ' aria-label="' + esc((a && a.name) || 'Ability') + ' — click to expand">' +
+      '<div class="ds-card__h"><span class="ds-card__nm">' + esc((a && a.name) || 'Untitled') + '</span>' + sig + costHtml + '</div>' +
+      body +
+      '<div class="ds-card__hint" aria-hidden="true">↳ click to expand</div>' +
     '</div>';
   }
 
-  // renderAbilityBody — the inline accordion detail for one ability: keywords +
-  // a stat rail (distance / target / spend) + the power-roll band + the tinted
-  // miss→partial→hit tier ladder + trigger / effect. No banner — the one-liner
-  // row above already shows the name. Text fields run through refText so {@…}
-  // tokens light up. READ-ONLY (Foundry is the source of truth).
-  function renderAbilityBody(a) {
-    var keywords = (a.keywords && a.keywords.length)
-      ? '<div class="cs-ad__keywords">' + a.keywords.map(function (k) {
-          return '<span class="cs-tag">' + esc(String(k)) + '</span>';
-        }).join('') + '</div>'
-      : '';
+  // bigStatRow — distance / target / power-roll cells for the big card's rules.
+  function bigStatRow(a) {
+    var cells = [];
+    function cell(k, v) { return '<div class="ds-big__stat"><span class="ds-big__sk">' + esc(k) + '</span><span class="ds-big__sv">' + esc(v) + '</span></div>'; }
+    var d = distanceLabel(a); if (d) cells.push(cell('Distance', d));
+    var t = targetLabel(a); if (t) cells.push(cell('Target', t));
+    var pr = powerRollLabel(a); if (pr) cells.push(cell('Power Roll', pr));
+    return cells.length ? '<div class="ds-big__stats">' + cells.join('') + '</div>' : '';
+  }
 
-    // Stat rail — distance / target / spend as compact cards. Omitted when empty.
-    var stats = [];
-    if (a.distance) stats.push('<div class="cs-ad__stat"><span class="cs-ad__stat-k">Distance</span><span class="cs-ad__stat-v">' + esc(String(a.distance)) + '</span></div>');
-    if (a.target) stats.push('<div class="cs-ad__stat"><span class="cs-ad__stat-k">Target</span><span class="cs-ad__stat-v">' + esc(String(a.target)) + '</span></div>');
-    var spendTxt = a.spend_vp || a.spend_resource;
-    if (spendTxt) stats.push('<div class="cs-ad__stat cs-ad__stat--spend"><span class="cs-ad__stat-k">Spend</span><span class="cs-ad__stat-v">' + esc(String(spendTxt)) + '</span></div>');
-    var statRail = stats.length ? '<div class="cs-ad__stats">' + stats.join('') + '</div>' : '';
-
-    // Power roll band.
-    var prHtml = a.power_roll
-      ? '<div class="cs-ad__pr"><span class="cs-ad__pr-k">Power Roll</span><span class="cs-ad__pr-v">' + esc(String(a.power_roll)) + '</span></div>'
-      : '';
-
-    // Tier ladder — the centerpiece. Each rung shows its band + outcome, tinted
-    // miss→partial→hit for an at-a-glance read.
-    var ladder = '';
-    if (a.tier1 || a.tier2 || a.tier3) {
-      var rung = function (band, txt) {
-        if (!txt) return '';
-        return '<div class="cs-ad__tier"><span class="cs-ad__tier-band">' + band + '</span>' +
-          '<span class="cs-ad__tier-text">' + refText(txt) + '</span></div>';
-      };
-      ladder = '<div class="cs-ad__ladder">' +
-        rung('&le;11', a.tier1) + rung('12&ndash;16', a.tier2) + rung('17+', a.tier3) +
-      '</div>';
+  // bigLadderHtml — the tier ladder for the big card (subtle tier accent edge).
+  function bigLadderHtml(a, subVal) {
+    var bands = ['≤11', '12–16', '17+'];
+    var any = false, rows = '';
+    for (var n = 1; n <= 3; n++) {
+      var txt = tierFragments(a, n, subVal);
+      if (txt) any = true;
+      rows += '<div class="ds-big__tier ds-big__tier--t' + n + '"><span class="ds-big__tb">' + bands[n - 1] + '</span>' +
+        '<span class="ds-big__tt">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
     }
+    return any ? '<div class="ds-big__ladder">' + rows + '</div>' : '';
+  }
 
-    var trigger = a.trigger ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Trigger</span><div class="cs-ad__block-v">' + refText(a.trigger) + '</div></div>' : '';
-    var effect = a.effect ? '<div class="cs-ad__block"><span class="cs-ad__block-k">Effect</span><div class="cs-ad__block-v">' + refText(a.effect) + '</div></div>' : '';
+  // forHeroHtml — section ②: computed for THIS hero. Roll expression, average →
+  // tier, the T1/T2/T3 odds bar, and resolved per-tier damage. Renders only when
+  // the ability has power-roll characteristics AND the hero's stats are synced.
+  function forHeroHtml(a, data) {
+    var chars = powerRollChars(a);
+    if (!chars.length) return '';
+    var best = null, bestKey = null;
+    chars.forEach(function (k) {
+      var v = num(data, String(k).toLowerCase(), null);
+      if (v != null && (best == null || v > best)) { best = v; bestKey = k; }
+    });
+    if (best == null) return '';
+    var odds = tierOdds(best);
+    var avg = 11 + best;
+    var avgTier = avg <= 11 ? 1 : (avg <= 16 ? 2 : 3);
+    var roll = '2d10 + ' + best + ' (' + esc(charLabel(bestKey)) + ')';
+    var resolved = bigLadderHtml(a, best);
+    var resolvedHtml = resolved
+      ? '<div class="ds-for__sub">Resolved for ' + esc(firstName(data.name)) + '</div>' + resolved : '';
+    var bar = '<div class="ds-for__bar">' +
+        '<i class="ds-for__o1" style="width:' + odds[0] + '%"></i>' +
+        '<i class="ds-for__o2" style="width:' + odds[1] + '%"></i>' +
+        '<i class="ds-for__o3" style="width:' + odds[2] + '%"></i>' +
+      '</div>' +
+      '<div class="ds-for__key">' +
+        '<span><i class="ds-sw ds-sw--1"></i>T1 <b>' + odds[0] + '%</b></span>' +
+        '<span><i class="ds-sw ds-sw--2"></i>T2 <b>' + odds[1] + '%</b></span>' +
+        '<span><i class="ds-sw ds-sw--3"></i>T3 <b>' + odds[2] + '%</b></span>' +
+      '</div>';
+    return '<div class="ds-for">' +
+      '<div class="ds-for__roll"><b>' + roll + '</b> → avg <b>' + avg + '</b> → likely <span class="ds-for__tier">Tier ' + avgTier + '</span></div>' +
+      bar + resolvedHtml +
+    '</div>';
+  }
 
-    return '<div class="cs-ad cs-ad--inline"><div class="cs-ad__body">' +
-      keywords + statRail + prHtml + ladder + trigger + effect +
-    '</div></div>';
+  // bigCardHtml — the grown two-section card: ① the rules (keywords / distance /
+  // target / power roll / tier ladder / effect text) and ② "For <hero>" odds.
+  function bigCardHtml(a, idx, data) {
+    var g = groupOf(a);
+    var star = g === 'signature' ? '★ ' : '';
+    var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
+    var kw = (Array.isArray(a.keywords) && a.keywords.length)
+      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) { return '<span>' + esc(String(k)) + '</span>'; }).join('') + '</div>' : '';
+    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(htmlToText(a.effectBefore)) + '</div>' : '';
+    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(htmlToText(a.trigger)) + '</span></div>' : '';
+    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(htmlToText(a.effectAfter)) + '</span></div>' : '';
+    var forHero = forHeroHtml(a, data);
+
+    return '<div class="ds-big" data-ds-collapse="' + idx + '">' +
+      '<div class="ds-big__h"><span class="ds-big__nm">' + star + esc((a && a.name) || 'Untitled') + '</span>' +
+        (meta ? '<span class="ds-big__meta">' + esc(meta) + '</span>' : '') +
+        '<button type="button" class="ds-big__x" data-ds-collapse-btn aria-label="Collapse to card">✕</button></div>' +
+      '<div class="ds-big__sec"><span class="ds-big__n">①</span> The rules</div>' +
+      kw + bigStatRow(a) + effBefore + bigLadderHtml(a, null) + trig + effAfter +
+      (forHero
+        ? '<div class="ds-big__sec ds-big__sec--for"><span class="ds-big__n">②</span> For ' + esc(firstName(data.name)) + '</div>' + forHero
+        : '') +
+    '</div>';
   }
 
   // ── empty-state placeholder ──────────────────────────────────────────────
@@ -635,15 +1052,17 @@
     ];
     var side = [
       boxDef('ds-combat', 'Combat', 'ds-combat', 'expanded', { pinned: true }),
+      boxDef('ds-kit', 'Kit', 'ds-kit', 'collapsed'),
       boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
       boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
     ];
     rows.push({ columns: [ { width: 8, boxes: main }, { width: 4, boxes: side } ] });
 
-    // Row 3 — Features (6) + Inventory (6), always present.
+    // Row 3 — Skills + Features + Inventory (three list sections, always present).
     rows.push({ columns: [
-      { width: 6, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
-      { width: 6, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
+      { width: 4, boxes: [ boxDef('ds-skills', 'Skills', 'ds-skills', 'collapsed') ] },
+      { width: 4, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
+      { width: 4, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
     ] });
 
     // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
@@ -674,8 +1093,10 @@
     s.registerBox('ds-heroic-resource', rHeroicResource);
     s.registerBox('ds-movement', rMovement);
     s.registerBox('ds-combat', rCombat);
+    s.registerBox('ds-kit', rKit);
     s.registerBox('ds-damage', rDamage);
     s.registerBox('ds-abilities', rAbilities);
+    s.registerBox('ds-skills', rSkills);
     s.registerBox('ds-features', rFeatures);
     s.registerBox('ds-progression', rProgression);
     s.registerBox('ds-inventory', rInventory);
@@ -708,64 +1129,133 @@
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
   }
 
-  // expandAcc / collapseAcc animate a panel's height (0 ↔ content) with the inner
-  // detail fading in. After opening, height is set to auto so the content can
-  // reflow; on close it stays at 0 but the content is kept for an instant reopen.
-  function expandAcc(row, acc) {
-    row.setAttribute('aria-expanded', 'true');
-    var inner = acc.firstChild;
-    if (reduced()) { acc.style.height = 'auto'; if (inner) inner.style.opacity = '1'; return; }
-    var h = inner ? inner.offsetHeight : acc.scrollHeight;
-    acc.style.height = '0px';
-    acc.style.transition = 'height 240ms cubic-bezier(.4,0,.2,1)';
-    if (inner) { inner.style.opacity = '0'; inner.style.transition = 'opacity 220ms ease 40ms'; }
-    requestAnimationFrame(function () { acc.style.height = h + 'px'; if (inner) inner.style.opacity = '1'; });
-    var done = function (e) {
-      if (e && (e.target !== acc || e.propertyName !== 'height')) return;
-      acc.style.height = 'auto'; acc.style.transition = '';
-      acc.removeEventListener('transitionend', done);
-    };
-    acc.addEventListener('transitionend', done);
-  }
-  function collapseAcc(row, acc) {
-    row.setAttribute('aria-expanded', 'false');
-    var inner = acc.firstChild;
-    if (reduced()) { acc.style.height = '0px'; return; }
-    acc.style.height = acc.offsetHeight + 'px';
-    acc.style.transition = 'height 220ms cubic-bezier(.4,0,.2,1)';
-    if (inner) inner.style.opacity = '0';
-    requestAnimationFrame(function () { acc.style.height = '0px'; });
+  // animateCardIn plays the card's reveal: the small card rises+fades, the big
+  // card scales+fades up (the "grows into the bigger card" motion). Skipped under
+  // reduce-motion (the final state is already in the DOM).
+  function animateCardIn(node, isBig) {
+    if (!node || reduced()) return;
+    node.style.opacity = '0';
+    node.style.transform = isBig ? 'scale(0.97)' : 'translateY(5px)';
+    node.style.transition = 'opacity 200ms ease, transform 260ms cubic-bezier(.2,.7,.2,1)';
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { node.style.opacity = '1'; node.style.transform = 'none'; });
+    });
   }
 
-  // attachInteractions wires ONE delegated click listener on the mounted root:
-  //   • a [data-ds-ability] one-liner row toggles its inline accordion detail
-  //     (the detail body is built lazily on first open)
-  //   • the [data-cs-read-story] button opens the backstory reading view
-  // Rows are native <button>s, so Enter/Space activate them without a separate
-  // keydown handler. No per-card listeners (the frame re-renders box bodies).
+  // attachInteractions wires the master–detail interactions with ONE delegated
+  // click + one keydown listener on the mounted root (the frame re-renders box
+  // bodies, so per-node listeners would leak):
+  //   • a [data-ds-ability] rail row → SELECT it (fill the pane with the small card)
+  //   • the small [data-ds-expand] card (or Enter/Space on it) → GROW to the big card
+  //   • the big card's [data-ds-collapse-btn] → shrink back to the small card
+  //   • [data-cs-read-story] → open the backstory reading view
+  // The pane is filled here (not in rAbilities) so selection state lives in the
+  // DOM while the box renderer stays a pure function. On mount the first ability
+  // (preferring a signature) is auto-selected so the pane is never blank.
   function attachInteractions(inst, el, data) {
     var abilities = parseAbilities(data);
-    function toggleAbility(row) {
-      var item = row.parentNode;
-      var acc = item ? item.querySelector('[data-ds-acc]') : null;
-      var a = abilities[parseInt(row.getAttribute('data-ds-ability'), 10)];
-      if (!acc || !a) return;
-      if (row.getAttribute('aria-expanded') === 'true') { collapseAcc(row, acc); return; }
-      if (!acc.firstChild) {
-        var inner = document.createElement('div');
-        inner.className = 'cs-ability-acc__inner';
-        inner.innerHTML = renderAbilityBody(a);
-        acc.appendChild(inner);
-      }
-      expandAcc(row, acc);
+    function pane() { return el.querySelector('[data-ds-pane]'); }
+
+    function selectAbility(idx) {
+      var a = abilities[idx];
+      if (!a) return;
+      var rows = el.querySelectorAll('[data-ds-ability]');
+      Array.prototype.forEach.call(rows, function (r) {
+        var on = r.getAttribute('data-ds-ability') === String(idx);
+        r.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on) r.classList.add('ds-li--sel'); else r.classList.remove('ds-li--sel');
+      });
+      var p = pane();
+      if (!p) return;
+      p.innerHTML = smallCardHtml(a, idx, data);
+      animateCardIn(p.firstChild, false);
     }
+    function expandAbility(idx) {
+      var a = abilities[idx];
+      var p = pane();
+      if (!a || !p) return;
+      p.innerHTML = bigCardHtml(a, idx, data);
+      animateCardIn(p.firstChild, true);
+    }
+
+    // Filter the rail rows by name; hide empty groups and force groups open while
+    // a query is active so matches inside a collapsed group still surface.
+    function applyFilter(q) {
+      q = String(q || '').trim().toLowerCase();
+      var rail = el.querySelector('.ds-rail');
+      if (!rail) return;
+      var anyShown = false;
+      Array.prototype.forEach.call(rail.querySelectorAll('.ds-ab-grp'), function (grp) {
+        var shown = 0;
+        Array.prototype.forEach.call(grp.querySelectorAll('[data-ds-ability]'), function (r) {
+          var match = !q || (r.textContent || '').toLowerCase().indexOf(q) !== -1;
+          if (match) { r.classList.remove('ds-li--hidden'); shown++; }
+          else r.classList.add('ds-li--hidden');
+        });
+        if (shown === 0 && q) grp.classList.add('ds-ab-grp--empty');
+        else grp.classList.remove('ds-ab-grp--empty');
+        if (q) grp.classList.add('ds-ab-grp--filtering');
+        else grp.classList.remove('ds-ab-grp--filtering');
+        if (shown) anyShown = true;
+      });
+      var none = rail.querySelector('[data-ds-no-match]');
+      if (none) none.hidden = anyShown;
+    }
+
     inst._onAbilityClick = function (e) {
-      var rs = (e.target && e.target.closest) ? e.target.closest('[data-cs-read-story]') : null;
-      if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'notes', '')); return; }
-      var row = (e.target && e.target.closest) ? e.target.closest('[data-ds-ability]') : null;
-      if (row) { e.preventDefault(); toggleAbility(row); }
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var rs = t.closest('[data-cs-read-story]');
+      if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
+      // group label → collapse/expand its rows.
+      var grpBtn = t.closest('[data-ds-grp]');
+      if (grpBtn) {
+        var box = grpBtn.closest('.ds-ab-grp');
+        if (box) {
+          var nowCollapsed = box.classList.toggle('ds-ab-grp--collapsed');
+          grpBtn.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+        }
+        return;
+      }
+      var collapseBtn = t.closest('[data-ds-collapse-btn]');
+      if (collapseBtn) {
+        var big = t.closest('[data-ds-collapse]');
+        if (big) { e.preventDefault(); selectAbility(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
+        return;
+      }
+      var card = t.closest('[data-ds-expand]');
+      if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); return; }
+      var row = t.closest('[data-ds-ability]');
+      if (row) { e.preventDefault(); selectAbility(parseInt(row.getAttribute('data-ds-ability'), 10)); }
     };
     el.addEventListener('click', inst._onAbilityClick);
+
+    // The small card is a div[role=button]; rail rows are native <button>s, so
+    // only the card needs an explicit Enter/Space handler.
+    inst._onAbilityKey = function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      var t = e.target;
+      var card = (t && t.closest) ? t.closest('[data-ds-expand]') : null;
+      if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); }
+    };
+    el.addEventListener('keydown', inst._onAbilityKey);
+
+    // The rail filter (present only on long lists) narrows rows as you type.
+    inst._onAbilityInput = function (e) {
+      var t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-ds-filter') !== null) applyFilter(t.value);
+    };
+    el.addEventListener('input', inst._onAbilityInput);
+
+    // Auto-select the first ability (prefer a signature) so the pane shows a card
+    // immediately instead of the resting prompt.
+    if (abilities.length) {
+      var firstIdx = 0;
+      for (var i = 0; i < abilities.length; i++) {
+        if (groupOf(abilities[i]) === 'signature') { firstIdx = i; break; }
+      }
+      selectAbility(firstIdx);
+    }
   }
 
   // ── entrance motion ────────────────────────────────────────────────
@@ -889,10 +1379,6 @@
       '.cs-pips-count { margin-left:8px; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); letter-spacing:normal; font-variant-numeric:tabular-nums; }',
       '.cs-pips-empty { color:var(--color-text-muted,#9ca3af); }',
       '.cs-roll-might { align-self:flex-start; margin-top:2px; }',
-      // v3.1 ability badges (right-aligned: cost pill + type label).
-      '.cs-ability-row__badges { margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex:none; }',
-      '.cs-ability-badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; background:rgba(var(--color-accent-rgb,168,85,247),0.14); color:var(--color-accent,#a855f7); }',
-      '.cs-ability-cost { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:600; background:var(--color-accent,#a855f7); color:#fff; }',
       // ── Headless identity banner + clean pinned boxes (frame box hooks) ──
       '.cs-box[data-box-key="ds-header"] > .cs-box__head { display:none; }',
       '.cs-box[data-box-key="ds-header"] > .cs-box__body { padding:16px; }',
@@ -948,56 +1434,111 @@
       '.cs-damage-row:last-child { border-bottom:none; }',
       '.cs-damage-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); width:100px; flex-shrink:0; padding-top:4px; }',
       '.cs-damage-list { display:flex; flex-wrap:wrap; gap:6px; flex:1; }',
-      // ── Abilities ──
-      '.cs-ability-group { margin-top:14px; }',
-      '.cs-ability-group:first-child { margin-top:0; }',
-      '.cs-ability-group-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin:0 0 6px; }',
-      // One-liner ability rows: name + muted glance + chevron; click zooms the full card.
-      '.cs-ability-list { display:flex; flex-direction:column; border-radius:10px; overflow:hidden; border:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ability-item { border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ability-list .cs-ability-item:last-child { border-bottom:0; }',
-      '.cs-ability-row { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 12px; background:var(--color-bg-primary,#f9fafb); border:0; font:inherit; cursor:pointer; transition:background 120ms ease; }',
-      '.cs-ability-row:hover { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
-      '.cs-ability-row[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,99,102,241),0.06); }',
-      '.cs-ability-row:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:-2px; }',
-      '.cs-ability-row__star { flex:none; color:var(--color-accent,#6366f1); font-size:13px; }',
-      '.cs-ability-row__name { flex:none; font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.cs-ability-row__meta { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
-      '.cs-ability-row__more { flex:none; margin-left:auto; font-size:18px; line-height:1; color:var(--color-text-muted,#9ca3af); transition:color 150ms ease, transform 200ms cubic-bezier(.4,0,.2,1); }',
-      '.cs-ability-row:not([aria-expanded="true"]):hover .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:translateX(2px); }',
-      '.cs-ability-row[aria-expanded="true"] .cs-ability-row__more { color:var(--color-accent,#6366f1); transform:rotate(90deg); }',
-      '.cs-ability-acc { height:0; overflow:hidden; }',
-      '.cs-ability-acc__inner { opacity:0; }',
-      '.cs-ad--inline { max-width:none; margin:0; padding:12px 14px 16px; border-top:3px solid var(--color-accent,#a855f7); background:rgba(var(--color-accent-rgb,168,85,247),0.05); }',
-      '.cs-ad--inline .cs-ad__keywords { margin-top:0; }',
-      // ── Ability detail overlay — the zoom destination (expansive, centered) ──
-      '.cs-ad { max-width:760px; margin:0 auto; padding:6px 6px 14px; }',
-      '.cs-ad__banner { padding:22px 26px; border-radius:14px; margin-bottom:18px; background:linear-gradient(135deg,rgba(var(--color-accent-rgb,99,102,241),0.14),rgba(var(--color-accent-rgb,99,102,241),0.03)); border:1px solid rgba(var(--color-accent-rgb,99,102,241),0.18); }',
-      '.cs-ad__title { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }',
-      '.cs-ad__star { color:var(--color-accent,#6366f1); font-size:20px; }',
-      '.cs-ad__name { font-size:26px; font-weight:800; line-height:1.1; letter-spacing:-0.01em; color:var(--color-text-primary,#111827); font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
-      '.cs-ad__type { padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; background:var(--color-accent,#6366f1); color:#fff; }',
-      '.cs-ad__keywords { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }',
-      '.cs-ad__body { display:flex; flex-direction:column; gap:16px; }',
-      '.cs-ad__stats { display:flex; flex-wrap:wrap; gap:10px; }',
-      '.cs-ad__stat { display:flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:10px; background:var(--color-bg-tertiary,#f3f4f6); min-width:120px; flex:1; }',
-      '.cs-ad__stat--spend { background:rgba(var(--color-accent-rgb,99,102,241),0.10); }',
-      '.cs-ad__stat-k { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-secondary,#6b7280); }',
-      '.cs-ad__stat-v { font-size:16px; font-weight:600; color:var(--color-text-primary,#111827); }',
-      '.cs-ad__pr { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:12px; background:var(--color-accent,#6366f1); color:#fff; }',
-      '.cs-ad__pr-k { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; opacity:0.85; }',
-      '.cs-ad__pr-v { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }',
-      '.cs-ad__ladder { display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--color-border,#e5e7eb); }',
-      '.cs-ad__tier { display:flex; gap:14px; align-items:flex-start; padding:13px 16px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ad__tier:last-child { border-bottom:none; }',
-      '.cs-ad__tier:nth-child(1) { background:rgba(220,38,38,0.05); }',
-      '.cs-ad__tier:nth-child(2) { background:rgba(245,158,11,0.06); }',
-      '.cs-ad__tier:nth-child(3) { background:rgba(16,185,129,0.06); }',
-      '.cs-ad__tier-band { flex-shrink:0; min-width:58px; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--color-text-secondary,#6b7280); }',
-      '.cs-ad__tier-text { font-size:14px; line-height:1.5; color:var(--color-text-body,#374151); }',
-      '.cs-ad__block { padding:12px 16px; border-radius:10px; background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); }',
-      '.cs-ad__block-k { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-accent,#6366f1); margin-bottom:4px; }',
-      '.cs-ad__block-v { font-size:14px; line-height:1.55; color:var(--color-text-body,#374151); }',
+      // ── Abilities: bare "Option D" master–detail (monochrome + one violet accent) ──
+      '.ds-md { display:flex; gap:14px; align-items:flex-start; }',
+      // master rail — a plain grouped list
+      // capped scroll area so a long list (a full kit + every universal maneuver)
+      // never shoves the detail pane down; x hidden, y auto.
+      '.ds-rail { flex:0 0 218px; min-width:0; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; overflow:hidden auto; max-height:460px; background:var(--color-bg-primary,#f9fafb); }',
+      // sticky filter (long lists only) — type to narrow the rows.
+      '.ds-rail__tools { position:sticky; top:0; z-index:2; padding:8px; background:var(--color-bg-primary,#f9fafb); border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-rail__filter { width:100%; box-sizing:border-box; padding:6px 9px; border:1px solid var(--color-border,#e5e7eb); border-radius:7px; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); font:inherit; font-size:12.5px; }',
+      '.ds-rail__filter::placeholder { color:var(--color-text-muted,#9ca3af); }',
+      '.ds-rail__filter:focus { outline:none; border-color:var(--color-accent,#a855f7); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      '.ds-rail__empty { padding:14px; text-align:center; font-size:12px; color:var(--color-text-muted,#9ca3af); }',
+      // group label is a collapse toggle button (caret + label + count).
+      '.ds-ab-grp__label { display:flex; align-items:center; gap:6px; width:100%; text-align:left; background:none; border:0; cursor:pointer; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); padding:10px 13px 5px; }',
+      '.ds-ab-grp__label:hover { color:var(--color-text-secondary,#6b7280); }',
+      '.ds-ab-grp__label:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
+      '.ds-ab-grp__caret { font-size:8px; transition:transform 160ms ease; }',
+      '.ds-ab-grp--collapsed .ds-ab-grp__caret { transform:rotate(-90deg); }',
+      '.ds-ab-grp__count { margin-left:auto; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-ab-grp--collapsed .ds-ab-grp__rows { display:none; }',
+      // while filtering, force groups open so a match in a collapsed group shows;
+      // rows that do not match and groups with zero matches are hidden.
+      '.ds-ab-grp--filtering .ds-ab-grp__rows { display:block; }',
+      '.ds-li--hidden { display:none; }',
+      '.ds-ab-grp--empty { display:none; }',
+      '.ds-li { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 13px; background:none; border:0; border-top:1px solid var(--color-border-light,#f3f4f6); font:inherit; font-size:13px; color:var(--color-text-secondary,#6b7280); cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
+      '.ds-ab-grp__label + .ds-li { border-top:0; }',
+      '.ds-li:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); color:var(--color-text-primary,#111827); }',
+      '.ds-li:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
+      '.ds-li__nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }',
+      '.ds-li__c { margin-left:auto; flex:none; font-weight:600; font-size:12px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-li--sel { color:var(--color-text-primary,#111827); font-weight:600; background:rgba(var(--color-accent-rgb,168,85,247),0.09); box-shadow:inset 2px 0 0 var(--color-accent,#a855f7); }',
+      '.ds-li--sel .ds-li__c { color:var(--color-accent,#a855f7); }',
+      '.ds-li--dim { color:var(--color-text-muted,#9ca3af); }',
+      // detail pane
+      '.ds-pane { flex:1; min-width:0; }',
+      '.ds-pane__empty { border:1px dashed var(--color-border,#e5e7eb); border-radius:11px; padding:38px 20px; text-align:center; color:var(--color-text-muted,#9ca3af); }',
+      '.ds-pane__empty-t { font-weight:700; font-size:14px; color:var(--color-text-secondary,#6b7280); margin-bottom:3px; }',
+      '.ds-pane__empty-d { font-size:12.5px; }',
+      '.ds-muted { color:var(--color-text-muted,#9ca3af); }',
+      // the small BARE card (narrow — addresses "too wide"; whole card clickable)
+      '.ds-card { max-width:420px; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; background:var(--color-bg-primary,#f9fafb); padding:11px 14px; cursor:pointer; transition:transform 160ms cubic-bezier(.4,0,.2,1), box-shadow 160ms ease, border-color 160ms ease; }',
+      '.ds-card:hover, .ds-card:focus-visible { transform:translateY(-3px); box-shadow:0 14px 30px -14px rgba(var(--color-accent-rgb,168,85,247),0.5); border-color:rgba(var(--color-accent-rgb,168,85,247),0.5); outline:none; }',
+      '.ds-card__h { display:flex; align-items:center; gap:8px; margin-bottom:7px; }',
+      '.ds-card__nm { font-size:15px; font-weight:700; color:var(--color-text-primary,#111827); }',
+      '.ds-card__sig { flex:none; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#fff; background:var(--color-accent,#a855f7); padding:2px 7px; border-radius:9999px; }',
+      '.ds-card__cost { margin-left:auto; flex:none; font-size:11px; font-weight:600; color:var(--color-text-secondary,#6b7280); }',
+      '.ds-tr { display:flex; gap:11px; padding:3px 0; font-size:13px; line-height:1.45; }',
+      '.ds-tr__b { flex:none; min-width:46px; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-tr__t { color:var(--color-text-body,#374151); }',
+      '.ds-card__line { display:flex; gap:10px; padding:3px 0; font-size:13px; color:var(--color-text-body,#374151); }',
+      '.ds-card__k { flex:none; min-width:74px; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); padding-top:2px; }',
+      '.ds-card__eff { font-size:13px; line-height:1.5; color:var(--color-text-body,#374151); padding:3px 0; }',
+      '.ds-card__hint { font-size:11px; font-weight:600; color:var(--color-accent,#a855f7); margin-top:7px; opacity:0; transition:opacity 150ms ease; }',
+      '.ds-card:hover .ds-card__hint, .ds-card:focus-visible .ds-card__hint { opacity:0.9; }',
+      // the grown BIG card — two sections, width-constrained
+      '.ds-big { max-width:520px; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.4); border-radius:12px; overflow:hidden; background:var(--color-bg-primary,#f9fafb); box-shadow:0 18px 44px -26px rgba(var(--color-accent-rgb,168,85,247),0.55); }',
+      '.ds-big__h { display:flex; align-items:center; gap:9px; padding:11px 15px; background:linear-gradient(90deg,var(--color-accent,#a855f7),#7c3aed); color:#fff; }',
+      '.ds-big__nm { font-size:16px; font-weight:800; }',
+      '.ds-big__meta { margin-left:auto; font-size:11px; font-weight:700; opacity:0.92; }',
+      '.ds-big__x { flex:none; background:none; border:0; color:#fff; opacity:0.8; cursor:pointer; font:inherit; font-size:13px; line-height:1; padding:2px 0 2px 4px; }',
+      '.ds-big__x:hover { opacity:1; }',
+      '.ds-big__sec { font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); background:var(--color-bg-tertiary,#f3f4f6); padding:7px 15px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__sec--for { border-top:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__n { color:var(--color-accent,#a855f7); margin-right:5px; }',
+      '.ds-big__kw { display:flex; flex-wrap:wrap; gap:6px; padding:10px 15px; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__kw span { font-size:9px; text-transform:uppercase; letter-spacing:0.03em; background:var(--color-bg-tertiary,#f3f4f6); border:1px solid var(--color-border-light,#f3f4f6); color:var(--color-text-secondary,#6b7280); padding:2px 8px; border-radius:9999px; }',
+      '.ds-big__stats { display:flex; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__stat { flex:1; padding:8px 15px; border-right:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__stat:last-child { border-right:0; }',
+      '.ds-big__sk { display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-muted,#9ca3af); }',
+      '.ds-big__sv { display:block; font-weight:700; font-size:12.5px; color:var(--color-text-primary,#111827); margin-top:1px; }',
+      '.ds-big__flavor { padding:9px 15px; font-size:12.5px; font-style:italic; line-height:1.5; color:var(--color-text-secondary,#6b7280); border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__ladder { display:flex; flex-direction:column; }',
+      '.ds-big__tier { display:flex; gap:12px; align-items:flex-start; padding:8px 15px; font-size:13px; line-height:1.5; border-top:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__tier--t1 { box-shadow:inset 3px 0 0 rgba(var(--color-accent-rgb,168,85,247),0.35); }',
+      '.ds-big__tier--t2 { box-shadow:inset 3px 0 0 rgba(var(--color-accent-rgb,168,85,247),0.6); }',
+      '.ds-big__tier--t3 { box-shadow:inset 3px 0 0 var(--color-accent,#a855f7); }',
+      '.ds-big__tb { flex:none; min-width:48px; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-big__tt { color:var(--color-text-body,#374151); }',
+      '.ds-big__block { padding:9px 15px; font-size:12.5px; line-height:1.5; color:var(--color-text-body,#374151); border-top:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-big__block-k { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-accent,#a855f7); margin-right:6px; }',
+      // section ② — "For <hero>" computed odds
+      '.ds-for { padding:11px 15px 14px; background:rgba(var(--color-accent-rgb,168,85,247),0.06); }',
+      '.ds-for__roll { font-size:13px; color:var(--color-text-body,#374151); margin-bottom:9px; }',
+      '.ds-for__roll b { color:var(--color-text-primary,#111827); }',
+      '.ds-for__tier { font-weight:800; color:var(--color-accent,#a855f7); }',
+      '.ds-for__bar { display:flex; height:9px; border-radius:9999px; overflow:hidden; background:var(--color-bg-tertiary,#f3f4f6); margin-bottom:7px; }',
+      '.ds-for__bar i { display:block; height:100%; }',
+      '.ds-for__o1 { background:rgba(var(--color-accent-rgb,168,85,247),0.32); }',
+      '.ds-for__o2 { background:rgba(var(--color-accent-rgb,168,85,247),0.6); }',
+      '.ds-for__o3 { background:var(--color-accent,#a855f7); }',
+      '.ds-for__key { display:flex; gap:14px; font-size:11px; color:var(--color-text-secondary,#6b7280); }',
+      '.ds-for__key b { color:var(--color-text-primary,#111827); }',
+      '.ds-sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; vertical-align:middle; }',
+      '.ds-sw--1 { background:rgba(var(--color-accent-rgb,168,85,247),0.32); }',
+      '.ds-sw--2 { background:rgba(var(--color-accent-rgb,168,85,247),0.6); }',
+      '.ds-sw--3 { background:var(--color-accent,#a855f7); }',
+      '.ds-for__sub { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); margin:10px 0 4px; }',
+      // responsive — stack the rail above the pane; cards fill width (tap reveals below)
+      '@media (max-width:680px) {',
+      '  .ds-md { flex-direction:column; }',
+      '  .ds-rail { flex:1 1 auto; width:100%; }',
+      '  .ds-card, .ds-big { max-width:none; }',
+      '}',
       // ── Tags ──
       '.cs-tag { display:inline-block; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-tag-level { background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); }',
@@ -1006,11 +1547,19 @@
       '.cs-feature-group:first-child { margin-top:0; }',
       '.cs-feature-group-title { font-size:13px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; text-transform:uppercase; letter-spacing:0.05em; }',
       '.cs-feature-list { display:flex; flex-direction:column; gap:8px; }',
-      '.cs-feature { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:10px 12px; }',
+      '.cs-feature { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:0; overflow:hidden; }',
       '.cs-feature-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }',
       '.cs-feature-name { font-weight:600; font-size:14px; }',
       '.cs-feature-source { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-bottom:4px; }',
-      '.cs-feature-desc { font-size:13px; color:var(--color-text-body,#374151); }',
+      '.cs-feature-desc { font-size:13px; line-height:1.55; color:var(--color-text-body,#374151); padding:0 12px 11px; }',
+      // native <details> feature accordion — collapses a long feature list, no JS.
+      '.cs-feature__sum { display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; list-style:none; }',
+      '.cs-feature__sum::-webkit-details-marker { display:none; }',
+      '.cs-feature__sum:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); }',
+      '.cs-feature__sum:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
+      '.cs-feature__caret { margin-left:auto; font-size:9px; color:var(--color-text-muted,#9ca3af); transition:transform 160ms ease; }',
+      '.cs-feature[open] .cs-feature__caret { transform:rotate(180deg); color:var(--color-accent,#a855f7); }',
+      '.cs-feature--flat { padding:10px 12px; display:flex; align-items:center; gap:8px; }',
       // ── Inventory ──
       '.cs-inventory-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }',
       '.cs-inventory-item { padding:8px 10px; background:var(--color-bg-primary,#f9fafb); border-radius:6px; font-size:13px; }',
@@ -1050,6 +1599,29 @@
       '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
       '.cs-cond--warn { background:rgba(217,119,6,0.14); color:#b45309; }',
+      // Potency strip (weak / avg / strong thresholds).
+      '.cs-pot-strip { display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }',
+      '.cs-pot-strip__label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-pot { display:inline-flex; align-items:center; gap:5px; }',
+      '.cs-pot__k { font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-pot__v { font-size:13px; font-weight:700; color:var(--color-text-primary,#111827); font-variant-numeric:tabular-nums; }',
+      // ── Skills (grouped chips) ──
+      '.cs-skill-grp { margin-top:10px; }',
+      '.cs-skill-grp:first-child { margin-top:0; }',
+      '.cs-skill-grp__label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted,#9ca3af); margin-bottom:5px; }',
+      '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
+      '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      // ── Kit (stat box: damage tier mini-ladder + bonus chips) ──
+      '.cs-kit-name { font-size:14px; font-weight:700; color:var(--color-text-primary,#111827); margin-bottom:8px; }',
+      '.cs-kit-dmg { border:1px solid var(--color-border-light,#f3f4f6); border-radius:9px; overflow:hidden; margin-bottom:10px; }',
+      '.cs-kit-dmg__head, .cs-kit-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; font-size:12px; }',
+      '.cs-kit-dmg__head { background:var(--color-bg-tertiary,#f3f4f6); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-kit-row { border-top:1px solid var(--color-border-light,#f3f4f6); }',
+      '.cs-kit-row__k { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
+      '.cs-kit-dist { font-weight:500; color:var(--color-text-muted,#9ca3af); font-size:11px; }',
+      '.cs-kit-tiers, .cs-kit-tierhead { display:flex; gap:6px; }',
+      '.cs-kit-tiers span, .cs-kit-tierhead span { display:inline-block; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }',
+      '.cs-kit-tiers span { font-weight:700; color:var(--color-text-primary,#111827); }',
       // ── v3 GM Lore ──
       '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
       // ── v3 Header: status pills + actions + live dot ──
@@ -1117,7 +1689,7 @@
 
   // ── widget ─────────────────────────────────────────────────────────
 
-  Chronicle.register('character-sheet', {
+  if (Chronicle) Chronicle.register('character-sheet', {
     init: function (el, config) {
       config = config || {};
       var ds = el.dataset || {};
@@ -1180,12 +1752,27 @@
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       if (this._onAbilityClick) el.removeEventListener('click', this._onAbilityClick);
       if (this._onAbilityKey) el.removeEventListener('keydown', this._onAbilityKey);
+      if (this._onAbilityInput) el.removeEventListener('input', this._onAbilityInput);
       this._onAbilityClick = null;
       this._onAbilityKey = null;
+      this._onAbilityInput = null;
       el.classList.remove('ds-sheet');
       el.innerHTML = '';
     }
   });
 
-  registerBoxes();
+  if (Chronicle) registerBoxes();
+
+  // Test seam: expose the pure helpers for Node unit tests. Inert in a browser
+  // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
+      humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
+      targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
+      substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
+      classifyFeature: classifyFeature, htmlToText: htmlToText,
+      SKILL_TO_GROUP: SKILL_TO_GROUP
+    };
+  }
 })();
