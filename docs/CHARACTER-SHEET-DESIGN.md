@@ -63,12 +63,21 @@ after extensive mock iteration — do NOT redesign; see scratch mocks `ledger-ba
 4. **Grouping** — the character's class/signature abilities up top; the universal
    maneuvers / free strikes / basic actions in a **collapsed/dimmed** group below
    (Foundry hands over ~21 ability items including universal ones).
-5. **Glossary `{@term}` hover-overs** — terms are dashed-underlined and **color-coded by
-   rule category** (Condition = amber, Movement = blue, Resource = purple, …). Hover
-   (desktop) / tap (mobile) → a small definition card (name + category chip + definition
-   + source), pulled from `data/rules-glossary.json` via the reference-renderer.
-6. **Responsive** — desktop = split (list + detail); mobile = the list, and tapping
-   opens the compact/expanded card as a **bottom drawer**.
+5. **Glossary lookup card** (the small `{@term}` definition popover) — inside ANY card,
+   rule terms like `{@condition slowed}` / `{@move shift}` render as dashed-underlined,
+   **category-color-coded** links (Condition = amber, Movement = blue, Resource = purple,
+   Duration/Action/Combat = their own tints). Hover (desktop) / tap (mobile) → a SMALL
+   floating definition card: the term **name** + a **category chip** + its **definition**
+   + a "Draw Steel · \<category>" source line. Pulled from `data/rules-glossary.json` via
+   `widgets/reference-renderer.js`. Self-contained (never reflows the sheet); the same
+   lookup works everywhere `{@…}` appears (ability text, features, lore). This is a
+   distinct, smaller popover from the ability card — it explains *what a word means*.
+6. **Sizing — keep the cards NARROW.** The detail cards (small AND grown) are
+   **width-constrained** (≈ max-width 520–560px), left-aligned in the detail pane — they
+   do NOT stretch to fill the whole pane/column. ("Too wide" was the note; a tight card
+   reads better and matches the bare aesthetic.)
+7. **Responsive** — desktop = split (list + detail); mobile = the list, and tapping
+   opens the small→grown card as a **bottom drawer**.
 
 ---
 
