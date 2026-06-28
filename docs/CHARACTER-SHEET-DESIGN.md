@@ -4,6 +4,19 @@
 > (`widgets/character-sheet.js`). Read this before redesigning anything so we
 > don't relitigate settled decisions. Updated as decisions are made.
 
+## 📸 Reference renders
+
+Headless renders of the **real widget** (not mockups) against mock Phase-C data —
+update these when the design changes.
+
+| | |
+|---|---|
+| Full sheet (all sections) | `docs/images/character-sheet-full.png` |
+| Ability card — expanded ("For \<hero>" odds) | `docs/images/ability-card-expanded.png` |
+| Ability rail — long list (filter + collapsed Maneuvers) | `docs/images/ability-rail-long-list.png` |
+
+![Full character sheet](images/character-sheet-full.png)
+
 ---
 
 ## ✅ DONE (shipped / merged / on-branch)
@@ -93,6 +106,47 @@ after extensive mock iteration — do NOT redesign; see scratch mocks `ledger-ba
    reads better and matches the bare aesthetic.)
 7. **Responsive** — desktop = split (list + detail); mobile = the list, and tapping
    opens the small→grown card as a **bottom drawer**.
+8. **Long lists ("tons in the list").** A hero carries their whole kit *plus* every
+   universal maneuver (~21 rows), so the rail must not sprawl. Three measures, all in
+   the bare aesthetic (✅ built):
+   - **Capped scroll** — the rail is a fixed-max-height (~460px) scroll area, so the
+     list scrolls *inside itself* and never shoves the detail pane down, no matter the
+     count.
+   - **Collapsible groups** — each group header is a toggle (caret + a count badge);
+     on a **long list (≥10)** the dim **Maneuvers** group starts **collapsed** (its ~16
+     universal actions folded away), Signature/Heroic stay open. Click any header to
+     fold/unfold.
+   - **Filter box** — a sticky "Filter abilities…" input appears on long lists; typing
+     narrows rows live, hides emptied groups, and force-opens collapsed groups so a
+     match inside Maneuvers still surfaces.
+
+---
+
+## 🧩 THE OTHER SECTIONS (each UI fit to its data — NOT a cloned ability card)
+
+Phase C syncs far more than abilities; every field gets a renderer shaped to its
+content (✅ built). The principle: *vary the UI by what the data is.*
+
+- **Skills** (own box) — trained skills as compact chips **grouped by the five Draw
+  Steel skill groups** (Crafting / Exploration / Interpersonal / Intrigue / Lore),
+  mirroring the official sheet; ids humanized (`handleAnimals` → "Handle Animals"). An
+  unknown id lands in an "Other" bucket rather than vanishing. (Hardcoded group map in
+  the widget; a `data/skills.json` catalog is the eventual home if it needs to drift.)
+- **Kit** (own box) — a **stat box**: the melee/ranged damage-tier mini-ladder
+  (≤11 / 12–16 / 17+) + flat bonus chips (stability / speed / stamina / disengage). Kit
+  is reference stats, so it is NOT a clickable card.
+- **Origin** — Culture + Career fold into the header subtitle line
+  (ancestry · culture · career · class (subclass) · kit).
+- **Vitals** — Surges as a statline alongside the heroic-resource pips.
+- **Combat** — Size + Disengage chips, plus a compact **Potency strip** (weak / avg /
+  strong thresholds); conditions render Title-cased from the `actor.statuses` ids.
+- **Damage / Progression** — existing chip layouts (immunities/weaknesses;
+  xp/victories/renown/wealth) now actually fed by Phase C paths.
+
+**Still open:** **Features** (class/ancestry/kit feature text) — Foundry stores them as
+generic `feature` items with no clean source discriminator, so projecting them needs one
+more Capability Report to find the right fields. The box renders "No features yet." until
+then.
 
 ---
 

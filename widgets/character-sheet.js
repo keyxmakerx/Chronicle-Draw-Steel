@@ -487,6 +487,12 @@
     var groups = { signature: [], heroic: [], maneuver: [] };
     abilities.forEach(function (a, idx) { groups[groupOf(a)].push({ a: a, idx: idx }); });
 
+    // "Tons in the list" handling: on a long list (≥10, e.g. a full kit + all the
+    // universal maneuvers) show a sticky filter and collapse the dimmed Maneuvers
+    // group by default, so the rail stays short. The rail itself is a capped
+    // scroll area (CSS) so it never shoves the pane down regardless of count.
+    var many = abilities.length >= 10;
+
     var rail = GROUP_ORDER.map(function (g) {
       var list = groups[g];
       if (!list.length) return '';
@@ -494,13 +500,27 @@
       // stays attached to each entry, so selection lookups are unaffected).
       list.sort(function (x, y) { return (Number(x.a.cost) || 0) - (Number(y.a.cost) || 0); });
       var rows = list.map(function (it) { return railRow(it.a, it.idx, g); }).join('');
-      return '<div class="ds-ab-grp ds-ab-grp--' + g + '">' +
-        '<div class="ds-ab-grp__label">' + esc(GROUP_LABELS[g]) + '</div>' + rows +
+      var collapsed = (g === 'maneuver' && many); // long list → fold maneuvers
+      return '<div class="ds-ab-grp ds-ab-grp--' + g + (collapsed ? ' ds-ab-grp--collapsed' : '') + '">' +
+        '<button type="button" class="ds-ab-grp__label" data-ds-grp aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
+          '<span class="ds-ab-grp__caret" aria-hidden="true">&#9662;</span>' +
+          esc(GROUP_LABELS[g]) +
+          '<span class="ds-ab-grp__count">' + list.length + '</span>' +
+        '</button>' +
+        '<div class="ds-ab-grp__rows">' + rows + '</div>' +
       '</div>';
     }).join('');
 
+    var tools = many
+      ? '<div class="ds-rail__tools"><input type="text" class="ds-rail__filter" data-ds-filter' +
+          ' placeholder="Filter abilities…" aria-label="Filter abilities" autocomplete="off"></div>'
+      : '';
+
     return '<div class="ds-md">' +
-      '<div class="ds-rail" role="listbox" aria-label="Abilities">' + rail + '</div>' +
+      '<div class="ds-rail" role="listbox" aria-label="Abilities">' +
+        tools + rail +
+        '<div class="ds-rail__empty" data-ds-no-match hidden>No matching abilities.</div>' +
+      '</div>' +
       '<div class="ds-pane" data-ds-pane>' + paneEmptyHtml() + '</div>' +
     '</div>';
   }
@@ -1086,11 +1106,45 @@
       animateCardIn(p.firstChild, true);
     }
 
+    // Filter the rail rows by name; hide empty groups and force groups open while
+    // a query is active so matches inside a collapsed group still surface.
+    function applyFilter(q) {
+      q = String(q || '').trim().toLowerCase();
+      var rail = el.querySelector('.ds-rail');
+      if (!rail) return;
+      var anyShown = false;
+      Array.prototype.forEach.call(rail.querySelectorAll('.ds-ab-grp'), function (grp) {
+        var shown = 0;
+        Array.prototype.forEach.call(grp.querySelectorAll('[data-ds-ability]'), function (r) {
+          var match = !q || (r.textContent || '').toLowerCase().indexOf(q) !== -1;
+          if (match) { r.classList.remove('ds-li--hidden'); shown++; }
+          else r.classList.add('ds-li--hidden');
+        });
+        if (shown === 0 && q) grp.classList.add('ds-ab-grp--empty');
+        else grp.classList.remove('ds-ab-grp--empty');
+        if (q) grp.classList.add('ds-ab-grp--filtering');
+        else grp.classList.remove('ds-ab-grp--filtering');
+        if (shown) anyShown = true;
+      });
+      var none = rail.querySelector('[data-ds-no-match]');
+      if (none) none.hidden = anyShown;
+    }
+
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
       var rs = t.closest('[data-cs-read-story]');
       if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
+      // group label → collapse/expand its rows.
+      var grpBtn = t.closest('[data-ds-grp]');
+      if (grpBtn) {
+        var box = grpBtn.closest('.ds-ab-grp');
+        if (box) {
+          var nowCollapsed = box.classList.toggle('ds-ab-grp--collapsed');
+          grpBtn.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+        }
+        return;
+      }
       var collapseBtn = t.closest('[data-ds-collapse-btn]');
       if (collapseBtn) {
         var big = t.closest('[data-ds-collapse]');
@@ -1113,6 +1167,13 @@
       if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); }
     };
     el.addEventListener('keydown', inst._onAbilityKey);
+
+    // The rail filter (present only on long lists) narrows rows as you type.
+    inst._onAbilityInput = function (e) {
+      var t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-ds-filter') !== null) applyFilter(t.value);
+    };
+    el.addEventListener('input', inst._onAbilityInput);
 
     // Auto-select the first ability (prefer a signature) so the pane shows a card
     // immediately instead of the resting prompt.
@@ -1304,8 +1365,28 @@
       // ── Abilities: bare "Option D" master–detail (monochrome + one violet accent) ──
       '.ds-md { display:flex; gap:14px; align-items:flex-start; }',
       // master rail — a plain grouped list
-      '.ds-rail { flex:0 0 218px; min-width:0; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; overflow:hidden; background:var(--color-bg-primary,#f9fafb); }',
-      '.ds-ab-grp__label { font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); padding:10px 13px 5px; }',
+      // capped scroll area so a long list (a full kit + every universal maneuver)
+      // never shoves the detail pane down; x hidden, y auto.
+      '.ds-rail { flex:0 0 218px; min-width:0; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; overflow:hidden auto; max-height:460px; background:var(--color-bg-primary,#f9fafb); }',
+      // sticky filter (long lists only) — type to narrow the rows.
+      '.ds-rail__tools { position:sticky; top:0; z-index:2; padding:8px; background:var(--color-bg-primary,#f9fafb); border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
+      '.ds-rail__filter { width:100%; box-sizing:border-box; padding:6px 9px; border:1px solid var(--color-border,#e5e7eb); border-radius:7px; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); font:inherit; font-size:12.5px; }',
+      '.ds-rail__filter::placeholder { color:var(--color-text-muted,#9ca3af); }',
+      '.ds-rail__filter:focus { outline:none; border-color:var(--color-accent,#a855f7); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      '.ds-rail__empty { padding:14px; text-align:center; font-size:12px; color:var(--color-text-muted,#9ca3af); }',
+      // group label is a collapse toggle button (caret + label + count).
+      '.ds-ab-grp__label { display:flex; align-items:center; gap:6px; width:100%; text-align:left; background:none; border:0; cursor:pointer; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); padding:10px 13px 5px; }',
+      '.ds-ab-grp__label:hover { color:var(--color-text-secondary,#6b7280); }',
+      '.ds-ab-grp__label:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
+      '.ds-ab-grp__caret { font-size:8px; transition:transform 160ms ease; }',
+      '.ds-ab-grp--collapsed .ds-ab-grp__caret { transform:rotate(-90deg); }',
+      '.ds-ab-grp__count { margin-left:auto; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-ab-grp--collapsed .ds-ab-grp__rows { display:none; }',
+      // while filtering, force groups open so a match in a collapsed group shows;
+      // rows that do not match and groups with zero matches are hidden.
+      '.ds-ab-grp--filtering .ds-ab-grp__rows { display:block; }',
+      '.ds-li--hidden { display:none; }',
+      '.ds-ab-grp--empty { display:none; }',
       '.ds-li { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 13px; background:none; border:0; border-top:1px solid var(--color-border-light,#f3f4f6); font:inherit; font-size:13px; color:var(--color-text-secondary,#6b7280); cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
       '.ds-ab-grp__label + .ds-li { border-top:0; }',
       '.ds-li:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); color:var(--color-text-primary,#111827); }',
@@ -1591,8 +1672,10 @@
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       if (this._onAbilityClick) el.removeEventListener('click', this._onAbilityClick);
       if (this._onAbilityKey) el.removeEventListener('keydown', this._onAbilityKey);
+      if (this._onAbilityInput) el.removeEventListener('input', this._onAbilityInput);
       this._onAbilityClick = null;
       this._onAbilityKey = null;
+      this._onAbilityInput = null;
       el.classList.remove('ds-sheet');
       el.innerHTML = '';
     }
