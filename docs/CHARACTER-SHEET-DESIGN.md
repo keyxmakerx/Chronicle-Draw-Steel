@@ -38,10 +38,21 @@ The Abilities section is the focus of the next build. Settled shape:
 3. **The expanded card has TWO sections:**
    - **(1) General info** — the rules, identical for everyone (keywords, distance,
      target, power-roll characteristics, the tier ladder text).
-   - **(2) Character-specific** — computed for *this* hero: their power-roll math
-     (`2d10 + best characteristic`), average → tier, the tier they'll most likely hit,
-     and any class-ability specifics. ⚠️ **Pending a rules audit** (below) to confirm
-     how useful/feasible this is given Draw Steel mechanics.
+   - **(2) Character-specific ("For \<hero>")** — computed for *this* hero. The rules
+     audit (✅ done) locked the spec. Power roll = `2d10 + characteristic` (the ability's
+     named one, or the higher when it says "X or Y"); tiers ≤11 / 12–16 / 17+ compared to
+     the final total; **nat 19–20 = auto Tier 3**. Show these four STATIC, ship-now values:
+     1. **Roll expression** — `2d10 + N (Characteristic)` using the hero's best applicable.
+     2. **Resolved per-tier damage** — substitute the hero's characteristic into each tier's
+        `base + C`, plus the **kit** bonus per tier (melee bonus if Melee+Weapon, ranged if
+        Ranged+Weapon). *Headline value.* (Kit/keywords need Phase C; ship the `+C` part now.)
+     3. **Average → tier** — `11 + mod` → band (e.g. +2 → 13 → Tier 2).
+     4. **Tier odds** — `T1 % / T2 % / T3 %` from a precomputed `mod → distribution` lookup,
+        with the nat-19/20 auto-Tier-3 floor folded in.
+     - **Affordability** (`cost vs current resource`) is gated — current resource is live
+       combat state, not static sheet data → render only when present.
+     - **Do NOT compute**: hit/miss vs defenses (no AC in DS), target state, edges/banes
+       (situational). These make the card wrong more often than right.
 4. **Grouping** — the character's class/signature abilities up top; the universal
    maneuvers / free strikes / basic actions in a **collapsed/dimmed** group below
    (Foundry hands over ~21 ability items including universal ones).
@@ -58,10 +69,8 @@ The Abilities section is the focus of the next build. Settled shape:
 
 - **Build the ability section** per the model above in `character-sheet.js`
   (replaces the current inline-accordion ability rows).
-- **Rules audit** — research Draw Steel mechanics to confirm the per-character
-  computed section (#3.2) is genuinely useful: power-roll = `2d10 + characteristic`,
-  tier bands (≤11 / 12–16 / 17+), edges/banes, surges, etc. Decide what's worth
-  computing vs. noise.
+- ~~Rules audit~~ — ✅ **DONE**; the locked "For \<hero>" spec is in the agreed-design
+  section above (4 static computed values + affordability gated + an exclude list).
 - **Phase C sync expansion** (manifest + Foundry adapter), needed to fully feed the
   cards:
   - Ability **keywords** (a Foundry `Set` → serialize to array) and the **tier ladder**
