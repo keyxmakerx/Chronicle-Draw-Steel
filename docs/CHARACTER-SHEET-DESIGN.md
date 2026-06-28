@@ -143,10 +143,18 @@ content (✅ built). The principle: *vary the UI by what the data is.*
 - **Damage / Progression** — existing chip layouts (immunities/weaknesses;
   xp/victories/renown/wealth) now actually fed by Phase C paths.
 
-**Still open:** **Features** (class/ancestry/kit feature text) — Foundry stores them as
-generic `feature` items with no clean source discriminator, so projecting them needs one
-more Capability Report to find the right fields. The box renders "No features yet." until
-then.
+- **Features** (own box) — ✅ built as a **defensive framework**, because Foundry stores
+  class/ancestry/kit/culture/career features all as generic `feature` items and a feature
+  does **not** record which item granted it (`system.source` is the publication book).
+  So instead of trusting one field: `features_json` projects every feature
+  (name / description / level / `_dsid` / source book), and the renderer **classifies**
+  each by matching its `_dsid`/name against the hero's KNOWN origin names (class, ancestry,
+  kit, culture, career — already synced), bucketing into those groups. Anything it can't
+  place lands in a generic **Features** group; if *nothing* classifies, it renders ONE flat
+  list rather than fake headers. Each feature is a native `<details>` accordion (name +
+  level → description on expand), so a long list collapses with zero JS. The classifier is
+  a heuristic — it tightens once live data shows which signal truly carries the origin, but
+  it already works (ungrouped at worst). Legacy `*_features_json` kept as a fallback.
 
 ---
 

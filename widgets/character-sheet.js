@@ -543,30 +543,100 @@
       '<div class="ds-pane__empty-d">Pick one on the left to see its card and tiers.</div>' +
     '</div>';
   }
+  // slugify normalizes a name to a comparable slug ("Sword and Board" →
+  // "sword-and-board") for matching a feature against its origin.
+  function slugify(s) {
+    return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  // FEATURES FRAMEWORK
+  // ------------------
+  // Draw Steel stores class/ancestry/kit/culture/career features all as generic
+  // `feature` items, and a feature does NOT record which item granted it
+  // (system.source is the publication book, not the origin). So we can't trust a
+  // single field. Instead we classify defensively: match each feature's rules-id
+  // (_dsid) / name against the hero's KNOWN origin names (class/ancestry/kit/…,
+  // which we already sync) and bucket it there; anything we can't place lands in
+  // a generic group. If nothing classifies, we render ONE flat "Features" list
+  // rather than fake groups. When live data shows which signal actually carries
+  // the origin, the classifier tightens — but it already works, ungrouped at worst.
+  var FEATURE_ORIGINS = [
+    { key: 'class', label: 'Class', field: 'class' },
+    { key: 'subclass', label: 'Subclass', field: 'subclass' },
+    { key: 'ancestry', label: 'Ancestry', field: 'ancestry' },
+    { key: 'culture', label: 'Culture', field: 'culture' },
+    { key: 'career', label: 'Career', field: 'career' },
+    { key: 'kit', label: 'Kit', field: 'kit' }
+  ];
+  var FEATURE_GROUP_ORDER = ['class', 'subclass', 'ancestry', 'culture', 'career', 'kit', 'other'];
+  var FEATURE_GROUP_LABELS = { class: 'Class', subclass: 'Subclass', ancestry: 'Ancestry', culture: 'Culture', career: 'Career', kit: 'Kit', other: 'Features' };
+
+  // classifyFeature picks an origin key by looking for an origin's slug or name
+  // inside the feature's _dsid + name. Specific origins are tried first.
+  function classifyFeature(ft, origins) {
+    var hay = (String((ft && ft.dsid) || '') + ' ' + String((ft && ft.name) || '')).toLowerCase();
+    for (var i = 0; i < origins.length; i++) {
+      var o = origins[i];
+      if ((o.slug && hay.indexOf(o.slug) !== -1) || (o.lname && hay.indexOf(o.lname) !== -1)) return o.key;
+    }
+    return 'other';
+  }
+
+  // renderFeature — a native <details> accordion (name + level → description on
+  // expand) so a long feature list collapses with zero JS. Flat row when there's
+  // no description to reveal.
+  function renderFeature(ft) {
+    var name = esc((ft && ft.name) || 'Feature');
+    var lvl = (ft && ft.level) ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
+    var descTxt = htmlToText(ft && ft.description);
+    if (descTxt) {
+      return '<details class="cs-feature"><summary class="cs-feature__sum">' +
+        '<span class="cs-feature-name">' + name + '</span>' + lvl +
+        '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span>' +
+      '</summary><div class="cs-feature-desc">' + refText(descTxt) + '</div></details>';
+    }
+    return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + lvl + '</div>';
+  }
+
+  function featureGroupHtml(label, list) {
+    if (!list || !list.length) return '';
+    return '<div class="cs-feature-group">' +
+      '<h4 class="cs-feature-group-title">' + esc(label) + '</h4>' +
+      '<div class="cs-feature-list">' + list.map(renderFeature).join('') + '</div>' +
+    '</div>';
+  }
+
   function rFeatures(def, data) {
-    var classFt = parseJson(f(data, 'class_features_json', ''), []);
-    var ancestryFt = parseJson(f(data, 'ancestry_features_json', ''), []);
-    var kitFt = parseJson(f(data, 'kit_features_json', ''), []);
+    var feats = parseJson(f(data, 'features_json', ''), []);
 
-    var renderFt = function (ft) {
-      var name = esc(ft.name || 'Feature');
-      var levelTag = ft.level ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
-      var desc = ft.description ? '<div class="cs-feature-desc">' + refText(ft.description) + '</div>' : '';
-      var source = ft.source ? '<div class="cs-feature-source">' + esc(String(ft.source)) + '</div>' : '';
-      return '<article class="cs-feature"><header class="cs-feature-header">' +
-        '<span class="cs-feature-name">' + name + '</span>' + levelTag +
-      '</header>' + source + desc + '</article>';
-    };
+    if (Array.isArray(feats) && feats.length) {
+      // build the origin matchers from the hero's known identity.
+      var origins = FEATURE_ORIGINS.map(function (o) {
+        var nm = f(data, o.field, '');
+        return { key: o.key, lname: String(nm).toLowerCase(), slug: slugify(nm) };
+      }).filter(function (o) { return o.lname; });
 
-    var groupHtml = function (label, list) {
-      if (!list || !list.length) return '';
-      return '<div class="cs-feature-group">' +
-        '<h4 class="cs-feature-group-title">' + esc(label) + '</h4>' +
-        '<div class="cs-feature-list">' + list.map(renderFt).join('') + '</div>' +
-      '</div>';
-    };
+      var buckets = {};
+      feats.forEach(function (ft) {
+        var g = classifyFeature(ft, origins);
+        (buckets[g] = buckets[g] || []).push(ft);
+      });
 
-    var out = groupHtml('Class', classFt) + groupHtml('Ancestry', ancestryFt) + groupHtml('Kit', kitFt);
+      // If we couldn't confidently place ANY feature, show one flat list instead
+      // of a misleading lone "Features" group header.
+      var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
+      if (!placed.length) {
+        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>';
+      }
+      return FEATURE_GROUP_ORDER.map(function (k) {
+        return featureGroupHtml(FEATURE_GROUP_LABELS[k], buckets[k]);
+      }).join('') || ph('No features yet.');
+    }
+
+    // Legacy fallback — the old pre-split fields, if ever populated.
+    var out = featureGroupHtml('Class', parseJson(f(data, 'class_features_json', ''), [])) +
+      featureGroupHtml('Ancestry', parseJson(f(data, 'ancestry_features_json', ''), [])) +
+      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), []));
     return out || ph('No features yet.');
   }
 
@@ -1475,11 +1545,19 @@
       '.cs-feature-group:first-child { margin-top:0; }',
       '.cs-feature-group-title { font-size:13px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; text-transform:uppercase; letter-spacing:0.05em; }',
       '.cs-feature-list { display:flex; flex-direction:column; gap:8px; }',
-      '.cs-feature { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:10px 12px; }',
+      '.cs-feature { background:var(--color-bg-primary,#f9fafb); border:1px solid var(--color-border-light,#f3f4f6); border-radius:8px; padding:0; overflow:hidden; }',
       '.cs-feature-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }',
       '.cs-feature-name { font-weight:600; font-size:14px; }',
       '.cs-feature-source { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-bottom:4px; }',
-      '.cs-feature-desc { font-size:13px; color:var(--color-text-body,#374151); }',
+      '.cs-feature-desc { font-size:13px; line-height:1.55; color:var(--color-text-body,#374151); padding:0 12px 11px; }',
+      // native <details> feature accordion — collapses a long feature list, no JS.
+      '.cs-feature__sum { display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; list-style:none; }',
+      '.cs-feature__sum::-webkit-details-marker { display:none; }',
+      '.cs-feature__sum:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); }',
+      '.cs-feature__sum:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
+      '.cs-feature__caret { margin-left:auto; font-size:9px; color:var(--color-text-muted,#9ca3af); transition:transform 160ms ease; }',
+      '.cs-feature[open] .cs-feature__caret { transform:rotate(180deg); color:var(--color-accent,#a855f7); }',
+      '.cs-feature--flat { padding:10px 12px; display:flex; align-items:center; gap:8px; }',
       // ── Inventory ──
       '.cs-inventory-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }',
       '.cs-inventory-item { padding:8px 10px; background:var(--color-bg-primary,#f9fafb); border-radius:6px; font-size:13px; }',
