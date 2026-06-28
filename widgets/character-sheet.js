@@ -590,7 +590,7 @@
   function renderFeature(ft) {
     var name = esc((ft && ft.name) || 'Feature');
     var lvl = (ft && ft.level) ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
-    var descTxt = htmlToText(ft && ft.description);
+    var descTxt = cleanFoundryText(ft && ft.description);
     if (descTxt) {
       return '<details class="cs-feature"><summary class="cs-feature__sum">' +
         '<span class="cs-feature-name">' + name + '</span>' + lvl +
@@ -688,7 +688,7 @@
     var notes = f(data, 'backstory', '') || f(data, 'notes', '');
     if (!notes) return ph('No backstory yet.');
     return '<div class="cs-bg">' +
-      '<p class="cs-bg__teaser">' + esc(teaser(notes, 180)) + '</p>' +
+      '<p class="cs-bg__teaser">' + esc(teaser(cleanFoundryText(notes), 180)) + '</p>' +
       '<button type="button" class="cs-bg__read" data-cs-read-story>Read full story &rsaquo;</button>' +
     '</div>';
   }
@@ -738,7 +738,7 @@
       '<button type="button" class="cs-reading__back" data-cs-reading-back>&lsaquo; Back to sheet</button>' +
       '<div class="cs-reading__eyebrow">Background</div>' +
       '<h1 class="cs-reading__title">' + esc(title || 'Background') + '</h1>' +
-      '<div class="cs-reading__body">' + refText(prose) + '</div>';
+      '<div class="cs-reading__body">' + refText(cleanFoundryProse(prose)) + '</div>';
     var back = node.querySelector('[data-cs-reading-back]');
     if (back) back.addEventListener('click', function () { Chronicle.surface.overlay.pop(); });
     return node;
@@ -767,6 +767,45 @@
       .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
       .replace(/\s+/g, ' ').trim();
+  }
+
+  // stripEnrichers removes Foundry rich-text enrichers that arrive raw in synced
+  // ability/feature/biography text and would otherwise show as literal junk:
+  //   [[/surge 1]]                       → "surge 1"   (bare command)
+  //   [[lookup @hero.victories]]{your …} → "your …"    (labeled)
+  //   @UUID[Item.x]{Falchion}            → "Falchion"  (document link)
+  // Labeled forms keep the display label; bare forms keep the cleaned command
+  // (drop a leading "/", the "lookup" keyword, and @path tokens).
+  function stripEnrichers(s) {
+    return String(s == null ? '' : s)
+      .replace(/@UUID\[[^\]]*\]\{([^}]*)\}/g, '$1')
+      .replace(/\[\[[^\]]*\]\]\{([^}]*)\}/g, '$1')
+      .replace(/\[\[([^\]]*)\]\]/g, function (_m, inner) {
+        return String(inner).replace(/^\s*\//, '').replace(/\blookup\b/g, '')
+          .replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim();
+      })
+      .replace(/@UUID\[[^\]]*\]/g, '');
+  }
+
+  // cleanFoundryText — inline-safe plain text from a synced rich field: strip
+  // tags + decode entities (htmlToText) THEN strip enrichers. Use for chips,
+  // cards, and teasers.
+  function cleanFoundryText(h) {
+    return stripEnrichers(htmlToText(h)).replace(/\s+/g, ' ').trim();
+  }
+
+  // cleanFoundryProse — like cleanFoundryText but PRESERVES paragraph breaks
+  // (block close-tags / <br> → newlines) for the reading-view lore page, which
+  // renders white-space:pre-wrap. Use for full backstory / long descriptions.
+  function cleanFoundryProse(h) {
+    if (!h) return '';
+    var s = String(h)
+      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'");
+    return stripEnrichers(s).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
   }
 
   function powerRollChars(a) {
@@ -862,9 +901,9 @@
       var tt = eff[key];
       if (tt && typeof tt === 'object') {
         var disp = tt.display || tt.text || tt.description;
-        if (disp) frags.push(htmlToText(disp));
+        if (disp) frags.push(cleanFoundryText(disp));
       } else if (typeof tt === 'string' && tt) {
-        frags.push(htmlToText(tt));
+        frags.push(cleanFoundryText(tt));
       }
     });
     return frags.join('; ');
@@ -907,7 +946,7 @@
     var bits = '';
     var pr = powerRollLabel(a);
     if (pr) bits += '<div class="ds-card__line"><span class="ds-card__k">Power Roll</span><span>2d10 + ' + esc(pr) + '</span></div>';
-    var eff = htmlToText(a.effectAfter) || (a.story ? String(a.story) : '') || htmlToText(a.effectBefore);
+    var eff = cleanFoundryText(a.effectAfter) || (a.story ? cleanFoundryText(a.story) : '') || cleanFoundryText(a.effectBefore);
     if (eff) bits += '<div class="ds-card__eff">' + refText(teaser(eff, 170)) + '</div>';
     if (!bits) bits = '<div class="ds-card__eff ds-muted">No detail synced yet.</div>';
     return bits;
@@ -995,9 +1034,9 @@
     var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
     var kw = (Array.isArray(a.keywords) && a.keywords.length)
       ? '<div class="ds-big__kw">' + a.keywords.map(function (k) { return '<span>' + esc(String(k)) + '</span>'; }).join('') + '</div>' : '';
-    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(htmlToText(a.effectBefore)) + '</div>' : '';
-    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(htmlToText(a.trigger)) + '</span></div>' : '';
-    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(htmlToText(a.effectAfter)) + '</span></div>' : '';
+    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(cleanFoundryText(a.effectBefore)) + '</div>' : '';
+    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(cleanFoundryText(a.trigger)) + '</span></div>' : '';
+    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
     var forHero = forHeroHtml(a, data);
 
     return '<div class="ds-big" data-ds-collapse="' + idx + '">' +
@@ -1551,7 +1590,7 @@
       '.cs-feature-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }',
       '.cs-feature-name { font-weight:600; font-size:14px; }',
       '.cs-feature-source { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-bottom:4px; }',
-      '.cs-feature-desc { font-size:13px; line-height:1.55; color:var(--color-text-body,#374151); padding:0 12px 11px; }',
+      '.cs-feature-desc { font-size:13px; line-height:1.55; color:var(--color-text-body,#374151); padding:0 12px 11px; max-height:260px; overflow-y:auto; }',
       // native <details> feature accordion — collapses a long feature list, no JS.
       '.cs-feature__sum { display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; list-style:none; }',
       '.cs-feature__sum::-webkit-details-marker { display:none; }',
@@ -1772,7 +1811,8 @@
       targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
       substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
       classifyFeature: classifyFeature, htmlToText: htmlToText,
-      SKILL_TO_GROUP: SKILL_TO_GROUP
+      stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
+      cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP
     };
   }
 })();

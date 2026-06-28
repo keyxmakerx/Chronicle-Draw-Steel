@@ -170,6 +170,41 @@ content (✅ built). The principle: *vary the UI by what the data is.*
 
 ---
 
+## 📣 LIVE FEEDBACK — 2026-06-28 (first real synced hero "Saatraaol")
+
+Phase C is **live and validated**: a real hero renders class/culture/career/subclass/
+kit, abilities with tiers + the computed "For \<hero>" odds, grouped skills, kit
+details, and grouped features. Five issues to fix (tracked as tasks #45–#49):
+
+1. **Foundry enricher syntax shows raw (ROOT CAUSE of several).** Synced ability/
+   feature text contains **Foundry** enrichers — `[[/surge 1]]`,
+   `[[lookup @hero.victories]]{your Victories}`, `[[/gain 1d3 hr]]{gain 1d3 insight}`
+   — which render as literal junk. We strip HTML tags but NOT these. Fix: a
+   `cleanFoundryText()` that turns `[[…]]{label}` → `label` and `[[…]]` → a cleaned
+   command word, applied to features, ability effect text, and backstory. (#45)
+2. **Features are a mess / huge.** Expanded a feature (e.g. *Insight*) dumps a giant
+   wall of text (full of #1's raw enrichers). Fix: clean the text AND clamp it —
+   teaser + "read full" (reuse the backstory reading-view overlay) or a max-height
+   scroll — so opening one doesn't blow out the column. (#46)
+3. **Backstory shows raw `<p>`.** The Foundry biography is HTML; `rNotes` teaser and
+   the reading-view overlay show the tags literally. Fix: run backstory through
+   `htmlToText`/clean in BOTH places. (#47)
+4. **No glossary defs on real heroes.** The `{@condition slowed}` tooltips only fire
+   on **Chronicle-authored** `{@category term}` text — but **synced Foundry text has
+   none of that syntax** (it uses `[[…]]`). So zero tooltips show live. Fix (after #1):
+   scan the *cleaned* text for known DS glossary terms (conditions, keywords) and wrap
+   them as ref tooltips, and **populate `data/rules-glossary.json`** with the DS
+   conditions + keyword defs (currently sparse/empty). (#48)
+5. **Skills want definitions.** Skills are bare name chips; a player can't tell what
+   "Alertness" does. Fix: add a `data/skills.json` catalog (slug/name/group/**description
+   from the Draw Steel rules**) and a small hover/tap definition card per skill (same
+   popover pattern as the ability glossary). Needs the DS rulebook skill text. (#49)
+
+> **Note for future sessions (don't re-derive):** the sheet renders **Foundry** rich
+> text, whose enricher syntax is `[[command args]]{display}` and `@UUID[...]{label}` —
+> NOT Chronicle's `{@category term}`. Any "why isn't the glossary working / why is there
+> raw markup" question traces back to this mismatch.
+
 ## 🛠️ WANT TO DO (planned, not yet built)
 
 - **Build the ability section** per the model above in `character-sheet.js`

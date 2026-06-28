@@ -123,6 +123,20 @@ test('costLabel reads the hero heroic-resource name from fields', () => {
   assert.equal(cs.costLabel({ cost: 0 }, data), '');       // signature → no cost label
 });
 
+// ── Foundry enricher cleanup (raw [[...]] in synced text) ─────────────────
+test('cleanFoundryText strips tags AND Foundry enrichers to a readable line', () => {
+  assert.equal(cs.cleanFoundryText('<p>Regains 5 and you [[/surge 1]].</p>'), 'Regains 5 and you surge 1.');
+  assert.equal(cs.cleanFoundryText('Gain [[/gain 1d3 hr]]{1d3 insight} now'), 'Gain 1d3 insight now');
+  assert.equal(cs.cleanFoundryText('equal to [[lookup @hero.victories]]{your Victories}.'), 'equal to your Victories.');
+  assert.equal(cs.cleanFoundryText('Wield @UUID[Item.abc]{Falchion} well'), 'Wield Falchion well');
+  assert.equal(cs.cleanFoundryText(''), '');
+});
+
+test('cleanFoundryProse preserves paragraph breaks for the reading view', () => {
+  const out = cs.cleanFoundryProse('<p>First line.</p><p>Second [[/surge 1]].</p>');
+  assert.equal(out, 'First line.\n\nSecond surge 1.');
+});
+
 // ── skill grouping ────────────────────────────────────────────────────────
 test('SKILL_TO_GROUP maps skill ids to the five Draw Steel groups', () => {
   assert.equal(cs.SKILL_TO_GROUP.heal, 'exploration');
