@@ -24,18 +24,25 @@
 
 ## 🎯 AGREED ABILITY-SECTION DESIGN (the model we settled on)
 
-The Abilities section is the focus of the next build. Settled shape:
+The Abilities section is the focus of the next build. **FINAL LOCKED SHAPE** (settled
+after extensive mock iteration — do NOT redesign; see scratch mocks `ledger-bare2`):
 
-1. **Master–detail ("D") is the default and the end-all.** A grouped list + a detail
-   view. Not a wall of cards, not inline dropdowns.
-2. **Three zoom levels:**
-   - **List row** — one tidy line (name + cost), at a glance.
-   - **Compact detail** — selecting a row shows a SMALL at-a-glance card: name, cost,
-     one line of meta, and just the *likely result*. This is the everyday view.
-   - **Expanded card (opt-in)** — clicking the *body* of the compact detail expands it
-     to the full statblock ("C"), with a subtle **floating animation** to signal the
-     expand. Closes back to the compact view.
-3. **The expanded card has TWO sections:**
+1. **Bare master–detail ("Option D"), monochrome.** A grouped list (master) + a detail
+   pane. The aesthetic is **minimal/restrained**: dark grayscale with a SINGLE violet
+   accent only (SIG badge, selected-row edge, glossary links). **No color-coded tier
+   bands, no action glyphs, no gradient chrome** in the resting/default views.
+   - **List** — plain rows: name + cost, grouped (Signature / Heroic / Maneuvers). The
+     selected row gets a subtle accent left-edge; maneuvers/free-strikes are dimmed.
+   - **Resting** (nothing selected) — the pane shows a quiet **"Select an ability"** prompt.
+2. **Two zoom levels in the detail pane — and NO expand button:**
+   - **Default = an even-smaller BARE card.** Click a list row → the pane fills with a
+     small card: header line (name · `Sig` · cost) + three **plain** tier lines
+     (≤11 / 12–16 / 17+), glossary `{@terms}` in accent. That's it — no color bands,
+     no footer note, no button.
+   - **Hover the card → it lifts + glows** (a transform/shadow animation) to signal it's
+     clickable, with a faint "click to expand" hint. The **whole card is the click target.**
+   - **Click → it grows into the bigger card via animation** (the two-section card below).
+3. **The grown (big) card has TWO sections:**
    - **(1) General info** — the rules, identical for everyone (keywords, distance,
      target, power-roll characteristics, the tier ladder text).
    - **(2) Character-specific ("For \<hero>")** — computed for *this* hero. The rules
