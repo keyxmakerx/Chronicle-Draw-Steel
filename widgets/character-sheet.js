@@ -82,6 +82,18 @@
     return refRenderer ? refRenderer.renderText(e) : e;
   }
 
+  // refSynced renders SYNCED Foundry prose (already enricher-cleaned to plain
+  // text): escape, resolve any {@…} (usually none), THEN scan for bare condition
+  // terms and wrap them with glossary tooltips — so synced text gets the same
+  // condition definitions hand-authored {@…} text would. Safe because the input
+  // is plain (no pre-existing ref spans for the scanner to corrupt).
+  function refSynced(s) {
+    var e = esc(s);
+    if (!refRenderer) return e;
+    e = refRenderer.renderText(e);
+    return refRenderer.scanText ? refRenderer.scanText(e) : e;
+  }
+
   function parseJson(raw, fallback) {
     if (raw == null || raw === '') return fallback;
     if (typeof raw !== 'string') return raw;
@@ -662,7 +674,7 @@
       return '<details class="cs-feature"><summary class="cs-feature__sum">' +
         '<span class="cs-feature-name">' + name + '</span>' + lvl +
         '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span>' +
-      '</summary><div class="cs-feature-desc">' + refText(descTxt) + '</div></details>';
+      '</summary><div class="cs-feature-desc">' + refSynced(descTxt) + '</div></details>';
     }
     return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + lvl + '</div>';
   }
@@ -753,7 +765,7 @@
       return '<details class="cs-feature"><summary class="cs-feature__sum">' +
         '<span class="cs-feature-name">' + name + '</span>' + ech + qty +
         '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span></summary>' +
-        kws + '<div class="cs-feature-desc">' + refText(desc) + '</div></details>';
+        kws + '<div class="cs-feature-desc">' + refSynced(desc) + '</div></details>';
     }
     return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + ech + qty + '</div>';
   }
@@ -852,7 +864,7 @@
       '<button type="button" class="cs-reading__back" data-cs-reading-back>&lsaquo; Back to sheet</button>' +
       '<div class="cs-reading__eyebrow">Background</div>' +
       '<h1 class="cs-reading__title">' + esc(title || 'Background') + '</h1>' +
-      '<div class="cs-reading__body">' + refText(cleanFoundryProse(prose)) + '</div>';
+      '<div class="cs-reading__body">' + refSynced(cleanFoundryProse(prose)) + '</div>';
     var back = node.querySelector('[data-cs-reading-back]');
     if (back) back.addEventListener('click', function () { Chronicle.surface.overlay.pop(); });
     return node;
@@ -1049,7 +1061,7 @@
       var txt = tierFragments(a, n, subVal);
       if (txt) any = true;
       rows += '<div class="ds-tr"><span class="ds-tr__b">' + bands[n - 1] + '</span>' +
-        '<span class="ds-tr__t">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
+        '<span class="ds-tr__t">' + (txt ? refSynced(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
     }
     return any ? rows : '';
   }
@@ -1061,7 +1073,7 @@
     var pr = powerRollLabel(a);
     if (pr) bits += '<div class="ds-card__line"><span class="ds-card__k">Power Roll</span><span>2d10 + ' + esc(pr) + '</span></div>';
     var eff = cleanFoundryText(a.effectAfter) || (a.story ? cleanFoundryText(a.story) : '') || cleanFoundryText(a.effectBefore);
-    if (eff) bits += '<div class="ds-card__eff">' + refText(teaser(eff, 170)) + '</div>';
+    if (eff) bits += '<div class="ds-card__eff">' + refSynced(teaser(eff, 170)) + '</div>';
     if (!bits) bits = '<div class="ds-card__eff ds-muted">No detail synced yet.</div>';
     return bits;
   }
@@ -1100,7 +1112,7 @@
       var txt = tierFragments(a, n, subVal);
       if (txt) any = true;
       rows += '<div class="ds-big__tier ds-big__tier--t' + n + '"><span class="ds-big__tb">' + bands[n - 1] + '</span>' +
-        '<span class="ds-big__tt">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
+        '<span class="ds-big__tt">' + (txt ? refSynced(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
     }
     return any ? '<div class="ds-big__ladder">' + rows + '</div>' : '';
   }
@@ -1152,9 +1164,9 @@
           var tip = (en && en.description) ? ' data-tip="' + esc(en.description) + '" tabindex="0"' : '';
           return '<span' + tip + '>' + esc(String(k)) + '</span>';
         }).join('') + '</div>' : '';
-    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(cleanFoundryText(a.effectBefore)) + '</div>' : '';
-    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(cleanFoundryText(a.trigger)) + '</span></div>' : '';
-    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
+    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
+    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refSynced(cleanFoundryText(a.trigger)) + '</span></div>' : '';
+    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
     var forHero = forHeroHtml(a, data);
 
     return '<div class="ds-big" data-ds-collapse="' + idx + '">' +

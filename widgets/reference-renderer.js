@@ -66,6 +66,37 @@ var DrawSteelRefRenderer = (function () {
     return this._glossary[String(termId).toLowerCase().trim()] || null;
   };
 
+  // scanText wraps BARE rule terms (DS conditions) found in already-escaped PLAIN
+  // text — for synced Foundry prose that has no {@…} markup of its own. Conservative
+  // by design: conditions only (unambiguous), whole-word, first occurrence of each.
+  // MUST be given plain escaped text with no existing ds-ref spans (else it could
+  // match inside a tooltip attribute) — the caller guarantees this for cleaned
+  // synced text. Keywords are handled separately via keyword badges, so they are
+  // NOT scanned here (too common in prose).
+  RefRenderer.prototype.scanText = function (escapedHtml) {
+    if (!this._loaded || !escapedHtml || !this._glossary) return escapedHtml || '';
+    if (!this._scanList) {
+      var list = [];
+      for (var slug in this._glossary) {
+        if (!Object.prototype.hasOwnProperty.call(this._glossary, slug)) continue;
+        var e = this._glossary[slug];
+        var cat = (e.properties && e.properties.category) || e.category || '';
+        if (cat === 'condition') list.push({ name: e.name || slug, slug: slug, cat: cat, def: e.description || '' });
+      }
+      list.sort(function (a, b) { return b.name.length - a.name.length; });
+      this._scanList = list;
+    }
+    var html = escapedHtml;
+    this._scanList.forEach(function (t) {
+      var re = new RegExp('\\b(' + t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'i');
+      if (re.test(html)) {
+        html = html.replace(re, '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
+          ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">$1</span>');
+      }
+    });
+    return html;
+  };
+
   RefRenderer.prototype.renderText = function (escapedHtml) {
     if (!this._loaded || !escapedHtml) return escapedHtml || '';
     var glossary = this._glossary;
