@@ -19,6 +19,21 @@
 - **Operator diagnostics workspace** + sync-map doc (debugging "where data dies").
 - **Foundry dashboard** — reliable reopen + "Sync Everything Now" (journals +
   linked characters + maps).
+- **Phase C sync expansion** (manifest + Foundry adapter) — the adapter now
+  normalizes Foundry Sets & pseudo-document collections to JSON
+  (`normalizeFoundryValue`), and the manifest projects ability keywords / tier
+  ladder (`system.power.effects`) / power-roll characteristics / effect text,
+  plus skills, kit details, culture, career, conditions (`actor.statuses`) and
+  potency. Needs a Draw Steel release + a hero re-sync to flow live.
+- **Ability section build** — the bare Option-D master–detail (below) is built
+  in `character-sheet.js`: grouped rail (Signature/Heroic/Maneuvers), the
+  even-smaller bare card (auto-selected, hover lifts+glows), click-grows to the
+  two-section big card (① rules ② "For \<hero>" computed odds), glossary refs,
+  responsive stack. Verified headlessly against the real widget + mock Phase-C
+  data (scratch `ability-harness`). **Caveat:** tier-line text for *non-damage*
+  power-roll effects depends on the live `system.power.effects` shape — damage
+  effects render cleanly now; other effect types fall back to the ability's
+  effect text until confirmed against a live re-sync.
 
 ---
 
