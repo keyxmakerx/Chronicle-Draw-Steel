@@ -191,13 +191,16 @@ State of the manifest **today**.
 | Backstory | `system.biography.value` |
 | Abilities (as names) | `items` filtered by `type == ability` |
 
-### ❌ Wrong today
+### ✅ Fixed in Phase A — do NOT revert to the "old" paths
 
-| Chronicle field | Manifest path (wrong) | Correct path |
+These were wrong and are now corrected in the manifest. Listed so a future editor
+doesn't "fix" them backward.
+
+| Chronicle field | OLD (wrong) path — do not use | CORRECT path (current) |
 |---|---|---|
 | Level | `system.details.level` | `class` item → `system.class.system.level` |
 | Heroic resource name | `system.hero.resource.name` | `class` item → `system.class.system.primary` |
-| Heroic resource max | *(nonexistent path)* | No actor field — current is `system.hero.primary.value`; "max" is not a stored scalar |
+| Heroic resource max | *(nonexistent)* | **No actor field — REMOVED.** DS heroic resources have no fixed max (you accumulate); the sheet shows a bare count of `system.hero.primary.value`. |
 
 ### ✅ Declared in Phase C (manifest, branch `claude/chronicle-sheet-sync-j2m9s4`)
 

@@ -21,8 +21,11 @@
  * entity data and only includes boxes that have content, so empty sections are
  * absent rather than rendered as empty titled boxes.
  *
- * DYNAMIC WIN: ability cards are compact in-box and open a power-roll OVERLAY
- * on click (Chronicle.surface.overlay.push), wired via one delegated listener.
+ * DYNAMIC WIN: the Abilities box is a master–detail — a grouped rail + a detail
+ * pane that fills with a small bare card on row click and grows to a two-section
+ * big card (rules + computed "For <hero>" odds) on card click. All wired via one
+ * delegated listener (the surface frame re-renders box bodies, so no per-node
+ * listeners); selection state lives in the DOM.
  *
  * READ-ONLY: Foundry is the source of truth; Chronicle mirrors fields_data
  * one-way. This widget never writes/saves.
@@ -151,10 +154,11 @@
     }
 
     // v3 action affordances + live dot (display-first; behavior is a follow-up).
+    var soon = ' title="Coming later — not implemented yet"';
     var actions = '<div class="cs-header-actions">' +
-      '<button type="button" class="cs-act cs-act--primary" data-cs-act="roll"><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
-      '<button type="button" class="cs-act" data-cs-act="levelup"><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
-      '<button type="button" class="cs-act" data-cs-act="share"><i class="fa-solid fa-share-nodes"></i> Share</button>' +
+      '<button type="button" class="cs-act cs-act--primary cs-act--soon" data-cs-act="roll"' + soon + '><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
+      '<button type="button" class="cs-act cs-act--soon" data-cs-act="levelup"' + soon + '><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
+      '<button type="button" class="cs-act cs-act--soon" data-cs-act="share"' + soon + '><i class="fa-solid fa-share-nodes"></i> Share</button>' +
       '<span class="cs-live" title="Live"><span class="cs-live-dot"></span> live</span>' +
     '</div>';
 
@@ -203,7 +207,6 @@
 
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var hrCur = num(data, 'heroic_resource_current', 0);
-    var hrMax = num(data, 'heroic_resource_max', 0);
 
     var left =
       '<div class="cs-bar-wrap">' +
@@ -215,13 +218,16 @@
       '</div>' +
       '<div class="cs-statline"><span class="cs-statline-label">Recoveries</span>' +
         renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
+      // Heroic resources have NO fixed max in Draw Steel (you accumulate them),
+      // so show a bare count + a single accent pip rather than a pool of pips
+      // that would imply a cap.
       '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
-        renderPips(hrCur, hrMax, '◆', '◇', 'cs-hr-pips') + '</div>' +
+        '<span class="cs-hr-pips">&#9670;</span><span class="cs-pips-count">' + hrCur + '</span></div>' +
       (isNum(data, 'surges')
         ? '<div class="cs-statline"><span class="cs-statline-label">Surges</span>' +
             '<span class="cs-pips-count">' + num(data, 'surges', 0) + '</span></div>'
         : '') +
-      '<button type="button" class="cs-act cs-act--primary cs-roll-might" data-cs-act="roll-might">' +
+      '<button type="button" class="cs-act cs-act--primary cs-act--soon cs-roll-might" data-cs-act="roll-might" title="Coming later — not implemented yet">' +
         '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
 
     var right =
@@ -247,51 +253,21 @@
     }).join('');
     return '<div class="cs-stat-row">' + cells + '</div>';
   }
-  function rHeroicResource(def, data) {
-    // The box title carries the resource NAME (computed at schema-build); the
-    // body is just the bar.
-    var current = num(data, 'heroic_resource_current', NaN);
-    var max = num(data, 'heroic_resource_max', NaN);
-    var currentTxt = isNaN(current) ? '0' : String(current);
-    var maxTxt = isNaN(max) ? '' : ' / ' + max;
-    var pct = (!isNaN(current) && !isNaN(max) && max > 0)
-      ? Math.max(0, Math.min(100, (current / max) * 100))
-      : (isNaN(current) ? 0 : Math.min(100, current * 10));
 
-    return '<div class="cs-bar-wrap">' +
-        '<div class="cs-bar-label"><span class="cs-bar-value">' + currentTxt + maxTxt + '</span></div>' +
-        '<div class="cs-bar"><div class="cs-bar-fill cs-bar-accent" style="width:' + pct + '%"></div></div>' +
-      '</div>';
-  }
-
-  function rMovement(def, data) {
-    var speed = num(data, 'speed', 0);
-    var stability = num(data, 'stability', 0);
-    return '<div class="cs-chip-row">' +
-        '<div class="cs-chip"><span class="cs-chip-label">Speed</span><span class="cs-chip-value">' + speed + '</span></div>' +
-        '<div class="cs-chip"><span class="cs-chip-label">Stability</span><span class="cs-chip-value">' + stability + '</span></div>' +
-      '</div>';
-  }
-
-  // rCombat is the v3 COMBAT panel: an in-combat/round status line, the
-  // Initiative / Speed / Stability chips, and condition pills. Always rendered
-  // (placeholders when empty); combat state + conditions populate via sync later.
+  // rCombat is the COMBAT panel: the static combat-reference scalars (Speed /
+  // Stability / Disengage / Size), the potency thresholds, and current
+  // conditions. Live combat STATE (initiative / in-combat / round) is NOT shown
+  // here — Draw Steel uses alternating activation (no initiative), and turn order
+  // lives on the Character viewer page, not the reference sheet.
   function rCombat(def, data) {
-    var inCombat = num(data, 'in_combat', 0);
-    var round = num(data, 'combat_round', 0);
-    var status = inCombat
-      ? '<div class="cs-combat-status cs-combat-status--active"><span class="cs-combat-dot"></span> In combat' +
-          (round ? ' &mdash; round ' + esc(String(round)) : '') + '</div>'
-      : '<div class="cs-combat-status">Not in combat</div>';
-
     var chip = function (label, key) {
       var v = f(data, key, null);
       var val = (v == null || v === '') ? '–' : esc(String(scalar(v)));
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
         '<span class="cs-chip-value">' + val + '</span></div>';
     };
-    // chips: combat-relevant scalars. Size/Disengage render only when synced.
-    var chipList = chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability');
+    // chips: static combat-relevant scalars. Disengage/Size render only when synced.
+    var chipList = chip('Speed', 'speed') + chip('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') chipList += chip('Disengage', 'disengage');
     if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
     var chips = '<div class="cs-chip-row">' + chipList + '</div>';
@@ -323,18 +299,39 @@
     } else {
       pills = ph('No conditions.');
     }
-    return status + chips + potency + pills;
+    return chips + potency + pills;
   }
+  // toDamageEntries tolerates every shape immunities/weaknesses can sync as: an
+  // array, a JSON string, a CSV/plain string, a bare number (a blanket "all"),
+  // or a per-type object { fire: 5, all: 0, … } → [{type,value}] (drops zeros).
+  function toDamageEntries(v) {
+    if (v == null || v === '' || v === 0) return [];
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'number') return [{ type: 'All', value: v }];
+    if (typeof v === 'object') {
+      var out = [];
+      Object.keys(v).forEach(function (k) {
+        var val = v[k];
+        if (val != null && val !== 0 && val !== '') out.push({ type: humanizeId(k), value: val });
+      });
+      return out;
+    }
+    var s = String(v).trim();
+    if (!s) return [];
+    if (s.charAt(0) === '[' || s.charAt(0) === '{') { var p = parseJson(s, null); if (p) return toDamageEntries(p); }
+    return s.split(/[,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
   function rDamage(def, data) {
-    var imm = parseJson(f(data, 'immunities', ''), []);
-    var weak = parseJson(f(data, 'weaknesses', ''), []);
+    var imm = toDamageEntries(f(data, 'immunities', ''));
+    var weak = toDamageEntries(f(data, 'weaknesses', ''));
 
     var rowFor = function (entry) {
       if (entry == null) return '';
       if (typeof entry === 'string') return esc(entry);
       var type = entry.type ? esc(String(entry.type)) : '';
       var value = (entry.value != null && entry.value !== '') ? ' ' + esc(String(entry.value)) : '';
-      return type + value;
+      return (type + value).trim();
     };
 
     var immHtml = (imm && imm.length)
@@ -647,11 +644,11 @@
       { label: 'XP', key: 'xp' },
       { label: 'Victories', key: 'victories' },
       { label: 'Renown', key: 'renown' },
-      { label: 'Project Points', key: 'project_points' },
       { label: 'Wealth', key: 'wealth' }
     ];
-    // v3: always render all five chips; unset values show "–" so the section's
-    // structure is visible even on a fresh hero.
+    // always render the chips; unset values show "–" so the section's structure
+    // is visible even on a fresh hero. (Project Points → the Projects item type,
+    // handled separately — not a hero scalar.)
     var chips = entries.map(function (e) {
       var v = f(data, e.key, null);
       var val = (v == null || v === '') ? '–' : esc(String(v));
@@ -1057,6 +1054,35 @@
   // with no data shows this muted placeholder instead of vanishing.
   function ph(text) { return '<div class="cs-placeholder">' + esc(text) + '</div>'; }
 
+  // showComingSoon — a transient toast for the not-yet-built action buttons
+  // (Roll / Level Up / Share / Roll Might). The sheet is a read-only reference
+  // today; interactive rolls are a future feature, so the buttons stay visible
+  // ("construction tape") and explain themselves on click instead of doing nothing.
+  var _toastTimer = null;
+  function showComingSoon(label) {
+    var existing = document.getElementById('ds-toast');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+    var toast = document.createElement('div');
+    toast.id = 'ds-toast';
+    toast.className = 'ds-toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = (label ? label + ': ' : '') + 'coming later — not implemented yet';
+    document.body.appendChild(toast);
+    if (!reduced()) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, 8px)';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, 0)'; });
+      });
+    }
+    _toastTimer = setTimeout(function () {
+      if (!toast.parentNode) return;
+      toast.style.opacity = '0';
+      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+    }, 2400);
+  }
+
   // ── schema builder ─────────────────────────────────────────────────
 
   // boxDef builds one box definition for the surface schema. `expand` is
@@ -1128,9 +1154,6 @@
     if (!s || !s.registerBox) return;
     s.registerBox('ds-header', rHeader);
     s.registerBox('ds-vitals', rVitals);
-    s.registerBox('ds-characteristics', rCharacteristics);
-    s.registerBox('ds-heroic-resource', rHeroicResource);
-    s.registerBox('ds-movement', rMovement);
     s.registerBox('ds-combat', rCombat);
     s.registerBox('ds-kit', rKit);
     s.registerBox('ds-damage', rDamage);
@@ -1245,6 +1268,14 @@
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
+      // Not-yet-built action buttons → explain themselves (read-only sheet today).
+      var act = t.closest('[data-cs-act]');
+      if (act) {
+        e.preventDefault();
+        var labels = { roll: 'Roll', 'roll-might': 'Power roll', levelup: 'Level Up', share: 'Share' };
+        showComingSoon(labels[act.getAttribute('data-cs-act')] || 'That');
+        return;
+      }
       var rs = t.closest('[data-cs-read-story]');
       if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
       // group label → collapse/expand its rows.
@@ -1649,9 +1680,6 @@
       // sheet always shows its full structure instead of collapsing.
       '.cs-placeholder { color:var(--color-text-muted,#9ca3af); font-size:13px; font-style:italic; padding:6px 2px; }',
       // ── v3 Combat panel ──
-      '.cs-combat-status { font-size:13px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:8px; display:flex; align-items:center; gap:6px; }',
-      '.cs-combat-status--active { color:#dc2626; }',
-      '.cs-combat-dot { width:8px; height:8px; border-radius:9999px; background:#dc2626; box-shadow:0 0 0 0 rgba(220,38,38,0.5); animation:ds-pulse 1.5s ease-in-out infinite; }',
       '.cs-cond-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }',
       '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
@@ -1691,6 +1719,10 @@
       '.cs-act--primary { background:var(--color-accent,#6366f1); color:#fff; border-color:transparent; }',
       '.cs-live { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#059669; }',
       '.cs-live-dot { width:8px; height:8px; border-radius:9999px; background:#10b981; }',
+      // not-yet-built buttons read as "construction tape" (subtle dashed accent).
+      '.cs-act--soon { border-style:dashed; opacity:0.85; }',
+      // transient "coming later" toast for the action buttons.
+      '.ds-toast { position:fixed; left:50%; bottom:28px; transform:translate(-50%,0); z-index:99999; max-width:90vw; padding:9px 16px; border-radius:9px; font-size:13px; font-weight:600; color:#fff; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.5); box-shadow:0 10px 30px -8px rgba(0,0,0,0.5); transition:opacity 250ms ease, transform 250ms ease; pointer-events:none; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',

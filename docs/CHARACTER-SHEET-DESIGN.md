@@ -205,21 +205,77 @@ details, and grouped features. Five issues to fix (tracked as tasks #45–#49):
 > NOT Chronicle's `{@category term}`. Any "why isn't the glossary working / why is there
 > raw markup" question traces back to this mismatch.
 
+**Status:** #45/#46/#47 ✅ shipped (enricher/HTML cleanup + feature clamp + backstory).
+#48/#49 in the plan below (now UNBLOCKED — see the glossary source).
+
+---
+
+## 🧭 PLAN & DECISIONS — 2026-06-28 (after the Saatraaol review)
+
+**Purpose of the sheet (sets priorities):** it is primarily a **DM reference** — so a
+director can look up a player's abilities/stats/defenses while **building monsters**
+(the monster builder) or writing notes. ⇒ favor **data completeness** over
+interactivity. Rolls etc. are a someday-thing.
+
+**Decisions (locked with the user):**
+- **Action buttons** (Roll / Level Up / Share / Roll Might) — stay as visible
+  "construction tape"; clicking shows a transient *"coming later"* toast. No rolling
+  for the foreseeable future (no roll endpoint in the read-only contract anyway).
+- **Combat-tracker fields** (initiative / in-combat / round) — **dropped from the
+  sheet.** Draw Steel uses **alternating activation** (no initiative roll); turn order
+  belongs on the **Character viewer page**, not the reference sheet.
+- **Treasures** — **yes, surface them.** DS Treasures are the magic-item system (one
+  Foundry `treasure` item type, `category` = consumable | trinket | leveled | artifact;
+  + kind / echelon / keywords / quantity). They change what a hero can DO in a fight, so
+  they're high DM-reference value. Render grouped by category.
+- **Write-back (Chronicle → Foundry)** — a **careful FUTURE epic**, not now. Scope:
+  notes/backstory first; **items only when fully synced**; on a sync failure, notify the
+  **player** lightly ("this item isn't synced") and the **owner** with detail, and emit
+  an **error dump into the AI diagnostics workspace** (the operator batch tooling). Until
+  built, the contract is **one-way read-only mirror** (Foundry is source of truth).
+- **Glossary + skills source** — build from **steelcompendium.io** (GitHub org
+  `SteelCompendium/data-md`): current DS **1.0** ruleset, machine-extractable Markdown+
+  YAML, **no scraping**. Licensed under MCDM's **Draw Steel Creator License** — quoting
+  rules text in our open-source `data/*.json` is permitted **provided** we include the
+  verbatim DSCL attribution `NOTICE` and don't imply MCDM endorsement. Pin a commit SHA.
+  Conditions (9) + skills (~55, grouped, with descriptions) come out cleanly; ability
+  **keywords** (Magic/Melee/Ranged/Weapon/Strike/Area/Charge…) are NOT discrete files →
+  curate ~10–15 by hand once.
+
+**DM-reference completeness gaps to add (from the model audit), priority order for a
+DM building a monster:**
+1. **Movement modes** — `system.movement.types` (Set: walk/climb/swim/fly/burrow/
+   teleport) + `system.movement.hover` (bool). We only show a flat Speed today.
+2. **Defenses / save** — `system.combat.save.threshold` (default 6) + `.bonus`.
+3. **Damage immunity/weakness VALUES per type** (+ blanket `all`) — currently we read
+   only `.all` and drop the magnitude; project the whole `system.damage.{immunities,
+   weaknesses}` objects.
+4. **Status/condition immunities** — `system.statuses.immunities` (Set).
+5. **Treasures** (above). 6. **Perks** (`perk` item, `perkType`). 7. **Titles**
+   (`title` item, extends feature, has echelon/story). 8. **Languages**
+   (`system.biography.languages` — an actor field, syncs like skills, not an item).
+   9. Triggered reactions called out as a group + reach as a top-line stat.
+
+**Execution batches:**
+- **Step 2 (done in this batch):** dead-button toast; drop combat-tracker placeholders;
+  HR as a bare count (DS HR has no max); `rDamage` tolerant of CSV/object/number shapes;
+  removed dead `project_points` chip + dead box registrations (`ds-characteristics`/
+  `-heroic-resource`/`-movement`) + dead `heroic_resource_max`; stale-docstring + doc fix.
+- **Step 3:** the DM-reference completeness projections + renders (1–9 above).
+- **Step 4:** generate `data/rules-glossary.json` + `data/skills.json` from Steel
+  Compendium (+ DSCL `NOTICE`), the enricher-aware term-scanner (#48), and the per-skill
+  definition cards (#49).
+
 ## 🛠️ WANT TO DO (planned, not yet built)
 
-- **Build the ability section** per the model above in `character-sheet.js`
-  (replaces the current inline-accordion ability rows).
-- ~~Rules audit~~ — ✅ **DONE**; the locked "For \<hero>" spec is in the agreed-design
-  section above (4 static computed values + affordability gated + an exclude list).
-- **Phase C sync expansion** (manifest + Foundry adapter), needed to fully feed the
-  cards:
-  - Ability **keywords** (a Foundry `Set` → serialize to array) and the **tier ladder**
-    text (lives in `system.power.effects`, a collection — more than scalar fields).
-  - **Skills**, **kit details**, **culture/career**, **conditions** from active effects.
-  - **Inventory** — a separate path (item entities + `has-item` relations via
-    item-sync), NOT actor fields; won't appear from a character re-push.
-- **"For Tyne" math** switches on once the power-roll characteristics sync (Phase C).
-  Until then, ship the card *without* the character-specific strip.
+- ~~Build the ability section~~ — ✅ **DONE** (bare Option-D master–detail + long-list
+  handling + click-to-collapse).
+- ~~Rules audit~~ / ~~"For \<hero>" math~~ — ✅ **DONE** (unit-tested).
+- ~~Phase C sync expansion~~ (keywords / tier ladder / skills / kit / culture-career /
+  conditions) — ✅ **DONE**.
+- **Remaining sync** — Treasures/inventory, perks, titles, languages, movement modes,
+  save, per-type damage values, status immunities. See the PLAN above (Step 3).
+- **Glossary + skills definitions** — Step 4 (Steel Compendium source).
 
 ---
 

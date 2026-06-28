@@ -120,7 +120,6 @@
         { "key": "wealth", "label": "Wealth", "type": "number", "foundry_path": "system.hero.wealth" },
         { "key": "heroic_resource_name", "label": "Heroic Resource Name", "type": "string", "foundry_collection": "items", "foundry_item_type": ["class"], "foundry_item_single": true, "foundry_item_fields": { "primary": "system.primary" } },
         { "key": "heroic_resource_current", "label": "Heroic Resource (current)", "type": "number", "foundry_path": "system.hero.primary.value" },
-        { "key": "heroic_resource_max", "label": "Heroic Resource (max)", "type": "number" },
         { "key": "stamina_temporary", "label": "Temporary Stamina", "type": "number", "foundry_path": "system.stamina.temporary" },
         { "key": "surges", "label": "Surges", "type": "number", "foundry_path": "system.hero.surges" },
         { "key": "disengage", "label": "Disengage", "type": "number", "foundry_path": "system.movement.disengage", "foundry_writable": false },
