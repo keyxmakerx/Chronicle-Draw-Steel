@@ -21,8 +21,11 @@
  * entity data and only includes boxes that have content, so empty sections are
  * absent rather than rendered as empty titled boxes.
  *
- * DYNAMIC WIN: ability cards are compact in-box and open a power-roll OVERLAY
- * on click (Chronicle.surface.overlay.push), wired via one delegated listener.
+ * DYNAMIC WIN: the Abilities box is a master–detail — a grouped rail + a detail
+ * pane that fills with a small bare card on row click and grows to a two-section
+ * big card (rules + computed "For <hero>" odds) on card click. All wired via one
+ * delegated listener (the surface frame re-renders box bodies, so no per-node
+ * listeners); selection state lives in the DOM.
  *
  * READ-ONLY: Foundry is the source of truth; Chronicle mirrors fields_data
  * one-way. This widget never writes/saves.
@@ -45,6 +48,26 @@
   // single shared renderer (and its glossary cache) backs every box renderer.
   var refRenderer = null;
 
+  // Skill catalog (slug → {name, description, group}) from data/skills.json,
+  // loaded once at mount so skill chips can show a definition tooltip. Module
+  // singleton like the reference renderer (one DS system per page).
+  var skillDefs = null;
+  function loadSkillDefs(base, campaignId) {
+    if (skillDefs) return Promise.resolve();
+    var url = campaignId
+      ? '/campaigns/' + campaignId + '/extensions/drawsteel/assets/data/skills.json'
+      : base + 'data/skills.json';
+    var fetchFn = (campaignId && Chronicle.apiFetch) ? Chronicle.apiFetch : fetch;
+    return fetchFn(url)
+      .then(function (r) { return r.json(); })
+      .then(function (arr) {
+        var m = {};
+        (Array.isArray(arr) ? arr : []).forEach(function (s) { if (s && s.slug) m[String(s.slug).toLowerCase()] = s; });
+        skillDefs = m;
+      })
+      .catch(function () { skillDefs = {}; });
+  }
+
   // ── primitive helpers ──────────────────────────────────────────────
 
   function esc(s) {
@@ -59,10 +82,33 @@
     return refRenderer ? refRenderer.renderText(e) : e;
   }
 
+  // refSynced renders SYNCED Foundry prose (already enricher-cleaned to plain
+  // text): escape, resolve any {@…} (usually none), THEN scan for bare condition
+  // terms and wrap them with glossary tooltips — so synced text gets the same
+  // condition definitions hand-authored {@…} text would. Safe because the input
+  // is plain (no pre-existing ref spans for the scanner to corrupt).
+  function refSynced(s) {
+    var e = esc(s);
+    if (!refRenderer) return e;
+    e = refRenderer.renderText(e);
+    return refRenderer.scanText ? refRenderer.scanText(e) : e;
+  }
+
   function parseJson(raw, fallback) {
     if (raw == null || raw === '') return fallback;
     if (typeof raw !== 'string') return raw;
     try { return JSON.parse(raw); } catch (e) { return fallback; }
+  }
+
+  // parseStrList coerces a Set-derived field (array, JSON-string array, or CSV)
+  // into an array of strings. For movement modes / languages / status immunities.
+  function parseStrList(v) {
+    if (v == null || v === '') return [];
+    if (Array.isArray(v)) return v.map(String);
+    if (typeof v === 'object') return Object.keys(v).map(String);
+    var s = String(v).trim();
+    if (s.charAt(0) === '[') { var p = parseJson(s, null); if (Array.isArray(p)) return p.map(String); }
+    return s.split(/[,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
   }
 
   function parseJsonAttr(raw, fallback) {
@@ -151,10 +197,11 @@
     }
 
     // v3 action affordances + live dot (display-first; behavior is a follow-up).
+    var soon = ' title="Coming later — not implemented yet"';
     var actions = '<div class="cs-header-actions">' +
-      '<button type="button" class="cs-act cs-act--primary" data-cs-act="roll"><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
-      '<button type="button" class="cs-act" data-cs-act="levelup"><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
-      '<button type="button" class="cs-act" data-cs-act="share"><i class="fa-solid fa-share-nodes"></i> Share</button>' +
+      '<button type="button" class="cs-act cs-act--primary cs-act--soon" data-cs-act="roll"' + soon + '><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
+      '<button type="button" class="cs-act cs-act--soon" data-cs-act="levelup"' + soon + '><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
+      '<button type="button" class="cs-act cs-act--soon" data-cs-act="share"' + soon + '><i class="fa-solid fa-share-nodes"></i> Share</button>' +
       '<span class="cs-live" title="Live"><span class="cs-live-dot"></span> live</span>' +
     '</div>';
 
@@ -203,7 +250,6 @@
 
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var hrCur = num(data, 'heroic_resource_current', 0);
-    var hrMax = num(data, 'heroic_resource_max', 0);
 
     var left =
       '<div class="cs-bar-wrap">' +
@@ -215,13 +261,16 @@
       '</div>' +
       '<div class="cs-statline"><span class="cs-statline-label">Recoveries</span>' +
         renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
+      // Heroic resources have NO fixed max in Draw Steel (you accumulate them),
+      // so show a bare count + a single accent pip rather than a pool of pips
+      // that would imply a cap.
       '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
-        renderPips(hrCur, hrMax, '◆', '◇', 'cs-hr-pips') + '</div>' +
+        '<span class="cs-hr-pips">&#9670;</span><span class="cs-pips-count">' + hrCur + '</span></div>' +
       (isNum(data, 'surges')
         ? '<div class="cs-statline"><span class="cs-statline-label">Surges</span>' +
             '<span class="cs-pips-count">' + num(data, 'surges', 0) + '</span></div>'
         : '') +
-      '<button type="button" class="cs-act cs-act--primary cs-roll-might" data-cs-act="roll-might">' +
+      '<button type="button" class="cs-act cs-act--primary cs-act--soon cs-roll-might" data-cs-act="roll-might" title="Coming later — not implemented yet">' +
         '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
 
     var right =
@@ -247,54 +296,43 @@
     }).join('');
     return '<div class="cs-stat-row">' + cells + '</div>';
   }
-  function rHeroicResource(def, data) {
-    // The box title carries the resource NAME (computed at schema-build); the
-    // body is just the bar.
-    var current = num(data, 'heroic_resource_current', NaN);
-    var max = num(data, 'heroic_resource_max', NaN);
-    var currentTxt = isNaN(current) ? '0' : String(current);
-    var maxTxt = isNaN(max) ? '' : ' / ' + max;
-    var pct = (!isNaN(current) && !isNaN(max) && max > 0)
-      ? Math.max(0, Math.min(100, (current / max) * 100))
-      : (isNaN(current) ? 0 : Math.min(100, current * 10));
 
-    return '<div class="cs-bar-wrap">' +
-        '<div class="cs-bar-label"><span class="cs-bar-value">' + currentTxt + maxTxt + '</span></div>' +
-        '<div class="cs-bar"><div class="cs-bar-fill cs-bar-accent" style="width:' + pct + '%"></div></div>' +
-      '</div>';
-  }
-
-  function rMovement(def, data) {
-    var speed = num(data, 'speed', 0);
-    var stability = num(data, 'stability', 0);
-    return '<div class="cs-chip-row">' +
-        '<div class="cs-chip"><span class="cs-chip-label">Speed</span><span class="cs-chip-value">' + speed + '</span></div>' +
-        '<div class="cs-chip"><span class="cs-chip-label">Stability</span><span class="cs-chip-value">' + stability + '</span></div>' +
-      '</div>';
-  }
-
-  // rCombat is the v3 COMBAT panel: an in-combat/round status line, the
-  // Initiative / Speed / Stability chips, and condition pills. Always rendered
-  // (placeholders when empty); combat state + conditions populate via sync later.
+  // rCombat is the COMBAT panel: the static combat-reference scalars (Speed /
+  // Stability / Disengage / Size), the potency thresholds, and current
+  // conditions. Live combat STATE (initiative / in-combat / round) is NOT shown
+  // here — Draw Steel uses alternating activation (no initiative), and turn order
+  // lives on the Character viewer page, not the reference sheet.
   function rCombat(def, data) {
-    var inCombat = num(data, 'in_combat', 0);
-    var round = num(data, 'combat_round', 0);
-    var status = inCombat
-      ? '<div class="cs-combat-status cs-combat-status--active"><span class="cs-combat-dot"></span> In combat' +
-          (round ? ' &mdash; round ' + esc(String(round)) : '') + '</div>'
-      : '<div class="cs-combat-status">Not in combat</div>';
-
     var chip = function (label, key) {
       var v = f(data, key, null);
       var val = (v == null || v === '') ? '–' : esc(String(scalar(v)));
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
         '<span class="cs-chip-value">' + val + '</span></div>';
     };
-    // chips: combat-relevant scalars. Size/Disengage render only when synced.
-    var chipList = chip('Initiative', 'initiative') + chip('Speed', 'speed') + chip('Stability', 'stability');
+    // chips: static combat-relevant scalars. Disengage/Size/Save render only when synced.
+    var chipList = chip('Speed', 'speed') + chip('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') chipList += chip('Disengage', 'disengage');
     if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
+    // Save (roll ≥ threshold to end an effect) — how sticky conditions are on this hero.
+    if (isNum(data, 'save_threshold')) {
+      var sb = f(data, 'save_bonus', '');
+      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+      chipList += '<div class="cs-chip"><span class="cs-chip-label">Save</span>' +
+        '<span class="cs-chip-value">' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</span></div>';
+    }
     var chips = '<div class="cs-chip-row">' + chipList + '</div>';
+
+    // Movement modes (fly / climb / swim / burrow / teleport / hover) — dictates
+    // terrain & line-of-effect design. Plain "walk" is the default, omitted here.
+    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); });
+    var special = modes.filter(function (m) { return m && m !== 'walk'; });
+    var moveHtml = '';
+    if (special.length || num(data, 'movement_hover', 0)) {
+      var badges = special.map(function (m) { return '<span class="cs-move-mode">' + esc(humanizeId(m)) + '</span>'; });
+      if (num(data, 'movement_hover', 0)) badges.push('<span class="cs-move-mode">Hover</span>');
+      moveHtml = '<div class="cs-move-modes"><span class="cs-statline-label">Movement</span>' + badges.join('') + '</div>';
+    }
 
     // Potency strip (weak / average / strong) — the derived thresholds an
     // ability's potency checks compare against. Compact, only when present.
@@ -323,18 +361,39 @@
     } else {
       pills = ph('No conditions.');
     }
-    return status + chips + potency + pills;
+    return chips + moveHtml + potency + pills;
   }
+  // toDamageEntries tolerates every shape immunities/weaknesses can sync as: an
+  // array, a JSON string, a CSV/plain string, a bare number (a blanket "all"),
+  // or a per-type object { fire: 5, all: 0, … } → [{type,value}] (drops zeros).
+  function toDamageEntries(v) {
+    if (v == null || v === '' || v === 0) return [];
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'number') return [{ type: 'All', value: v }];
+    if (typeof v === 'object') {
+      var out = [];
+      Object.keys(v).forEach(function (k) {
+        var val = v[k];
+        if (val != null && val !== 0 && val !== '') out.push({ type: humanizeId(k), value: val });
+      });
+      return out;
+    }
+    var s = String(v).trim();
+    if (!s) return [];
+    if (s.charAt(0) === '[' || s.charAt(0) === '{') { var p = parseJson(s, null); if (p) return toDamageEntries(p); }
+    return s.split(/[,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
   function rDamage(def, data) {
-    var imm = parseJson(f(data, 'immunities', ''), []);
-    var weak = parseJson(f(data, 'weaknesses', ''), []);
+    var imm = toDamageEntries(f(data, 'immunities', ''));
+    var weak = toDamageEntries(f(data, 'weaknesses', ''));
 
     var rowFor = function (entry) {
       if (entry == null) return '';
       if (typeof entry === 'string') return esc(entry);
       var type = entry.type ? esc(String(entry.type)) : '';
       var value = (entry.value != null && entry.value !== '') ? ' ' + esc(String(entry.value)) : '';
-      return type + value;
+      return (type + value).trim();
     };
 
     var immHtml = (imm && imm.length)
@@ -348,7 +407,16 @@
         '</div></div>'
       : '';
 
-    return (immHtml + weakHtml) || ph('No immunities or weaknesses.');
+    // Condition immunities — which statuses are wasted on this hero (a DM
+    // building a control-focused monster wants to know in advance).
+    var statusImm = parseStrList(f(data, 'status_immunities', ''));
+    var statusHtml = statusImm.length
+      ? '<div class="cs-damage-row"><div class="cs-damage-label">Cond. Immunities</div><div class="cs-damage-list">' +
+          statusImm.map(function (s) { return '<span class="cs-chip cs-chip-pill">' + esc(humanizeId(s)) + '</span>'; }).join('') +
+        '</div></div>'
+      : '';
+
+    return (immHtml + weakHtml + statusHtml) || ph('No immunities or weaknesses.');
   }
 
   // humanizeId turns a Foundry id ("handleAnimals", "criminalUnderworld",
@@ -380,29 +448,40 @@
   // A skill is a plain id string in skills_json (a Foundry Set → array).
   function rSkills(def, data) {
     var skills = parseJson(f(data, 'skills_json', ''), []);
-    if (!Array.isArray(skills) || !skills.length) return ph('No trained skills.');
+    var langs = parseStrList(f(data, 'languages_json', ''));
+    var html = '';
 
-    var buckets = {};
-    skills.forEach(function (s) {
-      var id = String(s == null ? '' : s);
-      var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
-      (buckets[gk] = buckets[gk] || []).push(id);
-    });
+    if (Array.isArray(skills) && skills.length) {
+      var buckets = {};
+      skills.forEach(function (s) {
+        var id = String(s == null ? '' : s);
+        var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
+        (buckets[gk] = buckets[gk] || []).push(id);
+      });
+      var skillTip = function (id) {
+        var d = skillDefs && skillDefs[String(id).toLowerCase()];
+        return (d && d.description) ? ' data-tip="' + esc(d.description) + '" tabindex="0"' : '';
+      };
+      var groupOut = function (key, label, cls) {
+        var list = buckets[key];
+        if (!list || !list.length) return '';
+        var chips = list.map(function (id) {
+          return '<span class="cs-skill' + (cls || '') + '"' + skillTip(id) + '>' + esc(humanizeId(id)) + '</span>';
+        }).join('');
+        return '<div class="cs-skill-grp"><div class="cs-skill-grp__label">' + esc(label) + '</div>' +
+          '<div class="cs-skill-list">' + chips + '</div></div>';
+      };
+      html += SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
+      if (buckets.other) html += groupOut('other', 'Other');
+    }
 
-    var groupOut = function (key, label) {
-      var list = buckets[key];
-      if (!list || !list.length) return '';
-      var chips = list.map(function (id) {
-        return '<span class="cs-skill">' + esc(humanizeId(id)) + '</span>';
-      }).join('');
-      return '<div class="cs-skill-grp">' +
-        '<div class="cs-skill-grp__label">' + esc(label) + '</div>' +
-        '<div class="cs-skill-list">' + chips + '</div>' +
-      '</div>';
-    };
+    if (langs.length) {
+      html += '<div class="cs-skill-grp"><div class="cs-skill-grp__label">Languages</div>' +
+        '<div class="cs-skill-list">' + langs.map(function (l) {
+          return '<span class="cs-skill cs-skill--lang">' + esc(humanizeId(l)) + '</span>';
+        }).join('') + '</div></div>';
+    }
 
-    var html = SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
-    if (buckets.other) html += groupOut('other', 'Other');
     return html || ph('No trained skills.');
   }
 
@@ -595,7 +674,7 @@
       return '<details class="cs-feature"><summary class="cs-feature__sum">' +
         '<span class="cs-feature-name">' + name + '</span>' + lvl +
         '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span>' +
-      '</summary><div class="cs-feature-desc">' + refText(descTxt) + '</div></details>';
+      '</summary><div class="cs-feature-desc">' + refSynced(descTxt) + '</div></details>';
     }
     return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + lvl + '</div>';
   }
@@ -610,6 +689,10 @@
 
   function rFeatures(def, data) {
     var feats = parseJson(f(data, 'features_json', ''), []);
+    // Perks (build choices) + Titles (aspirational progression) are their own
+    // Foundry item types, rendered as extra groups after the origin features.
+    var extra = featureGroupHtml('Perks', parseJson(f(data, 'perks_json', ''), [])) +
+      featureGroupHtml('Titles', parseJson(f(data, 'titles_json', ''), []));
 
     if (Array.isArray(feats) && feats.length) {
       // build the origin matchers from the hero's known identity.
@@ -628,17 +711,17 @@
       // of a misleading lone "Features" group header.
       var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
       if (!placed.length) {
-        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>';
+        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>' + extra;
       }
       return FEATURE_GROUP_ORDER.map(function (k) {
         return featureGroupHtml(FEATURE_GROUP_LABELS[k], buckets[k]);
-      }).join('') || ph('No features yet.');
+      }).join('') + extra;
     }
 
     // Legacy fallback — the old pre-split fields, if ever populated.
     var out = featureGroupHtml('Class', parseJson(f(data, 'class_features_json', ''), [])) +
       featureGroupHtml('Ancestry', parseJson(f(data, 'ancestry_features_json', ''), [])) +
-      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), []));
+      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), [])) + extra;
     return out || ph('No features yet.');
   }
 
@@ -647,11 +730,11 @@
       { label: 'XP', key: 'xp' },
       { label: 'Victories', key: 'victories' },
       { label: 'Renown', key: 'renown' },
-      { label: 'Project Points', key: 'project_points' },
       { label: 'Wealth', key: 'wealth' }
     ];
-    // v3: always render all five chips; unset values show "–" so the section's
-    // structure is visible even on a fresh hero.
+    // always render the chips; unset values show "–" so the section's structure
+    // is visible even on a fresh hero. (Project Points → the Projects item type,
+    // handled separately — not a hero scalar.)
     var chips = entries.map(function (e) {
       var v = f(data, e.key, null);
       var val = (v == null || v === '') ? '–' : esc(String(v));
@@ -661,22 +744,65 @@
     return '<div class="cs-chip-row">' + chips + '</div>';
   }
 
+  // Treasures = Draw Steel's magic-item system (consumable / trinket / leveled /
+  // artifact). They change what a hero can DO in a fight, so they belong on a
+  // DM-reference sheet. Grouped by category; each a <details> accordion.
+  var TREASURE_CATS = [
+    { key: 'leveled', label: 'Leveled Treasures' },
+    { key: 'trinket', label: 'Trinkets' },
+    { key: 'consumable', label: 'Consumables' },
+    { key: 'artifact', label: 'Artifacts' }
+  ];
+  function renderTreasure(t) {
+    var name = esc((t && t.name) || 'Treasure');
+    var ech = (t && t.echelon) ? '<span class="cs-tag cs-tag-level">E' + esc(String(t.echelon)) + '</span>' : '';
+    var qN = Number(t && t.quantity);
+    var qty = (qN > 1) ? '<span class="cs-treasure__qty">&times;' + qN + '</span>' : '';
+    var kws = (Array.isArray(t && t.keywords) && t.keywords.length)
+      ? '<div class="cs-treasure__kws">' + t.keywords.map(function (k) { return esc(String(k)); }).join(' &middot; ') + '</div>' : '';
+    var desc = cleanFoundryText(t && t.description);
+    if (desc) {
+      return '<details class="cs-feature"><summary class="cs-feature__sum">' +
+        '<span class="cs-feature-name">' + name + '</span>' + ech + qty +
+        '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span></summary>' +
+        kws + '<div class="cs-feature-desc">' + refSynced(desc) + '</div></details>';
+    }
+    return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + ech + qty + '</div>';
+  }
+  function renderTreasures(list) {
+    var buckets = {};
+    list.forEach(function (t) { var c = String((t && t.category) || 'other').toLowerCase(); (buckets[c] = buckets[c] || []).push(t); });
+    var grp = function (label, b) {
+      return '<div class="cs-feature-group"><h4 class="cs-feature-group-title">' + esc(label) +
+        '</h4><div class="cs-feature-list">' + b.map(renderTreasure).join('') + '</div></div>';
+    };
+    var html = TREASURE_CATS.map(function (c) { return buckets[c.key] && buckets[c.key].length ? grp(c.label, buckets[c.key]) : ''; }).join('');
+    Object.keys(buckets).forEach(function (k) {
+      if (!TREASURE_CATS.some(function (c) { return c.key === k; })) html += grp(humanizeId(k), buckets[k]);
+    });
+    return html;
+  }
+
   function rInventory(def, data) {
+    var out = '';
+    var treasures = parseJson(f(data, 'treasures_json', ''), []);
+    if (Array.isArray(treasures) && treasures.length) out += renderTreasures(treasures);
+
     var items = invItems(data);
-    if (!items.length) return ph('Empty.');
-    var cid = data.campaignId;
-    var rows = items.map(function (it) {
-      var entity = it.entity || it;
-      var name = esc(entity.name || 'Item');
-      var qty = (it.metadata && it.metadata.quantity) ? ' &times; ' + esc(String(it.metadata.quantity)) : '';
-      var equipped = (it.metadata && it.metadata.equipped) ? ' <span class="cs-tag">equipped</span>' : '';
-      var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
-      var label = href
-        ? '<a class="cs-inventory-link" href="' + esc(href) + '">' + name + '</a>'
-        : name;
-      return '<li class="cs-inventory-item">' + label + qty + equipped + '</li>';
-    }).join('');
-    return '<ul class="cs-inventory-list">' + rows + '</ul>';
+    if (items.length) {
+      var cid = data.campaignId;
+      var rows = items.map(function (it) {
+        var entity = it.entity || it;
+        var name = esc(entity.name || 'Item');
+        var qty = (it.metadata && it.metadata.quantity) ? ' &times; ' + esc(String(it.metadata.quantity)) : '';
+        var equipped = (it.metadata && it.metadata.equipped) ? ' <span class="cs-tag">equipped</span>' : '';
+        var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
+        var label = href ? '<a class="cs-inventory-link" href="' + esc(href) + '">' + name + '</a>' : name;
+        return '<li class="cs-inventory-item">' + label + qty + equipped + '</li>';
+      }).join('');
+      out += '<ul class="cs-inventory-list">' + rows + '</ul>';
+    }
+    return out || ph('Empty.');
   }
 
   // rNotes renders the Background section as a TEASER + "Read full story" — the
@@ -738,7 +864,7 @@
       '<button type="button" class="cs-reading__back" data-cs-reading-back>&lsaquo; Back to sheet</button>' +
       '<div class="cs-reading__eyebrow">Background</div>' +
       '<h1 class="cs-reading__title">' + esc(title || 'Background') + '</h1>' +
-      '<div class="cs-reading__body">' + refText(cleanFoundryProse(prose)) + '</div>';
+      '<div class="cs-reading__body">' + refSynced(cleanFoundryProse(prose)) + '</div>';
     var back = node.querySelector('[data-cs-reading-back]');
     if (back) back.addEventListener('click', function () { Chronicle.surface.overlay.pop(); });
     return node;
@@ -935,7 +1061,7 @@
       var txt = tierFragments(a, n, subVal);
       if (txt) any = true;
       rows += '<div class="ds-tr"><span class="ds-tr__b">' + bands[n - 1] + '</span>' +
-        '<span class="ds-tr__t">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
+        '<span class="ds-tr__t">' + (txt ? refSynced(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
     }
     return any ? rows : '';
   }
@@ -947,7 +1073,7 @@
     var pr = powerRollLabel(a);
     if (pr) bits += '<div class="ds-card__line"><span class="ds-card__k">Power Roll</span><span>2d10 + ' + esc(pr) + '</span></div>';
     var eff = cleanFoundryText(a.effectAfter) || (a.story ? cleanFoundryText(a.story) : '') || cleanFoundryText(a.effectBefore);
-    if (eff) bits += '<div class="ds-card__eff">' + refText(teaser(eff, 170)) + '</div>';
+    if (eff) bits += '<div class="ds-card__eff">' + refSynced(teaser(eff, 170)) + '</div>';
     if (!bits) bits = '<div class="ds-card__eff ds-muted">No detail synced yet.</div>';
     return bits;
   }
@@ -986,7 +1112,7 @@
       var txt = tierFragments(a, n, subVal);
       if (txt) any = true;
       rows += '<div class="ds-big__tier ds-big__tier--t' + n + '"><span class="ds-big__tb">' + bands[n - 1] + '</span>' +
-        '<span class="ds-big__tt">' + (txt ? refText(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
+        '<span class="ds-big__tt">' + (txt ? refSynced(txt) : '<span class="ds-muted">—</span>') + '</span></div>';
     }
     return any ? '<div class="ds-big__ladder">' + rows + '</div>' : '';
   }
@@ -1033,10 +1159,14 @@
     var star = g === 'signature' ? '★ ' : '';
     var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
     var kw = (Array.isArray(a.keywords) && a.keywords.length)
-      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) { return '<span>' + esc(String(k)) + '</span>'; }).join('') + '</div>' : '';
-    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refText(cleanFoundryText(a.effectBefore)) + '</div>' : '';
-    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refText(cleanFoundryText(a.trigger)) + '</span></div>' : '';
-    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refText(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
+      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
+          var en = (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(k) : null;
+          var tip = (en && en.description) ? ' data-tip="' + esc(en.description) + '" tabindex="0"' : '';
+          return '<span' + tip + '>' + esc(String(k)) + '</span>';
+        }).join('') + '</div>' : '';
+    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
+    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refSynced(cleanFoundryText(a.trigger)) + '</span></div>' : '';
+    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
     var forHero = forHeroHtml(a, data);
 
     return '<div class="ds-big" data-ds-collapse="' + idx + '">' +
@@ -1056,6 +1186,35 @@
   // structure, spacing, and chrome are visible even on a sparse hero. A section
   // with no data shows this muted placeholder instead of vanishing.
   function ph(text) { return '<div class="cs-placeholder">' + esc(text) + '</div>'; }
+
+  // showComingSoon — a transient toast for the not-yet-built action buttons
+  // (Roll / Level Up / Share / Roll Might). The sheet is a read-only reference
+  // today; interactive rolls are a future feature, so the buttons stay visible
+  // ("construction tape") and explain themselves on click instead of doing nothing.
+  var _toastTimer = null;
+  function showComingSoon(label) {
+    var existing = document.getElementById('ds-toast');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+    var toast = document.createElement('div');
+    toast.id = 'ds-toast';
+    toast.className = 'ds-toast';
+    toast.setAttribute('role', 'status');
+    toast.textContent = (label ? label + ': ' : '') + 'coming later — not implemented yet';
+    document.body.appendChild(toast);
+    if (!reduced()) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translate(-50%, 8px)';
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, 0)'; });
+      });
+    }
+    _toastTimer = setTimeout(function () {
+      if (!toast.parentNode) return;
+      toast.style.opacity = '0';
+      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+    }, 2400);
+  }
 
   // ── schema builder ─────────────────────────────────────────────────
 
@@ -1128,9 +1287,6 @@
     if (!s || !s.registerBox) return;
     s.registerBox('ds-header', rHeader);
     s.registerBox('ds-vitals', rVitals);
-    s.registerBox('ds-characteristics', rCharacteristics);
-    s.registerBox('ds-heroic-resource', rHeroicResource);
-    s.registerBox('ds-movement', rMovement);
     s.registerBox('ds-combat', rCombat);
     s.registerBox('ds-kit', rKit);
     s.registerBox('ds-damage', rDamage);
@@ -1186,7 +1342,8 @@
   // bodies, so per-node listeners would leak):
   //   • a [data-ds-ability] rail row → SELECT it (fill the pane with the small card)
   //   • the small [data-ds-expand] card (or Enter/Space on it) → GROW to the big card
-  //   • the big card's [data-ds-collapse-btn] → shrink back to the small card
+  //   • clicking anywhere on the big [data-ds-collapse] card (the ✕, or Escape)
+  //     → shrink back to the small card (glossary refs / text selection excepted)
   //   • [data-cs-read-story] → open the backstory reading view
   // The pane is filled here (not in rAbilities) so selection state lives in the
   // DOM while the box renderer stays a pure function. On mount the first ability
@@ -1244,6 +1401,14 @@
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
+      // Not-yet-built action buttons → explain themselves (read-only sheet today).
+      var act = t.closest('[data-cs-act]');
+      if (act) {
+        e.preventDefault();
+        var labels = { roll: 'Roll', 'roll-might': 'Power roll', levelup: 'Level Up', share: 'Share' };
+        showComingSoon(labels[act.getAttribute('data-cs-act')] || 'That');
+        return;
+      }
       var rs = t.closest('[data-cs-read-story]');
       if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
       // group label → collapse/expand its rows.
@@ -1256,10 +1421,18 @@
         }
         return;
       }
-      var collapseBtn = t.closest('[data-ds-collapse-btn]');
-      if (collapseBtn) {
-        var big = t.closest('[data-ds-collapse]');
-        if (big) { e.preventDefault(); selectAbility(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
+      // Clicking anywhere on the big card returns to the small card (symmetric
+      // with the small card being wholly clickable to expand). Guarded: don't
+      // hijack a glossary ref / link, and don't collapse on the click that ends
+      // a text selection (so the rules text stays readable/selectable).
+      var big = t.closest('[data-ds-collapse]');
+      if (big) {
+        if (t.closest('.ds-ref') || t.closest('a')) return;
+        var sel = '';
+        try { sel = window.getSelection ? String(window.getSelection()) : ''; } catch (e2) {}
+        if (sel) return;
+        e.preventDefault();
+        selectAbility(parseInt(big.getAttribute('data-ds-collapse'), 10));
         return;
       }
       var card = t.closest('[data-ds-expand]');
@@ -1272,8 +1445,15 @@
     // The small card is a div[role=button]; rail rows are native <button>s, so
     // only the card needs an explicit Enter/Space handler.
     inst._onAbilityKey = function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var t = e.target;
+      // Escape on the big card → shrink back to the small card.
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        var openBig = (t && t.closest) ? t.closest('[data-ds-collapse]') : null;
+        if (!openBig) { var p0 = pane(); openBig = p0 ? p0.querySelector('[data-ds-collapse]') : null; }
+        if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
+        return;
+      }
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var card = (t && t.closest) ? t.closest('[data-ds-expand]') : null;
       if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); }
     };
@@ -1530,7 +1710,9 @@
       '.ds-card:hover .ds-card__hint, .ds-card:focus-visible .ds-card__hint { opacity:0.9; }',
       // the grown BIG card — two sections, width-constrained
       '.ds-big { max-width:520px; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.4); border-radius:12px; overflow:hidden; background:var(--color-bg-primary,#f9fafb); box-shadow:0 18px 44px -26px rgba(var(--color-accent-rgb,168,85,247),0.55); }',
-      '.ds-big__h { display:flex; align-items:center; gap:9px; padding:11px 15px; background:linear-gradient(90deg,var(--color-accent,#a855f7),#7c3aed); color:#fff; }',
+      '.ds-big__h { display:flex; align-items:center; gap:9px; padding:11px 15px; background:linear-gradient(90deg,var(--color-accent,#a855f7),#7c3aed); color:#fff; cursor:pointer; }',
+      '.ds-big__h:hover .ds-big__x { opacity:1; transform:scale(1.08); }',
+      '.ds-big__x { transition:opacity 140ms ease, transform 140ms ease; }',
       '.ds-big__nm { font-size:16px; font-weight:800; }',
       '.ds-big__meta { margin-left:auto; font-size:11px; font-weight:700; opacity:0.92; }',
       '.ds-big__x { flex:none; background:none; border:0; color:#fff; opacity:0.8; cursor:pointer; font:inherit; font-size:13px; line-height:1; padding:2px 0 2px 4px; }',
@@ -1631,9 +1813,6 @@
       // sheet always shows its full structure instead of collapsing.
       '.cs-placeholder { color:var(--color-text-muted,#9ca3af); font-size:13px; font-style:italic; padding:6px 2px; }',
       // ── v3 Combat panel ──
-      '.cs-combat-status { font-size:13px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:8px; display:flex; align-items:center; gap:6px; }',
-      '.cs-combat-status--active { color:#dc2626; }',
-      '.cs-combat-dot { width:8px; height:8px; border-radius:9999px; background:#dc2626; box-shadow:0 0 0 0 rgba(220,38,38,0.5); animation:ds-pulse 1.5s ease-in-out infinite; }',
       '.cs-cond-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }',
       '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
@@ -1650,6 +1829,17 @@
       '.cs-skill-grp__label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted,#9ca3af); margin-bottom:5px; }',
       '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
       '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      '.cs-skill--lang { background:var(--color-bg-tertiary,#f3f4f6); border-color:var(--color-border-light,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      // generic definition tooltip (skill chips, ability-keyword badges) — a small
+      // floating card with the rule text. Hover (desktop) + keyboard focus.
+      '.ds-sheet [data-tip] { cursor:help; position:relative; }',
+      '.ds-sheet [data-tip]:hover::after, .ds-sheet [data-tip]:focus-visible::after { content:attr(data-tip); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:7px; z-index:9999; width:max-content; max-width:240px; white-space:normal; padding:8px 11px; border-radius:8px; font-size:11.5px; font-weight:500; line-height:1.45; text-transform:none; letter-spacing:normal; color:#f1f5f9; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.45); box-shadow:0 10px 28px -8px rgba(0,0,0,0.55); pointer-events:none; }',
+      // movement modes (Combat) — DM-relevant non-walk movement.
+      '.cs-move-modes { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }',
+      '.cs-move-mode { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:rgba(var(--color-accent-rgb,168,85,247),0.12); color:var(--color-accent,#a855f7); }',
+      // treasures (Inventory) — keyword line + quantity badge on the accordion.
+      '.cs-treasure__qty { font-size:11px; font-weight:600; color:var(--color-text-muted,#9ca3af); margin-left:2px; }',
+      '.cs-treasure__kws { padding:0 12px 6px; font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-muted,#9ca3af); }',
       // ── Kit (stat box: damage tier mini-ladder + bonus chips) ──
       '.cs-kit-name { font-size:14px; font-weight:700; color:var(--color-text-primary,#111827); margin-bottom:8px; }',
       '.cs-kit-dmg { border:1px solid var(--color-border-light,#f3f4f6); border-radius:9px; overflow:hidden; margin-bottom:10px; }',
@@ -1673,6 +1863,10 @@
       '.cs-act--primary { background:var(--color-accent,#6366f1); color:#fff; border-color:transparent; }',
       '.cs-live { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#059669; }',
       '.cs-live-dot { width:8px; height:8px; border-radius:9999px; background:#10b981; }',
+      // not-yet-built buttons read as "construction tape" (subtle dashed accent).
+      '.cs-act--soon { border-style:dashed; opacity:0.85; }',
+      // transient "coming later" toast for the action buttons.
+      '.ds-toast { position:fixed; left:50%; bottom:28px; transform:translate(-50%,0); z-index:99999; max-width:90vw; padding:9px 16px; border-radius:9px; font-size:13px; font-weight:600; color:#fff; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.5); box-shadow:0 10px 30px -8px rgba(0,0,0,0.5); transition:opacity 250ms ease, transform 250ms ease; pointer-events:none; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
@@ -1770,7 +1964,7 @@
           claimed: ds.claimed === 'true' || ds.claimed === '1'
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
-        loadRef.then(function () {
+        Promise.all([loadRef, loadSkillDefs(base, campaignId)]).then(function () {
           if (refRenderer) refRenderer.injectStyles();
           mountSheet(self, el, data);
         });

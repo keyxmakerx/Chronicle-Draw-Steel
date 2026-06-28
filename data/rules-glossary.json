@@ -198,5 +198,61 @@
     "properties": {
       "category": "combat"
     }
+  },
+  {
+    "slug": "magic",
+    "name": "Magic",
+    "description": "An ability with the Magic keyword draws on magic. Some effects, creatures, and treasures interact specifically with Magic abilities.",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "psionic",
+    "name": "Psionic",
+    "description": "An ability with the Psionic keyword draws on the power of the mind. Some effects interact specifically with Psionic abilities.",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "melee",
+    "name": "Melee",
+    "description": "A Melee ability can be used against targets within reach (adjacent unless a greater melee distance is noted).",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "ranged",
+    "name": "Ranged",
+    "description": "A Ranged ability can be used against targets at a distance, up to its listed range.",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "weapon",
+    "name": "Weapon",
+    "description": "A Weapon ability is made with a held weapon and benefits from your kit's weapon damage bonuses.",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "strike",
+    "name": "Strike",
+    "description": "A Strike ability makes one or more attacks against a target, typically dealing damage on a power roll.",
+    "properties": {
+      "category": "keyword"
+    }
+  },
+  {
+    "slug": "area",
+    "name": "Area",
+    "description": "An Area ability affects every valid target within a defined zone (a burst, cube, line, or wall).",
+    "properties": {
+      "category": "keyword"
+    }
   }
 ]

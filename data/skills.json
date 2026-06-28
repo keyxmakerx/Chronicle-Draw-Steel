@@ -1,0 +1,458 @@
+[
+  {
+    "slug": "alchemy",
+    "name": "Alchemy",
+    "description": "Make bombs and potions",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "architecture",
+    "name": "Architecture",
+    "description": "Create buildings and vehicles",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "blacksmithing",
+    "name": "Blacksmithing",
+    "description": "Forge metal armor and weapons",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "carpentry",
+    "name": "Carpentry",
+    "description": "Create items out of wood",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "cooking",
+    "name": "Cooking",
+    "description": "Create delicious dishes",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "fletching",
+    "name": "Fletching",
+    "description": "Make ranged weapons and ammunition",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "forgery",
+    "name": "Forgery",
+    "description": "Create false badges, documents, and other items",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "jewelry",
+    "name": "Jewelry",
+    "description": "Create bracelets, crowns, rings, and other jewelry",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "mechanics",
+    "name": "Mechanics",
+    "description": "Build machines and clockwork items",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "tailoring",
+    "name": "Tailoring",
+    "description": "Craft clothing of cloth or leather",
+    "properties": {
+      "group": "Crafting"
+    }
+  },
+  {
+    "slug": "climb",
+    "name": "Climb",
+    "description": "Move up vertical surfaces",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "drive",
+    "name": "Drive",
+    "description": "Control vehicles",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "endurance",
+    "name": "Endurance",
+    "description": "Remain engaged in strenuous activity over a long period of time",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "gymnastics",
+    "name": "Gymnastics",
+    "description": "Move across unsteady or narrow surfaces; tumble",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "heal",
+    "name": "Heal",
+    "description": "Use mundane first aid",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "jump",
+    "name": "Jump",
+    "description": "Leap vertical and horizontal distances",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "lift",
+    "name": "Lift",
+    "description": "Pick up, carry, and throw heavy objects",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "navigate",
+    "name": "Navigate",
+    "description": "Read a map and travel without becoming lost",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "ride",
+    "name": "Ride",
+    "description": "Ride and control a nonsapient mount, such as a horse",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "swim",
+    "name": "Swim",
+    "description": "Move through deep liquid",
+    "properties": {
+      "group": "Exploration"
+    }
+  },
+  {
+    "slug": "brag",
+    "name": "Brag",
+    "description": "Impress others with stories of your deeds",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "empathize",
+    "name": "Empathize",
+    "description": "Relate to someone on a personal level",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "flirt",
+    "name": "Flirt",
+    "description": "Attract romantic attention from someone",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "gamble",
+    "name": "Gamble",
+    "description": "Make bets with others",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "handleAnimals",
+    "name": "Handle Animals",
+    "description": "Interact with nonsapient animal wildlife",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "interrogate",
+    "name": "Interrogate",
+    "description": "Obtain information from a creature withholding it",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "intimidate",
+    "name": "Intimidate",
+    "description": "Awe or scare a creature",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "lead",
+    "name": "Lead",
+    "description": "Inspire people to action",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "lie",
+    "name": "Lie",
+    "description": "Convince someone that a falsehood is true",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "music",
+    "name": "Music",
+    "description": "Perform music vocally or with an instrument",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "perform",
+    "name": "Perform",
+    "description": "Engage in dance, oratory, acting, or some other physical performance",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "persuade",
+    "name": "Persuade",
+    "description": "Convince someone to agree with you through use of your charms and grace",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "readPerson",
+    "name": "Read Person",
+    "description": "Read the emotions and body language of other creatures",
+    "properties": {
+      "group": "Interpersonal"
+    }
+  },
+  {
+    "slug": "alertness",
+    "name": "Alertness",
+    "description": "Intuitively sense the details of your surroundings",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "concealObject",
+    "name": "Conceal Object",
+    "description": "Hide an object on your person or in your environment",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "disguise",
+    "name": "Disguise",
+    "description": "Change your appearance to look like a different person",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "eavesdrop",
+    "name": "Eavesdrop",
+    "description": "Actively listen to something that is hard to hear, such as a whispered conversation through a door",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "escapeArtist",
+    "name": "Escape Artist",
+    "description": "Escape from bonds such as rope or manacles",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "hide",
+    "name": "Hide",
+    "description": "Conceal yourself from others' observation",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "pickLock",
+    "name": "Pick Lock",
+    "description": "Open a lock without using the key",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "pickPocket",
+    "name": "Pick Pocket",
+    "description": "Steal an item that another person wears or carries without them noticing",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "sabotage",
+    "name": "Sabotage",
+    "description": "Disable a mechanical device such as a trap",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "search",
+    "name": "Search",
+    "description": "Actively search an environment for important details and items",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "sneak",
+    "name": "Sneak",
+    "description": "Move silently",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "track",
+    "name": "Track",
+    "description": "Follow a trail that another creature has left behind",
+    "properties": {
+      "group": "Intrigue"
+    }
+  },
+  {
+    "slug": "criminalUnderworld",
+    "name": "Criminal Underworld",
+    "description": "Knowing about criminal organizations, their crimes, their relationships, and their leaders",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "culture",
+    "name": "Culture",
+    "description": "Knowing about a culture's customs, folktales, and taboos",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "history",
+    "name": "History",
+    "description": "Knowing about significant past events",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "magic",
+    "name": "Magic",
+    "description": "Knowing about magical places, spells, rituals, items, and phenomena",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "monsters",
+    "name": "Monsters",
+    "description": "Knowing monster ecology, strengths, and weaknesses",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "nature",
+    "name": "Nature",
+    "description": "Knowing about natural flora, fauna, and weather",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "psionics",
+    "name": "Psionics",
+    "description": "Knowing about psionic places, spells, rituals, items, and phenomena",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "religion",
+    "name": "Religion",
+    "description": "Knowing about religious mythology, practices, and rituals",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "rumors",
+    "name": "Rumors",
+    "description": "Knowing gossip, legends, and uncertain truths",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "society",
+    "name": "Society",
+    "description": "Knowing noble etiquette and the leadership and power dynamics of noble families",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "strategy",
+    "name": "Strategy",
+    "description": "Knowing about battle tactics and logistics",
+    "properties": {
+      "group": "Lore"
+    }
+  },
+  {
+    "slug": "timescape",
+    "name": "Timescape",
+    "description": "Knowing about the many worlds of the timescape",
+    "properties": {
+      "group": "Lore"
+    }
+  }
+]
