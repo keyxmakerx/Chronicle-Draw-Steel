@@ -68,6 +68,17 @@
     try { return JSON.parse(raw); } catch (e) { return fallback; }
   }
 
+  // parseStrList coerces a Set-derived field (array, JSON-string array, or CSV)
+  // into an array of strings. For movement modes / languages / status immunities.
+  function parseStrList(v) {
+    if (v == null || v === '') return [];
+    if (Array.isArray(v)) return v.map(String);
+    if (typeof v === 'object') return Object.keys(v).map(String);
+    var s = String(v).trim();
+    if (s.charAt(0) === '[') { var p = parseJson(s, null); if (Array.isArray(p)) return p.map(String); }
+    return s.split(/[,;]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
   function parseJsonAttr(raw, fallback) {
     if (!raw) return fallback;
     try { return JSON.parse(raw); } catch (e) { return fallback; }
@@ -266,11 +277,30 @@
       return '<div class="cs-chip"><span class="cs-chip-label">' + esc(label) + '</span>' +
         '<span class="cs-chip-value">' + val + '</span></div>';
     };
-    // chips: static combat-relevant scalars. Disengage/Size render only when synced.
+    // chips: static combat-relevant scalars. Disengage/Size/Save render only when synced.
     var chipList = chip('Speed', 'speed') + chip('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') chipList += chip('Disengage', 'disengage');
     if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
+    // Save (roll ≥ threshold to end an effect) — how sticky conditions are on this hero.
+    if (isNum(data, 'save_threshold')) {
+      var sb = f(data, 'save_bonus', '');
+      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+      chipList += '<div class="cs-chip"><span class="cs-chip-label">Save</span>' +
+        '<span class="cs-chip-value">' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</span></div>';
+    }
     var chips = '<div class="cs-chip-row">' + chipList + '</div>';
+
+    // Movement modes (fly / climb / swim / burrow / teleport / hover) — dictates
+    // terrain & line-of-effect design. Plain "walk" is the default, omitted here.
+    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); });
+    var special = modes.filter(function (m) { return m && m !== 'walk'; });
+    var moveHtml = '';
+    if (special.length || num(data, 'movement_hover', 0)) {
+      var badges = special.map(function (m) { return '<span class="cs-move-mode">' + esc(humanizeId(m)) + '</span>'; });
+      if (num(data, 'movement_hover', 0)) badges.push('<span class="cs-move-mode">Hover</span>');
+      moveHtml = '<div class="cs-move-modes"><span class="cs-statline-label">Movement</span>' + badges.join('') + '</div>';
+    }
 
     // Potency strip (weak / average / strong) — the derived thresholds an
     // ability's potency checks compare against. Compact, only when present.
@@ -299,7 +329,7 @@
     } else {
       pills = ph('No conditions.');
     }
-    return chips + potency + pills;
+    return chips + moveHtml + potency + pills;
   }
   // toDamageEntries tolerates every shape immunities/weaknesses can sync as: an
   // array, a JSON string, a CSV/plain string, a bare number (a blanket "all"),
@@ -345,7 +375,16 @@
         '</div></div>'
       : '';
 
-    return (immHtml + weakHtml) || ph('No immunities or weaknesses.');
+    // Condition immunities — which statuses are wasted on this hero (a DM
+    // building a control-focused monster wants to know in advance).
+    var statusImm = parseStrList(f(data, 'status_immunities', ''));
+    var statusHtml = statusImm.length
+      ? '<div class="cs-damage-row"><div class="cs-damage-label">Cond. Immunities</div><div class="cs-damage-list">' +
+          statusImm.map(function (s) { return '<span class="cs-chip cs-chip-pill">' + esc(humanizeId(s)) + '</span>'; }).join('') +
+        '</div></div>'
+      : '';
+
+    return (immHtml + weakHtml + statusHtml) || ph('No immunities or weaknesses.');
   }
 
   // humanizeId turns a Foundry id ("handleAnimals", "criminalUnderworld",
@@ -377,29 +416,36 @@
   // A skill is a plain id string in skills_json (a Foundry Set → array).
   function rSkills(def, data) {
     var skills = parseJson(f(data, 'skills_json', ''), []);
-    if (!Array.isArray(skills) || !skills.length) return ph('No trained skills.');
+    var langs = parseStrList(f(data, 'languages_json', ''));
+    var html = '';
 
-    var buckets = {};
-    skills.forEach(function (s) {
-      var id = String(s == null ? '' : s);
-      var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
-      (buckets[gk] = buckets[gk] || []).push(id);
-    });
+    if (Array.isArray(skills) && skills.length) {
+      var buckets = {};
+      skills.forEach(function (s) {
+        var id = String(s == null ? '' : s);
+        var gk = SKILL_TO_GROUP[id.toLowerCase()] || 'other';
+        (buckets[gk] = buckets[gk] || []).push(id);
+      });
+      var groupOut = function (key, label, cls) {
+        var list = buckets[key];
+        if (!list || !list.length) return '';
+        var chips = list.map(function (id) {
+          return '<span class="cs-skill' + (cls || '') + '">' + esc(humanizeId(id)) + '</span>';
+        }).join('');
+        return '<div class="cs-skill-grp"><div class="cs-skill-grp__label">' + esc(label) + '</div>' +
+          '<div class="cs-skill-list">' + chips + '</div></div>';
+      };
+      html += SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
+      if (buckets.other) html += groupOut('other', 'Other');
+    }
 
-    var groupOut = function (key, label) {
-      var list = buckets[key];
-      if (!list || !list.length) return '';
-      var chips = list.map(function (id) {
-        return '<span class="cs-skill">' + esc(humanizeId(id)) + '</span>';
-      }).join('');
-      return '<div class="cs-skill-grp">' +
-        '<div class="cs-skill-grp__label">' + esc(label) + '</div>' +
-        '<div class="cs-skill-list">' + chips + '</div>' +
-      '</div>';
-    };
+    if (langs.length) {
+      html += '<div class="cs-skill-grp"><div class="cs-skill-grp__label">Languages</div>' +
+        '<div class="cs-skill-list">' + langs.map(function (l) {
+          return '<span class="cs-skill cs-skill--lang">' + esc(humanizeId(l)) + '</span>';
+        }).join('') + '</div></div>';
+    }
 
-    var html = SKILL_GROUPS.map(function (g) { return groupOut(g.key, g.label); }).join('');
-    if (buckets.other) html += groupOut('other', 'Other');
     return html || ph('No trained skills.');
   }
 
@@ -607,6 +653,10 @@
 
   function rFeatures(def, data) {
     var feats = parseJson(f(data, 'features_json', ''), []);
+    // Perks (build choices) + Titles (aspirational progression) are their own
+    // Foundry item types, rendered as extra groups after the origin features.
+    var extra = featureGroupHtml('Perks', parseJson(f(data, 'perks_json', ''), [])) +
+      featureGroupHtml('Titles', parseJson(f(data, 'titles_json', ''), []));
 
     if (Array.isArray(feats) && feats.length) {
       // build the origin matchers from the hero's known identity.
@@ -625,17 +675,17 @@
       // of a misleading lone "Features" group header.
       var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
       if (!placed.length) {
-        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>';
+        return '<div class="cs-feature-list">' + feats.map(renderFeature).join('') + '</div>' + extra;
       }
       return FEATURE_GROUP_ORDER.map(function (k) {
         return featureGroupHtml(FEATURE_GROUP_LABELS[k], buckets[k]);
-      }).join('') || ph('No features yet.');
+      }).join('') + extra;
     }
 
     // Legacy fallback — the old pre-split fields, if ever populated.
     var out = featureGroupHtml('Class', parseJson(f(data, 'class_features_json', ''), [])) +
       featureGroupHtml('Ancestry', parseJson(f(data, 'ancestry_features_json', ''), [])) +
-      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), []));
+      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), [])) + extra;
     return out || ph('No features yet.');
   }
 
@@ -658,22 +708,65 @@
     return '<div class="cs-chip-row">' + chips + '</div>';
   }
 
+  // Treasures = Draw Steel's magic-item system (consumable / trinket / leveled /
+  // artifact). They change what a hero can DO in a fight, so they belong on a
+  // DM-reference sheet. Grouped by category; each a <details> accordion.
+  var TREASURE_CATS = [
+    { key: 'leveled', label: 'Leveled Treasures' },
+    { key: 'trinket', label: 'Trinkets' },
+    { key: 'consumable', label: 'Consumables' },
+    { key: 'artifact', label: 'Artifacts' }
+  ];
+  function renderTreasure(t) {
+    var name = esc((t && t.name) || 'Treasure');
+    var ech = (t && t.echelon) ? '<span class="cs-tag cs-tag-level">E' + esc(String(t.echelon)) + '</span>' : '';
+    var qN = Number(t && t.quantity);
+    var qty = (qN > 1) ? '<span class="cs-treasure__qty">&times;' + qN + '</span>' : '';
+    var kws = (Array.isArray(t && t.keywords) && t.keywords.length)
+      ? '<div class="cs-treasure__kws">' + t.keywords.map(function (k) { return esc(String(k)); }).join(' &middot; ') + '</div>' : '';
+    var desc = cleanFoundryText(t && t.description);
+    if (desc) {
+      return '<details class="cs-feature"><summary class="cs-feature__sum">' +
+        '<span class="cs-feature-name">' + name + '</span>' + ech + qty +
+        '<span class="cs-feature__caret" aria-hidden="true">&#9662;</span></summary>' +
+        kws + '<div class="cs-feature-desc">' + refText(desc) + '</div></details>';
+    }
+    return '<div class="cs-feature cs-feature--flat"><span class="cs-feature-name">' + name + '</span>' + ech + qty + '</div>';
+  }
+  function renderTreasures(list) {
+    var buckets = {};
+    list.forEach(function (t) { var c = String((t && t.category) || 'other').toLowerCase(); (buckets[c] = buckets[c] || []).push(t); });
+    var grp = function (label, b) {
+      return '<div class="cs-feature-group"><h4 class="cs-feature-group-title">' + esc(label) +
+        '</h4><div class="cs-feature-list">' + b.map(renderTreasure).join('') + '</div></div>';
+    };
+    var html = TREASURE_CATS.map(function (c) { return buckets[c.key] && buckets[c.key].length ? grp(c.label, buckets[c.key]) : ''; }).join('');
+    Object.keys(buckets).forEach(function (k) {
+      if (!TREASURE_CATS.some(function (c) { return c.key === k; })) html += grp(humanizeId(k), buckets[k]);
+    });
+    return html;
+  }
+
   function rInventory(def, data) {
+    var out = '';
+    var treasures = parseJson(f(data, 'treasures_json', ''), []);
+    if (Array.isArray(treasures) && treasures.length) out += renderTreasures(treasures);
+
     var items = invItems(data);
-    if (!items.length) return ph('Empty.');
-    var cid = data.campaignId;
-    var rows = items.map(function (it) {
-      var entity = it.entity || it;
-      var name = esc(entity.name || 'Item');
-      var qty = (it.metadata && it.metadata.quantity) ? ' &times; ' + esc(String(it.metadata.quantity)) : '';
-      var equipped = (it.metadata && it.metadata.equipped) ? ' <span class="cs-tag">equipped</span>' : '';
-      var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
-      var label = href
-        ? '<a class="cs-inventory-link" href="' + esc(href) + '">' + name + '</a>'
-        : name;
-      return '<li class="cs-inventory-item">' + label + qty + equipped + '</li>';
-    }).join('');
-    return '<ul class="cs-inventory-list">' + rows + '</ul>';
+    if (items.length) {
+      var cid = data.campaignId;
+      var rows = items.map(function (it) {
+        var entity = it.entity || it;
+        var name = esc(entity.name || 'Item');
+        var qty = (it.metadata && it.metadata.quantity) ? ' &times; ' + esc(String(it.metadata.quantity)) : '';
+        var equipped = (it.metadata && it.metadata.equipped) ? ' <span class="cs-tag">equipped</span>' : '';
+        var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
+        var label = href ? '<a class="cs-inventory-link" href="' + esc(href) + '">' + name + '</a>' : name;
+        return '<li class="cs-inventory-item">' + label + qty + equipped + '</li>';
+      }).join('');
+      out += '<ul class="cs-inventory-list">' + rows + '</ul>';
+    }
+    return out || ph('Empty.');
   }
 
   // rNotes renders the Background section as a TEASER + "Read full story" — the
@@ -1696,6 +1789,13 @@
       '.cs-skill-grp__label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-text-muted,#9ca3af); margin-bottom:5px; }',
       '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
       '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
+      '.cs-skill--lang { background:var(--color-bg-tertiary,#f3f4f6); border-color:var(--color-border-light,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
+      // movement modes (Combat) — DM-relevant non-walk movement.
+      '.cs-move-modes { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }',
+      '.cs-move-mode { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:rgba(var(--color-accent-rgb,168,85,247),0.12); color:var(--color-accent,#a855f7); }',
+      // treasures (Inventory) — keyword line + quantity badge on the accordion.
+      '.cs-treasure__qty { font-size:11px; font-weight:600; color:var(--color-text-muted,#9ca3af); margin-left:2px; }',
+      '.cs-treasure__kws { padding:0 12px 6px; font-size:10px; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-muted,#9ca3af); }',
       // ── Kit (stat box: damage tier mini-ladder + bonus chips) ──
       '.cs-kit-name { font-size:14px; font-weight:700; color:var(--color-text-primary,#111827); margin-bottom:8px; }',
       '.cs-kit-dmg { border:1px solid var(--color-border-light,#f3f4f6); border-radius:9px; overflow:hidden; margin-bottom:10px; }',
