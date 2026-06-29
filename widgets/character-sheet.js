@@ -718,11 +718,9 @@
       }).join('') + extra;
     }
 
-    // Legacy fallback — the old pre-split fields, if ever populated.
-    var out = featureGroupHtml('Class', parseJson(f(data, 'class_features_json', ''), [])) +
-      featureGroupHtml('Ancestry', parseJson(f(data, 'ancestry_features_json', ''), [])) +
-      featureGroupHtml('Kit', parseJson(f(data, 'kit_features_json', ''), [])) + extra;
-    return out || ph('No features yet.');
+    // No origin/class features synced yet — still show Perks/Titles if present,
+    // otherwise a placeholder.
+    return extra || ph('No features yet.');
   }
 
   function rProgression(def, data) {
