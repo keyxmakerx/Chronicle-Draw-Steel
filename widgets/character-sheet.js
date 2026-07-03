@@ -55,7 +55,7 @@
   function loadSkillDefs(base, campaignId) {
     if (skillDefs) return Promise.resolve();
     var url = campaignId
-      ? '/campaigns/' + campaignId + '/extensions/drawsteel/assets/data/skills.json'
+      ? '/campaigns/' + campaignId + '/systems/drawsteel/data/skills.json'
       : base + 'data/skills.json';
     var fetchFn = (campaignId && Chronicle.apiFetch) ? Chronicle.apiFetch : fetch;
     return fetchFn(url)
@@ -1932,9 +1932,12 @@
       var entityObj = parseJsonAttr(ds.fieldsData, null);
       var children = parseJsonAttr(ds.children, []);
 
+      // System content namespace (NOT extensions/assets — drawsteel is a System).
+      // Only the non-campaign fallbacks of the glossary/skills loaders use this;
+      // the live campaign paths hit /campaigns/:id/systems/drawsteel/... directly.
       var base = campaignId
-        ? '/api/v1/campaigns/' + campaignId + '/extensions/drawsteel/assets/'
-        : '/extensions/drawsteel/assets/';
+        ? '/campaigns/' + campaignId + '/systems/drawsteel/'
+        : '/systems/drawsteel/';
       refRenderer = (typeof DrawSteelRefRenderer !== 'undefined')
         ? new DrawSteelRefRenderer(base, campaignId)
         : null;
