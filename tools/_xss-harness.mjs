@@ -17,7 +17,11 @@ export function makeEl() {
     addEventListener() {}, removeEventListener() {},
     appendChild(c) { this.children.push(c); return c; },
     insertBefore(c) { this.children.unshift(c); return c; },
-    removeChild() {}, querySelector() { return null; }, querySelectorAll() { return []; },
+    removeChild() {},
+    // Return a fresh element so widget code that chains
+    // `.querySelector(sel).addEventListener(...)` / `.textContent = ...` during
+    // event wiring does not throw under the shim.
+    querySelector() { return makeEl(); }, querySelectorAll() { return []; },
     scrollIntoView() {}, focus() {}, click() {}, closest() { return null; }
   };
 }

@@ -560,20 +560,21 @@ Chronicle.register('monster-builder', {
     var self = this;
     var c = this._contentEl;
     var h = Chronicle.escapeHtml;
+    var ha = Chronicle.escapeAttr;   // H-5: attribute-context escaping (escapes quotes)
 
     c.innerHTML =
       '<div class="mb-section">' +
       '<h3>Step 1: Identity</h3>' +
       '<div id="mb-step1-warn" class="mb-inline-warn" style="display:none"></div>' +
       '<div class="mb-field-row">' +
-        '<label>Name<input type="text" class="mb-input" id="mb-name" value="' + h(this.creature.name) + '" placeholder="Creature name"></label>' +
-        '<label>Level (1-20)<input type="number" class="mb-input" id="mb-level" min="1" max="20" value="' + this.creature.level + '"></label>' +
+        '<label>Name<input type="text" class="mb-input" id="mb-name" value="' + ha(this.creature.name) + '" placeholder="Creature name"></label>' +
+        '<label>Level (1-20)<input type="number" class="mb-input" id="mb-level" min="1" max="20" value="' + (Number(this.creature.level) || 1) + '"></label>' +
         '<label>Size<select class="mb-input" id="mb-size">' +
           this._sizeOptions.map(function (s) {
             return '<option value="' + s.value + '"' + (self.creature.size === s.value ? ' selected' : '') + '>' + Chronicle.escapeHtml(s.label) + '</option>';
           }).join('') +
         '</select></label>' +
-        '<label>Faction<input type="text" class="mb-input" id="mb-faction" value="' + h(this.creature.faction) + '" placeholder="e.g. Goblin, Dragon"></label>' +
+        '<label>Faction<input type="text" class="mb-input" id="mb-faction" value="' + ha(this.creature.faction) + '" placeholder="e.g. Goblin, Dragon"></label>' +
       '</div>' +
       '<div class="mb-field-row">' +
         '<label>Keywords</label>' +
@@ -619,14 +620,14 @@ Chronicle.register('monster-builder', {
       '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
     this.orgTemplates.forEach(function (o) {
       var sel = self.creature.organization === o.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-org="' + Chronicle.escapeHtml(o.slug) + '">' +
+      orgHtml += '<button class="mb-radio-card' + sel + '" data-org="' + Chronicle.escapeAttr(o.slug) + '">' +   // M-2
         '<strong>' + Chronicle.escapeHtml(o.name) + '</strong> (' + Chronicle.escapeHtml(String(o.ev_multiplier)) + ' EV/level)' +
         '<br><small>' + Chronicle.escapeHtml(o.description || '') + '</small></button>';
     });
     orgHtml += '</div><div class="mb-card-col"><h4>Role</h4>';
     this.roleTemplates.forEach(function (r) {
       var sel = self.creature.role === r.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-role="' + Chronicle.escapeHtml(r.slug) + '">' +
+      orgHtml += '<button class="mb-radio-card' + sel + '" data-role="' + Chronicle.escapeAttr(r.slug) + '">' +   // M-2
         '<strong>' + Chronicle.escapeHtml(r.name) + '</strong>' +
         '<br><small>' + Chronicle.escapeHtml(r.description || '') + '</small></button>';
     });
@@ -723,7 +724,7 @@ Chronicle.register('monster-builder', {
     this.creature.immunities.forEach(function (imm, i) {
       var row = document.createElement('div');
       row.className = 'mb-list-row';
-      row.innerHTML = '<input type="text" class="mb-input" value="' + Chronicle.escapeHtml(imm) + '" placeholder="e.g. Magic 2">' +
+      row.innerHTML = '<input type="text" class="mb-input" value="' + Chronicle.escapeAttr(imm) + '" placeholder="e.g. Magic 2">' +
         '<button class="btn btn-sm btn-danger">X</button>';
       row.querySelector('input').addEventListener('change', function () {
         self.creature.immunities[i] = this.value;
@@ -859,7 +860,7 @@ Chronicle.register('monster-builder', {
       card.innerHTML =
         '<div class="mb-ability-header">' +
           '<span class="mb-ability-type">[' + typeLabel + ']</span> ' +
-          '<input type="text" class="mb-input mb-ability-name" value="' + Chronicle.escapeHtml(ability.name) + '">' +
+          '<input type="text" class="mb-input mb-ability-name" value="' + Chronicle.escapeAttr(ability.name) + '">' +
           '<button class="btn btn-sm btn-danger mb-delete-ability">Delete</button>' +
           '<button class="btn btn-sm btn-secondary mb-toggle-ability">Edit</button>' +
         '</div>' +
@@ -874,22 +875,22 @@ Chronicle.register('monster-builder', {
                 return '<option value="' + t + '"' + (ability.type === t ? ' selected' : '') + '>' + t + '</option>';
               }).join('') +
             '</select></label>' +
-            '<label>Distance<input type="text" class="mb-input mb-ab-distance" value="' + Chronicle.escapeHtml(ability.distance) + '"></label>' +
-            '<label>Target<input type="text" class="mb-input mb-ab-target" value="' + Chronicle.escapeHtml(ability.target) + '"></label>' +
+            '<label>Distance<input type="text" class="mb-input mb-ab-distance" value="' + Chronicle.escapeAttr(ability.distance) + '"></label>' +
+            '<label>Target<input type="text" class="mb-input mb-ab-target" value="' + Chronicle.escapeAttr(ability.target) + '"></label>' +
           '</div>' +
           '<div class="mb-field-row">' +
-            '<label>Power Roll<input type="text" class="mb-input mb-ab-roll" value="' + Chronicle.escapeHtml(ability.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
+            '<label>Power Roll<input type="text" class="mb-input mb-ab-roll" value="' + Chronicle.escapeAttr(ability.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
           '</div>' +
           '<div class="mb-field-row mb-tiers">' +
-            '<label>T1 (11-)<input type="text" class="mb-input mb-ab-t1" value="' + Chronicle.escapeHtml(ability.tier1 || '') + '"></label>' +
-            '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeHtml(ability.tier2 || '') + '"></label>' +
-            '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeHtml(ability.tier3 || '') + '"></label>' +
+            '<label>T1 (11-)<input type="text" class="mb-input mb-ab-t1" value="' + Chronicle.escapeAttr(ability.tier1 || '') + '"></label>' +
+            '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeAttr(ability.tier2 || '') + '"></label>' +
+            '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeAttr(ability.tier3 || '') + '"></label>' +
           '</div>' +
           '<div class="mb-damage-hints">' + self._getDamageHints() + '</div>' +
           '<label>Effect<textarea class="mb-input mb-ab-effect" rows="2">' + Chronicle.escapeHtml(ability.effect || '') + '</textarea></label>' +
           '<div class="mb-field-row">' +
-            '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeHtml(ability.trigger || '') + '"></label>' +
-            '<label>VP Cost<input type="number" class="mb-input mb-ab-vp" value="' + (ability.spend_vp || 0) + '" min="0"></label>' +
+            '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeAttr(ability.trigger || '') + '"></label>' +
+            '<label>VP Cost<input type="number" class="mb-input mb-ab-vp" value="' + (Number(ability.spend_vp) || 0) + '" min="0"></label>' +   // H-5: coerce, never a raw string
           '</div>' +
           '<div class="mb-keyword-list mb-ab-keywords"></div>' +
         '</div>';
@@ -953,7 +954,7 @@ Chronicle.register('monster-builder', {
       var p = tmpl.properties || {};
       var btn = document.createElement('button');
       btn.className = 'mb-template-btn';
-      btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + (p.type || '') + ']' +
+      btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + Chronicle.escapeHtml(p.type || '') + ']' +   // M-3
         '<br><small>' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
       btn.addEventListener('click', function () {
         var ability = JSON.parse(JSON.stringify(p));
@@ -1070,7 +1071,7 @@ Chronicle.register('monster-builder', {
           '<option value="melee"' + (cr.free_strike.indexOf('ranged') === -1 ? ' selected' : '') + '>Melee</option>' +
           '<option value="ranged"' + (cr.free_strike.indexOf('ranged') !== -1 ? ' selected' : '') + '>Ranged</option>' +
         '</select></label>' +
-        '<label>Description (optional)<input type="text" class="mb-input" id="mb-fs-desc" value="' + Chronicle.escapeHtml(cr.free_strike) + '" placeholder="e.g. 5 damage"></label>' +
+        '<label>Description (optional)<input type="text" class="mb-input" id="mb-fs-desc" value="' + Chronicle.escapeAttr(cr.free_strike) + '" placeholder="e.g. 5 damage"></label>' +
       '</div>' +
       '</div>';
 
@@ -1106,16 +1107,16 @@ Chronicle.register('monster-builder', {
         '<div class="mb-va-header"><span class="mb-va-num">' + slot.icon + '</span> ' +
         '<strong>' + slot.label + '</strong> <small>' + slot.desc + '</small></div>' +
         '<div class="mb-field-row">' +
-          '<label>Name<input type="text" class="mb-input mb-va-name" data-idx="' + i + '" value="' + Chronicle.escapeHtml(va.name) + '" placeholder="Villain action name"></label>' +
+          '<label>Name<input type="text" class="mb-input mb-va-name" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.name) + '" placeholder="Villain action name"></label>' +
         '</div>' +
         '<label>Description<textarea class="mb-input mb-va-desc" data-idx="' + i + '" rows="3" placeholder="What this villain action does...">' + Chronicle.escapeHtml(va.description) + '</textarea></label>' +
         '<div class="mb-field-row">' +
-          '<label>Power Roll (optional)<input type="text" class="mb-input mb-va-roll" data-idx="' + i + '" value="' + Chronicle.escapeHtml(va.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
+          '<label>Power Roll (optional)<input type="text" class="mb-input mb-va-roll" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
         '</div>' +
         '<div class="mb-field-row mb-tiers">' +
-          '<label>T1 (11-)<input type="text" class="mb-input mb-va-t1" data-idx="' + i + '" value="' + Chronicle.escapeHtml(va.tier1 || '') + '"></label>' +
-          '<label>T2 (12-16)<input type="text" class="mb-input mb-va-t2" data-idx="' + i + '" value="' + Chronicle.escapeHtml(va.tier2 || '') + '"></label>' +
-          '<label>T3 (17+)<input type="text" class="mb-input mb-va-t3" data-idx="' + i + '" value="' + Chronicle.escapeHtml(va.tier3 || '') + '"></label>' +
+          '<label>T1 (11-)<input type="text" class="mb-input mb-va-t1" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier1 || '') + '"></label>' +
+          '<label>T2 (12-16)<input type="text" class="mb-input mb-va-t2" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier2 || '') + '"></label>' +
+          '<label>T3 (17+)<input type="text" class="mb-input mb-va-t3" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier3 || '') + '"></label>' +
         '</div>' +
         '</div>';
     });
@@ -1179,7 +1180,7 @@ Chronicle.register('monster-builder', {
       row.className = 'mb-trait-row';
       row.innerHTML =
         '<div class="mb-field-row">' +
-          '<label>Name<input type="text" class="mb-input mb-trait-name" value="' + Chronicle.escapeHtml(trait.name) + '" placeholder="Trait name"></label>' +
+          '<label>Name<input type="text" class="mb-input mb-trait-name" value="' + Chronicle.escapeAttr(trait.name) + '" placeholder="Trait name"></label>' +
           '<button class="btn btn-sm btn-danger mb-del-trait">X</button>' +
         '</div>' +
         '<label>Description<textarea class="mb-input mb-trait-desc" rows="2" placeholder="What this trait does...">' + Chronicle.escapeHtml(trait.description) + '</textarea></label>';
@@ -1393,7 +1394,7 @@ Chronicle.register('monster-builder', {
     html += '<div class="sb-header">';
     html += '<h2 class="sb-name">' + h(cr.name || 'Unnamed') + '</h2>';
     html += '<div class="sb-subtitle">Level ' + cr.level + ' ';
-    if (cr.size) html += cr.size + ' ';
+    if (cr.size) html += h(cr.size) + ' ';   // H-5: escape size in the preview
     if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
     if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
     html += '</div>';
@@ -1455,7 +1456,8 @@ Chronicle.register('monster-builder', {
           html += '</div>';
         }
         if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        if (ab.spend_vp && ab.spend_vp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        var svp = Number(ab.spend_vp);   // L-4: coerce so no string reaches output
+        if (svp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + svp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
     }
