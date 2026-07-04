@@ -72,3 +72,14 @@ export function assertNoInjection(assert, html, label) {
   // i.e. a bare `" onerror=` breakout. Escaped quotes (&quot;) cannot break out.
   assert.ok(!/"\s+on\w+=/i.test(html), (label || '') + ': attribute breakout (" on...=) must not appear');
 }
+
+// For ATTRIBUTE-context sinks where a legitimate tag (e.g. <img>) is expected in
+// the output: assert the payload's quote did not break out to open a new
+// event-handler attribute. A raw quote (not &quot;) followed by `on...=` is the
+// breakout signature; an escaped quote ends in `;` and cannot match.
+export function assertNoAttrBreakout(assert, html, label) {
+  assert.ok(!/["']\s+on\w+\s*=/i.test(html),
+    (label || '') + ': attribute breakout (" on...=) must not appear');
+  assert.ok(!/<[a-z]+[^>]*\son\w+\s*=\s*["']?alert/i.test(html),
+    (label || '') + ': no live event handler invoking alert');
+}
