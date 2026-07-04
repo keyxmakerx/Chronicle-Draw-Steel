@@ -90,8 +90,13 @@ var DrawSteelRefRenderer = (function () {
     this._scanList.forEach(function (t) {
       var re = new RegExp('\\b(' + t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'i');
       if (re.test(html)) {
-        html = html.replace(re, '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
-          ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">$1</span>');
+        // L-5: use a function replacer so a `$`-sequence in the glossary
+        // description (t.def) or in the matched term is treated literally, not
+        // as a String.replace replacement pattern ($1, $&, $`, $').
+        html = html.replace(re, function (m, g1) {
+          return '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
+            ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">' + g1 + '</span>';
+        });
       }
     });
     return html;
@@ -108,7 +113,10 @@ var DrawSteelRefRenderer = (function () {
         var displayName = displayOverride || termId;
         return '<span class="ds-ref ds-ref--unknown">' + displayName + '</span>';
       }
-      var label = displayOverride || entry.name;
+      // H-6: displayOverride comes from the caller's ALREADY-escaped input text
+      // (renderText's contract), so it is safe as-is; entry.name comes from the
+      // glossary data (untrusted) and must be escaped before it becomes HTML.
+      var label = displayOverride || _escHtml(entry.name);
       var tip = entry.description || '';
       tip = tip.replace(/"/g, '&quot;');
       return '<span class="ds-ref ds-ref--' + _safeClass(category) + '"' +
@@ -135,6 +143,19 @@ var DrawSteelRefRenderer = (function () {
 
   function _safeAttr(str) {
     return str.replace(/[^a-z0-9_-]/g, '');
+  }
+
+  // _escHtml escapes a string for safe insertion into HTML *element content*
+  // (matches Chronicle.escapeHtml: escapes & < > only). Kept self-contained so
+  // the renderer can escape untrusted glossary values without depending on the
+  // platform Chronicle global (and so the Node tests can exercise it directly).
+  // H-6: the resolved glossary label (entry.name) is attacker-influenceable
+  // (a malicious package / systems-data glossary entry) and must be escaped.
+  function _escHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   RefRenderer.prototype.injectStyles = function () {
@@ -185,3 +206,9 @@ var DrawSteelRefRenderer = (function () {
 
   return RefRenderer;
 })();
+
+// Test seam: expose the constructor for Node unit tests. Inert in a browser
+// (no CommonJS `module`), so the widget's runtime behavior is unchanged.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = DrawSteelRefRenderer;
+}
