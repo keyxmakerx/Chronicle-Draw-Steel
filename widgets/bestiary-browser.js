@@ -540,12 +540,16 @@ Chronicle.register('bestiary-browser', {
 
     var header = '<div class="bb-card-header">' +
       '<span class="bb-card-name">' + h(creature.name) + '</span>' +
-      '<span class="bb-card-level">L' + creature.level + '</span></div>';
+      '<span class="bb-card-level">L' + (Number(creature.level) || 0) + '</span></div>';
 
+    // C-1 (client half): organization/role come from unsanitized publication /
+    // custom-field data — escape them (element content) before rendering. The
+    // numeric fields are Number()-coerced here too, defence in depth against a
+    // publication JSON that carries strings where numbers are expected.
     var subtitle = '<div class="bb-card-subtitle">';
-    if (creature.organization) subtitle += this._capitalize(creature.organization) + ' ';
-    if (creature.role) subtitle += this._capitalize(creature.role);
-    if (creature.ev) subtitle += ' &middot; EV ' + creature.ev;
+    if (creature.organization) subtitle += h(this._capitalize(creature.organization)) + ' ';
+    if (creature.role) subtitle += h(this._capitalize(creature.role));
+    if (creature.ev) subtitle += ' &middot; EV ' + (Number(creature.ev) || 0);
     subtitle += '</div>';
 
     var tags = '';
@@ -555,8 +559,8 @@ Chronicle.register('bestiary-browser', {
       }).join('') + '</div>';
     }
 
-    var charSign = function (v) { return v >= 0 ? '+' + v : '' + v; };
-    var stats = '<div class="bb-card-stats">STM ' + creature.stamina + ' &middot; SPD ' + creature.speed + '</div>';
+    var charSign = function (v) { v = Number(v) || 0; return v >= 0 ? '+' + v : '' + v; };
+    var stats = '<div class="bb-card-stats">STM ' + (Number(creature.stamina) || 0) + ' &middot; SPD ' + (Number(creature.speed) || 0) + '</div>';
     var chars = '<div class="bb-card-chars">MGT ' + charSign(creature.might) +
       ' AGI ' + charSign(creature.agility) +
       ' RSN ' + charSign(creature.reason) +
@@ -915,7 +919,7 @@ Chronicle.register('bestiary-browser', {
     html += '<div class="sb-header">';
     html += '<h2 class="sb-name">' + h(cr.name) + '</h2>';
     html += '<div class="sb-subtitle">Level ' + cr.level + ' ';
-    if (cr.size) html += cr.size + ' ';
+    if (cr.size) html += h(cr.size) + ' ';   // H-4: size is user-authored, escape it
     if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
     if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
     html += '</div>';
@@ -984,7 +988,8 @@ Chronicle.register('bestiary-browser', {
           html += '</div>';
         }
         if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        if (ab.spend_vp && ab.spend_vp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        var svp = Number(ab.spend_vp);   // L-4: coerce so no string reaches output
+        if (svp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + svp + ' VP:</strong> Enhanced effect</div>';
         html += '</div>';
       });
       html += '</div>';
