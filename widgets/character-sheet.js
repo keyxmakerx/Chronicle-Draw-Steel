@@ -74,6 +74,31 @@
     return Chronicle.escapeHtml(s == null ? '' : String(s));
   }
 
+  // escAttr escapes for HTML ATTRIBUTE context — it also escapes quotes, which
+  // Chronicle.escapeHtml does NOT, so it is required wherever a value lands
+  // inside a "…" attribute (else a value with a double-quote breaks out and
+  // injects an event handler). Prefers the platform helper; falls back to a
+  // self-contained implementation so the widget stays robust across Chronicle
+  // versions and testable off-browser. (DS-SEC-FIXES-R1: H-1, M-4, M-5, L-1, L-2)
+  function escAttr(s) {
+    s = (s == null) ? '' : String(s);
+    if (Chronicle && Chronicle.escapeAttr) return Chronicle.escapeAttr(s);
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // safeImgUrl returns the URL only when it is http(s), protocol-relative,
+  // root-relative, or a scheme-less relative path; otherwise '' (caller shows a
+  // placeholder). Blocks javascript:/data:/vbscript: portrait_url values. (H-1)
+  function safeImgUrl(u) {
+    u = String(u == null ? '' : u).trim();
+    if (!u) return '';
+    if (/^(?:https?:)?\/\//i.test(u)) return u;   // http(s):// or //host
+    if (u.charAt(0) === '/') return u;             // root-relative /path
+    if (u.indexOf(':') === -1) return u;           // scheme-less relative
+    return '';                                      // foreign scheme -> reject
+  }
+
   // refText escapes THEN resolves {@category term} tokens to ref spans. Safe to
   // call before the glossary loads (renderText degrades to plain text), but the
   // mount is deferred until refRenderer.load() resolves so first paint is lit.
@@ -183,8 +208,11 @@
     if (kit) parts.push(esc(kit) + ' kit');
     var subtitle = parts.join(' &bull; ');
 
-    var portraitHtml = portrait
-      ? '<img class="cs-portrait" src="' + esc(portrait) + '" alt="' + esc(name) + '">'
+    // H-1: portrait_url is user-authored; validate the scheme and escape both
+    // attribute values (escAttr, not esc — escapeHtml leaves quotes intact).
+    var safePortrait = safeImgUrl(portrait);
+    var portraitHtml = safePortrait
+      ? '<img class="cs-portrait" src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
       : '<div class="cs-portrait cs-portrait-placeholder"><i class="fa-solid fa-shield-halved"></i></div>';
 
     // Status pills (claimed / visibility) — only when the host supplied context.
@@ -460,7 +488,7 @@
       });
       var skillTip = function (id) {
         var d = skillDefs && skillDefs[String(id).toLowerCase()];
-        return (d && d.description) ? ' data-tip="' + esc(d.description) + '" tabindex="0"' : '';
+        return (d && d.description) ? ' data-tip="' + escAttr(d.description) + '" tabindex="0"' : '';   // M-4
       };
       var groupOut = function (key, label, cls) {
         var list = buckets[key];
@@ -495,7 +523,11 @@
     if (!k) return ph('No kit equipped.');
 
     var has = function (v) { return v != null && v !== '' && v !== 0; };
-    var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : String(v)); };
+    // H-2: escape the non-numeric branch — kit_details_json values are
+    // user-authored and 'v > 0' is false for a string, so String(v) would
+    // otherwise reach element content raw. (v > 0 implies a number, so '+' + v
+    // is inherently safe.)
+    var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : esc(String(v))); };
 
     // damage tier mini-ladder (melee / ranged rows × T1/T2/T3) — only if any set.
     var dmgRows = '';
@@ -795,7 +827,7 @@
         var qty = (it.metadata && it.metadata.quantity) ? ' &times; ' + esc(String(it.metadata.quantity)) : '';
         var equipped = (it.metadata && it.metadata.equipped) ? ' <span class="cs-tag">equipped</span>' : '';
         var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
-        var label = href ? '<a class="cs-inventory-link" href="' + esc(href) + '">' + name + '</a>' : name;
+        var label = href ? '<a class="cs-inventory-link" href="' + escAttr(href) + '">' + name + '</a>' : name;   // L-2
         return '<li class="cs-inventory-item">' + label + qty + equipped + '</li>';
       }).join('');
       out += '<ul class="cs-inventory-list">' + rows + '</ul>';
@@ -1085,7 +1117,7 @@
     var costHtml = cost ? '<span class="ds-card__cost">' + esc(cost) + '</span>' : '';
     var body = tierLinesHtml(a, null) || fallbackBodyHtml(a);
     return '<div class="ds-card" data-ds-expand="' + idx + '" role="button" tabindex="0"' +
-        ' aria-label="' + esc((a && a.name) || 'Ability') + ' — click to expand">' +
+        ' aria-label="' + escAttr((a && a.name) || 'Ability') + ' — click to expand">' +   // L-1
       '<div class="ds-card__h"><span class="ds-card__nm">' + esc((a && a.name) || 'Untitled') + '</span>' + sig + costHtml + '</div>' +
       body +
       '<div class="ds-card__hint" aria-hidden="true">↳ click to expand</div>' +
@@ -1159,7 +1191,7 @@
     var kw = (Array.isArray(a.keywords) && a.keywords.length)
       ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
           var en = (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(k) : null;
-          var tip = (en && en.description) ? ' data-tip="' + esc(en.description) + '" tabindex="0"' : '';
+          var tip = (en && en.description) ? ' data-tip="' + escAttr(en.description) + '" tabindex="0"' : '';   // M-5
           return '<span' + tip + '>' + esc(String(k)) + '</span>';
         }).join('') + '</div>' : '';
     var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
@@ -2007,7 +2039,8 @@
       substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
-      cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP
+      cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rHeader: rHeader, rKit: rKit
     };
   }
 })();

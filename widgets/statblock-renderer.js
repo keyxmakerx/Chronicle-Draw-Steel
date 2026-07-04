@@ -153,7 +153,7 @@ Chronicle.register('statblock-renderer', {
     html += '<h2 class="sb-name">' + h(cr.name) + '</h2>';
     html += '<div class="sb-subtitle">';
     html += 'Level ' + cr.level + ' ';
-    if (cr.size) html += cr.size + ' ';
+    if (cr.size) html += h(cr.size) + ' ';   // H-3: size is user-authored, escape it
     if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
     if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
     html += '</div>';
@@ -232,8 +232,9 @@ Chronicle.register('statblock-renderer', {
         if (ab.effect) {
           html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
         }
-        if (ab.spend_vp && ab.spend_vp > 0) {
-          html += '<div class="sb-ability-vp"><strong>Spend ' + ab.spend_vp + ' VP:</strong> Enhanced effect</div>';
+        var svp = Number(ab.spend_vp);   // L-4: coerce so no string reaches output
+        if (svp > 0) {
+          html += '<div class="sb-ability-vp"><strong>Spend ' + svp + ' VP:</strong> Enhanced effect</div>';
         }
         html += '</div>';
       });
