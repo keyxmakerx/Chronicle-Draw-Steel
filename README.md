@@ -98,6 +98,16 @@ Every `data/*.json` file is a JSON array of these objects. Required fields: `slu
 - XSS safety via `Chronicle.escapeHtml()`
 - Styles injected as `<style>` tags (no separate CSS files)
 
+### Releases
+Releases are cut on demand from `main` via the **Release** workflow
+(`.github/workflows/release.yml`). There is no version in `manifest.json` — the
+Git tag **is** the version, and Chronicle's package manager installs the latest
+non-prerelease tag.
+
+To publish: **Actions → Release → Run workflow**, enter the version (e.g.
+`0.13.7`, no leading `v`). The workflow creates the tag and GitHub Release from
+`main` HEAD with auto-generated "What's Changed" notes.
+
 ## Project Structure
 
 ```

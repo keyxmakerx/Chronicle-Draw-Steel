@@ -1,0 +1,51 @@
+name: Release
+
+# On-demand releases for the Draw Steel system pack.
+#
+# Chronicle installs this package BY TAG: its package updater reads GitHub
+# Releases (api.github.com/.../releases) and pulls the source zipball of the
+# newest non-prerelease tag. manifest.json has NO version field — the release
+# tag IS the version — so this workflow only creates the tag + GitHub Release
+# from main. It builds no artifact and edits no file (Chronicle uses the
+# auto-generated source zipball).
+#
+# Usage: Actions tab -> "Release" -> "Run workflow" -> enter the version
+# (e.g. 0.13.7, no leading "v"). The tag and Release are created from main HEAD
+# with GitHub's auto-generated "What's Changed" notes (the house style).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version — no leading "v" (e.g. 0.13.7)'
+        required: true
+        type: string
+
+# Least privilege: creating the tag + Release is all this workflow does.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # Reject a malformed version before it becomes a bad tag. Value is read
+      # from an env var (not interpolated into the script) to avoid injection.
+      - name: Validate version (X.Y.Z, no leading v)
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::version must be X.Y.Z with no leading 'v' (got '$VERSION')"; exit 1; }
+
+      # Creates the tag at main's current HEAD and a non-prerelease Release with
+      # GitHub's auto-generated notes. No files uploaded — Chronicle fetches the
+      # tag's source zipball.
+      - name: Create tag + GitHub release from main
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          target_commitish: main
+          generate_release_notes: true
+          make_latest: 'true'
