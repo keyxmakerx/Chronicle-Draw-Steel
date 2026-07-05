@@ -150,7 +150,7 @@
         { "key": "in_combat", "label": "In Combat", "type": "number" },
         { "key": "combat_round", "label": "Combat Round", "type": "number" },
         { "key": "conditions_json", "label": "Conditions Data", "type": "string", "foundry_path": "statuses", "foundry_writable": false },
-        { "key": "gm_notes", "label": "GM Notes", "type": "markdown", "foundry_path": "system.biography.director" }
+        { "key": "gm_notes", "label": "GM Notes", "type": "markdown", "gm_only": true, "foundry_path": "system.biography.director" }
       ]
     },
     {
