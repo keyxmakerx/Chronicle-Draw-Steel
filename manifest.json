@@ -273,6 +273,20 @@
       "file": "widgets/reference-renderer.js",
       "entry_point": "DrawSteelRefRenderer",
       "description": "Resolves {@category term} syntax to styled tooltips with Draw Steel rule definitions. Requires Chronicle platform text_renderers support for campaign-wide coverage."
+    },
+    {
+      "slug": "monster-engine",
+      "name": "Monster Engine",
+      "file": "widgets/monster-engine.js",
+      "entry_point": "MonsterEngine",
+      "description": "Pure encounter math (grounded EV budget) for the monster builder. Loaded as a global before widget scripts; no visible UI."
+    },
+    {
+      "slug": "monster-party",
+      "name": "Monster Party",
+      "file": "widgets/monster-party.js",
+      "entry_point": "MonsterParty",
+      "description": "Pure party read + PartyProfile derivation for the monster builder. Loaded as a global before widget scripts; no visible UI."
     }
   ]
 }
