@@ -62,6 +62,9 @@ Chronicle.register('monster-builder', {
     // Encounter-calculator state lives on the instance so it survives step
     // navigation instead of resetting every time Step 3 re-renders (B-7).
     this._encounterState = { partySize: 4, partyLevel: this.creature.level };
+    // The derived party profile (redo Phase 0), populated by _loadParty before
+    // first render; null = no heroes read / manual mode.
+    this._partyProfile = null;
 
     // Bestiary publish state: the "Publish to Bestiary" button is enabled only
     // after a successful entity save, and defaults to a private (draft) listing.
@@ -69,7 +72,7 @@ Chronicle.register('monster-builder', {
     this._canPublish = false;
     this._publishVisibility = 'draft';
 
-    Promise.all([this._loadReferenceData(), this._ref.load()]).then(function () {
+    Promise.all([this._loadReferenceData(), this._ref.load(), this._loadParty()]).then(function () {
       self._ref.injectStyles();
       return self._loadExistingEntity();
     }).then(function () {
@@ -89,6 +92,24 @@ Chronicle.register('monster-builder', {
       function (body) { return body && body.message ? body.message : fallback; },
       function () { return fallback; }
     );
+  },
+
+  // _loadParty reads the live campaign party via the pure MonsterParty module
+  // and stores the derived profile for the Party panel + budget seeding. It
+  // never blocks the builder: any failure or absence degrades to manual mode.
+  _loadParty: function () {
+    var self = this;
+    var cid = this.config && this.config.campaignId;
+    if (!cid || typeof MonsterParty === 'undefined') {
+      this._partyProfile = null;
+      return Promise.resolve();
+    }
+    return MonsterParty.fetchParty(cid).then(function (heroes) {
+      self._partyProfile = MonsterParty.deriveParty(heroes);
+    }).catch(function (err) {
+      if (typeof console !== 'undefined') console.warn('Monster Builder: party read failed', err);
+      self._partyProfile = null;
+    });
   },
 
   // _fetchData loads a single reference JSON file from the extension's asset
@@ -430,8 +451,9 @@ Chronicle.register('monster-builder', {
       step.className = 'mb-step-tab' + (i === this.currentStep ? ' active' : '');
       step.textContent = (i + 1) + '. ' + this.steps[i];
       step.dataset.step = i;
-      // Hide villain actions tab unless leader/solo
-      if (i === 5 && this.creature.organization !== 'leader' && this.creature.organization !== 'solo') {
+      // Hide the villain-actions tab unless this org unlocks them, driven by the
+      // org template's villain_action_count (data), not a 'leader'/'solo' string.
+      if (i === 5 && !this._hasVillainActions()) {
         step.style.display = 'none';
       }
       step.addEventListener('click', function () {
@@ -496,7 +518,7 @@ Chronicle.register('monster-builder', {
       prev.textContent = 'Previous';
       prev.addEventListener('click', function () {
         self.currentStep--;
-        if (self.currentStep === 5 && self.creature.organization !== 'leader' && self.creature.organization !== 'solo') {
+        if (self.currentStep === 5 && !self._hasVillainActions()) {
           self.currentStep--;
         }
         self._renderCurrentStep();
@@ -510,7 +532,7 @@ Chronicle.register('monster-builder', {
       next.textContent = 'Next';
       next.addEventListener('click', function () {
         self.currentStep++;
-        if (self.currentStep === 5 && self.creature.organization !== 'leader' && self.creature.organization !== 'solo') {
+        if (self.currentStep === 5 && !self._hasVillainActions()) {
           self.currentStep++;
         }
         self._renderCurrentStep();
@@ -1007,6 +1029,13 @@ Chronicle.register('monster-builder', {
     return null;
   },
 
+  // _hasVillainActions is the data-driven replacement for the old hardcoded
+  // 'leader'/'solo' string checks: an org unlocks the villain-actions step iff
+  // its template declares villain_action_count > 0 (leaders/solos = 3).
+  _hasVillainActions: function () {
+    return MonsterEngine.villainActionCount(this._getOrgTemplate()) > 0;
+  },
+
   _getRoleTemplate: function () {
     var slug = this.creature.role;
     for (var i = 0; i < this.roleTemplates.length; i++) {
@@ -1224,12 +1253,24 @@ Chronicle.register('monster-builder', {
   },
 
   _renderEncounterCalc: function (container) {
+    var self = this;
     var cr = this.creature;
     if (!cr.ev || cr.ev <= 0) return;
 
+    var profile = this._partyProfile;
     // Party size/level persist on the instance so they survive step navigation
     // and validation re-renders instead of resetting to defaults (B-7).
     var st = this._encounterState;
+    // Seed the encounter inputs from the LIVE party once (redo Phase 0); the
+    // director can still override, and with no party we keep today's hand-typed
+    // values as the manual fallback (redo Q4 ruling).
+    if (profile && !st._seededFromParty) {
+      if (profile.size) st.partySize = profile.size;
+      if (profile.levelAvg !== null && profile.levelAvg !== undefined) {
+        st.partyLevel = Math.round(profile.levelAvg);
+      }
+      st._seededFromParty = true;
+    }
     st.partySize = Math.max(1, Math.min(10, st.partySize || 4));
     st.partyLevel = Math.max(1, Math.min(20, st.partyLevel || cr.level));
 
@@ -1237,9 +1278,11 @@ Chronicle.register('monster-builder', {
     calc.className = 'mb-encounter-calc';
     // The structure is built once; only .mb-ec-output is rewritten on input, so
     // the number fields keep focus while typing instead of losing it every
-    // keystroke to a full innerHTML rebuild (B-7).
+    // keystroke to a full innerHTML rebuild (B-7). The party panel above it is
+    // read-only, so it never re-renders on keystroke either.
     calc.innerHTML =
-      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Calculator</h4>' +
+      this._partyPanelHtml(profile) +
+      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Budget</h4>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
         '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + st.partySize + '" min="1" max="10" style="width:50px"></label>' +
         '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + st.partyLevel + '" min="1" max="20" style="width:50px"></label>' +
@@ -1248,12 +1291,18 @@ Chronicle.register('monster-builder', {
 
     var output = calc.querySelector('.mb-ec-output');
     var refresh = function () {
-      var budget = st.partySize * st.partyLevel;
-      var count = Math.max(1, Math.round(budget / cr.ev));
-      var totalEV = count * cr.ev;
+      // Grounded EV budget: party size x level x the standard EV-per-hero-level
+      // the engine derives from the org templates (docs/monster-builder.md
+      // \u00a72.1/\u00a74.1) \u2014 replaces the old crude partySize*partyLevel.
+      var budget = MonsterEngine.encounterBudget(st.partySize, st.partyLevel, self.orgTemplates);
+      var meter = MonsterEngine.evMeter(cr.ev, budget);
+      var pct = meter.budget ? Math.max(0, Math.min(100, Math.round(meter.ratio * 100))) : 0;
+      var orgName = Chronicle.escapeHtml(cr.organization || 'creature');
       output.innerHTML =
-        '<strong>Budget:</strong> ' + budget + ' EV (' + st.partySize + ' heroes \u00d7 level ' + st.partyLevel + ')<br>' +
-        '<strong>Use ~' + count + '</strong> of this ' + Chronicle.escapeHtml(cr.organization || 'creature') + ' (EV ' + cr.ev + ' each = ' + totalEV + ' total EV)';
+        '<strong>Budget:</strong> ' + meter.budget + ' EV (' + st.partySize + ' heroes \u00d7 level ' + st.partyLevel + ')<br>' +
+        '<strong>This ' + orgName + ':</strong> spent ' + meter.spent + ' / ' + meter.budget + ' EV' +
+        '<div style="height:6px;border-radius:3px;background:var(--color-border,#e5e7eb);margin:4px 0;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--color-primary,#7c3aed)"></div></div>' +
+        'Use <strong>~' + meter.copies + '</strong> of these for a balanced encounter (EV ' + meter.spent + ' each = ' + (meter.copies * meter.spent) + ' total).';
     };
 
     calc.querySelector('.mb-ec-party').addEventListener('input', function () {
@@ -1267,6 +1316,57 @@ Chronicle.register('monster-builder', {
 
     refresh();
     container.appendChild(calc);
+  },
+
+  // _partyPanelHtml renders the read-only "party at a glance" panel above the
+  // budget meter: the derived profile with an honest per-stat coverage caveat,
+  // or a manual-mode note when no drawsteel-character entities were found (redo
+  // Phase 0 + Q4 ruling: graceful manual fallback, never average nulls as zeros).
+  // Every dynamic string (immunities/weaknesses come from hero data) is escaped.
+  _partyPanelHtml: function (profile) {
+    var esc = Chronicle.escapeHtml;
+    if (!profile) {
+      return '<div class="mb-party-panel mb-party-manual" style="margin-bottom:10px;padding:8px;border:1px dashed var(--color-border,#e5e7eb);border-radius:6px;font-size:0.85em;opacity:0.85">' +
+        'No hero entities found in this campaign \u2014 using manual party inputs below.' +
+        '</div>';
+    }
+    var LABELS = {
+      might: 'Might', agility: 'Agility', reason: 'Reason', intuition: 'Intuition',
+      presence: 'Presence', level: 'level', stamina_max: 'stamina'
+    };
+    var rows = [];
+    var lvl = (profile.levelAvg === null || profile.levelAvg === undefined)
+      ? '?' : (Math.round(profile.levelAvg * 10) / 10);
+    var spread = profile.levelSpread ? (' (' + profile.levelSpread[0] + '\u2013' + profile.levelSpread[1] + ')') : '';
+    rows.push('<strong>Party:</strong> ' + profile.size + ' hero' + (profile.size === 1 ? '' : 'es') + ' \u00b7 avg level ' + lvl + spread);
+    if (profile.weakestDefense) {
+      var wv = profile.weakestDefenseValue;
+      rows.push('<strong>Weakest defense:</strong> ' + esc(LABELS[profile.weakestDefense] || profile.weakestDefense) +
+        (wv === null ? '' : ' (avg ' + (Math.round(wv * 10) / 10) + ')') + ' \u2014 build to challenge it');
+    }
+    if (profile.staminaAvg !== null && profile.staminaAvg !== undefined) {
+      rows.push('<strong>Avg stamina:</strong> ' + Math.round(profile.staminaAvg));
+    }
+    if (profile.weaknesses && profile.weaknesses.length) {
+      rows.push('<strong>Weak to (lean in):</strong> ' + esc(profile.weaknesses.join(', ')));
+    }
+    if (profile.immunities && profile.immunities.length) {
+      rows.push('<strong>Immune to (avoid):</strong> ' + esc(profile.immunities.join(', ')));
+    }
+    // Honest coverage caveat: name any stat not present on every hero (Q4).
+    var caveats = [];
+    var covKeys = ['level', 'stamina_max'].concat(MonsterParty.STAT_KEYS);
+    var full = profile.size + ' of ' + profile.size;
+    for (var i = 0; i < covKeys.length; i++) {
+      var c = profile.coverage[covKeys[i]];
+      if (c && c !== full) caveats.push((LABELS[covKeys[i]] || covKeys[i]) + ' ' + c);
+    }
+    var caveatHtml = caveats.length
+      ? '<div style="font-size:0.8em;opacity:0.75;margin-top:4px">Partial data \u2014 not every hero has: ' + esc(caveats.join('; ')) + '.</div>'
+      : '';
+    return '<div class="mb-party-panel" style="margin-bottom:10px;padding:8px;border:1px solid var(--color-border,#e5e7eb);border-radius:6px;font-size:0.85em;background:var(--color-bg-primary,#f9fafb)">' +
+      rows.join('<br>') + caveatHtml +
+      '</div>';
   },
 
   _validate: function () {
@@ -1289,10 +1389,13 @@ Chronicle.register('monster-builder', {
       rules.push({ severity: 'error', message: 'Every creature must have at least 1 signature ability.' });
     }
 
-    if (cr.organization === 'leader' || cr.organization === 'solo') {
+    // Villain-action requirement is data-driven: the org template's
+    // villain_action_count (>0 unlocks; the count must match exactly).
+    var vaRequired = MonsterEngine.villainActionCount(this._getOrgTemplate());
+    if (vaRequired > 0) {
       var vaCount = cr.villain_actions.filter(function (va) { return va.name && va.name.trim() !== ''; }).length;
-      if (vaCount < 3) {
-        rules.push({ severity: 'error', message: 'Leaders and solos must have exactly 3 villain actions. Currently: ' + vaCount + '.' });
+      if (vaCount !== vaRequired) {
+        rules.push({ severity: 'error', message: 'This organization requires exactly ' + vaRequired + ' villain actions. Currently: ' + vaCount + '.' });
       }
     }
 
@@ -1310,10 +1413,10 @@ Chronicle.register('monster-builder', {
       }
     }
 
-    if (cr.organization !== 'leader' && cr.organization !== 'solo') {
+    if (vaRequired === 0) {
       var hasVA = cr.villain_actions.some(function (va) { return va.name && va.name.trim() !== ''; });
       if (hasVA) {
-        rules.push({ severity: 'warning', message: 'Only leaders and solos should have villain actions.' });
+        rules.push({ severity: 'warning', message: 'This organization should not have villain actions.' });
       }
     }
 
