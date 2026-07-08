@@ -66,6 +66,14 @@ Chronicle.register('monster-builder', {
     // first render; null = no heroes read / manual mode.
     this._partyProfile = null;
 
+    // Phase 2 suggestion state (redo Q2/Q3, R3). `_intent` is the director's
+    // recorded difficulty (display-only — R3.2, no scaling). `_suggestion` is the
+    // last MonsterSuggestion applied (drives the rationale-chip panel);
+    // `_suggestionDamage` is the editable suggested damage type (immune-warned).
+    this._intent = 'standard';
+    this._suggestion = null;
+    this._suggestionDamage = '';
+
     // Bestiary publish state: the "Publish to Bestiary" button is enabled only
     // after a successful entity save, and defaults to a private (draft) listing.
     this._entityIsPrivate = false;
@@ -639,6 +647,10 @@ Chronicle.register('monster-builder', {
     var orgHtml = '<div class="mb-section"><h3>Step 2: Organization & Role</h3>' +
       '<div id="mb-step2-warn" class="mb-inline-warn" style="display:none"></div>' +
       this._dataErrorBanner() +
+      // "Build to complement the party" lives ABOVE the org cards so it is
+      // reachable BEFORE an organization is selected (R3.6) — its job includes
+      // suggesting the org, so it must not be gated behind one.
+      this._complementSectionHtml() +
       '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
     this.orgTemplates.forEach(function (o) {
       var sel = self.creature.organization === o.slug ? ' selected' : '';
@@ -680,6 +692,212 @@ Chronicle.register('monster-builder', {
         self._recalcAuto();
       });
     });
+
+    // Bind the "Build to complement the party" controls (Phase 2).
+    this._bindComplement(c);
+  },
+
+  // ── Phase 2: party-aware suggestion (redo Q2/Q3, R3) ──────
+
+  // _complementSectionHtml renders the "Build to complement the party" control
+  // block that sits above the org cards. With a party it shows the intent
+  // selector + the build button + (once run) the rationale-chip panel; with no
+  // party it degrades to a plain note (the button is never shown — manual mode).
+  _complementSectionHtml: function () {
+    if (!this._partyProfile || typeof MonsterEngine === 'undefined') {
+      return '<div class="mb-complement mb-complement-manual">' +
+        '<p class="mb-hint">Party-aware suggestions need campaign heroes (drawsteel-character). None were found — build manually below.</p>' +
+        '</div>';
+    }
+    var intents = ['trivial', 'standard', 'hard', 'boss'];
+    var opts = '';
+    for (var i = 0; i < intents.length; i++) {
+      opts += '<option value="' + intents[i] + '"' + (this._intent === intents[i] ? ' selected' : '') + '>' +
+        intents[i].charAt(0).toUpperCase() + intents[i].slice(1) + '</option>';
+    }
+    return '<div class="mb-complement">' +
+      '<div class="mb-complement-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">' +
+        '<button type="button" class="btn btn-primary" id="mb-complement-btn">Build to complement the party</button>' +
+        '<label style="font-size:0.85em">Intent ' +
+          '<select class="mb-input" id="mb-complement-intent" style="width:auto">' + opts + '</select>' +
+        '</label>' +
+      '</div>' +
+      '<p class="mb-hint">Fills level, organization, role, damage, and ability tiers to challenge this party. Nothing is locked — edit anything after.</p>' +
+      this._suggestionPanelHtml() +
+      '</div>';
+  },
+
+  // _suggestionPanelHtml renders the mandatory per-field rationale chips (Q2)
+  // for the last-applied suggestion, plus the editable (immune-warned) damage
+  // type and any degradation caveats. Returns '' when nothing has been built.
+  _suggestionPanelHtml: function () {
+    var s = this._suggestion;
+    if (!s) return '';
+    var h = Chronicle.escapeHtml;
+    var ha = Chronicle.escapeAttr;
+    var r = s.rationale || {};
+    function chip(label, why) {
+      if (!why) return '';
+      return '<li class="mb-sugg-chip"><span class="mb-sugg-field">' + h(label) + '</span> ' +
+        '<span class="mb-sugg-why">' + h(why) + '</span></li>';
+    }
+    var chips =
+      chip('Level', r.level) +
+      chip('Organization', r.organization) +
+      chip('Role', r.role) +
+      chip('Power-roll target', r.target) +
+      chip('Ability tiers', r.tiers) +
+      chip('Intent', r.intent);
+
+    var notesHtml = '';
+    if (s.notes && s.notes.length) {
+      notesHtml = '<ul class="mb-sugg-notes">';
+      for (var i = 0; i < s.notes.length; i++) {
+        notesHtml += '<li class="mb-sugg-note">' + h(s.notes[i]) + '</li>';
+      }
+      notesHtml += '</ul>';
+    }
+
+    var immList = (this._partyProfile && this._partyProfile.immunities) || [];
+    var immNote = immList.length
+      ? '<p class="mb-hint">Party is immune to: ' + h(immList.join(', ')) + ' — avoid these damage types.</p>'
+      : '';
+
+    return '<div class="mb-sugg-panel" style="border:1px solid var(--border,#ccc);border-radius:6px;padding:10px;margin-top:8px">' +
+      '<h4 style="margin:0 0 6px;font-size:0.9em">Suggested — why (every field is editable)</h4>' +
+      '<ul class="mb-sugg-chips" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px">' + chips + '</ul>' +
+      '<div class="mb-field-row" style="margin-top:8px">' +
+        '<label style="font-size:0.85em">Damage type ' +
+          '<input type="text" class="mb-input" id="mb-complement-damage" value="' + ha(this._suggestionDamage || '') + '" placeholder="untyped">' +
+        '</label>' +
+      '</div>' +
+      '<div id="mb-complement-damage-warn" class="mb-inline-warn" style="display:none"></div>' +
+      '<p class="mb-hint" style="margin-top:2px">' + h(r.damage || '') + '</p>' +
+      immNote +
+      notesHtml +
+      '</div>';
+  },
+
+  // _bindComplement wires the build button, intent selector, and the
+  // immune-warned damage input. Safe to call when the party is absent (the
+  // controls simply aren't in the DOM).
+  _bindComplement: function (c) {
+    var self = this;
+    var btn = c.querySelector('#mb-complement-btn');
+    if (btn) {
+      btn.addEventListener('click', function () { self._applyPartySuggestion(); });
+    }
+    var intentSel = c.querySelector('#mb-complement-intent');
+    if (intentSel) {
+      intentSel.addEventListener('change', function () { self._intent = this.value; });
+    }
+    var dmg = c.querySelector('#mb-complement-damage');
+    if (dmg) {
+      // Live, non-blocking immune warning (Q3) — never prevents save.
+      dmg.addEventListener('input', function () { self._checkImmuneDamage(this.value); });
+      // On commit, record the type and rewrite the suggested ability's tiers.
+      dmg.addEventListener('change', function () {
+        self._suggestionDamage = this.value;
+        self._applyDamageTypeToSuggestedAbility(this.value);
+      });
+      // Reflect any pre-filled immune type immediately on (re)render.
+      this._checkImmuneDamage(dmg.value);
+    }
+  },
+
+  // _checkImmuneDamage shows/hides the inline warning when the typed damage type
+  // is in the party's immunity union (case-insensitive). Non-blocking.
+  _checkImmuneDamage: function (value) {
+    var warn = this._contentEl && this._contentEl.querySelector('#mb-complement-damage-warn');
+    if (!warn) return;
+    var v = (value || '').trim().toLowerCase();
+    var imm = (this._partyProfile && this._partyProfile.immunities) || [];
+    var hit = false;
+    for (var i = 0; i < imm.length; i++) {
+      if (String(imm[i]).toLowerCase() === v && v !== '') { hit = true; break; }
+    }
+    if (hit) {
+      warn.textContent = 'The party is immune to “' + value + '” — this damage would do nothing. You can still save.';
+      warn.style.display = 'block';
+    } else {
+      warn.textContent = '';
+      warn.style.display = 'none';
+    }
+  },
+
+  // _applyPartySuggestion runs the pure engine against the derived profile and
+  // writes the result into the creature model (level/org/role + a signature
+  // ability carrying the baseline tiers), then re-renders so the org/role cards
+  // reflect the pick and the rationale chips appear. Nothing is locked (Q2).
+  _applyPartySuggestion: function () {
+    if (!this._partyProfile || typeof MonsterEngine === 'undefined') return;
+    var s = MonsterEngine.suggest(this._partyProfile, this._intent, {
+      orgTemplates: this.orgTemplates,
+      roleTemplates: this.roleTemplates,
+      baselines: this.damageBaselines
+    });
+    this._suggestion = s;
+    this._suggestionDamage = (s.damageTypes && s.damageTypes[0]) || '';
+
+    if (typeof s.level === 'number') this.creature.level = s.level;
+    if (s.organization) this.creature.organization = s.organization;
+    if (s.role) this.creature.role = s.role;
+    // Cascade EV / stamina / characteristics from the picked org+role+level
+    // (the same recalculation the manual org/role clicks perform).
+    this._recalcAuto();
+
+    // Replace any prior suggested ability with one carrying the baseline tiers.
+    this.creature.abilities = this.creature.abilities.filter(function (a) { return !a._suggested; });
+    if (s.tiers) {
+      this.creature.abilities.push(this._buildSuggestedAbility(s, this._suggestionDamage));
+    }
+
+    this._setSaveStatus('unsaved');
+    this._renderCurrentStep();
+  },
+
+  // _buildSuggestedAbility creates the signature attack that carries the
+  // suggested tiers (WRITTEN into tier1/2/3, not just hinted) and a power roll
+  // of "<attack-stat> vs. <target-defense>" targeting the party's weakest
+  // defense. Flagged `_suggested` so a re-run replaces it rather than stacking.
+  _buildSuggestedAbility: function (s, dmgType) {
+    function cap(x) { return x ? (x.charAt(0).toUpperCase() + x.slice(1)) : ''; }
+    var suffix = dmgType ? (' ' + String(dmgType).toLowerCase() + ' damage') : ' damage';
+    var attack = cap(s.powerRollAttack);
+    var target = cap(s.powerRollTarget);
+    var roll = (attack && target) ? (attack + ' vs. ' + target) : (target ? ('vs. ' + target) : '');
+    return {
+      type: 'signature',
+      name: 'Signature Attack',
+      distance: 'Melee 1',
+      target: '1 creature',
+      power_roll: roll,
+      tier1: String(s.tiers.tier1) + suffix,
+      tier2: String(s.tiers.tier2) + suffix,
+      tier3: String(s.tiers.tier3) + suffix,
+      effect: '',
+      trigger: '',
+      spend_vp: 0,
+      keywords: [],
+      _suggested: true
+    };
+  },
+
+  // _applyDamageTypeToSuggestedAbility rewrites the suggested ability's tier
+  // text when the director edits the damage type, keeping the panel and the
+  // ability coherent. No-op if there is no suggested ability.
+  _applyDamageTypeToSuggestedAbility: function (dmgType) {
+    var s = this._suggestion;
+    if (!s || !s.tiers) return;
+    for (var i = 0; i < this.creature.abilities.length; i++) {
+      if (this.creature.abilities[i]._suggested) {
+        var suffix = dmgType ? (' ' + String(dmgType).toLowerCase() + ' damage') : ' damage';
+        this.creature.abilities[i].tier1 = String(s.tiers.tier1) + suffix;
+        this.creature.abilities[i].tier2 = String(s.tiers.tier2) + suffix;
+        this.creature.abilities[i].tier3 = String(s.tiers.tier3) + suffix;
+        break;
+      }
+    }
   },
 
   // ── Step 3: Statistics ────────────────────────────────────
