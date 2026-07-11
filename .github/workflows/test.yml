@@ -1,0 +1,22 @@
+name: Tests
+
+# Runs the off-DOM unit suite (widgets' pure helpers + data checks) on every
+# push and pull request. DS-BETA-HARDENING item 2 (ruling B-R8).
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  node-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # Glob form on purpose: `node --test tools/` (the directory form) errors
+      # spuriously because it tries to execute non-test helpers like
+      # tools/_xss-harness.mjs. The `test-*.mjs` glob runs only the test files.
+      - name: Run unit tests
+        run: node --test tools/test-*.mjs
