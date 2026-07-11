@@ -1012,6 +1012,9 @@
   // numbers, binary + - * /, unary + -, parentheses. Returns a finite number,
   // or null on empty / gate-fail / parse-error / non-finite result (e.g.
   // division by zero) — matching the prior Function()-based fallback semantics.
+  // Never throws: pathological input (deep paren/unary-sign nesting) that
+  // would otherwise overflow the call stack is also folded into the "returns
+  // null" contract via a try/catch around the parse (DS-BETA-HARDENING-R2).
   function safeEvalArith(s) {
     s = String(s == null ? '' : s).trim();
     // Belt-and-suspenders: keep the original character gate.
@@ -1091,7 +1094,17 @@
       return v;
     }
 
-    var result = parseExpr();
+    var result;
+    try {
+      result = parseExpr();
+    } catch (e) {
+      // Pathological input (thousands of nested parens or unary signs) can
+      // exceed the call stack — degrade to null like any other parse
+      // failure instead of throwing an uncaught RangeError through
+      // substituteFormula -> tierFragments -> the card render.
+      // See DS-BETA-HARDENING-R2.
+      return null;
+    }
     skipSpace();
     if (result === null || pos !== s.length) return null; // parse error / trailing garbage
     return (typeof result === 'number' && isFinite(result)) ? result : null;

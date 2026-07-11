@@ -387,8 +387,14 @@ calculateFreeStrike(level, characteristics, role):
   return level + characteristics[primaryStat]
 
 suggestAbilityDamage(level, organization, tier):
-  return level * DAMAGE_MULTIPLIERS[organization][tier]
+  baseline = DAMAGE_BASELINES[organization]  // data/damage-baselines.json -> properties.baselines
+  scale = baseline.per_level * (level - 1)
+  return round(baseline['tier' + tier] + scale)
 ```
+
+_Generated from `data/damage-baselines.json` (`properties.baselines`); see §4.6 —
+the additive model (`widgets/monster-engine.js` `tierValues`). The data file
+is authoritative._
 
 ### 6.4 Statblock Preview
 

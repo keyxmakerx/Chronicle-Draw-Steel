@@ -2,7 +2,7 @@
   {
     "slug": "damage-baselines",
     "name": "Damage Baselines",
-    "description": "Damage baselines per tier per organization at level 1. Scale by multiplying with level. T1 = roll of 11 or less, T2 = 12-16, T3 = 17+.",
+    "description": "Damage baselines per tier per organization at level 1. Scale per level by adding per_level to each tier ((level - 1) times), not by multiplying. T1 = roll of 11 or less, T2 = 12-16, T3 = 17+.",
     "properties": {
       "baselines": {
         "minion": {
