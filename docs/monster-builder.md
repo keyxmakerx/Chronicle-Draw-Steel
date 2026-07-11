@@ -18,7 +18,7 @@ The Monster Builder is a fully automated creature authoring tool built into the 
 - Full mechanical intelligence: auto-calculate EV, suggest stamina/speed/stability from organization + level
 - Validate creature structure (signature ability required, 3 villain actions for leaders, etc.)
 - Support all 7 organization types: Minion, Horde, Platoon, Elite, Leader, Solo, Swarm
-- Support all 5 roles: Brute, Controller, Defender, Harrier, Hexer
+- Support all 9 roles: Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
 - Full Foundry VTT sync as NPC actors (see [Foundry Sync spec](./foundry-creature-sync.md))
 - Publish to Community Bestiary (see [Bestiary design](../../Chronicle/docs/bestiary/design.md))
 
@@ -50,13 +50,19 @@ Organizations define a creature's power tier and how many heroes it can face.
 
 Roles define a creature's combat style and primary function.
 
-| Role | Primary Function | Typical Primary Stat |
+| Role | Primary Function | Primary Stat |
 |---|---|---|
-| **Brute** | High stamina, high damage, forces engagement | Might |
-| **Controller** | Repositions foes, alters terrain, area control | Reason |
-| **Defender** | Absorbs damage, forces enemies to target them | Might / Presence |
-| **Harrier** | Mobile hit-and-run, positional advantage | Agility |
-| **Hexer** | Debuffs with conditions, generally squishy | Reason / Presence |
+| **Ambusher** | Strikes from concealment with devastating opening attacks; high burst | Agility |
+| **Artillery** | Deals heavy damage at range but vulnerable in melee; stays behind the line | Reason |
+| **Brute** | High damage, tough, but slow or predictable; frontline powerhouse | Might |
+| **Controller** | Manipulates the battlefield with conditions and forced movement | Reason |
+| **Defender** | Tanky front-liner that protects allies and controls space | Might |
+| **Harrier** | Fast, mobile striker that darts in and out of combat | Agility |
+| **Hexer** | Debuffer and condition specialist, often ranged or magical | Reason |
+| **Mount** | Carries a rider, granting enhanced mobility and synergy bonuses | Might |
+| **Support** | Heals, buffs, or repositions allies rather than dealing direct damage | Presence |
+
+_Generated from `data/role-templates.json` (`description` + `primary_stat`); the data file is authoritative._
 
 ### 2.3 Creature Keywords
 
@@ -251,13 +257,19 @@ Formula: `base + (level × multiplier)`
 
 These are starting-point suggestions, not requirements. Users can freely adjust.
 
-| Role | MGT | AGI | RSN | INT | PRS | Notes |
+| Role | MGT | AGI | RSN | INT | PRS | Primary |
 |---|---|---|---|---|---|---|
-| Brute | +3 | +0 | -1 | +0 | +1 | High might, tanky |
-| Controller | -1 | +0 | +3 | +1 | +0 | Battlefield manipulation |
-| Defender | +2 | -1 | +0 | +0 | +2 | Taunts, absorbs hits |
-| Harrier | +0 | +3 | +0 | +1 | -1 | Mobile, positional |
-| Hexer | -1 | +0 | +2 | +0 | +2 | Debuffs, conditions |
+| Ambusher | +1 | +3 | +0 | +1 | -2 | Agility |
+| Artillery | -2 | +1 | +3 | +0 | +1 | Reason |
+| Brute | +3 | +0 | -1 | +0 | +1 | Might |
+| Controller | -1 | +0 | +3 | +1 | +0 | Reason |
+| Defender | +2 | -1 | +0 | +0 | +2 | Might |
+| Harrier | +0 | +3 | +0 | +1 | -1 | Agility |
+| Hexer | -1 | +0 | +2 | +0 | +2 | Reason |
+| Mount | +2 | +1 | -2 | +1 | -1 | Might |
+| Support | -1 | +0 | +1 | +1 | +3 | Presence |
+
+_Generated from `data/role-templates.json` (`characteristics` + `primary_stat`); the data file is authoritative._
 
 **Level scaling for characteristics:** Add +1 to primary stat at levels 4, 8, 12, 16, 20. Add +1 to secondary stat at levels 6, 12, 18.
 
@@ -269,17 +281,21 @@ Example: Level 5 Brute (Might +4) → Free Strike: 9 damage.
 
 ### 4.6 Ability Damage Baselines
 
-Power roll tier damage scales by level and organization:
+Power-roll tier damage per organization. Values are the **level-1 baseline**;
+`per-level` is the increment added to each tier for every level above 1
+(T1 = roll of 11 or less, T2 = 12–16, T3 = 17+).
 
-| Organization | T1 (≤11) | T2 (12–16) | T3 (17+) |
-|---|---|---|---|
-| Minion | level × 1 | level × 1 | level × 2 |
-| Horde | level × 1 | level × 2 | level × 3 |
-| Platoon | level × 2 | level × 3 | level × 4 |
-| Elite | level × 2 | level × 4 | level × 6 |
-| Leader | level × 2 | level × 4 | level × 6 |
-| Solo | level × 3 | level × 5 | level × 8 |
-| Swarm | level × 2 | level × 3 | level × 4 |
+| Organization | T1 (≤11) | T2 (12–16) | T3 (17+) | Per level |
+|---|---|---|---|---|
+| Minion | 2 | 3 | 4 | +1 |
+| Horde | 3 | 5 | 7 | +1.5 |
+| Platoon | 4 | 7 | 10 | +2 |
+| Elite | 6 | 10 | 14 | +3 |
+| Leader | 6 | 10 | 14 | +3 |
+| Solo | 8 | 14 | 20 | +4 |
+| Swarm | 4 | 7 | 10 | +2 |
+
+_Generated from `data/damage-baselines.json` (`properties.baselines`); the data file is authoritative._
 
 ---
 

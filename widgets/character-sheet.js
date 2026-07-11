@@ -1006,15 +1006,95 @@
   // ── power-roll math (the "For <hero>" section) ─────────────────────────────
 
   // safeEvalArith evaluates a pure-arithmetic string ("2 + 3") after @chr was
-  // substituted. The input is regex-restricted to digits/space/+-*/() so the
-  // Function constructor can't reach any identifier or call — no eval risk.
+  // substituted. The input is regex-restricted to digits/space/+-*/() and then
+  // parsed by a tiny hand-written recursive-descent evaluator — NO Function /
+  // eval (the package's zero-dynamic-code goal; audit L-3). Grammar: decimal
+  // numbers, binary + - * /, unary + -, parentheses. Returns a finite number,
+  // or null on empty / gate-fail / parse-error / non-finite result (e.g.
+  // division by zero) — matching the prior Function()-based fallback semantics.
   function safeEvalArith(s) {
     s = String(s == null ? '' : s).trim();
+    // Belt-and-suspenders: keep the original character gate.
     if (s === '' || !/^[0-9+\-*/(). ]+$/.test(s)) return null;
-    try {
-      var v = Function('"use strict";return (' + s + ');')();
-      return (typeof v === 'number' && isFinite(v)) ? v : null;
-    } catch (e) { return null; }
+
+    var pos = 0;
+    function peek() { return s.charAt(pos); }
+    function skipSpace() { while (peek() === ' ') pos++; }
+
+    // number — a maximal digits-and-single-dot run. A leading-zero integer
+    // ("08") is rejected to match the old strict-mode octal SyntaxError.
+    function parseNumber() {
+      skipSpace();
+      var start = pos, seenDot = false, c;
+      while (pos < s.length) {
+        c = s.charAt(pos);
+        if (c >= '0' && c <= '9') { pos++; }
+        else if (c === '.' && !seenDot) { seenDot = true; pos++; }
+        else break;
+      }
+      if (pos === start) return null;
+      var tok = s.slice(start, pos);
+      if (/^0[0-9]/.test(tok)) return null;
+      var n = Number(tok);
+      return isFinite(n) ? n : null;
+    }
+
+    // factor — unary +/-, a parenthesised expression, or a number.
+    function parseFactor() {
+      skipSpace();
+      var c = peek();
+      if (c === '+') { pos++; return parseFactor(); }
+      if (c === '-') { pos++; var f = parseFactor(); return f === null ? null : -f; }
+      if (c === '(') {
+        pos++;
+        var e = parseExpr();
+        if (e === null) return null;
+        skipSpace();
+        if (peek() !== ')') return null;
+        pos++;
+        return e;
+      }
+      return parseNumber();
+    }
+
+    // term — factor (('*' | '/') factor)*
+    function parseTerm() {
+      var v = parseFactor();
+      if (v === null) return null;
+      for (;;) {
+        skipSpace();
+        var c = peek();
+        if (c === '*' || c === '/') {
+          pos++;
+          var r = parseFactor();
+          if (r === null) return null;
+          v = (c === '*') ? v * r : v / r;
+        } else break;
+      }
+      return v;
+    }
+
+    // expr — term (('+' | '-') term)*
+    function parseExpr() {
+      var v = parseTerm();
+      if (v === null) return null;
+      for (;;) {
+        skipSpace();
+        var c = peek();
+        if (c === '+' || c === '-') {
+          pos++;
+          var r = parseTerm();
+          if (r === null) return null;
+          v = (c === '+') ? v + r : v - r;
+        } else break;
+      }
+      return v;
+    }
+
+    var result = parseExpr();
+    skipSpace();
+    if (result === null || pos !== s.length) return null; // parse error / trailing garbage
+    return (typeof result === 'number' && isFinite(result)) ? result : null;
   }
 
   // substituteFormula resolves a tier damage formula. With subVal (a hero's
