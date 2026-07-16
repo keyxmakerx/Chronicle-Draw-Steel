@@ -137,6 +137,62 @@ test('cleanFoundryProse preserves paragraph breaks for the reading view', () => 
   assert.equal(out, 'First line.\n\nSecond surge 1.');
 });
 
+// ── clampTooltipPos (viewport-clamped tooltip placement) ──────────────────
+// Regression coverage for the "hover content gets cut off" report: glossary
+// tooltips and definition popovers used to be pure-CSS ::after content
+// centered on the trigger with no viewport awareness, so they clipped inside
+// overflow:hidden ancestors (.ds-big, .ds-rail, .cs-feature) and ran off-screen
+// near any edge. clampTooltipPos is the pure placement math backing the real,
+// JS-positioned .ds-tipbox that replaced them (see attachTooltips).
+test('clampTooltipPos centers above the anchor when there is room on every side', () => {
+  const pos = cs.clampTooltipPos(
+    { left: 360, top: 300, bottom: 320, width: 40, height: 20 },
+    { width: 100, height: 30 },
+    { width: 800, height: 600 }
+  );
+  assert.equal(pos.placement, 'above');
+  assert.equal(pos.left, 360 + 20 - 50); // anchor center (380) minus half tip width
+  assert.equal(pos.top, 300 - 30 - 7);   // anchor.top - tip.height - gap
+});
+
+test('clampTooltipPos clamps left instead of running off the left viewport edge', () => {
+  const pos = cs.clampTooltipPos(
+    { left: 2, top: 300, bottom: 320, width: 20, height: 20 },
+    { width: 240, height: 30 },
+    { width: 800, height: 600 }
+  );
+  assert.equal(pos.left, 8); // TIP_MARGIN, never negative
+});
+
+test('clampTooltipPos clamps left instead of running off the right viewport edge', () => {
+  const pos = cs.clampTooltipPos(
+    { left: 780, top: 300, bottom: 320, width: 20, height: 20 },
+    { width: 240, height: 30 },
+    { width: 800, height: 600 }
+  );
+  assert.equal(pos.left, 800 - 240 - 8); // viewport.width - tip.width - margin
+  assert.ok(pos.left + 240 <= 800, 'tooltip must stay within the viewport width');
+});
+
+test('clampTooltipPos flips below the anchor when there is no room above (mobile: first row near the top)', () => {
+  const pos = cs.clampTooltipPos(
+    { left: 100, top: 4, bottom: 24, width: 40, height: 20 },
+    { width: 100, height: 30 },
+    { width: 375, height: 600 } // narrow mobile viewport
+  );
+  assert.equal(pos.placement, 'below');
+  assert.equal(pos.top, 24 + 7); // anchor.bottom + gap
+});
+
+test('clampTooltipPos degrades gracefully when the tooltip is wider than the viewport', () => {
+  const pos = cs.clampTooltipPos(
+    { left: 100, top: 300, bottom: 320, width: 20, height: 20 },
+    { width: 400, height: 30 },
+    { width: 320, height: 600 } // tip wider than a small phone screen
+  );
+  assert.equal(pos.left, 8, 'left-aligns at the margin rather than going negative');
+});
+
 // ── skill grouping ────────────────────────────────────────────────────────
 test('SKILL_TO_GROUP maps skill ids to the five Draw Steel groups', () => {
   assert.equal(cs.SKILL_TO_GROUP.heal, 'exploration');
