@@ -1600,6 +1600,122 @@
     }
   }
 
+  // ── tooltips (viewport-clamped) ──────────────────────────────────────────
+  // Both glossary-term tooltips (.ds-ref[data-ref-tip], from reference-renderer.js
+  // — ability tier text, feature descriptions) and definition tooltips
+  // ([data-tip] — skill chips, ability keyword badges) used to be pure-CSS
+  // `content:attr(...)::after` popovers centered on the trigger. That breaks two
+  // ways: (1) any ancestor with overflow:hidden/auto (.ds-big, .ds-rail,
+  // .cs-feature) clips the popover outright since position:absolute doesn't
+  // escape an ancestor's overflow clip, and (2) centering via
+  // `left:50%;transform:translateX(-50%)` with no viewport awareness pushes the
+  // box off-screen near any edge (narrow rail, mobile width, first/last row).
+  // Fix: one shared floating tooltip element appended to <body> (escapes every
+  // ancestor's overflow) and positioned with position:fixed from a pure,
+  // unit-testable placement function — never the CSS popover for anything
+  // inside .ds-sheet (suppressed below in injectStyles).
+  var TIP_SELECTOR = '[data-tip], .ds-ref[data-ref-tip]';
+  var TIP_MARGIN = 8;
+  var TIP_GAP = 7;
+
+  // clampTooltipPos is pure (plain rect-shaped objects in, plain {left,top,
+  // placement} out) so it's testable off-DOM. Centers the tip on the anchor
+  // horizontally, clamped so it never crosses the viewport's left/right edge;
+  // prefers placing it above the anchor, flipping below when there isn't room
+  // (e.g. the anchor sits near the top of the viewport or a scrolled container).
+  function clampTooltipPos(anchor, tip, viewport, gap) {
+    gap = (gap == null) ? TIP_GAP : gap;
+    var left = anchor.left + (anchor.width / 2) - (tip.width / 2);
+    var maxLeft = viewport.width - tip.width - TIP_MARGIN;
+    if (left > maxLeft) left = maxLeft;
+    if (left < TIP_MARGIN) left = TIP_MARGIN;
+
+    var placement = 'above';
+    var top = anchor.top - tip.height - gap;
+    if (top < TIP_MARGIN) {
+      placement = 'below';
+      top = anchor.bottom + gap;
+      var maxTop = viewport.height - tip.height - TIP_MARGIN;
+      if (top > maxTop) top = (maxTop < TIP_MARGIN) ? TIP_MARGIN : maxTop;
+    }
+    return { left: left, top: top, placement: placement };
+  }
+
+  // One shared tooltip node per page (module singleton — same "one DS system per
+  // page" assumption as refRenderer/skillDefs above), created lazily and reused
+  // across hovers so we never leak nodes.
+  var _tipbox = null;
+  function getTipbox() {
+    if (!_tipbox) {
+      _tipbox = document.createElement('div');
+      _tipbox.className = 'ds-tipbox';
+      _tipbox.setAttribute('role', 'tooltip');
+      (document.body || document.documentElement).appendChild(_tipbox);
+    }
+    return _tipbox;
+  }
+
+  function tipTextFor(trigger) {
+    var t = trigger.getAttribute('data-tip');
+    if (t == null) t = trigger.getAttribute('data-ref-tip');
+    return t;
+  }
+
+  // showTipFor measures the tip off-screen first (so the reveal never flashes at
+  // the wrong spot), then clamps against the live viewport size — re-derived on
+  // every show, not cached, so a resize/rotate between hovers is always honored.
+  function showTipFor(trigger) {
+    var text = tipTextFor(trigger);
+    if (!text) return;
+    var box = getTipbox();
+    box.textContent = text;
+    box.style.maxWidth = Math.min(280, window.innerWidth - TIP_MARGIN * 2) + 'px';
+    box.className = 'ds-tipbox ds-tipbox--measuring';
+    var tipSize = { width: box.offsetWidth, height: box.offsetHeight };
+    var a = trigger.getBoundingClientRect();
+    var viewport = { width: window.innerWidth, height: window.innerHeight };
+    var pos = clampTooltipPos(
+      { left: a.left, top: a.top, bottom: a.bottom, width: a.width, height: a.height },
+      tipSize, viewport
+    );
+    box.style.left = pos.left + 'px';
+    box.style.top = pos.top + 'px';
+    box.className = 'ds-tipbox ds-tipbox--visible ds-tipbox--' + pos.placement;
+  }
+
+  function hideTipbox() {
+    if (!_tipbox) return;
+    _tipbox.className = 'ds-tipbox';
+    _tipbox.textContent = '';
+  }
+
+  // attachTooltips wires ONE delegated mouseover/mouseout + focusin/focusout
+  // pair (same "one listener on the mount root" approach as attachInteractions)
+  // covering every current and future [data-tip]/.ds-ref in the sheet, so box
+  // re-renders never need per-node rewiring.
+  function attachTooltips(inst, el) {
+    var current = null;
+    inst._onTipShow = function (e) {
+      var t = e.target;
+      var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
+      if (!trigger || !el.contains(trigger) || trigger === current) return;
+      current = trigger;
+      showTipFor(trigger);
+    };
+    inst._onTipHide = function (e) {
+      var t = e.target;
+      var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
+      var related = e.relatedTarget;
+      if (trigger && related && trigger.contains(related)) return; // stayed within the same trigger
+      current = null;
+      hideTipbox();
+    };
+    el.addEventListener('mouseover', inst._onTipShow);
+    el.addEventListener('mouseout', inst._onTipHide);
+    el.addEventListener('focusin', inst._onTipShow);
+    el.addEventListener('focusout', inst._onTipHide);
+  }
+
   // ── entrance motion ────────────────────────────────────────────────
   // countUp animates a single integer-bearing node from 0 → its value, keeping
   // any surrounding text (a leading sign, a " / max"). Restores the exact
@@ -1671,6 +1787,7 @@
     Chronicle.surface.mount(el, buildSchema(data));
     appendBlockSlots(el, data);
     attachInteractions(inst, el, data);
+    attachTooltips(inst, el);
     playEntrance(el);
   }
 
@@ -1788,11 +1905,18 @@
       '.ds-rail__filter::placeholder { color:var(--color-text-muted,#9ca3af); }',
       '.ds-rail__filter:focus { outline:none; border-color:var(--color-accent,#a855f7); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,168,85,247),0.18); }',
       '.ds-rail__empty { padding:14px; text-align:center; font-size:12px; color:var(--color-text-muted,#9ca3af); }',
-      // group label is a collapse toggle button (caret + label + count).
-      '.ds-ab-grp__label { display:flex; align-items:center; gap:6px; width:100%; text-align:left; background:none; border:0; cursor:pointer; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); padding:10px 13px 5px; }',
-      '.ds-ab-grp__label:hover { color:var(--color-text-secondary,#6b7280); }',
+      // group label is a collapse toggle button (caret + label + count). Given a
+      // background/radius/heavier weight so it reads as a distinct SECTION header
+      // rather than another row in the list — it was previously differentiated
+      // from a .ds-li row by font-size alone, which read as the same kind of
+      // element at a glance (operator report: sections indistinguishable from
+      // ability entries).
+      '.ds-ab-grp__label { display:flex; align-items:center; gap:7px; width:calc(100% - 12px); text-align:left; border:0; cursor:pointer; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-secondary,#6b7280); background:var(--color-bg-tertiary,#f3f4f6); border-radius:6px; margin:6px 6px 4px; padding:7px 9px; }',
+      '.ds-ab-grp__label:hover { color:var(--color-text-primary,#111827); background:rgba(var(--color-accent-rgb,168,85,247),0.12); }',
       '.ds-ab-grp__label:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
-      '.ds-ab-grp__caret { font-size:8px; transition:transform 160ms ease; }',
+      // the chevron itself is the "collapsible" affordance — sized and colored to
+      // read as a control, not decorative text.
+      '.ds-ab-grp__caret { font-size:12px; color:var(--color-accent,#a855f7); transition:transform 160ms ease; }',
       '.ds-ab-grp--collapsed .ds-ab-grp__caret { transform:rotate(-90deg); }',
       '.ds-ab-grp__count { margin-left:auto; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
       '.ds-ab-grp--collapsed .ds-ab-grp__rows { display:none; }',
@@ -1953,10 +2077,21 @@
       '.cs-skill-list { display:flex; flex-wrap:wrap; gap:5px; }',
       '.cs-skill { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11.5px; font-weight:500; background:rgba(var(--color-accent-rgb,168,85,247),0.10); color:var(--color-text-body,#374151); border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.18); }',
       '.cs-skill--lang { background:var(--color-bg-tertiary,#f3f4f6); border-color:var(--color-border-light,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      // generic definition tooltip (skill chips, ability-keyword badges) — a small
-      // floating card with the rule text. Hover (desktop) + keyboard focus.
-      '.ds-sheet [data-tip] { cursor:help; position:relative; }',
-      '.ds-sheet [data-tip]:hover::after, .ds-sheet [data-tip]:focus-visible::after { content:attr(data-tip); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:7px; z-index:9999; width:max-content; max-width:240px; white-space:normal; padding:8px 11px; border-radius:8px; font-size:11.5px; font-weight:500; line-height:1.45; text-transform:none; letter-spacing:normal; color:#f1f5f9; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.45); box-shadow:0 10px 28px -8px rgba(0,0,0,0.55); pointer-events:none; }',
+      // generic definition tooltip (skill chips, ability-keyword badges) — cursor
+      // affordance only; the floating card itself is .ds-tipbox (a real,
+      // JS-positioned DOM node — see attachTooltips), not a CSS ::after popover,
+      // so it can escape ancestor overflow:hidden and clamp to the viewport.
+      '.ds-sheet [data-tip] { cursor:help; }',
+      // Glossary refs (.ds-ref) ship their own CSS-only ::after popover from
+      // reference-renderer.js (shared by other widgets — left alone there). On
+      // the character sheet it is superseded by the same .ds-tipbox mechanism
+      // (attachTooltips reads [data-ref-tip] too), so it's suppressed here —
+      // otherwise both would show. Selector specificity wins regardless of
+      // stylesheet injection order (two classes beat reference-renderer's one).
+      '.ds-sheet .ds-ref:hover::after, .ds-sheet .ds-ref:focus-visible::after { content:none; }',
+      '.ds-tipbox { box-sizing:border-box; position:fixed; z-index:9999; width:max-content; max-width:280px; white-space:normal; padding:8px 11px; border-radius:8px; font-size:11.5px; font-weight:500; line-height:1.45; color:#f1f5f9; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.45); box-shadow:0 10px 28px -8px rgba(0,0,0,0.55); pointer-events:none; opacity:0; visibility:hidden; }',
+      '.ds-tipbox--measuring { left:-9999px; top:-9999px; }',
+      '.ds-tipbox--visible { visibility:visible; opacity:1; }',
       // movement modes (Combat) — DM-relevant non-walk movement.
       '.cs-move-modes { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; }',
       '.cs-move-mode { display:inline-block; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:rgba(var(--color-accent-rgb,168,85,247),0.12); color:var(--color-accent,#a855f7); }',
@@ -2112,9 +2247,15 @@
       if (this._onAbilityClick) el.removeEventListener('click', this._onAbilityClick);
       if (this._onAbilityKey) el.removeEventListener('keydown', this._onAbilityKey);
       if (this._onAbilityInput) el.removeEventListener('input', this._onAbilityInput);
+      if (this._onTipShow) { el.removeEventListener('mouseover', this._onTipShow); el.removeEventListener('focusin', this._onTipShow); }
+      if (this._onTipHide) { el.removeEventListener('mouseout', this._onTipHide); el.removeEventListener('focusout', this._onTipHide); }
       this._onAbilityClick = null;
       this._onAbilityKey = null;
       this._onAbilityInput = null;
+      this._onTipShow = null;
+      this._onTipHide = null;
+      if (_tipbox && _tipbox.parentNode) _tipbox.parentNode.removeChild(_tipbox);
+      _tipbox = null;
       el.classList.remove('ds-sheet');
       el.innerHTML = '';
     }
@@ -2133,7 +2274,8 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rHeader: rHeader, rKit: rKit
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rHeader: rHeader, rKit: rKit,
+      clampTooltipPos: clampTooltipPos
     };
   }
 })();
