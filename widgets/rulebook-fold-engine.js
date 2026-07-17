@@ -247,6 +247,7 @@ var RulebookFoldEngine = (function () {
       if (!host) return;
       _openWingEl = host;
       host.classList.add('is-open');
+      host.setAttribute('aria-expanded', 'true');
       var wing = host.querySelector('.rb-wing');
       var side = host.getAttribute('data-rb-side') === 'left' ? 'left' : 'right';
       if (wing) {
@@ -275,6 +276,7 @@ var RulebookFoldEngine = (function () {
       if (!_openWingEl) return;
       var host = _openWingEl; _openWingEl = null;
       host.classList.remove('is-open');
+      host.setAttribute('aria-expanded', 'false');
       var wing = host.querySelector('.rb-wing');
       if (wing) { wing.style.width = ''; wing.classList.remove('rb-wing--down'); }
       // only wings set rb-dimmed (search uses rb-nomatch), so clearing is safe
@@ -312,6 +314,7 @@ var RulebookFoldEngine = (function () {
     function _domOpenReader() {
       if (!readerSheet || !readerTrigger) return;
       _reading = true;
+      readerTrigger.setAttribute('aria-expanded', 'true');
       var from = readerTrigger.getBoundingClientRect();
       var w = Math.min(940, win.innerWidth - 36);
       var h = Math.min(win.innerHeight * 0.86, 700);
@@ -331,6 +334,7 @@ var RulebookFoldEngine = (function () {
     function _domCloseReader() {
       if (!_reading) return;
       _reading = false;
+      if (readerTrigger) readerTrigger.setAttribute('aria-expanded', 'false');
       if (readerSheet && readerTrigger) _setSheetRect(readerTrigger.getBoundingClientRect());
       root.classList.remove('rb-reading');
       onClose(FOLD.READER);
@@ -357,6 +361,18 @@ var RulebookFoldEngine = (function () {
     // small DOM utilities (ES5-safe; no NodeList.forEach / classList.toggle-arg)
     function each(list, fn) { if (!list) return; for (var i = 0; i < list.length; i++) fn(list[i], i); }
     function _toggle(el, cls, add) { if (add) el.classList.add(cls); else el.classList.remove(cls); }
+    function _isActivateKey(e) { return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'; }
+    // _activatable makes a non-button fold trigger keyboard-operable + announced
+    // (the wing/reader hosts are <div>s in the mockup). Idempotent; never
+    // overrides an author-set role/tabindex.
+    function _activatable(el) {
+      if (!el) return;
+      var tag = (el.tagName || '').toLowerCase();
+      if (tag === 'button' || tag === 'a') return;
+      if (!el.getAttribute('role')) el.setAttribute('role', 'button');
+      if (el.getAttribute('tabindex') == null) el.setAttribute('tabindex', '0');
+      if (el.getAttribute('aria-expanded') == null) el.setAttribute('aria-expanded', 'false');
+    }
     function _scrollTo(el) { if (el && el.scrollIntoView) el.scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'center' }); }
     function _hopThen(fn) { if (prefersReduced()) fn(); else win.setTimeout(fn, 130); }
     function _closeAll() {
@@ -380,7 +396,11 @@ var RulebookFoldEngine = (function () {
 
     // wings: tap a card to fold its panel out; tapping the open card is a no-op
     each(root.querySelectorAll('[data-rb-wing]'), function (host) {
+      _activatable(host);
       on(host, 'click', function () { if (_openWingEl !== host) dispatch({ type: 'OPEN_WING', id: host.id || '' }, host); });
+      on(host, 'keydown', function (e) {
+        if (_isActivateKey(e) && _openWingEl !== host) { e.preventDefault(); dispatch({ type: 'OPEN_WING', id: host.id || '' }, host); }
+      });
     });
     // flaps: tap a row to unfold; tap the open row again to fold back (toggle)
     each(root.querySelectorAll('[data-rb-flap]'), function (crow) {
@@ -392,7 +412,11 @@ var RulebookFoldEngine = (function () {
       });
     });
     // reader: the lead-story block unfolds into the centred sheet
-    if (readerTrigger) on(readerTrigger, 'click', function () { if (!_reading) dispatch({ type: 'OPEN_READER' }); });
+    if (readerTrigger) {
+      _activatable(readerTrigger);
+      on(readerTrigger, 'click', function () { if (!_reading) dispatch({ type: 'OPEN_READER' }); });
+      on(readerTrigger, 'keydown', function (e) { if (_isActivateKey(e) && !_reading) { e.preventDefault(); dispatch({ type: 'OPEN_READER' }); } });
+    }
 
     // dismiss buttons (crease ✕, rope, rx, veil-as-close-reader)
     each(root.querySelectorAll('[data-rb-close-wing]'), function (b) { on(b, 'click', function (e) { e.stopPropagation(); dispatch({ type: 'CLOSE_WING' }); }); });
