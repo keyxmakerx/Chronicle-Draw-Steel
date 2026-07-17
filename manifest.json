@@ -250,6 +250,16 @@
         { "key": "entity_id", "label": "Entity ID", "type": "string" },
         { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
       ]
+    },
+    {
+      "slug": "rulebook-frontpage",
+      "name": "Rulebook Front Page",
+      "description": "The dynamic rulebook's editorial front page — hero Power Roll block, characteristic cards with fold-out wings, condition flap rows, and the Lich's Lair worked-scene hub. Best placed on a campaign dashboard or a dedicated 'Rules' page.",
+      "icon": "fa-book-open",
+      "script_file": "widgets/rulebook-frontpage.js",
+      "config": [
+        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+      ]
     }
   ],
 
@@ -287,6 +297,13 @@
       "file": "widgets/monster-party.js",
       "entry_point": "MonsterParty",
       "description": "Pure party read + PartyProfile derivation for the monster builder. Loaded as a global before widget scripts; no visible UI."
+    },
+    {
+      "slug": "rulebook-fold-engine",
+      "name": "Rulebook Fold Engine",
+      "file": "widgets/rulebook-fold-engine.js",
+      "entry_point": "RulebookFoldEngine",
+      "description": "Reusable, content-agnostic fold-interaction module (hinged wing / rotateX flap / FLIP reader takeover, with dismissal priority, viewport clamp, sibling dim, deal-in, face-down search, reduced-motion). Loaded as a global before widget scripts; consumed by rulebook-frontpage. No visible UI of its own."
     }
   ]
 }

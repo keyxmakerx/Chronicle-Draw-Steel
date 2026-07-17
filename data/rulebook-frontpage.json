@@ -1,0 +1,163 @@
+[
+  {
+    "slug": "hero-power-roll",
+    "name": "Everything is a Power Roll",
+    "description": "2d10 plus one characteristic decides every attack, test and resistance — no miss, only three tiers of how well it goes.",
+    "properties": {
+      "kind": "hero",
+      "order": 0,
+      "kicker": "THE ONE MECHANIC",
+      "kickerNo": "1",
+      "readCrumb": "The Basics · The Power Roll",
+      "tiers": [
+        { "label": "≤11", "note": "Tier 1 — the cost", "o": 0.35 },
+        { "label": "12–16", "note": "Tier 2 — the solid", "o": 0.65 },
+        { "label": "17+", "note": "Tier 3 — the strong", "o": 1 }
+      ],
+      "modifiers": [
+        { "label": "edge +2", "note": "double edge → tier up" },
+        { "label": "bane −2", "note": "double bane → tier down" },
+        { "label": "nat 19–20", "note": "crit — tier 3 + act again" }
+      ],
+      "readerLede": "opens the reading sheet",
+      "reader": [
+        { "type": "p", "text": "When the outcome is uncertain — an attack, a test, a resistance — roll **2d10, add one characteristic**, read the tier. There is no miss and no wasted turn: tier 1 is the weakest result, never nothing." },
+        { "type": "h3", "text": "Edges & Banes" },
+        { "type": "p", "text": "An **edge** is +2; a **bane** −2. They never stack past two — doubles move the tier instead; one of each cancels. Natural 19–20 is a **critical**: tier 3 and you immediately act again." },
+        { "type": "h3", "text": "Tests use it too" },
+        { "type": "p", "text": "No target numbers — the tier IS the outcome. Tier 1 fails forward at a cost, tier 2 succeeds with a wrinkle, tier 3 is clean. Skills grant an edge when they apply." }
+      ]
+    }
+  },
+  {
+    "slug": "characteristic-might",
+    "name": "Might",
+    "description": "Might drives melee damage-dealing abilities, forced-movement distances, breaking objects, and resisting being grabbed. Knights and Furies lead with it.",
+    "properties": {
+      "kind": "characteristic",
+      "order": 1,
+      "emoji": "🗡",
+      "color": "pur",
+      "tagline": "smash · grapple · resist.",
+      "tags": "might strength smash grapple grab forced push attributes characteristics stat",
+      "examples": [
+        { "icon": "▶", "label": "Bursting the door" },
+        { "icon": "⚔", "label": "The grapple" }
+      ],
+      "chapterLabel": "Full chapter",
+      "related": [
+        { "icon": "🎲", "label": "The Power Roll", "goto": "reader" },
+        { "icon": "🩸", "label": "Grabbed", "goto": "flap", "target": "cond-grabbed" }
+      ]
+    }
+  },
+  {
+    "slug": "characteristic-agility",
+    "name": "Agility",
+    "description": "Agility governs ranged finesse, dodging and tumbling clear of danger, keeping your balance on a ledge, moving unseen, and lining up a shot. Rangers and Tacticians lean on it.",
+    "properties": {
+      "kind": "characteristic",
+      "order": 2,
+      "emoji": "🤸",
+      "color": "pur",
+      "tagline": "dodge · tumble · aim.",
+      "tags": "agility dodge tumble aim stealth attributes stat",
+      "examples": [
+        { "icon": "▶", "label": "The ledge run" }
+      ],
+      "chapterLabel": "Full chapter",
+      "related": []
+    }
+  },
+  {
+    "slug": "characteristic-reason",
+    "name": "Reason",
+    "description": "Reason powers deduction, recalling lore, and unravelling puzzles, rituals, and tactics. Elementalist abilities key off it.",
+    "properties": {
+      "kind": "characteristic",
+      "order": 3,
+      "emoji": "📐",
+      "color": "pur",
+      "tagline": "deduce · recall · unravel.",
+      "tags": "reason logic lore deduce recall attributes stat",
+      "examples": [
+        { "icon": "▶", "label": "Reading the ritual" }
+      ],
+      "chapterLabel": "Full chapter",
+      "related": []
+    }
+  },
+  {
+    "slug": "characteristic-intuition",
+    "name": "Intuition",
+    "description": "Intuition covers perception, reading a room, spotting what's hidden, and holding your nerve when fear takes hold.",
+    "properties": {
+      "kind": "characteristic",
+      "order": 4,
+      "emoji": "👁",
+      "color": "pur",
+      "tagline": "sense · spot · hold nerve.",
+      "tags": "intuition sense spot nerve attributes stat",
+      "examples": [
+        { "icon": "▶", "label": "The tell" }
+      ],
+      "chapterLabel": "Full chapter",
+      "related": []
+    }
+  },
+  {
+    "slug": "characteristic-presence",
+    "name": "Presence",
+    "description": "Presence drives negotiation, leadership, and inspiring allies — the force of personality behind Talent abilities.",
+    "properties": {
+      "kind": "characteristic",
+      "order": 5,
+      "emoji": "👑",
+      "color": "pur",
+      "tagline": "lead · negotiate · inspire.",
+      "tags": "presence lead negotiate inspire attributes stat",
+      "examples": [
+        { "icon": "▶", "label": "The parley" }
+      ],
+      "chapterLabel": "Full chapter",
+      "related": []
+    }
+  },
+  {
+    "slug": "conditions-block",
+    "name": "Conditions",
+    "description": "tap a row, its flap slides down over the rest",
+    "properties": {
+      "kind": "conditions",
+      "order": 6,
+      "kicker": "CONDITIONS",
+      "kickerNo": "3",
+      "featured": [
+        { "slug": "dazed", "emoji": "😵", "tagline": "one thing on your turn · no triggers" },
+        { "slug": "grabbed", "emoji": "🫳", "tagline": "speed 0 · Might to escape" },
+        { "slug": "frightened", "emoji": "😨", "tagline": "bane vs source · can't close" }
+      ],
+      "rollup": { "emoji": "🩸", "name": "…and more", "tagline": "restrained · slowed · weakened · bleeding…" }
+    }
+  },
+  {
+    "slug": "worked-scene-lichs-lair",
+    "name": "The Lich's Lair",
+    "description": "A mini-adventure played end-to-end — every roll shown, every speaker lit.",
+    "properties": {
+      "kind": "worked-scene",
+      "order": 10,
+      "emoji": "🏰",
+      "kicker": "WORKED SCENE",
+      "kickerNo": "4",
+      "chips": ["🚪 Into the lair", "⚔ Minions", "💀 The lich", "🏆 Aftermath"],
+      "intro": "Each part teaches the rules it touches. Pick where to drop in:",
+      "parts": [
+        { "emoji": "🚪", "name": "Into the lair", "note": "tests · montage" },
+        { "emoji": "⚔", "name": "Minion skirmish", "note": "squads · captains" },
+        { "emoji": "💀", "name": "The lich fight", "note": "solo boss · malice" },
+        { "emoji": "🏆", "name": "Aftermath", "note": "victories · respite" }
+      ]
+    }
+  }
+]
