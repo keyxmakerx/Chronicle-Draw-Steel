@@ -47,8 +47,53 @@
     return esc(s).replace(/\*\*([\s\S]+?)\*\*/g, '<b>$1</b>');
   }
 
+  // TERM_RE matches the repo's authored cross-reference syntax {@category slug}
+  // with an optional |display override (the same shape reference-renderer.js
+  // parses) — reused here purely for AUTHORING; the rulebook renders + wires its
+  // own dotted glossary terms (see Step-0 note in the PR), it does not reuse the
+  // reference-renderer's CSS-::after tooltip.
+  var TERM_RE = /\{@(\w+)\s+([^|}]+)(?:\|([^}]+))?\}/g;
+
+  // richProse is rich() plus glossary-term promotion: it turns {@cat slug|disp}
+  // into a dotted .rb-hl term the fold engine attaches a hover/tap card to. The
+  // captured text is already escaped (esc ran first), so display text is injected
+  // as-is; the slug is sanitised for the attribute.
+  function richProse(s) {
+    return rich(s).replace(TERM_RE, function (m, cat, term, disp) {
+      var slug = String(term).trim().replace(/[^a-z0-9-]/gi, '');
+      var label = String(disp != null ? disp : term).trim();
+      // aria-describedby points AT at the shared hover card, which the engine
+      // repopulates with this term's definition on focus (a11y) — the card is a
+      // single shell (id rb-hcard) reused by every term.
+      return '<span class="rb-hl" data-rb-term="' + slug + '" tabindex="0" ' +
+        'aria-describedby="rb-hcard" ' +
+        'aria-label="' + label.replace(/"/g, '&quot;') + ', glossary term">' + label + '</span>';
+    });
+  }
+
   function isArr(x) {
     return Object.prototype.toString.call(x) === '[object Array]';
+  }
+
+  // buildExamplesMap indexes example scripts (ReferenceItem[]) by slug for the
+  // staged player's { slug: scriptData } contract.
+  function buildExamplesMap(list) {
+    var m = {};
+    for (var i = 0; i < list.length; i++) { var it = list[i]; if (it && it.slug) m[it.slug] = it; }
+    return m;
+  }
+
+  // buildTermsMap projects the glossary into the fold engine's hover-card input:
+  // { slug: { name, category, body } }. This keeps rules-glossary.json the single
+  // source of truth for the dotted terms' definitions.
+  function buildTermsMap(glossary) {
+    var m = {};
+    for (var i = 0; i < glossary.length; i++) {
+      var g = glossary[i];
+      if (!g || !g.slug) continue;
+      m[g.slug] = { name: g.name, category: (g.properties && g.properties.category) || '', body: g.description || '' };
+    }
+    return m;
   }
 
   // unwrap accepts a bare array OR an envelope ({data|results|entries:[...]}).
@@ -268,7 +313,15 @@
         'background:var(--rb-box2);padding:9px 11px;transition:border-color .2s,transform .2s}',
       '.rb-part:hover{border-color:var(--rb-grn);transform:translateY(-2px)}',
       '.rb-pn{font:750 11.5px/1.2 inherit}',
-      '.rb-pd{font:500 10px/1.35 inherit;color:var(--rb-mut);flex:1}'
+      '.rb-pd{font:500 10px/1.35 inherit;color:var(--rb-mut);flex:1}',
+      // Parts 2–4 (a P3 slice): visible but not yet playable.
+      '.rb-part--soon{opacity:.55;cursor:not-allowed}',
+      '.rb-part--soon:hover{border-color:var(--rb-edge);transform:none}',
+      '.rb-soon{font:800 8px/1 inherit;letter-spacing:.08em;color:var(--rb-mut2);' +
+        'border:1px solid var(--rb-edge);padding:2.5px 5px;border-radius:99px}',
+      // Drill-in hidden state — a fallback so the Lair part view stays hidden even
+      // if the example player module is absent (the player also defines this).
+      '.rbx-hidden{display:none!important}'
     );
     // Reader takeover (FLIP: engine sets inline left/top/width/height) + veil.
     s.push(
@@ -305,6 +358,21 @@
       '.rb-rel{font:700 10.5px/1 inherit;color:var(--rb-ink2);background:var(--rb-box2);' +
         'border:1px solid var(--rb-edge);padding:6px 10px;border-radius:99px}',
       '.rb-rel:hover{border-color:var(--tc,var(--rb-combat));color:var(--rb-ink)}',
+      // Glossary dotted terms + the hover/tap quick card (engine-driven; sourced
+      // from rules-glossary.json). Visual per the mockup .hl / .hcard.
+      '.rb-hl{color:var(--rb-hc,var(--rb-pur));font-weight:650;cursor:help;' +
+        'border-bottom:1.5px dotted color-mix(in srgb,var(--rb-hc,var(--rb-pur)) 55%,transparent)}',
+      '.rb-hl:focus-visible{outline:2px solid var(--rb-pur);outline-offset:2px;border-radius:4px}',
+      '.rb-hcard{position:fixed;z-index:90;width:270px;background:var(--rb-box2);' +
+        'border:1px solid var(--rb-edge);border-radius:13px;box-shadow:var(--rb-sh);padding:12px 14px;' +
+        'opacity:0;pointer-events:none;transform:translateY(8px) scale(.98);' +
+        'transition:opacity .2s,transform .2s var(--rb-spring)}',
+      '.rb-hcard.is-open{opacity:1;pointer-events:auto;transform:none}',
+      '.rb-hcard b{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--rb-ink)}',
+      '.rb-hc-cat{margin-left:auto;font:800 8.5px/1 inherit;letter-spacing:.08em;' +
+        'color:var(--rb-cc,var(--rb-mut));padding:3px 6px;border-radius:99px;' +
+        'border:1px solid color-mix(in srgb,var(--rb-cc,var(--rb-mut)) 35%,transparent)}',
+      '.rb-hcard p{margin:6px 0 0;font-size:11.5px;color:var(--rb-ink2);line-height:1.5}',
       // Loading skeleton + error panel.
       '.rb-load{padding:22px 20px}',
       '.rb-sk{border:1px solid var(--rb-edge);border-radius:14px;background:var(--rb-box);' +
@@ -317,7 +385,9 @@
         'border-radius:12px;background:color-mix(in srgb,var(--rb-cond) 8%,var(--rb-box));color:var(--rb-ink2)}',
       '.rb-err b{color:var(--rb-ink);display:block;margin-bottom:5px;font-size:14px}',
       '.rb-err code{font:600 11px/1.5 ui-monospace,monospace;color:var(--rb-mut)}',
-      // Mobile: wings fold DOWN full-width instead of sideways.
+      // Mobile: wings fold DOWN over the block instead of sideways. The engine
+      // sets an inline width + left so the panel spans the FULL block (booked P1
+      // fix r28) — the left:0/right:0/width:auto here is only the no-JS fallback.
       '@media(max-width:640px){' +
         '.rb-wing.rb-wing--down{left:0;right:0;width:auto;top:calc(100% - 3px);' +
           'transform:perspective(1000px) rotateX(-88deg);transform-origin:top center;' +
@@ -426,11 +496,21 @@
     var examples = isArr(p.examples) ? p.examples : [];
     var related = isArr(p.related) ? p.related : [];
 
-    var ex = '';
+    var ex = '', scripts = '';
     for (var e = 0; e < examples.length; e++) {
       var x = examples[e] || {};
-      ex += '<button class="rb-exbtn" type="button" data-rb-example>' +
-        esc(x.icon) + ' ' + esc(x.label) + '</button>';
+      if (x.play) {
+        // A wired example: the staged player renders + plays this script into the
+        // matching container on click (data-rbx-* is the player's contract).
+        ex += '<button class="rb-exbtn" type="button" data-rbx-play="' + escAttr(x.play) + '" ' +
+          'aria-controls="rbx-' + escAttr(x.play) + '">' + esc(x.icon) + ' ' + esc(x.label) + '</button>';
+        scripts += '<div class="rbx-script" id="rbx-' + escAttr(x.play) + '" ' +
+          'data-rbx-script="' + escAttr(x.play) + '" aria-live="polite"></div>';
+      } else {
+        // Unwired examples stay inert placeholders (a later slice may script them).
+        ex += '<button class="rb-exbtn" type="button" data-rb-example>' +
+          esc(x.icon) + ' ' + esc(x.label) + '</button>';
+      }
     }
     ex += '<button class="rb-exbtn rb-ghost" type="button">📖 ' +
       esc(p.chapterLabel || 'Full chapter') + '</button>';
@@ -450,8 +530,9 @@
           '<div class="rb-crease">' + esc(p.emoji) + ' ' +
             esc(String(item.name).toUpperCase()) + ' · UNFOLDED ' +
             '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +
-          '<p>' + rich(item.description) + '</p>' +
+          '<p>' + richProse(item.description) + '</p>' +
           '<div class="rb-exrow">' + ex + '</div>' +
+          scripts +
           rel +
           '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
         '</div>' +
@@ -553,11 +634,23 @@
     var partHtml = '';
     for (var i = 0; i < parts.length; i++) {
       var pt = parts[i] || {};
-      partHtml += '<button class="rb-part" type="button" data-rb-part>' +
-        '<span>' + esc(pt.emoji) + '</span>' +
-        '<span class="rb-pn">' + esc(pt.name) + '</span>' +
-        '<span class="rb-pd">' + esc(pt.note) + '</span>' +
-        '<span>▶</span></button>';
+      if (pt.play) {
+        // A wired part (part 1 this slice): drill in — reveal the part view, hide
+        // the overview, and play the script (the player owns data-rbx-*).
+        partHtml += '<button class="rb-part" type="button" data-rbx-play="' + escAttr(pt.play) + '" ' +
+          'data-rbx-show="rb-lair-part" data-rbx-hide="rb-lair-overview">' +
+          '<span>' + esc(pt.emoji) + '</span>' +
+          '<span class="rb-pn">' + esc(pt.name) + '</span>' +
+          '<span class="rb-pd">' + esc(pt.note) + '</span>' +
+          '<span>▶</span></button>';
+      } else {
+        // Parts 2–4 are a P3 slice — shown but marked "soon", not yet playable.
+        partHtml += '<button class="rb-part rb-part--soon" type="button" disabled aria-disabled="true">' +
+          '<span>' + esc(pt.emoji) + '</span>' +
+          '<span class="rb-pn">' + esc(pt.name) + '</span>' +
+          '<span class="rb-pd">' + esc(pt.note) + '</span>' +
+          '<span class="rb-soon">soon</span></button>';
+      }
     }
 
     return '<div class="rb-blk rb-lair" id="t-lair" data-rb-block data-rb-wing ' +
@@ -574,8 +667,15 @@
           '<div class="rb-crease">' + esc(p.emoji) + ' ' +
             esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
             '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +
-          '<p>' + esc(p.intro) + '</p>' +
-          '<div class="rb-parts">' + partHtml + '</div>' +
+          '<div id="rb-lair-overview">' +
+            '<p>' + esc(p.intro) + '</p>' +
+            '<div class="rb-parts">' + partHtml + '</div>' +
+          '</div>' +
+          '<div id="rb-lair-part" class="rbx-hidden">' +
+            '<button class="rbx-lairback" type="button" data-rbx-back ' +
+              'data-rbx-show="rb-lair-overview" data-rbx-hide="rb-lair-part">← lair overview</button>' +
+            '<div class="rbx-script" id="rbx-into-the-lair" data-rbx-script="into-the-lair" aria-live="polite"></div>' +
+          '</div>' +
           '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
         '</div>' +
       '</div>';
@@ -588,7 +688,14 @@
   // it" button is an inert seam (staged player out of scope). Returns just the
   // veil when there is no hero to read.
   function buildReader(hero) {
-    var veil = '<div class="rb-veil" data-rb-veil data-rb-close-reader></div>';
+    // The veil + the shared glossary hover-card shell (the engine fills + places
+    // it, using textContent, from the terms map). Both are fixed overlays that
+    // live directly under .rb-root regardless of whether there is a hero to read.
+    var veil = '<div class="rb-veil" data-rb-veil data-rb-close-reader></div>' +
+      '<div class="rb-hcard" id="rb-hcard" data-rb-hcard role="tooltip" aria-hidden="true">' +
+        '<b><span data-rb-hcard-title></span>' +
+        '<span class="rb-hc-cat" data-rb-hcard-cat></span></b>' +
+        '<p data-rb-hcard-body></p></div>';
     if (!hero) return veil;
 
     var p = hero.properties || {};
@@ -596,8 +703,8 @@
     var body = '';
     for (var i = 0; i < blocks.length; i++) {
       var b = blocks[i] || {};
-      if (b.type === 'h3') body += '<h3>' + rich(b.text) + '</h3>';
-      else body += '<p>' + rich(b.text) + '</p>';
+      if (b.type === 'h3') body += '<h3>' + richProse(b.text) + '</h3>';
+      else body += '<p>' + richProse(b.text) + '</p>';
     }
 
     return veil +
@@ -611,8 +718,10 @@
         '<div class="rb-rbody">' +
           '<h2 id="rb-reader-title">' + esc(hero.name) + '</h2>' +
           '<div class="rb-rcols">' + body + '</div>' +
-          '<div class="rb-exrow"><button class="rb-exbtn" type="button" data-rb-example>' +
+          '<div class="rb-exrow"><button class="rb-exbtn" type="button" ' +
+            'data-rbx-play="kaelen-swings" aria-controls="rbx-kaelen-swings">' +
             '▶ Watch the table play it</button></div>' +
+          '<div class="rbx-script" id="rbx-kaelen-swings" data-rbx-script="kaelen-swings" aria-live="polite"></div>' +
           '<div class="rb-relrow"><span class="rb-rellbl">RELATED →</span>' +
             '<button class="rb-rel" type="button" data-rb-goto-card="t-might">💪 Might (the card)</button>' +
             '<button class="rb-rel" type="button" data-rb-goto-flap="cond-grabbed">🩸 Grabbed (the flap)</button>' +
@@ -683,13 +792,20 @@
 
       Promise.all([
         getJson('data/rulebook-frontpage.json'),
-        getJson('data/rules-glossary.json')
+        getJson('data/rules-glossary.json'),
+        // Examples are an enhancement — a missing/failed file must not blank the
+        // page, so it degrades to an empty map (buttons render, play is inert).
+        getJson('data/rulebook-examples.json').catch(function () { return []; })
       ]).then(function (res) {
         var items = unwrap(res[0]);
         var glossary = unwrap(res[1]);
         if (!items.length) throw new Error('rulebook-frontpage.json was empty');
+        self._glossary = glossary;
+        self._examples = buildExamplesMap(unwrap(res[2]));
+        self._terms = buildTermsMap(glossary);
         self._setBody(buildContent(items, glossary));
         self._mountEngine(el);
+        self._mountPlayer(el);
       }).catch(function (err) {
         if (typeof console !== 'undefined' && console.error) {
           console.error('Rulebook Front Page: load failed', err);
@@ -702,21 +818,61 @@
       if (this._fold && typeof this._fold.destroy === 'function') {
         try { this._fold.destroy(); } catch (e) { /* ignore */ }
       }
+      if (this._player && typeof this._player.destroy === 'function') {
+        try { this._player.destroy(); } catch (e) { /* ignore */ }
+      }
       this._fold = null;
+      this._player = null;
       if (el) el.innerHTML = '';
     },
 
     // _mountEngine hands the built DOM to the shared fold engine when present;
     // absent the global, the static spread stays readable (graceful degrade).
+    // The engine also drives the glossary hover cards (terms map) and, on wing
+    // close, resets the Lair drill-in + halts any playing example.
     _mountEngine: function (el) {
+      var self = this;
       if (typeof RulebookFoldEngine !== 'undefined' && RulebookFoldEngine &&
           typeof RulebookFoldEngine.mount === 'function') {
-        try { this._fold = RulebookFoldEngine.mount(el, {}); } catch (e) {
+        try {
+          this._fold = RulebookFoldEngine.mount(el, {
+            terms: this._terms || {},
+            onClose: function (kind) {
+              if (kind !== 'wing') return;
+              self._resetLair(el);
+              if (self._player && typeof self._player.stopAll === 'function') self._player.stopAll();
+              // Collapse played panels after the fold-back so reopening the wing
+              // shows a clean default (mockup closeWings parity).
+              if (self._player && typeof self._player.collapseAll === 'function') self._player.collapseAll();
+            }
+          });
+        } catch (e) {
           if (typeof console !== 'undefined' && console.warn) {
             console.warn('Rulebook Front Page: fold engine mount failed', e);
           }
         }
       }
+    },
+
+    // _mountPlayer wires the staged example player over the built DOM when the
+    // global is present; absent it, the example buttons are inert (degrade).
+    _mountPlayer: function (el) {
+      if (typeof RulebookExamplePlayer !== 'undefined' && RulebookExamplePlayer &&
+          typeof RulebookExamplePlayer.mount === 'function') {
+        try { this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {} }); } catch (e) {
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn('Rulebook Front Page: example player mount failed', e);
+          }
+        }
+      }
+    },
+
+    // _resetLair returns the Lair wing to its parts overview (used on wing close),
+    // so reopening the wing always starts at the "pick a part" view.
+    _resetLair: function (el) {
+      var ov = el.querySelector('#rb-lair-overview'), pv = el.querySelector('#rb-lair-part');
+      if (ov) ov.classList.remove('rbx-hidden');
+      if (pv) pv.classList.add('rbx-hidden');
     },
 
     // _injectStyles adds the scoped stylesheet once (class guard).

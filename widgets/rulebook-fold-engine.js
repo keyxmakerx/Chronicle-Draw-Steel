@@ -60,6 +60,8 @@ var RulebookFoldEngine = (function () {
 
   var MOBILE_BREAKPOINT = 640; // px; below this, wings open downward full-width
   var WING_MIN = 270, WING_MAX = 340, WING_GUTTER = 16; // clamp defaults (mockup)
+  var PAGE_PADDING = 18; // .rb-wrap horizontal padding; a mobile down-wing spans
+                         // the whole block (viewport − 2×page-padding), never the card
 
   // ── PURE STATE MACHINE (headless-testable; no DOM) ──────────────────────
 
@@ -177,10 +179,57 @@ var RulebookFoldEngine = (function () {
     return Number(width) < bp;
   }
 
+  // mobileWingWidth sizes a downward mobile wing to the FULL width of its block
+  // (the booked P1 fix, r28): under the breakpoint the wing must span the block,
+  // not the cramped card-column it hinges from. When the caller can measure the
+  // block it passes `blockWidth` (the block is full-bleed on mobile, so this IS
+  // "viewport minus the page's horizontal padding"); otherwise the rule is
+  // derived from the viewport (`viewportWidth − 2×pagePadding`). Never clamped to
+  // the desktop [min,max] — a mobile wing is deliberately wider than the desktop
+  // card wing. Result floored at 0.
+  function mobileWingWidth(opts) {
+    var o = opts || {};
+    if (o.blockWidth != null) return Math.max(0, Number(o.blockWidth) || 0);
+    var vw = Number(o.viewportWidth) || 0;
+    var pad = o.pagePadding != null ? Number(o.pagePadding) : PAGE_PADDING;
+    return Math.max(0, vw - 2 * pad);
+  }
+
   // motionAllowed centralises the reduced-motion gate for JS-driven timing
   // (the CSS handles declarative transitions via a media query).
   function motionAllowed(prefersReducedMotion) {
     return !prefersReducedMotion;
+  }
+
+  // ── glossary hover-card logic (content-agnostic; data supplied at mount) ────
+
+  // TERM_CAT_COLORS maps a glossary category to its accent token — the hover
+  // card's category-chip colour. Unknown categories fall back to muted.
+  var TERM_CAT_COLORS = {
+    condition: 'var(--rb-cond)', movement: 'var(--rb-move)', combat: 'var(--rb-combat)',
+    duration: 'var(--rb-pur)', resource: 'var(--rb-grn)', action: 'var(--rb-combat)',
+    keyword: 'var(--rb-mut)'
+  };
+  function termCategoryColor(cat) {
+    return TERM_CAT_COLORS[String(cat == null ? '' : cat).toLowerCase()] || 'var(--rb-mut)';
+  }
+
+  // clampCardPosition places a hover card near its term: horizontally centred on
+  // the term but kept `margin` inside the viewport, and just BELOW it — unless it
+  // would overflow the bottom, where it flips ABOVE instead (the mockup's rule).
+  // Pure geometry so the placement is unit-tested headless.
+  function clampCardPosition(opts) {
+    var o = opts || {};
+    var r = o.rect || {};
+    var w = o.cardWidth != null ? o.cardWidth : 270;
+    var h = o.cardHeight != null ? o.cardHeight : 140;
+    var m = o.margin != null ? o.margin : 10;
+    var vw = o.viewportWidth || 0, vh = o.viewportHeight || 0;
+    var centred = (r.left || 0) + (r.width || 0) / 2 - w / 2;
+    var x = Math.min(Math.max(m, centred), vw - w - m);
+    var y = (r.bottom || 0) + 8;
+    if (y + h > vh) y = (r.top || 0) - 8 - h;   // flip above when it would overflow
+    return { x: x, y: y };
   }
 
   // tileMatches / blockMatches back the client-side search: a tile matches on
@@ -231,6 +280,14 @@ var RulebookFoldEngine = (function () {
     var readerTrigger = root.querySelector('[data-rb-reader]');
     var readerSheet = root.querySelector('[data-rb-reader-sheet]');
 
+    // Glossary hover cards: `terms` is a content-agnostic map slug -> {name,
+    // category, body}; the caller supplies it and renders the [data-rb-hcard]
+    // shell. The engine owns the card's content, placement, and dismissal so it
+    // shares the single Esc pipeline + one outside-click handler with the folds.
+    var terms = opts.terms || {};
+    var hcardEl = root.querySelector('[data-rb-hcard]');
+    var _hcardOpen = false;
+
     function prefersReduced() {
       return !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
@@ -251,24 +308,7 @@ var RulebookFoldEngine = (function () {
       _openWingEl = host;
       host.classList.add('is-open');
       host.setAttribute('aria-expanded', 'true');
-      var wing = host.querySelector('.rb-wing');
-      var side = host.getAttribute('data-rb-side') === 'left' ? 'left' : 'right';
-      if (wing) {
-        if (isMobileWidth(win.innerWidth, breakpoint)) {
-          wing.classList.add('rb-wing--down');   // downward full-width (flap-style)
-          wing.style.width = '';
-        } else {
-          wing.classList.remove('rb-wing--down');
-          var rect = host.getBoundingClientRect();
-          var maxAttr = parseInt(host.getAttribute('data-rb-wing-max'), 10);
-          var w = clampWingWidth({
-            side: side, viewportWidth: win.innerWidth,
-            cardLeft: rect.left, cardRight: rect.right,
-            max: isNaN(maxAttr) ? WING_MAX : maxAttr
-          });
-          wing.style.width = w + 'px';
-        }
-      }
+      _applyWingGeometry(host);           // sizes/places the panel (mobile vs desktop)
       var group = _closest(host, '[data-rb-wing-group]');
       if (group) group.classList.add('rb-dimmed');
       var dimSel = host.getAttribute('data-rb-dim');
@@ -281,7 +321,10 @@ var RulebookFoldEngine = (function () {
       host.classList.remove('is-open');
       host.setAttribute('aria-expanded', 'false');
       var wing = host.querySelector('.rb-wing');
-      if (wing) { wing.style.width = ''; wing.classList.remove('rb-wing--down'); }
+      // Clear every inline geometry the open path may have set (width always;
+      // left/right only on the mobile down path) so the closed panel returns to
+      // the stylesheet's defaults and a later desktop open is not mis-placed.
+      if (wing) { wing.style.width = ''; wing.style.left = ''; wing.style.right = ''; wing.classList.remove('rb-wing--down'); }
       // only wings set rb-dimmed (search uses rb-nomatch), so clearing is safe
       var dimmed = root.querySelectorAll('.rb-dimmed');
       for (var i = 0; i < dimmed.length; i++) dimmed[i].classList.remove('rb-dimmed');
@@ -359,6 +402,38 @@ var RulebookFoldEngine = (function () {
       onClose(FOLD.READER);
     }
 
+    // ── glossary hover-card DOM ops ──────────────────────────────────────────
+    function _hcardSub(sel) { return hcardEl ? hcardEl.querySelector(sel) : null; }
+    function _showHcard(termEl) {
+      if (!hcardEl || !termEl) return;
+      var d = terms[termEl.getAttribute('data-rb-term')];
+      if (!d) return;                                  // no definition -> no card
+      var titleEl = _hcardSub('[data-rb-hcard-title]');
+      var catEl = _hcardSub('[data-rb-hcard-cat]');
+      var bodyEl = _hcardSub('[data-rb-hcard-body]');
+      // textContent (never innerHTML) keeps untrusted glossary text inert (§T-B1).
+      if (titleEl) titleEl.textContent = d.name || termEl.getAttribute('data-rb-term') || '';
+      if (catEl) catEl.textContent = String(d.category || '').toUpperCase();
+      if (bodyEl) bodyEl.textContent = d.body || '';
+      hcardEl.style.setProperty('--rb-cc', termCategoryColor(d.category));
+      var pos = clampCardPosition({
+        rect: termEl.getBoundingClientRect(),
+        viewportWidth: win.innerWidth, viewportHeight: win.innerHeight,
+        cardWidth: hcardEl.offsetWidth || 270, cardHeight: hcardEl.offsetHeight || 140
+      });
+      hcardEl.style.left = pos.x + 'px';
+      hcardEl.style.top = pos.y + 'px';
+      hcardEl.classList.add('is-open');
+      hcardEl.setAttribute('aria-hidden', 'false');
+      _hcardOpen = true;
+    }
+    function _hideHcard() {
+      if (!hcardEl || !_hcardOpen) return;
+      hcardEl.classList.remove('is-open');
+      hcardEl.setAttribute('aria-hidden', 'true');
+      _hcardOpen = false;
+    }
+
     // dispatch runs an action through the PURE reducer, then applies each
     // effect to the DOM. At most one 'open-*' effect fires per action, so the
     // opened element is carried in `el`; closes use the tracked open refs.
@@ -428,8 +503,27 @@ var RulebookFoldEngine = (function () {
     function _applyWingGeometry(host) {
       var wing = host && host.querySelector('.rb-wing');
       if (!wing) return;
-      if (isMobileWidth(win.innerWidth, breakpoint)) { wing.classList.add('rb-wing--down'); wing.style.width = ''; return; }
+      if (isMobileWidth(win.innerWidth, breakpoint)) {
+        // Mobile (booked P1 fix r28): the wing folds DOWNWARD and must span the
+        // whole block (viewport minus page padding), not the cramped card column
+        // it hinges from. Measure the block so the panel matches the real layout
+        // whatever the page padding is; nudge its left edge to the block's left.
+        wing.classList.add('rb-wing--down');
+        var blk = _closest(host, '[data-rb-block]');
+        var br = blk ? blk.getBoundingClientRect() : null;
+        var hostRect = host.getBoundingClientRect();
+        wing.style.width = mobileWingWidth({
+          blockWidth: br ? br.width : null,
+          viewportWidth: win.innerWidth, pagePadding: PAGE_PADDING
+        }) + 'px';
+        wing.style.left = br ? (br.left - hostRect.left) + 'px' : '';
+        wing.style.right = 'auto';
+        return;
+      }
+      // Desktop: sideways hinge — clear the mobile left/right nudge and clamp the
+      // width to the space beside the card.
       wing.classList.remove('rb-wing--down');
+      wing.style.left = ''; wing.style.right = '';
       var side = host.getAttribute('data-rb-side') === 'left' ? 'left' : 'right';
       var rect = host.getBoundingClientRect();
       var maxAttr = parseInt(host.getAttribute('data-rb-wing-max'), 10);
@@ -462,6 +556,20 @@ var RulebookFoldEngine = (function () {
       _activatable(readerTrigger);
       on(readerTrigger, 'click', function () { if (!_reading) dispatch({ type: 'OPEN_READER' }); });
       on(readerTrigger, 'keydown', function (e) { if (_isActivateKey(e) && !_reading) { e.preventDefault(); dispatch({ type: 'OPEN_READER' }); } });
+    }
+
+    // glossary terms: hover/focus shows the quick card; tap shows it on touch;
+    // Esc / outside / scroll dismiss (wired below, shared with the folds). The
+    // terms are author-focusable (tabindex in the markup) so this is keyboard-
+    // reachable; the card content is looked up in the `terms` map at mount.
+    if (hcardEl) {
+      each(root.querySelectorAll('[data-rb-term]'), function (t) {
+        on(t, 'mouseenter', function () { _showHcard(t); });
+        on(t, 'focus', function () { _showHcard(t); });
+        on(t, 'blur', function () { _hideHcard(); });
+        on(t, 'click', function (e) { e.stopPropagation(); _showHcard(t); });
+        on(t, 'keydown', function (e) { if (_isActivateKey(e)) { e.preventDefault(); _showHcard(t); } });
+      });
     }
 
     // dismiss buttons (crease ✕, rope, rx, veil-as-close-reader)
@@ -520,8 +628,16 @@ var RulebookFoldEngine = (function () {
         if (_openWingEl && !_openWingEl.contains(e.target)) dispatch({ type: 'CLOSE_WING' });
         if (_openFlapEl && !_openFlapEl.contains(e.target)) dispatch({ type: 'CLOSE_FLAP' });
       });
+      // Hover card: capture-phase so it runs before a term's own click re-opens
+      // it — dismiss when a click lands outside both the card and any term.
+      on(doc, 'click', function (e) {
+        if (_hcardOpen && hcardEl && !hcardEl.contains(e.target) && !_closest(e.target, '[data-rb-term]')) _hideHcard();
+      }, true);
+      // Any scroll invalidates the card's fixed position — fold it away.
+      on(doc, 'scroll', function () { if (_hcardOpen) _hideHcard(); }, true);
       on(doc, 'keydown', function (e) {
-        if (e.key === 'Escape') { dispatch({ type: 'ESCAPE' }); return; }
+        // Esc closes the hover card first (it sits above the folds), then folds.
+        if (e.key === 'Escape') { if (_hcardOpen) { _hideHcard(); return; } dispatch({ type: 'ESCAPE' }); return; }
         if (_reading && e.key === 'Tab') { _trapReaderTab(e); return; }
         // "/" focuses search — but never when typing in another editable field
         // on the host page, and never with a modifier held.
@@ -533,6 +649,7 @@ var RulebookFoldEngine = (function () {
     }
     // keep an open fold correctly sized across resizes / orientation changes
     on(win, 'resize', function () {
+      if (_hcardOpen) _hideHcard();   // its fixed position would be stale
       if (_openWingEl) _applyWingGeometry(_openWingEl);
       if (_reading && readerSheet) {
         var w = Math.min(940, win.innerWidth - 36), h = Math.min(win.innerHeight * 0.86, 700);
@@ -548,7 +665,7 @@ var RulebookFoldEngine = (function () {
         try { L.t.removeEventListener(L.type, L.fn, L.o); } catch (e) {}
       }
       listeners = [];
-      _domCloseWing(); _domCloseFlap(); _domCloseReader();
+      _domCloseWing(); _domCloseFlap(); _domCloseReader(); _hideHcard();
       state = createState();
     }
 
@@ -578,7 +695,10 @@ var RulebookFoldEngine = (function () {
     wingSide: wingSide,
     clampWingWidth: clampWingWidth,
     isMobileWidth: isMobileWidth,
+    mobileWingWidth: mobileWingWidth,
     motionAllowed: motionAllowed,
+    termCategoryColor: termCategoryColor,
+    clampCardPosition: clampCardPosition,
     tileMatches: tileMatches,
     blockMatches: blockMatches,
     mount: mount
