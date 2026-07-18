@@ -200,6 +200,22 @@
     }
   },
   {
+    "slug": "edge",
+    "name": "Edge",
+    "description": "An edge grants +2 to your power roll. Edges and banes never stack past two — a double edge bumps the result up a tier instead, and one edge and one bane cancel out.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "bane",
+    "name": "Bane",
+    "description": "A bane imposes −2 on your power roll. Edges and banes never stack past two — a double bane drops the result down a tier instead, and one bane and one edge cancel out.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
     "slug": "magic",
     "name": "Magic",
     "description": "An ability with the Magic keyword draws on magic. Some effects, creatures, and treasures interact specifically with Magic abilities.",

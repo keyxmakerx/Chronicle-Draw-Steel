@@ -1,0 +1,109 @@
+[
+  {
+    "slug": "bursting-the-door",
+    "name": "Bursting the door",
+    "description": "A worked Might test — Orden shoulders through a barred iron door.",
+    "properties": {
+      "icon": "🚪",
+      "title": "Bursting the door",
+      "stage": {
+        "pc": { "fig": "🛡", "label": "ORDEN" },
+        "foe": { "fig": "🚪", "label": "THE DOOR" }
+      },
+      "lines": [
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The iron door is barred — and the chanting is getting faster." },
+        { "speaker": "ORDEN", "kind": "pc", "text": "I hit it shoulder-first. Might test!" },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [7, 5], "tier": "TIER 2",
+          "steps": [
+            { "text": "= **12**" },
+            { "text": "+2 **Might**" },
+            { "text": "(it's a Might test)", "why": true },
+            { "text": "→ **14**" }
+          ]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The bar splinters — you're through, but ~~the noise carries~~." }
+      ]
+    }
+  },
+  {
+    "slug": "the-grapple",
+    "name": "The grapple",
+    "description": "A worked Might resistance — Kaelen shrugs off a cultist's grab.",
+    "properties": {
+      "icon": "⚔",
+      "title": "The grapple",
+      "stage": {
+        "pc": { "fig": "🪓", "label": "KAELEN" },
+        "foe": { "fig": "🥷", "label": "CULTIST" }
+      },
+      "lines": [
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The cultist lunges to grab you off the ledge." },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [9, 6], "tier": "TIER 3",
+          "steps": [
+            { "text": "= **15**" },
+            { "text": "+2 **Might**" },
+            { "text": "(resisting with muscle)", "why": true },
+            { "text": "→ **17**" }
+          ]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "He bounces off — ~~prone~~ at your boots." }
+      ]
+    }
+  },
+  {
+    "slug": "kaelen-swings",
+    "name": "Kaelen swings",
+    "description": "The Power Roll in action — Kaelen's Brutal Slam lands a tier 3.",
+    "properties": {
+      "icon": "⚔️",
+      "title": "Kaelen swings",
+      "stage": {
+        "pc": { "fig": "🪓", "label": "KAELEN" },
+        "foe": { "fig": "👹", "label": "BUGBEAR" }
+      },
+      "lines": [
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The bugbear rounds on you, Kaelen — roll it." },
+        { "speaker": "KAELEN", "kind": "pc", "text": "Brutal Slam — that's a **Might** ability. Rolling…" },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [8, 8], "tier": "TIER 3",
+          "steps": [
+            { "text": "= **16**" },
+            { "text": "+2 **Might**" },
+            { "text": "(her ability keys off Might)", "why": true },
+            { "text": "→ **18**" }
+          ]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "Tier 3: ~~7 damage~~ and a push into the brazier." }
+      ]
+    }
+  },
+  {
+    "slug": "into-the-lair",
+    "name": "Into the lair",
+    "description": "The Lich's Lair, part 1 — a stealth montage into the barrow.",
+    "properties": {
+      "icon": "🚪",
+      "title": "Part 1 — Into the lair",
+      "stage": {
+        "pc": { "fig": "🛡", "label": "THE PARTY" },
+        "foe": { "fig": "🏰", "label": "THE LAIR" }
+      },
+      "lines": [
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The barrow mouth breathes cold. Getting in unseen is a **montage**." },
+        { "speaker": "SERA", "kind": "pc", "text": "I read the ward-glyphs — Reason test." },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [6, 9], "tier": "TIER 3",
+          "steps": [
+            { "text": "= **15**" },
+            { "text": "+2 **Reason**" },
+            { "text": "(glyphs are lore)", "why": true },
+            { "text": "→ **17**" }
+          ]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The wards part like curtains — ~~one success~~." }
+      ]
+    }
+  }
+]

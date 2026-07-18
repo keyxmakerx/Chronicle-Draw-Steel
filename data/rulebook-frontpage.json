@@ -23,7 +23,7 @@
       "reader": [
         { "type": "p", "text": "When the outcome is uncertain — an attack, a test, a resistance — roll **2d10, add one characteristic**, read the tier. There is no miss and no wasted turn: tier 1 is the weakest result, never nothing." },
         { "type": "h3", "text": "Edges & Banes" },
-        { "type": "p", "text": "An **edge** is +2; a **bane** −2. They never stack past two — doubles move the tier instead; one of each cancels. Natural 19–20 is a **critical**: tier 3 and you immediately act again." },
+        { "type": "p", "text": "An {@combat edge} is +2; a {@combat bane} −2. They never stack past two — doubles move the tier instead; one of each cancels. Natural 19–20 is a **critical**: tier 3 and you immediately act again." },
         { "type": "h3", "text": "Tests use it too" },
         { "type": "p", "text": "No target numbers — the tier IS the outcome. Tier 1 fails forward at a cost, tier 2 succeeds with a wrinkle, tier 3 is clean. Skills grant an edge when they apply." }
       ]
@@ -32,7 +32,7 @@
   {
     "slug": "characteristic-might",
     "name": "Might",
-    "description": "Might drives melee damage-dealing abilities, forced-movement distances, breaking objects, and resisting being grabbed. Knights and Furies lead with it.",
+    "description": "Might drives melee **damage-dealing abilities**, {@combat forced-movement|forced movement} distances, breaking objects, and resisting being {@condition grabbed}. Knights and Furies lead with it.",
     "properties": {
       "kind": "characteristic",
       "order": 1,
@@ -41,8 +41,8 @@
       "tagline": "smash · grapple · resist.",
       "tags": "might strength smash grapple grab forced push attributes characteristics stat",
       "examples": [
-        { "icon": "▶", "label": "Bursting the door" },
-        { "icon": "⚔", "label": "The grapple" }
+        { "icon": "▶", "label": "Bursting the door", "play": "bursting-the-door" },
+        { "icon": "⚔", "label": "The grapple", "play": "the-grapple" }
       ],
       "chapterLabel": "Full chapter",
       "related": [
@@ -153,7 +153,7 @@
       "chips": ["🚪 Into the lair", "⚔ Minions", "💀 The lich", "🏆 Aftermath"],
       "intro": "Each part teaches the rules it touches. Pick where to drop in:",
       "parts": [
-        { "emoji": "🚪", "name": "Into the lair", "note": "tests · montage" },
+        { "emoji": "🚪", "name": "Into the lair", "note": "tests · montage", "play": "into-the-lair" },
         { "emoji": "⚔", "name": "Minion skirmish", "note": "squads · captains" },
         { "emoji": "💀", "name": "The lich fight", "note": "solo boss · malice" },
         { "emoji": "🏆", "name": "Aftermath", "note": "victories · respite" }

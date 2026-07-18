@@ -105,7 +105,15 @@ that folds open in three matched ways (the SIGNED `rulebook-v10` design):
 Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
 related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
 (priority flap → wing → reader). Everything is tap-first; under 640px wings open
-**downward full-width** (flap-style) instead of sideways. Honours `prefers-reduced-motion`.
+**downward, spanning the full width of their block** (viewport minus page padding —
+not the cramped card column). Honours `prefers-reduced-motion`.
+
+**Staged examples** (P2): the Might card's two example buttons, the reader's
+"▶ Watch the table play it" seam, and the Lich's Lair part 1 play the worked scenes
+via the `RulebookExamplePlayer` module (see below). **Glossary hover cards** (P2): dotted
+`.rb-hl` terms in the prose (authored with `{@category slug}` markup) show a quick card
+(term · category chip · body) sourced from `rules-glossary.json`, on hover/focus/tap,
+dismissed by `Esc` / outside-tap / scroll — driven by the fold engine's `terms` map.
 
 ### Config Keys
 
@@ -144,9 +152,44 @@ reader) and how they coordinate. `rulebook-frontpage` builds a DOM using the fol
 contract (documented in the file head) and calls `RulebookFoldEngine.mount(root, options)`.
 
 The module splits a **pure state machine** (`createState` / `reduce` / `escapePriority` /
-`wingSide` / `clampWingWidth` / `isMobileWidth` / `tileMatches` / `blockMatches`) from the DOM
-controller, so the fold logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`,
-`node --test`).
+`wingSide` / `clampWingWidth` / `isMobileWidth` / `mobileWingWidth` / `tileMatches` /
+`blockMatches` / `termCategoryColor` / `clampCardPosition`) from the DOM controller, so the fold
+logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`, `node --test`).
+
+**Mobile wings** (`mobileWingWidth`): under 640px a wing folds downward and spans the **full
+width of its block** (viewport minus page padding, measured from the `[data-rb-block]` ancestor),
+never the card column it hinges from.
+
+**Glossary hover cards**: a content-agnostic layer. Pass `mount(root, { terms })` a map
+`slug → { name, category, body }`; the engine attaches a quick card to every `[data-rb-term]`
+element (hover / focus / tap → show near the term via `clampCardPosition`; `Esc` / outside / scroll
+→ dismiss). The card content is set with `textContent` (untrusted glossary text stays inert), and
+the category chip is coloured by `termCategoryColor`. The caller renders the `[data-rb-hcard]`
+shell; the engine owns content, placement, and dismissal (sharing the single `Esc` pipeline with
+the folds — the card dismisses first). `mount` also accepts `onClose(kind)` (fired when a fold
+closes) so the consumer can react (e.g. reset a drill-in).
+
+---
+
+## Rulebook Example Player (Shared Utility)
+
+**File:** `widgets/rulebook-example-player.js` · **Global:** `RulebookExamplePlayer`
+
+Not a standalone widget — a reusable, **content-agnostic** module (loaded as a global via the
+manifest `text_renderers` seam) that renders + plays a "script": a little at-the-table scene where
+character tokens slide in and the acting token glows, lines light one by one (director gold /
+player purple / roll amber), the ROLL line ticks its dice, settles on the scripted values, steps
+the math out piece by piece **with its why**, and the tier **stamps** on; `↻ replay` is always
+available and `prefers-reduced-motion` reveals everything instantly.
+
+Scripts are **data** (`data/rulebook-examples.json`, ReferenceItem array; `properties.stage` +
+`properties.lines[]` with `speaker` / `kind` (`dir`|`pc`|`roll`) / `text` / `dice` / `steps` /
+`tier`). Text markup: `**bold**` and `~~dmg~~` (combat accent). The consumer builds the DOM
+(`[data-rbx-play="slug"]` buttons + `[data-rbx-script="slug"]` containers; optional
+`data-rbx-show` / `data-rbx-hide` for a drill-in and `data-rbx-back` to reverse it) and calls
+`RulebookExamplePlayer.mount(root, { examples })`. The module splits **pure logic**
+(`planScript` / `rollRevealOrder` / `tokenForLine` / `isRoll` / `richText` / `buildScriptHtml`)
+from the DOM controller, unit-tested headless (`tools/test-rulebook-example-player.mjs`).
 
 ---
 

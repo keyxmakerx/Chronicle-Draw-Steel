@@ -273,10 +273,80 @@ test('isMobileWidth: a custom breakpoint is honoured', () => {
   assert.equal(E.isMobileWidth(800, 800), false);
 });
 
+// ── mobileWingWidth (booked P1 fix r28: mobile wings are FULL-BLOCK-width) ────
+test('mobileWingWidth: derives full block width from viewport minus 2× page padding', () => {
+  // 390px phone: 390 − 2×18 = 354 (the .rb-wrap content width).
+  assert.equal(E.mobileWingWidth({ viewportWidth: 390 }), 354);
+  assert.equal(E.mobileWingWidth({ viewportWidth: 390, pagePadding: 18 }), 354);
+  // A different page padding is honoured.
+  assert.equal(E.mobileWingWidth({ viewportWidth: 360, pagePadding: 12 }), 336);
+});
+
+test('mobileWingWidth: a measured block width wins over the viewport calc', () => {
+  // When the controller can measure the block it passes blockWidth verbatim.
+  assert.equal(E.mobileWingWidth({ blockWidth: 354, viewportWidth: 999 }), 354);
+  assert.equal(E.mobileWingWidth({ blockWidth: 0 }), 0);
+  // Floored at 0, never negative.
+  assert.equal(E.mobileWingWidth({ viewportWidth: 20, pagePadding: 18 }), 0);
+});
+
+test('mobileWingWidth: the mobile wing is wider than the desktop clamp ceiling', () => {
+  // This is the whole point of the r28 fix: at 390px the full-block wing (354)
+  // exceeds the desktop clamp's hard ceiling (WING_MAX 340), so text flows across
+  // the block instead of one cramped word per line inside a single card column.
+  const mobile = E.mobileWingWidth({ viewportWidth: 390 });
+  // The desktop clamp never returns more than WING_MAX, however much room exists.
+  const desktopCeiling = E.clampWingWidth({ side: 'right', viewportWidth: 4000, cardRight: 500 });
+  assert.equal(desktopCeiling, 340);
+  assert.ok(mobile > desktopCeiling, 'mobile full-block width must exceed the desktop ceiling');
+});
+
 // ── motionAllowed ──────────────────────────────────────────────────────────
 test('motionAllowed is the negation of prefers-reduced-motion', () => {
   assert.equal(E.motionAllowed(false), true);
   assert.equal(E.motionAllowed(true), false);
+});
+
+// ── termCategoryColor (the glossary hover-card chip accent) ─────────────────
+test('termCategoryColor maps each glossary category to its accent token', () => {
+  assert.equal(E.termCategoryColor('condition'), 'var(--rb-cond)');
+  assert.equal(E.termCategoryColor('movement'), 'var(--rb-move)');
+  assert.equal(E.termCategoryColor('combat'), 'var(--rb-combat)');
+  assert.equal(E.termCategoryColor('COMBAT'), 'var(--rb-combat)');   // case-insensitive
+});
+
+test('termCategoryColor falls back to muted for an unknown/empty category', () => {
+  assert.equal(E.termCategoryColor('nonsense'), 'var(--rb-mut)');
+  assert.equal(E.termCategoryColor(''), 'var(--rb-mut)');
+  assert.equal(E.termCategoryColor(null), 'var(--rb-mut)');
+});
+
+// ── clampCardPosition (the hover card's placement rule) ─────────────────────
+test('clampCardPosition: centres the card under a roomy term', () => {
+  // term centre 500, card 270 wide -> left 365; sits 8px below the term bottom.
+  const pos = E.clampCardPosition({
+    rect: { left: 450, right: 550, top: 200, bottom: 216, width: 100 },
+    viewportWidth: 1000, viewportHeight: 800, cardWidth: 270, cardHeight: 140
+  });
+  assert.equal(pos.x, 365);
+  assert.equal(pos.y, 224);
+});
+
+test('clampCardPosition: keeps the card inside the viewport at the right edge', () => {
+  const pos = E.clampCardPosition({
+    rect: { left: 960, right: 1000, top: 100, bottom: 116, width: 40 },
+    viewportWidth: 1000, viewportHeight: 800, cardWidth: 270, cardHeight: 140, margin: 10
+  });
+  assert.equal(pos.x, 1000 - 270 - 10);   // clamped so it never overflows right
+});
+
+test('clampCardPosition: flips ABOVE the term when it would overflow the bottom', () => {
+  // term near the bottom: below would be 790+8+140 > 800, so flip above.
+  const pos = E.clampCardPosition({
+    rect: { left: 100, right: 180, top: 782, bottom: 790, width: 80 },
+    viewportWidth: 1000, viewportHeight: 800, cardWidth: 270, cardHeight: 140
+  });
+  assert.equal(pos.y, 782 - 8 - 140);
 });
 
 // ── tileMatches ────────────────────────────────────────────────────────────
