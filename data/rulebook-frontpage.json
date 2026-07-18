@@ -17,7 +17,7 @@
       "modifiers": [
         { "label": "edge +2", "note": "double edge → tier up" },
         { "label": "bane −2", "note": "double bane → tier down" },
-        { "label": "nat 19–20", "note": "crit — tier 3 + act again" }
+        { "label": "nat 19–20", "note": "crit — tier 3 + act again", "o": 1 }
       ],
       "readerLede": "opens the reading sheet",
       "reader": [

@@ -224,6 +224,9 @@ var RulebookFoldEngine = (function () {
     var state = createState();
     var listeners = [];              // tracked for a clean destroy()
     var _openWingEl = null, _openFlapEl = null, _reading = false;
+    var _readerReturnFocus = null;   // element focus returns to when the reader closes
+    var _hopTimer = null;            // cross-hop deferral (cancelled on destroy)
+    var _destroyed = false;          // guards deferred callbacks after teardown
 
     var readerTrigger = root.querySelector('[data-rb-reader]');
     var readerSheet = root.querySelector('[data-rb-reader-sheet]');
@@ -286,10 +289,12 @@ var RulebookFoldEngine = (function () {
     }
 
     // ── flap DOM ops ─────────────────────────────────────────────────────
+    function _flapTrigger(crow) { return crow.querySelector('[data-rb-flap-trigger]') || crow; }
     function _domOpenFlap(crow) {
       if (!crow) return;
       _openFlapEl = crow;
       crow.classList.add('is-open');
+      _flapTrigger(crow).setAttribute('aria-expanded', 'true');
       var group = _closest(crow, '[data-rb-flap-group]');
       if (group) group.classList.add('rb-flapopen');
       onOpen(FOLD.FLAP, crow.id || '');
@@ -298,6 +303,7 @@ var RulebookFoldEngine = (function () {
       if (!_openFlapEl) return;
       var crow = _openFlapEl; _openFlapEl = null;
       crow.classList.remove('is-open');
+      _flapTrigger(crow).setAttribute('aria-expanded', 'false');
       var groups = root.querySelectorAll('[data-rb-flap-group].rb-flapopen');
       for (var i = 0; i < groups.length; i++) groups[i].classList.remove('rb-flapopen');
       onClose(FOLD.FLAP);
@@ -329,6 +335,15 @@ var RulebookFoldEngine = (function () {
         root.classList.add('rb-reading');
         _setSheetRect(to);
       }
+      // Move focus into the dialog and remember where to send it back.
+      var d = root.ownerDocument;
+      _readerReturnFocus = (d && d.activeElement) || readerTrigger;
+      var firstBtn = readerSheet.querySelector('[data-rb-close-reader], button, [tabindex], a[href]');
+      if (firstBtn && firstBtn.focus) firstBtn.focus();
+      else if (readerSheet.focus) {
+        if (readerSheet.getAttribute('tabindex') == null) readerSheet.setAttribute('tabindex', '-1');
+        readerSheet.focus();
+      }
       onOpen(FOLD.READER, '');
     }
     function _domCloseReader() {
@@ -337,6 +352,10 @@ var RulebookFoldEngine = (function () {
       if (readerTrigger) readerTrigger.setAttribute('aria-expanded', 'false');
       if (readerSheet && readerTrigger) _setSheetRect(readerTrigger.getBoundingClientRect());
       root.classList.remove('rb-reading');
+      // Return focus to wherever it was before the dialog opened.
+      if (_readerReturnFocus && _readerReturnFocus.focus) _readerReturnFocus.focus();
+      else if (readerTrigger && readerTrigger.focus) readerTrigger.focus();
+      _readerReturnFocus = null;
       onClose(FOLD.READER);
     }
 
@@ -374,7 +393,33 @@ var RulebookFoldEngine = (function () {
       if (el.getAttribute('aria-expanded') == null) el.setAttribute('aria-expanded', 'false');
     }
     function _scrollTo(el) { if (el && el.scrollIntoView) el.scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'center' }); }
-    function _hopThen(fn) { if (prefersReduced()) fn(); else win.setTimeout(fn, 130); }
+    // _hopThen defers the next fold's open so the previous one can fold back
+    // first. `long` (reader-originated hops) waits for the reader's ~600ms
+    // rect fold-back instead of the ~130ms wing/flap crease. Tracked so destroy
+    // can cancel it, and guarded so it never dispatches into a torn-down widget.
+    function _hopThen(fn, long) {
+      if (_destroyed) return;
+      if (prefersReduced()) { fn(); return; }
+      _hopTimer = win.setTimeout(function () { _hopTimer = null; if (!_destroyed) fn(); }, long ? 600 : 130);
+    }
+    // _isEditableTarget is true when focus is in a control that should receive a
+    // literal "/" (so the search shortcut doesn't hijack other page inputs).
+    function _isEditableTarget(el) {
+      if (!el) return false;
+      if (el.isContentEditable) return true;
+      var tag = (el.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select';
+    }
+    // _trapReaderTab keeps Tab focus inside the reader dialog while it is open.
+    function _trapReaderTab(e) {
+      if (!readerSheet) return;
+      var f = readerSheet.querySelectorAll('a[href],button:not([disabled]),input,[tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      var active = root.ownerDocument ? root.ownerDocument.activeElement : null;
+      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+    }
     function _closeAll() {
       if (state.wing) dispatch({ type: 'CLOSE_WING' });
       if (state.flap) dispatch({ type: 'CLOSE_FLAP' });
@@ -405,6 +450,7 @@ var RulebookFoldEngine = (function () {
     // flaps: tap a row to unfold; tap the open row again to fold back (toggle)
     each(root.querySelectorAll('[data-rb-flap]'), function (crow) {
       var trig = crow.querySelector('[data-rb-flap-trigger]') || crow;
+      if (trig.getAttribute('aria-expanded') == null) trig.setAttribute('aria-expanded', 'false');
       on(trig, 'click', function (e) {
         e.stopPropagation();
         if (_openFlapEl === crow) dispatch({ type: 'CLOSE_FLAP' });
@@ -431,16 +477,18 @@ var RulebookFoldEngine = (function () {
       on(b, 'click', function (e) {
         e.stopPropagation();
         var t = byId(b.getAttribute('data-rb-goto-card'));
+        var wasReader = state.reader;
         _closeAll();
-        _hopThen(function () { _scrollTo(t); if (t) dispatch({ type: 'OPEN_WING', id: t.id || '' }, t); });
+        _hopThen(function () { _scrollTo(t); if (t) dispatch({ type: 'OPEN_WING', id: t.id || '' }, t); }, wasReader);
       });
     });
     each(root.querySelectorAll('[data-rb-goto-flap]'), function (b) {
       on(b, 'click', function (e) {
         e.stopPropagation();
         var c = byId(b.getAttribute('data-rb-goto-flap'));
+        var wasReader = state.reader;
         _closeAll();
-        _hopThen(function () { if (c) { dispatch({ type: 'OPEN_FLAP', id: c.id || '' }, c); _scrollTo(c); } });
+        _hopThen(function () { if (c) { dispatch({ type: 'OPEN_FLAP', id: c.id || '' }, c); _scrollTo(c); } }, wasReader);
       });
     });
 
@@ -473,8 +521,14 @@ var RulebookFoldEngine = (function () {
         if (_openFlapEl && !_openFlapEl.contains(e.target)) dispatch({ type: 'CLOSE_FLAP' });
       });
       on(doc, 'keydown', function (e) {
-        if (e.key === 'Escape') dispatch({ type: 'ESCAPE' });
-        else if (e.key === '/' && searchEl && doc.activeElement !== searchEl) { e.preventDefault(); searchEl.focus(); }
+        if (e.key === 'Escape') { dispatch({ type: 'ESCAPE' }); return; }
+        if (_reading && e.key === 'Tab') { _trapReaderTab(e); return; }
+        // "/" focuses search — but never when typing in another editable field
+        // on the host page, and never with a modifier held.
+        if (e.key === '/' && !_reading && !e.ctrlKey && !e.metaKey && !e.altKey && searchEl &&
+            doc.activeElement !== searchEl && !_isEditableTarget(doc.activeElement)) {
+          e.preventDefault(); searchEl.focus();
+        }
       });
     }
     // keep an open fold correctly sized across resizes / orientation changes
@@ -487,6 +541,8 @@ var RulebookFoldEngine = (function () {
     });
 
     function destroy() {
+      _destroyed = true;
+      if (_hopTimer) { win.clearTimeout(_hopTimer); _hopTimer = null; }
       for (var i = 0; i < listeners.length; i++) {
         var L = listeners[i];
         try { L.t.removeEventListener(L.type, L.fn, L.o); } catch (e) {}

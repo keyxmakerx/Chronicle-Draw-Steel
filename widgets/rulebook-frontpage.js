@@ -197,7 +197,10 @@
         'border:1.5px solid color-mix(in srgb,var(--tc,var(--bc)) 55%,var(--rb-edge));' +
         'border-radius:0 14px 14px 14px;box-shadow:26px 26px 60px rgba(0,0,0,.68);' +
         'transform:perspective(1100px) rotateY(-88deg);transform-origin:left center;' +
-        'opacity:0;pointer-events:none;transition:transform .55s var(--rb-spring),opacity .3s}',
+        // visibility:hidden (deferred .55s so the fold-back still plays) removes
+        // the closed panel's buttons from the tab order + a11y tree.
+        'opacity:0;visibility:hidden;pointer-events:none;' +
+        'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s .55s}',
       '.rb-wing::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;' +
         'background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--tc,var(--bc)) 60%,transparent),transparent)}',
       '.rb-wing--wide{width:540px;max-height:74vh}',
@@ -207,7 +210,8 @@
         'box-shadow:-26px 26px 60px rgba(0,0,0,.68)}',
       '[data-rb-side="left"] .rb-wing::before{left:auto;right:0}',
       // Open state (engine adds .is-open to the [data-rb-wing] host).
-      '[data-rb-wing].is-open>.rb-wing{transform:none;opacity:1;pointer-events:auto}',
+      '[data-rb-wing].is-open>.rb-wing{transform:none;opacity:1;visibility:visible;pointer-events:auto;' +
+        'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s 0s}',
       '[data-rb-wing].is-open{z-index:46;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--tc,var(--bc)) 40%,transparent);' +
         'border-color:color-mix(in srgb,var(--tc,var(--bc)) 65%,var(--rb-edge))}',
       '[data-rb-wing].is-open .rb-unf,[data-rb-wing].is-open .rb-openmark{animation:none;opacity:.4}',
@@ -240,8 +244,10 @@
         'border:1px solid color-mix(in srgb,var(--rb-cond) 45%,var(--rb-edge));' +
         'box-shadow:0 22px 50px rgba(0,0,0,.7);' +
         'transform:perspective(1000px) rotateX(-88deg);transform-origin:top center;' +
-        'opacity:0;pointer-events:none;transition:transform .55s var(--rb-spring),opacity .3s}',
-      '.rb-crow.is-open .rb-flap{transform:none;opacity:1;pointer-events:auto}',
+        'opacity:0;visibility:hidden;pointer-events:none;' +
+        'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s .55s}',
+      '.rb-crow.is-open .rb-flap{transform:none;opacity:1;visibility:visible;pointer-events:auto;' +
+        'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s 0s}',
       '.rb-crow.is-open{z-index:36;border-color:color-mix(in srgb,var(--rb-cond) 50%,var(--rb-edge))}',
       '.rb-flap p{margin:6px 0;font:500 12px/1.6 inherit;color:var(--rb-ink2)}',
       '.rb-flap b{color:var(--rb-ink)}',
@@ -267,10 +273,12 @@
     // Reader takeover (FLIP: engine sets inline left/top/width/height) + veil.
     s.push(
       '.rb-reader{position:fixed;z-index:70;border:1px solid var(--rb-edge);border-radius:18px;' +
-        'background:var(--rb-box);box-shadow:var(--rb-sh);opacity:0;pointer-events:none;overflow:auto;' +
+        'background:var(--rb-box);box-shadow:var(--rb-sh);opacity:0;visibility:hidden;pointer-events:none;overflow:auto;' +
         'transition:left .55s var(--rb-spring),top .55s var(--rb-spring),width .55s var(--rb-spring),' +
-        'height .55s var(--rb-spring),opacity .25s}',
-      '.rb-root.rb-reading .rb-reader{opacity:1;pointer-events:auto}',
+        'height .55s var(--rb-spring),opacity .25s,visibility 0s .55s}',
+      '.rb-root.rb-reading .rb-reader{opacity:1;visibility:visible;pointer-events:auto;' +
+        'transition:left .55s var(--rb-spring),top .55s var(--rb-spring),width .55s var(--rb-spring),' +
+        'height .55s var(--rb-spring),opacity .25s,visibility 0s 0s}',
       '.rb-rh{display:flex;align-items:center;gap:10px;padding:11px 16px;position:sticky;top:0;z-index:2;' +
         'border-bottom:1px solid var(--rb-edge2);background:var(--rb-box2)}',
       '.rb-rope{font:700 11.5px/1 inherit;color:var(--rb-mut);padding:6px 10px;' +
@@ -328,13 +336,14 @@
     return buildTop() +
       '<div class="rb-wrap"><div class="rb-mast"><h1>The Rules</h1>' +
         '<p>loading the front page…</p></div>' +
-        '<div class="rb-load"><div class="rb-sk"></div><div class="rb-sk"></div>' +
+        '<div class="rb-load" role="status" aria-live="polite" aria-busy="true" ' +
+        'aria-label="Loading the rulebook front page"><div class="rb-sk"></div><div class="rb-sk"></div>' +
         '<div class="rb-sk"></div></div></div>';
   }
 
   function buildError(msg) {
     return buildTop() +
-      '<div class="rb-wrap"><div class="rb-err">' +
+      '<div class="rb-wrap"><div class="rb-err" role="alert" aria-live="assertive">' +
         '<b>The rulebook front page could not load.</b>' +
         '<div>Check that the Draw Steel extension assets are installed and reachable, ' +
         'then reload this page. If it persists, reinstall the extension.</div>' +
@@ -361,7 +370,9 @@
     var html = '';
     for (var i = 0; i < list.length; i++) {
       var t = list[i] || {};
-      var o = isMod ? 0.5 : (typeof t.o === 'number' ? t.o : 0.6);
+      // Honour a per-cell opacity for modifiers too, so the crit bar can brighten
+      // to full (mockup) instead of the flat soft accent.
+      var o = (typeof t.o === 'number') ? t.o : (isMod ? 0.5 : 0.6);
       html += '<div class="rb-t" style="--o:' + Number(o) + '">' +
         '<b>' + esc(t.label) + '</b><span>' + esc(t.note) + '</span></div>';
     }
@@ -590,14 +601,15 @@
     }
 
     return veil +
-      '<div class="rb-reader" data-rb-reader-sheet>' +
+      '<div class="rb-reader" data-rb-reader-sheet role="dialog" aria-modal="true" ' +
+        'aria-labelledby="rb-reader-title">' +
         '<div class="rb-rh">' +
           '<button class="rb-rope" data-rb-close-reader>← Back to <b>the front page</b></button>' +
           '<span class="rb-crumb">' + esc(p.readCrumb) + '</span>' +
-          '<button class="rb-rx" data-rb-close-reader>✕</button>' +
+          '<button class="rb-rx" data-rb-close-reader aria-label="Close reader">✕</button>' +
         '</div>' +
         '<div class="rb-rbody">' +
-          '<h2>' + esc(hero.name) + '</h2>' +
+          '<h2 id="rb-reader-title">' + esc(hero.name) + '</h2>' +
           '<div class="rb-rcols">' + body + '</div>' +
           '<div class="rb-exrow"><button class="rb-exbtn" type="button" data-rb-example>' +
             '▶ Watch the table play it</button></div>' +
