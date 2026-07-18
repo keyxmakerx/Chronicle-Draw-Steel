@@ -89,6 +89,67 @@ Place on a creature entity page alongside or instead of the raw field editor. Pr
 
 ---
 
+## Rulebook Front Page
+
+**Slug:** `rulebook-frontpage`
+
+The dynamic rulebook's editorial "front page of the book" — a single-screen spread
+that folds open in three matched ways (the SIGNED `rulebook-v10` design):
+
+- **Hero Power Roll block** → unfolds into a centred **reading sheet** (FLIP takeover, veil behind).
+- **Five characteristic cards** → each folds a **hinged wing** out of its edge, over its
+  neighbours (left-column cards wing right, right-column cards wing left).
+- **Condition rows** → each unfolds a **flap** down over the rows beneath.
+- **The Lich's Lair** worked-scene → wings left over the whole Conditions block.
+
+Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
+related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
+(priority flap → wing → reader). Everything is tap-first; under 640px wings open
+**downward full-width** (flap-style) instead of sideways. Honours `prefers-reduced-motion`.
+
+### Config Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
+
+### Content Source
+
+- **Hero / characteristics / worked-scene** copy comes from `data/rulebook-frontpage.json`
+  (ReferenceItem array; `properties.kind` = `hero` \| `characteristic` \| `conditions` \| `worked-scene`).
+- **Condition flap text** comes from `data/rules-glossary.json` (entries with
+  `properties.category === "condition"`), looked up by slug — a single source of truth
+  shared with the @reference tooltip system.
+
+### Placement / Cutover
+
+This widget is **additive** — it introduces a NEW rules surface and demolishes nothing.
+There is no pre-existing rules-browser widget; the only prior rules surface is the
+`reference-renderer.js` tooltip utility + the glossary data, both of which this widget
+reuses. Place it via the layout customizer on a **campaign dashboard** or a dedicated
+**"Rules" page** as the entry point. Later slices (staged example player, glossary
+hover-cards, long-form chapters, Lair transcripts, deep glossary search) extend this
+surface; the widget leaves clean seams for each.
+
+---
+
+## Rulebook Fold Engine (Shared Utility)
+
+**File:** `widgets/rulebook-fold-engine.js` · **Global:** `RulebookFoldEngine`
+
+Not a standalone widget — a reusable, **content-agnostic** interaction module loaded as a
+global (via the manifest `text_renderers` seam, before widget scripts). It knows nothing
+about characteristics or conditions; it only knows three physical fold moves (wing / flap /
+reader) and how they coordinate. `rulebook-frontpage` builds a DOM using the fold data-attribute
+contract (documented in the file head) and calls `RulebookFoldEngine.mount(root, options)`.
+
+The module splits a **pure state machine** (`createState` / `reduce` / `escapePriority` /
+`wingSide` / `clampWingWidth` / `isMobileWidth` / `tileMatches` / `blockMatches`) from the DOM
+controller, so the fold logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`,
+`node --test`).
+
+---
+
 ## Reference Renderer (Shared Utility)
 
 **File:** `widgets/reference-renderer.js`
