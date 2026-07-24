@@ -1386,11 +1386,19 @@
       { width: 4, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
     ] });
 
-    // Row 4 — Background (12). Pinned/expanded: the box shows a teaser + a
-    // "Read full story" that opens the reading-view overlay (not an accordion).
-    rows.push({ columns: [ { width: 12, boxes: [
-      boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true })
-    ] } ] });
+    // Row 4 — Background (12), GM + OWNER ONLY. Backstory is player-private
+    // (owner_only in the manifest — the server already strips its VALUE for
+    // every other viewer), so the box itself is scheduled only for the GM or
+    // the claiming owner, same rationale as GM Lore below: a teammate should
+    // not see an empty "No backstory yet." placeholder for a hero that
+    // actually has one, they should see no box at all (a permission gate,
+    // not a data gate). Pinned/expanded: the box shows a teaser + a "Read
+    // full story" that opens the reading-view overlay (not an accordion).
+    if (data.isGm || data.isOwner) {
+      rows.push({ columns: [ { width: 12, boxes: [
+        boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true })
+      ] } ] });
+    }
 
     // Row 5 — GM Lore (12), GM ONLY. Scheduled solely when the viewer is a GM so
     // DM-only content never reaches a player (a permission gate, not a data gate).
@@ -2218,9 +2226,14 @@
           entityId: entityId,
           children: Array.isArray(children) ? children : [],
           // Viewer/permission context passed by the Chronicle mount (data-* attrs).
-          // isGm gates the GM-only lore box; visibility/claimed drive the header
-          // pills. All default to safe/empty when the host doesn't supply them.
+          // isGm gates the GM-only lore box; isOwner additionally gates the
+          // owner-only Background box (a teammate's private backstory should
+          // never render as an empty "No backstory yet." placeholder — it
+          // should not render at all, same as GM Lore). visibility/claimed
+          // drive the header pills. All default to safe/empty when the host
+          // doesn't supply them.
           isGm: ds.isGm === 'true' || ds.isGm === '1',
+          isOwner: ds.isOwner === 'true' || ds.isOwner === '1',
           visibility: (entity && entity.visibility) || ds.visibility || '',
           claimed: ds.claimed === 'true' || ds.claimed === '1'
         };

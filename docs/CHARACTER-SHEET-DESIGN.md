@@ -33,6 +33,13 @@ update these when the design changes.
 
 ## ✅ DONE (shipped / merged / on-branch)
 
+- **Backstory made owner-private (Chronicle C-FIELDS-OWNER-FILTER)** — `backstory`
+  is now `"owner_only": true` in the manifest (Chronicle strips its VALUE
+  server-side for any viewer who is neither GM nor the hero's claimed owner —
+  same mechanism as `gm_notes`'s existing `gm_only`, just scoped to owner+GM
+  instead of GM-only). The Background row is scheduled only `if (data.isGm ||
+  data.isOwner)`, mirroring the GM Lore gate exactly, so a teammate sees no box
+  at all instead of a misleading "No backstory yet." for a hero that has one.
 - **Phase A data fixes** (manifest) — corrected wrong `foundry_path`s and added an
   ability projection. **Confirmed live**: a re-synced hero now shows `Level 1`,
   `Conduit (Life)` (class + subclass collapsed to names), the `PIETY` heroic-resource
