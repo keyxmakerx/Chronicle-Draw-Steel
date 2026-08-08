@@ -342,3 +342,33 @@ scope it to this package's own work, if any `data/*.json` entry's `source` menti
 Creative Commons, or if the attribution line `DRAW STEEL © 2024 MCDM Productions, LLC`
 goes missing from `LICENSE`, `README.md`, or this file. The misstatement survived
 because nothing was watching for it.
+
+## Corrections to previously-shipped rules text
+
+Entries here were **wrong in a way a table would feel**, and are listed so anyone
+who has been playing from this package knows a rule changed under them.
+
+### `save-ends` — corrected 2026-08-08
+
+| | |
+|---|---|
+| **Was** | *"roll 2d10; 10+ ends the effect"* |
+| **Is** | *"roll a d10; on a 6 or higher the effect ends"* |
+| **Source** | `Rules/Chapters/Classes.md` — *"To make a saving throw, a creature rolls a d10. On a 6 or higher, the effect ends. Otherwise, it continues."* |
+
+**Why this one matters more than its size suggests.** `save-ends` is the tooltip
+behind **327 `{@duration save-ends}` cross-references** across this package — it
+is one of the most-hovered definitions in the whole dataset. The old text was not
+a typo but a different die and a different threshold: 2d10 needing 10+ succeeds
+about 64% of the time, while a d10 needing 6+ succeeds 50%. **Any table that read
+this tooltip has been ending conditions too easily**, on every saving throw, for
+as long as the entry has shipped.
+
+Nothing else in the package depended on the wrong text — the abilities, kits and
+ancestry data all carry the reference, never a restatement of the rule — so
+correcting the single glossary entry corrects all 327 sites at once.
+
+**How it was found:** an adversarial verification pass checked shipped glossary
+text against the sources rather than trusting it, on the principle that content
+nobody has re-read is content nobody has checked. The other pre-existing glossary
+entries were re-verified in the same pass.
