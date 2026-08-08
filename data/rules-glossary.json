@@ -138,7 +138,7 @@
   {
     "slug": "save-ends",
     "name": "Save Ends",
-    "description": "The effect persists until the affected creature succeeds on a resistance roll at the end of their turn (roll 2d10; 10+ ends the effect).",
+    "description": "The effect persists until the affected creature succeeds on a saving throw at the end of their turn (roll a d10; 6 or higher ends the effect).",
     "properties": {
       "category": "duration"
     }
@@ -269,6 +269,182 @@
     "description": "An Area ability affects every valid target within a defined zone (a burst, cube, line, or wall).",
     "properties": {
       "category": "keyword"
+    }
+  },
+  {
+    "slug": "slide",
+    "name": "Slide",
+    "description": "Forced movement that moves the target up to the indicated number of squares in any direction except vertically. Unlike a push or a pull, a slide doesn't have to be a straight line.",
+    "properties": {
+      "category": "movement"
+    }
+  },
+  {
+    "slug": "saving-throw",
+    "name": "Saving Throw",
+    "description": "A roll made at the end of your turn to shake off an effect that ends with a save. Roll a d10; on a 6 or higher the effect ends, otherwise it continues.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "potency",
+    "name": "Potency",
+    "description": "An added effect lands only if its potency value is higher than the target's listed characteristic score. Potencies are written as a characteristic letter, a less-than sign, and a value — M < WEAK, A < AVERAGE, R < STRONG. Your weak, average, and strong potency values are your highest characteristic score minus 2, minus 1, and unmodified.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "surge",
+    "name": "Surge",
+    "description": "Stored momentum. Whenever you deal rolled damage you can spend up to 3 surges against one target, each dealing extra damage equal to your highest characteristic score; alternatively, spend 2 surges to raise one potency by 1 for one target. Any surges left over are lost at the end of combat.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "recovery",
+    "name": "Recovery",
+    "description": "A second wind you can spend. Your recovery value is one-third of your Stamina maximum rounded down, and spending a Recovery regains that much Stamina. Your number of Recoveries comes from your class, and finishing a respite restores all of them.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "respite",
+    "name": "Respite",
+    "description": "24 uninterrupted hours of rest plus one respite activity. Finishing a respite restores all your Stamina and Recoveries and converts your Victories into Experience. A night's sleep is not a respite.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "damage-immunity",
+    "name": "Damage Immunity",
+    "description": "Reduces damage of the stated type by the immunity's value, to a minimum of 0; an immunity of \"all\" ignores that damage entirely. Immunity is applied last when calculating damage, and only the highest applicable immunity counts.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "damage-weakness",
+    "name": "Damage Weakness",
+    "description": "The mirror of damage immunity — you take extra damage of the stated type equal to the weakness value. Weakness is applied before immunity, and only the highest applicable weakness counts.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "concealment",
+    "name": "Concealment",
+    "description": "Darkness, fog, invisibility, and any other effect that fully obscures a creature without protecting their physical form grants concealment. You can still target a creature who has concealment as long as they aren't hidden, but strikes against them take a bane.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "cover",
+    "name": "Cover",
+    "description": "A target has cover when you have line of effect to them but at least half their form is blocked by a solid object such as a tree, a wall, or an overturned table. Damage-dealing abilities used against a target with cover take a bane.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "difficult-terrain",
+    "name": "Difficult Terrain",
+    "description": "Thick underbrush, rubble, webs, and similar obstacles create difficult terrain. It costs 1 additional square of movement to enter a square of difficult terrain. Forced movement ignores it.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "flanking",
+    "name": "Flanking",
+    "description": "You are flanking an enemy when you and at least one ally are adjacent to them on opposite sides. While flanking, you gain an edge on melee strikes against that enemy. You must have line of effect to the enemy and be able to take triggered actions to gain or grant the benefit.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "critical-hit",
+    "name": "Critical Hit",
+    "description": "An ability roll made as a main action that comes up a natural 19 or 20 — the total on the dice before adding your characteristic score or any other modifier — is a critical hit. You immediately take an additional main action after resolving the power roll, even off your turn and even while dazed. Rolls made as maneuvers or other action types can't crit.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "dying",
+    "name": "Dying",
+    "description": "You are dying while your Stamina is 0 or lower. A dying creature is bleeding and that instance of the condition can't be removed until they stop dying, and they can't use the Catch Breath maneuver in combat. If your Stamina falls to the negative of your winded value, you die.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "surprised",
+    "name": "Surprised",
+    "description": "A creature who isn't ready for combat when it starts is surprised until the end of the first combat round. A surprised creature can't take triggered actions or free triggered actions, and ability rolls made against them gain an edge.",
+    "properties": {
+      "category": "condition"
+    }
+  },
+  {
+    "slug": "triggered-action",
+    "name": "Triggered Action",
+    "description": "An action you can take only when its stated trigger occurs, on your turn or another creature's. You get one triggered action per round.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "free-triggered-action",
+    "name": "Free Triggered Action",
+    "description": "Follows the same rules as a triggered action but doesn't count against your one-per-round limit. Anything that stops you taking triggered actions also stops free triggered actions.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "main-action",
+    "name": "Main Action",
+    "description": "The heaviest of the three things you get on your turn. Most class, kit, and treasure abilities are main actions, as are Charge, Defend, Heal, and Free Strike. You can convert a main action into a maneuver or a move action.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "maneuver",
+    "name": "Maneuver",
+    "description": "One of the three things you get on your turn, involving less focus and exertion than a main action. Aid Attack, Catch Breath, Escape Grab, Grab, Hide, Knockback, Stand Up, and Use Consumable are maneuvers.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "move-action",
+    "name": "Move Action",
+    "description": "The part of your turn spent getting around the battlefield: Advance, Disengage, or Ride. You can break the movement up before, after, or between your maneuver and main action.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "disengage",
+    "name": "Disengage",
+    "description": "A move action. You shift 1 square. Certain kits, class features, and ancestry traits let you shift further when you disengage.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "catch-breath",
+    "name": "Catch Breath",
+    "description": "A maneuver. You spend a Recovery and regain Stamina equal to your recovery value. A dying creature can't use it in combat, though allies can still help them spend Recoveries.",
+    "properties": {
+      "category": "action"
     }
   }
 ]
