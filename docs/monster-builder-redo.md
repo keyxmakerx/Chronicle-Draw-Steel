@@ -1,5 +1,18 @@
 # Monster Builder Redo — Party-Aware Design
 
+> **Where this stands (2026-08-08):** Phases 0 and 1 shipped (`DS-MB-REDO-P01` —
+> `widgets/monster-party.js`, `widgets/monster-engine.js`, the EV meter, the
+> `'leader'`/`'solo'` literals gone). Phases 2–3 are folded into the coordinator
+> dispatch **`C-BESTIARY-REWRITE`**
+> (`Cordinator/dispatches/chronicle/C-BESTIARY-REWRITE.md`) — `[BR-4]` rules how much
+> of the 7-step shell survives, `[BR-5]` rules what "start from an existing creature"
+> seeds from, `[BR-6]` rules the fate of `data/creatures.json`. All unsigned.
+>
+> **§3.2's EV/budget arithmetic below is superseded.** `ev_multiplier` and
+> `hero_ratio` were this package's own invention; the published formulas now live in
+> `widgets/monster-formulas.js` and are the only place they may be evaluated. See
+> CLAUDE.md → "The builder's math must carry its own provenance".
+
 > Status: **DRAFT for review.** This is a design proposal, not shipped code.
 > It captures the target architecture for a complete rebuild of the Draw Steel
 > monster builder, centered on integrating the campaign **party** (the player

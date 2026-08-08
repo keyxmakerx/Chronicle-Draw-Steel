@@ -113,17 +113,17 @@ To publish: **Actions → Release → Run workflow**, enter the version (e.g.
 ```
 manifest.json              Package manifest (categories, presets, widgets, text_renderers)
 data/
-  creatures.json           35 creatures with full stat blocks
+  creatures.json           35 example creatures (see the rewrite dispatch below)
   creature-abilities.json  23 template abilities
-  rules-glossary.json      25 rules definitions for @references
+  rules-glossary.json      60 rules definitions for @references
   organization-templates.json  7 org types (stamina/EV formulas)
   role-templates.json      9 roles (characteristic baselines)
   damage-baselines.json    Damage scaling by tier and organization
   creature-keywords.json   23 creature type keywords
   ability-keywords.json    9 ability type keywords
-  abilities.json           Stub (future: hero abilities)
-  ancestries.json          Stub (future: ancestry data)
-  kits.json                Stub (future: kit data)
+  abilities.json           519 hero abilities
+  ancestries.json          12 ancestries
+  kits.json                21 kits
 widgets/
   monster-builder.js       7-step creature authoring wizard
   bestiary-browser.js      Filterable creature catalog
@@ -135,8 +135,40 @@ docs/
   PROJECT-HANDOFF.md       Architecture and status overview
   monster-builder.md       Monster Builder design document
   foundry-creature-sync.md Foundry VTT sync specification
-  implementation-checklist.md  Implementation roadmap
+  implementation-checklist.md  Implementation roadmap (STALE — see below)
 ```
+
+## Planned: the bestiary + monster-builder rewrite
+
+The community bestiary browser, the monster builder, and the Foundry creature-sync
+leg are booked for a rewrite. The plan of record is the coordinator dispatch
+**`C-BESTIARY-REWRITE`** (`Cordinator/dispatches/chronicle/C-BESTIARY-REWRITE.md`).
+It is **unsigned** — ten blocks `[BR-1]`…`[BR-10]` await a coordinator ruling, and
+none of them is an executor's to open.
+
+Read it before planning any work on `widgets/bestiary-browser.js`,
+`widgets/monster-builder.js`, `data/creatures.json`, or the creature preset's
+`foundry_path` annotations. Four things it settles that are easy to get wrong here:
+
+- **Chronicle's `internal/plugins/bestiary` is shipped and working** (3,252 lines of
+  Go, JSON-only, sanitised on write *and* read, multi-system). The rewrite is this
+  package's **widgets**, not that plugin. `docs/implementation-checklist.md` marks
+  that plugin — and the "Publish to Bestiary" button that shipped in
+  `widgets/monster-builder.js` — as *not done*; it is wrong on both counts.
+- **`widgets/monster-formulas.js` stays the only place published formulas are
+  evaluated**, and every rendered figure keeps its `sourced` provenance flag. See
+  CLAUDE.md → "The builder's math must carry its own provenance".
+- **`data/creatures.json` is 35 example fixtures, not a seed corpus.** Nothing loads
+  it, every `source` is `"custom"`, its abilities are bare names, and against the
+  published formulas in `data/monster-building.json` only 2 of 30 EV values and
+  **0 of 30** Stamina values agree (the other 5 entries are `Swarm`, which has no
+  published organization modifier at all). `[BR-6]` rules its fate.
+- **The Foundry creature leg does not exist yet in either repo**, and three documents
+  (`docs/foundry-creature-sync.md` §4.1, `manifest.json`'s creature preset, and the
+  Foundry module's `API-CONTRACT.md`) give three different, unverified `foundry_path`
+  maps. `docs/FOUNDRY-SYNC-MAP.md` is the *hero* map and is the only one verified
+  against the Draw Steel system source. `[BR-7]`/`[BR-8]` rule direction, conflict
+  resolution, and where the paths get verified.
 
 ## License
 
