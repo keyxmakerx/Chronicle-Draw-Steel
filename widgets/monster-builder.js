@@ -84,7 +84,7 @@ Chronicle.register('monster-builder', {
     // is { sourced, value, note }. `sourced:false` means the published Draw
     // Steel formulas do not cover this input and the figure shown is the
     // widget's own heuristic — the UI is required to say so rather than let the
-    // checks panel imply the number was validated. See widgets/monster-formulas.js.
+    // checks panel imply the number was validated. See the DrawSteelFormulas section of widgets/monster-engine.js.
     this._provenance = {};
 
     Promise.all([this._loadReferenceData(), this._ref.load(), this._loadParty()]).then(function () {
@@ -1245,7 +1245,8 @@ Chronicle.register('monster-builder', {
   },
 
   // _recalcAuto fills EV and Stamina from the PUBLISHED formulas
-  // (widgets/monster-formulas.js) and records, per figure, whether the number
+  // (the DrawSteelFormulas section of widgets/monster-engine.js) and records, per
+  // figure, whether the number
   // shown is published or the widget's own. It used to fill both from invented
   // per-organization tables — `ev_multiplier * level` and
   // `stamina_base + stamina_per_level * level` — which ran 1.67x and up to 2.3x

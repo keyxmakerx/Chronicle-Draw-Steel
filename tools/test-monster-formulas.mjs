@@ -1,4 +1,4 @@
-// test-monster-formulas.mjs — pins widgets/monster-formulas.js against the
+// test-monster-formulas.mjs — pins the DrawSteelFormulas section of widgets/monster-engine.js against the
 // PUBLISHED formulas that ship in data/monster-building.json and
 // data/encounter-building.json.
 //
@@ -15,7 +15,7 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
-const F = require('../widgets/monster-formulas.js');
+const F = require('../widgets/monster-engine.js').Formulas;
 
 const load = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8'));
 const ORGS = load('organization-templates.json');

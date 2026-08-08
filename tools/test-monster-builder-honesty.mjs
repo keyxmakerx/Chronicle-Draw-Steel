@@ -26,7 +26,7 @@ installDom();
 globalThis.Chronicle = makeChronicle();
 
 const require = createRequire(import.meta.url);
-const F = require('../widgets/monster-formulas.js');
+const F = require('../widgets/monster-engine.js').Formulas;
 globalThis.DrawSteelFormulas = F;
 globalThis.MonsterEngine = require('../widgets/monster-engine.js');
 globalThis.MonsterParty = require('../widgets/monster-party.js');
