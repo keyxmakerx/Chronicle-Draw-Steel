@@ -13,6 +13,10 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `kits.json` | The twenty-one kits: equipment, armor and weapon categories, Stamina/speed/stability/damage/distance/disengage bonuses, and signature abilities | *Heroes Book* ch. 6 (Kits) |
 | `abilities.json` | 519 abilities: the nine classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
 | `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
+| `ancestry-point-buy.json` | The ancestry-points budget rule, signature vs. purchased traits, the starting size/speed/stability baseline, the per-ancestry budget table, and the revenant's Previous Life case | *Heroes Book* ch. 3 (Ancestries) |
+| `monster-building.json` | The monster-making formulas: role/damage and organization modifier tables, the EV, Stamina, and damage-tier equations, characteristics and potency, target-count adjustment, Instant Solo Creature, reskinning, and the animal-trait point budget | *Monsters Book* ch. 1 (Monster Basics), ch. 2 (Monsters — Animals) |
+| `encounter-building.json` | The six-step encounter-building procedure: the five difficulty tiers with their budget bands and Victory awards, encounter strength and its table, budget spending rules, creature level and count limits, initiative groups, and Quick Encounter Building | *Monsters Book* ch. 1 (Monster Basics) |
+| `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -46,6 +50,27 @@ are merged into one entry that lists every level it is offered at in
 Grave Speech, Guided to Your Side, Hands of the Maker) are printed for both the
 censor and the conduit; those stay as two entries, one per class, because the
 slugs are namespaced by class.
+
+The **build-your-own** files draw on a second published source and a second Steel
+Compendium repository. `ancestry-point-buy.json` reproduces the "Ancestry Traits"
+and "Starting Size and Speed" sections of `Rules/Chapters/Ancestries.md` in
+`SteelCompendium/data-md`, the same file already consulted for `ancestries.json`.
+`monster-building.json`, `encounter-building.json`, and `animal-traits.json` come
+from `SteelCompendium/data-bestiary-md`, the markdown of the *Draw Steel Monsters*
+book (`source: mcdm.monsters.v1`), which carries the same DRAW STEEL Creator
+License attribution as `data-md`. The specific files consulted were
+`Monsters/Chapters/Monster Basics.md` — its "Monster Basics" (Encounter Value,
+Creature Organization, Creature Roles, Villain Actions), "Malice",
+"Step-by-Step Encounter Building", "Quick Encounter Building",
+"Reskinning Monsters", and "Adjusting Monster Levels" sections — and
+`Monsters/Chapters/Monsters.md`, whose "Animals" section carries the animal-trait
+point budget, the four trait categories, and the Animal Notation shorthand.
+
+Three glossary entries were added alongside them: `encounter-value` and
+`encounter-strength` from "Monster Basics" and "Step 3: Determine Encounter
+Strength", and `malice` from the "Malice" and "Earning Malice" sections. They
+exist because the build-your-own text refers to all three constantly and the
+tooltip system had definitions for neither.
 
 The keyword definitions in `ability-keywords.json` come from
 `Rules/Chapters/Classes.md` ("Ability Keywords") for the core keywords,
@@ -88,6 +113,18 @@ ability, so it is left for `creatures.json` and the entry records the fact in
 editorialising published rules; the page-number anchors they linked to are dropped, as
 they address a PDF this package does not ship.
 
+The build-your-own files needed one deliberate cut. Each published animal trait ends
+with a **"Typically Used By"** line naming example creatures, and some of those are
+invented Draw Steel creature names rather than real-world animals (mohlers,
+quadrakangas, thrazzes, thunderjellies). Those lines are flavor, not mechanics, so
+none of them are reproduced in `animal-traits.json`; every trait's cost, effect,
+upgrade, and optional line is complete. `encounter-building.json` and
+`monster-building.json` needed no cuts — the encounter-building and monster-making
+sections name no character, place, or god. The Monsters book's bestiary itself
+(`Monsters/Chapters/Monsters.md` outside the Animals section) is largely proprietary
+setting fiction and named villains, and **none of it is reproduced here**; only the
+Animals section's trait menu carries over.
+
 The kit entries needed almost none of this treatment: the published kit text is rules
 and fighting-style description, and names no character, place, or god. Each kit's
 `description` is therefore the published introductory paragraph, reproduced as-is —
@@ -117,7 +154,56 @@ at a glance:
   Steel Compendium"`.
 
 Operators adding their own ancestries, kits, and creatures should set
-`"source": "custom"` on those entries.
+`"source": "custom"` on those entries. This is a contract, not a habit: it is
+written into `docs/DATA-SCHEMA.md` → "Provenance", and
+`tools/test-build-your-own-data.mjs` fails CI on any build-your-own entry that
+carries no `properties.source`, or that claims a published source without naming
+Draw Steel.
+
+**`ancestry-point-buy.json` contains two custom entries, and they exist because a
+published rule does not.** Draw Steel ships no rules for building a custom
+ancestry — no costing table for pricing an invented trait. Chapter 3 presents the
+twelve pre-designed ancestries and nothing else.
+`custom-ancestry-costing-benchmark` is therefore not a rule: it is a benchmark
+computed from `data/ancestries.json` by tabulating what the 69 published purchased
+traits actually do at 1 point and at 2 points, so an invented trait can be priced
+by analogy against the closest published one. `custom-ancestry-checklist` is the
+shape every published ancestry actually has, written down. Both carry
+`"source": "custom"` and `properties.derived_from`, and both say in their own
+`description` that they are not published rules. The other six entries in that
+file are published rules text with their real provenance.
+
+**`monster-building.json`, `encounter-building.json`, and `animal-traits.json`
+contain no custom content.** Every entry is published rules text or a published
+number. As with `kits.json`, the only non-published thing about them is the
+*shape*: field names such as `stamina_organization_modifier`, `hero_slots_filled`,
+and `budget_band`, the expression form the difficulty budget bands are written in
+(`party_es + one_hero_es` rather than prose), and the `{@category term}`
+cross-references woven into the text. Those encode published facts rather than
+adding new ones, so they carry no flag.
+
+**`organization-templates.json` and `role-templates.json` are mixed, and now say
+so per field.** Their `hero_ratio`, `villain_action_count`, and the newly added
+`organization_modifier` / `stamina_organization_modifier` / `hero_slots_filled` /
+`role_modifier` / `damage_modifier` are published. Their `ev_multiplier`,
+`stamina_base`, `stamina_per_level`, `default_speed`, `default_stability`,
+`primary_stat`, and `characteristics` are this package's own approximations and
+are listed in each entry's `properties`-equivalent `custom_fields` array. They do
+not agree with the published formulas now in `monster-building.json` — the
+published EV is `((2 × Level) + 4) × Organization Modifier`, not
+`ev_multiplier × Level`, and published Stamina depends on the creature's *role*,
+which the templates' organization-only model cannot express. The derived numbers
+are left in place because `monster-engine.js`, `monster-builder.js`, and
+`creatures.json` all consume them; they are flagged rather than silently
+rewritten. `damage-baselines.json` is the same case and is likewise not published:
+its per-organization tier table does not follow from the published damage
+equation. Reconciling the widgets onto the published formulas is a code change,
+not a data change, and is left for a later stage.
+
+**The `swarm` organization is this package's own.** Swarm is a published creature
+*keyword*, not a published creature *organization*: the Monsters book's
+Organization Modifier table has rows for minion, horde, platoon, leader, elite,
+and solo only. The `swarm` entry carries `"source": "custom"` and null modifiers.
 
 **`abilities.json` contains no custom content.** Every one of the 519 entries is
 published rules text and carries its real provenance in `properties.source`

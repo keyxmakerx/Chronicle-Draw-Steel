@@ -20,6 +20,35 @@ All files in `data/` must be JSON arrays of **ReferenceItem** objects. Chronicle
 | `description` | string | No | Tooltip/detail text |
 | `properties` | object | No | Arbitrary key-value metadata |
 
+**Domain-specific fields go inside `properties`, never at the root.** The root
+carries those four keys and nothing else. A domain field written at the root is
+invisible to every consumer, because every consumer reads `properties`.
+(`organization-templates.json` and `role-templates.json` are the two legacy
+exceptions — they are read straight off the root by `monster-engine.js` and
+`monster-builder.js`, and are documented as-is below. Do not copy that shape into
+a new file.)
+
+## Provenance — `properties.source` and `properties.custom_fields`
+
+Every entry in `data/` must declare where it came from. This is a contract, not a
+convention: `data/NOTICE.md` is the package's licensing position, and it can only
+be true if published rules text and this package's own content can be told apart
+mechanically.
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `properties.source` | string | Provenance. Either a real citation — e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"` — or the exact string `"custom"`. |
+| `properties.custom_fields` | array | Present on an otherwise-published entry whose *specific listed fields* were written for this package rather than reproduced. E.g. every `ancestries.json` entry carries `["description"]`, because the published ancestry descriptions are setting fiction that is deliberately not reproduced. |
+| `properties.derived_from` | string | On a `"custom"` entry that was computed from other data in this package, the file it was computed from — so the derivation can be re-checked. |
+| `properties.omissions` | array | Published content deliberately not reproduced, and why. |
+
+**Operator-authored content — new ancestries, new creatures, new kits — sets
+`"source": "custom"`.** Anything shipped in this package that is a worked
+example, a derived table, or a helper entry does the same. Published entries
+carry their real citation instead. `tools/test-build-your-own-data.mjs` enforces
+this for the build-your-own files, and `tools/test-abilities-data.mjs` for
+`abilities.json`.
+
 ## creatures.json
 
 Each creature represents a full Draw Steel stat block.
@@ -242,7 +271,9 @@ Rule definitions for the @reference tooltip system.
 
 ## organization-templates.json
 
-Defines stat formulas per organization type.
+Defines stat formulas per organization type. **Legacy root-field shape** — the
+fields sit at the root, not in `properties`, because `monster-engine.js` and
+`monster-builder.js` read them there.
 
 ```json
 {
@@ -255,13 +286,32 @@ Defines stat formulas per organization type.
   "default_speed": 5,
   "default_stability": 1,
   "villain_action_count": 0,
-  "hero_ratio": "1:1"
+  "hero_ratio": "1:1",
+  "organization_modifier": 1,
+  "stamina_organization_modifier": 1,
+  "hero_slots_filled": 1,
+  "custom_fields": ["description", "ev_multiplier", "stamina_base", "stamina_per_level",
+                    "default_speed", "default_stability"],
+  "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
 }
 ```
 
+| Field | Provenance | Description |
+|-------|-----------|-------------|
+| `organization_modifier` | published | Multiplier in the EV and Stamina formulas (see `monster-building.json`). `null` on an organization Draw Steel does not publish. |
+| `stamina_organization_modifier` | published | The Stamina-only multiplier; differs from `organization_modifier` for minion (0.125) and solo (5). |
+| `hero_slots_filled` | published | Hero slots one creature of this organization fills in Quick Encounter Building. Equals `heroes / creatures` from `hero_ratio`. |
+| `hero_ratio` | published | `"creatures:heroes"`. Read by `MonsterEngine.heroesPerCreature`. |
+| `villain_action_count` | published | 3 for leaders and solos, 0 otherwise. |
+| `ev_multiplier`, `stamina_base`, `stamina_per_level`, `default_speed`, `default_stability` | **custom** | This package's own linear approximations, listed in `custom_fields`. The published formulas are in `monster-building.json` and disagree with them; the widgets still consume these, so they are left in place rather than silently rewritten. |
+
+`swarm` carries `"source": "custom"` and null modifiers: Swarm is a published
+creature *keyword*, not a published creature *organization*, so the Monsters book
+prints no modifier row, EV formula, or hero-slot rate for it.
+
 ## role-templates.json
 
-Defines characteristic baselines per role.
+Defines characteristic baselines per role. Same legacy root-field shape.
 
 ```json
 {
@@ -275,9 +325,110 @@ Defines characteristic baselines per role.
     "reason": -1,
     "intuition": 0,
     "presence": 1
+  },
+  "role_modifier": 30,
+  "damage_modifier": 1,
+  "custom_fields": ["description", "primary_stat", "characteristics"],
+  "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
+}
+```
+
+`role_modifier` feeds the published Stamina formula and `damage_modifier` the
+published damage formula. `primary_stat` and `characteristics` are this package's
+own — Draw Steel publishes no per-role characteristic array.
+
+## ancestry-point-buy.json
+
+The published ancestry-points rules, plus the two derived aids an operator needs
+to invent an ancestry. Eight entries, all with `properties.category` set to
+`"ancestry-point-buy"` and `properties.rule_type` naming the kind of entry
+(`budget`, `trait-class`, `baseline`, `table`, `special-case`, `benchmark`,
+`checklist`).
+
+Six entries are published rules. The two that are not —
+`custom-ancestry-costing-benchmark` (what 1-point and 2-point traits actually do,
+tabulated from the 69 published purchased traits, so an invented trait can be
+priced by analogy) and `custom-ancestry-checklist` — carry `"source": "custom"`
+and `properties.derived_from`. **Draw Steel publishes no costing table for
+inventing ancestry traits; those two entries are this package's own and must never
+be presented as rules.**
+
+`ancestry-point-budgets` is derived from `ancestries.json` and pinned against it
+by `tools/test-build-your-own-data.mjs`, so editing an ancestry's budget or trait
+list without updating the table fails CI.
+
+## monster-building.json
+
+The published monster-making formulas — the ones the Monsters book prints for
+approximating a monster you create yourself, alongside the caveat that published
+stat blocks are not meant to be modified.
+
+| Slug | What it carries |
+|------|-----------------|
+| `monster-building-caveat` | Why published stat blocks should be reskinned rather than rebuilt. |
+| `reskinning-monsters` | The changes that do not alter a creature's level or challenge. |
+| `role-and-damage-modifier-table` | `properties.rows`: `role_modifier` + `damage_modifier` per role, and per organization for elite/leader/solo. |
+| `organization-modifier-table` | `properties.rows`: `organization_modifier` + `stamina_organization_modifier`. |
+| `encounter-value-formula` | `((2 * level) + 4) * organization_modifier`, rounded up. |
+| `stamina-formula` | `((10 * level) + role_modifier) * stamina_organization_modifier`, rounded up. |
+| `damage-and-power-roll-tiers` | `(4 + level + damage_modifier) * tier_modifier`, tier modifiers 0.6 / 1.1 / 1.4, halved for horde and minion. |
+| `target-count-damage-adjustment` | ×0.8 / ×0.5 / ×1.2 for target counts off the expected. |
+| `monster-characteristics-and-potency` | Highest characteristic = `1 + echelon`; potency per tier; leader/solo bonuses; free strike = tier 1. |
+| `instant-solo-creature` | Converting a leader or elite into a solo. |
+| `animal-trait-point-buy` | 4 free trait points, +2 EV per point beyond. |
+| `animal-notation` | The `"Predator B: Swiftness, Pack, Hunter"` shorthand. |
+
+Formula entries state the **equation**, never a table of pre-computed numbers for
+one level: `properties.formula` is a string, `properties.rounding` is `"up"`, and
+`properties.inputs` names the variables. `damage-baselines.json` is the
+counter-example — it bakes one level's output into a table and its numbers do not
+follow from the published equations.
+
+## encounter-building.json
+
+The published six-step encounter-building procedure — the creature-side point-buy.
+Seventeen entries, `properties.category` = `"encounter-building"`, with
+`properties.rule_type` one of `procedure`, `difficulty`, `formula`, `adjustment`,
+`constraint`, `guideline`.
+
+The five `difficulty` entries (`difficulty-trivial` … `difficulty-extreme`) each
+carry `budget_band` — `{lower, upper, upper_inclusive}` as expressions over
+`party_es` and `one_hero_es` — plus `budget_band_text` and `victories`.
+`encounter-strength` carries the `4 + (2 * hero_level)` formula and the full
+published table for 1–8 heroes at levels 1–10. `quick-encounter-building` carries
+`fill_rates` (how many creatures of each organization fill one hero slot) and
+`difficulty_adjustments`.
+
+## animal-traits.json
+
+The published animal-trait menu — 35 traits an operator buys to build a custom
+animal. This is the one per-creature point-buy Draw Steel actually publishes.
+
+```json
+{
+  "slug": "swiftness",
+  "name": "Swiftness",
+  "description": "The animal has a +2 bonus to speed, and they ignore {@combat difficult-terrain|difficult terrain}.",
+  "properties": {
+    "group": "Mobility",
+    "cost": 1,
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium",
+    "repeatable": 2
   }
 }
 ```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group` | string | Yes | `Mobility`, `Defensive`, `Offensive`, or `Supernatural` |
+| `cost` | number | Yes | Point cost (positive integer) |
+| `repeatable` | number | No | How many times the trait may be selected; absent means once |
+| `upgrade` | object | No | `{cost, text}` — the trait's published "+N Point" upgrade |
+| `optional` | string | No | The trait's published "Optional:" line |
+| `granted_ability` | object | No | A full ability the trait grants (Web) |
+
+The budget rule lives in `monster-building.json` → `animal-trait-point-buy`, not
+here, so this file stays homogeneous: every entry is a trait with a cost.
 
 ## @Reference Syntax
 
@@ -297,7 +448,7 @@ Verify all data files:
 
 ```bash
 # JSON validity
-python3 -c "import json; [json.load(open(f'data/{f}')) for f in ['creatures.json','creature-abilities.json','rules-glossary.json','organization-templates.json','role-templates.json','damage-baselines.json','creature-keywords.json','ability-keywords.json']]"
+python3 -c "import json, glob; [json.load(open(f)) for f in glob.glob('data/*.json')]"
 
 # All arrays with slug+name
 python3 -c "
@@ -321,4 +472,7 @@ for c in json.load(open('data/creatures.json')):
     assert p['winded'] == p['stamina'] // 2
 print('All 35 creatures pass formula validation')
 "
+
+# Build-your-own data: provenance flags, @references, and the derived tables
+node --test tools/test-build-your-own-data.mjs
 ```
