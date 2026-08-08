@@ -446,5 +446,13 @@
     "properties": {
       "category": "action"
     }
+  },
+  {
+    "slug": "echelon",
+    "name": "Echelon",
+    "description": "The four tiers of play, each covering a band of levels: 1st echelon is 1st to 3rd level, 2nd echelon is 4th to 6th level, 3rd echelon is 7th to 9th level, and 4th echelon is 10th level. Bonuses that scale per echelon — such as a kit's Stamina bonus — increase as your hero crosses into each band.",
+    "properties": {
+      "category": "combat"
+    }
   }
 ]
