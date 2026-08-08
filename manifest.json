@@ -1,9 +1,9 @@
 {
   "id": "drawsteel",
   "name": "Draw Steel",
-  "description": "Reference data and entity presets for the Draw Steel RPG by MCDM Productions. Content sourced from publicly available CC-BY-4.0 material.",
+  "description": "Reference data and entity presets for the Draw Steel RPG. Rules text is reproduced under the DRAW STEEL Creator License; DRAW STEEL (c) 2024 MCDM Productions, LLC. An independent product, not affiliated with MCDM. See data/NOTICE.md.",
   "author": "Chronicle Team",
-  "license": "CC-BY-4.0",
+  "license": "DRAW STEEL Creator License (rules text) / CC-BY-4.0 (this package's own work)",
   "icon": "fa-swords",
   "api_version": "1",
   "status": "available",

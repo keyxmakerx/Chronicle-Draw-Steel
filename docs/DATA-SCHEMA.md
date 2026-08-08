@@ -120,6 +120,16 @@ ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
 `damage-baselines.json` and `rulebook-examples.json` — carries a real root
 `source`.
 
+**A citation also has to be true about the *licence*.** Until the licensing
+correction, every entry in `creatures.json` carried
+`"source": "Draw Steel CC-BY-4.0, MCDM Productions"`, and Chronicle printed that
+string on all 35 creature pages. Both halves were wrong: Draw Steel is not
+CC-BY-4.0 (see `LICENSE` and `data/NOTICE.md`), and those 35 creatures are not
+reproduced Draw Steel monsters — they are example stat blocks written for this
+package's monster-builder and bestiary widgets. They now carry
+`"source": "custom"`. The evidence and the trademark caveat are recorded in
+`data/NOTICE.md` → "creatures.json is example content".
+
 | Field | Type | Meaning |
 |-------|------|---------|
 | `source` (root) | string | Provenance. Either a real citation — e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"` — or the exact string `"custom"`. |
@@ -166,9 +176,15 @@ Each creature represents a full Draw Steel stat block.
     "villain_actions_json": "[]"
   },
   "tags": ["creature", "minion", "artillery", "goblin", "level-1"],
-  "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+  "source": "custom"
 }
 ```
+
+All 35 shipped creatures are `"source": "custom"` — they are example stat blocks
+written for this package, not reproduced Draw Steel monsters. An operator adding
+a creature reproduced from a published book should replace that with a real
+citation naming the book and chapter (the shape used elsewhere in `data/` is
+`"Draw Steel Monsters Book, ch. 2 (mcdm.monsters.v1), via Steel Compendium"`).
 
 ### Properties Schema
 

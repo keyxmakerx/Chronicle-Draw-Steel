@@ -91,6 +91,46 @@ endorsement is not implied. No MCDM trademarks, logos, art, or proprietary setti
 material are used here — only rules text (condition/keyword/skill/ancestry trait
 definitions and their mechanical numbers).
 
+### The limit of that statement — nobody here has read the licence
+
+**The paragraph above is this project's established position, not a reading of the
+licence text.** `mcdmproductions.com` is unreachable from the environment this
+package has been authored in — three separate authors have hit the same egress
+block — so the Creator License itself has never been opened by anyone working on
+these files. What the position actually rests on is:
+
+1. the position already established in this repository (`docs/CHARACTER-SHEET-DESIGN.md`
+   set it out when the glossary/skills source was chosen), and
+2. the community **Steel Compendium**'s own reliance: it publishes this same rules
+   text publicly under the same Creator License with the same attribution
+   disclaimer, and this package's data was compiled from it.
+
+That is a reasonable basis for proceeding. It is **not** verification, and nothing
+in this file should be read as a paraphrase of licence terms — no clause of the
+Creator License is quoted or summarised anywhere in this package, because none has
+been read.
+
+**Action for a human maintainer:** open
+<https://www.mcdmproductions.com/draw-steel-creator-license> once and confirm three
+things — (a) that it permits reproducing rules text in a free, open-source product;
+(b) that the attribution wording quoted above is the wording it *requires*, verbatim;
+and (c) that offering this package's own original work under CC-BY-4.0 alongside it
+is compatible with its terms. Then delete this subsection. Until then it stays.
+
+### What is licensed how
+
+This package is not licensed as one thing. `LICENSE` at the repository root states
+both halves:
+
+| Material | Position |
+|----------|----------|
+| The Draw Steel rules text in `data/` (the table at the top of this file) | Reproduced under the **DRAW STEEL Creator License**. This package cannot sublicense it; a redistributor relies on the same licence and carries the same attribution. |
+| This package's own work — `widgets/*.js`, `tools/*.mjs`, `docs/*`, `manifest.json`, and every data entry flagged `"source": "custom"` or field named in `properties.custom_fields` | **CC-BY-4.0**, © the Chronicle Draw Steel contributors. |
+
+Keeping those apart is why the provenance contract below exists: the licensing
+position can only be true if published rules text and this package's own content can
+be told apart mechanically, per entry.
+
 ### Setting material deliberately excluded
 
 The published ancestry entries are mostly proprietary setting fiction — narrative
@@ -240,13 +280,65 @@ such as `melee_damage_bonus` and `stamina_bonus_scaling`, and the choice to reco
 "—" in the published Kits table as `0` or `null`. That is an encoding of published
 facts, not new content, so it carries no flag.
 
-## Known inconsistency — to be corrected
+## creatures.json is example content, not reproduced monsters
 
-`manifest.json`, `README.md`, `data/creatures.json`, `docs/DATA-SCHEMA.md`,
-`docs/PROJECT-HANDOFF.md`, and `docs/implementation-checklist.md` currently describe
-the Draw Steel content in this package as **CC-BY-4.0**. That is incorrect: MCDM has
-not released Draw Steel under Creative Commons, and there is no Draw Steel SRD or
-free Basic Rules tier. The Creator License described above is the only permission
-this package relies on, and it is the position stated in this file. Those CC-BY
-claims should be replaced with the Creator License attribution; they are left
-untouched here only because correcting them spans files outside this dataset.
+The 35 entries in `creatures.json` carry `"source": "custom"`. They are example stat
+blocks written for this package's monster-builder and bestiary widgets, expressed in
+Draw Steel's published vocabulary (organizations, roles, EV, Stamina, characteristics)
+but not reproduced from any published bestiary. They previously carried an incorrect
+claim — `"source": "Draw Steel CC-BY-4.0, MCDM Productions"`, which Chronicle printed
+on all 35 creature pages — false about the licence *and* false about the provenance.
+
+The reclassification is evidenced, not assumed:
+
+- **The roster is not a Draw Steel roster.** It includes Beholder Tyrant, Mind Flayer
+  Adept, Death Knight, Lich Overlord, Vampire Lord and Ancient Wyrm — generic and
+  other-publisher fantasy monsters that do not appear in the Draw Steel *Monsters*
+  book.
+- **The stat blocks are skeletal.** Most entries have `traits: ""` and an
+  `abilities_json` holding names with no mechanics (`[{"name": "Shortbow Shot"}]`).
+  Reproduced statblocks would carry full ability text; these are widget fixtures.
+- **The commit history says so** — `bce204f` ("Expand bestiary to 35 creatures"),
+  `fc8432b` ("…example creatures").
+- **This file already said the bestiary is not reproduced.** The Monsters book's
+  bestiary outside the Animals section is proprietary setting fiction and named
+  villains, and none of it is reproduced here (see above). A creature file claiming
+  Draw Steel provenance contradicted that.
+
+**Flagged for a human, not fixed here:** *Beholder* and *Mind Flayer* are Wizards of
+the Coast trademarks, and using them as creature names is a separate IP problem from
+the one this pass corrects. Renaming them changes slugs that `bestiary-browser.js`,
+`monster-builder.js` and any campaign that imported a creature already reference, so
+it is a content decision for the maintainers rather than a licensing correction.
+
+## The CC-BY-4.0 misstatement, and where it was corrected
+
+`manifest.json`, `README.md`, `LICENSE`, `data/creatures.json`, `docs/DATA-SCHEMA.md`,
+`docs/PROJECT-HANDOFF.md`, and `docs/implementation-checklist.md` all described the
+Draw Steel content in this package as **CC-BY-4.0**. That was incorrect: MCDM has not
+released Draw Steel under Creative Commons, and there is no Draw Steel SRD or free
+Basic Rules tier. A package that ships someone else's licensed rules text while
+declaring itself CC-BY-4.0 misrepresents what a downstream user may do with it.
+
+Every claim has been corrected:
+
+| Where | Was | Now |
+|-------|-----|-----|
+| `LICENSE` | "This content pack contains material licensed under CC-BY-4.0" | Two-part statement: Creator License for the rules text, CC-BY-4.0 for this package's own work, plus the unread-licence limitation |
+| `README.md` → License | "Content is licensed under **CC-BY-4.0**" | Both positions stated separately, with the attribution block and the limitation |
+| `manifest.json` → `license` | `"CC-BY-4.0"` | `"DRAW STEEL Creator License (rules text) / CC-BY-4.0 (this package's own work)"` — rendered in Chronicle's Admin → Extensions list and system diagnostics header |
+| `manifest.json` → `description` | "Content sourced from publicly available CC-BY-4.0 material." | Creator License attribution + pointer to this file |
+| `data/creatures.json` (×35) | `"source": "Draw Steel CC-BY-4.0, MCDM Productions"` | `"source": "custom"` (see above) |
+| `docs/DATA-SCHEMA.md` | the same string, as the worked `creatures.json` example | `"custom"`, plus the correction recorded in "Provenance" |
+| `docs/PROJECT-HANDOFF.md` | `LICENSE \| CC-BY-4.0`; "if Draw Steel CC-BY-4.0 content is available" | both corrected to the Creator License position |
+| `docs/implementation-checklist.md` | "Sourced from CC-BY-4.0 Draw Steel content only" | struck through and corrected in place, since it is a historical record |
+
+`docs/CHARACTER-SHEET-DESIGN.md` already stated the Creator License position and was
+left as-is.
+
+**The correction is enforced.** `tools/test-licence-claims.mjs` fails CI if a CC-BY or
+Creative Commons mention appears anywhere outside the handful of places allowed to
+scope it to this package's own work, if any `data/*.json` entry's `source` mentions
+Creative Commons, or if the attribution line `DRAW STEEL © 2024 MCDM Productions, LLC`
+goes missing from `LICENSE`, `README.md`, or this file. The misstatement survived
+because nothing was watching for it.

@@ -17,6 +17,30 @@ This applies to any file: widgets, modules, large configs, etc.
 - `data/` - Reference JSON data (creature keywords, org templates, role templates, etc.)
 - `manifest.json` - Package manifest with categories, entity presets, and widget registrations
 
+## Licensing — two positions, never flattened into one
+
+This package is **not** one licence. Do not write "CC-BY-4.0" as though it
+covered the whole thing; that misstatement shipped for months.
+
+- **Draw Steel rules text in `data/`** is reproduced under MCDM's **DRAW STEEL
+  Creator License**. Draw Steel has never been released under Creative Commons
+  and there is no SRD. Attribution: `DRAW STEEL © 2024 MCDM Productions, LLC`.
+  This package cannot sublicense it.
+- **This package's own work** — `widgets/*.js`, `tools/*.mjs`, `docs/*`,
+  `manifest.json`, and every entry flagged `"source": "custom"` — is CC-BY-4.0.
+
+`LICENSE` states both; `data/NOTICE.md` is the file-by-file attribution and the
+authoritative position. `tools/test-licence-claims.mjs` fails CI on an unscoped
+Creative Commons mention anywhere in the tree, so a new doc or widget header
+cannot quietly reintroduce the incorrect claim.
+
+**Nobody working on this package has read the Creator License** —
+`mcdmproductions.com` is unreachable from the authoring environment. The
+position is reasoned from this repo's history and the Steel Compendium's
+reliance, not verified. **Never invent or paraphrase licence terms**, and leave
+the limitation sections in `LICENSE` / `data/NOTICE.md` in place until a human
+has read the licence and confirmed.
+
 ## Widget Patterns
 
 - All widgets use `Chronicle.register('slug', { init, destroy, ... })`

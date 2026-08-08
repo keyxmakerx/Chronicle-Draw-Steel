@@ -32,7 +32,7 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "kobold-torchbearer",
@@ -67,7 +67,7 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "skeleton-archer",
@@ -103,7 +103,7 @@
       "level-2",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "cultist-acolyte",
@@ -138,7 +138,7 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "zombie-shambler",
@@ -174,7 +174,7 @@
       "level-3",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "skeleton-warrior",
@@ -210,7 +210,7 @@
       "level-1",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "goblin-skirmisher",
@@ -245,7 +245,7 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "wolf",
@@ -281,7 +281,7 @@
       "animal",
       "beast"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "bandit-thug",
@@ -316,7 +316,7 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "orc-raider",
@@ -351,7 +351,7 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "radenwight-reaver",
@@ -386,7 +386,7 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "hobgoblin-soldier",
@@ -421,7 +421,7 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "ogre",
@@ -456,7 +456,7 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "dark-elf-ranger",
@@ -492,7 +492,7 @@
       "humanoid",
       "fey"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "minotaur-warrior",
@@ -527,7 +527,7 @@
       "level-5",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "shadow-assassin",
@@ -563,7 +563,7 @@
       "humanoid",
       "shadow"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "troll",
@@ -598,7 +598,7 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "medusa-archer",
@@ -634,7 +634,7 @@
       "humanoid",
       "monstrosity"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "mind-flayer-adept",
@@ -670,7 +670,7 @@
       "aberration",
       "psionic"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "iron-golem",
@@ -706,7 +706,7 @@
       "level-7",
       "construct"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "goblin-war-chief",
@@ -741,7 +741,7 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "hobgoblin-warlord",
@@ -776,7 +776,7 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "vampire-lord",
@@ -812,7 +812,7 @@
       "level-5",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "fire-giant-champion",
@@ -849,7 +849,7 @@
       "giant",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "lich-overlord",
@@ -885,7 +885,7 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "young-fire-drake",
@@ -922,7 +922,7 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "beholder-tyrant",
@@ -957,7 +957,7 @@
       "level-6",
       "aberration"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "adult-dragon",
@@ -992,7 +992,7 @@
       "level-7",
       "dragon"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "death-knight",
@@ -1028,7 +1028,7 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "ancient-wyrm",
@@ -1065,7 +1065,7 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "rat-swarm",
@@ -1101,7 +1101,7 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "bat-swarm",
@@ -1137,7 +1137,7 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "spider-swarm",
@@ -1173,7 +1173,7 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "locust-swarm",
@@ -1210,7 +1210,7 @@
       "swarm",
       "elemental"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   },
   {
     "slug": "shadow-swarm",
@@ -1246,6 +1246,6 @@
       "shadow",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions"
+    "source": "custom"
   }
 ]

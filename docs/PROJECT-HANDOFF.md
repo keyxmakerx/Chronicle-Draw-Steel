@@ -53,7 +53,7 @@ Draw Steel is a tabletop RPG. This package lets Chronicle users create, browse, 
 | `manifest.json` (195 lines) | Package manifest — categories, entity presets, relation presets, widget registrations |
 | `CLAUDE.md` | AI coding guidelines (large file strategy, widget patterns) |
 | `README.md` | User-facing package overview |
-| `LICENSE` | CC-BY-4.0 |
+| `LICENSE` | Two-part licensing statement: Draw Steel rules text under MCDM's DRAW STEEL Creator License; this package's own code, docs and `"source": "custom"` data under CC-BY-4.0 |
 
 ### `widgets/` — Interactive Widgets (all ES5 JavaScript)
 | File | Lines | Purpose |
@@ -276,7 +276,7 @@ All work is on branch `claude/consolidate-repos-AVzyM`, pushed and up to date wi
 ## 11. What's Next (For the Next AI/Developer)
 
 ### If staying in this repo:
-- **Nothing major left.** Phases 1-2 are complete. The stub data files (`abilities.json`, `ancestries.json`, `kits.json`) could be populated if Draw Steel CC-BY-4.0 content is available for those categories, but that's optional.
+- **Nothing major left.** Phases 1-2 are complete. (Since this was written, the stub data files `abilities.json`, `ancestries.json` and `kits.json` *have* been populated — 519 abilities, 12 ancestries, 21 kits — reproduced under the DRAW STEEL Creator License, not under CC-BY-4.0, which Draw Steel has never been released under. See `data/NOTICE.md`.)
 - Could add more example creatures to `data/creatures.json`
 - Could add a "support" role template (mentioned in some Draw Steel discussions but not in the current 5-role set)
 

@@ -140,5 +140,32 @@ docs/
 
 ## License
 
-Content is licensed under **CC-BY-4.0**. Draw Steel is a product of MCDM Productions.
-See [LICENSE](LICENSE) for details.
+This package carries **two** licensing positions, because it contains two kinds of
+material. See [LICENSE](LICENSE) for the full statement and
+[data/NOTICE.md](data/NOTICE.md) for the file-by-file attribution.
+
+**The Draw Steel rules text in `data/`** — glossary, skills, ancestries, kits,
+abilities, ability keywords, the ancestry point-buy, the monster-making and
+encounter-building formulas, and the animal traits — is reproduced under MCDM's
+**DRAW STEEL Creator License**. It is *not* Creative Commons material: MCDM has not
+released Draw Steel under any CC licence, and there is no Draw Steel SRD.
+
+> This package is an independent product published under the DRAW STEEL Creator
+> License and is not affiliated with MCDM Productions, LLC.
+> **DRAW STEEL © 2024 MCDM Productions, LLC.**
+
+No MCDM trademarks, logos, art, or setting material are reproduced here — only rules
+text and its mechanical numbers. MCDM endorsement is not implied. This package cannot
+sublicense that text; anyone redistributing it relies on the same Creator License and
+must carry the same attribution.
+
+**This package's own work** — `widgets/*.js`, `tools/*.mjs`, `docs/*`, `manifest.json`,
+and the data entries flagged `"source": "custom"` (including the 35 example creatures in
+`creatures.json`) — is licensed **CC-BY-4.0**, © the Chronicle Draw Steel contributors.
+
+**A limitation worth knowing about:** the Creator License text itself could not be read
+from the environment this position was written in (`mcdmproductions.com` is unreachable
+there). The statements above rest on this repository's established position and on the
+community Steel Compendium's reliance on the same licence for the same material — not on
+a reading of the licence. A human should read it once and confirm. See the closing
+section of [LICENSE](LICENSE).
