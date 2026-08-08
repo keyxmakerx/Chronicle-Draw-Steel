@@ -63,10 +63,12 @@ test('every file is an array of ReferenceItems with unique slugs', () => {
 });
 
 test('domain-specific fields live inside properties, never at the root', () => {
-  // CLAUDE.md "Data Format" and docs/DATA-SCHEMA.md: the root carries exactly the
-  // four ReferenceItem keys. A domain field at the root is invisible to any
-  // consumer that reads properties, which is all of them.
-  const allowed = new Set(['slug', 'name', 'description', 'properties']);
+  // CLAUDE.md "Data Format" and docs/DATA-SCHEMA.md: the root carries only the
+  // ReferenceItem keys Chronicle reads off the root, and every DOMAIN field goes
+  // in properties. `summary` and `source` are root keys because that is where the
+  // renderer looks: system_pages.templ prints item.Summary in the list table and
+  // item.Source in the detail header, never properties.summary/source.
+  const allowed = new Set(['slug', 'name', 'summary', 'description', 'properties', 'tags', 'source']);
   for (const [file, data] of Object.entries(FILES)) {
     for (const e of data) {
       for (const key of Object.keys(e)) {
@@ -76,12 +78,12 @@ test('domain-specific fields live inside properties, never at the root', () => {
   }
 });
 
-test('every entry declares its provenance in properties.source', () => {
+test('every entry declares its provenance in the root source', () => {
   for (const [file, data] of Object.entries(FILES)) {
     for (const e of data) {
-      const src = e.properties.source;
-      assert.equal(typeof src, 'string', `${file}: ${e.slug} needs properties.source`);
-      assert.ok(src.length > 0, `${file}: ${e.slug} has an empty properties.source`);
+      const src = e.source;
+      assert.equal(typeof src, 'string', `${file}: ${e.slug} needs a root source`);
+      assert.ok(src.length > 0, `${file}: ${e.slug} has an empty root source`);
       if (src !== 'custom') {
         assert.match(src, /Draw Steel/,
           `${file}: ${e.slug} claims a published source that doesn't name Draw Steel`);
@@ -94,7 +96,7 @@ test('custom entries are flagged as custom and say what they were derived from',
   // The operator asked that anything not reproduced from published Draw Steel be
   // denoted as custom. Both derived entries in ancestry-point-buy.json are, and
   // each names the file it was computed from so the derivation can be re-checked.
-  const custom = ANCESTRY_PB.filter((e) => e.properties.source === 'custom');
+  const custom = ANCESTRY_PB.filter((e) => e.source === 'custom');
   assert.deepEqual(
     custom.map((e) => e.slug).sort(),
     ['custom-ancestry-checklist', 'custom-ancestry-costing-benchmark'],
@@ -106,7 +108,7 @@ test('custom entries are flagged as custom and say what they were derived from',
   // The other three files reproduce published rules only.
   for (const file of ['monster-building.json', 'encounter-building.json', 'animal-traits.json']) {
     for (const e of FILES[file]) {
-      assert.notEqual(e.properties.source, 'custom',
+      assert.notEqual(e.source, 'custom',
         `${file}: ${e.slug} is flagged custom but this file is published rules only`);
     }
   }

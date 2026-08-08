@@ -2,19 +2,25 @@
   {
     "slug": "devil",
     "name": "Devil",
+    "summary": "Horned, tailed humanoids whose innate magic bends how their words are heard.",
     "description": "Horned, tailed humanoids whose innate magic bends how their words are heard. Size 1M, speed 5. The signature trait Silver Tongue grants an interpersonal skill and an edge on reading a negotiation; 3 ancestry points buy from seven traits spanning speed, retaliation, sight through darkness, and flight.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Beast Legs", "Impressive Horns"],
+      "quick_build": [
+        "Beast Legs",
+        "Impressive Horns"
+      ],
+      "quick_build_display": "Beast Legs, Impressive Horns",
       "signature_traits": [
         {
           "name": "Silver Tongue",
           "description": "Your innate magic allows you to twist how your words are perceived to get a better read on people and convince them to see things your way. You have one skill of your choice from the interpersonal skill group, and you gain an {@combat edge} on tests when attempting to discover an NPC's motivations and pitfalls during a negotiation."
         }
       ],
+      "signature_traits_display": "Silver Tongue — Your innate magic allows you to twist how your words are perceived to get a better read on people and convince them to see things your way. You have one skill of your choice from the interpersonal skill group, and you gain an {@combat edge} on tests when attempting to discover an NPC's motivations and pitfalls during a negotiation.",
       "purchased_traits": [
         {
           "name": "Barbed Tail",
@@ -52,26 +58,36 @@
           "description": "You possess wings powerful enough to take you airborne. While using your wings to fly, you can stay aloft for a number of rounds equal to your Might score (minimum 1 round) before you fall. While using your wings to fly at 3rd level or lower, you have {@resource damage-weakness|damage weakness} 5."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Barbed Tail (cost: 1) — Your pointy tail allows you to punctuate all your actions. Once per round when you make a melee strike, you can deal extra damage with the strike equal to your highest characteristic score. · Beast Legs (cost: 1) — Your powerful legs make you faster. You have speed 6. · Glowing Eyes (cost: 1) — Your eyes are a solid, vibrant color that flares to show your excitement or rage. Whenever you take damage from a creature, you can use a {@action triggered-action|triggered action} to deal that creature psychic damage equal to 1d10 + your level. · Hellsight (cost: 1) — Your eyes let you see through darkness, fog, and other obscuring effects. You don't take a {@combat bane} on strikes made against creatures with {@combat concealment}. · Impressive Horns (cost: 2) — Your cherished horns are larger than the average devil's, and a hardened representation of your force of will. Whenever you make a {@combat saving-throw|saving throw}, you succeed on a roll of 5 or higher. · Prehensile Tail (cost: 2) — Your prehensile tail allows you to challenge foes on all sides. You can't be {@combat flanking|flanked}. · Wings (cost: 2) — You possess wings powerful enough to take you airborne. While using your wings to fly, you can stay aloft for a number of rounds equal to your Might score (minimum 1 round) before you fall. While using your wings to fly at 3rd level or lower, you have {@resource damage-weakness|damage weakness} 5.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "dragon-knight",
     "name": "Dragon Knight",
+    "summary": "Muscled draconic humanoids in scale of any color, standing 6 to 7 feet tall.",
     "description": "Muscled draconic humanoids in scale of any color, standing 6 to 7 feet tall. Size 1M, speed 5. The signature trait Wyrmplate grants a damage immunity equal to level that can be reassigned each respite; 3 ancestry points buy from six traits, two of which grant a signature ability outright.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Dragon Breath", "Prismatic Scales"],
+      "quick_build": [
+        "Dragon Breath",
+        "Prismatic Scales"
+      ],
+      "quick_build_display": "Dragon Breath, Prismatic Scales",
       "signature_traits": [
         {
           "name": "Wyrmplate",
           "description": "Your hardened scales grant you {@resource damage-immunity|damage immunity} equal to your level to one of the following damage types: acid, cold, corruption, fire, lightning, or poison. You can change your damage immunity type when you finish a {@resource respite}."
         }
       ],
+      "signature_traits_display": "Wyrmplate — Your hardened scales grant you {@resource damage-immunity|damage immunity} equal to your level to one of the following damage types: acid, cold, corruption, fire, lightning, or poison. You can change your damage immunity type when you finish a {@resource respite}.",
       "purchased_traits": [
         {
           "name": "Draconian Guard",
@@ -87,7 +103,10 @@
             "flavor": "You let loose a mighty roar to shake your foes' spirits.",
             "type": "signature",
             "action_type": "Main action",
-            "keywords": ["Area", "Magic"],
+            "keywords": [
+              "Area",
+              "Magic"
+            ],
             "distance": "1 burst",
             "target": "Each enemy in the area",
             "power_roll": "Might or Presence",
@@ -105,7 +124,10 @@
             "flavor": "A furious exhalation of energy washes over your foes.",
             "type": "signature",
             "action_type": "Main action",
-            "keywords": ["Area", "Magic"],
+            "keywords": [
+              "Area",
+              "Magic"
+            ],
             "distance": "3 cube within 1",
             "target": "Each enemy in the area",
             "power_roll": "Might or Presence",
@@ -131,27 +153,39 @@
           "description": "You possess wings powerful enough to take you airborne. While using your wings to fly, you can stay aloft for a number of rounds equal to your Might score (minimum 1 round) before you fall. While using your wings to fly at 3rd level or lower, you have {@resource damage-weakness|damage weakness} 5."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"],
-      "omissions": ["The verse of the oath recited by the Remember Your Oath trait is flavor text and is not reproduced here; the trait's mechanics are complete."]
-    }
+      "purchased_traits_display": "Draconian Guard (cost: 1) — Whenever you or an adjacent creature takes damage from a strike, you can use a {@action triggered-action|triggered action} to guard against the blow. You reduce any damage from the strike by an amount equal to your level. · Draconian Pride (cost: 2; ability: Draconian Pride — flavor: You let loose a mighty roar to shake your foes' spirits.; type: signature; action type: Main action; keywords: Area, Magic; distance: 1 burst; target: Each enemy in the area; power roll: Might or Presence; tier1: 2 damage; tier2: 5 damage; {@movement push} 1; tier3: 7 damage; {@movement push} 2) — You have the following signature ability. · Dragon Breath (cost: 2; ability: Dragon Breath — flavor: A furious exhalation of energy washes over your foes.; type: signature; action type: Main action; keywords: Area, Magic; distance: 3 cube within 1; target: Each enemy in the area; power roll: Might or Presence; tier1: 2 damage; tier2: 4 damage; tier3: 6 damage; effect: You choose the ability's damage type from acid, cold, corruption, fire, lightning, or poison.) — You have the following signature ability. · Prismatic Scales (cost: 1) — Select one damage immunity granted by your Wyrmplate trait. You always have this immunity, in addition to the immunity granted by Wyrmplate. · Remember Your Oath (cost: 1) — As a {@action maneuver}, you can recite your knightly oath. Until the start of your next turn, whenever you make a {@combat saving-throw|saving throw}, you succeed on a 4 or higher. · Wings (cost: 2) — You possess wings powerful enough to take you airborne. While using your wings to fly, you can stay aloft for a number of rounds equal to your Might score (minimum 1 round) before you fall. While using your wings to fly at 3rd level or lower, you have {@resource damage-weakness|damage weakness} 5.",
+      "custom_fields": [
+        "description"
+      ],
+      "omissions": [
+        "The verse of the oath recited by the Remember Your Oath trait is flavor text and is not reproduced here; the trait's mechanics are complete."
+      ],
+      "provenance_display": "custom fields — description · omissions — The verse of the oath recited by the Remember Your Oath trait is flavor text and is not reproduced here; the trait's mechanics are complete."
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "dwarf",
     "name": "Dwarf",
+    "summary": "Short, stout humanoids whose flesh is infused with stone, making them denser than other humanoids.",
     "description": "Short, stout humanoids whose flesh is infused with stone, making them denser than other humanoids. Size 1M, speed 5. The signature trait Runic Carving lets you carve a rune of detection, light, or telepathic voice into your own skin; 3 ancestry points buy from five traits built around toughness and immovability.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Grounded", "Spark Off Your Skin"],
+      "quick_build": [
+        "Grounded",
+        "Spark Off Your Skin"
+      ],
+      "quick_build_display": "Grounded, Spark Off Your Skin",
       "signature_traits": [
         {
           "name": "Runic Carving",
           "description": "You can carve a rune onto your skin with 10 uninterrupted minutes of work, which is activated by the magic within your body. The rune you carve determines the benefit you receive, chosen from among the following. **Detection:** Pick a specific type of creature (such as goblins or humans) or object (such as gems or potions). Your rune glows softly when you are within 20 squares of any creature or object of that type, even if you don't have line of effect to the creature or object. You can change the type of creature or object as a {@action maneuver}. **Light:** Your skin sheds light for 10 squares. You can turn this light on and off as a {@action maneuver}. **Voice:** As a {@action maneuver}, you can communicate telepathically with a willing creature you have met before and who is within 1 mile of you. You must know the creature's name, and they must speak and understand a language you know. You and the creature can respond to one another as if having a spoken conversation. You can communicate with a different creature by changing the rune. You can have one rune active at a time, and can change or remove a rune with 10 uninterrupted minutes of work."
         }
       ],
+      "signature_traits_display": "Runic Carving — You can carve a rune onto your skin with 10 uninterrupted minutes of work, which is activated by the magic within your body. The rune you carve determines the benefit you receive, chosen from among the following. **Detection:** Pick a specific type of creature (such as goblins or humans) or object (such as gems or potions). Your rune glows softly when you are within 20 squares of any creature or object of that type, even if you don't have line of effect to the creature or object. You can change the type of creature or object as a {@action maneuver}. **Light:** Your skin sheds light for 10 squares. You can turn this light on and off as a {@action maneuver}. **Voice:** As a {@action maneuver}, you can communicate telepathically with a willing creature you have met before and who is within 1 mile of you. You must know the creature's name, and they must speak and understand a language you know. You and the creature can respond to one another as if having a spoken conversation. You can communicate with a different creature by changing the rune. You can have one rune active at a time, and can change or remove a rune with 10 uninterrupted minutes of work.",
       "purchased_traits": [
         {
           "name": "Great Fortitude",
@@ -179,26 +213,36 @@
           "description": "You have a magic connection to the earth. When you spend 1 uninterrupted hour singing, you can reshape any unworked mundane stone within 3 squares. You can't destroy this stone, but you can move each square of it anywhere within 3 squares, piling it off to one side to dig a hole or building it up to create a wall."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Great Fortitude (cost: 2) — Your hearty constitution prevents you from losing strength. You can't be made {@condition weakened}. · Grounded (cost: 1) — Your heavy stone body and connection to the earth make it difficult for others to move you. You have a +1 bonus to {@combat stability}. · Spark Off Your Skin (cost: 2) — Your stone skin affords you potent protection. You have a +6 bonus to Stamina, and that bonus increases by 6 at 4th, 7th, and 10th levels. · Stand Tough (cost: 1) — Your body is made to withstand the blows of your enemies. Your Might score is treated as 1 higher for the purpose of resisting {@combat potency|potencies}, and you gain an {@combat edge} on Might tests when called for to resist environmental effects or a creature's traits or abilities. · Stone Singer (cost: 1) — You have a magic connection to the earth. When you spend 1 uninterrupted hour singing, you can reshape any unworked mundane stone within 3 squares. You can't destroy this stone, but you can move each square of it anywhere within 3 squares, piling it off to one side to dig a hole or building it up to create a wall.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "hakaan",
     "name": "Hakaan",
+    "summary": "Descendants of stone giants, standing over 9 feet tall on well-muscled bodies of organic stone — the largest of the twelve ancestries.",
     "description": "Descendants of stone giants, standing over 9 feet tall on well-muscled bodies of organic stone — the largest of the twelve ancestries. Size 1L, speed 5. The signature trait Big! is what sets that size; 3 ancestry points buy from five traits about raw strength, resilience, and a death chosen in advance.",
     "properties": {
       "size": "1L",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Doomsight", "Forceful"],
+      "quick_build": [
+        "Doomsight",
+        "Forceful"
+      ],
+      "quick_build_display": "Doomsight, Forceful",
       "signature_traits": [
         {
           "name": "Big!",
           "description": "Your stature reflects your giant forebears. Your size is 1L."
         }
       ],
+      "signature_traits_display": "Big! — Your stature reflects your giant forebears. Your size is 1L.",
       "purchased_traits": [
         {
           "name": "All Is a Feather",
@@ -226,26 +270,36 @@
           "description": "Your body is made to withstand the blows of your enemies. Your Might score is treated as 1 higher for the purpose of resisting {@combat potency|potencies}, and you gain an {@combat edge} on Might tests when called for to resist environmental effects or a creature's traits or abilities."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "All Is a Feather (cost: 1) — You are exceptionally strong. You gain an {@combat edge} on tests made to lift and haul heavy objects. · Doomsight (cost: 2) — Working with your Director, you can predetermine an encounter in which you will die. When that encounter begins, you become doomed. While doomed, you automatically obtain a tier 3 outcome on tests and ability rolls, and you don't die no matter how low your Stamina falls. You then die immediately at the end of the encounter, and can't be returned to life by any means. If you don't predetermine your death encounter, you can choose to become doomed while you are {@combat dying} with the Director's approval (no action required). Doing so should be reserved for encounters in which you are dying as a result of suitable heroism, such as making a last stand against a boss or saving civilians, or when the consequences of your actions have finally caught up to you. Additionally, when your Stamina reaches the negative of your {@combat winded} value and you are not doomed, you turn to rubble instead of experiencing death. You are unaware of your surroundings in this state, and you can't regain Stamina or have this effect undone in any way. After 12 hours, you regain Stamina equal to your {@resource recovery|recovery value}. · Forceful (cost: 1) — Whenever you force move a creature or object, the {@combat forced-movement|forced movement} distance gains a +1 bonus. · Great Fortitude (cost: 2) — Your hearty constitution prevents you from losing strength. You can't be made {@condition weakened}. · Stand Tough (cost: 1) — Your body is made to withstand the blows of your enemies. Your Might score is treated as 1 higher for the purpose of resisting {@combat potency|potencies}, and you gain an {@combat edge} on Might tests when called for to resist environmental effects or a creature's traits or abilities.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "high-elf",
     "name": "High Elf",
+    "summary": "Tall, willowy humanoids with pointed ears, smooth skin, and rare metal inlays growing as organic components within it.",
     "description": "Tall, willowy humanoids with pointed ears, smooth skin, and rare metal inlays growing as organic components within it. Size 1M, speed 5. The signature trait High Elf Glamor makes others find them engaging; 3 ancestry points buy from six traits about grace, perception, and a mind that can't be pinned down.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["High Senses", "Otherworldly Grace"],
+      "quick_build": [
+        "High Senses",
+        "Otherworldly Grace"
+      ],
+      "quick_build_display": "High Senses, Otherworldly Grace",
       "signature_traits": [
         {
           "name": "High Elf Glamor",
           "description": "A magic glamor makes others perceive you as interesting and engaging, granting you an {@combat edge} on Presence tests using the Flirt or Persuade skills. This glamor makes you appear and sound slightly different to each creature you meet, since what is engaging to one might be different for another. However, you never appear to be anyone other than yourself."
         }
       ],
+      "signature_traits_display": "High Elf Glamor — A magic glamor makes others perceive you as interesting and engaging, granting you an {@combat edge} on Presence tests using the Flirt or Persuade skills. This glamor makes you appear and sound slightly different to each creature you meet, since what is engaging to one might be different for another. However, you never appear to be anyone other than yourself.",
       "purchased_traits": [
         {
           "name": "Glamor of Terror",
@@ -278,26 +332,36 @@
           "description": "Your mind allows you to maintain your focus in any situation. You can't be made {@condition dazed}."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Glamor of Terror (cost: 2) — When a foe strikes, you reverse the magic of your glamor to instill fear into their heart. Whenever you take damage from a creature, you can use a {@action triggered-action|triggered action} to make that creature {@condition frightened} of you until the end of their next turn. · Graceful Retreat (cost: 1) — You gain a +1 bonus to the distance you can {@movement shift} when you take the {@action disengage|Disengage} move action. · High Senses (cost: 1) — Your senses are especially keen and perceptive. You gain an {@combat edge} on tests made to notice threats. · Otherworldly Grace (cost: 2) — Your elf body and mind can't be contained for long. Whenever you make a {@combat saving-throw|saving throw}, you succeed on a roll of 5 or higher. · Revisit Memory (cost: 1) — Accessing memories is as easy as living in the present for you. You gain an {@combat edge} on tests made to recall lore. · Unstoppable Mind (cost: 2) — Your mind allows you to maintain your focus in any situation. You can't be made {@condition dazed}.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "human",
     "name": "Human",
+    "summary": "The most numerous people of the mundane world, as physically varied as our own species — and able to sense the presence of supernatural energy.",
     "description": "The most numerous people of the mundane world, as physically varied as our own species — and able to sense the presence of supernatural energy. Size 1M, speed 5. The signature trait Detect the Supernatural pinpoints undead, constructs, otherworldly creatures, and supernatural objects nearby; 3 ancestry points buy from five traits about endurance and shrugging off the unnatural.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Perseverance", "Staying Power"],
+      "quick_build": [
+        "Perseverance",
+        "Staying Power"
+      ],
+      "quick_build_display": "Perseverance, Staying Power",
       "signature_traits": [
         {
           "name": "Detect the Supernatural",
           "description": "As a {@action maneuver}, you can open your awareness to detect supernatural creatures and phenomena. Until the end of your next turn, you know the location of any supernatural object, or any undead, construct, or creature from another world within 5 squares, even if you don't have line of effect to that object or creature. You know if you're detecting an item or a creature, and you know the nature of any creature you detect."
         }
       ],
+      "signature_traits_display": "Detect the Supernatural — As a {@action maneuver}, you can open your awareness to detect supernatural creatures and phenomena. Until the end of your next turn, you know the location of any supernatural object, or any undead, construct, or creature from another world within 5 squares, even if you don't have line of effect to that object or creature. You know if you're detecting an item or a creature, and you know the nature of any creature you detect.",
       "purchased_traits": [
         {
           "name": "Can't Take Hold",
@@ -325,20 +389,29 @@
           "description": "Your human physiology allows you to fight, run, and stay awake longer than others. You increase your number of {@resource recovery|Recoveries} by 2."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Can't Take Hold (cost: 1) — Your connection to the natural world allows you to resist certain supernatural effects. You ignore temporary {@combat difficult-terrain|difficult terrain} created by magic and psionic abilities. Additionally, when you are force moved by a magic or psionic ability, you can reduce the {@combat forced-movement|forced movement} distance by 1. · Determination (cost: 2) — A tolerance for pain and distress allows you to push through difficult situations. If you are {@condition frightened}, {@condition slowed}, or {@condition weakened}, you can use a {@action maneuver} to immediately end one of those conditions. · Perseverance (cost: 1) — Giving up is for other people. You gain an {@combat edge} on tests made using the Endurance skill. Additionally, when you are {@condition slowed}, your speed is reduced to 3 instead of 2. · Resist the Unnatural (cost: 1) — Your instinctive resilience protects you from injuries beyond the routine. Whenever you take damage that isn't untyped, you can use a {@action triggered-action|triggered action} to take half the damage. · Staying Power (cost: 2) — Your human physiology allows you to fight, run, and stay awake longer than others. You increase your number of {@resource recovery|Recoveries} by 2.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "memonek",
     "name": "Memonek",
+    "summary": "A machine people built of metal, marble, glass, and other inorganic materials, lightweight for their height.",
     "description": "A machine people built of metal, marble, glass, and other inorganic materials, lightweight for their height. Size 1M, speed 5. Two signature traits — Fall Lightly and Lightweight — soften falls and resist being shoved around; an unusually generous 4 ancestry points buy from seven traits about order, speed, and unbreakable focus.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 4,
-      "quick_build": ["Lightning Nimbleness", "Nonstop"],
+      "quick_build": [
+        "Lightning Nimbleness",
+        "Nonstop"
+      ],
+      "quick_build_display": "Lightning Nimbleness, Nonstop",
       "signature_traits": [
         {
           "name": "Fall Lightly",
@@ -349,6 +422,7 @@
           "description": "Your body is light for a creature of your height. Whenever another creature attempts to force move you, you treat your size as one size smaller than it is."
         }
       ],
+      "signature_traits_display": "Fall Lightly — Your silicone body is low in density. Whenever you fall, you reduce the distance of the fall by 2 squares. · Lightweight — Your body is light for a creature of your height. Whenever another creature attempts to force move you, you treat your size as one size smaller than it is.",
       "purchased_traits": [
         {
           "name": "I Am Law",
@@ -386,27 +460,39 @@
           "description": "You know how to turn your own pain into something your enemies feel. At the start of any combat, you gain 1 {@resource surge}."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"],
-      "omissions": ["Flavor sentences naming the memonek home plane and their word for worldsickness are setting material and are not reproduced; the mechanics of Keeper of Order, Nonstop, and Useful Emotion are complete."]
-    }
+      "purchased_traits_display": "I Am Law (cost: 1) — Your lawful nature and quick reflexes mean you give no quarter to creatures trying to get past you. Enemies can't move through your space unless you allow them to do so. · Keeper of Order (cost: 2) — Once per round when you or an adjacent creature makes a {@combat power-roll|power roll}, you can use a {@action free-triggered-action|free triggered action} to remove an {@combat edge} or a {@combat bane} on the roll, to turn a double edge into an edge, or to turn a double bane into a bane. · Lightning Nimbleness (cost: 2) — You can push your body to move at incredible speeds. Your speed is 7. · Nonstop (cost: 2) — You regulate your own movement, and nothing interrupts it. You can't be made {@condition slowed}. · Systematic Mind (cost: 1) — You gain an {@combat edge} on tests made to parse schematics, maps, and other systematic documents that aren't inherently chaotic. In addition, you treat any language you don't know as if you know a related language. · Unphased (cost: 1) — Your ordered mind can't be caught off guard. You can't be made {@condition surprised}. · Useful Emotion (cost: 1) — You know how to turn your own pain into something your enemies feel. At the start of any combat, you gain 1 {@resource surge}.",
+      "custom_fields": [
+        "description"
+      ],
+      "omissions": [
+        "Flavor sentences naming the memonek home plane and their word for worldsickness are setting material and are not reproduced; the mechanics of Keeper of Order, Nonstop, and Useful Emotion are complete."
+      ],
+      "provenance_display": "custom fields — description · omissions — Flavor sentences naming the memonek home plane and their word for worldsickness are setting material and are not reproduced; the mechanics of Keeper of Order, Nonstop, and Useful Emotion are complete."
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "orc",
     "name": "Orc",
+    "summary": "Green-toned humanoids standing slightly taller and wider than humans, with a supernatural energy in their veins that ignites in colorful lines during a life-or-death fight.",
     "description": "Green-toned humanoids standing slightly taller and wider than humans, with a supernatural energy in their veins that ignites in colorful lines during a life-or-death fight. Size 1M, speed 5. The signature trait Relentless turns a killing blow into a free strike; 3 ancestry points buy from five traits about speed, recovery, and refusing to be slowed.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Glowing Recovery", "Grounded"],
+      "quick_build": [
+        "Glowing Recovery",
+        "Grounded"
+      ],
+      "quick_build_display": "Glowing Recovery, Grounded",
       "signature_traits": [
         {
           "name": "Relentless",
           "description": "Whenever a creature deals damage to you that leaves you {@combat dying}, you can make a {@action free-strike|free strike} against any creature. If the creature is reduced to 0 Stamina by your strike, you can spend a {@resource recovery|Recovery}."
         }
       ],
+      "signature_traits_display": "Relentless — Whenever a creature deals damage to you that leaves you {@combat dying}, you can make a {@action free-strike|free strike} against any creature. If the creature is reduced to 0 Stamina by your strike, you can spend a {@resource recovery|Recovery}.",
       "purchased_traits": [
         {
           "name": "Bloodfire Rush",
@@ -434,20 +520,30 @@
           "description": "When you are stirred by a passion for creation, your bloodfire allows you to work longer and harder. When you gain your initial skills from your career, culture, class, or other source, choose two skills from the crafting skill group, whether you have those skills or not. Whenever you make a project roll for a crafting project that uses these skills, you gain a +2 bonus to the roll."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Bloodfire Rush (cost: 1) — The magic coursing through your veins makes you run faster in the heat of battle. The first time in any combat round that you take damage, you gain a +2 bonus to speed until the end of the round. · Glowing Recovery (cost: 2) — Your bloodfire allows you to regain your strength quicker than others. Whenever you use the {@action catch-breath|Catch Breath} maneuver, you can spend as many {@resource recovery|Recoveries} as you like. · Grounded (cost: 1) — The magic in your blood makes it difficult for others to move you. You have a +1 bonus to {@combat stability}. · Nonstop (cost: 2) — Your bloodfire supplies you with a constant rush of adrenaline. You can't be made {@condition slowed}. · Passionate Artisan (cost: 1) — When you are stirred by a passion for creation, your bloodfire allows you to work longer and harder. When you gain your initial skills from your career, culture, class, or other source, choose two skills from the crafting skill group, whether you have those skills or not. Whenever you make a project roll for a crafting project that uses these skills, you gain a +2 bonus to the roll.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "polder",
     "name": "Polder",
+    "summary": "The smallest of the twelve ancestries, standing no taller than three and a half feet, with an innate knack for melting into shadow.",
     "description": "The smallest of the twelve ancestries, standing no taller than three and a half feet, with an innate knack for melting into shadow. Size 1S, speed 5. Two signature traits — Shadowmeld and Small! — flatten them onto a wall and set that size; 4 ancestry points buy from six traits about evasion, footwork, and nerve.",
     "properties": {
       "size": "1S",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 4,
-      "quick_build": ["Corruption Immunity", "Fearless", "Graceful Retreat"],
+      "quick_build": [
+        "Corruption Immunity",
+        "Fearless",
+        "Graceful Retreat"
+      ],
+      "quick_build_display": "Corruption Immunity, Fearless, Graceful Retreat",
       "signature_traits": [
         {
           "name": "Shadowmeld",
@@ -457,7 +553,9 @@
             "flavor": "You become an actual shadow.",
             "type": "maneuver",
             "action_type": "Maneuver",
-            "keywords": ["Magic"],
+            "keywords": [
+              "Magic"
+            ],
             "distance": "Self",
             "target": "Self",
             "effect": "You flatten yourself into a shadow against a wall or floor you are touching, and become {@condition hidden} from any creature you have {@combat cover} or {@combat concealment} from or who isn't observing you. While in shadow form, you have full awareness of your surroundings, and strikes made against you and tests made to search for you take a {@combat bane}. You can't move or be force moved, and you can't take main actions or maneuvers except to exit this form or to direct creatures under your control, such as one you summon using an ability. Any ability or effect that targets more than 1 square affects you in this form only if it explicitly affects the surface you are flattened against. You can exit this form as a maneuver. If the surface you are flattened against is destroyed, this ability ends and you take 1d6 damage that can't be reduced in any way."
@@ -468,6 +566,7 @@
           "description": "Your diminutive stature lets you easily get out of — or into — trouble. Your size is 1S."
         }
       ],
+      "signature_traits_display": "Shadowmeld (ability: Shadowmeld — flavor: You become an actual shadow.; type: maneuver; action type: Maneuver; keywords: Magic; distance: Self; target: Self; effect: You flatten yourself into a shadow against a wall or floor you are touching, and become {@condition hidden} from any creature you have {@combat cover} or {@combat concealment} from or who isn't observing you. While in shadow form, you have full awareness of your surroundings, and strikes made against you and tests made to search for you take a {@combat bane}. You can't move or be force moved, and you can't take main actions or maneuvers except to exit this form or to direct creatures under your control, such as one you summon using an ability. Any ability or effect that targets more than 1 square affects you in this form only if it explicitly affects the surface you are flattened against. You can exit this form as a maneuver. If the surface you are flattened against is destroyed, this ability ends and you take 1d6 damage that can't be reduced in any way.) — You have the following ability. · Small! — Your diminutive stature lets you easily get out of — or into — trouble. Your size is 1S.",
       "purchased_traits": [
         {
           "name": "Corruption Immunity",
@@ -500,13 +599,18 @@
           "description": "Staying light on your feet lets you quickly get back into position. Whenever you are force moved, you can use a {@action free-triggered-action|free triggered action} to {@movement shift} 1 square after the forced movement is resolved."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Corruption Immunity (cost: 1) — Your innate shadow magic grants you resilience against the unnatural. You have corruption {@resource damage-immunity|immunity} equal to your level + 2. · Fearless (cost: 2) — Courage is all you know. You can't be made {@condition frightened}. · Graceful Retreat (cost: 1) — Your small size makes it easier for you to slip away from the fray. You gain a +1 bonus to the distance you can {@movement shift} when you take the {@action disengage|Disengage} move action. · Nimblestep (cost: 2) — A light step serves you well when speed is of the essence. You ignore the effects of {@combat difficult-terrain|difficult terrain} and can move at full speed while sneaking. · Polder Geist (cost: 1) — Evading others' notice gives you freedom to move. At the start of each of your turns during combat, if no enemy has line of effect to you or if you are {@condition hidden} from or have {@combat concealment} from any enemy with line of effect to you, you gain a +3 bonus to speed until the end of your turn. · Reactive Tumble (cost: 1) — Staying light on your feet lets you quickly get back into position. Whenever you are force moved, you can use a {@action free-triggered-action|free triggered action} to {@movement shift} 1 square after the forced movement is resolved.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "revenant",
     "name": "Revenant",
+    "summary": "No hero starts life as a revenant. A character of any ancestry can return from death as one to finish dire business. Your size is that of the ancestry you were; speed 5. Two…",
     "description": "No hero starts life as a revenant. A character of any ancestry can return from death as one to finish dire business. Your size is that of the ancestry you were; speed 5. Two signature traits, Former Life and Tough But Withered, set the rules of your undead body and trade a fire weakness for immunity to cold, corruption, lightning, and poison. You get 2 ancestry points — 3 if your size is 1S.",
     "properties": {
       "size": "As your previous ancestry",
@@ -514,7 +618,11 @@
       "stability": 0,
       "ancestry_points": 2,
       "ancestry_points_note": "3 ancestry points instead if your size is 1S.",
-      "quick_build": ["Bloodless", "Undead Influence (if size 1S)"],
+      "quick_build": [
+        "Bloodless",
+        "Undead Influence (if size 1S)"
+      ],
+      "quick_build_display": "Bloodless, Undead Influence (if size 1S)",
       "signature_traits": [
         {
           "name": "Former Life",
@@ -525,6 +633,7 @@
           "description": "Your undead body grants you {@resource damage-immunity|immunity} to cold, corruption, lightning, and poison damage equal to your level, but you have fire {@resource damage-weakness|weakness} 5. You can't suffocate, and you don't need to eat or drink to stay alive. Additionally, when your Stamina reaches the negative of your {@combat winded} value, you become inert instead of dying. You fall {@condition prone} and can't stand. You continue to observe your surroundings, but you can't speak, take main actions, maneuvers, move actions, or {@action triggered-action|triggered actions}. While inert this way, if you take any fire damage, your body is destroyed and you die. Otherwise, after 12 hours, you regain Stamina equal to your {@resource recovery|recovery value}."
         }
       ],
+      "signature_traits_display": "Former Life — Choose the ancestry you were before you died. Your size is that ancestry's size and your speed is 5. Unless you select one of the Previous Life traits, you don't receive any other ancestral traits from your original ancestry. · Tough But Withered — Your undead body grants you {@resource damage-immunity|immunity} to cold, corruption, lightning, and poison damage equal to your level, but you have fire {@resource damage-weakness|weakness} 5. You can't suffocate, and you don't need to eat or drink to stay alive. Additionally, when your Stamina reaches the negative of your {@combat winded} value, you become inert instead of dying. You fall {@condition prone} and can't stand. You continue to observe your surroundings, but you can't speak, take main actions, maneuvers, move actions, or {@action triggered-action|triggered actions}. While inert this way, if you take any fire damage, your body is destroyed and you die. Otherwise, after 12 hours, you regain Stamina equal to your {@resource recovery|recovery value}.",
       "purchased_traits": [
         {
           "name": "Bloodless",
@@ -555,7 +664,11 @@
             "flavor": "A magic sigil you placed on a creature explodes with energy.",
             "type": "signature",
             "action_type": "Main action",
-            "keywords": ["Magic", "Ranged", "Strike"],
+            "keywords": [
+              "Magic",
+              "Ranged",
+              "Strike"
+            ],
             "distance": "Ranged 10",
             "target": "One creature bearing your sigil",
             "power_roll": "Reason, Intuition, or Presence",
@@ -566,26 +679,37 @@
           }
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Bloodless (cost: 2) — For you, an open wound is indistinguishable from a scratch. You can't be made {@condition bleeding} even while {@combat dying}. · Previous Life: 1 Point (cost: 1) — You select a purchased trait that costs 1 ancestry point from your previous ancestry. You can take this trait multiple times, selecting a different 1 point trait from your previous ancestry each time. · Previous Life: 2 Points (cost: 2) — You select a purchased trait that costs 2 ancestry points from your previous ancestry. · Undead Influence (cost: 1) — Your supernatural gifts allow you to influence other undead. You gain an {@combat edge} on Reason, Intuition, and Presence tests made to interact with undead creatures. · Vengeance Mark (cost: 2; ability: Detonate Sigil — flavor: A magic sigil you placed on a creature explodes with energy.; type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 10; target: One creature bearing your sigil; power roll: Reason, Intuition, or Presence; tier1: 3 + R, I, or P damage; {@movement slide} 1; tier2: 5 + R, I, or P damage; {@movement slide} 2; tier3: 7 + R, I, or P damage; {@movement slide} 3; effect: The sigil disappears from the creature.) — As a {@action maneuver}, you place a magic sigil on a creature within 10 squares. When you place a sigil, you decide where it appears on the creature's body, and whether the sigil is visible to only you or to all creatures. You always know the direction to the exact location of a creature who bears one of your sigils and is on the same world. You can have a number of active sigils equal to your level, and can remove a sigil from a creature at will (no action required). If you already have the maximum number of sigils activated and you place a new one, your oldest sigil disappears with no other effect. Additionally, you have the following signature ability, which can be used at will.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description",
+      "details_display": "ancestry points note — 3 ancestry points instead if your size is 1S."
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "time-raider",
     "name": "Time Raider",
+    "summary": "Four-armed humanoids with a single ocular sensor in place of a pair of eyes, many of them born with psionic ability.",
     "description": "Four-armed humanoids with a single ocular sensor in place of a pair of eyes, many of them born with psionic ability. Size 1M, speed 5. The signature trait Psychic Scar grants psychic immunity equal to your level; 3 ancestry points buy from six traits about extended senses, multi-limbed grappling, and psionic strikes.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Beyondsight", "Psionic Gift (Psionic Bolt)"],
+      "quick_build": [
+        "Beyondsight",
+        "Psionic Gift (Psionic Bolt)"
+      ],
+      "quick_build_display": "Beyondsight, Psionic Gift (Psionic Bolt)",
       "signature_traits": [
         {
           "name": "Psychic Scar",
           "description": "Your mind is a formidable layer of defense. You have psychic {@resource damage-immunity|immunity} equal to your level."
         }
       ],
+      "signature_traits_display": "Psychic Scar — Your mind is a formidable layer of defense. You have psychic {@resource damage-immunity|immunity} equal to your level.",
       "purchased_traits": [
         {
           "name": "Beyondsight",
@@ -617,7 +741,11 @@
               "flavor": "You slam an invisible force down upon the target.",
               "type": "signature",
               "action_type": "Main action",
-              "keywords": ["Psionic", "Ranged", "Strike"],
+              "keywords": [
+                "Psionic",
+                "Ranged",
+                "Strike"
+              ],
               "distance": "Ranged 10",
               "target": "One creature or object",
               "power_roll": "Reason, Intuition, or Presence",
@@ -630,7 +758,11 @@
               "flavor": "You shoot forth a purple beam of psychic force that moves your target.",
               "type": "signature",
               "action_type": "Main action",
-              "keywords": ["Psionic", "Ranged", "Strike"],
+              "keywords": [
+                "Psionic",
+                "Ranged",
+                "Strike"
+              ],
               "distance": "Ranged 10",
               "target": "One creature or object",
               "power_roll": "Reason, Intuition, or Presence",
@@ -643,7 +775,10 @@
               "flavor": "You fill yourself or an ally with a burst of speed.",
               "type": "maneuver",
               "action_type": "Maneuver",
-              "keywords": ["Psionic", "Melee"],
+              "keywords": [
+                "Psionic",
+                "Melee"
+              ],
               "distance": "Melee 1",
               "target": "Self or one ally",
               "effect": "The target gains a bonus to speed equal to your Reason, Intuition, or Presence score (your choice) until the start of your next turn."
@@ -656,26 +791,36 @@
           "description": "Your mind allows you to maintain your focus in any situation. You can't be made {@condition dazed}."
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Beyondsight (cost: 1) — As a {@action maneuver}, you can adjust your vision to allow you to see through mundane obstructions that are 1 square thick or less. While your vision is adjusted this way, you can't see the area within 1 square of you and you don't have line of effect to any creature or object in that area. You can restore your usual vision as a maneuver. · Foresight (cost: 1) — Your senses extend past mundane obscuration and the veil of the future alike. You automatically know the location of any creature with {@combat concealment} who isn't {@condition hidden} from you within 20, and you negate the usual {@combat bane} on strikes against such creatures. Additionally, whenever you are targeted by a strike, you can use a {@action triggered-action|triggered action} to impose a bane on the {@combat power-roll|power roll}. · Four-Armed Athletics (cost: 1) — Your unique physiology enhances your movement. You gain an {@combat edge} on tests that use the Climb, Gymnastics, or Swim skills when you can use all your arms in the attempt. · Four-Armed Martial Arts (cost: 2) — Your multiple arms let you take on multiple tasks at the same time. Whenever you use the Grab or Knockback maneuver against an adjacent creature, you can target one additional adjacent creature, using the same {@combat power-roll|power roll} for both targets. Additionally, you can have up to two creatures {@condition grabbed} at a time. · Psionic Gift (cost: 2; ability options: Concussive Slam — flavor: You slam an invisible force down upon the target.; type: signature; action type: Main action; keywords: Psionic, Ranged, Strike; distance: Ranged 10; target: One creature or object; power roll: Reason, Intuition, or Presence; tier1: 2 + R, I, or P damage; tier2: 5 + R, I, or P damage; {@movement push} 1; tier3: 7 + R, I, or P damage; {@movement push} 2; M < STRONG, {@condition prone} · Psionic Bolt — flavor: You shoot forth a purple beam of psychic force that moves your target.; type: signature; action type: Main action; keywords: Psionic, Ranged, Strike; distance: Ranged 10; target: One creature or object; power roll: Reason, Intuition, or Presence; tier1: 2 + R, I, or P psychic damage; {@movement slide} 1; tier2: 5 + R, I, or P psychic damage; {@movement slide} 2; tier3: 7 + R, I, or P psychic damage; {@movement slide} 3 · Minor Acceleration — flavor: You fill yourself or an ally with a burst of speed.; type: maneuver; action type: Maneuver; keywords: Psionic, Melee; distance: Melee 1; target: Self or one ally; effect: The target gains a bonus to speed equal to your Reason, Intuition, or Presence score (your choice) until the start of your next turn.) — Choose one signature ability from the following options. Signature abilities can be used at will. · Unstoppable Mind (cost: 2) — Your mind allows you to maintain your focus in any situation. You can't be made {@condition dazed}.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "wode-elf",
     "name": "Wode Elf",
+    "summary": "Lithe humanoids with finely furred skin in shades of blue, angular features, and large pointed ears, carrying a glamor that blends them into their surroundings.",
     "description": "Lithe humanoids with finely furred skin in shades of blue, angular features, and large pointed ears, carrying a glamor that blends them into their surroundings. Size 1M, speed 5. The signature trait Wode Elf Glamor grants an edge on hiding and sneaking; 3 ancestry points buy from six traits about woodcraft, speed, and a binding signature ability.",
     "properties": {
       "size": "1M",
       "speed": 5,
       "stability": 0,
       "ancestry_points": 3,
-      "quick_build": ["Swift", "Otherworldly Grace"],
+      "quick_build": [
+        "Swift",
+        "Otherworldly Grace"
+      ],
+      "quick_build_display": "Swift, Otherworldly Grace",
       "signature_traits": [
         {
           "name": "Wode Elf Glamor",
           "description": "You can magically alter your appearance to better blend in with your surroundings. You gain an {@combat edge} on tests made to hide and sneak, and tests made to search for you while you are {@condition hidden} take a {@combat bane}."
         }
       ],
+      "signature_traits_display": "Wode Elf Glamor — You can magically alter your appearance to better blend in with your surroundings. You gain an {@combat edge} on tests made to hide and sneak, and tests made to search for you while you are {@condition hidden} take a {@combat bane}.",
       "purchased_traits": [
         {
           "name": "Forest Walk",
@@ -711,7 +856,11 @@
             "flavor": "Thorny vines erupt from every surface and attempt to bind your foe.",
             "type": "signature",
             "action_type": "Main action",
-            "keywords": ["Magic", "Ranged", "Strike"],
+            "keywords": [
+              "Magic",
+              "Ranged",
+              "Strike"
+            ],
             "distance": "Ranged 10",
             "target": "One creature",
             "power_roll": "Might or Agility",
@@ -721,8 +870,12 @@
           }
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "custom_fields": ["description"]
-    }
+      "purchased_traits_display": "Forest Walk (cost: 1) — You can {@movement shift} into and while within {@combat difficult-terrain|difficult terrain}. · Quick and Brutal (cost: 1) — Whenever you score a {@combat critical-hit|critical hit}, you can take an additional main action and an additional move action instead of just a main action. · Otherworldly Grace (cost: 2) — Your elf body and mind can't be contained for long. Whenever you make a {@combat saving-throw|saving throw}, you succeed on a roll of 5 or higher. · Revisit Memory (cost: 1) — Accessing memories is as easy as living in the present for you. You gain an {@combat edge} on tests made to recall lore. · Swift (cost: 1) — You have speed 6. · The Wode Defends (cost: 2; ability: The Wode Defends — flavor: Thorny vines erupt from every surface and attempt to bind your foe.; type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 10; target: One creature; power roll: Might or Agility; tier1: 2 + M or A damage; A < WEAK, {@condition slowed} ({@duration save-ends}); tier2: 3 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration save-ends}); tier3: 5 + M or A damage; A < STRONG, {@condition restrained} ({@duration save-ends})) — You have the following signature ability, which can be used at will.",
+      "custom_fields": [
+        "description"
+      ],
+      "provenance_display": "custom fields — description"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   }
 ]

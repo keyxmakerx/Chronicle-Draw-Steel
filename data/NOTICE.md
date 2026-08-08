@@ -138,27 +138,30 @@ an in-world figure.
 ## Custom (non-published) content
 
 Anything in `data/` that is **not** reproduced from published Draw Steel rules is
-flagged in that entry's `properties`, so it can be told apart from published content
-at a glance:
+flagged on that entry, so it can be told apart from published content at a glance:
 
+- **root `source: "custom"`** — marks an entry that is wholly original
+  (operator-authored ancestries, creatures, worked examples, derived tables, helper
+  entries). Published entries instead carry their real provenance in the same
+  field, e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel
+  Compendium"`. It is a **root** field, not a property, because that is where
+  Chronicle's item-detail header reads it from (`internal/systems/system_pages.templ`
+  prints `item.Source`); provenance parked in `properties` displayed nowhere.
 - **`properties.custom_fields`** — lists the fields on that entry that were written
   for this package rather than reproduced. In `ancestries.json`, every entry carries
   `"custom_fields": ["description"]`: because the published ancestry descriptions are
   setting fiction (see above), each `description` is an original, neutral mechanical
   summary written for this package. The `signature_traits` and `purchased_traits`
   on those same entries are published rules text.
-- **`properties.source: "custom"`** — marks an entry that is wholly original
-  (operator-authored ancestries, creatures, worked examples, derived tables, helper
-  entries). Published entries instead carry their real provenance in
-  `properties.source`, e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via
-  Steel Compendium"`.
 
 Operators adding their own ancestries, kits, and creatures should set
-`"source": "custom"` on those entries. This is a contract, not a habit: it is
-written into `docs/DATA-SCHEMA.md` → "Provenance", and
-`tools/test-build-your-own-data.mjs` fails CI on any build-your-own entry that
-carries no `properties.source`, or that claims a published source without naming
-Draw Steel.
+`"source": "custom"` on those entries. This is a contract, not a habit, and it is
+enforced with a named exception list rather than assumed: `docs/DATA-SCHEMA.md`
+→ "Provenance" states the rule and enumerates the five pre-existing files still
+pending a citation; `tools/test-render-contract.mjs` fails CI on any entry in any
+other file that carries no root `source`, and on any attempt to grow that pending
+list. `tools/test-build-your-own-data.mjs` additionally fails on a build-your-own
+entry that claims a published source without naming Draw Steel.
 
 **`ancestry-point-buy.json` contains two custom entries, and they exist because a
 published rule does not.** Draw Steel ships no rules for building a custom
@@ -206,7 +209,7 @@ Organization Modifier table has rows for minion, horde, platoon, leader, elite,
 and solo only. The `swarm` entry carries `"source": "custom"` and null modifiers.
 
 **`abilities.json` contains no custom content.** Every one of the 519 entries is
-published rules text and carries its real provenance in `properties.source`
+published rules text and carries its real provenance in its root `source`
 (ch. 5 for class abilities, ch. 6 for kit signature abilities, ch. 10 for the
 common actions). As with `kits.json`, the only non-published thing about the file
 is the *shape* of the data: field names such as `cost_resource` and

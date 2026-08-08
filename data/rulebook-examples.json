@@ -24,7 +24,8 @@
         },
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The bar splinters — you're through, but ~~the noise carries~~." }
       ]
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "the-grapple",
@@ -50,7 +51,8 @@
         },
         { "speaker": "DIRECTOR", "kind": "dir", "text": "He bounces off — ~~prone~~ at your boots." }
       ]
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "kaelen-swings",
@@ -77,7 +79,8 @@
         },
         { "speaker": "DIRECTOR", "kind": "dir", "text": "Tier 3: ~~7 damage~~ and a push into the brazier." }
       ]
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "into-the-lair",
@@ -104,6 +107,7 @@
         },
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The wards part like curtains — ~~one success~~." }
       ]
-    }
+    },
+    "source": "custom"
   }
 ]

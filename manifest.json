@@ -15,10 +15,23 @@
       "name": "Abilities",
       "icon": "fa-bolt",
       "fields": [
+        { "key": "category", "label": "Granted By", "type": "string" },
+        { "key": "class", "label": "Class", "type": "string" },
+        { "key": "level", "label": "Level", "type": "number" },
         { "key": "type", "label": "Type", "type": "string" },
-        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "action_type", "label": "Action", "type": "string" },
+        { "key": "cost", "label": "Cost", "type": "string" },
+        { "key": "keywords_display", "label": "Keywords", "type": "string" },
         { "key": "distance", "label": "Distance", "type": "string" },
-        { "key": "target", "label": "Target", "type": "string" }
+        { "key": "target", "label": "Target", "type": "string" },
+        { "key": "power_roll", "label": "Power Roll", "type": "string" },
+        { "key": "tier1", "label": "Tier 1 (11 or lower)", "type": "string" },
+        { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect", "label": "Effect", "type": "string" },
+        { "key": "trigger", "label": "Trigger", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -27,8 +40,14 @@
       "icon": "fa-dna",
       "fields": [
         { "key": "size", "label": "Size", "type": "string" },
-        { "key": "speed", "label": "Speed", "type": "string" },
-        { "key": "traits", "label": "Traits", "type": "string" }
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "stability", "label": "Stability", "type": "number" },
+        { "key": "ancestry_points", "label": "Ancestry Points", "type": "number" },
+        { "key": "quick_build_display", "label": "Quick Build", "type": "string" },
+        { "key": "signature_traits_display", "label": "Signature Traits", "type": "string" },
+        { "key": "purchased_traits_display", "label": "Purchased Traits", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -39,8 +58,17 @@
         { "key": "type", "label": "Type", "type": "string" },
         { "key": "armor", "label": "Armor", "type": "string" },
         { "key": "weapon", "label": "Weapon", "type": "string" },
+        { "key": "equipment", "label": "Equipment", "type": "string" },
         { "key": "stamina_bonus", "label": "Stamina Bonus", "type": "number" },
-        { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" }
+        { "key": "stamina_bonus_scaling", "label": "Stamina Scaling", "type": "string" },
+        { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" },
+        { "key": "stability_bonus", "label": "Stability Bonus", "type": "number" },
+        { "key": "melee_damage_bonus", "label": "Melee Damage", "type": "string" },
+        { "key": "ranged_damage_bonus", "label": "Ranged Damage", "type": "string" },
+        { "key": "melee_distance_bonus", "label": "Melee Distance", "type": "number" },
+        { "key": "ranged_distance_bonus", "label": "Ranged Distance", "type": "number" },
+        { "key": "disengage_bonus", "label": "Disengage Bonus", "type": "number" },
+        { "key": "signature_ability_display", "label": "Signature Ability", "type": "string" }
       ]
     },
     {
@@ -52,17 +80,12 @@
         { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "role", "label": "Role", "type": "string" },
         { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "size", "label": "Size", "type": "string" },
         { "key": "stamina", "label": "Stamina", "type": "number" },
-        { "key": "keywords", "label": "Keywords", "type": "string" }
-      ]
-    },
-    {
-      "slug": "rules-glossary",
-      "name": "Rules Glossary",
-      "icon": "fa-book",
-      "fields": [
-        { "key": "category", "label": "Category", "type": "string" },
-        { "key": "description", "label": "Description", "type": "string" }
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "traits", "label": "Traits", "type": "string" }
       ]
     },
     {
@@ -71,18 +94,93 @@
       "icon": "fa-burst",
       "fields": [
         { "key": "type", "label": "Type", "type": "string" },
-        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "keywords_display", "label": "Keywords", "type": "string" },
         { "key": "distance", "label": "Distance", "type": "string" },
         { "key": "target", "label": "Target", "type": "string" },
         { "key": "power_roll", "label": "Power Roll", "type": "string" },
-        { "key": "tier1", "label": "Tier 1 (11-)", "type": "string" },
+        { "key": "tier1", "label": "Tier 1 (11 or lower)", "type": "string" },
         { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
         { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
         { "key": "effect", "label": "Effect", "type": "string" },
-        { "key": "spend_vp", "label": "VP Cost", "type": "number" },
         { "key": "trigger", "label": "Trigger", "type": "string" },
         { "key": "villain_action_order", "label": "VA Order", "type": "string" }
       ]
+    },
+    {
+      "slug": "animal-traits",
+      "name": "Animal Traits",
+      "icon": "fa-hippo",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "cost", "label": "Cost", "type": "number" },
+        { "key": "repeatable", "label": "Repeatable", "type": "number" },
+        { "key": "upgrade_display", "label": "Upgrade", "type": "string" },
+        { "key": "optional", "label": "Optional", "type": "string" },
+        { "key": "granted_ability_display", "label": "Granted Ability", "type": "string" }
+      ]
+    },
+    {
+      "slug": "ancestry-point-buy",
+      "name": "Ancestry Point Buy",
+      "icon": "fa-scale-balanced",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
+      ]
+    },
+    {
+      "slug": "monster-building",
+      "name": "Monster Building",
+      "icon": "fa-dragon",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "formula", "label": "Formula", "type": "string" },
+        { "key": "rounding", "label": "Rounding", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
+      "slug": "encounter-building",
+      "name": "Encounter Building",
+      "icon": "fa-chess-board",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "difficulty", "label": "Difficulty", "type": "string" },
+        { "key": "budget_band_text", "label": "Budget Band", "type": "string" },
+        { "key": "victories", "label": "Victories", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
+      "slug": "rules-glossary",
+      "name": "Rules Glossary",
+      "icon": "fa-book",
+      "fields": [
+        { "key": "category", "label": "Category", "type": "string" }
+      ]
+    },
+    {
+      "slug": "skills",
+      "name": "Skills",
+      "icon": "fa-graduation-cap",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" }
+      ]
+    },
+    {
+      "slug": "ability-keywords",
+      "name": "Ability Keywords",
+      "icon": "fa-tags",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "note", "label": "Note", "type": "string" }
+      ]
+    },
+    {
+      "slug": "creature-keywords",
+      "name": "Creature Keywords",
+      "icon": "fa-hashtag"
     }
   ],
 

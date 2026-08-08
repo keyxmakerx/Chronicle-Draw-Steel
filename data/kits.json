@@ -2,6 +2,7 @@
   {
     "slug": "arcane-archer",
     "name": "Arcane Archer",
+    "summary": "The Arcane Archer kit allows you to combine magic and ranged weapon strikes. Your lack of armor keeps you mobile, and your magic makes your arrows explode to devastate your foes.",
     "description": "The Arcane Archer kit allows you to combine magic and ranged weapon strikes. Your lack of armor keeps you mobile, and your magic makes your arrows explode to devastate your foes.",
     "properties": {
       "type": "kit",
@@ -12,7 +13,6 @@
       "stamina_bonus_scaling": "per {@combat echelon}",
       "speed_bonus": 1,
       "stability_bonus": 0,
-      "melee_damage_bonus": null,
       "ranged_damage_bonus": "+2/+2/+2",
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 10,
@@ -22,7 +22,12 @@
         "flavor": "Your ammunition explodes with magical energy.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Magic", "Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Magic",
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Ranged 15",
         "target": "One creature or object",
         "power_roll": "Agility, Reason, Intuition, or Presence",
@@ -31,12 +36,14 @@
         "tier3": "10 + A, R, I, or P fire damage",
         "effect": "One creature or object of your choice within 2 squares of the target takes fire damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Exploding Arrow — flavor: Your ammunition explodes with magical energy.; type: signature; action type: Main action; keywords: Magic, Ranged, Strike, Weapon; distance: Ranged 15; target: One creature or object; power roll: Agility, Reason, Intuition, or Presence; tier1: 5 + A, R, I, or P fire damage; tier2: 7 + A, R, I, or P fire damage; tier3: 10 + A, R, I, or P fire damage; effect: One creature or object of your choice within 2 squares of the target takes fire damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "battlemind",
     "name": "Battlemind",
+    "summary": "Who says lightly armored heroes can't also be hard to move?",
     "description": "Who says lightly armored heroes can't also be hard to move? You just need to employ some psionics! The Battlemind kit harnesses the power of your mind to make you harder to move—and to make your foes easier to push around.",
     "properties": {
       "type": "kit",
@@ -48,7 +55,6 @@
       "speed_bonus": 2,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -57,7 +63,12 @@
         "flavor": "Your weapon unleashes psionic energy that reduces your target's weight.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Psionic", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Psionic",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might, Reason, Intuition, or Presence",
@@ -66,12 +77,14 @@
         "tier3": "11 + M, R, I, or P damage",
         "effect": "Until the end of the target's next turn, any {@combat forced-movement|forced movement} that affects the target has its distance increased by 2."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Unmooring — flavor: Your weapon unleashes psionic energy that reduces your target's weight.; type: signature; action type: Main action; keywords: Melee, Psionic, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P damage; tier2: 8 + M, R, I, or P damage; tier3: 11 + M, R, I, or P damage; effect: Until the end of the target's next turn, any {@combat forced-movement|forced movement} that affects the target has its distance increased by 2."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "cloak-and-dagger",
     "name": "Cloak and Dagger",
+    "summary": "Providing throwable light weapons and light armor easily concealed by a cloak to confuse your enemies, the Cloak and Dagger kit makes you more mobile while increasing the…",
     "description": "Providing throwable light weapons and light armor easily concealed by a cloak to confuse your enemies, the Cloak and Dagger kit makes you more mobile while increasing the effectiveness of your short-range strikes.",
     "properties": {
       "type": "kit",
@@ -92,7 +105,12 @@
         "flavor": "A stab, and a few quick, careful steps back.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1 or ranged 10",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -100,12 +118,14 @@
         "tier2": "6 + M or A damage; you can {@movement shift} up to 2 squares",
         "tier3": "8 + M or A damage; you can {@movement shift} up to 3 squares"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Fade — flavor: A stab, and a few quick, careful steps back.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; you can {@movement shift} 1 square; tier2: 6 + M or A damage; you can {@movement shift} up to 2 squares; tier3: 8 + M or A damage; you can {@movement shift} up to 3 squares"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "dual-wielder",
     "name": "Dual Wielder",
+    "summary": "The Dual Wielder kit is for folks who want to excel at using two weapons at the same time.",
     "description": "The Dual Wielder kit is for folks who want to excel at using two weapons at the same time. Your fighting style maximizes the power of each weapon you have in hand, making you a whirling dealer of death.",
     "properties": {
       "type": "kit",
@@ -117,7 +137,6 @@
       "speed_bonus": 2,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -126,7 +145,11 @@
         "flavor": "Why strike once when you could do it twice?",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "Two creatures or objects",
         "power_roll": "Might or Agility",
@@ -135,12 +158,14 @@
         "tier3": "8 damage",
         "effect": "If you use this ability on your turn, you can use it against one target, then use your {@action maneuver} and your {@action move-action|move action} for that turn before using the ability against a second target. You still use the same {@combat power-roll|power roll} for both targets."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Double Strike — flavor: Why strike once when you could do it twice?; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: Two creatures or objects; power roll: Might or Agility; tier1: 4 damage; tier2: 6 damage; tier3: 8 damage; effect: If you use this ability on your turn, you can use it against one target, then use your {@action maneuver} and your {@action move-action|move action} for that turn before using the ability against a second target. You still use the same {@combat power-roll|power roll} for both targets."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "guisarmier",
     "name": "Guisarmier",
+    "summary": "The Guisarmier kit is for those who want to use a polearm for extended reach while remaining protected by sturdy armor.",
     "description": "The Guisarmier kit is for those who want to use a polearm for extended reach while remaining protected by sturdy armor. This is the kit that allows you to become the ultimate halberd, longspear, or glaive fighter.",
     "properties": {
       "type": "kit",
@@ -152,7 +177,6 @@
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 1,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -161,7 +185,11 @@
         "flavor": "In your hands, the haft is as good as the head.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 2",
         "target": "Two creatures or objects",
         "power_roll": "Might or Agility",
@@ -169,12 +197,14 @@
         "tier2": "7 damage",
         "tier3": "9 damage"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Forward Thrust, Backward Smash — flavor: In your hands, the haft is as good as the head.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: Two creatures or objects; power roll: Might or Agility; tier1: 4 damage; tier2: 7 damage; tier3: 9 damage"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "martial-artist",
     "name": "Martial Artist",
+    "summary": "If you want to be fast in a fight, then Martial Artist is the kit for you.",
     "description": "If you want to be fast in a fight, then Martial Artist is the kit for you. Unencumbered by weapons or armor, this fighting style rewards quick, focused unarmed strikes against opponents, and allows you to be the ultimate skirmisher.",
     "properties": {
       "type": "kit",
@@ -186,7 +216,6 @@
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -195,7 +224,11 @@
         "flavor": "You feint to move your enemies into perfect position.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -204,12 +237,14 @@
         "tier3": "11 + M or A damage; you can swap places with the target",
         "effect": "If you obtain a tier 2 or tier 3 outcome and can't swap places with the target because one or both of you is too big to fit into the swapped space, you both remain in your original spaces and the target takes 1 extra damage."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Battle Grace — flavor: You feint to move your enemies into perfect position.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 8 + M or A damage; you can swap places with the target; tier3: 11 + M or A damage; you can swap places with the target; effect: If you obtain a tier 2 or tier 3 outcome and can't swap places with the target because one or both of you is too big to fit into the swapped space, you both remain in your original spaces and the target takes 1 extra damage."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "mountain",
     "name": "Mountain",
+    "summary": "The Mountain kit does exactly what it says on the tin.",
     "description": "The Mountain kit does exactly what it says on the tin. You don heavy armor and raise a heavy weapon to stand strong against your foes, quickly demolishing them when it's your turn to strike.",
     "properties": {
       "type": "kit",
@@ -221,7 +256,6 @@
       "speed_bonus": 0,
       "stability_bonus": 2,
       "melee_damage_bonus": "+0/+0/+4",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -230,7 +264,11 @@
         "flavor": "An enemy who tagged you will pay for that.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -239,12 +277,14 @@
         "tier3": "13 + M or A damage",
         "effect": "If the target dealt damage to you since the end of your last turn, this strike deals additional damage equal to your Might or Agility score (your choice)."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Pain for Pain — flavor: An enemy who tagged you will pay for that.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 5 + M or A damage; tier3: 13 + M or A damage; effect: If the target dealt damage to you since the end of your last turn, this strike deals additional damage equal to your Might or Agility score (your choice)."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "panther",
     "name": "Panther",
+    "summary": "If you want a good balance of protection, speed, and damage, the Panther kit is for you.",
     "description": "If you want a good balance of protection, speed, and damage, the Panther kit is for you. This kit increases your Stamina not by wearing armor, but through the focused battle preparation of body and mind, letting you be fast and mobile while swinging a heavy weapon at your foes.",
     "properties": {
       "type": "kit",
@@ -256,7 +296,6 @@
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+0/+0/+4",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -265,7 +304,11 @@
         "flavor": "The faster you move, the harder you hit.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature or object",
         "power_roll": "Might or Agility",
@@ -274,12 +317,14 @@
         "tier3": "13 + M or A damage",
         "effect": "You can move up to 3 squares straight toward the target before this strike, which deals extra damage equal to the number of squares you move this way."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Devastating Rush — flavor: The faster you move, the harder you hit.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 13 + M or A damage; effect: You can move up to 3 squares straight toward the target before this strike, which deals extra damage equal to the number of squares you move this way."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "pugilist",
     "name": "Pugilist",
+    "summary": "Meant for brawlers and boxers, the Pugilist kit gives you access to a melee fighting style that grants a boost to Stamina and damage while allowing you to float like a butterfly.",
     "description": "Meant for brawlers and boxers, the Pugilist kit gives you access to a melee fighting style that grants a boost to Stamina and damage while allowing you to float like a butterfly. If you want to be a tough, strong hero who doles out punishment with your fists, then this kit is for you.",
     "properties": {
       "type": "kit",
@@ -291,7 +336,6 @@
       "speed_bonus": 2,
       "stability_bonus": 1,
       "melee_damage_bonus": "+1/+1/+1",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -300,7 +344,11 @@
         "flavor": "Keeping your enemies stumbling around the battlefield is second nature to you.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -309,12 +357,14 @@
         "tier3": "8 + M or A damage; {@movement slide} 2",
         "effect": "You can {@movement shift} into any square the target leaves after you slide them."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Let's Dance — flavor: Keeping your enemies stumbling around the battlefield is second nature to you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; {@movement slide} 1; tier3: 8 + M or A damage; {@movement slide} 2; effect: You can {@movement shift} into any square the target leaves after you slide them."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "raider",
     "name": "Raider",
+    "summary": "The Raider kit keeps you protected while granting you full mobility, providing a boost to speed and distance that lets you run around the battlefield like a Viking warrior.",
     "description": "The Raider kit keeps you protected while granting you full mobility, providing a boost to speed and distance that lets you run around the battlefield like a Viking warrior.",
     "properties": {
       "type": "kit",
@@ -335,7 +385,12 @@
         "flavor": "You execute a brutal strike that leaves your foe reeling.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1 or ranged 10",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -344,12 +399,14 @@
         "tier3": "8 + M or A damage",
         "effect": "The target takes a {@combat bane} on their next {@combat power-roll|power roll} made before the end of their next turn."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Raider's Awe — flavor: You execute a brutal strike that leaves your foe reeling.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 8 + M or A damage; effect: The target takes a {@combat bane} on their next {@combat power-roll|power roll} made before the end of their next turn."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "ranger",
     "name": "Ranger",
+    "summary": "The Ranger kit outfits you with medium armor and weapons for every challenge, letting you easily switch between melee and ranged combat.",
     "description": "The Ranger kit outfits you with medium armor and weapons for every challenge, letting you easily switch between melee and ranged combat. This kit provides a good balance of bonuses to defense and offense to create a hero who is a jack-of-all-trades.",
     "properties": {
       "type": "kit",
@@ -370,7 +427,11 @@
         "flavor": "A well-placed shot leaves your enemy struggling to move.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Ranged 10",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -378,12 +439,14 @@
         "tier2": "5 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration save-ends})",
         "tier3": "7 + M or A damage; A < STRONG, {@condition slowed} ({@duration save-ends})"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Hamstring Shot — flavor: A well-placed shot leaves your enemy struggling to move.; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; A < WEAK, {@condition slowed} ({@duration save-ends}); tier2: 5 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration save-ends}); tier3: 7 + M or A damage; A < STRONG, {@condition slowed} ({@duration save-ends})"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "rapid-fire",
     "name": "Rapid-Fire",
+    "summary": "The Rapid-Fire kit is for archers who want to deal maximum damage by shooting as many arrows as possible into nearby enemies.",
     "description": "The Rapid-Fire kit is for archers who want to deal maximum damage by shooting as many arrows as possible into nearby enemies. With this kit, your fighting technique focuses on peppering foes before they can get close enough to counterattack.",
     "properties": {
       "type": "kit",
@@ -394,7 +457,6 @@
       "stamina_bonus_scaling": "per {@combat echelon}",
       "speed_bonus": 1,
       "stability_bonus": 0,
-      "melee_damage_bonus": null,
       "ranged_damage_bonus": "+2/+2/+2",
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 7,
@@ -404,7 +466,11 @@
         "flavor": "When you fire two arrows back-to-back, both hit their mark.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Ranged 12",
         "target": "Two creatures or objects",
         "power_roll": "Might or Agility",
@@ -412,12 +478,14 @@
         "tier2": "6 damage",
         "tier3": "8 damage"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Two Shot — flavor: When you fire two arrows back-to-back, both hit their mark.; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 12; target: Two creatures or objects; power roll: Might or Agility; tier1: 4 damage; tier2: 6 damage; tier3: 8 damage"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "retiarius",
     "name": "Retiarius",
+    "summary": "The retiarius is often depicted as a lightly armored warrior with a net in one hand and a trident in the other, and this kit gives you the equipment and fighting technique to make…",
     "description": "The retiarius is often depicted as a lightly armored warrior with a net in one hand and a trident in the other, and this kit gives you the equipment and fighting technique to make that happen. Tie up your foe with a net and then poke them to death!",
     "properties": {
       "type": "kit",
@@ -429,7 +497,6 @@
       "speed_bonus": 1,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 1,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -438,7 +505,11 @@
         "flavor": "The well-thrown net that follows your main attack leaves your foes right where you want them.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 2",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -446,12 +517,14 @@
         "tier2": "6 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration eot})",
         "tier3": "8 + M or A damage; A < STRONG, {@condition restrained} ({@duration eot})"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Net and Stab — flavor: The well-thrown net that follows your main attack leaves your foes right where you want them.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; A < WEAK, {@condition slowed} ({@duration eot}); tier2: 6 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration eot}); tier3: 8 + M or A damage; A < STRONG, {@condition restrained} ({@duration eot})"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "shining-armor",
     "name": "Shining Armor",
+    "summary": "The Shining Armor kit provides the most protection a kit can afford, providing you with the sword, shield, and armor necessary to play the prototypical knight.",
     "description": "The Shining Armor kit provides the most protection a kit can afford, providing you with the sword, shield, and armor necessary to play the prototypical knight.",
     "properties": {
       "type": "kit",
@@ -463,7 +536,6 @@
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -472,7 +544,11 @@
         "flavor": "The strength of your assault makes it impossible for your foe to ignore you.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -481,12 +557,14 @@
         "tier3": "11 + M or A damage",
         "effect": "The target is {@condition taunted} until the end of their next turn."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Protective Attack — flavor: The strength of your assault makes it impossible for your foe to ignore you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 8 + M or A damage; tier3: 11 + M or A damage; effect: The target is {@condition taunted} until the end of their next turn."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "sniper",
     "name": "Sniper",
+    "summary": "The Sniper kit gives you the tools and techniques to take down enemies from afar.",
     "description": "The Sniper kit gives you the tools and techniques to take down enemies from afar. This kit can help you become the archer who lurks behind trees or down tunnels, picking off enemies with a bow or crossbow as they approach.",
     "properties": {
       "type": "kit",
@@ -497,7 +575,6 @@
       "stamina_bonus_scaling": "per {@combat echelon}",
       "speed_bonus": 1,
       "stability_bonus": 0,
-      "melee_damage_bonus": null,
       "ranged_damage_bonus": "+0/+0/+4",
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 10,
@@ -507,7 +584,11 @@
         "flavor": "Breathe... aim... wait... then strike!",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Ranged", "Strike", "Weapon"],
+        "keywords": [
+          "Ranged",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Ranged 15",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -516,12 +597,14 @@
         "tier3": "13 + M or A damage",
         "effect": "If you don't take a {@action move-action|move action} this turn, this strike deals extra damage equal to your Might or Agility score (your choice)."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Patient Shot — flavor: Breathe... aim... wait... then strike!; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 15; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 13 + M or A damage; effect: If you don't take a {@action move-action|move action} this turn, this strike deals extra damage equal to your Might or Agility score (your choice)."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "spellsword",
     "name": "Spellsword",
+    "summary": "The Spellsword kit combines melee strikes and a little bit of magic, letting you create a warrior who doesn't have to choose between the incantation and the blade.",
     "description": "The Spellsword kit combines melee strikes and a little bit of magic, letting you create a warrior who doesn't have to choose between the incantation and the blade.",
     "properties": {
       "type": "kit",
@@ -533,7 +616,6 @@
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -542,7 +624,12 @@
         "flavor": "Lightning jumps from your weapon as you strike to harm a nearby foe.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Magic", "Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Magic",
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature or object",
         "power_roll": "Might, Reason, Intuition, or Presence",
@@ -551,12 +638,14 @@
         "tier3": "11 + M, R, I, or P lightning damage",
         "effect": "A creature or object of your choice within 2 squares of the target takes lightning damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Leaping Lightning — flavor: Lightning jumps from your weapon as you strike to harm a nearby foe.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P lightning damage; tier2: 8 + M, R, I, or P lightning damage; tier3: 11 + M, R, I, or P lightning damage; effect: A creature or object of your choice within 2 squares of the target takes lightning damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "stick-and-robe",
     "name": "Stick and Robe",
+    "summary": "Armed with a simple reach weapon, often a quarterstaff, a character using the Stick and Robe kit is highly mobile thanks to their light armor.",
     "description": "Armed with a simple reach weapon, often a quarterstaff, a character using the Stick and Robe kit is highly mobile thanks to their light armor. This allows your hero to make maximum use of their weapon's length.",
     "properties": {
       "type": "kit",
@@ -568,7 +657,6 @@
       "speed_bonus": 2,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 1,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -577,7 +665,11 @@
         "flavor": "When your stick speaks, your enemy moves.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 2",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -585,12 +677,14 @@
         "tier2": "7 + M or A damage; {@movement slide} 1",
         "tier3": "10 + M or A damage; {@movement slide} 3"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Where I Want You — flavor: When your stick speaks, your enemy moves.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; tier2: 7 + M or A damage; {@movement slide} 1; tier3: 10 + M or A damage; {@movement slide} 3"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "swashbuckler",
     "name": "Swashbuckler",
+    "summary": "If you want to be mobile and deal a lot of damage with melee strikes, then you should reach for the Swashbuckler kit. This is a great kit for heroes who want to be master duelists.",
     "description": "If you want to be mobile and deal a lot of damage with melee strikes, then you should reach for the Swashbuckler kit. This is a great kit for heroes who want to be master duelists.",
     "properties": {
       "type": "kit",
@@ -602,7 +696,6 @@
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -611,7 +704,11 @@
         "flavor": "All combat is a dance—and you'll be the one leading.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -620,12 +717,14 @@
         "tier3": "10 + M or A damage; {@movement push} 2",
         "effect": "You can {@movement shift} into any square the target leaves after you push them."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Fancy Footwork — flavor: All combat is a dance—and you'll be the one leading.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 7 + M or A damage; {@movement push} 1; tier3: 10 + M or A damage; {@movement push} 2; effect: You can {@movement shift} into any square the target leaves after you push them."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "sword-and-board",
     "name": "Sword and Board",
+    "summary": "The Sword and Board kit doesn't just give you a shield—it makes the shield part of your offensive arsenal.",
     "description": "The Sword and Board kit doesn't just give you a shield—it makes the shield part of your offensive arsenal. With a medium weapon in one hand and a block of steel or solid oak in the other, you protect yourself while you control the battlefield.",
     "properties": {
       "type": "kit",
@@ -637,7 +736,6 @@
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -646,7 +744,11 @@
         "flavor": "In your hands, a shield isn't just for protection.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -654,12 +756,14 @@
         "tier2": "7 + M or A damage; {@movement push} 2",
         "tier3": "9 + M or A damage; {@movement push} 3; M < STRONG, {@condition prone}"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Shield Bash — flavor: In your hands, a shield isn't just for protection.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; {@movement push} 1; tier2: 7 + M or A damage; {@movement push} 2; tier3: 9 + M or A damage; {@movement push} 3; M < STRONG, {@condition prone}"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "warrior-priest",
     "name": "Warrior Priest",
+    "summary": "The Warrior Priest kit imbues the power of the gods into your weapon, making it a smiting instrument.",
     "description": "The Warrior Priest kit imbues the power of the gods into your weapon, making it a smiting instrument. You wade into the fray without fear, thanks to the power of the divine... and the heavy armor you wear.",
     "properties": {
       "type": "kit",
@@ -671,7 +775,6 @@
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+1/+1/+1",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 0,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 0,
@@ -680,7 +783,12 @@
         "flavor": "The impact of your weapon brands your target for destruction.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Magic", "Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Magic",
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 1",
         "target": "One creature or object",
         "power_roll": "Might, Reason, Intuition, or Presence",
@@ -689,12 +797,14 @@
         "tier3": "8 + M, R, I, or P holy damage",
         "effect": "Until the end of the target's next turn, they have {@resource damage-weakness|damage weakness} equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Weakening Brand — flavor: The impact of your weapon brands your target for destruction.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 3 + M, R, I, or P holy damage; tier2: 5 + M, R, I, or P holy damage; tier3: 8 + M, R, I, or P holy damage; effect: Until the end of the target's next turn, they have {@resource damage-weakness|damage weakness} equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "whirlwind",
     "name": "Whirlwind",
+    "summary": "The Whirlwind kit makes effective use of whips, granting you mobility, damage, and reach.",
     "description": "The Whirlwind kit makes effective use of whips, granting you mobility, damage, and reach. If you want to be a fast-moving warrior who lashes foes with a chain or whip, then this is the kit for you.",
     "properties": {
       "type": "kit",
@@ -706,7 +816,6 @@
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
-      "ranged_damage_bonus": null,
       "melee_distance_bonus": 1,
       "ranged_distance_bonus": 0,
       "disengage_bonus": 1,
@@ -715,7 +824,11 @@
         "flavor": "When you draw your whip back after an attack, your enemy is drawn ever closer.",
         "type": "signature",
         "action_type": "Main action",
-        "keywords": ["Melee", "Strike", "Weapon"],
+        "keywords": [
+          "Melee",
+          "Strike",
+          "Weapon"
+        ],
         "distance": "Melee 3",
         "target": "One creature",
         "power_roll": "Might or Agility",
@@ -723,7 +836,8 @@
         "tier2": "7 + M or A damage; vertical {@movement pull} 2",
         "tier3": "10 + M or A damage; vertical {@movement pull} 3"
       },
-      "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
-    }
+      "signature_ability_display": "Extension of My Arm — flavor: When you draw your whip back after an attack, your enemy is drawn ever closer.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 3; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; vertical {@movement pull} 1; tier2: 7 + M or A damage; vertical {@movement pull} 2; tier3: 10 + M or A damage; vertical {@movement pull} 3"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   }
 ]

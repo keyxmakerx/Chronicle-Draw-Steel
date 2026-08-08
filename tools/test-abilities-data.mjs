@@ -46,8 +46,13 @@ test('slugs are unique', () => {
   }
 });
 
-test('domain fields live under properties, never at the root', () => {
-  const allowedRoot = new Set(['slug', 'name', 'description', 'properties']);
+test('domain fields live under properties; the root carries only ReferenceItem keys', () => {
+  // Chronicle's ReferenceItem (internal/systems/system.go) reads these keys off
+  // the root and everything else out of Properties. `source` and `summary` are
+  // root keys BECAUSE the renderer reads them there: system_pages.templ prints
+  // item.Source in the detail header and item.Summary in the list table, and
+  // neither ever looks inside properties. See tools/test-render-contract.mjs.
+  const allowedRoot = new Set(['slug', 'name', 'summary', 'description', 'properties', 'tags', 'source']);
   for (const a of ABILITIES) {
     for (const k of Object.keys(a)) {
       assert.ok(allowedRoot.has(k), `${a.slug} has root-level field "${k}"; it belongs in properties`);
@@ -61,8 +66,8 @@ test('every entry records its category, type and provenance', () => {
     const p = a.properties;
     assert.ok(categories.has(p.category), `${a.slug} has unknown category "${p.category}"`);
     assert.equal(typeof p.type, 'string', `${a.slug} needs a type`);
-    assert.equal(typeof p.source, 'string', `${a.slug} needs a source`);
-    assert.ok(p.source.length > 0, `${a.slug} needs a non-empty source`);
+    assert.equal(typeof a.source, 'string', `${a.slug} needs a root source`);
+    assert.ok(a.source.length > 0, `${a.slug} needs a non-empty root source`);
     if (p.category === 'class') assert.ok(p.class, `${a.slug} is a class ability but names no class`);
     if (p.category === 'kit') assert.ok(p.kit, `${a.slug} is a kit ability but names no kit`);
   }
@@ -111,7 +116,7 @@ test('ability-keywords.json is itself a well-formed, unique ReferenceItem list',
     assert.equal(typeof k.name, 'string', `keyword ${k.slug} needs a name`);
     assert.ok(!seen.has(k.slug), `duplicate keyword slug: ${k.slug}`);
     seen.add(k.slug);
-    assert.equal(typeof k.properties?.source, 'string', `keyword ${k.slug} must record a source`);
+    assert.equal(typeof k.source, 'string', `keyword ${k.slug} must record a root source`);
   }
 });
 

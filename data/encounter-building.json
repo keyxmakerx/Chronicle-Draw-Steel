@@ -2,10 +2,10 @@
   {
     "slug": "encounter-building-overview",
     "name": "Step-by-Step Encounter Building",
+    "summary": "Building a combat encounter runs in six steps: think about the encounter's premise, choose its difficulty, determine the party's encounter strength, determine the encounter…",
     "description": "Building a combat encounter runs in six steps: think about the encounter's premise, choose its difficulty, determine the party's encounter strength, determine the encounter budget, spend that budget on creatures, and build initiative groups. The guidelines are explicitly not a science — the heroes the players create, the map, the treasures they carry, the dice, and each player's tactical acumen all move the result, so expect to adjust the guidelines to your group.",
     "properties": {
       "rule_type": "procedure",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "steps": [
         "Think",
         "Choose Encounter Difficulty",
@@ -14,16 +14,18 @@
         "Spend Encounter Budget",
         "Build Initiative Groups"
       ],
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "steps — Think, Choose Encounter Difficulty, Determine Encounter Strength, Determine Encounter Budget, Spend Encounter Budget, Build Initiative Groups"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "difficulty-trivial",
     "name": "Trivial Encounter",
+    "summary": "Trivial encounters are easier than easy and present no challenge at all — the heroes are guaranteed to survive with their Stamina mostly or entirely untouched.",
     "description": "Trivial encounters are easier than easy and present no challenge at all — the heroes are guaranteed to survive with their Stamina mostly or entirely untouched. Unless you decide otherwise, a trivial encounter earns the heroes no Victories.",
     "properties": {
       "rule_type": "difficulty",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "trivial",
       "budget_band_text": "anything less than the party's ES minus the encounter strength of one hero",
       "budget_band": {
@@ -33,15 +35,16 @@
       },
       "victories": "0",
       "category": "encounter-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "difficulty-easy",
     "name": "Easy Encounter",
+    "summary": "Unless the heroes have already burned most of their Stamina and Recoveries, an easy encounter will not threaten their lives. It is worth 1 Victory.",
     "description": "Unless the heroes have already burned most of their Stamina and Recoveries, an easy encounter will not threaten their lives. It is worth 1 Victory.",
     "properties": {
       "rule_type": "difficulty",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "easy",
       "budget_band_text": "less than the party's ES, but more than a trivial budget",
       "budget_band": {
@@ -51,15 +54,16 @@
       },
       "victories": "1",
       "category": "encounter-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "difficulty-standard",
     "name": "Standard Encounter",
+    "summary": "Standard encounters are the most common. They deplete some of the heroes' Stamina and Recoveries, especially for melee-focused heroes. Death is uncommon but not impossible. It is…",
     "description": "Standard encounters are the most common. They deplete some of the heroes' Stamina and Recoveries, especially for melee-focused heroes. Death is uncommon but not impossible. It is worth 1 Victory.",
     "properties": {
       "rule_type": "difficulty",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "standard",
       "budget_band_text": "between the party's ES and the party's ES plus the encounter strength of one hero",
       "budget_band": {
@@ -69,15 +73,16 @@
       },
       "victories": "1",
       "category": "encounter-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "difficulty-hard",
     "name": "Hard Encounter",
+    "summary": "Hard encounters are typically climactic fights with leaders and their servants, or another scenario that puts the heroes' lives in real peril.",
     "description": "Hard encounters are typically climactic fights with leaders and their servants, or another scenario that puts the heroes' lives in real peril. They are winnable, but the heroes have to play smart. A hard encounter is worth 2 Victories.",
     "properties": {
       "rule_type": "difficulty",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "hard",
       "budget_band_text": "greater than a standard budget, but no more than the party's ES plus the encounter strength of three heroes",
       "budget_band": {
@@ -87,15 +92,16 @@
       },
       "victories": "2",
       "category": "encounter-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "difficulty-extreme",
     "name": "Extreme Encounter",
+    "summary": "Extreme encounters feature threats the heroes are unlikely to survive if they fight to the bitter end.",
     "description": "Extreme encounters feature threats the heroes are unlikely to survive if they fight to the bitter end. They rarely belong in most campaigns, though heroes of 8th level or higher can typically survive one — or come back to life afterward. An extreme encounter is worth 2 or more Victories.",
     "properties": {
       "rule_type": "difficulty",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "extreme",
       "budget_band_text": "anything greater than a hard budget",
       "budget_band": {
@@ -104,15 +110,16 @@
       },
       "victories": "2 or more",
       "category": "encounter-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "encounter-strength",
     "name": "Encounter Strength",
+    "summary": "A party's encounter strength (ES) is the benchmark you buy monsters against.",
     "description": "A party's encounter strength (ES) is the benchmark you buy monsters against. Each hero's encounter strength starts at a baseline of 4, plus 2 for each level of the hero — a 3rd-level hero has an encounter strength of 10. Add every hero's encounter strength together for the party's ES, so five 3rd-level heroes have an ES of 50. Each retainer or other NPC fighting alongside the heroes counts as a hero of their own level.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "per_hero_formula": "4 + (2 * hero_level)",
       "party_formula": "sum of every hero's encounter strength",
       "retainers_count_as_heroes": true,
@@ -258,112 +265,128 @@
           }
         }
       ],
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "per hero formula — 4 + (2 * hero_level) · party formula — sum of every hero's encounter strength · retainers count as heroes — true · table — hero level: 1; per hero: 6; party: 1: 6; 2: 12; 3: 18; 4: 24; 5: 30; 6: 36; 7: 42; 8: 48 · hero level: 2; per hero: 8; party: 1: 8; 2: 16; 3: 24; 4: 32; 5: 40; 6: 48; 7: 56; 8: 64 · hero level: 3; per hero: 10; party: 1: 10; 2: 20; 3: 30; 4: 40; 5: 50; 6: 60; 7: 70; 8: 80 · hero level: 4; per hero: 12; party: 1: 12; 2: 24; 3: 36; 4: 48; 5: 60; 6: 72; 7: 84; 8: 96 · hero level: 5; per hero: 14; party: 1: 14; 2: 28; 3: 42; 4: 56; 5: 70; 6: 84; 7: 98; 8: 112 · hero level: 6; per hero: 16; party: 1: 16; 2: 32; 3: 48; 4: 64; 5: 80; 6: 96; 7: 112; 8: 128 · hero level: 7; per hero: 18; party: 1: 18; 2: 36; 3: 54; 4: 72; 5: 90; 6: 108; 7: 126; 8: 144 · hero level: 8; per hero: 20; party: 1: 20; 2: 40; 3: 60; 4: 80; 5: 100; 6: 120; 7: 140; 8: 160 · hero level: 9; per hero: 22; party: 1: 22; 2: 44; 3: 66; 4: 88; 5: 110; 6: 132; 7: 154; 8: 176 · hero level: 10; per hero: 24; party: 1: 24; 2: 48; 3: 72; 4: 96; 5: 120; 6: 144; 7: 168; 8: 192"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "encounter-strength-victories",
     "name": "Factoring Victories into Encounter Strength",
+    "summary": "Victories make heroes more powerful on the way to their next level.",
     "description": "Victories make heroes more powerful on the way to their next level. For every 2 Victories the heroes have earned on average, increase the party's encounter strength as if there were another hero in the party — a party of 3rd-level heroes with 2 or 3 Victories each gains 10 ES, and with 6 Victories each gains 30. Be careful that the larger encounter strength does not push you past the recommended number of creatures: it is usually better to use higher-cost creatures than to add extra ones.",
     "properties": {
       "rule_type": "adjustment",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "formula": "add one hero of the party's level per 2 average Victories",
       "caution": "prefer higher-EV creatures over more creatures",
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "formula — add one hero of the party's level per 2 average Victories · caution — prefer higher-EV creatures over more creatures"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "spending-the-encounter-budget",
     "name": "Spending the Encounter Budget",
+    "summary": "You spend your encounter budget to buy hostile creatures.",
     "description": "You spend your encounter budget to buy hostile creatures. Each creature costs a number of budget points equal to its encounter value (EV). Choose a variety of creature roles for a more dynamic fight. Dynamic terrain objects are bought out of the same budget.",
     "properties": {
       "rule_type": "procedure",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "cost_per_creature": "the creature's EV",
       "also_purchasable": [
         "dynamic terrain objects"
       ],
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "cost per creature — the creature's EV · also purchasable — dynamic terrain objects"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "creature-level-limits",
     "name": "Choosing Creature Levels",
+    "summary": "Choose creatures whose level is no more than 2 greater than the heroes' level — for a party of 5th-level heroes, creatures of level 7 and below.",
     "description": "Choose creatures whose level is no more than 2 greater than the heroes' level — for a party of 5th-level heroes, creatures of level 7 and below. If the heroes have 6 or more Victories you can push that to within 3 levels. Solo creatures are the exception: restrict them to no more than 1 level above the party's average, because a solo's abilities dish out a lot of damage for their level. This level comparison is the only role level plays in encounter building; everything else relies on encounter value and organization.",
     "properties": {
       "rule_type": "constraint",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "max_levels_above_party": 2,
       "max_levels_above_party_with_6_victories": 3,
       "max_levels_above_party_solo": 1,
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "max levels above party — 2 · max levels above party with 6 victories — 3 · max levels above party solo — 1"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "minions-come-in-fours",
     "name": "Minions Come in Groups of Four",
+    "summary": "Whenever you spend EV on minions, you buy them four at a time, and it is recommended to buy at least two sets for any encounter because minions are not effective in smaller numbers.",
     "description": "Whenever you spend EV on minions, you buy them four at a time, and it is recommended to buy at least two sets for any encounter because minions are not effective in smaller numbers. The minions you buy can then be arranged into squads of any size up to a maximum of eight. More minions in a squad makes each minion turn more effective; more squads is easier to track.",
     "properties": {
       "rule_type": "constraint",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "purchase_multiple": 4,
       "recommended_minimum_sets": 2,
       "max_squad_size": 8,
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "purchase multiple — 4 · recommended minimum sets — 2 · max squad size — 8"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "number-of-creatures",
     "name": "Number of Creatures and Stat Blocks",
+    "summary": "Too many creatures, or too many different stat blocks, turns an exciting combat into a slog.",
     "description": "Too many creatures, or too many different stat blocks, turns an exciting combat into a slog. In general do not use more than eight creatures per hero at a time. If the encounter has more than three creatures per hero, at least half of them should be minions. Typically use no more than six different kinds of stat blocks in an encounter, though you can manage more if many of them are simple minion stat blocks.",
     "properties": {
       "rule_type": "constraint",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "max_creatures_per_hero": 8,
       "minion_majority_threshold_per_hero": 3,
       "max_distinct_stat_blocks": 6,
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "max creatures per hero — 8 · minion majority threshold per hero — 3 · max distinct stat blocks — 6"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "star-of-the-show",
     "name": "Star of the Show",
+    "summary": "If you want a creature to stick around and become the star of the encounter, set up a hard encounter and choose a leader or solo creature whose EV is at least one-third of the…",
     "description": "If you want a creature to stick around and become the star of the encounter, set up a hard encounter and choose a leader or solo creature whose EV is at least one-third of the encounter budget.",
     "properties": {
       "rule_type": "guideline",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "difficulty": "hard",
       "organizations": [
         "leader",
         "solo"
       ],
       "min_share_of_budget": 0.3333,
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "organizations — leader, solo · min share of budget — 0.3333"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "initiative-groups",
     "name": "Building Initiative Groups",
+    "summary": "Put the encounter's foes into initiative groups, with every creature in a group acting on the same turn.",
     "description": "Put the encounter's foes into initiative groups, with every creature in a group acting on the same turn. Try to keep each group's total EV between the encounter strength of one and two heroes, so the group can hold its own against any one hero without overwhelming them. A group worth less than that is fine; a group worth more is fine when it is a single creature or the heroes have racked up a lot of Victories. In a battle without a solo creature, aim for about as many initiative groups as there are heroes, plus or minus one or two.",
     "properties": {
       "rule_type": "guideline",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "group_ev_band": {
         "lower": "one_hero_es",
         "upper": "2 * one_hero_es"
       },
       "group_count": "about the number of heroes, ±1 to 2 (in a battle with no solo)",
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "group ev band — lower: one_hero_es; upper: 2 * one_hero_es · group count — about the number of heroes, ±1 to 2 (in a battle with no solo)"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "quick-encounter-building",
     "name": "Quick Encounter Building",
+    "summary": "A faster method that skips the EV arithmetic.",
     "description": "A faster method that skips the EV arithmetic. Note the party's level and size, then add one hero to the party for every two Victories the heroes have on average. The encounter has a number of hero slots equal to that adjusted party size. Fill each slot with creatures at the listed rates, adjusting the slot count and the creature levels by difficulty. Then include one or two dynamic terrain objects for standard-or-easier encounters and two or three for hard and extreme ones, using only objects of the heroes' level or lower.",
     "properties": {
       "rule_type": "procedure",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "hero_slots": "party size, plus one hero per 2 average Victories",
       "fill_rates": [
         {
@@ -433,35 +456,41 @@
         "hard_to_extreme": "2 to 3",
         "levels": "the heroes' level or lower"
       },
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "hero slots — party size, plus one hero per 2 average Victories · fill rates — organization: minion; creatures: 8; hero slots: 1 · organization: horde; creatures: 2; hero slots: 1 · organization: platoon; creatures: 1; hero slots: 1 · organization: elite; creatures: 1; hero slots: 2 · organization: leader; creatures: 1; hero slots: 2 · organization: solo; creatures: 1; hero slots: 6 · difficulty adjustments — difficulty: trivial; hero slot delta: -2; creature levels: the heroes' level or lower · difficulty: easy; hero slot delta: -1; creature levels: the heroes' level or one higher · difficulty: standard; hero slot delta: 0; creature levels: the heroes' level or one higher · difficulty: hard; hero slot delta: 2; creature levels: the heroes' level and up to two higher, or up to one higher for solos · difficulty: extreme; hero slot delta: 4; creature levels: the heroes' level or higher · dynamic terrain objects — trivial to standard: 1 to 2; hard to extreme: 2 to 3; levels: the heroes' level or lower"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "parties-large-and-small",
     "name": "Parties Large and Small",
+    "summary": "Draw Steel was made and tested for groups of three to six heroes including retainers.",
     "description": "Draw Steel was made and tested for groups of three to six heroes including retainers. For a party of seven or more, solo creatures no longer live up to the name — give them lackeys or extra dynamic terrain objects. For a party of three or fewer, consider giving the heroes retainers, because small parties struggle against solo creatures and large groups of minions.",
     "properties": {
       "rule_type": "guideline",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "tested_party_size": {
         "min": 3,
         "max": 6
       },
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "tested party size — min: 3; max: 6"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "encounter-pacing",
     "name": "How Many Fights Before a Respite",
+    "summary": "A group of heroes can generally handle from 4 to 6 Victories' worth of combat encounters before needing a respite to refresh their Stamina and Recoveries.",
     "description": "A group of heroes can generally handle from 4 to 6 Victories' worth of combat encounters before needing a respite to refresh their Stamina and Recoveries. Like encounter building itself this is not exact — treasures, dice, encounter composition, and downtime projects all move the number.",
     "properties": {
       "rule_type": "guideline",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "victories_between_respites": {
         "min": 4,
         "max": 6
       },
-      "category": "encounter-building"
-    }
+      "category": "encounter-building",
+      "details_display": "victories between respites — min: 4; max: 6"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   }
 ]

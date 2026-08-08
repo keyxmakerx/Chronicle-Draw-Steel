@@ -8,8 +8,10 @@ All files in `data/` must be JSON arrays of **ReferenceItem** objects. Chronicle
 {
   "slug": "unique-identifier",
   "name": "Display Name",
+  "summary": "One line for the list table.",
   "description": "Optional description text.",
-  "properties": {}
+  "properties": {},
+  "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
 }
 ```
 
@@ -17,33 +19,116 @@ All files in `data/` must be JSON arrays of **ReferenceItem** objects. Chronicle
 |-------|------|----------|-------------|
 | `slug` | string | Yes | Unique identifier (lowercase, hyphenated) |
 | `name` | string | Yes | Display name |
+| `summary` | string | Derived | One line; the list table's Summary column. Generated from `description` — see "Generated fields" |
 | `description` | string | No | Tooltip/detail text |
 | `properties` | object | No | Arbitrary key-value metadata |
+| `tags` | array | No | Searchable labels |
+| `source` | string | Yes | Provenance — see "Provenance" |
 
-**Domain-specific fields go inside `properties`, never at the root.** The root
-carries those four keys and nothing else. A domain field written at the root is
-invisible to every consumer, because every consumer reads `properties`.
+**Domain-specific fields go inside `properties`. The root carries only the keys
+Chronicle's `ReferenceItem` reads off the root** (`internal/systems/system.go`):
+`slug`, `name`, `summary`, `description`, `properties`, `tags`, `source`. A
+*domain* field written at the root is invisible to every consumer, because every
+consumer reads `properties` — but `summary` and `source` are root fields
+*because that is where the renderer looks for them*:
+`internal/systems/system_pages.templ` prints `item.Summary` in the list table and
+`item.Source` in the detail header, and neither ever looks inside `properties`.
 (`organization-templates.json` and `role-templates.json` are the two legacy
-exceptions — they are read straight off the root by `monster-engine.js` and
-`monster-builder.js`, and are documented as-is below. Do not copy that shape into
-a new file.)
+exceptions that put *domain* fields at the root — they are read straight off the
+root by `monster-engine.js` and `monster-builder.js`, and are documented as-is
+below. Do not copy that shape into a new file.)
 
-## Provenance — `properties.source` and `properties.custom_fields`
+## How a data file becomes a page (the rendering contract)
 
-Every entry in `data/` must declare where it came from. This is a contract, not a
-convention: `data/NOTICE.md` is the package's licensing position, and it can only
-be true if published rules text and this package's own content can be told apart
-mechanically.
+Correct data that nobody can see is not shipped. Chronicle renders this package
+through `internal/systems`, and its rules are narrow enough that data has to be
+shaped for them:
+
+1. **`handler.go` → `Index()` iterates `manifest.Categories` only.** A file in
+   `data/` with no category in `manifest.json` is not in the reference browser at
+   all — no card, no route, nothing.
+2. **A category's `fields[].key` is looked up in `properties`.** If the key is
+   absent, `propString` returns `""` — a blank table column and a silently
+   omitted detail row. Nothing errors. This is how twelve ancestries shipped with
+   an empty Traits column: the manifest said `traits`, the data had
+   `signature_traits` / `purchased_traits`.
+3. **`propString` is `fmt.Sprintf("%v", value)`, so it only formats scalars.** An
+   object prints as `map[cost:1 name:Beast Legs]`, an array of objects as
+   `[map[…] map[…]]`, an array of strings as `[Attack Melee]`, and a JSON `null`
+   as `<nil>`.
+4. **Every declared field is a list column *and* a detail row** — the template
+   has no detail-only slot. The list table is `w-full` inside an
+   `overflow-hidden` wrapper, so columns do not scroll; each one added squeezes
+   the rest.
+
+### Generated fields
+
+Because of (3), a `properties` value that is an object or an array cannot be a
+manifest field. `tools/build-render-fields.mjs` derives a scalar twin beside it:
+
+| Key | What it is |
+|-----|-----------|
+| `<key>_display` | Machine-derived one-line rendering of the structured `<key>`. The manifest points at this; widgets keep reading `<key>`. |
+| `<key>_text` | **Authored** prose rendering of a structured value, where a generic render would be worse (`encounter-building.json`'s `budget_band_text`). Never overwritten by the generator. |
+| `details_display` | For the heterogeneous rules files, everything without its own column, folded into one string — `monster-building.json`'s twelve entries use twenty-eight distinct keys between them. |
+| `provenance_display` | `custom_fields` / `derived_from` / `omissions`, folded. |
+| `summary` (root) | First sentence of `description`, so the list table's Summary column is never blank. An authored `summary` is kept as-is. |
+
+**After editing any `data/*.json` by hand, run the generator:**
+
+```bash
+node tools/build-render-fields.mjs          # rewrite data/*.json + manifest.json
+node tools/build-render-fields.mjs --check  # CI mode: fail if anything is stale
+```
+
+It also **generates `manifest.json`'s `categories` array** from the single
+`CATEGORIES` declaration in `tools/_render-fields.mjs`, resolving each declared
+column against the real data. That is what makes failure (2) structurally
+impossible rather than merely discouraged. `tools/test-render-contract.mjs`
+re-checks all of it against the committed manifest, so a hand-edit to
+`manifest.json` is caught too.
+
+## Provenance — root `source`, and `properties.custom_fields`
+
+Every entry in `data/` must declare where it came from, in the root `source`
+field — not `properties.source`, which the item-detail header never reads.
+This is a contract, not a convention: `data/NOTICE.md` is the package's licensing
+position, and it can only be true if published rules text and this package's own
+content can be told apart mechanically.
+
+**The contract is enforced, and its exceptions are enumerated.**
+`tools/test-render-contract.mjs` fails if any entry in any `data/*.json` lacks a
+root `source`, *unless* its file is in the `SOURCE_PENDING` list in
+`tools/_render-fields.mjs`. That list is pinned in both directions: a file on it
+that becomes fully sourced must be removed, and a file not on it can never be
+added — so it can only shrink, and no new dataset can join it.
+
+Five files predate the rule and are still pending:
+
+| File | Entries | Why still pending |
+|------|---------|-------------------|
+| `rules-glossary.json` | 60 | Sourcing each term means citing a book and chapter per condition, read off the published text |
+| `skills.json` | 57 | As above |
+| `creature-abilities.json` | 23 | Template abilities; whether each is reproduced or authored has to be checked, not guessed |
+| `creature-keywords.json` | 23 | As above |
+| `rulebook-frontpage.json` | 8 | Mostly authored UI prose, but some entries carry tier/modifier tables that may reproduce published numbers |
+
+A citation is only worth having if it is true, so these say nothing rather than
+guessing a chapter. Everything else in `data/` — all 632 entries added for the
+ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
+`ability-keywords.json`, `organization-templates.json`, `role-templates.json`,
+`damage-baselines.json` and `rulebook-examples.json` — carries a real root
+`source`.
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `properties.source` | string | Provenance. Either a real citation — e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"` — or the exact string `"custom"`. |
+| `source` (root) | string | Provenance. Either a real citation — e.g. `"Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"` — or the exact string `"custom"`. |
 | `properties.custom_fields` | array | Present on an otherwise-published entry whose *specific listed fields* were written for this package rather than reproduced. E.g. every `ancestries.json` entry carries `["description"]`, because the published ancestry descriptions are setting fiction that is deliberately not reproduced. |
 | `properties.derived_from` | string | On a `"custom"` entry that was computed from other data in this package, the file it was computed from — so the derivation can be re-checked. |
 | `properties.omissions` | array | Published content deliberately not reproduced, and why. |
 
 **Operator-authored content — new ancestries, new creatures, new kits — sets
-`"source": "custom"`.** Anything shipped in this package that is a worked
+the root `"source": "custom"`.** Anything shipped in this package that is a worked
 example, a derived table, or a helper entry does the same. Published entries
 carry their real citation instead. `tools/test-build-your-own-data.mjs` enforces
 this for the build-your-own files, and `tools/test-abilities-data.mjs` for
@@ -190,8 +275,9 @@ and the common actions every creature has. (Monster abilities live in
     "tier3": "The target is {@condition slowed} ({@duration save-ends|save ends})...",
     "effect": "A target can't use triggered actions while their speed is reduced this way.",
     "strained": "The {@combat potency} of this ability increases by 1...",
-    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
-  }
+    "keywords_display": "Chronopathy, Psionic, Ranged"
+  },
+  "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
 }
 ```
 
@@ -230,7 +316,10 @@ Slugs are namespaced by owner — `<class>-<ability>`, `kit-<ability>`,
 | `persistent` | array | No | Persistent entries: `{label, text}` |
 | `notes` | array | No | Any other labelled entry: `{label, text}` |
 | `omissions` | array | No | Source content deliberately not reproduced, and why |
-| `source` | string | Yes | Provenance (see `data/NOTICE.md`) |
+
+Provenance is the **root** `source` (see "Provenance"), not a property. The
+`*_display` keys beside `keywords`, `spend`, `persistent`, `levels` and
+`additional_power_rolls` are generated — see "Generated fields".
 
 `tools/test-abilities-data.mjs` enforces the invariants above in CI.
 
@@ -239,7 +328,7 @@ Slugs are namespaced by owner — `<class>-<ability>`, `kit-<ability>`,
 Keyword definitions for the tooltip system: the core ability keywords, the
 elementalist's elemental specializations, and the talent traditions. Base
 ReferenceItem shape, with `properties.group` (`Core`, `Elemental specialization`,
-`Talent tradition`, or `Helper`) and `properties.source`. Entries that are not
+`Talent tradition`, or `Helper`) and a root `source`. Entries that are not
 published Draw Steel keywords carry `"source": "custom"` and a `note` explaining
 why they exist.
 
@@ -412,9 +501,9 @@ animal. This is the one per-creature point-buy Draw Steel actually publishes.
   "properties": {
     "group": "Mobility",
     "cost": 1,
-    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium",
     "repeatable": 2
-  }
+  },
+  "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
 }
 ```
 
@@ -475,4 +564,11 @@ print('All 35 creatures pass formula validation')
 
 # Build-your-own data: provenance flags, @references, and the derived tables
 node --test tools/test-build-your-own-data.mjs
+
+# Does it RENDER? Manifest field keys vs the data, scalar-only values, every
+# file reachable, provenance where the header reads it, derived fields fresh.
+node --test tools/test-render-contract.mjs
+
+# Everything
+node --test tools/test-*.mjs
 ```

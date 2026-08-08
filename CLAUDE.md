@@ -29,10 +29,33 @@ This applies to any file: widgets, modules, large configs, etc.
 ## Data Format
 
 - All `data/*.json` files MUST be JSON arrays of ReferenceItem objects
-- Required fields: `slug` (string, unique), `name` (string)
-- Optional fields: `description` (string), `properties` (object)
-- Domain-specific fields go inside `properties`, not at root level
+- Required fields: `slug` (string, unique), `name` (string), `source` (string — provenance, or the exact string `"custom"`)
+- Optional fields: `description` (string), `summary` (string), `properties` (object), `tags` (array)
+- Domain-specific fields go inside `properties`, not at root level. The root
+  carries only the keys Chronicle's ReferenceItem reads there — `slug`, `name`,
+  `summary`, `description`, `properties`, `tags`, `source`. `summary` and
+  `source` are root fields because the renderer reads them there and never
+  looks in `properties`.
 - See `docs/DATA-SCHEMA.md` for full schemas
+
+## Rendering: data has to be shaped for the consumer
+
+Chronicle's reference browser (`internal/systems`) renders a property through
+`propString` = `fmt.Sprintf("%v", props[key])`, which returns `""` for an absent
+key and Go-syntax garbage (`map[…]`, `[…]`, `<nil>`) for anything that is not a
+scalar. It only shows categories declared in `manifest.json`. So:
+
+- **A manifest field key must exist in the data and hold a scalar.** A key that
+  doesn't renders as a blank column and a missing detail row, silently — this is
+  the defect that shipped 632 correct entries with an empty Traits column.
+- **A data file with no manifest category is invisible entirely.**
+- Nested values get a generated scalar `<key>_display` twin; the manifest points
+  at the twin, widgets keep reading the structured value.
+
+**After editing `data/*.json` by hand, run `node tools/build-render-fields.mjs`.**
+It regenerates the derived fields AND `manifest.json`'s `categories` from the
+single `CATEGORIES` declaration in `tools/_render-fields.mjs`.
+`tools/test-render-contract.mjs` fails CI on any of the above.
 
 ## @Reference Syntax
 

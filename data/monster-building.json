@@ -2,30 +2,32 @@
   {
     "slug": "monster-building-caveat",
     "name": "Adjusting Monster Levels",
+    "summary": "Every published monster was created with handcrafted tables of numbers and the full monster-making rules, so published stat blocks are not intended to be modified or adjusted —…",
     "description": "Every published monster was created with handcrafted tables of numbers and the full monster-making rules, so published stat blocks are not intended to be modified or adjusted — the exceptions are animals and rivals, whose sections carry rules for building new stat blocks. The best way to adjust a monster is to find another monster of the level, organization, and role you want and reskin it. The formulas that follow get close to the right numbers for a monster of a level you want to create when no stat block suits reskinning, and are published with the note that more robust guidance for making new monsters and abilities will appear in the future.",
     "properties": {
       "rule_type": "caveat",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "category": "monster-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "reskinning-monsters",
     "name": "Reskinning Monsters",
+    "summary": "You can modify any published stat block to make a new creature.",
     "description": "You can modify any published stat block to make a new creature. Change the description alone and use the stat block as-is. Granting a creature the ability to climb or swim at full speed while moving, an aquatic origin, or the ability to breathe underwater does not change their level or challenge. Damage types can be swapped freely across abilities, immunities, and weaknesses. The stat blocks in the Animals and Rivals sections are explicitly meant to be modified and carry their own rules for doing so.",
     "properties": {
       "rule_type": "procedure",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "category": "monster-building"
-    }
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "role-and-damage-modifier-table",
     "name": "Role and Damage Modifier Table",
+    "summary": "The role modifier feeds the Stamina formula and the damage modifier feeds the damage formula.",
     "description": "The role modifier feeds the Stamina formula and the damage modifier feeds the damage formula. Leader and solo creatures have no additional role, so they appear in this table in place of one. Elite is an organization rather than a role, and its +1 damage modifier stacks with a role that also has a +1 damage modifier, for a total of +2.",
     "properties": {
       "rule_type": "table",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "rows": [
         {
           "name": "Ambusher",
@@ -113,16 +115,18 @@
           "damage_modifier": 2
         }
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "rows — Ambusher — slug: ambusher; kind: role; role modifier: 20; damage modifier: 1 · Artillery — slug: artillery; kind: role; role modifier: 10; damage modifier: 1 · Brute — slug: brute; kind: role; role modifier: 30; damage modifier: 1 · Controller — slug: controller; kind: role; role modifier: 10; damage modifier: 0 · Defender — slug: defender; kind: role; role modifier: 30; damage modifier: 0 · Harrier — slug: harrier; kind: role; role modifier: 20; damage modifier: 0 · Hexer — slug: hexer; kind: role; role modifier: 10; damage modifier: 0 · Mount — slug: mount; kind: role; role modifier: 20; damage modifier: 0 · Support — slug: support; kind: role; role modifier: 20; damage modifier: 0 · Elite (slug: elite; kind: organization; role modifier: 0; damage modifier: 1) — Elite can be used together with a role that has a +1 damage modifier, for a total of +2. · Leader — slug: leader; kind: organization; role modifier: 30; damage modifier: 1 · Solo — slug: solo; kind: organization; role modifier: 30; damage modifier: 2"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "organization-modifier-table",
     "name": "Organization Modifier Table",
+    "summary": "The organization modifier multiplies the results of the encounter value and Stamina formulas.",
     "description": "The organization modifier multiplies the results of the encounter value and Stamina formulas. Minion and solo each have a separate, different multiplier that applies to Stamina only.",
     "properties": {
       "rule_type": "table",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "rows": [
         {
           "name": "Minion",
@@ -161,16 +165,18 @@
           "stamina_organization_modifier": 5
         }
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "rows — Minion — slug: minion; organization modifier: 0.5; stamina organization modifier: 0.125 · Horde — slug: horde; organization modifier: 0.5; stamina organization modifier: 0.5 · Platoon — slug: platoon; organization modifier: 1; stamina organization modifier: 1 · Leader — slug: leader; organization modifier: 2; stamina organization modifier: 2 · Elite — slug: elite; organization modifier: 2; stamina organization modifier: 2 · Solo — slug: solo; organization modifier: 6; stamina organization modifier: 5"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "encounter-value-formula",
     "name": "Encounter Value Formula",
+    "summary": "A monster's encounter value is ((2 x Level) + 4) x Organization Modifier.",
     "description": "A monster's encounter value is ((2 x Level) + 4) x Organization Modifier. Round the result up to the nearest whole number. The encounter value produced for minions represents four minions together, not one.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "formula": "((2 * level) + 4) * organization_modifier",
       "rounding": "up",
       "inputs": [
@@ -180,16 +186,18 @@
       "notes": [
         "The EV for minions represents four minions together."
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "inputs — level, organization_modifier · notes — The EV for minions represents four minions together."
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "stamina-formula",
     "name": "Monster Stamina Formula",
+    "summary": "A monster's Stamina can be approximated as ((10 x Level) + Role Modifier) x Organization Modifier, rounded up to the nearest whole number.",
     "description": "A monster's Stamina can be approximated as ((10 x Level) + Role Modifier) x Organization Modifier, rounded up to the nearest whole number. Use the Stamina-only organization modifier for minions and solos. If you want a non-minion monster to have additional Stamina, you can add (3 x Level) + 3 to the total.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "formula": "((10 * level) + role_modifier) * stamina_organization_modifier",
       "rounding": "up",
       "inputs": [
@@ -201,16 +209,18 @@
         "formula": "(3 * level) + 3",
         "applies_to": "any non-minion monster that wants more Stamina"
       },
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "inputs — level, role_modifier, stamina_organization_modifier · optional bonus — formula: (3 * level) + 3; applies to: any non-minion monster that wants more Stamina"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "damage-and-power-roll-tiers",
     "name": "Monster Damage and Power Roll Tiers",
+    "summary": "The baseline damage of a monster's ability is (4 + Level + Damage Modifier) x Tier Modifier, rounded up.",
     "description": "The baseline damage of a monster's ability is (4 + Level + Damage Modifier) x Tier Modifier, rounded up. The tier modifier is 0.6 at tier 1, 1.1 at tier 2, and 1.4 at tier 3. For horde and minion monsters, divide the result by 2. If the ability is a strike, add the monster's highest characteristic to the total. At higher levels these values can run a few points above the numbers printed in the published stat blocks.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "formula": "(4 + level + damage_modifier) * tier_modifier",
       "rounding": "up",
       "tier_modifiers": {
@@ -228,16 +238,18 @@
           "effect": "add the monster's highest characteristic"
         }
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "tier modifiers — tier1: 0.6; tier2: 1.1; tier3: 1.4 · adjustments — when: organization is horde or minion; effect: divide the result by 2 · when: the ability is a strike; effect: add the monster's highest characteristic"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "target-count-damage-adjustment",
     "name": "Adjusting Damage for Target Count",
+    "summary": "Monster abilities normally target one creature or object.",
     "description": "Monster abilities normally target one creature or object. Elite, leader, and solo monsters have abilities that typically target two creatures or objects. If you want an ability to target one more target than expected, multiply the damage at all tiers by 0.8. For two or more additional targets, multiply by 0.5. For one fewer target than expected, multiply by 1.2.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "expected_targets": {
         "default": 1,
         "elite": 2,
@@ -258,16 +270,18 @@
           "damage_multiplier": 1.2
         }
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "expected targets — default: 1; elite: 2; leader: 2; solo: 2 · multipliers — targets relative to expected: +1; damage multiplier: 0.8 · targets relative to expected: +2 or more; damage multiplier: 0.5 · targets relative to expected: -1; damage multiplier: 1.2"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "monster-characteristics-and-potency",
     "name": "Monster Characteristics and Potency",
+    "summary": "A monster's highest characteristic and power roll bonus equals 1 + their {@combat echelon} — a level 5 monster is 2nd echelon, so its highest characteristic is +3.",
     "description": "A monster's highest characteristic and power roll bonus equals 1 + their {@combat echelon} — a level 5 monster is 2nd echelon, so its highest characteristic is +3. A monster that uses {@combat potency} in its abilities bases those potencies on its highest characteristic, minus 1 for each tier below tier 3: at +3 that is M < 1 at tier 1, M < 2 at tier 2, and M < 3 at tier 3. A leader or a solo increases its highest characteristic and power roll by 1 (maximum +5) and its potency values at every tier by 1 (maximum 6). A monster's free strike damage equals the damage calculated for a tier 1 outcome.",
     "properties": {
       "rule_type": "formula",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "highest_characteristic": "1 + echelon",
       "highest_characteristic_max": 5,
       "potency_by_tier": {
@@ -281,16 +295,18 @@
         "potency_all_tiers": 1
       },
       "free_strike": "equal to the tier 1 damage result",
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "highest characteristic — 1 + echelon · highest characteristic max — 5 · potency by tier — tier1: highest characteristic - 2; tier2: highest characteristic - 1; tier3: highest characteristic · potency max — 6 · leader solo bonus — characteristic and power roll: 1; potency all tiers: 1 · free strike — equal to the tier 1 damage result"
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "instant-solo-creature",
     "name": "Instant Solo Creature",
+    "summary": "Most leader and elite creatures can be adapted into a solo creature on the fly: multiply their EV by 3, multiply their Stamina by 2.5, and give them the Solo Turns trait (the…",
     "description": "Most leader and elite creatures can be adapted into a solo creature on the fly: multiply their EV by 3, multiply their Stamina by 2.5, and give them the Solo Turns trait (the creature can take two turns each round, but not consecutively). Give them the End Effect trait if they do not already have it (at the end of each of their turns the creature can take 10 damage to end one effect on them that can be ended by a {@combat saving-throw|saving throw}; this damage cannot be reduced in any way). Give them the Solo Action Malice feature (5 Malice: the creature takes an additional {@action main-action|main action} on their turn, and can use this even while {@condition dazed}).",
     "properties": {
       "rule_type": "conversion",
-      "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium",
       "applies_to": [
         "leader",
         "elite"
@@ -315,30 +331,34 @@
           "text": "The creature takes an additional main action on their turn. They can use this feature even if they are {@condition dazed}."
         }
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "applies to — leader, elite · ev multiplier — 3 · stamina multiplier — 2.5 · granted traits — Solo Turns — The creature can take two turns each round. They can't take turns consecutively. · End Effect (only if absent: true) — At the end of each of their turns, the creature can take 10 damage to end one effect on them that can be ended by a {@combat saving-throw|saving throw}. This damage can't be reduced in any way. · granted malice features — Solo Action (cost: 5 Malice) — The creature takes an additional main action on their turn. They can use this feature even if they are {@condition dazed}."
+    },
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "animal-trait-point-buy",
     "name": "Animal Trait Point Buy",
+    "summary": "The animal stat blocks are meant to be customized.",
     "description": "The animal stat blocks are meant to be customized. You can spend up to 4 points on traits added to an animal stat block without increasing its encounter value. Each point spent after the first 4 increases the stat block's EV by 2. Unless a trait says otherwise, you can select it only once. The traits themselves are in animal-traits.json. A good default is one mobility trait plus either a defensive or an offensive trait. Animal traits can also be applied to the noncombatant stat block to make harmless animals.",
     "properties": {
       "rule_type": "point-buy",
-      "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium",
       "free_points": 4,
       "ev_per_extra_point": 2,
       "default_repeatable": false,
       "data_file": "animal-traits.json",
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "free points — 4 · ev per extra point — 2 · default repeatable — false · data file — animal-traits.json"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "animal-notation",
     "name": "Animal Notation",
+    "summary": "When building an animal by adding traits to a stat block, you can use a shorthand to describe it: the stat block name, a colon, then the selected traits listed in category order —…",
     "description": "When building an animal by adding traits to a stat block, you can use a shorthand to describe it: the stat block name, a colon, then the selected traits listed in category order — mobility, defensive, offensive, supernatural. For example, \"Predator B: Swiftness, Pack, Hunter\".",
     "properties": {
       "rule_type": "notation",
-      "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium",
       "format": "<stat block>: <trait>, <trait>, ...",
       "trait_order": [
         "mobility",
@@ -346,7 +366,9 @@
         "offensive",
         "supernatural"
       ],
-      "category": "monster-building"
-    }
+      "category": "monster-building",
+      "details_display": "format — <stat block>: <trait>, <trait>, ... · trait order — mobility, defensive, offensive, supernatural"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
   }
 ]

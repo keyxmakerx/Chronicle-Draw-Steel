@@ -2,27 +2,31 @@
   {
     "slug": "ancestry-points",
     "name": "Ancestry Points",
+    "summary": "An ancestry provides a budget of ancestry points that you spend to select that ancestry's purchased traits.",
     "description": "An ancestry provides a budget of ancestry points that you spend to select that ancestry's purchased traits. Each trait has a point cost that you pay to grant its benefit to your hero. You cannot spend more points than your ancestry's budget, and you cannot bank unspent points for anything else. For example, the devil ancestry has 3 ancestry points and seven purchased traits: a devil hero could take three 1-point traits, or one 1-point trait plus one 2-point trait, but not two 2-point traits, because their combined cost of 4 exceeds the budget.",
     "properties": {
       "rule_type": "budget",
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
       "category": "ancestry-point-buy"
-    }
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "signature-trait",
     "name": "Signature Trait",
+    "summary": "Each ancestry has one or more signature traits, which your hero gets for free if they take that ancestry.",
     "description": "Each ancestry has one or more signature traits, which your hero gets for free if they take that ancestry. A signature trait costs no ancestry points and is a defining feature that every other hero of that ancestry also possesses.",
     "properties": {
       "rule_type": "trait-class",
       "cost": 0,
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "details_display": "cost — 0"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "purchased-trait",
     "name": "Purchased Trait",
+    "summary": "Purchased traits are the optional traits an ancestry offers.",
     "description": "Purchased traits are the optional traits an ancestry offers. You do not get every purchased trait your ancestry has to offer — you buy them with ancestry points. Published purchased traits cost either 1 or 2 ancestry points.",
     "properties": {
       "rule_type": "trait-class",
@@ -30,26 +34,30 @@
         1,
         2
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "details_display": "costs seen — 1, 2"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "ancestry-starting-statistics",
     "name": "Ancestry Starting Statistics",
+    "summary": "Unless an ancestry says otherwise, a hero of any published ancestry is size 1M and has speed 5 and {@combat stability} 0.",
     "description": "Unless an ancestry says otherwise, a hero of any published ancestry is size 1M and has speed 5 and {@combat stability} 0. Traits that change size, speed, or stability are priced against those defaults.",
     "properties": {
       "rule_type": "baseline",
       "size": "1M",
       "speed": 5,
       "stability": 0,
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "details_display": "size — 1M · speed — 5 · stability — 0"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "ancestry-point-budgets",
     "name": "Ancestry Point Budgets",
+    "summary": "Every published ancestry and the budget it grants.",
     "description": "Every published ancestry and the budget it grants. Nine ancestries grant 3 ancestry points alongside a single signature trait. The two that grant 4 points (memonek, polder) each grant two signature traits, and the revenant grants 2 points (3 if the hero is size 1S) alongside two signature traits — the larger budgets and the smaller one both come paired with a change in how many traits are given away for free.",
     "properties": {
       "rule_type": "table",
@@ -152,28 +160,31 @@
           "purchased_traits_2_points": 2
         }
       ],
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "details_display": "rows — ancestry: Devil; slug: devil; ancestry points: 3; signature traits: 1; purchased traits 1 point: 4; purchased traits 2 points: 3 · ancestry: Dragon Knight; slug: dragon-knight; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 3 · ancestry: Dwarf; slug: dwarf; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 2 · ancestry: Hakaan; slug: hakaan; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 2 · ancestry: High Elf; slug: high-elf; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 3 · ancestry: Human; slug: human; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 2 · ancestry: Memonek; slug: memonek; ancestry points: 4; signature traits: 2; purchased traits 1 point: 4; purchased traits 2 points: 3 · ancestry: Orc; slug: orc; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 2 · ancestry: Polder; slug: polder; ancestry points: 4; signature traits: 2; purchased traits 1 point: 4; purchased traits 2 points: 2 · ancestry: Revenant; slug: revenant; ancestry points: 2; signature traits: 2; purchased traits 1 point: 2; purchased traits 2 points: 3 · ancestry: Time Raider; slug: time-raider; ancestry points: 3; signature traits: 1; purchased traits 1 point: 3; purchased traits 2 points: 3 · ancestry: Wode Elf; slug: wode-elf; ancestry points: 3; signature traits: 1; purchased traits 1 point: 4; purchased traits 2 points: 2"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "revenant-previous-life",
     "name": "Previous Life (Revenant)",
+    "summary": "The revenant is the one published ancestry whose purchased traits reach outside itself.",
     "description": "The revenant is the one published ancestry whose purchased traits reach outside itself. A revenant chooses a previous ancestry, and can spend 1 ancestry point on Previous Life: 1 Point to select a 1-point purchased trait from that ancestry — repeatable, choosing a different 1-point trait each time — or 2 ancestry points on Previous Life: 2 Points to select a 2-point purchased trait from it. This is the published precedent for a trait whose benefit is \"a trait of cost N from elsewhere\": it is priced at exactly the cost of what it fetches.",
     "properties": {
       "rule_type": "special-case",
       "ancestry": "revenant",
-      "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "details_display": "ancestry — revenant"
+    },
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
   },
   {
     "slug": "custom-ancestry-costing-benchmark",
     "name": "Costing Benchmark for Custom Ancestry Traits",
+    "summary": "Draw Steel publishes no costing table for inventing ancestry traits — only twelve pre-designed ancestries.",
     "description": "Draw Steel publishes no costing table for inventing ancestry traits — only twelve pre-designed ancestries. This entry is not a rule: it is a benchmark derived by tabulating what the 69 published purchased traits actually do at each price, so an invented trait can be priced by analogy against the closest published one. Cost a trait at the tier whose effects it matches, and if it straddles two tiers, price it at the higher one.",
     "properties": {
       "rule_type": "benchmark",
-      "source": "custom",
       "derived_from": "data/ancestries.json (the 12 published ancestries)",
       "sample_size": {
         "traits": 69,
@@ -302,16 +313,19 @@
         "No published purchased trait costs 0 or 3 or more. If an invented trait feels like it should cost 3, it is a signature trait or an ability, not a purchased trait.",
         "The same trait is priced identically wherever it is reprinted across ancestries — Grounded, Stand Tough, Graceful Retreat, Revisit Memory at 1 point; Great Fortitude, Nonstop, Unstoppable Mind, Otherworldly Grace, Wings at 2. Reuse a published trait at its published price rather than repricing it."
       ],
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "provenance_display": "derived from — data/ancestries.json (the 12 published ancestries)",
+      "details_display": "sample size — traits: 69; one point: 39; two point: 30 · tiers — cost: 1; summary: A narrow, situational, or +1-sized benefit.; archetypes: effect: An {@combat edge} on a named, narrow set of tests; published examples: High Senses, All Is a Feather, Revisit Memory, Systematic Mind, Four-Armed Athletics · effect: A +1 to a single numeric: speed 5 to 6, +1 {@combat stability}, +1 to a {@movement shift} or {@combat forced-movement} distance; published examples: Beast Legs, Swift, Grounded, Graceful Retreat, Forceful · effect: Immunity to one narrow condition or effect class, or a damage immunity that scales with level; published examples: Unphased, Corruption Immunity, Can't Take Hold · effect: Ignoring one battlefield penalty ({@combat concealment}, {@combat difficult-terrain}); published examples: Hellsight, Forest Walk · effect: A once-per-round conditional rider on a strike, or a small triggered retaliation; published examples: Barbed Tail, Glowing Eyes, Draconian Guard · effect: A purely non-combat or downtime utility, however evocative; published examples: Stone Singer, Passionate Artisan · cost: 2; summary: A blanket, always-on, or action-granting benefit.; archetypes: effect: Blanket immunity to a common combat condition; published examples: Great Fortitude ({@condition weakened}), Nonstop ({@condition slowed}), Unstoppable Mind ({@condition dazed}), Fearless ({@condition frightened}), Bloodless ({@condition bleeding}) · effect: A new movement mode; published examples: Wings · effect: An entire signature ability, usable at will; published examples: Dragon Breath, Draconian Pride, Psionic Gift, The Wode Defends · effect: An always-on defensive upgrade to a core roll or pool; published examples: Otherworldly Grace, Impressive Horns, Spark Off Your Skin, Staying Power · effect: A numeric jump larger than +1 (speed 5 to 7); published examples: Lightning Nimbleness · effect: Denying an opponent a structural advantage outright; published examples: Prehensile Tail (cannot be {@combat flanking|flanked}), Nimblestep · effect: A per-round triggered action that manipulates a {@combat power-roll}, or a maneuver that plants a lasting effect; published examples: Keeper of Order, Vengeance Mark · notes — No published purchased trait costs 0 or 3 or more. If an invented trait feels like it should cost 3, it is a signature trait or an ability, not a purchased trait., The same trait is priced identically wherever it is reprinted across ancestries — Grounded, Stand Tough, Graceful Retreat, Revisit Memory at 1 point; Great Fortitude, Nonstop, Unstoppable Mind, Otherworldly Grace, Wings at 2. Reuse a published trait at its published price rather than repricing it."
+    },
+    "source": "custom"
   },
   {
     "slug": "custom-ancestry-checklist",
     "name": "Building a Custom Ancestry",
+    "summary": "A checklist for assembling an ancestry of your own that sits inside the published envelope.",
     "description": "A checklist for assembling an ancestry of your own that sits inside the published envelope. This is not a published procedure — Draw Steel ships no rules for creating an ancestry — it is the shape every published ancestry actually has, written down so an invented one can be checked against it.",
     "properties": {
       "rule_type": "checklist",
-      "source": "custom",
       "derived_from": "data/ancestries.json (the 12 published ancestries)",
       "steps": [
         "Set size, speed, and stability. Start from size 1M, speed 5, stability 0 and change one of them only if that change is the ancestry's point.",
@@ -323,7 +337,10 @@
         "Name a Quick Build — two or three traits that spend the budget exactly.",
         "Set \"source\": \"custom\" in properties on the finished entry so it is never mistaken for published content."
       ],
-      "category": "ancestry-point-buy"
-    }
+      "category": "ancestry-point-buy",
+      "provenance_display": "derived from — data/ancestries.json (the 12 published ancestries)",
+      "details_display": "steps — Set size, speed, and stability. Start from size 1M, speed 5, stability 0 and change one of them only if that change is the ancestry's point., Write 1 signature trait and grant 3 ancestry points. That is the shape of nine of the twelve published ancestries and the safest default., If you write 2 signature traits, grant 4 ancestry points (memonek, polder) — unless the signature traits are themselves large, in which case grant 2 (revenant)., Write 5 to 7 purchased traits, roughly half at 1 point and half at 2. The published range is 5 (hakaan, human, orc) to 7 (devil, memonek)., Price each purchased trait against the costing benchmark (custom-ancestry-costing-benchmark). Reuse published traits at their published price., Check that the budget cannot buy every trait: a hero must have to choose. Every published ancestry's traits cost more in total than its budget, by a wide margin., Name a Quick Build — two or three traits that spend the budget exactly., Set \"source\": \"custom\" in properties on the finished entry so it is never mistaken for published content."
+    },
+    "source": "custom"
   }
 ]

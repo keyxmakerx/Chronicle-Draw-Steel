@@ -2,6 +2,7 @@
   {
     "slug": "crushing-blow",
     "name": "Crushing Blow",
+    "summary": "A powerful melee strike. Good signature ability for Brute creatures.",
     "description": "A powerful melee strike. Good signature ability for Brute creatures.",
     "properties": {
       "type": "signature",
@@ -10,6 +11,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
@@ -21,6 +23,7 @@
   {
     "slug": "mind-lash",
     "name": "Mind Lash",
+    "summary": "A ranged psionic attack. Good signature ability for Controller or Hexer creatures.",
     "description": "A ranged psionic attack. Good signature ability for Controller or Hexer creatures.",
     "properties": {
       "type": "signature",
@@ -29,6 +32,7 @@
         "Ranged",
         "Psionic"
       ],
+      "keywords_display": "Attack, Ranged, Psionic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
@@ -40,12 +44,14 @@
   {
     "slug": "shield-wall",
     "name": "Shield Wall",
+    "summary": "A defensive maneuver. Good for Defender creatures.",
     "description": "A defensive maneuver. Good for Defender creatures.",
     "properties": {
       "type": "maneuver",
       "keywords": [
         "Resistance"
       ],
+      "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
       "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1."
@@ -54,6 +60,7 @@
   {
     "slug": "quick-strike",
     "name": "Quick Strike",
+    "summary": "A fast melee strike with repositioning. Good signature ability for Harrier creatures.",
     "description": "A fast melee strike with repositioning. Good signature ability for Harrier creatures.",
     "properties": {
       "type": "signature",
@@ -62,6 +69,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -73,6 +81,7 @@
   {
     "slug": "hex-bolt",
     "name": "Hex Bolt",
+    "summary": "A debilitating magical bolt. Good signature ability for Hexer creatures.",
     "description": "A debilitating magical bolt. Good signature ability for Hexer creatures.",
     "properties": {
       "type": "signature",
@@ -81,6 +90,7 @@
         "Ranged",
         "Magic"
       ],
+      "keywords_display": "Attack, Ranged, Magic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
@@ -92,6 +102,7 @@
   {
     "slug": "retaliating-strike",
     "name": "Retaliating Strike",
+    "summary": "A reactive strike when allies are threatened. Good triggered ability for Defender creatures.",
     "description": "A reactive strike when allies are threatened. Good triggered ability for Defender creatures.",
     "properties": {
       "type": "triggered",
@@ -100,6 +111,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "Triggering creature",
       "trigger": "A creature adjacent to this creature attacks one of its allies.",
@@ -112,12 +124,14 @@
   {
     "slug": "rallying-cry",
     "name": "Rallying Cry",
+    "summary": "A villain action opener that buffs allies. Good for Leader creatures.",
     "description": "A villain action opener that buffs allies. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
       "keywords": [
         "Area"
       ],
+      "keywords_display": "Area",
       "distance": "Aura 5",
       "target": "All allies in aura",
       "villain_action_order": "opener",
@@ -127,6 +141,7 @@
   {
     "slug": "longbow-volley",
     "name": "Longbow Volley",
+    "summary": "A long-range precision shot. Good signature ability for Artillery creatures.",
     "description": "A long-range precision shot. Good signature ability for Artillery creatures.",
     "properties": {
       "type": "signature",
@@ -135,6 +150,7 @@
         "Ranged",
         "Weapon"
       ],
+      "keywords_display": "Attack, Ranged, Weapon",
       "distance": "Ranged 15",
       "target": "1 creature",
       "power_roll": "Reason vs. Agility",
@@ -146,6 +162,7 @@
   {
     "slug": "ambush-strike",
     "name": "Ambush Strike",
+    "summary": "A devastating first strike from concealment. Good signature ability for Ambusher creatures.",
     "description": "A devastating first strike from concealment. Good signature ability for Ambusher creatures.",
     "properties": {
       "type": "signature",
@@ -154,6 +171,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -165,6 +183,7 @@
   {
     "slug": "trampling-charge",
     "name": "Trampling Charge",
+    "summary": "A charging attack that knocks enemies aside. Good signature ability for Mount creatures.",
     "description": "A charging attack that knocks enemies aside. Good signature ability for Mount creatures.",
     "properties": {
       "type": "signature",
@@ -174,6 +193,7 @@
         "Weapon",
         "Charge"
       ],
+      "keywords_display": "Attack, Melee, Weapon, Charge",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Might",
@@ -185,6 +205,7 @@
   {
     "slug": "healing-word",
     "name": "Healing Word",
+    "summary": "A restorative ability that heals allies. Good signature ability for Support creatures.",
     "description": "A restorative ability that heals allies. Good signature ability for Support creatures.",
     "properties": {
       "type": "signature",
@@ -192,6 +213,7 @@
         "Area",
         "Magic"
       ],
+      "keywords_display": "Area, Magic",
       "distance": "Ranged 5",
       "target": "1 ally",
       "effect": "The target regains stamina equal to their recovery value."
@@ -200,6 +222,7 @@
   {
     "slug": "venom-bite",
     "name": "Venom Bite",
+    "summary": "A venomous bite that deals ongoing poison damage. Versatile melee signature.",
     "description": "A venomous bite that deals ongoing poison damage. Versatile melee signature.",
     "properties": {
       "type": "signature",
@@ -208,6 +231,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
@@ -219,6 +243,7 @@
   {
     "slug": "breath-weapon",
     "name": "Breath Weapon",
+    "summary": "A devastating area breath attack. Damage type varies by creature (fire, cold, poison, etc.).",
     "description": "A devastating area breath attack. Damage type varies by creature (fire, cold, poison, etc.).",
     "properties": {
       "type": "action",
@@ -227,6 +252,7 @@
         "Area",
         "Magic"
       ],
+      "keywords_display": "Attack, Area, Magic",
       "distance": "3 cube within 1",
       "target": "All creatures in area",
       "power_roll": "Might vs. Agility",
@@ -238,6 +264,7 @@
   {
     "slug": "web-shot",
     "name": "Web Shot",
+    "summary": "A sticky web projectile that immobilizes targets. Good for spider-type creatures.",
     "description": "A sticky web projectile that immobilizes targets. Good for spider-type creatures.",
     "properties": {
       "type": "action",
@@ -245,6 +272,7 @@
         "Attack",
         "Ranged"
       ],
+      "keywords_display": "Attack, Ranged",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -256,6 +284,7 @@
   {
     "slug": "psychic-scream",
     "name": "Psychic Scream",
+    "summary": "A burst of psychic energy that disrupts nearby enemies. Good for Controller creatures.",
     "description": "A burst of psychic energy that disrupts nearby enemies. Good for Controller creatures.",
     "properties": {
       "type": "action",
@@ -264,6 +293,7 @@
         "Area",
         "Psionic"
       ],
+      "keywords_display": "Attack, Area, Psionic",
       "distance": "2 burst",
       "target": "All enemies in area",
       "power_roll": "Reason vs. Intuition",
@@ -275,12 +305,14 @@
   {
     "slug": "rally",
     "name": "Rally",
+    "summary": "A supportive maneuver that bolsters nearby allies. Good for Support creatures.",
     "description": "A supportive maneuver that bolsters nearby allies. Good for Support creatures.",
     "properties": {
       "type": "maneuver",
       "keywords": [
         "Area"
       ],
+      "keywords_display": "Area",
       "distance": "Aura 5",
       "target": "All allies in aura",
       "effect": "Each target gains 5 {@resource temporary-stamina}."
@@ -289,6 +321,7 @@
   {
     "slug": "fade-to-shadow",
     "name": "Fade to Shadow",
+    "summary": "A stealth maneuver that grants concealment and repositioning. Good for Ambusher creatures.",
     "description": "A stealth maneuver that grants concealment and repositioning. Good for Ambusher creatures.",
     "properties": {
       "type": "maneuver",
@@ -301,12 +334,14 @@
   {
     "slug": "defensive-stance",
     "name": "Defensive Stance",
+    "summary": "A tanking maneuver that draws attacks and reduces damage. Good for Defender creatures.",
     "description": "A tanking maneuver that draws attacks and reduces damage. Good for Defender creatures.",
     "properties": {
       "type": "maneuver",
       "keywords": [
         "Resistance"
       ],
+      "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
       "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
@@ -315,6 +350,7 @@
   {
     "slug": "intercept",
     "name": "Intercept",
+    "summary": "A reactive strike that prevents enemies from escaping. Good triggered ability for Defender creatures.",
     "description": "A reactive strike that prevents enemies from escaping. Good triggered ability for Defender creatures.",
     "properties": {
       "type": "triggered",
@@ -322,6 +358,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Melee, Weapon",
       "distance": "Melee 1",
       "target": "Triggering creature",
       "trigger": "An enemy within reach moves away from the creature.",
@@ -334,6 +371,7 @@
   {
     "slug": "death-burst",
     "name": "Death Burst",
+    "summary": "An explosion of energy on death. Good for volatile creatures like fire elementals or unstable undead.",
     "description": "An explosion of energy on death. Good for volatile creatures like fire elementals or unstable undead.",
     "properties": {
       "type": "triggered",
@@ -341,6 +379,7 @@
         "Area",
         "Magic"
       ],
+      "keywords_display": "Area, Magic",
       "distance": "1 burst",
       "target": "All creatures in area",
       "trigger": "The creature is reduced to 0 stamina.",
@@ -350,6 +389,7 @@
   {
     "slug": "terrifying-roar",
     "name": "Terrifying Roar",
+    "summary": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures.",
     "description": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures.",
     "properties": {
       "type": "villain-action",
@@ -357,6 +397,7 @@
         "Area",
         "Fear"
       ],
+      "keywords_display": "Area, Fear",
       "distance": "5 burst",
       "target": "All enemies in area",
       "villain_action_order": "closer",
@@ -369,6 +410,7 @@
   {
     "slug": "summon-minions",
     "name": "Summon Minions",
+    "summary": "A villain action escalation that brings reinforcements. Good for Leader creatures.",
     "description": "A villain action escalation that brings reinforcements. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
@@ -376,6 +418,7 @@
         "Area",
         "Summoning"
       ],
+      "keywords_display": "Area, Summoning",
       "distance": "Ranged 10",
       "target": "Special",
       "villain_action_order": "escalation",
@@ -385,6 +428,7 @@
   {
     "slug": "focused-assault",
     "name": "Focused Assault",
+    "summary": "A villain action escalation featuring a flurry of devastating melee attacks.",
     "description": "A villain action escalation featuring a flurry of devastating melee attacks.",
     "properties": {
       "type": "villain-action",
@@ -393,6 +437,7 @@
         "Melee",
         "Weapon"
       ],
+      "keywords_display": "Attack, Melee, Weapon",
       "distance": "Melee 1",
       "target": "Up to 3 creatures",
       "villain_action_order": "escalation",
