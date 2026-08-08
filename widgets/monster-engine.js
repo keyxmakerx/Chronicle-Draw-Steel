@@ -17,6 +17,19 @@
 var MonsterEngine = (function () {
   'use strict';
 
+  // formulas() resolves DrawSteelFormulas — the module holding the PUBLISHED
+  // Draw Steel math (widgets/monster-formulas.js). In the browser it is a global
+  // loaded ahead of this file via the manifest's text_renderers section; under
+  // `node --test` it is required directly. Resolved lazily so load order in
+  // either environment cannot leave this file holding a stale null.
+  function formulas() {
+    if (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) return DrawSteelFormulas;
+    if (typeof require === 'function') {
+      try { return require('./monster-formulas.js'); } catch (e) { return null; }
+    }
+    return null;
+  }
+
   // heroesPerCreature parses an org template's `hero_ratio`, written
   // "creatures:heroes" (minion "8:1" = 8 creatures per 1 hero; solo "1:6" = 1
   // creature per 6 heroes), into the number of heroes ONE creature of that org
@@ -31,6 +44,11 @@ var MonsterEngine = (function () {
     return heroes / creatures;
   }
 
+  // standardEvPerHeroLevel is NO LONGER part of the budget path — the published
+  // encounter-strength formula replaced it (see encounterBudget). It is kept
+  // because it is the honest description of the shipped org templates' internal
+  // consistency, and its tests document that relationship.
+  //
   // standardEvPerHeroLevel derives, straight from the org templates, the EV a
   // single hero-level is worth against a "standard" (1:1) opponent. For every
   // org tier `ev_multiplier / heroesPerCreature` equals the Platoon multiplier
@@ -55,27 +73,50 @@ var MonsterEngine = (function () {
     return ratios.length % 2 ? ratios[mid] : (ratios[mid - 1] + ratios[mid]) / 2;
   }
 
-  // encounterBudget grounds the total EV a director may spend against a party:
-  //   party size x party level x standard EV-per-hero-level.
-  // This replaces the builder's old crude `partySize * partyLevel`. Returns 0
-  // when the org data is unavailable (caller falls back to a plain display).
-  function encounterBudget(partySize, partyLevel, orgTemplates) {
-    var size = Number(partySize);
-    var level = Number(partyLevel);
-    if (!isFinite(size) || !isFinite(level) || size <= 0 || level <= 0) return 0;
-    var per = standardEvPerHeroLevel(orgTemplates);
-    if (per === null) return 0;
-    return Math.round(size * level * per);
+  // encounterBudget is the party's PUBLISHED encounter strength: the sum over
+  // heroes of 4 + (2 x hero level) (data/encounter-building.json,
+  // "encounter-strength"). It is also the floor of the published standard
+  // difficulty band, whose ceiling is one more hero's worth of strength —
+  // encounterBands() returns the whole ladder.
+  //
+  // This REPLACES the widget's old `size x level x 4`, which ran 1.67x the
+  // published strength at level 10 (160 against 96 for four heroes) and was
+  // presented to directors as a balanced budget. `orgTemplates` is accepted for
+  // call-site compatibility and no longer read — the published formula depends
+  // only on the party.
+  function encounterBudget(partySize, partyLevel, orgTemplates) {   // eslint-disable-line no-unused-vars
+    var F = formulas();
+    if (!F) return 0;
+    var es = F.partyEncounterStrength(partySize, partyLevel);
+    return es.value === null ? 0 : es.value;
   }
 
-  // creatureEV is a single creature's encounter value: level x its org's
-  // ev_multiplier (docs/monster-builder.md §4.1). `org` may be the template
-  // object or a raw multiplier number.
+  // encounterBands returns the published difficulty ladder for a party, so the
+  // UI can name what a given spend actually is (trivial/easy/standard/hard/
+  // extreme) instead of asserting that some number is "balanced". Returns null
+  // when the party cannot be read.
+  function encounterBands(partySize, partyLevel) {
+    var F = formulas();
+    if (!F) return null;
+    var party = F.partyEncounterStrength(partySize, partyLevel);
+    var perHero = F.heroEncounterStrength(partyLevel);
+    if (party.value === null || perHero.value === null) return null;
+    var bands = F.budgetBands(party.value, perHero.value);
+    return bands.value === null ? null : { partyEs: party.value, perHeroEs: perHero.value, bands: bands.value };
+  }
+
+  // creatureEV is a single creature's PUBLISHED encounter value:
+  //   ((2 x level) + 4) x organization modifier, rounded up.
+  // The old `level x ev_multiplier` ran 1.67x high at level 10 (a level 10 solo
+  // was priced at 240 against a published 144). Returns 0 — "cannot be priced"
+  // — for an organization the published rules do not define, which is how Swarm
+  // (original to this package) drops out of the automatic picks rather than
+  // being quietly costed with invented math.
   function creatureEV(level, org) {
-    var lvl = Number(level);
-    var mult = (org && typeof org === 'object') ? Number(org.ev_multiplier) : Number(org);
-    if (!isFinite(lvl) || !isFinite(mult)) return 0;
-    return lvl * mult;
+    var F = formulas();
+    if (!F) return 0;
+    var ev = F.encounterValue(level, org);
+    return ev.value === null ? 0 : ev.value;
   }
 
   // villainActionCount reads the data-driven villain-action requirement for an
@@ -86,10 +127,11 @@ var MonsterEngine = (function () {
     return org.villain_action_count;
   }
 
-  // evMeter summarizes one creature's spend against the party budget for the
-  // live "spent X / budget Y" meter. `copies` is the balanced multiple of this
-  // creature that fills the budget (>= 1) — the bridge to Phase 3 encounter
-  // assembly (many creatures against one budget).
+  // evMeter summarizes one creature's spend against the party's encounter
+  // strength for the live "spent X / budget Y" meter. `copies` is arithmetic —
+  // how many of this creature spend that strength (>= 1) — and is NOT a balance
+  // verdict: the published spending limits (creatures per hero, the
+  // six-stat-block cap, minions in fours, star-of-the-show) are checked nowhere.
   function evMeter(creatureEv, budget) {
     var ev = Number(creatureEv);
     var b = Number(budget);
@@ -228,16 +270,28 @@ var MonsterEngine = (function () {
     return { types: types, rationale: rationale };
   }
 
-  // tierValues applies the shipped baseline as tierN + per_level*(level-1),
-  // Math.round-ed — the SAME application the builder's _getDamageHints uses
-  // (R3.3: the data wins over docs/monster-builder.md §4.6).
-  function tierValues(bl, level) {
+  // legacyTierValues applies data/damage-baselines.json as
+  // tierN + per_level*(level-1). That file's own `source` is the string
+  // "custom": the numbers are this package's invention and run as much as 2.4x
+  // the published damage formula (a level 8 solo tier 3 of 48 against a
+  // published 20). It survives ONLY as the labelled fallback for an
+  // organization the published rules do not define, never as a silent default.
+  function legacyTierValues(bl, level) {
     var scale = (Number(bl.per_level) || 0) * (level - 1);
     return {
       tier1: Math.round(Number(bl.tier1) + scale),
       tier2: Math.round(Number(bl.tier2) + scale),
       tier3: Math.round(Number(bl.tier3) + scale)
     };
+  }
+
+  // addFlat returns a copy of a tier triple with `n` added to every tier — the
+  // published "if the ability is a strike, add the monster's highest
+  // characteristic" adjustment, kept separate from the baseline so a caller can
+  // show both and say which is which.
+  function addFlat(tiers, n) {
+    if (!tiers) return null;
+    return { tier1: tiers.tier1 + n, tier2: tiers.tier2 + n, tier3: tiers.tier3 + n };
   }
 
   // suggest is the pure entry point. `data` carries { orgTemplates, roleTemplates,
@@ -256,6 +310,7 @@ var MonsterEngine = (function () {
       return {
         level: null, organization: null, copies: 1, budget: 0, role: null,
         powerRollAttack: null, powerRollTarget: null, damageTypes: [], tiers: null,
+        strikeTiers: null, tiersSourced: false, tierNotes: [],
         intent: chosenIntent, immunities: [], rationale: {},
         notes: ['No party profile — nothing to complement (manual build).']
       };
@@ -273,24 +328,31 @@ var MonsterEngine = (function () {
       notes.push('No hero levels available; level defaulted to 1.');
     }
 
-    // Budget (grounded, P1) then organization (biggest single creature that fits).
+    // Budget = the party's PUBLISHED encounter strength, which is also the floor
+    // of the published standard difficulty band. Then organization: the biggest
+    // single creature that fits. NOTE the honest limit of that second step —
+    // "biggest single creature that fits" is the widget's own heuristic, not a
+    // published selection rule, so the rationale describes what it did and does
+    // not call the result balanced.
     var budget = encounterBudget(partyProfile.size, level, orgTemplates);
     var orgPick = pickOrganization(budget, level, orgTemplates);
-    var organization = null, orgRationale = '', copies = 1;
+    var organization = null, orgRationale = '', copies = 1, orgObj = null;
     if (orgPick && orgPick.org) {
+      orgObj = orgPick.org;
       organization = orgPick.org.slug;
       copies = orgPick.copies;
       var va = villainActionCount(orgPick.org);
       if (orgPick.overBudget) {
-        orgRationale = titleCase(orgPick.org.name) + ' — the lightest organization; the party is too small for a balanced single creature at this level.';
-        notes.push('Budget ' + budget + ' is below the lightest creature’s EV; suggested the lightest org.');
+        orgRationale = titleCase(orgPick.org.name) + ' — the lightest organization; the party’s encounter strength is below even one creature of this level.';
+        notes.push('Encounter strength ' + budget + ' is below the lightest creature’s EV; suggested the lightest org.');
       } else {
-        orgRationale = titleCase(orgPick.org.name) + ' — the largest single creature that fits the EV budget of ' + budget +
-          ' (hero ratio ' + (orgPick.org.hero_ratio || '?') + (va > 0 ? ', ' + va + ' villain actions' : '') + '); about ' + copies + ' fill the budget.';
+        orgRationale = titleCase(orgPick.org.name) + ' — the largest single creature that fits the party’s published encounter strength of ' + budget +
+          ' (hero ratio ' + (orgPick.org.hero_ratio || '?') + (va > 0 ? ', ' + va + ' villain actions' : '') + '); ' + copies +
+          ' of them spend it, which is a standard-difficulty encounter. Creature-count and star-of-the-show limits are not checked here.';
       }
     } else {
-      orgRationale = 'No organization could be fit to the budget — choose one manually.';
-      notes.push('Could not fit an organization to the budget.');
+      orgRationale = 'No organization could be fit to the party’s encounter strength — choose one manually.';
+      notes.push('Could not fit an organization to the party’s encounter strength.');
     }
 
     // Role ← primary_stat === weakest defense, with the R3.5 fallback chain.
@@ -329,15 +391,39 @@ var MonsterEngine = (function () {
     // Damage types ← party weaknesses, never an immunity (Q3).
     var dmg = pickDamageTypes(partyProfile);
 
-    // Ability tiers ← the shipped baseline at the chosen org + level.
-    var tiers = null, tiersRationale;
-    if (organization && baselines[organization]) {
-      tiers = tierValues(baselines[organization], level);
+    // Ability tiers ← the PUBLISHED damage formula (4 + level + damage modifier)
+    // x tier modifier, halved for horde/minion. The suggested ability is
+    // authored as a melee strike, so the published "add the highest
+    // characteristic" adjustment applies; it is returned as `strikeTiers`
+    // ALONGSIDE the baseline rather than folded in, so the UI can show which
+    // number is the formula and which is the formula plus an adjustment.
+    var F = formulas();
+    var tiers = null, strikeTiers = null, tiersSourced = false, tierNotes = [], tiersRationale;
+    var published = (F && organization) ? F.damageTiers(level, orgObj, roleResult.role) : null;
+    if (published && published.value) {
+      tiers = published.value;
+      tiersSourced = true;
+      tierNotes = published.notes;
+      var hc = F.highestCharacteristic(level, orgObj);
+      strikeTiers = (hc.value === null) ? null : addFlat(tiers, hc.value);
       tiersRationale = 'Ability damage tiers ' + tiers.tier1 + ' / ' + tiers.tier2 + ' / ' + tiers.tier3 +
-        ' — the ' + titleCase(organization) + ' baseline at level ' + level + ' (base + per-level × (level − 1)).';
+        ' — the published formula (4 + level + damage modifier) × tier modifier at level ' + level +
+        (strikeTiers ? ('; as a strike, add the highest characteristic (+' + hc.value + ') for ' +
+          strikeTiers.tier1 + ' / ' + strikeTiers.tier2 + ' / ' + strikeTiers.tier3) : '') + '.';
+    } else if (organization && baselines[organization]) {
+      // Fallback: an organization the published rules do not define (Swarm).
+      // The numbers are this package's own and are labelled as such.
+      tiers = legacyTierValues(baselines[organization], level);
+      strikeTiers = tiers;
+      tiersSourced = false;
+      tierNotes = ['These tiers are the widget’s own baseline table, not published Draw Steel math — “' +
+        organization + '” is not a published organization. Pending the builder rework.'];
+      tiersRationale = 'Ability damage tiers ' + tiers.tier1 + ' / ' + tiers.tier2 + ' / ' + tiers.tier3 +
+        ' — the widget’s own baseline for ' + titleCase(organization) + ', which the published rules do not cover. Unsourced.';
+      notes.push('Damage tiers for ' + organization + ' are unsourced — it is not a published organization.');
     } else {
-      tiersRationale = 'No damage baseline for the chosen organization — tiers left blank.';
-      if (organization) notes.push('No damage baseline found for organization ' + organization + '.');
+      tiersRationale = 'No damage tiers could be computed for the chosen organization — left blank.';
+      if (organization) notes.push('No damage tiers could be computed for organization ' + organization + '.');
     }
 
     // Intent ← recorded only (R3.2); it changes nothing here.
@@ -354,6 +440,9 @@ var MonsterEngine = (function () {
       powerRollTarget: powerRollTarget,
       damageTypes: dmg.types,
       tiers: tiers,
+      strikeTiers: strikeTiers,
+      tiersSourced: tiersSourced,
+      tierNotes: tierNotes,
       intent: chosenIntent,
       immunities: partyProfile.immunities || [],
       rationale: {
@@ -373,6 +462,7 @@ var MonsterEngine = (function () {
     heroesPerCreature: heroesPerCreature,
     standardEvPerHeroLevel: standardEvPerHeroLevel,
     encounterBudget: encounterBudget,
+    encounterBands: encounterBands,
     creatureEV: creatureEV,
     villainActionCount: villainActionCount,
     evMeter: evMeter,

@@ -383,11 +383,18 @@
       "description": "Resolves {@category term} syntax to styled tooltips with Draw Steel rule definitions. Requires Chronicle platform text_renderers support for campaign-wide coverage."
     },
     {
+      "slug": "monster-formulas",
+      "name": "Monster Formulas",
+      "file": "widgets/monster-formulas.js",
+      "entry_point": "DrawSteelFormulas",
+      "description": "The published Draw Steel monster and encounter formulas — encounter value, Stamina, damage tiers, encounter strength and its difficulty bands — each result carrying its own provenance so a caller can tell a published figure from the widget's own. Must load BEFORE monster-engine.js, which reads it. No visible UI."
+    },
+    {
       "slug": "monster-engine",
       "name": "Monster Engine",
       "file": "widgets/monster-engine.js",
       "entry_point": "MonsterEngine",
-      "description": "Pure encounter math (grounded EV budget) for the monster builder. Loaded as a global before widget scripts; no visible UI."
+      "description": "Encounter math for the monster builder, evaluated through monster-formulas.js. Loaded as a global before widget scripts; no visible UI."
     },
     {
       "slug": "monster-party",

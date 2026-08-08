@@ -14,7 +14,18 @@ This package provides three interactive widgets that can be added to entity page
 
 **Slug:** `monster-builder`
 
-A 7-step guided creature authoring wizard with auto-calculated stats, validation, encounter balancing, and full statblock preview.
+A 7-step guided creature authoring wizard with auto-calculated stats, completeness checks, an encounter-strength calculator, and full statblock preview.
+
+**What the numbers are.** Encounter value, Stamina and baseline ability damage
+come from the published formulas in `data/monster-building.json`; the encounter
+readout uses the published encounter strength and difficulty bands from
+`data/encounter-building.json`. Where the published rules do not cover an input
+— the Swarm organization is this package's own invention, and the Stamina
+formula needs a role before it can be evaluated — the widget falls back to its
+own estimate and labels it unsourced on screen. **The panel checks that a stat
+block is complete. It does not certify that a creature or an encounter is
+balanced**, and it does not check the published spending limits (creatures per
+hero, the six-stat-block cap, buying minions in fours, star-of-the-show).
 
 ### Config Keys
 

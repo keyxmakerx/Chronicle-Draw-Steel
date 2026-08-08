@@ -91,6 +91,40 @@ It regenerates the derived fields AND `manifest.json`'s `categories` from the
 single `CATEGORIES` declaration in `tools/_render-fields.mjs`.
 `tools/test-render-contract.mjs` fails CI on any of the above.
 
+## The builder's math must carry its own provenance
+
+The monster builder computed four figures with numbers this package invented —
+`ev_multiplier × level` for encounter value, `stamina_base + stamina_per_level ×
+level` for Stamina, `partySize × partyLevel × 4` for the encounter budget, and
+`data/damage-baselines.json` (whose own `source` is the literal string
+`"custom"`) for ability damage. They ran up to **1.67×** the published encounter
+value, **2.3×** on Stamina and **2.4×** on damage — and a panel headed
+"Validation" presented them to a director as balanced. Wrong numbers wearing a
+green tick are worse than no numbers.
+
+- **`widgets/monster-formulas.js` (`DrawSteelFormulas`) is the only place the
+  published formulas are evaluated.** Every return is
+  `{ value, sourced, source, notes }`. `sourced: false` means the published data
+  does not cover this input and `value` is `null` — the module never returns a
+  plausible-looking guess.
+- **A caller that renders an unsourced figure MUST say so in the UI.** That is
+  what the flag is for. `_recalcAuto` records per-figure provenance on
+  `this._provenance`, the checks panel emits it as `severity: 'provenance'`
+  rows, and Step 3 labels the Stamina hint either "published formula:" or
+  "unsourced estimate:".
+- **The panel is titled "Completeness checks", never "Validation".** It carries
+  a standing, unconditional line saying it is not a balance check — an empty
+  panel used to read as a clean bill of health. A deviation warning is raised
+  only against a figure the published formulas can actually produce.
+- **Swarm is not a published organization** (it is a creature keyword); its
+  `organization_modifier` and `stamina_organization_modifier` are `null`, and it
+  is the reason the legacy tables still exist at all — as a labelled fallback,
+  never a silent default.
+- Pinned by `tools/test-monster-formulas.mjs` (the module against the shipped
+  `monster-building.json` / `encounter-building.json`) and
+  `tools/test-monster-builder-honesty.mjs` (the widget's claims). A full rebuild
+  of the builder is separate work — do not treat this as the rework.
+
 ## @Reference Syntax
 
 - Use `{@category term}` in text fields for rule cross-references

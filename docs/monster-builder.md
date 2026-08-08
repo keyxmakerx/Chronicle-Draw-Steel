@@ -36,7 +36,16 @@ The Monster Builder is a fully automated creature authoring tool built into the 
 
 Organizations define a creature's power tier and how many heroes it can face.
 
-| Organization | Hero Ratio | EV Multiplier | Villain Actions | Key Mechanic |
+> **The "EV Multiplier" column is not Draw Steel's.** The published encounter
+> value is `((2 × level) + 4) × organization modifier` (minion and horde 0.5,
+> platoon 1, elite and leader 2, solo 6) — see `data/monster-building.json`,
+> `encounter-value-formula`. The multipliers below are this package's own and run
+> up to 1.67× the published value; they are kept here only because they still
+> appear in `organization-templates.json` as `ev_multiplier`. **Swarm** is not a
+> published organization at all — it is a creature keyword — so it has no
+> published modifier and the builder labels its figures unsourced on screen.
+
+| Organization | Hero Ratio | EV Multiplier (unsourced — see above) | Villain Actions | Key Mechanic |
 |---|---|---|---|---|
 | **Minion** | 8:1 (squad) | level × 1 | 0 | Act in squads; squad attacks require all minions |
 | **Horde** | 2:1 | level × 2 | 0 | Fragile, outnumber heroes |
@@ -213,9 +222,31 @@ This category holds example/template abilities that users can browse and use as 
 
 File: `data/organization-templates.json`
 
-These provide the auto-calculation baselines for the builder. When a user selects an organization and level, stats are pre-filled from these formulas.
+> **⚠️ §4.1, §4.2 and §4.6 below are SUPERSEDED and are kept only as a record of
+> what the builder used to do.** The tables in those three sections were this
+> package's own invention. They were never Draw Steel's, and they disagree with
+> the published formulas — now shipped in `data/monster-building.json` and
+> `data/encounter-building.json` — by up to **1.67×** on encounter value,
+> **2.3×** on Stamina and **2.4×** on ability damage. The widget presented them
+> through a panel labelled "Validation".
+>
+> The builder now evaluates the published formulas via
+> `widgets/monster-formulas.js`:
+>
+> | Figure | Published formula |
+> |---|---|
+> | Encounter value | `ceil(((2 × level) + 4) × organization modifier)` |
+> | Stamina | `ceil(((10 × level) + role modifier) × Stamina organization modifier)` |
+> | Ability damage | `ceil((4 + level + damage modifier) × tier modifier)`, halved for horde and minion |
+> | Party encounter strength | `4 + (2 × hero level)` per hero, summed |
+>
+> Where a published formula cannot be evaluated — **Swarm** is original to this
+> package and has no published modifiers, and the Stamina formula needs a role —
+> the old table is still used as a starting point and is **labelled unsourced on
+> screen**. A full rebuild of the builder is separate work
+> (`DS-MONSTER-BUILDER-REWORK-R1`).
 
-### 4.1 EV Formulas
+### 4.1 EV Formulas — SUPERSEDED (unsourced; see the notice above)
 
 | Organization | EV Formula |
 |---|---|
@@ -227,7 +258,7 @@ These provide the auto-calculation baselines for the builder. When a user select
 | Solo | level × 24 |
 | Swarm | level × 4 |
 
-### 4.2 Stamina Baselines
+### 4.2 Stamina Baselines — SUPERSEDED (unsourced; see the notice above)
 
 Formula: `base + (level × multiplier)`
 
@@ -279,7 +310,7 @@ Formula: `level + primary_characteristic_modifier` damage, melee range 1.
 
 Example: Level 5 Brute (Might +4) → Free Strike: 9 damage.
 
-### 4.6 Ability Damage Baselines
+### 4.6 Ability Damage Baselines — SUPERSEDED (unsourced; see the notice above)
 
 Power-roll tier damage per organization. Values are the **level-1 baseline**;
 `per-level` is the increment added to each tier for every level above 1
@@ -295,7 +326,10 @@ Power-roll tier damage per organization. Values are the **level-1 baseline**;
 | Solo | 8 | 14 | 20 | +4 |
 | Swarm | 4 | 7 | 10 | +2 |
 
-_Generated from `data/damage-baselines.json` (`properties.baselines`); the data file is authoritative._
+_Generated from `data/damage-baselines.json`, whose own `source` field is the
+literal string `"custom"` — these numbers are this package's, not MCDM's. The
+builder now uses the published damage formula instead; this table survives only
+as the labelled fallback for an organization the published rules never defined._
 
 ---
 

@@ -8,7 +8,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10
 - **23 template abilities** — signature, action, maneuver, triggered, and villain-action types
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
-- **7 organization templates** — stamina/EV/speed formulas for encounter balancing
+- **7 organization templates** — the published organization and Stamina modifiers, plus default speed/stability (Swarm is this package's own, and carries no published modifiers)
 - **25 rules glossary entries** — conditions, movement, durations, resources, combat terms
 - **23 creature keywords** — Dragon, Undead, Humanoid, Elemental, etc.
 
@@ -17,7 +17,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
 
 ### Interactive Widgets
-- **Monster Builder** — 7-step creature authoring with auto-calculated stats, validation, damage hints, encounter calculator, and full preview
+- **Monster Builder** — 7-step creature authoring with stats auto-filled from the published formulas, completeness checks, damage hints, an encounter-strength calculator, and full preview. It does not certify balance: figures the published rules do not cover are labelled unsourced on screen. See `docs/WIDGET-GUIDE.md`.
 - **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal statblocks, and campaign import
 - **Statblock Renderer** — read-only formatted creature statblock display for entity pages
 
