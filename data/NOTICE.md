@@ -11,6 +11,8 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `skills.json` | Skill names and their uses | *Heroes Book* ch. 9 (Tests) |
 | `ancestries.json` | The twelve ancestries: signature traits, purchased traits, point costs, and granted abilities | *Heroes Book* ch. 3 (Ancestries) |
 | `kits.json` | The twenty-one kits: equipment, armor and weapon categories, Stamina/speed/stability/damage/distance/disengage bonuses, and signature abilities | *Heroes Book* ch. 6 (Kits) |
+| `abilities.json` | 519 abilities: the nine classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
+| `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -29,6 +31,27 @@ numbers mean). The `echelon` glossary entry added alongside them comes from
 `Rules/Chapters/The Basics.md` ("Echelons of Play"), reduced to its level bands —
 the surrounding passage names setting locations and characters and is excluded
 (see below).
+
+The files consulted for `abilities.json` were `Rules/Abilities/**/*.md` — all 545
+of them: `Common/{Main Actions,Maneuvers,Move Actions}` (17 files), `Kits/<kit>/`
+(21 files, one signature ability per kit), and the nine class folders
+`{Censor, Conduit, Elementalist, Fury, Null, Shadow, Tactician, Talent,
+Troubadour}/<N>-Level Features/` (507 files). Each file's YAML frontmatter
+carries the ability's type, keywords, distance, target, level, cost and flavor
+line, and its body carries the power-roll tiers and effect text; both were
+converted mechanically, so every field traces back to a specific source file.
+Twenty-one abilities are printed at more than one level; the per-level duplicates
+are merged into one entry that lists every level it is offered at in
+`properties.levels`. Five domain abilities (Blessing of Secrets, Faithful Friend,
+Grave Speech, Guided to Your Side, Hands of the Maker) are printed for both the
+censor and the conduit; those stay as two entries, one per class, because the
+slugs are namespaced by class.
+
+The keyword definitions in `ability-keywords.json` come from
+`Rules/Chapters/Classes.md` ("Ability Keywords") for the core keywords,
+`Rules/Classes/Elementalist.md` for the elemental specializations,
+`Rules/Classes/Talent.md` for the talent traditions, and
+`Rules/Classes/Troubadour.md` ("Routines") for Performance.
 
 ## Licence
 
@@ -53,6 +76,17 @@ dropped and only the mechanics kept; the affected traits record this in
 `properties.omissions` (memonek Keeper of Order / Nonstop / Useful Emotion, and the
 dragon knight's Remember Your Oath, whose recited verse is omitted). The mechanics of
 every such trait are complete.
+
+The ability entries needed none of this treatment either. Ability names, flavor lines,
+and effect text are mechanics and fighting-style description; nothing in the 545 source
+files names a character, a place, or a god. One structural omission is recorded rather
+than reproduced: the elementalist's Summon Source of Earth ability prints a full
+stat block for the summoned elemental, which is a creature rather than part of the
+ability, so it is left for `creatures.json` and the entry records the fact in
+`properties.omissions`. Book-internal cross-references ("see Free Strikes below",
+"see Conditions in Chapter 5") survive as plain text, because rewriting them would be
+editorialising published rules; the page-number anchors they linked to are dropped, as
+they address a PDF this package does not ship.
 
 The kit entries needed almost none of this treatment: the published kit text is rules
 and fighting-style description, and names no character, place, or god. Each kit's
@@ -84,6 +118,29 @@ at a glance:
 
 Operators adding their own ancestries, kits, and creatures should set
 `"source": "custom"` on those entries.
+
+**`abilities.json` contains no custom content.** Every one of the 519 entries is
+published rules text and carries its real provenance in `properties.source`
+(ch. 5 for class abilities, ch. 6 for kit signature abilities, ch. 10 for the
+common actions). As with `kits.json`, the only non-published thing about the file
+is the *shape* of the data: field names such as `cost_resource` and
+`additional_power_rolls`, the `class`/`kit`/`common` split in `properties.category`,
+the `signature`/`heroic`/`free-strike`/`ability`/`common-ability` values in
+`properties.type` (derived from whether the published ability names itself a
+signature ability and whether it has a Heroic Resource cost), and the
+`{@category term}` cross-references woven into the text. Those encode published
+facts rather than adding new ones, so they carry no flag. The twenty-one kit
+signature abilities appear here *and* in `kits.json`; both are generated from the
+same source files, so the two must agree.
+
+**`ability-keywords.json` contains two custom entries**, both pre-dating this
+dataset and both kept: `attack` and `resistance` are not published Draw Steel
+ability keywords, and no published ability in `abilities.json` uses either. They
+are flagged `"source": "custom"` with a `note` saying so, and are retained only as
+generic tags for operator-authored content. The other twenty-two entries are
+published definitions and carry their real provenance. Two published elements —
+Air and Water — are deliberately absent: Draw Steel 1.0 ships no elementalist
+specialization for them, so no ability in this package carries those keywords.
 
 **`kits.json` contains no custom content.** All twenty-one entries — description,
 equipment line, every bonus, and every signature ability — are published rules text

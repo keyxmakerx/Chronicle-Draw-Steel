@@ -1,47 +1,220 @@
 [
   {
+    "slug": "animapathy",
+    "name": "Animapathy",
+    "description": "Animapathy abilities allow you to manipulate, meld, and exchange the souls of living things.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
     "slug": "area",
     "name": "Area",
-    "description": "Affects an area rather than individual targets."
+    "description": "Abilities with the Area keyword create an area of effect. Many area abilities deal damage to targets in their area, but such abilities are treated differently than strikes made against specific targets.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "attack",
     "name": "Attack",
-    "description": "An offensive action that involves a power roll against a target."
+    "description": "An offensive action that involves a power roll against a target.",
+    "properties": {
+      "group": "Helper",
+      "source": "custom",
+      "note": "Not a published Draw Steel ability keyword. Kept as a generic tag for operator-authored content; published abilities use Strike or Area."
+    }
   },
   {
     "slug": "charge",
     "name": "Charge",
-    "description": "The creature moves and attacks in a single action."
+    "description": "Abilities with the Charge keyword can be used with the Charge main action instead of a melee free strike.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "chronopathy",
+    "name": "Chronopathy",
+    "description": "Chronopathy abilities allow you to view future and past events, and to manipulate time to aid allies and hinder foes.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "cryokinesis",
+    "name": "Cryokinesis",
+    "description": "Cryokinesis abilities allow you to manifest and manipulate absolute cold to enemies and the environment alike.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "earth",
+    "name": "Earth",
+    "description": "Earth is the element of permanence. Earth abilities bolster your body and grant the power to permanently create and shape physical terrain.",
+    "properties": {
+      "group": "Elemental specialization",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "fire",
+    "name": "Fire",
+    "description": "Fire is the element of destruction. Fire abilities devastate enemies and melt objects to slag.",
+    "properties": {
+      "group": "Elemental specialization",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "green",
+    "name": "Green",
+    "description": "Green is the element of creation and growth. Green abilities make and manipulate plants, fungi, and other forms of life to hamper foes and nourish your allies.",
+    "properties": {
+      "group": "Elemental specialization",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "magic",
     "name": "Magic",
-    "description": "The ability is magical in nature."
+    "description": "Abilities with the Magic keyword are used by characters who can cast spells, have innate magical features, or wield magic treasures. Such abilities do magical things such as create rays of fire, open swirling portals, or summon creatures.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "melee",
     "name": "Melee",
-    "description": "Requires the creature to be adjacent or within reach."
+    "description": "Abilities with the Melee keyword can be used only over very short distances, typically within a character's reach, because they require a character to make contact with a creature or object with their body, a weapon, or an implement.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "metamorphosis",
+    "name": "Metamorphosis",
+    "description": "Metamorphosis abilities allow you to strengthen and manipulate your body and the bodies of others to perform preternatural exploits.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "performance",
+    "name": "Performance",
+    "description": "Performances are magical presentations (such as songs, dances, poems, or gymnastic feats) that your allies can participate in. These abilities have the Performance keyword.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "psionic",
     "name": "Psionic",
-    "description": "The ability is psionic in nature."
+    "description": "Abilities with the Psionic keyword are used by characters who can manifest psionic powers, have innate psionic features, or wield psionic items. These abilities might create blasts of psychic energy, move objects with telekinesis, or slow down time with chronopathy.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "pyrokinesis",
+    "name": "Pyrokinesis",
+    "description": "Pyrokinesis abilities allow you to create and manipulate fire by interacting with the potential energy found in all things.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "ranged",
     "name": "Ranged",
-    "description": "Can target creatures at a distance."
+    "description": "Abilities with the Ranged keyword can be used to affect creatures who are too far away to make contact with.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "resistance",
     "name": "Resistance",
-    "description": "Provides damage resistance or damage reduction."
+    "description": "Provides damage resistance or damage reduction.",
+    "properties": {
+      "group": "Helper",
+      "source": "custom",
+      "note": "Not a published Draw Steel ability keyword. Kept as a generic tag for operator-authored content."
+    }
+  },
+  {
+    "slug": "resopathy",
+    "name": "Resopathy",
+    "description": "Resopathy abilities allow you to manipulate matter and space to create, alter, or displace your environment and the creatures and objects in it.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "rot",
+    "name": "Rot",
+    "description": "Rot is the element of decay. Rot abilities harm and debuff enemies.",
+    "properties": {
+      "group": "Elemental specialization",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "strike",
+    "name": "Strike",
+    "description": "Abilities with the Strike keyword (often referred to simply as \"strikes\") deal damage to or impose a harmful effect on specific creatures or objects.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "telekinesis",
+    "name": "Telekinesis",
+    "description": "Telekinesis abilities allow you to physically manipulate creatures and objects.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "telepathy",
+    "name": "Telepathy",
+    "description": "Telepathy abilities allow you to communicate with, read, and influence the minds of other creatures.",
+    "properties": {
+      "group": "Talent tradition",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
+  },
+  {
+    "slug": "void",
+    "name": "Void",
+    "description": "Void is the element of the mystery. Void abilities warp space and reality, allowing you to teleport, create illusions, and make things incorporeal.",
+    "properties": {
+      "group": "Elemental specialization",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   },
   {
     "slug": "weapon",
     "name": "Weapon",
-    "description": "Uses a physical weapon for the attack."
+    "description": "The Weapon keyword is used in abilities that must be used with a blade, a bow, or some other offensive weapon. Weapon abilities also include strikes creatures make with their own bodies, such as a character's unarmed strikes or a monster's punches, kicks, bites, tail slaps, and more.",
+    "properties": {
+      "group": "Core",
+      "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+    }
   }
 ]

@@ -131,6 +131,89 @@ Template abilities that creatures reference.
 | `trigger` | string | Trigger condition (for triggered abilities) |
 | `villain_action_order` | string | `opener`, `escalation`, or `closer` |
 
+## abilities.json
+
+Hero-facing abilities: the nine classes' abilities, the kit signature abilities,
+and the common actions every creature has. (Monster abilities live in
+`creature-abilities.json`, which uses a deliberately similar but smaller shape.)
+
+```json
+{
+  "slug": "talent-slow-5-clarity",
+  "name": "Slow (5 Clarity)",
+  "description": "Perhaps they wonder why everyone else is moving so quickly?",
+  "properties": {
+    "category": "class",
+    "type": "heroic",
+    "class": "Talent",
+    "subclass": "Chronopathy",
+    "level": 2,
+    "action_type": "Maneuver",
+    "cost": "5 Clarity",
+    "cost_amount": 5,
+    "cost_resource": "Clarity",
+    "keywords": ["Chronopathy", "Psionic", "Ranged"],
+    "distance": "Ranged 10",
+    "target": "Three creatures or objects",
+    "power_roll": "Presence",
+    "tier1": "The target's speed is halved ({@duration save-ends|save ends})...",
+    "tier2": "The target is {@condition slowed} ({@duration save-ends|save ends})...",
+    "tier3": "The target is {@condition slowed} ({@duration save-ends|save ends})...",
+    "effect": "A target can't use triggered actions while their speed is reduced this way.",
+    "strained": "The {@combat potency} of this ability increases by 1...",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  }
+}
+```
+
+Slugs are namespaced by owner — `<class>-<ability>`, `kit-<ability>`,
+`common-<ability>` — because ability names repeat across classes.
+
+### Properties Schema
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `category` | string | Yes | `class`, `kit`, or `common` — who grants the ability |
+| `type` | string | Yes | `signature`, `heroic` (has a Heroic Resource cost), `free-strike`, `common-ability`, or `ability` |
+| `class` | string | class only | Censor, Conduit, Elementalist, Fury, Null, Shadow, Tactician, Talent, or Troubadour |
+| `kit` | string | kit only | Granting kit's name |
+| `subclass` | string | No | Subclass/tradition/specialization that grants it |
+| `level` | number | class only | Level at which it is offered (lowest, if several) |
+| `levels` | array | No | Present only when the ability is offered at more than one level |
+| `action_category` | string | common only | `main action`, `maneuver`, or `move action` |
+| `action_type` | string | No | Main action, Maneuver, Triggered, Free triggered, Free maneuver, Move, or No action |
+| `cost` | string | heroic only | e.g. `"5 Clarity"` |
+| `cost_amount` | number | heroic only | Numeric half of `cost` |
+| `cost_resource` | string | heroic only | Heroic Resource spent |
+| `keywords` | array | No | Ability keyword strings; every one must exist in `ability-keywords.json` |
+| `distance` | string | No | Melee 1, Ranged 10, 1 aura, 3 cube within 1, Self, … |
+| `target` | string | No | Target description |
+| `power_roll` | string | No | Characteristic(s) added, e.g. `"Might or Agility"` |
+| `tier1`/`tier2`/`tier3` | string | No | Results for ≤11 / 12–16 / 17+; never present without `power_roll` |
+| `additional_power_rolls` | array | No | Further rolls in the same ability: `{intro?, power_roll, tier1..3}` |
+| `effect` | string | No | Effect text |
+| `rules_text` | string | No | Rules prose printed after the Effect entry |
+| `trigger` | string | No | Trigger condition, for triggered abilities |
+| `strained` | string | No | Strained entry (talent) |
+| `special` | string | No | Special entry |
+| `mark_benefit` | string | No | Mark Benefit entry (tactician) |
+| `spend` | array | No | Optional Heroic Resource spends: `{label, text}` |
+| `persistent` | array | No | Persistent entries: `{label, text}` |
+| `notes` | array | No | Any other labelled entry: `{label, text}` |
+| `omissions` | array | No | Source content deliberately not reproduced, and why |
+| `source` | string | Yes | Provenance (see `data/NOTICE.md`) |
+
+`tools/test-abilities-data.mjs` enforces the invariants above in CI.
+
+## ability-keywords.json
+
+Keyword definitions for the tooltip system: the core ability keywords, the
+elementalist's elemental specializations, and the talent traditions. Base
+ReferenceItem shape, with `properties.group` (`Core`, `Elemental specialization`,
+`Talent tradition`, or `Helper`) and `properties.source`. Entries that are not
+published Draw Steel keywords carry `"source": "custom"` and a `note` explaining
+why they exist.
+
 ## rules-glossary.json
 
 Rule definitions for the @reference tooltip system.
