@@ -1,7 +1,6 @@
 {
   "name": "chronicle-draw-steel",
   "private": true,
-  "type": "module",
   "description": "Draw Steel reference content for Chronicle. Rules text under the DRAW STEEL Creator License; this package's own work under CC-BY-4.0. See data/NOTICE.md — the two positions are never flattened into one.",
   "scripts": {
     "test": "node --test \"tools/test-*.mjs\""

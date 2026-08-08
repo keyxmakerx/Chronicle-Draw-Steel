@@ -51,6 +51,11 @@ const MAY_MENTION_CC = new Set([
   'docs/PROJECT-HANDOFF.md',
   'docs/implementation-checklist.md',
   'tools/test-licence-claims.mjs', // this file
+  // package.json's `description` states BOTH positions in one sentence — Creator
+  // License for the rules text, CC-BY-4.0 for this package's own work — which is
+  // exactly the scoping this guard exists to require. It is allowlisted for the
+  // mention, and the scoping assertion below still applies to it.
+  'package.json',
 ]);
 
 // A mention is scoped when its 3-line neighbourhood says, in words a reader
