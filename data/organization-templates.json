@@ -10,7 +10,20 @@
     "default_stability": 0,
     "villain_action_count": 0,
     "hero_ratio": "8:1",
-    "notes": "Squad mechanics. Minions share a squad stamina pool. When a minion takes damage equal to its individual stamina, it drops and the next minion in the squad steps up."
+    "notes": "Squad mechanics. Minions share a squad stamina pool. When a minion takes damage equal to its individual stamina, it drops and the next minion in the squad steps up.",
+    "organization_modifier": 0.5,
+    "stamina_organization_modifier": 0.125,
+    "hero_slots_filled": 0.125,
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability",
+      "notes"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "horde",
@@ -22,7 +35,19 @@
     "default_speed": 5,
     "default_stability": 0,
     "villain_action_count": 0,
-    "hero_ratio": "2:1"
+    "hero_ratio": "2:1",
+    "organization_modifier": 0.5,
+    "stamina_organization_modifier": 0.5,
+    "hero_slots_filled": 0.5,
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "platoon",
@@ -34,7 +59,19 @@
     "default_speed": 5,
     "default_stability": 1,
     "villain_action_count": 0,
-    "hero_ratio": "1:1"
+    "hero_ratio": "1:1",
+    "organization_modifier": 1,
+    "stamina_organization_modifier": 1,
+    "hero_slots_filled": 1,
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "elite",
@@ -46,7 +83,19 @@
     "default_speed": 5,
     "default_stability": 2,
     "villain_action_count": 0,
-    "hero_ratio": "1:2"
+    "hero_ratio": "1:2",
+    "organization_modifier": 2,
+    "stamina_organization_modifier": 2,
+    "hero_slots_filled": 2,
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "leader",
@@ -58,7 +107,19 @@
     "default_speed": 5,
     "default_stability": 2,
     "villain_action_count": 3,
-    "hero_ratio": "1:2"
+    "hero_ratio": "1:2",
+    "organization_modifier": 2,
+    "stamina_organization_modifier": 2,
+    "hero_slots_filled": 2,
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "solo",
@@ -70,7 +131,20 @@
     "default_speed": 5,
     "default_stability": 3,
     "villain_action_count": 3,
-    "hero_ratio": "1:6"
+    "hero_ratio": "1:6",
+    "organization_modifier": 6,
+    "stamina_organization_modifier": 5,
+    "hero_slots_filled": 6,
+    "hero_slots_note": "A solo fills one additional hero slot for each level it is higher than the heroes.",
+    "custom_fields": [
+      "description",
+      "ev_multiplier",
+      "stamina_base",
+      "stamina_per_level",
+      "default_speed",
+      "default_stability"
+    ],
+    "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
   {
     "slug": "swarm",
@@ -83,6 +157,11 @@
     "default_stability": 0,
     "villain_action_count": 0,
     "hero_ratio": "1:1",
-    "notes": "Swarm creatures should have area-based abilities and typically occupy a larger space."
+    "notes": "Swarm creatures should have area-based abilities and typically occupy a larger space.",
+    "organization_modifier": null,
+    "stamina_organization_modifier": null,
+    "hero_slots_filled": null,
+    "source": "custom",
+    "custom_note": "Swarm is a published creature keyword, not a published creature organization — the Monsters book prints no organization modifier, EV formula, or hero-slot rate for it. This entry is original to this package."
   }
 ]

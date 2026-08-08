@@ -454,5 +454,29 @@
     "properties": {
       "category": "combat"
     }
+  },
+  {
+    "slug": "encounter-value",
+    "name": "Encounter Value",
+    "description": "Every Director-controlled creature has an encounter value (EV), the number of budget points it costs to buy that creature for a combat encounter. The EV printed for a minion covers four minions together, not one.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "encounter-strength",
+    "name": "Encounter Strength",
+    "description": "A party's encounter strength (ES) is the benchmark the Director buys monsters against. Each hero's encounter strength is 4 plus 2 for each of their levels, so a 3rd-level hero is worth 10; add every hero together for the party's ES. Retainers and other NPCs fighting alongside the heroes count as heroes of their own level.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "malice",
+    "name": "Malice",
+    "description": "Malice is the Director's resource, the counterpart to a hero's Heroic Resource, spent to activate monsters' most powerful abilities. At the start of combat the Director gains Malice equal to the average number of Victories per hero, then at the start of each combat round gains Malice equal to the number of heroes in the battle plus the round number. A hero who dies stops generating Malice, and any unused Malice is lost at the end of an encounter.",
+    "properties": {
+      "category": "resource"
+    }
   }
 ]
