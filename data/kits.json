@@ -11,6 +11,7 @@
       "equipment": "You wear no armor and wield a bow.",
       "stamina_bonus": 0,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "ranged_damage_bonus": "+2/+2/+2",
@@ -36,7 +37,7 @@
         "tier3": "10 + A, R, I, or P fire damage",
         "effect": "One creature or object of your choice within 2 squares of the target takes fire damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "signature_ability_display": "Exploding Arrow — flavor: Your ammunition explodes with magical energy.; type: signature; action type: Main action; keywords: Magic, Ranged, Strike, Weapon; distance: Ranged 15; target: One creature or object; power roll: Agility, Reason, Intuition, or Presence; tier1: 5 + A, R, I, or P fire damage; tier2: 7 + A, R, I, or P fire damage; tier3: 10 + A, R, I, or P fire damage; effect: One creature or object of your choice within 2 squares of the target takes fire damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+      "signature_ability_display": "Exploding Arrow — flavor: Your ammunition explodes with magical energy.; type: signature; action type: Main action; keywords: Magic, Ranged, Strike, Weapon; distance: Ranged 15; target: One creature or object; power roll: Agility, Reason, Intuition, or Presence; tier1: 5 + A, R, I, or P fire damage; tier2: 7 + A, R, I, or P fire damage; tier3: 10 + A, R, I, or P fire damage; effect: One creature or object of your choice within 2 squares of the target takes fire damage equal to the characteristic score used for this ability's power roll."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -52,6 +53,7 @@
       "equipment": "You wear light armor and wield a medium weapon.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 2,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
@@ -77,7 +79,7 @@
         "tier3": "11 + M, R, I, or P damage",
         "effect": "Until the end of the target's next turn, any {@combat forced-movement|forced movement} that affects the target has its distance increased by 2."
       },
-      "signature_ability_display": "Unmooring — flavor: Your weapon unleashes psionic energy that reduces your target's weight.; type: signature; action type: Main action; keywords: Melee, Psionic, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P damage; tier2: 8 + M, R, I, or P damage; tier3: 11 + M, R, I, or P damage; effect: Until the end of the target's next turn, any {@combat forced-movement|forced movement} that affects the target has its distance increased by 2."
+      "signature_ability_display": "Unmooring — flavor: Your weapon unleashes psionic energy that reduces your target's weight.; type: signature; action type: Main action; keywords: Melee, Psionic, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P damage; tier2: 8 + M, R, I, or P damage; tier3: 11 + M, R, I, or P damage; effect: Until the end of the target's next turn, any forced movement that affects the target has its distance increased by 2."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -93,6 +95,7 @@
       "equipment": "You wear light armor and wield one or two light weapons.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 2,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
@@ -118,7 +121,7 @@
         "tier2": "6 + M or A damage; you can {@movement shift} up to 2 squares",
         "tier3": "8 + M or A damage; you can {@movement shift} up to 3 squares"
       },
-      "signature_ability_display": "Fade — flavor: A stab, and a few quick, careful steps back.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; you can {@movement shift} 1 square; tier2: 6 + M or A damage; you can {@movement shift} up to 2 squares; tier3: 8 + M or A damage; you can {@movement shift} up to 3 squares"
+      "signature_ability_display": "Fade — flavor: A stab, and a few quick, careful steps back.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; you can shift 1 square; tier2: 6 + M or A damage; you can shift up to 2 squares; tier3: 8 + M or A damage; you can shift up to 3 squares"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -134,6 +137,7 @@
       "equipment": "You wear medium armor and wield a light weapon and a medium weapon.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 2,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
@@ -158,7 +162,7 @@
         "tier3": "8 damage",
         "effect": "If you use this ability on your turn, you can use it against one target, then use your {@action maneuver} and your {@action move-action|move action} for that turn before using the ability against a second target. You still use the same {@combat power-roll|power roll} for both targets."
       },
-      "signature_ability_display": "Double Strike — flavor: Why strike once when you could do it twice?; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: Two creatures or objects; power roll: Might or Agility; tier1: 4 damage; tier2: 6 damage; tier3: 8 damage; effect: If you use this ability on your turn, you can use it against one target, then use your {@action maneuver} and your {@action move-action|move action} for that turn before using the ability against a second target. You still use the same {@combat power-roll|power roll} for both targets."
+      "signature_ability_display": "Double Strike — flavor: Why strike once when you could do it twice?; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: Two creatures or objects; power roll: Might or Agility; tier1: 4 damage; tier2: 6 damage; tier3: 8 damage; effect: If you use this ability on your turn, you can use it against one target, then use your maneuver and your move action for that turn before using the ability against a second target. You still use the same power roll for both targets."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -174,6 +178,7 @@
       "equipment": "You wear medium armor and wield a polearm.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
@@ -213,6 +218,7 @@
       "equipment": "You wear no armor and wield only your unarmed strikes.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
@@ -253,6 +259,7 @@
       "equipment": "You wear heavy armor and wield a heavy weapon.",
       "stamina_bonus": 9,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 0,
       "stability_bonus": 2,
       "melee_damage_bonus": "+0/+0/+4",
@@ -293,6 +300,7 @@
       "equipment": "You wear no armor and wield a heavy weapon.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+0/+0/+4",
@@ -333,6 +341,7 @@
       "equipment": "You wear no armor and wield only your unarmed strikes.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 2,
       "stability_bonus": 1,
       "melee_damage_bonus": "+1/+1/+1",
@@ -357,7 +366,7 @@
         "tier3": "8 + M or A damage; {@movement slide} 2",
         "effect": "You can {@movement shift} into any square the target leaves after you slide them."
       },
-      "signature_ability_display": "Let's Dance — flavor: Keeping your enemies stumbling around the battlefield is second nature to you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; {@movement slide} 1; tier3: 8 + M or A damage; {@movement slide} 2; effect: You can {@movement shift} into any square the target leaves after you slide them."
+      "signature_ability_display": "Let's Dance — flavor: Keeping your enemies stumbling around the battlefield is second nature to you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; slide 1; tier3: 8 + M or A damage; slide 2; effect: You can shift into any square the target leaves after you slide them."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -373,6 +382,7 @@
       "equipment": "You wear light armor and wield a shield and a light weapon.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
@@ -399,7 +409,7 @@
         "tier3": "8 + M or A damage",
         "effect": "The target takes a {@combat bane} on their next {@combat power-roll|power roll} made before the end of their next turn."
       },
-      "signature_ability_display": "Raider's Awe — flavor: You execute a brutal strike that leaves your foe reeling.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 8 + M or A damage; effect: The target takes a {@combat bane} on their next {@combat power-roll|power roll} made before the end of their next turn."
+      "signature_ability_display": "Raider's Awe — flavor: You execute a brutal strike that leaves your foe reeling.; type: signature; action type: Main action; keywords: Melee, Ranged, Strike, Weapon; distance: Melee 1 or ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 8 + M or A damage; effect: The target takes a bane on their next power roll made before the end of their next turn."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -415,6 +425,7 @@
       "equipment": "You wear medium armor and wield a bow and a medium weapon.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
@@ -439,7 +450,7 @@
         "tier2": "5 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration save-ends})",
         "tier3": "7 + M or A damage; A < STRONG, {@condition slowed} ({@duration save-ends})"
       },
-      "signature_ability_display": "Hamstring Shot — flavor: A well-placed shot leaves your enemy struggling to move.; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; A < WEAK, {@condition slowed} ({@duration save-ends}); tier2: 5 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration save-ends}); tier3: 7 + M or A damage; A < STRONG, {@condition slowed} ({@duration save-ends})"
+      "signature_ability_display": "Hamstring Shot — flavor: A well-placed shot leaves your enemy struggling to move.; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 10; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; A < WEAK, slowed (save-ends); tier2: 5 + M or A damage; A < AVERAGE, slowed (save-ends); tier3: 7 + M or A damage; A < STRONG, slowed (save-ends)"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -455,6 +466,7 @@
       "equipment": "You wear light armor and wield a bow.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "ranged_damage_bonus": "+2/+2/+2",
@@ -494,6 +506,7 @@
       "equipment": "You wear light armor and wield several ensnaring weapons and a polearm.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
@@ -517,7 +530,7 @@
         "tier2": "6 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration eot})",
         "tier3": "8 + M or A damage; A < STRONG, {@condition restrained} ({@duration eot})"
       },
-      "signature_ability_display": "Net and Stab — flavor: The well-thrown net that follows your main attack leaves your foes right where you want them.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; A < WEAK, {@condition slowed} ({@duration eot}); tier2: 6 + M or A damage; A < AVERAGE, {@condition slowed} ({@duration eot}); tier3: 8 + M or A damage; A < STRONG, {@condition restrained} ({@duration eot})"
+      "signature_ability_display": "Net and Stab — flavor: The well-thrown net that follows your main attack leaves your foes right where you want them.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; A < WEAK, slowed (eot); tier2: 6 + M or A damage; A < AVERAGE, slowed (eot); tier3: 8 + M or A damage; A < STRONG, restrained (eot)"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -533,6 +546,7 @@
       "equipment": "You wear heavy armor and wield a shield and a medium weapon.",
       "stamina_bonus": 12,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
@@ -557,7 +571,7 @@
         "tier3": "11 + M or A damage",
         "effect": "The target is {@condition taunted} until the end of their next turn."
       },
-      "signature_ability_display": "Protective Attack — flavor: The strength of your assault makes it impossible for your foe to ignore you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 8 + M or A damage; tier3: 11 + M or A damage; effect: The target is {@condition taunted} until the end of their next turn."
+      "signature_ability_display": "Protective Attack — flavor: The strength of your assault makes it impossible for your foe to ignore you.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 8 + M or A damage; tier3: 11 + M or A damage; effect: The target is taunted until the end of their next turn."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -573,6 +587,7 @@
       "equipment": "You wear no armor and wield a bow.",
       "stamina_bonus": 0,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 0,
       "ranged_damage_bonus": "+0/+0/+4",
@@ -597,7 +612,7 @@
         "tier3": "13 + M or A damage",
         "effect": "If you don't take a {@action move-action|move action} this turn, this strike deals extra damage equal to your Might or Agility score (your choice)."
       },
-      "signature_ability_display": "Patient Shot — flavor: Breathe... aim... wait... then strike!; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 15; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 13 + M or A damage; effect: If you don't take a {@action move-action|move action} this turn, this strike deals extra damage equal to your Might or Agility score (your choice)."
+      "signature_ability_display": "Patient Shot — flavor: Breathe... aim... wait... then strike!; type: signature; action type: Main action; keywords: Ranged, Strike, Weapon; distance: Ranged 15; target: One creature; power roll: Might or Agility; tier1: 3 + M or A damage; tier2: 6 + M or A damage; tier3: 13 + M or A damage; effect: If you don't take a move action this turn, this strike deals extra damage equal to your Might or Agility score (your choice)."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -613,6 +628,7 @@
       "equipment": "You wear light armor and wield a shield and a medium weapon.",
       "stamina_bonus": 6,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
@@ -638,7 +654,7 @@
         "tier3": "11 + M, R, I, or P lightning damage",
         "effect": "A creature or object of your choice within 2 squares of the target takes lightning damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "signature_ability_display": "Leaping Lightning — flavor: Lightning jumps from your weapon as you strike to harm a nearby foe.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P lightning damage; tier2: 8 + M, R, I, or P lightning damage; tier3: 11 + M, R, I, or P lightning damage; effect: A creature or object of your choice within 2 squares of the target takes lightning damage equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+      "signature_ability_display": "Leaping Lightning — flavor: Lightning jumps from your weapon as you strike to harm a nearby foe.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 5 + M, R, I, or P lightning damage; tier2: 8 + M, R, I, or P lightning damage; tier3: 11 + M, R, I, or P lightning damage; effect: A creature or object of your choice within 2 squares of the target takes lightning damage equal to the characteristic score used for this ability's power roll."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -654,6 +670,7 @@
       "equipment": "You wear light armor and wield a polearm.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 2,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
@@ -677,7 +694,7 @@
         "tier2": "7 + M or A damage; {@movement slide} 1",
         "tier3": "10 + M or A damage; {@movement slide} 3"
       },
-      "signature_ability_display": "Where I Want You — flavor: When your stick speaks, your enemy moves.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; tier2: 7 + M or A damage; {@movement slide} 1; tier3: 10 + M or A damage; {@movement slide} 3"
+      "signature_ability_display": "Where I Want You — flavor: When your stick speaks, your enemy moves.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; tier2: 7 + M or A damage; slide 1; tier3: 10 + M or A damage; slide 3"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -693,6 +710,7 @@
       "equipment": "You wear light armor and wield a medium weapon.",
       "stamina_bonus": 3,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+2/+2/+2",
@@ -717,7 +735,7 @@
         "tier3": "10 + M or A damage; {@movement push} 2",
         "effect": "You can {@movement shift} into any square the target leaves after you push them."
       },
-      "signature_ability_display": "Fancy Footwork — flavor: All combat is a dance—and you'll be the one leading.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 7 + M or A damage; {@movement push} 1; tier3: 10 + M or A damage; {@movement push} 2; effect: You can {@movement shift} into any square the target leaves after you push them."
+      "signature_ability_display": "Fancy Footwork — flavor: All combat is a dance—and you'll be the one leading.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 5 + M or A damage; tier2: 7 + M or A damage; push 1; tier3: 10 + M or A damage; push 2; effect: You can shift into any square the target leaves after you push them."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -733,6 +751,7 @@
       "equipment": "You wear medium armor and wield a shield and a medium weapon.",
       "stamina_bonus": 9,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 0,
       "stability_bonus": 1,
       "melee_damage_bonus": "+2/+2/+2",
@@ -756,7 +775,7 @@
         "tier2": "7 + M or A damage; {@movement push} 2",
         "tier3": "9 + M or A damage; {@movement push} 3; M < STRONG, {@condition prone}"
       },
-      "signature_ability_display": "Shield Bash — flavor: In your hands, a shield isn't just for protection.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; {@movement push} 1; tier2: 7 + M or A damage; {@movement push} 2; tier3: 9 + M or A damage; {@movement push} 3; M < STRONG, {@condition prone}"
+      "signature_ability_display": "Shield Bash — flavor: In your hands, a shield isn't just for protection.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; push 1; tier2: 7 + M or A damage; push 2; tier3: 9 + M or A damage; push 3; M < STRONG, prone"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -772,6 +791,7 @@
       "equipment": "You wear heavy armor and wield a light weapon.",
       "stamina_bonus": 9,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 1,
       "stability_bonus": 1,
       "melee_damage_bonus": "+1/+1/+1",
@@ -797,7 +817,7 @@
         "tier3": "8 + M, R, I, or P holy damage",
         "effect": "Until the end of the target's next turn, they have {@resource damage-weakness|damage weakness} equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
       },
-      "signature_ability_display": "Weakening Brand — flavor: The impact of your weapon brands your target for destruction.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 3 + M, R, I, or P holy damage; tier2: 5 + M, R, I, or P holy damage; tier3: 8 + M, R, I, or P holy damage; effect: Until the end of the target's next turn, they have {@resource damage-weakness|damage weakness} equal to the characteristic score used for this ability's {@combat power-roll|power roll}."
+      "signature_ability_display": "Weakening Brand — flavor: The impact of your weapon brands your target for destruction.; type: signature; action type: Main action; keywords: Magic, Melee, Strike, Weapon; distance: Melee 1; target: One creature or object; power roll: Might, Reason, Intuition, or Presence; tier1: 3 + M, R, I, or P holy damage; tier2: 5 + M, R, I, or P holy damage; tier3: 8 + M, R, I, or P holy damage; effect: Until the end of the target's next turn, they have damage weakness equal to the characteristic score used for this ability's power roll."
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -813,6 +833,7 @@
       "equipment": "You wear no armor and wield a whip.",
       "stamina_bonus": 0,
       "stamina_bonus_scaling": "per {@combat echelon}",
+      "stamina_bonus_scaling_display": "per echelon",
       "speed_bonus": 3,
       "stability_bonus": 0,
       "melee_damage_bonus": "+1/+1/+1",
@@ -836,7 +857,7 @@
         "tier2": "7 + M or A damage; vertical {@movement pull} 2",
         "tier3": "10 + M or A damage; vertical {@movement pull} 3"
       },
-      "signature_ability_display": "Extension of My Arm — flavor: When you draw your whip back after an attack, your enemy is drawn ever closer.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 3; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; vertical {@movement pull} 1; tier2: 7 + M or A damage; vertical {@movement pull} 2; tier3: 10 + M or A damage; vertical {@movement pull} 3"
+      "signature_ability_display": "Extension of My Arm — flavor: When you draw your whip back after an attack, your enemy is drawn ever closer.; type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 3; target: One creature; power roll: Might or Agility; tier1: 4 + M or A damage; vertical pull 1; tier2: 7 + M or A damage; vertical pull 2; tier3: 10 + M or A damage; vertical pull 3"
     },
     "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
   }

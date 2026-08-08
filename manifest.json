@@ -25,11 +25,11 @@
         { "key": "distance", "label": "Distance", "type": "string" },
         { "key": "target", "label": "Target", "type": "string" },
         { "key": "power_roll", "label": "Power Roll", "type": "string" },
-        { "key": "tier1", "label": "Tier 1 (11 or lower)", "type": "string" },
-        { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
-        { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
-        { "key": "effect", "label": "Effect", "type": "string" },
-        { "key": "trigger", "label": "Trigger", "type": "string" },
+        { "key": "tier1_display", "label": "Tier 1 (11 or lower)", "type": "string" },
+        { "key": "tier2_display", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3_display", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect_display", "label": "Effect", "type": "string" },
+        { "key": "trigger_display", "label": "Trigger", "type": "string" },
         { "key": "details_display", "label": "Details", "type": "string" },
         { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
@@ -60,7 +60,7 @@
         { "key": "weapon", "label": "Weapon", "type": "string" },
         { "key": "equipment", "label": "Equipment", "type": "string" },
         { "key": "stamina_bonus", "label": "Stamina Bonus", "type": "number" },
-        { "key": "stamina_bonus_scaling", "label": "Stamina Scaling", "type": "string" },
+        { "key": "stamina_bonus_scaling_display", "label": "Stamina Scaling", "type": "string" },
         { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" },
         { "key": "stability_bonus", "label": "Stability Bonus", "type": "number" },
         { "key": "melee_damage_bonus", "label": "Melee Damage", "type": "string" },
@@ -85,7 +85,7 @@
         { "key": "speed", "label": "Speed", "type": "number" },
         { "key": "free_strike", "label": "Free Strike", "type": "string" },
         { "key": "keywords", "label": "Keywords", "type": "string" },
-        { "key": "traits", "label": "Traits", "type": "string" }
+        { "key": "traits_display", "label": "Traits", "type": "string" }
       ]
     },
     {
@@ -98,10 +98,10 @@
         { "key": "distance", "label": "Distance", "type": "string" },
         { "key": "target", "label": "Target", "type": "string" },
         { "key": "power_roll", "label": "Power Roll", "type": "string" },
-        { "key": "tier1", "label": "Tier 1 (11 or lower)", "type": "string" },
-        { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
-        { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
-        { "key": "effect", "label": "Effect", "type": "string" },
+        { "key": "tier1_display", "label": "Tier 1 (11 or lower)", "type": "string" },
+        { "key": "tier2_display", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3_display", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect_display", "label": "Effect", "type": "string" },
         { "key": "trigger", "label": "Trigger", "type": "string" },
         { "key": "villain_action_order", "label": "VA Order", "type": "string" }
       ]

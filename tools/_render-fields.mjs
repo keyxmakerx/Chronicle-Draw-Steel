@@ -45,6 +45,69 @@
 // than any generic formatter could.
 
 // ---------------------------------------------------------------------------
+// Reference markup
+// ---------------------------------------------------------------------------
+//
+// This package's text fields carry its own cross-reference markup,
+// `{@category term}` / `{@category term|label}` (CLAUDE.md → "@Reference
+// Syntax"). Inside a widget that is the input to reference-renderer.js, which
+// swaps each marker for a `<span class="ds-ref" data-ref-tip="…">` — a live
+// glossary tooltip.
+//
+// Chronicle's reference browser has no such step. system_pages.templ prints
+// `propString(item.Properties, field.Key)` and `item.Summary` as literal text,
+// so a marker reaches the page as the four characters `{@co` followed by the
+// rest of the token: 435 of 519 abilities printed "{@combat dying}"
+// mid-sentence, and so did every ancestry and kit.
+//
+// The fix is the same shape as the one for nested values: the STRUCTURED value
+// keeps its markers, because that is what the widgets resolve into tooltips and
+// stripping them at source would delete the interactive half to fix the flat
+// half — and the generated `<key>_display` twin, which is all Chronicle ever
+// sees, carries the resolved text. So a key whose value contains a marker gets
+// a twin even when it is already a scalar, which is the one case the original
+// twin rule did not cover.
+//
+// Resolving markers server-side in Chronicle's propString/templ is the better
+// long-run answer and is booked separately; these twins are the interim.
+
+/**
+ * REF_MARKER matches one reference marker. Deliberately character-for-character
+ * the same grammar as REF_PATTERN in widgets/reference-renderer.js — the two
+ * must agree about what a marker is, or the twin would flatten a token the
+ * widget still shows raw (or vice versa). test-render-contract.mjs pins them
+ * against each other by reading the widget source.
+ */
+export const REF_MARKER_SOURCE = '\\{@(\\w+)\\s+([^|}]+)(?:\\|([^}]+))?\\}';
+
+/**
+ * flattenRefs resolves reference markup down to the words it displays:
+ *
+ *   "{@combat dying}"             -> "dying"
+ *   "{@condition taunted|taunts}" -> "taunts"
+ *
+ * i.e. exactly the label reference-renderer.js puts inside its tooltip span,
+ * minus the span. Non-strings and marker-free strings are returned unchanged,
+ * so this is safe to run over every generated value unconditionally.
+ *
+ * Note it resolves from the marker's OWN text rather than by looking the term
+ * up in the glossary: the glossary name is what the widget substitutes, but the
+ * authored term is what makes the sentence grammatical ("{@combat dying}" reads
+ * as "dying", not as the glossary entry's title-cased "Dying").
+ */
+export function flattenRefs(text) {
+  if (typeof text !== 'string' || !text.includes('{@')) return text;
+  return text.replace(new RegExp(REF_MARKER_SOURCE, 'g'), (_m, _cat, term, label) =>
+    String(label ?? term).trim(),
+  );
+}
+
+/** True when a value still carries markup Chronicle would print literally. */
+export function hasRefMarkers(v) {
+  return typeof v === 'string' && v.includes('{@');
+}
+
+// ---------------------------------------------------------------------------
 // Scalar rendering
 // ---------------------------------------------------------------------------
 
@@ -157,27 +220,65 @@ export const PROVENANCE_KEY = 'provenance' + DERIVED_SUFFIX;
  * displayKeyFor names the scalar property key a manifest category must declare
  * in order to display the data key `key`: the key itself when its value is a
  * scalar, its authored `<key>_text` when one exists, else the derived
- * `<key>_display`. Pure — it decides from the value's shape alone, so the
- * builder and the test agree without sharing state.
+ * `<key>_display`. Pure — it decides from the value's shape alone (plus the
+ * caller's marker verdict), so the builder and the test agree without sharing
+ * state.
+ *
+ * `flattened` is the set of data keys whose values carry reference markup
+ * somewhere in the file. Those always resolve to the derived twin, whatever
+ * their shape: a marker-bearing scalar is a perfectly good scalar as far as
+ * propString is concerned, and an authored `_text` is no less literal than the
+ * value it phrases — only the generated twin is flattened.
+ *
+ * The verdict is per FILE, not per entry: if it were per entry, a column whose
+ * first carrier happens to be marker-free would be declared as the bare key and
+ * every marker-bearing entry in the same column would print its markup raw.
  */
-export function displayKeyFor(properties, key) {
+export function displayKeyFor(properties, key, flattened) {
   const v = (properties || {})[key];
   if (v === undefined || v === null) return null;
-  if (isScalar(v)) return key;
-  if (typeof properties[key + AUTHORED_SUFFIX] === 'string') return key + AUTHORED_SUFFIX;
+  const forced = flattened instanceof Set ? flattened.has(key) : Boolean(flattened);
+  if (!forced) {
+    if (isScalar(v)) return key;
+    if (typeof properties[key + AUTHORED_SUFFIX] === 'string') return key + AUTHORED_SUFFIX;
+  }
   return key + DERIVED_SUFFIX;
+}
+
+/**
+ * columnsNeedingFlattening returns the category's column keys that carry
+ * reference markup in at least one entry of the file — the keys whose manifest
+ * field must point at a flattened twin. Checks the authored `_text` phrasing
+ * too, since that is what a twin would otherwise be built from.
+ */
+export function columnsNeedingFlattening(items, category) {
+  const hit = new Set();
+  for (const [dataKey] of category?.columns || []) {
+    const found = items.some((it) => {
+      const p = it.properties || {};
+      if (p[dataKey] === undefined) return false;
+      return hasRefMarkers(renderValue(p[dataKey])) || hasRefMarkers(p[dataKey + AUTHORED_SUFFIX]);
+    });
+    if (found) hit.add(dataKey);
+  }
+  return hit;
 }
 
 /**
  * foldEntries renders a set of properties into one "k — v · k — v" scalar.
  * Used for the two aggregate columns; see CATEGORIES for why they exist.
+ *
+ * Flattened unconditionally: the fold's output exists only to be printed by
+ * Chronicle, so there is no structured reader whose markers it could destroy.
  */
 export function foldEntries(properties, keys) {
-  return keys
-    .map((k) => [k, renderValue(properties[k])])
-    .filter(([, s]) => s !== '')
-    .map(([k, s]) => `${humanKey(k)} — ${s}`)
-    .join(' · ');
+  return flattenRefs(
+    keys
+      .map((k) => [k, renderValue(properties[k])])
+      .filter(([, s]) => s !== '')
+      .map(([k, s]) => `${humanKey(k)} — ${s}`)
+      .join(' · '),
+  );
 }
 
 /** Longest summary we will derive before truncating. */

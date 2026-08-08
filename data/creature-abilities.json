@@ -16,8 +16,11 @@
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
       "tier1": "3 damage",
+      "tier1_display": "3 damage",
       "tier2": "6 damage",
-      "tier3": "9 damage; {@movement push} 2"
+      "tier2_display": "6 damage",
+      "tier3": "9 damage; {@movement push} 2",
+      "tier3_display": "9 damage; push 2"
     }
   },
   {
@@ -37,8 +40,11 @@
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
       "tier1": "2 psychic damage",
+      "tier1_display": "2 psychic damage",
       "tier2": "5 psychic damage; {@condition slowed} ({@duration eot})",
-      "tier3": "7 psychic damage; {@condition dazed} ({@duration eot})"
+      "tier2_display": "5 psychic damage; slowed (eot)",
+      "tier3": "7 psychic damage; {@condition dazed} ({@duration eot})",
+      "tier3_display": "7 psychic damage; dazed (eot)"
     }
   },
   {
@@ -54,7 +60,8 @@
       "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
-      "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1."
+      "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1.",
+      "effect_display": "The creature gains damage-resistance 3 until the start of its next turn. Each ally adjacent to the creature also gains damage-resistance 1."
     }
   },
   {
@@ -74,8 +81,11 @@
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
       "tier1": "2 damage",
+      "tier1_display": "2 damage",
       "tier2": "5 damage; the creature can {@movement shift} 1",
-      "tier3": "7 damage; the creature can {@movement shift} 3"
+      "tier2_display": "5 damage; the creature can shift 1",
+      "tier3": "7 damage; the creature can {@movement shift} 3",
+      "tier3_display": "7 damage; the creature can shift 3"
     }
   },
   {
@@ -95,8 +105,11 @@
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
       "tier1": "2 corruption damage",
+      "tier1_display": "2 corruption damage",
       "tier2": "5 corruption damage; {@condition weakened} ({@duration eot})",
-      "tier3": "7 corruption damage; {@condition weakened} ({@duration save-ends})"
+      "tier2_display": "5 corruption damage; weakened (eot)",
+      "tier3": "7 corruption damage; {@condition weakened} ({@duration save-ends})",
+      "tier3_display": "7 corruption damage; weakened (save-ends)"
     }
   },
   {
@@ -117,8 +130,11 @@
       "trigger": "A creature adjacent to this creature attacks one of its allies.",
       "power_roll": "Might vs. Agility",
       "tier1": "2 damage",
+      "tier1_display": "2 damage",
       "tier2": "4 damage",
-      "tier3": "6 damage; {@condition taunted} ({@duration eot})"
+      "tier2_display": "4 damage",
+      "tier3": "6 damage; {@condition taunted} ({@duration eot})",
+      "tier3_display": "6 damage; taunted (eot)"
     }
   },
   {
@@ -135,7 +151,8 @@
       "distance": "Aura 5",
       "target": "All allies in aura",
       "villain_action_order": "opener",
-      "effect": "Each target gains 10 {@resource temporary-stamina} and can {@movement shift} 2."
+      "effect": "Each target gains 10 {@resource temporary-stamina} and can {@movement shift} 2.",
+      "effect_display": "Each target gains 10 temporary-stamina and can shift 2."
     }
   },
   {
@@ -155,8 +172,11 @@
       "target": "1 creature",
       "power_roll": "Reason vs. Agility",
       "tier1": "2 damage",
+      "tier1_display": "2 damage",
       "tier2": "5 damage",
-      "tier3": "8 damage; {@condition bleeding} ({@duration eot})"
+      "tier2_display": "5 damage",
+      "tier3": "8 damage; {@condition bleeding} ({@duration eot})",
+      "tier3_display": "8 damage; bleeding (eot)"
     }
   },
   {
@@ -176,8 +196,11 @@
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
       "tier1": "3 damage",
+      "tier1_display": "3 damage",
       "tier2": "6 damage",
-      "tier3": "9 damage; if the creature was {@condition hidden}, deal an extra 4 damage"
+      "tier2_display": "6 damage",
+      "tier3": "9 damage; if the creature was {@condition hidden}, deal an extra 4 damage",
+      "tier3_display": "9 damage; if the creature was hidden, deal an extra 4 damage"
     }
   },
   {
@@ -198,8 +221,11 @@
       "target": "1 creature",
       "power_roll": "Might vs. Might",
       "tier1": "3 damage",
+      "tier1_display": "3 damage",
       "tier2": "6 damage; {@movement push} 2",
-      "tier3": "9 damage; {@movement push} 3 and the target falls {@condition prone}"
+      "tier2_display": "6 damage; push 2",
+      "tier3": "9 damage; {@movement push} 3 and the target falls {@condition prone}",
+      "tier3_display": "9 damage; push 3 and the target falls prone"
     }
   },
   {
@@ -216,7 +242,8 @@
       "keywords_display": "Area, Magic",
       "distance": "Ranged 5",
       "target": "1 ally",
-      "effect": "The target regains stamina equal to their recovery value."
+      "effect": "The target regains stamina equal to their recovery value.",
+      "effect_display": "The target regains stamina equal to their recovery value."
     }
   },
   {
@@ -236,8 +263,11 @@
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
       "tier1": "2 poison damage",
+      "tier1_display": "2 poison damage",
       "tier2": "5 poison damage; 3 poison damage ({@duration eot})",
-      "tier3": "8 poison damage; 5 poison damage ({@duration eot}, {@duration save-ends})"
+      "tier2_display": "5 poison damage; 3 poison damage (eot)",
+      "tier3": "8 poison damage; 5 poison damage ({@duration eot}, {@duration save-ends})",
+      "tier3_display": "8 poison damage; 5 poison damage (eot, save-ends)"
     }
   },
   {
@@ -257,8 +287,11 @@
       "target": "All creatures in area",
       "power_roll": "Might vs. Agility",
       "tier1": "3 fire damage",
+      "tier1_display": "3 fire damage",
       "tier2": "6 fire damage",
-      "tier3": "10 fire damage; {@condition burning} ({@duration eot})"
+      "tier2_display": "6 fire damage",
+      "tier3": "10 fire damage; {@condition burning} ({@duration eot})",
+      "tier3_display": "10 fire damage; burning (eot)"
     }
   },
   {
@@ -277,8 +310,11 @@
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
       "tier1": "{@condition slowed} ({@duration eot})",
+      "tier1_display": "slowed (eot)",
       "tier2": "{@condition restrained} ({@duration eot})",
-      "tier3": "{@condition restrained} ({@duration save-ends})"
+      "tier2_display": "restrained (eot)",
+      "tier3": "{@condition restrained} ({@duration save-ends})",
+      "tier3_display": "restrained (save-ends)"
     }
   },
   {
@@ -298,8 +334,11 @@
       "target": "All enemies in area",
       "power_roll": "Reason vs. Intuition",
       "tier1": "2 psychic damage",
+      "tier1_display": "2 psychic damage",
       "tier2": "5 psychic damage; {@condition dazed} ({@duration eot})",
-      "tier3": "8 psychic damage; {@condition dazed} ({@duration save-ends})"
+      "tier2_display": "5 psychic damage; dazed (eot)",
+      "tier3": "8 psychic damage; {@condition dazed} ({@duration save-ends})",
+      "tier3_display": "8 psychic damage; dazed (save-ends)"
     }
   },
   {
@@ -315,7 +354,8 @@
       "keywords_display": "Area",
       "distance": "Aura 5",
       "target": "All allies in aura",
-      "effect": "Each target gains 5 {@resource temporary-stamina}."
+      "effect": "Each target gains 5 {@resource temporary-stamina}.",
+      "effect_display": "Each target gains 5 temporary-stamina."
     }
   },
   {
@@ -328,7 +368,8 @@
       "keywords": [],
       "distance": "Self",
       "target": "Self",
-      "effect": "The creature becomes {@condition hidden} and can {@movement shift} up to their speed. They gain concealment until the end of their next turn."
+      "effect": "The creature becomes {@condition hidden} and can {@movement shift} up to their speed. They gain concealment until the end of their next turn.",
+      "effect_display": "The creature becomes hidden and can shift up to their speed. They gain concealment until the end of their next turn."
     }
   },
   {
@@ -344,7 +385,8 @@
       "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
-      "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
+      "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
+      "effect_display": "The creature gains damage-resistance 5 and taunts all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
     }
   },
   {
@@ -364,8 +406,11 @@
       "trigger": "An enemy within reach moves away from the creature.",
       "power_roll": "Might vs. Agility",
       "tier1": "2 damage",
+      "tier1_display": "2 damage",
       "tier2": "4 damage; the target's speed becomes 0 ({@duration eot})",
-      "tier3": "6 damage; the target's speed becomes 0 ({@duration eot}) and is {@condition taunted} ({@duration eot})"
+      "tier2_display": "4 damage; the target's speed becomes 0 (eot)",
+      "tier3": "6 damage; the target's speed becomes 0 ({@duration eot}) and is {@condition taunted} ({@duration eot})",
+      "tier3_display": "6 damage; the target's speed becomes 0 (eot) and is taunted (eot)"
     }
   },
   {
@@ -383,7 +428,8 @@
       "distance": "1 burst",
       "target": "All creatures in area",
       "trigger": "The creature is reduced to 0 stamina.",
-      "effect": "Each target takes 5 damage of the creature's primary damage type."
+      "effect": "Each target takes 5 damage of the creature's primary damage type.",
+      "effect_display": "Each target takes 5 damage of the creature's primary damage type."
     }
   },
   {
@@ -403,8 +449,11 @@
       "villain_action_order": "closer",
       "power_roll": "Presence vs. Intuition",
       "tier1": "{@condition frightened} ({@duration eot})",
+      "tier1_display": "frightened (eot)",
       "tier2": "{@condition frightened} ({@duration save-ends}); the target must use their next move action to move away",
-      "tier3": "{@condition frightened} ({@duration save-ends}); the target is also {@condition dazed} ({@duration eot})"
+      "tier2_display": "frightened (save-ends); the target must use their next move action to move away",
+      "tier3": "{@condition frightened} ({@duration save-ends}); the target is also {@condition dazed} ({@duration eot})",
+      "tier3_display": "frightened (save-ends); the target is also dazed (eot)"
     }
   },
   {
@@ -422,7 +471,8 @@
       "distance": "Ranged 10",
       "target": "Special",
       "villain_action_order": "escalation",
-      "effect": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative."
+      "effect": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative.",
+      "effect_display": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative."
     }
   },
   {
@@ -443,8 +493,11 @@
       "villain_action_order": "escalation",
       "power_roll": "Might vs. Agility",
       "tier1": "4 damage per target",
+      "tier1_display": "4 damage per target",
       "tier2": "8 damage per target",
-      "tier3": "12 damage per target; {@movement push} 3"
+      "tier2_display": "8 damage per target",
+      "tier3": "12 damage per target; {@movement push} 3",
+      "tier3_display": "12 damage per target; push 3"
     }
   }
 ]

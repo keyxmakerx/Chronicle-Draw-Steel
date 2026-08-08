@@ -28,6 +28,7 @@
 //   3. a data file with no category                     -> invisible entirely
 //   4. provenance in properties.source                  -> blank Source line
 //   5. a derived field stale against its structured source
+//   6. this package's own {@category term} markup       -> printed verbatim
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,7 +36,16 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { isScalar, WIDGET_ONLY, SOURCE_PENDING } from './_render-fields.mjs';
+import {
+  isScalar,
+  flattenRefs,
+  hasRefMarkers,
+  renderValue,
+  REF_MARKER_SOURCE,
+  DERIVED_SUFFIX,
+  WIDGET_ONLY,
+  SOURCE_PENDING,
+} from './_render-fields.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DATA_DIR = path.join(ROOT, 'data');
@@ -260,3 +270,129 @@ test('every list row has a summary to show', () => {
   }
   assert.deepEqual(failures, [], `entries with a blank Summary column: ${failures.join(', ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// 6. This package's own {@category term} markup must not reach the page.
+// ---------------------------------------------------------------------------
+//
+// `{@combat dying}` is input to widgets/reference-renderer.js, which turns it
+// into a hover-tooltip span. Chronicle's reference browser has no such step —
+// system_pages.templ prints propString(...) and item.Summary as literal text —
+// so a marker that reaches a rendered field is four characters of syntax in the
+// middle of a rules sentence. Measured against the real render path, 435 of 519
+// abilities did exactly that, and so did every ancestry and every kit: 1,835
+// markers on the list pages, 1,870 on the detail pages.
+//
+// The markers are NOT removed from the data. The structured value keeps them,
+// because that is what the widgets resolve; only the generated `_display` twin
+// the manifest points at is flattened. The two tests below pin both halves.
+
+test('no reference markup survives into any manifest-declared field', () => {
+  const failures = [];
+  for (const cat of MANIFEST.categories) {
+    for (const it of load(`${cat.slug}.json`)) {
+      for (const field of cat.fields || []) {
+        const v = (it.properties || {})[field.key];
+        if (!hasRefMarkers(v)) continue;
+        const marker = (String(v).match(/\{@[^}]*\}?/) || [''])[0];
+        const fix = field.key.endsWith(DERIVED_SUFFIX)
+          ? `the twin is stale or was hand-edited — rerun node tools/build-render-fields.mjs`
+          : `declare its flattened ${field.key}${DERIVED_SUFFIX} twin instead ` +
+            `(tools/_render-fields.mjs), then rerun node tools/build-render-fields.mjs`;
+        failures.push(
+          `${cat.slug}/${it.slug}: declared field "${field.key}" still contains ${marker} — ` +
+            `Chronicle prints propString() verbatim, so that renders as markup in the middle ` +
+            `of the sentence. ${fix}.`,
+        );
+      }
+    }
+  }
+  assert.deepEqual(failures.slice(0, 20), [], `\n  ${failures.slice(0, 20).join('\n  ')}\n`);
+});
+
+test('no reference markup survives into the other fields the pages print verbatim', () => {
+  // Beyond the declared property fields, system_pages.templ prints item.Summary
+  // (list table), item.Name and item.Source (detail header) and each tag. Only
+  // item.Description is left alone — see the residue note below.
+  const failures = [];
+  for (const cat of MANIFEST.categories) {
+    for (const it of load(`${cat.slug}.json`)) {
+      for (const key of ['name', 'summary', 'source']) {
+        if (hasRefMarkers(it[key])) failures.push(`${cat.slug}/${it.slug}: ${key}`);
+      }
+      for (const tag of it.tags || []) {
+        if (hasRefMarkers(tag)) failures.push(`${cat.slug}/${it.slug}: tag "${tag}"`);
+      }
+    }
+  }
+  assert.deepEqual(failures, [], `these render verbatim and cannot carry markup: ${failures.join(', ')}`);
+});
+
+test('flattening happens only in the twin — the structured value keeps its markers', () => {
+  // The inverse failure, and the more expensive one: "fix" the markup by
+  // stripping it from the data and every tooltip in every widget goes away, with
+  // nothing failing. So for every twin that a marker forced into existence, the
+  // value it was derived from must STILL carry that marker.
+  let checked = 0;
+  const stripped = [];
+  for (const file of itemFiles) {
+    if (WIDGET_ONLY.has(file)) continue;
+    for (const it of load(file)) {
+      const props = it.properties || {};
+      for (const [k, v] of Object.entries(props)) {
+        if (!k.endsWith(DERIVED_SUFFIX) || typeof v !== 'string') continue;
+        const sourceKey = k.slice(0, -DERIVED_SUFFIX.length);
+        const src = props[sourceKey];
+        if (src === undefined) continue; // details_display / provenance_display
+        const rendered = renderValue(src);
+        if (!hasRefMarkers(rendered)) continue;
+        checked++;
+        if (flattenRefs(rendered) !== v) {
+          stripped.push(`data/${file}: ${it.slug}.${k} is not the flattened ${sourceKey}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(stripped.slice(0, 20), [], `\n  ${stripped.slice(0, 20).join('\n  ')}\n`);
+  assert.ok(
+    checked > 500,
+    `only ${checked} structured values still carry reference markup. Either the markers were ` +
+      `stripped from the data instead of only from the twins — which silently deletes every ` +
+      `glossary tooltip in every widget — or the twin naming changed.`,
+  );
+});
+
+test('the flattener speaks exactly the grammar the widget renderer parses', () => {
+  // If the two disagree about what a marker is, one of them leaves a token the
+  // other resolved: markup on the Chronicle page, or a tooltip that never fires.
+  const widget = readFileSync(path.join(ROOT, 'widgets', 'reference-renderer.js'), 'utf8');
+  const m = widget.match(/var REF_PATTERN = \/(.*)\/g;/);
+  assert.ok(m, 'widgets/reference-renderer.js no longer declares REF_PATTERN as a /…/g literal');
+  assert.equal(
+    new RegExp(REF_MARKER_SOURCE).source,
+    m[1],
+    'REF_MARKER_SOURCE in tools/_render-fields.mjs has drifted from REF_PATTERN in ' +
+      'widgets/reference-renderer.js',
+  );
+});
+
+test('flattenRefs resolves a marker to the words the widget would show', () => {
+  assert.equal(flattenRefs('you are {@combat dying}'), 'you are dying');
+  assert.equal(flattenRefs('it {@condition taunted|taunts} you'), 'it taunts you');
+  assert.equal(flattenRefs('{@movement shift} 1 and {@movement shift} 2'), 'shift 1 and shift 2');
+  assert.equal(flattenRefs('no markup here'), 'no markup here');
+  assert.equal(flattenRefs(''), '');
+  assert.equal(flattenRefs(undefined), undefined);
+  assert.equal(flattenRefs(7), 7);
+  // A brace that is not a marker is left alone rather than half-eaten.
+  assert.equal(flattenRefs('{not a marker}'), '{not a marker}');
+});
+
+// RESIDUE, deliberately not asserted away: the root `description` still carries
+// its markers, and the item-detail page prints it verbatim (83 markers across
+// the tree as of this commit). It is the authored source the widgets resolve
+// into tooltips and there is no `description_display` slot on Chronicle's
+// ReferenceItem to point at, so the package cannot flatten it without deleting
+// the interactive rendering. The fix belongs in Chronicle — resolving markers in
+// propString/templ — and is booked in the Cordinator dispatch on package
+// reference markup. These twins are the interim.

@@ -75,6 +75,16 @@ scalar. It only shows categories declared in `manifest.json`. So:
 - **A data file with no manifest category is invisible entirely.**
 - Nested values get a generated scalar `<key>_display` twin; the manifest points
   at the twin, widgets keep reading the structured value.
+- **`{@category term}` markup is not a renderer contract Chronicle knows.** Only
+  `widgets/reference-renderer.js` resolves it; `propString` prints it verbatim,
+  so 435 of 519 abilities printed `{@combat dying}` mid-sentence — right data,
+  wrong renderer, every test green. A key carrying markup anywhere in its file
+  gets a `_display` twin **even when it is already a scalar**, and the manifest
+  points at the twin. Only the twins (plus the derived `summary`) are flattened:
+  the structured value and the root `description` keep their markers, because
+  stripping them at source would delete the tooltips to fix the flat text. The
+  decision is per file, not per entry — a per-entry verdict would declare the
+  bare key whenever the first carrier happened to be marker-free.
 
 **After editing `data/*.json` by hand, run `node tools/build-render-fields.mjs`.**
 It regenerates the derived fields AND `manifest.json`'s `categories` from the

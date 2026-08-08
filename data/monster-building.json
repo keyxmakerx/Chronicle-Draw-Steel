@@ -278,7 +278,7 @@
   {
     "slug": "monster-characteristics-and-potency",
     "name": "Monster Characteristics and Potency",
-    "summary": "A monster's highest characteristic and power roll bonus equals 1 + their {@combat echelon} — a level 5 monster is 2nd echelon, so its highest characteristic is +3.",
+    "summary": "A monster's highest characteristic and power roll bonus equals 1 + their echelon — a level 5 monster is 2nd echelon, so its highest characteristic is +3.",
     "description": "A monster's highest characteristic and power roll bonus equals 1 + their {@combat echelon} — a level 5 monster is 2nd echelon, so its highest characteristic is +3. A monster that uses {@combat potency} in its abilities bases those potencies on its highest characteristic, minus 1 for each tier below tier 3: at +3 that is M < 1 at tier 1, M < 2 at tier 2, and M < 3 at tier 3. A leader or a solo increases its highest characteristic and power roll by 1 (maximum +5) and its potency values at every tier by 1 (maximum 6). A monster's free strike damage equals the damage calculated for a tier 1 outcome.",
     "properties": {
       "rule_type": "formula",
@@ -332,7 +332,7 @@
         }
       ],
       "category": "monster-building",
-      "details_display": "applies to — leader, elite · ev multiplier — 3 · stamina multiplier — 2.5 · granted traits — Solo Turns — The creature can take two turns each round. They can't take turns consecutively. · End Effect (only if absent: true) — At the end of each of their turns, the creature can take 10 damage to end one effect on them that can be ended by a {@combat saving-throw|saving throw}. This damage can't be reduced in any way. · granted malice features — Solo Action (cost: 5 Malice) — The creature takes an additional main action on their turn. They can use this feature even if they are {@condition dazed}."
+      "details_display": "applies to — leader, elite · ev multiplier — 3 · stamina multiplier — 2.5 · granted traits — Solo Turns — The creature can take two turns each round. They can't take turns consecutively. · End Effect (only if absent: true) — At the end of each of their turns, the creature can take 10 damage to end one effect on them that can be ended by a saving throw. This damage can't be reduced in any way. · granted malice features — Solo Action (cost: 5 Malice) — The creature takes an additional main action on their turn. They can use this feature even if they are dazed."
     },
     "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },

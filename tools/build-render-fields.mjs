@@ -34,9 +34,12 @@ import path from 'node:path';
 import {
   renderValue,
   displayKeyFor,
+  columnsNeedingFlattening,
+  flattenRefs,
   foldEntries,
   deriveSummary,
   isScalar,
+  AUTHORED_SUFFIX,
   CATEGORIES,
   CATEGORY_BY_FILE,
   WIDGET_ONLY,
@@ -70,7 +73,7 @@ const isDerived = (k) => k.endsWith(DERIVED_SUFFIX);
  * the generator yields a different file, never a merged one. Authored `_text`
  * fields and every structured value are left untouched.
  */
-function rebuildProperties(properties, category) {
+function rebuildProperties(properties, category, flattened = new Set()) {
   const authored = Object.fromEntries(
     Object.entries(properties)
       .filter(([k]) => !isDerived(k))
@@ -84,16 +87,24 @@ function rebuildProperties(properties, category) {
 
   const columnKeys = new Set((category?.columns || []).map(([k]) => k));
 
-  // A `_display` twin only for a nested value that has its own column; anything
-  // else either is already scalar or belongs in the folded Details column, and
-  // a twin for it would put the same sentence on the page twice.
+  // A `_display` twin for a column value Chronicle cannot print as it stands:
+  // a nested value (propString would emit "map[…]"), or ANY value in a column
+  // that carries reference markup somewhere in the file (propString would emit
+  // "{@combat dying}" verbatim). Everything else either is already a printable
+  // scalar or belongs in the folded Details column, and a twin for it would put
+  // the same sentence on the page twice.
   const out = {};
   for (const [k, v] of Object.entries(authored)) {
     out[k] = v;
-    if (!columnKeys.has(k) || isScalar(v)) continue;
-    const twin = displayKeyFor(authored, k);
+    if (!columnKeys.has(k)) continue;
+    if (isScalar(v) && !flattened.has(k)) continue;
+    const twin = displayKeyFor(authored, k, flattened);
     if (twin !== k + DERIVED_SUFFIX) continue; // authored `_text` wins
-    const rendered = renderValue(v);
+    // When an entry authors its own prose for this key, flatten THAT rather
+    // than the generic rendering — the authored words are better, and the only
+    // reason the twin has to take over is the markup inside them.
+    const src = typeof authored[k + AUTHORED_SUFFIX] === 'string' ? authored[k + AUTHORED_SUFFIX] : v;
+    const rendered = flattenRefs(renderValue(src));
     if (rendered !== '') out[twin] = rendered;
   }
 
@@ -117,7 +128,7 @@ function rebuildProperties(properties, category) {
   return out;
 }
 
-export function transformItem(item, category) {
+export function transformItem(item, category, flattened = new Set()) {
   const next = { ...item };
 
   if (next.properties && typeof next.properties === 'object') {
@@ -126,11 +137,23 @@ export function transformItem(item, category) {
       if (!next.source) next.source = props.source;
       delete props.source;
     }
-    next.properties = rebuildProperties(props, category);
+    next.properties = rebuildProperties(props, category, flattened);
   }
 
+  // `summary` is flattened outright, unlike the `description` it comes from.
+  // The description is the authored source the widgets resolve into tooltips;
+  // the summary exists only for the list table, which prints item.Summary
+  // verbatim, and nothing in this package reads it structurally.
+  const flatDescription = flattenRefs(next.description);
+  if (typeof next.summary === 'string' && next.summary !== '') {
+    const flat = flattenRefs(next.summary);
+    // A summary truncated mid-marker leaves an unmatchable `{@…` fragment that
+    // no flattener can resolve; re-derive it from the flattened description
+    // instead, where the truncation lands on real words.
+    next.summary = flat.includes('{@') ? deriveSummary(flatDescription) : flat;
+  }
   if (!next.summary) {
-    const s = deriveSummary(next.description);
+    const s = deriveSummary(flatDescription);
     if (s) next.summary = s;
   }
 
@@ -149,6 +172,10 @@ const pending = [];
 // data this run produces rather than from what is still on disk — otherwise a
 // run that changes both leaves the manifest one generation behind.
 const transformed = new Map();
+// Per file, the column keys that carry reference markup. Decided once over the
+// whole file (see displayKeyFor) and reused by buildCategories, so the twin the
+// data grows and the key the manifest declares cannot disagree.
+const flattenedColumns = new Map();
 
 for (const file of dataFiles) {
   const p = path.join(DATA_DIR, file);
@@ -156,7 +183,9 @@ for (const file of dataFiles) {
   const data = JSON.parse(before);
   if (!Array.isArray(data)) continue;
   const category = CATEGORY_BY_FILE.get(file);
-  const items = data.map((it) => transformItem(it, category));
+  const flattened = columnsNeedingFlattening(data, category);
+  flattenedColumns.set(file, flattened);
+  const items = data.map((it) => transformItem(it, category, flattened));
   transformed.set(file, items);
   const after = JSON.stringify(items, null, 2) + '\n';
   if (after !== before) pending.push({ path: p, label: `data/${file}`, after });
@@ -184,7 +213,7 @@ function buildCategories() {
       // suffix is decided by a real value rather than by a guess.
       const carrier = items.find((it) => (it.properties || {})[dataKey] !== undefined);
       if (!carrier) continue;
-      const key = displayKeyFor(carrier.properties, dataKey);
+      const key = displayKeyFor(carrier.properties, dataKey, flattenedColumns.get(cat.file));
       if (!key || !populated(key)) continue;
       fields.push({ key, label, type });
     }

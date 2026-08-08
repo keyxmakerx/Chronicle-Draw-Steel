@@ -64,11 +64,13 @@ shaped for them:
 ### Generated fields
 
 Because of (3), a `properties` value that is an object or an array cannot be a
-manifest field. `tools/build-render-fields.mjs` derives a scalar twin beside it:
+manifest field. Nor can a value carrying `{@category term}` reference markup:
+Chronicle has no renderer for it and prints it verbatim (see "@Reference
+Syntax"). `tools/build-render-fields.mjs` derives a scalar twin beside either:
 
 | Key | What it is |
 |-----|-----------|
-| `<key>_display` | Machine-derived one-line rendering of the structured `<key>`. The manifest points at this; widgets keep reading `<key>`. |
+| `<key>_display` | Machine-derived one-line rendering of the structured `<key>`, with any reference markup resolved to the words it displays. The manifest points at this; widgets keep reading `<key>`, markup intact. |
 | `<key>_text` | **Authored** prose rendering of a structured value, where a generic render would be worse (`encounter-building.json`'s `budget_band_text`). Never overwritten by the generator. |
 | `details_display` | For the heterogeneous rules files, everything without its own column, folded into one string — `monster-building.json`'s twelve entries use twenty-eight distinct keys between them. |
 | `provenance_display` | `custom_fields` / `derived_from` / `omissions`, folded. |
@@ -546,6 +548,40 @@ Use `{@category term}` in any text field to create a cross-reference:
 - The renderer (`widgets/reference-renderer.js`) parses these after HTML escaping
 - Each term must match a `slug` in `data/rules-glossary.json`
 - Display override: `{@condition taunted|taunts}` renders as "taunts" but links to the "taunted" definition
+
+### The markup must never reach Chronicle's reference browser
+
+Only the widgets resolve markers. Chronicle's reference browser prints
+`propString(item.Properties, field.Key)` and `item.Summary` as literal text, so
+a marker that reaches a declared field renders as four characters of syntax in
+the middle of a rules sentence — measured on the real render path, 1,835 of them
+across the list pages and 1,870 across the detail pages, including 435 of 519
+abilities.
+
+So the generator resolves markers **in the generated twin only**:
+
+| Where | Markers |
+|-------|---------|
+| structured `properties.<key>`, root `description` | **kept** — the widgets turn them into glossary tooltips |
+| `<key>_display`, `details_display`, `provenance_display`, root `summary` | **resolved** — `{@combat dying}` → `dying`, `{@condition taunted\|taunts}` → `taunts` |
+
+A key that carries markup anywhere in its file therefore gets a `_display` twin
+even when its value is already a scalar, and the manifest points at the twin.
+The decision is per FILE: were it per entry, a column whose first carrier happens
+to be marker-free would be declared as the bare key and every marker-bearing
+entry in that column would print raw.
+
+`tools/test-render-contract.mjs` pins both halves — no markup in a declared
+field, and the structured value it came from still carrying it. Stripping
+markers from the data instead of from the twins deletes every tooltip in every
+widget without failing anything else.
+
+**Residue:** the root `description` still carries its markers and the
+item-detail page prints it verbatim (83 occurrences). There is no
+`description_display` slot on Chronicle's `ReferenceItem` to point at, so the
+package cannot flatten it without deleting the interactive rendering. Resolving
+markers server-side in Chronicle's `propString`/templ is the real fix; these
+twins are the interim.
 
 ## Validation
 
