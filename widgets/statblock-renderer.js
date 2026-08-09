@@ -33,8 +33,14 @@ Chronicle.register('statblock-renderer', {
     return Chronicle.apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (entity) {
-        if (!entity || !entity.custom_fields) return;
-        var f = entity.custom_fields;
+        // Chronicle's Entity emits its custom fields as `fields_data`
+        // (internal/plugins/entities/model.go). There is no `custom_fields`
+        // key on the wire, so the old guard early-returned on every real
+        // response and the widget rendered nothing at all. Bestiary
+        // publications do use `custom_fields`, so accept it as a fallback.
+        if (!entity) return;
+        var f = entity.fields_data || entity.custom_fields;
+        if (!f) return;
         self.creature = {
           name: entity.name || 'Unnamed Creature',
           level: Number(f.level) || 1,

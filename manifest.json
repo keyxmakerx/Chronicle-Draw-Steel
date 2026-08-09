@@ -1,24 +1,36 @@
 {
   "id": "drawsteel",
   "name": "Draw Steel",
-  "description": "Reference data and entity presets for the Draw Steel RPG by MCDM Productions. Content sourced from publicly available CC-BY-4.0 material.",
+  "description": "Reference data and entity presets for the Draw Steel RPG. Rules text is reproduced under the DRAW STEEL Creator License; DRAW STEEL (c) 2024 MCDM Productions, LLC. An independent product, not affiliated with MCDM. See data/NOTICE.md.",
   "author": "Chronicle Team",
-  "license": "CC-BY-4.0",
+  "license": "DRAW STEEL Creator License (rules text) / CC-BY-4.0 (this package's own work)",
   "icon": "fa-swords",
   "api_version": "1",
   "status": "available",
   "foundry_system_id": "draw-steel",
-
   "categories": [
     {
       "slug": "abilities",
       "name": "Abilities",
       "icon": "fa-bolt",
       "fields": [
+        { "key": "category", "label": "Granted By", "type": "string" },
+        { "key": "class", "label": "Class", "type": "string" },
+        { "key": "level", "label": "Level", "type": "number" },
         { "key": "type", "label": "Type", "type": "string" },
-        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "action_type", "label": "Action", "type": "string" },
+        { "key": "cost", "label": "Cost", "type": "string" },
+        { "key": "keywords_display", "label": "Keywords", "type": "string" },
         { "key": "distance", "label": "Distance", "type": "string" },
-        { "key": "target", "label": "Target", "type": "string" }
+        { "key": "target", "label": "Target", "type": "string" },
+        { "key": "power_roll", "label": "Power Roll", "type": "string" },
+        { "key": "tier1_display", "label": "Tier 1 (11 or lower)", "type": "string" },
+        { "key": "tier2_display", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3_display", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect_display", "label": "Effect", "type": "string" },
+        { "key": "trigger_display", "label": "Trigger", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -27,8 +39,14 @@
       "icon": "fa-dna",
       "fields": [
         { "key": "size", "label": "Size", "type": "string" },
-        { "key": "speed", "label": "Speed", "type": "string" },
-        { "key": "traits", "label": "Traits", "type": "string" }
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "stability", "label": "Stability", "type": "number" },
+        { "key": "ancestry_points", "label": "Ancestry Points", "type": "number" },
+        { "key": "quick_build_display", "label": "Quick Build", "type": "string" },
+        { "key": "signature_traits_display", "label": "Signature Traits", "type": "string" },
+        { "key": "purchased_traits_display", "label": "Purchased Traits", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -39,8 +57,17 @@
         { "key": "type", "label": "Type", "type": "string" },
         { "key": "armor", "label": "Armor", "type": "string" },
         { "key": "weapon", "label": "Weapon", "type": "string" },
+        { "key": "equipment", "label": "Equipment", "type": "string" },
         { "key": "stamina_bonus", "label": "Stamina Bonus", "type": "number" },
-        { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" }
+        { "key": "stamina_bonus_scaling_display", "label": "Stamina Scaling", "type": "string" },
+        { "key": "speed_bonus", "label": "Speed Bonus", "type": "number" },
+        { "key": "stability_bonus", "label": "Stability Bonus", "type": "number" },
+        { "key": "melee_damage_bonus", "label": "Melee Damage", "type": "string" },
+        { "key": "ranged_damage_bonus", "label": "Ranged Damage", "type": "string" },
+        { "key": "melee_distance_bonus", "label": "Melee Distance", "type": "number" },
+        { "key": "ranged_distance_bonus", "label": "Ranged Distance", "type": "number" },
+        { "key": "disengage_bonus", "label": "Disengage Bonus", "type": "number" },
+        { "key": "signature_ability_display", "label": "Signature Ability", "type": "string" }
       ]
     },
     {
@@ -52,17 +79,12 @@
         { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "role", "label": "Role", "type": "string" },
         { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "size", "label": "Size", "type": "string" },
         { "key": "stamina", "label": "Stamina", "type": "number" },
-        { "key": "keywords", "label": "Keywords", "type": "string" }
-      ]
-    },
-    {
-      "slug": "rules-glossary",
-      "name": "Rules Glossary",
-      "icon": "fa-book",
-      "fields": [
-        { "key": "category", "label": "Category", "type": "string" },
-        { "key": "description", "label": "Description", "type": "string" }
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "traits_display", "label": "Traits", "type": "string" }
       ]
     },
     {
@@ -71,21 +93,95 @@
       "icon": "fa-burst",
       "fields": [
         { "key": "type", "label": "Type", "type": "string" },
-        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "keywords_display", "label": "Keywords", "type": "string" },
         { "key": "distance", "label": "Distance", "type": "string" },
         { "key": "target", "label": "Target", "type": "string" },
         { "key": "power_roll", "label": "Power Roll", "type": "string" },
-        { "key": "tier1", "label": "Tier 1 (11-)", "type": "string" },
-        { "key": "tier2", "label": "Tier 2 (12-16)", "type": "string" },
-        { "key": "tier3", "label": "Tier 3 (17+)", "type": "string" },
-        { "key": "effect", "label": "Effect", "type": "string" },
-        { "key": "spend_vp", "label": "VP Cost", "type": "number" },
+        { "key": "tier1_display", "label": "Tier 1 (11 or lower)", "type": "string" },
+        { "key": "tier2_display", "label": "Tier 2 (12-16)", "type": "string" },
+        { "key": "tier3_display", "label": "Tier 3 (17+)", "type": "string" },
+        { "key": "effect_display", "label": "Effect", "type": "string" },
         { "key": "trigger", "label": "Trigger", "type": "string" },
         { "key": "villain_action_order", "label": "VA Order", "type": "string" }
       ]
+    },
+    {
+      "slug": "animal-traits",
+      "name": "Animal Traits",
+      "icon": "fa-hippo",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "cost", "label": "Cost", "type": "number" },
+        { "key": "repeatable", "label": "Repeatable", "type": "number" },
+        { "key": "upgrade_display", "label": "Upgrade", "type": "string" },
+        { "key": "optional", "label": "Optional", "type": "string" },
+        { "key": "granted_ability_display", "label": "Granted Ability", "type": "string" }
+      ]
+    },
+    {
+      "slug": "ancestry-point-buy",
+      "name": "Ancestry Point Buy",
+      "icon": "fa-scale-balanced",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
+      ]
+    },
+    {
+      "slug": "monster-building",
+      "name": "Monster Building",
+      "icon": "fa-dragon",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "formula", "label": "Formula", "type": "string" },
+        { "key": "rounding", "label": "Rounding", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
+      "slug": "encounter-building",
+      "name": "Encounter Building",
+      "icon": "fa-chess-board",
+      "fields": [
+        { "key": "rule_type", "label": "Rule Type", "type": "string" },
+        { "key": "difficulty", "label": "Difficulty", "type": "string" },
+        { "key": "budget_band_text", "label": "Budget Band", "type": "string" },
+        { "key": "victories", "label": "Victories", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
+      "slug": "rules-glossary",
+      "name": "Rules Glossary",
+      "icon": "fa-book",
+      "fields": [
+        { "key": "category", "label": "Category", "type": "string" }
+      ]
+    },
+    {
+      "slug": "skills",
+      "name": "Skills",
+      "icon": "fa-graduation-cap",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" }
+      ]
+    },
+    {
+      "slug": "ability-keywords",
+      "name": "Ability Keywords",
+      "icon": "fa-tags",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "note", "label": "Note", "type": "string" }
+      ]
+    },
+    {
+      "slug": "creature-keywords",
+      "name": "Creature Keywords",
+      "icon": "fa-hashtag"
     }
   ],
-
   "entity_presets": [
     {
       "slug": "drawsteel-character",
@@ -96,61 +192,472 @@
       "category": "character",
       "foundry_actor_type": "hero",
       "fields": [
-        { "key": "class", "label": "Class", "type": "string", "foundry_collection": "items", "foundry_item_type": ["class"], "foundry_item_single": true },
-        { "key": "subclass", "label": "Subclass", "type": "string", "foundry_collection": "items", "foundry_item_type": ["subclass"], "foundry_item_single": true },
-        { "key": "ancestry", "label": "Ancestry", "type": "string", "foundry_collection": "items", "foundry_item_type": ["ancestry"], "foundry_item_single": true },
-        { "key": "culture", "label": "Culture", "type": "string", "foundry_collection": "items", "foundry_item_type": ["culture"], "foundry_item_single": true },
-        { "key": "career", "label": "Career", "type": "string", "foundry_collection": "items", "foundry_item_type": ["career"], "foundry_item_single": true },
-        { "key": "level", "label": "Level", "type": "number", "foundry_collection": "items", "foundry_item_type": ["class"], "foundry_item_single": true, "foundry_item_fields": { "level": "system.level" } },
-        { "key": "kit", "label": "Kit", "type": "string", "foundry_collection": "items", "foundry_item_type": ["kit"], "foundry_item_single": true },
-        { "key": "faction", "label": "Faction", "type": "string" },
-        { "key": "portrait_url", "label": "Portrait URL", "type": "string", "foundry_path": "prototypeToken.texture.src" },
-        { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might.value" },
-        { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility.value" },
-        { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason.value" },
-        { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition.value" },
-        { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence.value" },
-        { "key": "stamina_max", "label": "Max Stamina", "type": "number", "foundry_path": "system.stamina.max" },
-        { "key": "stamina_current", "label": "Current Stamina", "type": "number", "foundry_path": "system.stamina.value" },
-        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.winded" },
-        { "key": "recoveries", "label": "Recoveries", "type": "number", "foundry_path": "system.recoveries.value" },
-        { "key": "recoveries_max", "label": "Max Recoveries", "type": "number", "foundry_path": "system.recoveries.max" },
-        { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.value", "foundry_writable": false },
-        { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.combat.stability", "foundry_writable": false },
-        { "key": "wealth", "label": "Wealth", "type": "number", "foundry_path": "system.hero.wealth" },
-        { "key": "heroic_resource_name", "label": "Heroic Resource Name", "type": "string", "foundry_collection": "items", "foundry_item_type": ["class"], "foundry_item_single": true, "foundry_item_fields": { "primary": "system.primary" } },
-        { "key": "heroic_resource_current", "label": "Heroic Resource (current)", "type": "number", "foundry_path": "system.hero.primary.value" },
-        { "key": "stamina_temporary", "label": "Temporary Stamina", "type": "number", "foundry_path": "system.stamina.temporary" },
-        { "key": "surges", "label": "Surges", "type": "number", "foundry_path": "system.hero.surges" },
-        { "key": "disengage", "label": "Disengage", "type": "number", "foundry_path": "system.movement.disengage", "foundry_writable": false },
-        { "key": "size", "label": "Size", "type": "string", "foundry_path": "system.combat.size.value", "foundry_writable": false },
-        { "key": "victories", "label": "Victories", "type": "number", "foundry_path": "system.hero.victories" },
-        { "key": "renown", "label": "Renown", "type": "number", "foundry_path": "system.hero.renown" },
-        { "key": "xp", "label": "XP", "type": "number", "foundry_path": "system.hero.xp" },
-        { "key": "immunities", "label": "Immunities", "type": "string", "foundry_path": "system.damage.immunities", "foundry_writable": false },
-        { "key": "weaknesses", "label": "Weaknesses", "type": "string", "foundry_path": "system.damage.weaknesses", "foundry_writable": false },
-        { "key": "skills_json", "label": "Skills Data", "type": "string", "foundry_path": "system.skills.value", "foundry_writable": false },
-        { "key": "languages_json", "label": "Languages Data", "type": "string", "foundry_path": "system.biography.languages", "foundry_writable": false },
-        { "key": "movement_types", "label": "Movement Modes", "type": "string", "foundry_path": "system.movement.types", "foundry_writable": false },
-        { "key": "movement_hover", "label": "Hover", "type": "number", "foundry_path": "system.movement.hover", "foundry_writable": false },
-        { "key": "save_threshold", "label": "Save Threshold", "type": "number", "foundry_path": "system.combat.save.threshold", "foundry_writable": false },
-        { "key": "save_bonus", "label": "Save Bonus", "type": "string", "foundry_path": "system.combat.save.bonus", "foundry_writable": false },
-        { "key": "status_immunities", "label": "Condition Immunities", "type": "string", "foundry_path": "system.statuses.immunities", "foundry_writable": false },
-        { "key": "kit_details_json", "label": "Kit Details Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["kit"], "foundry_item_fields": { "name": "name", "meleeDamageT1": "system.bonuses.melee.damage.tier1", "meleeDamageT2": "system.bonuses.melee.damage.tier2", "meleeDamageT3": "system.bonuses.melee.damage.tier3", "rangedDamageT1": "system.bonuses.ranged.damage.tier1", "rangedDamageT2": "system.bonuses.ranged.damage.tier2", "rangedDamageT3": "system.bonuses.ranged.damage.tier3", "meleeDistance": "system.bonuses.melee.distance", "rangedDistance": "system.bonuses.ranged.distance", "stability": "system.bonuses.stability", "speed": "system.bonuses.speed", "stamina": "system.bonuses.stamina", "disengage": "system.bonuses.disengage" } },
-        { "key": "potency_weak", "label": "Potency (weak)", "type": "number", "foundry_path": "system.potency.weak", "foundry_writable": false },
-        { "key": "potency_average", "label": "Potency (average)", "type": "number", "foundry_path": "system.potency.average", "foundry_writable": false },
-        { "key": "potency_strong", "label": "Potency (strong)", "type": "number", "foundry_path": "system.potency.strong", "foundry_writable": false },
-        { "key": "abilities_json", "label": "Abilities Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["ability"], "foundry_item_fields": { "name": "name", "type": "system.type", "category": "system.category", "cost": "system.resource", "keywords": "system.keywords", "distanceType": "system.distance.type", "distance": "system.distance.primary", "distanceSecondary": "system.distance.secondary", "targetType": "system.target.type", "target": "system.target.value", "targetCustom": "system.target.custom", "powerRollFormula": "system.power.roll.formula", "powerRollChars": "system.power.roll.characteristics", "tiers": "system.power.effects", "trigger": "system.trigger", "effectBefore": "system.effect.before", "effectAfter": "system.effect.after", "story": "system.story", "damageDisplay": "system.damageDisplay" } },
-        { "key": "backstory", "label": "Backstory", "type": "markdown", "owner_only": true, "foundry_path": "system.biography.value" },
-        { "key": "features_json", "label": "Features Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["feature"], "foundry_item_fields": { "name": "name", "description": "system.description.value", "level": "system.prerequisites.level", "dsid": "system._dsid", "sourceBook": "system.source.book" } },
-        { "key": "perks_json", "label": "Perks Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["perk"], "foundry_item_fields": { "name": "name", "perkType": "system.perkType", "description": "system.description.value", "dsid": "system._dsid" } },
-        { "key": "titles_json", "label": "Titles Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["title"], "foundry_item_fields": { "name": "name", "echelon": "system.echelon", "description": "system.description.value", "story": "system.story", "dsid": "system._dsid" } },
-        { "key": "treasures_json", "label": "Treasures Data", "type": "string", "foundry_collection": "items", "foundry_item_type": ["treasure"], "foundry_item_fields": { "name": "name", "category": "system.category", "kind": "system.kind", "echelon": "system.echelon", "keywords": "system.keywords", "quantity": "system.quantity", "description": "system.description.value" } },
-        { "key": "initiative", "label": "Initiative", "type": "number" },
-        { "key": "in_combat", "label": "In Combat", "type": "number" },
-        { "key": "combat_round", "label": "Combat Round", "type": "number" },
-        { "key": "conditions_json", "label": "Conditions Data", "type": "string", "foundry_path": "statuses", "foundry_writable": false },
-        { "key": "gm_notes", "label": "GM Notes", "type": "markdown", "gm_only": true, "foundry_path": "system.biography.director" }
+        {
+          "key": "class",
+          "label": "Class",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "class"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "subclass",
+          "label": "Subclass",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "subclass"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "ancestry",
+          "label": "Ancestry",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "ancestry"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "culture",
+          "label": "Culture",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "culture"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "career",
+          "label": "Career",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "career"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "level",
+          "label": "Level",
+          "type": "number",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "class"
+          ],
+          "foundry_item_single": true,
+          "foundry_item_fields": {
+            "level": "system.level"
+          }
+        },
+        {
+          "key": "kit",
+          "label": "Kit",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "kit"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "faction",
+          "label": "Faction",
+          "type": "string"
+        },
+        {
+          "key": "portrait_url",
+          "label": "Portrait URL",
+          "type": "string",
+          "foundry_path": "prototypeToken.texture.src"
+        },
+        {
+          "key": "might",
+          "label": "Might",
+          "type": "number",
+          "foundry_path": "system.characteristics.might.value"
+        },
+        {
+          "key": "agility",
+          "label": "Agility",
+          "type": "number",
+          "foundry_path": "system.characteristics.agility.value"
+        },
+        {
+          "key": "reason",
+          "label": "Reason",
+          "type": "number",
+          "foundry_path": "system.characteristics.reason.value"
+        },
+        {
+          "key": "intuition",
+          "label": "Intuition",
+          "type": "number",
+          "foundry_path": "system.characteristics.intuition.value"
+        },
+        {
+          "key": "presence",
+          "label": "Presence",
+          "type": "number",
+          "foundry_path": "system.characteristics.presence.value"
+        },
+        {
+          "key": "stamina_max",
+          "label": "Max Stamina",
+          "type": "number",
+          "foundry_path": "system.stamina.max"
+        },
+        {
+          "key": "stamina_current",
+          "label": "Current Stamina",
+          "type": "number",
+          "foundry_path": "system.stamina.value"
+        },
+        {
+          "key": "winded",
+          "label": "Winded",
+          "type": "number",
+          "foundry_path": "system.stamina.winded"
+        },
+        {
+          "key": "recoveries",
+          "label": "Recoveries",
+          "type": "number",
+          "foundry_path": "system.recoveries.value"
+        },
+        {
+          "key": "recoveries_max",
+          "label": "Max Recoveries",
+          "type": "number",
+          "foundry_path": "system.recoveries.max"
+        },
+        {
+          "key": "speed",
+          "label": "Speed",
+          "type": "number",
+          "foundry_path": "system.movement.value",
+          "foundry_writable": false
+        },
+        {
+          "key": "stability",
+          "label": "Stability",
+          "type": "number",
+          "foundry_path": "system.combat.stability",
+          "foundry_writable": false
+        },
+        {
+          "key": "wealth",
+          "label": "Wealth",
+          "type": "number",
+          "foundry_path": "system.hero.wealth"
+        },
+        {
+          "key": "heroic_resource_name",
+          "label": "Heroic Resource Name",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "class"
+          ],
+          "foundry_item_single": true,
+          "foundry_item_fields": {
+            "primary": "system.primary"
+          }
+        },
+        {
+          "key": "heroic_resource_current",
+          "label": "Heroic Resource (current)",
+          "type": "number",
+          "foundry_path": "system.hero.primary.value"
+        },
+        {
+          "key": "stamina_temporary",
+          "label": "Temporary Stamina",
+          "type": "number",
+          "foundry_path": "system.stamina.temporary"
+        },
+        {
+          "key": "surges",
+          "label": "Surges",
+          "type": "number",
+          "foundry_path": "system.hero.surges"
+        },
+        {
+          "key": "disengage",
+          "label": "Disengage",
+          "type": "number",
+          "foundry_path": "system.movement.disengage",
+          "foundry_writable": false
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "string",
+          "foundry_path": "system.combat.size.value",
+          "foundry_writable": false
+        },
+        {
+          "key": "victories",
+          "label": "Victories",
+          "type": "number",
+          "foundry_path": "system.hero.victories"
+        },
+        {
+          "key": "renown",
+          "label": "Renown",
+          "type": "number",
+          "foundry_path": "system.hero.renown"
+        },
+        {
+          "key": "xp",
+          "label": "XP",
+          "type": "number",
+          "foundry_path": "system.hero.xp"
+        },
+        {
+          "key": "immunities",
+          "label": "Immunities",
+          "type": "string",
+          "foundry_path": "system.damage.immunities",
+          "foundry_writable": false
+        },
+        {
+          "key": "weaknesses",
+          "label": "Weaknesses",
+          "type": "string",
+          "foundry_path": "system.damage.weaknesses",
+          "foundry_writable": false
+        },
+        {
+          "key": "skills_json",
+          "label": "Skills Data",
+          "type": "string",
+          "foundry_path": "system.skills.value",
+          "foundry_writable": false
+        },
+        {
+          "key": "languages_json",
+          "label": "Languages Data",
+          "type": "string",
+          "foundry_path": "system.biography.languages",
+          "foundry_writable": false
+        },
+        {
+          "key": "movement_types",
+          "label": "Movement Modes",
+          "type": "string",
+          "foundry_path": "system.movement.types",
+          "foundry_writable": false
+        },
+        {
+          "key": "movement_hover",
+          "label": "Hover",
+          "type": "number",
+          "foundry_path": "system.movement.hover",
+          "foundry_writable": false
+        },
+        {
+          "key": "save_threshold",
+          "label": "Save Threshold",
+          "type": "number",
+          "foundry_path": "system.combat.save.threshold",
+          "foundry_writable": false
+        },
+        {
+          "key": "save_bonus",
+          "label": "Save Bonus",
+          "type": "string",
+          "foundry_path": "system.combat.save.bonus",
+          "foundry_writable": false
+        },
+        {
+          "key": "status_immunities",
+          "label": "Condition Immunities",
+          "type": "string",
+          "foundry_path": "system.statuses.immunities",
+          "foundry_writable": false
+        },
+        {
+          "key": "kit_details_json",
+          "label": "Kit Details Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "kit"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "meleeDamageT1": "system.bonuses.melee.damage.tier1",
+            "meleeDamageT2": "system.bonuses.melee.damage.tier2",
+            "meleeDamageT3": "system.bonuses.melee.damage.tier3",
+            "rangedDamageT1": "system.bonuses.ranged.damage.tier1",
+            "rangedDamageT2": "system.bonuses.ranged.damage.tier2",
+            "rangedDamageT3": "system.bonuses.ranged.damage.tier3",
+            "meleeDistance": "system.bonuses.melee.distance",
+            "rangedDistance": "system.bonuses.ranged.distance",
+            "stability": "system.bonuses.stability",
+            "speed": "system.bonuses.speed",
+            "stamina": "system.bonuses.stamina",
+            "disengage": "system.bonuses.disengage"
+          }
+        },
+        {
+          "key": "potency_weak",
+          "label": "Potency (weak)",
+          "type": "number",
+          "foundry_path": "system.potency.weak",
+          "foundry_writable": false
+        },
+        {
+          "key": "potency_average",
+          "label": "Potency (average)",
+          "type": "number",
+          "foundry_path": "system.potency.average",
+          "foundry_writable": false
+        },
+        {
+          "key": "potency_strong",
+          "label": "Potency (strong)",
+          "type": "number",
+          "foundry_path": "system.potency.strong",
+          "foundry_writable": false
+        },
+        {
+          "key": "abilities_json",
+          "label": "Abilities Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "ability"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "type": "system.type",
+            "category": "system.category",
+            "cost": "system.resource",
+            "keywords": "system.keywords",
+            "distanceType": "system.distance.type",
+            "distance": "system.distance.primary",
+            "distanceSecondary": "system.distance.secondary",
+            "targetType": "system.target.type",
+            "target": "system.target.value",
+            "targetCustom": "system.target.custom",
+            "powerRollFormula": "system.power.roll.formula",
+            "powerRollChars": "system.power.roll.characteristics",
+            "tiers": "system.power.effects",
+            "trigger": "system.trigger",
+            "effectBefore": "system.effect.before",
+            "effectAfter": "system.effect.after",
+            "story": "system.story",
+            "damageDisplay": "system.damageDisplay"
+          }
+        },
+        {
+          "key": "backstory",
+          "label": "Backstory",
+          "type": "markdown",
+          "owner_only": true,
+          "foundry_path": "system.biography.value"
+        },
+        {
+          "key": "features_json",
+          "label": "Features Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "feature"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "description": "system.description.value",
+            "level": "system.prerequisites.level",
+            "dsid": "system._dsid",
+            "sourceBook": "system.source.book"
+          }
+        },
+        {
+          "key": "perks_json",
+          "label": "Perks Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "perk"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "perkType": "system.perkType",
+            "description": "system.description.value",
+            "dsid": "system._dsid"
+          }
+        },
+        {
+          "key": "titles_json",
+          "label": "Titles Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "title"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "echelon": "system.echelon",
+            "description": "system.description.value",
+            "story": "system.story",
+            "dsid": "system._dsid"
+          }
+        },
+        {
+          "key": "treasures_json",
+          "label": "Treasures Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "treasure"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "category": "system.category",
+            "kind": "system.kind",
+            "echelon": "system.echelon",
+            "keywords": "system.keywords",
+            "quantity": "system.quantity",
+            "description": "system.description.value"
+          }
+        },
+        {
+          "key": "initiative",
+          "label": "Initiative",
+          "type": "number"
+        },
+        {
+          "key": "in_combat",
+          "label": "In Combat",
+          "type": "number"
+        },
+        {
+          "key": "combat_round",
+          "label": "Combat Round",
+          "type": "number"
+        },
+        {
+          "key": "conditions_json",
+          "label": "Conditions Data",
+          "type": "string",
+          "foundry_path": "statuses",
+          "foundry_writable": false
+        },
+        {
+          "key": "gm_notes",
+          "label": "GM Notes",
+          "type": "markdown",
+          "gm_only": true,
+          "foundry_path": "system.biography.director"
+        }
       ]
     },
     {
@@ -162,47 +669,167 @@
       "category": "creature",
       "foundry_actor_type": "npc",
       "fields": [
-        { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
-        { "key": "organization", "label": "Organization", "type": "string", "foundry_path": "system.details.organization" },
-        { "key": "role", "label": "Role", "type": "string", "foundry_path": "system.details.role" },
-        { "key": "ev", "label": "EV", "type": "number", "foundry_path": "system.details.ev" },
-        { "key": "size", "label": "Size", "type": "string", "foundry_path": "system.details.size" },
-        { "key": "keywords", "label": "Keywords", "type": "string", "foundry_path": "system.details.keywords" },
-        { "key": "faction", "label": "Faction", "type": "string" },
-        { "key": "stamina", "label": "Stamina", "type": "number", "foundry_path": "system.stamina.max" },
-        { "key": "winded", "label": "Winded", "type": "number", "foundry_path": "system.stamina.winded" },
-        { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed" },
-        { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value" },
-        { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
-        { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
-        { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
-        { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition" },
-        { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
-        { "key": "immunities", "label": "Immunities", "type": "string" },
-        { "key": "free_strike", "label": "Free Strike", "type": "string", "foundry_path": "system.combat.freeStrike" },
-        { "key": "traits", "label": "Traits", "type": "string" },
-        { "key": "abilities_json", "label": "Abilities Data", "type": "string" },
-        { "key": "villain_actions_json", "label": "Villain Actions Data", "type": "string" }
+        {
+          "key": "level",
+          "label": "Level",
+          "type": "number",
+          "foundry_path": "system.details.level"
+        },
+        {
+          "key": "organization",
+          "label": "Organization",
+          "type": "string",
+          "foundry_path": "system.details.organization"
+        },
+        {
+          "key": "role",
+          "label": "Role",
+          "type": "string",
+          "foundry_path": "system.details.role"
+        },
+        {
+          "key": "ev",
+          "label": "EV",
+          "type": "number",
+          "foundry_path": "system.details.ev"
+        },
+        {
+          "key": "size",
+          "label": "Size",
+          "type": "string",
+          "foundry_path": "system.details.size"
+        },
+        {
+          "key": "keywords",
+          "label": "Keywords",
+          "type": "string",
+          "foundry_path": "system.details.keywords"
+        },
+        {
+          "key": "faction",
+          "label": "Faction",
+          "type": "string"
+        },
+        {
+          "key": "stamina",
+          "label": "Stamina",
+          "type": "number",
+          "foundry_path": "system.stamina.max"
+        },
+        {
+          "key": "winded",
+          "label": "Winded",
+          "type": "number",
+          "foundry_path": "system.stamina.winded"
+        },
+        {
+          "key": "speed",
+          "label": "Speed",
+          "type": "number",
+          "foundry_path": "system.movement.speed"
+        },
+        {
+          "key": "stability",
+          "label": "Stability",
+          "type": "number",
+          "foundry_path": "system.stability.value"
+        },
+        {
+          "key": "might",
+          "label": "Might",
+          "type": "number",
+          "foundry_path": "system.characteristics.might"
+        },
+        {
+          "key": "agility",
+          "label": "Agility",
+          "type": "number",
+          "foundry_path": "system.characteristics.agility"
+        },
+        {
+          "key": "reason",
+          "label": "Reason",
+          "type": "number",
+          "foundry_path": "system.characteristics.reason"
+        },
+        {
+          "key": "intuition",
+          "label": "Intuition",
+          "type": "number",
+          "foundry_path": "system.characteristics.intuition"
+        },
+        {
+          "key": "presence",
+          "label": "Presence",
+          "type": "number",
+          "foundry_path": "system.characteristics.presence"
+        },
+        {
+          "key": "immunities",
+          "label": "Immunities",
+          "type": "string"
+        },
+        {
+          "key": "free_strike",
+          "label": "Free Strike",
+          "type": "string",
+          "foundry_path": "system.combat.freeStrike"
+        },
+        {
+          "key": "traits",
+          "label": "Traits",
+          "type": "string"
+        },
+        {
+          "key": "abilities_json",
+          "label": "Abilities Data",
+          "type": "string"
+        },
+        {
+          "key": "villain_actions_json",
+          "label": "Villain Actions Data",
+          "type": "string"
+        }
       ]
     }
   ],
-
   "relation_presets": [
-    { "slug": "ally", "name": "Ally", "reverse_name": "Ally" },
-    { "slug": "enemy", "name": "Enemy", "reverse_name": "Enemy" },
-    { "slug": "patron", "name": "Patron", "reverse_name": "Agent" },
-    { "slug": "mentor", "name": "Mentor", "reverse_name": "Student" },
+    {
+      "slug": "ally",
+      "name": "Ally",
+      "reverse_name": "Ally"
+    },
+    {
+      "slug": "enemy",
+      "name": "Enemy",
+      "reverse_name": "Enemy"
+    },
+    {
+      "slug": "patron",
+      "name": "Patron",
+      "reverse_name": "Agent"
+    },
+    {
+      "slug": "mentor",
+      "name": "Mentor",
+      "reverse_name": "Student"
+    },
     {
       "slug": "has-item",
       "name": "Has Item",
       "reverse_name": "In Inventory Of",
       "metadata_schema": {
-        "quantity": { "type": "number", "default": 1 },
-        "equipped": { "type": "boolean", "default": false }
+        "quantity": {
+          "type": "number",
+          "default": 1
+        },
+        "equipped": {
+          "type": "boolean",
+          "default": false
+        }
       }
     }
   ],
-
   "widgets": [
     {
       "slug": "monster-builder",
@@ -211,9 +838,22 @@
       "icon": "fa-dragon",
       "script_file": "widgets/monster-builder.js",
       "config": [
-        { "key": "entity_id", "label": "Entity ID", "type": "string" },
-        { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
-        { "key": "editable", "label": "Editable", "type": "boolean", "default": true }
+        {
+          "key": "entity_id",
+          "label": "Entity ID",
+          "type": "string"
+        },
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        },
+        {
+          "key": "editable",
+          "label": "Editable",
+          "type": "boolean",
+          "default": true
+        }
       ]
     },
     {
@@ -223,8 +863,16 @@
       "icon": "fa-scroll",
       "script_file": "widgets/statblock-renderer.js",
       "config": [
-        { "key": "entity_id", "label": "Entity ID", "type": "string" },
-        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+        {
+          "key": "entity_id",
+          "label": "Entity ID",
+          "type": "string"
+        },
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
       ]
     },
     {
@@ -234,10 +882,29 @@
       "icon": "fa-book-skull",
       "script_file": "widgets/bestiary-browser.js",
       "config": [
-        { "key": "campaign_id", "label": "Campaign ID", "type": "string" },
-        { "key": "source", "label": "Source (campaign or bestiary)", "type": "string", "default": "bestiary" },
-        { "key": "per_page", "label": "Items Per Page", "type": "number", "default": 20 },
-        { "key": "editable", "label": "Allow Create/Edit/Delete", "type": "boolean", "default": true }
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        },
+        {
+          "key": "source",
+          "label": "Source (campaign or bestiary)",
+          "type": "string",
+          "default": "bestiary"
+        },
+        {
+          "key": "per_page",
+          "label": "Items Per Page",
+          "type": "number",
+          "default": 20
+        },
+        {
+          "key": "editable",
+          "label": "Allow Create/Edit/Delete",
+          "type": "boolean",
+          "default": true
+        }
       ]
     },
     {
@@ -247,22 +914,33 @@
       "icon": "fa-shield-halved",
       "script_file": "widgets/character-sheet.js",
       "config": [
-        { "key": "entity_id", "label": "Entity ID", "type": "string" },
-        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+        {
+          "key": "entity_id",
+          "label": "Entity ID",
+          "type": "string"
+        },
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
       ]
     },
     {
       "slug": "rulebook-frontpage",
       "name": "Rulebook Front Page",
-      "description": "The dynamic rulebook's editorial front page — hero Power Roll block, characteristic cards with fold-out wings, condition flap rows, and the Lich's Lair worked-scene hub. Best placed on a campaign dashboard or a dedicated 'Rules' page.",
+      "description": "The dynamic rulebook's editorial front page \u2014 hero Power Roll block, characteristic cards with fold-out wings, condition flap rows, and the Lich's Lair worked-scene hub. Best placed on a campaign dashboard or a dedicated 'Rules' page.",
       "icon": "fa-book-open",
       "script_file": "widgets/rulebook-frontpage.js",
       "config": [
-        { "key": "campaign_id", "label": "Campaign ID", "type": "string" }
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
       ]
     }
   ],
-
   "renderers": [
     {
       "slug": "drawsteel-character",
@@ -275,7 +953,6 @@
       "description": "System-agnostic binding: render the Draw Steel hero sheet on ANY entity type whose preset_category is 'character' (e.g. a 'hero' or 'character' slug type adopted by the player-character addon), not only the bespoke drawsteel-character slug."
     }
   ],
-
   "text_renderers": [
     {
       "slug": "rules-reference",
@@ -289,7 +966,7 @@
       "name": "Monster Engine",
       "file": "widgets/monster-engine.js",
       "entry_point": "MonsterEngine",
-      "description": "Pure encounter math (grounded EV budget) for the monster builder. Loaded as a global before widget scripts; no visible UI."
+      "description": "Encounter math for the monster builder, evaluated through the DrawSteelFormulas section of monster-engine.js. Loaded as a global before widget scripts; no visible UI."
     },
     {
       "slug": "monster-party",
@@ -310,7 +987,7 @@
       "name": "Rulebook Example Player",
       "file": "widgets/rulebook-example-player.js",
       "entry_point": "RulebookExamplePlayer",
-      "description": "Reusable, content-agnostic staged-example player: character tokens slide in and glow, lines light one by one, the roll ticks its dice, settles, steps the math out with its why, and the tier stamps on; ↻ replay; reduced-motion reveals instantly. Scripts are data (data/rulebook-examples.json). Loaded as a global before widget scripts; consumed by rulebook-frontpage. No visible UI of its own."
+      "description": "Reusable, content-agnostic staged-example player: character tokens slide in and glow, lines light one by one, the roll ticks its dice, settles, steps the math out with its why, and the tier stamps on; \u21bb replay; reduced-motion reveals instantly. Scripts are data (data/rulebook-examples.json). Loaded as a global before widget scripts; consumed by rulebook-frontpage. No visible UI of its own."
     }
   ]
 }

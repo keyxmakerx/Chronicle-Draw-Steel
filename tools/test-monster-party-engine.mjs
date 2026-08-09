@@ -50,26 +50,45 @@ test('standardEvPerHeroLevel is unskewed by the Minion outlier (median, not mean
   assert.equal(Engine.standardEvPerHeroLevel(ORGS), 4);
 });
 
-// ── Engine: encounter budget (party size × level × standard) ────────────────
-test('encounterBudget = partySize × partyLevel × standard (grounded, not partySize*partyLevel)', () => {
-  assert.equal(Engine.encounterBudget(4, 5, ORGS), 80);   // 4 × 5 × 4
-  assert.equal(Engine.encounterBudget(3, 7, ORGS), 84);   // 3 × 7 × 4
-  assert.equal(Engine.encounterBudget(1, 1, ORGS), 4);
+// ── Engine: encounter budget = the PUBLISHED party encounter strength ───────
+// This replaced `partySize × partyLevel × 4`, which ran 1.67x the published
+// strength at level 10 and was labelled a balanced budget in the UI. The
+// published formula is 4 + (2 × hero level) per hero (DS-MB-HONESTY).
+test('encounterBudget = the published party encounter strength, summed per hero', () => {
+  assert.equal(Engine.encounterBudget(4, 5, ORGS), 56);   // 4 × (4 + 2×5)
+  assert.equal(Engine.encounterBudget(3, 7, ORGS), 54);   // 3 × (4 + 2×7)
+  assert.equal(Engine.encounterBudget(1, 1, ORGS), 6);    // 1 × (4 + 2×1)
+  assert.equal(Engine.encounterBudget(4, 10, ORGS), 96);  // the old widget said 160
 });
 
-test('encounterBudget degrades to 0 on bad inputs / missing data', () => {
+test('encounterBudget degrades to 0 on bad inputs', () => {
   assert.equal(Engine.encounterBudget(0, 5, ORGS), 0);
   assert.equal(Engine.encounterBudget(4, 0, ORGS), 0);
-  assert.equal(Engine.encounterBudget(4, 5, []), 0);
+  // The org templates are no longer an input — the published formula depends
+  // only on the party — so an empty template list no longer zeroes the budget.
+  assert.equal(Engine.encounterBudget(4, 5, []), 56);
 });
 
-// ── Engine: a single creature's EV, per org, matches docs/monster-builder §4.1
-test('creatureEV = level × ev_multiplier for all 7 orgs', () => {
+test('encounterBands returns the published difficulty ladder for the party', () => {
+  const b = Engine.encounterBands(4, 10);
+  assert.equal(b.partyEs, 96);
+  assert.equal(b.perHeroEs, 24);
+  assert.deepEqual(b.bands.standard, { lower: 96, upper: 120, upper_inclusive: true });
+  assert.equal(Engine.encounterBands(0, 5), null);
+});
+
+// ── Engine: a single creature's EV is the PUBLISHED formula ─────────────────
+test('creatureEV = ceil(((2 × level) + 4) × organization modifier)', () => {
   const L = 5;
-  const expected = { minion: 5, horde: 10, platoon: 20, elite: 40, leader: 40, solo: 120, swarm: 20 };
+  // ((2×5)+4) = 14, times the published organization modifier.
+  const expected = { minion: 7, horde: 7, platoon: 14, elite: 28, leader: 28, solo: 84 };
   for (const org of ORGS) {
+    if (org.organization_modifier === null) continue;
     assert.equal(Engine.creatureEV(L, org), expected[org.slug], org.slug);
   }
+  // Swarm is original to this package and has no published modifier, so it
+  // cannot be priced — 0 means "unpriceable", not "free".
+  assert.equal(Engine.creatureEV(L, ORGS.find((o) => o.slug === 'swarm')), 0);
 });
 
 // ── Engine: villain-action requirement is data-driven (kills 'leader'/'solo') ─
@@ -84,12 +103,16 @@ test('villainActionCount comes from the org template, not a string literal', () 
 });
 
 // ── Engine: the live "spent / budget" meter ─────────────────────────────────
-test('evMeter reports spend, budget, and a balanced copy count', () => {
-  const m = Engine.evMeter(20, 80);   // one platoon (EV 20) vs an 80 budget
-  assert.equal(m.spent, 20);
-  assert.equal(m.budget, 80);
-  assert.equal(m.copies, 4);          // 4 platoons = balanced 1:1 party fight
-  const solo = Engine.evMeter(120, 80);
+// `copies` is arithmetic — how many of this creature spend the party's
+// encounter strength — and nothing more. It is NOT a balance verdict: the
+// published spending limits (creatures per hero, six stat blocks, minions in
+// fours, star-of-the-show) are not checked here or by the caller.
+test('evMeter reports spend, budget, and how many copies spend it', () => {
+  const m = Engine.evMeter(14, 56);   // one platoon at L5 (EV 14) vs a 56 ES
+  assert.equal(m.spent, 14);
+  assert.equal(m.budget, 56);
+  assert.equal(m.copies, 4);
+  const solo = Engine.evMeter(84, 56);
   assert.equal(solo.copies, 1);       // never below 1
 });
 

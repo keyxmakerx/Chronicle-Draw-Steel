@@ -94,14 +94,87 @@ Chronicle.register('bestiary-browser', {
     this.creatureKeywords = list;
   },
 
+  // Chronicle returns some list endpoints as a bare JSON array and others
+  // wrapped as {"data":[…],"total":N}. A consumer that assumes one shape
+  // silently renders empty — /api/v1/campaigns/:id/entities is an envelope
+  // endpoint, and reading it as `data.entities || data.results` is exactly
+  // why campaign mode showed zero creatures. Accept both.
+  _unwrapList: function (body) {
+    if (Array.isArray(body)) return body;
+    if (!body) return [];
+    if (Array.isArray(body.data)) return body.data;
+    if (Array.isArray(body.results)) return body.results;
+    if (Array.isArray(body.entities)) return body.entities;
+    return [];
+  },
+
+  // Resolve the campaign's Creature entity type id. `?preset=drawsteel-creature`
+  // is not a parameter Chronicle reads — ListEntities takes type_id/page/
+  // per_page/q only, so an unknown param is ignored and the response is every
+  // entity in the campaign. The manifest preset slug is not stored on the type
+  // either: Chronicle records the preset's `category` as `preset_category` and
+  // derives the slug from the name. Match preset_category first, then the
+  // slug/name fallbacks the monster builder already uses.
+  _resolveCreatureTypeId: function () {
+    var self = this;
+    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entity-types';
+    return Chronicle.apiFetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (body) {
+        var types = self._unwrapList(body);
+        var i, match = null;
+        for (i = 0; i < types.length; i++) {
+          if (types[i].preset_category === 'creature') { match = types[i]; break; }
+        }
+        for (i = 0; !match && i < types.length; i++) {
+          if (types[i].slug === 'drawsteel-creature') { match = types[i]; break; }
+        }
+        for (i = 0; !match && i < types.length; i++) {
+          if (String(types[i].name || '').toLowerCase() === 'creature') { match = types[i]; break; }
+        }
+        return match ? match.id : 0;
+      })
+      .catch(function () { return 0; });
+  },
+
+  // Walk every page of the entity list. per_page defaults to 20 server-side and
+  // is capped at 100, so a single unpaged GET shows at most 20 creatures however
+  // many the campaign holds. Bounded so a bad `total` cannot spin forever.
+  _fetchEntityPages: function (typeId) {
+    var self = this;
+    var acc = [];
+    var base = '/api/v1/campaigns/' + this.config.campaignId + '/entities?per_page=100';
+    if (typeId) base += '&type_id=' + encodeURIComponent(typeId);
+    var MAX_PAGES = 50;
+
+    function page(n) {
+      return Chronicle.apiFetch(base + '&page=' + n)
+        .then(function (r) { return r.json(); })
+        .then(function (body) {
+          var items = self._unwrapList(body);
+          acc = acc.concat(items);
+          var total = (body && typeof body.total === 'number') ? body.total : acc.length;
+          if (items.length === 0 || acc.length >= total || n >= MAX_PAGES) return acc;
+          return page(n + 1);
+        });
+    }
+    return page(1);
+  },
+
   _fetchCreatures: function () {
     var self = this;
     if (this.state.source === 'campaign' && this.config.campaignId) {
-      var url = '/api/v1/campaigns/' + this.config.campaignId + '/entities?preset=drawsteel-creature';
-      return Chronicle.apiFetch(url)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var entities = Array.isArray(data) ? data : (data.entities || data.results || []);
+      return this._resolveCreatureTypeId()
+        .then(function (typeId) {
+          self._creatureTypeId = typeId;
+          if (!typeId) {
+            // Degraded, but visible: without the type we cannot filter
+            // server-side, so show what the campaign has rather than nothing.
+            console.warn('Bestiary Browser: no Creature entity type found; listing all entities.');
+          }
+          return self._fetchEntityPages(typeId);
+        })
+        .then(function (entities) {
           self.state.creatures = entities.map(function (e) { return self._normalizeEntity(e); });
         });
     }
@@ -128,7 +201,10 @@ Chronicle.register('bestiary-browser', {
   },
 
   _normalizeEntity: function (entity) {
-    var f = entity.custom_fields || entity;
+    // Chronicle's Entity carries its custom fields as `fields_data`; it has no
+    // `custom_fields` key. Bestiary publications use `custom_fields`, so both
+    // are accepted, but fields_data wins.
+    var f = entity.fields_data || entity.custom_fields || entity;
     return {
       id: entity.id || '',
       name: entity.name || f.name || 'Unnamed',
@@ -153,6 +229,23 @@ Chronicle.register('bestiary-browser', {
       traits: this._parseJSON(f.traits, []),
       abilities: this._parseJSON(f.abilities_json, []),
       villain_actions: this._parseJSON(f.villain_actions_json, [])
+    };
+  },
+
+  // Inverse of _normalizeEntity: the fields_data map Chronicle stores. traits /
+  // abilities_json / villain_actions_json are JSON strings on the wire (the
+  // shape the monster builder writes and _parseJSON reads back).
+  _toFieldsData: function (cr) {
+    return {
+      level: cr.level, organization: cr.organization, role: cr.role, ev: cr.ev,
+      size: cr.size, keywords: (cr.keywords || []).join(', '), faction: cr.faction,
+      stamina: cr.stamina, winded: cr.winded, speed: cr.speed, stability: cr.stability,
+      might: cr.might, agility: cr.agility, reason: cr.reason,
+      intuition: cr.intuition, presence: cr.presence,
+      immunities: (cr.immunities || []).join(', '), free_strike: cr.free_strike,
+      traits: JSON.stringify(cr.traits || []),
+      abilities_json: JSON.stringify(cr.abilities || []),
+      villain_actions_json: JSON.stringify(cr.villain_actions || [])
     };
   },
 
@@ -327,7 +420,10 @@ Chronicle.register('bestiary-browser', {
       createBtn.textContent = '+ Create Creature';
       createBtn.style.marginLeft = 'auto';
       createBtn.addEventListener('click', function () {
-        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/new?preset=drawsteel-creature';
+        // NewForm preselects the category from `?type=<entity_type_id>`;
+        // `?preset=<slug>` is not read and lands the user on an unpicked form.
+        var q = self._creatureTypeId ? '?type=' + encodeURIComponent(self._creatureTypeId) : '';
+        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/new' + q;
       });
       toolbar.appendChild(createBtn);
     }
@@ -839,9 +935,18 @@ Chronicle.register('bestiary-browser', {
       importBtn.textContent = 'Import to Campaign';
       importBtn.addEventListener('click', function () {
         if (!self.config.campaignId) { alert('No campaign selected.'); return; }
+        // CreateEntity binds {name, entity_type_id, fields_data} and rejects a
+        // zero entity_type_id outright; `preset`/`custom_fields` are not read.
+        var typeId = self._creatureTypeId;
         var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
-        var payload = { name: creature.name, preset: 'drawsteel-creature', custom_fields: creature };
-        Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        var start = typeId
+          ? Promise.resolve(typeId)
+          : self._resolveCreatureTypeId().then(function (id) { self._creatureTypeId = id; return id; });
+        start.then(function (id) {
+          if (!id) throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign.');
+          var payload = { name: creature.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: self._toFieldsData(creature) };
+          return Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        })
           .then(function (res) {
             if (!res.ok) {
               return self._apiError(res, 'Could not import this creature. Please try again.').then(function (msg) {

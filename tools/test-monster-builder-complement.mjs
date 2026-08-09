@@ -87,9 +87,13 @@ test('applying the suggestion writes level/org/role + a signature ability with b
   assert.equal(sig.length, 1, 'exactly one suggested signature ability');
   assert.equal(sig[0].type, 'signature');
   assert.match(sig[0].power_roll, /Agility vs\. Agility/);   // attack-stat vs. target-defense
-  assert.match(sig[0].tier1, /^18\b/);                        // leader @ L5 baseline (6 + 3*4)
-  assert.match(sig[0].tier2, /^22\b/);
-  assert.match(sig[0].tier3, /^26\b/);
+  // Published damage formula at leader/L5: base 4 + 5 + 1 = 10 → 6/11/14, plus
+  // the highest characteristic (+4) because this ability is authored as a
+  // strike → 10/15/18. The old figures (18/22/26) came from the widget's own
+  // damage-baselines.json, whose `source` is the string "custom" (DS-MB-HONESTY).
+  assert.match(sig[0].tier1, /^10\b/);
+  assert.match(sig[0].tier2, /^15\b/);
+  assert.match(sig[0].tier3, /^18\b/);
   assert.match(sig[0].tier1, /cold damage/);                 // suggested (non-immune) damage type
 });
 
@@ -143,5 +147,5 @@ test('editing the damage type rewrites the suggested ability tiers, keeping them
   def._applyDamageTypeToSuggestedAbility.call(it, 'Psychic');
   const sig = it.creature.abilities.find((a) => a._suggested);
   assert.match(sig.tier1, /psychic damage/);
-  assert.match(sig.tier1, /^18\b/);                    // the number is unchanged, only the type
+  assert.match(sig.tier1, /^10\b/);                    // the number is unchanged, only the type
 });

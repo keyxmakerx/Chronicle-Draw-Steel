@@ -8,7 +8,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10
 - **23 template abilities** — signature, action, maneuver, triggered, and villain-action types
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
-- **7 organization templates** — stamina/EV/speed formulas for encounter balancing
+- **7 organization templates** — the published organization and Stamina modifiers, plus default speed/stability (Swarm is this package's own, and carries no published modifiers)
 - **25 rules glossary entries** — conditions, movement, durations, resources, combat terms
 - **23 creature keywords** — Dragon, Undead, Humanoid, Elemental, etc.
 
@@ -17,7 +17,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
 
 ### Interactive Widgets
-- **Monster Builder** — 7-step creature authoring with auto-calculated stats, validation, damage hints, encounter calculator, and full preview
+- **Monster Builder** — 7-step creature authoring with stats auto-filled from the published formulas, completeness checks, damage hints, an encounter-strength calculator, and full preview. It does not certify balance: figures the published rules do not cover are labelled unsourced on screen. See `docs/WIDGET-GUIDE.md`.
 - **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal statblocks, and campaign import
 - **Statblock Renderer** — read-only formatted creature statblock display for entity pages
 
@@ -113,17 +113,17 @@ To publish: **Actions → Release → Run workflow**, enter the version (e.g.
 ```
 manifest.json              Package manifest (categories, presets, widgets, text_renderers)
 data/
-  creatures.json           35 creatures with full stat blocks
+  creatures.json           35 example creatures (see the rewrite dispatch below)
   creature-abilities.json  23 template abilities
-  rules-glossary.json      25 rules definitions for @references
+  rules-glossary.json      60 rules definitions for @references
   organization-templates.json  7 org types (stamina/EV formulas)
   role-templates.json      9 roles (characteristic baselines)
   damage-baselines.json    Damage scaling by tier and organization
   creature-keywords.json   23 creature type keywords
   ability-keywords.json    9 ability type keywords
-  abilities.json           Stub (future: hero abilities)
-  ancestries.json          Stub (future: ancestry data)
-  kits.json                Stub (future: kit data)
+  abilities.json           519 hero abilities
+  ancestries.json          12 ancestries
+  kits.json                21 kits
 widgets/
   monster-builder.js       7-step creature authoring wizard
   bestiary-browser.js      Filterable creature catalog
@@ -135,10 +135,69 @@ docs/
   PROJECT-HANDOFF.md       Architecture and status overview
   monster-builder.md       Monster Builder design document
   foundry-creature-sync.md Foundry VTT sync specification
-  implementation-checklist.md  Implementation roadmap
+  implementation-checklist.md  Implementation roadmap (STALE — see below)
 ```
+
+## Planned: the bestiary + monster-builder rewrite
+
+The community bestiary browser, the monster builder, and the Foundry creature-sync
+leg are booked for a rewrite. The plan of record is the coordinator dispatch
+**`C-BESTIARY-REWRITE`** (`Cordinator/dispatches/chronicle/C-BESTIARY-REWRITE.md`).
+It is **unsigned** — ten blocks `[BR-1]`…`[BR-10]` await a coordinator ruling, and
+none of them is an executor's to open.
+
+Read it before planning any work on `widgets/bestiary-browser.js`,
+`widgets/monster-builder.js`, `data/creatures.json`, or the creature preset's
+`foundry_path` annotations. Four things it settles that are easy to get wrong here:
+
+- **Chronicle's `internal/plugins/bestiary` is shipped and working** (3,252 lines of
+  Go, JSON-only, sanitised on write *and* read, multi-system). The rewrite is this
+  package's **widgets**, not that plugin. `docs/implementation-checklist.md` marks
+  that plugin — and the "Publish to Bestiary" button that shipped in
+  `widgets/monster-builder.js` — as *not done*; it is wrong on both counts.
+- **`widgets/monster-formulas.js` stays the only place published formulas are
+  evaluated**, and every rendered figure keeps its `sourced` provenance flag. See
+  CLAUDE.md → "The builder's math must carry its own provenance".
+- **`data/creatures.json` is 35 example fixtures, not a seed corpus.** Nothing loads
+  it, every `source` is `"custom"`, its abilities are bare names, and against the
+  published formulas in `data/monster-building.json` only 2 of 30 EV values and
+  **0 of 30** Stamina values agree (the other 5 entries are `Swarm`, which has no
+  published organization modifier at all). `[BR-6]` rules its fate.
+- **The Foundry creature leg does not exist yet in either repo**, and three documents
+  (`docs/foundry-creature-sync.md` §4.1, `manifest.json`'s creature preset, and the
+  Foundry module's `API-CONTRACT.md`) give three different, unverified `foundry_path`
+  maps. `docs/FOUNDRY-SYNC-MAP.md` is the *hero* map and is the only one verified
+  against the Draw Steel system source. `[BR-7]`/`[BR-8]` rule direction, conflict
+  resolution, and where the paths get verified.
 
 ## License
 
-Content is licensed under **CC-BY-4.0**. Draw Steel is a product of MCDM Productions.
-See [LICENSE](LICENSE) for details.
+This package carries **two** licensing positions, because it contains two kinds of
+material. See [LICENSE](LICENSE) for the full statement and
+[data/NOTICE.md](data/NOTICE.md) for the file-by-file attribution.
+
+**The Draw Steel rules text in `data/`** — glossary, skills, ancestries, kits,
+abilities, ability keywords, the ancestry point-buy, the monster-making and
+encounter-building formulas, and the animal traits — is reproduced under MCDM's
+**DRAW STEEL Creator License**. It is *not* Creative Commons material: MCDM has not
+released Draw Steel under any CC licence, and there is no Draw Steel SRD.
+
+> This package is an independent product published under the DRAW STEEL Creator
+> License and is not affiliated with MCDM Productions, LLC.
+> **DRAW STEEL © 2024 MCDM Productions, LLC.**
+
+No MCDM trademarks, logos, art, or setting material are reproduced here — only rules
+text and its mechanical numbers. MCDM endorsement is not implied. This package cannot
+sublicense that text; anyone redistributing it relies on the same Creator License and
+must carry the same attribution.
+
+**This package's own work** — `widgets/*.js`, `tools/*.mjs`, `docs/*`, `manifest.json`,
+and the data entries flagged `"source": "custom"` (including the 35 example creatures in
+`creatures.json`) — is licensed **CC-BY-4.0**, © the Chronicle Draw Steel contributors.
+
+**A limitation worth knowing about:** the Creator License text itself could not be read
+from the environment this position was written in (`mcdmproductions.com` is unreachable
+there). The statements above rest on this repository's established position and on the
+community Steel Compendium's reliance on the same licence for the same material — not on
+a reading of the licence. A human should read it once and confirm. See the closing
+section of [LICENSE](LICENSE).

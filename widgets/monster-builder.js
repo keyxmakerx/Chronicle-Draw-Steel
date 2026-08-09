@@ -80,6 +80,13 @@ Chronicle.register('monster-builder', {
     this._canPublish = false;
     this._publishVisibility = 'draft';
 
+    // Provenance of the auto-filled figures, written by _recalcAuto. Each entry
+    // is { sourced, value, note }. `sourced:false` means the published Draw
+    // Steel formulas do not cover this input and the figure shown is the
+    // widget's own heuristic — the UI is required to say so rather than let the
+    // checks panel imply the number was validated. See the DrawSteelFormulas section of widgets/monster-engine.js.
+    this._provenance = {};
+
     Promise.all([this._loadReferenceData(), this._ref.load(), this._loadParty()]).then(function () {
       self._ref.injectStyles();
       return self._loadExistingEntity();
@@ -347,6 +354,9 @@ Chronicle.register('monster-builder', {
       '.mb-v-error { background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
       '.mb-v-warning { background:rgba(245,158,11,0.05); border-left:3px solid #d97706; color:#92400e; }',
       '.mb-v-info { background:rgba(59,130,246,0.05); border-left:3px solid #2563eb; color:#1e40af; }',
+      // Provenance rows are deliberately neutral-grey, never green: they say
+      // what the panel cannot vouch for, so they must not read as approval.
+      '.mb-v-provenance { background:var(--color-bg-secondary,#f3f4f6); border-left:3px solid var(--color-text-muted,#9ca3af); color:var(--color-text-muted,#4b5563); font-style:italic; }',
       '.mb-v-icon { flex-shrink:0; }',
       '.mb-inline-warn { display:flex; align-items:center; gap:8px; padding:8px 12px; margin:0 0 12px; border-radius:6px; font-size:13px; background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
       // ── Encounter calculator ──
@@ -749,11 +759,16 @@ Chronicle.register('monster-builder', {
       chip('Ability tiers', r.tiers) +
       chip('Intent', r.intent);
 
+    // The suggestion's own notes, plus the damage-formula caveats the published
+    // rules attach to the tiers (a strike's characteristic add, the target-count
+    // multipliers, the horde/minion halving). These ride WITH the numbers: the
+    // director is looking at a baseline, not a finished damage line.
+    var allNotes = (s.notes || []).concat(s.tierNotes || []);
     var notesHtml = '';
-    if (s.notes && s.notes.length) {
+    if (allNotes.length) {
       notesHtml = '<ul class="mb-sugg-notes">';
-      for (var i = 0; i < s.notes.length; i++) {
-        notesHtml += '<li class="mb-sugg-note">' + h(s.notes[i]) + '</li>';
+      for (var i = 0; i < allNotes.length; i++) {
+        notesHtml += '<li class="mb-sugg-note">' + h(allNotes[i]) + '</li>';
       }
       notesHtml += '</ul>';
     }
@@ -856,6 +871,15 @@ Chronicle.register('monster-builder', {
     this._renderCurrentStep();
   },
 
+  // _suggestedAbilityTiers picks which tier triple gets written into the
+  // suggested ability. The ability is authored as a melee strike against one
+  // creature, so the published "a strike adds the monster's highest
+  // characteristic" adjustment applies and `strikeTiers` is the right number.
+  // Falls back to the bare baseline if the characteristic could not be derived.
+  _suggestedAbilityTiers: function (s) {
+    return s.strikeTiers || s.tiers;
+  },
+
   // _buildSuggestedAbility creates the signature attack that carries the
   // suggested tiers (WRITTEN into tier1/2/3, not just hinted) and a power roll
   // of "<attack-stat> vs. <target-defense>" targeting the party's weakest
@@ -866,15 +890,16 @@ Chronicle.register('monster-builder', {
     var attack = cap(s.powerRollAttack);
     var target = cap(s.powerRollTarget);
     var roll = (attack && target) ? (attack + ' vs. ' + target) : (target ? ('vs. ' + target) : '');
+    var t = this._suggestedAbilityTiers(s);
     return {
       type: 'signature',
       name: 'Signature Attack',
       distance: 'Melee 1',
       target: '1 creature',
       power_roll: roll,
-      tier1: String(s.tiers.tier1) + suffix,
-      tier2: String(s.tiers.tier2) + suffix,
-      tier3: String(s.tiers.tier3) + suffix,
+      tier1: String(t.tier1) + suffix,
+      tier2: String(t.tier2) + suffix,
+      tier3: String(t.tier3) + suffix,
       effect: '',
       trigger: '',
       spend_vp: 0,
@@ -889,12 +914,13 @@ Chronicle.register('monster-builder', {
   _applyDamageTypeToSuggestedAbility: function (dmgType) {
     var s = this._suggestion;
     if (!s || !s.tiers) return;
+    var t = this._suggestedAbilityTiers(s);
     for (var i = 0; i < this.creature.abilities.length; i++) {
       if (this.creature.abilities[i]._suggested) {
         var suffix = dmgType ? (' ' + String(dmgType).toLowerCase() + ' damage') : ' damage';
-        this.creature.abilities[i].tier1 = String(s.tiers.tier1) + suffix;
-        this.creature.abilities[i].tier2 = String(s.tiers.tier2) + suffix;
-        this.creature.abilities[i].tier3 = String(s.tiers.tier3) + suffix;
+        this.creature.abilities[i].tier1 = String(t.tier1) + suffix;
+        this.creature.abilities[i].tier2 = String(t.tier2) + suffix;
+        this.creature.abilities[i].tier3 = String(t.tier3) + suffix;
         break;
       }
     }
@@ -914,7 +940,10 @@ Chronicle.register('monster-builder', {
       '<div class="mb-card"><h4>Vitals</h4>' +
       '<div class="mb-field-row">' +
         '<label>Stamina<input type="number" class="mb-input" id="mb-stamina" value="' + cr.stamina + '">' +
-        '<small class="mb-suggestion">suggested: ' + suggested.stamina + '</small></label>' +
+        '<small class="mb-suggestion">' + (suggested.staminaSourced
+          ? ('published formula: ' + suggested.stamina)
+          : ('unsourced estimate: ' + suggested.stamina + ' — the widget’s own number, not published Draw Steel math')) +
+        '</small></label>' +
         '<label>Winded<input type="number" class="mb-input" id="mb-winded" value="' + cr.winded + '" readonly>' +
         '<small class="mb-suggestion">auto: floor(stamina/2)</small></label>' +
         '<label>Speed<input type="number" class="mb-input" id="mb-speed" value="' + cr.speed + '">' +
@@ -1209,12 +1238,61 @@ Chronicle.register('monster-builder', {
 
   // ── Auto-calculation ──────────────────────────────────────
 
+  // _formulas resolves the published-math module. Null only if the manifest
+  // failed to load it, in which case every figure degrades to unsourced.
+  _formulas: function () {
+    return (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) ? DrawSteelFormulas : null;
+  },
+
+  // _recalcAuto fills EV and Stamina from the PUBLISHED formulas
+  // (the DrawSteelFormulas section of widgets/monster-engine.js) and records, per
+  // figure, whether the number
+  // shown is published or the widget's own. It used to fill both from invented
+  // per-organization tables — `ev_multiplier * level` and
+  // `stamina_base + stamina_per_level * level` — which ran 1.67x and up to 2.3x
+  // off the published math while the checks panel presented them as validated.
+  //
+  // Where the published formula cannot be evaluated (Swarm, which is original to
+  // this package; or before a role is chosen, since published role modifiers
+  // span 10-30 and no midpoint is defensible) the legacy figure is kept as a
+  // usable starting point and FLAGGED unsourced. Nothing here is allowed to be
+  // shown without its provenance.
   _recalcAuto: function () {
     var org = this._getOrgTemplate();
     var role = this._getRoleTemplate();
+    var F = this._formulas();
+    if (!this._provenance) this._provenance = {};
     if (org) {
-      this.creature.ev = org.ev_multiplier * this.creature.level;
-      this.creature.stamina = org.stamina_base + (org.stamina_per_level * this.creature.level);
+      var lvl = this.creature.level;
+
+      var ev = F ? F.encounterValue(lvl, org) : null;
+      if (ev && ev.value !== null) {
+        this.creature.ev = ev.value;
+        this._provenance.ev = { sourced: true, value: ev.value, note: '' };
+      } else {
+        this.creature.ev = org.ev_multiplier * lvl;
+        this._provenance.ev = {
+          sourced: false, value: this.creature.ev,
+          note: 'EV ' + this.creature.ev + ' is the widget’s own figure (level × ' + org.ev_multiplier +
+            '), not the published formula — “' + org.name + '” has no published organization modifier. Pending the builder rework.'
+        };
+      }
+
+      var stam = (F && role) ? F.stamina(lvl, org, role) : (F ? F.stamina(lvl, org, null) : null);
+      if (stam && stam.value !== null) {
+        this.creature.stamina = stam.value;
+        this._provenance.stamina = { sourced: true, value: stam.value, note: '' };
+      } else {
+        this.creature.stamina = org.stamina_base + (org.stamina_per_level * lvl);
+        this._provenance.stamina = {
+          sourced: false, value: this.creature.stamina,
+          note: 'Stamina ' + this.creature.stamina + ' is the widget’s own figure, not the published formula — ' +
+            (role ? ('“' + org.name + '” has no published Stamina organization modifier')
+                  : 'the published formula needs a role, and published role modifiers range from 10 to 30') +
+            '. Pending the builder rework.'
+        };
+      }
+
       this.creature.winded = Math.floor(this.creature.stamina / 2);
       this.creature.speed = org.default_speed;
       this.creature.stability = org.default_stability;
@@ -1277,24 +1355,60 @@ Chronicle.register('monster-builder', {
     return best;
   },
 
+  // _getDamageHints shows the PUBLISHED baseline damage for the current
+  // organization and role — (4 + level + damage modifier) × tier modifier,
+  // halved for horde and minion — and names the two published adjustments it
+  // has not applied, because they depend on the ability the director is writing.
+  // It used to print data/damage-baselines.json, whose own `source` is "custom"
+  // and which runs up to 2.4x the published figures; that table now appears only
+  // for an organization the published rules do not define, clearly labelled.
   _getDamageHints: function () {
     var org = this._getOrgTemplate();
-    if (!org || !this.damageBaselines[org.slug]) return '';
-    var bl = this.damageBaselines[org.slug];
+    if (!org) return '';
+    var role = this._getRoleTemplate();
+    var F = this._formulas();
     var lvl = this.creature.level;
-    var t1 = Math.round(bl.tier1 + (bl.per_level * (lvl - 1)));
-    var t2 = Math.round(bl.tier2 + (bl.per_level * (lvl - 1)));
-    var t3 = Math.round(bl.tier3 + (bl.per_level * (lvl - 1)));
-    return 'Damage baseline: T1 ~' + t1 + ' &middot; T2 ~' + t2 + ' &middot; T3 ~' + t3;
+
+    var pub = F ? F.damageTiers(lvl, org, role) : null;
+    if (pub && pub.value) {
+      var t = pub.value;
+      var notes = (pub.notes || []).map(function (n) { return Chronicle.escapeHtml(n); }).join(' ');
+      return 'Published baseline damage: T1 ' + t.tier1 + ' &middot; T2 ' + t.tier2 + ' &middot; T3 ' + t.tier3 +
+        ' <em>(4 + level + damage modifier, × tier modifier)</em>' +
+        (notes ? ('<br><small>' + notes + '</small>') : '');
+    }
+
+    var bl = this.damageBaselines[org.slug];
+    if (!bl) {
+      return '<small>No damage baseline available for this organization' +
+        (role ? '' : ' until a role is chosen — the published formula needs the role’s damage modifier') + '.</small>';
+    }
+    var l1 = Math.round(bl.tier1 + (bl.per_level * (lvl - 1)));
+    var l2 = Math.round(bl.tier2 + (bl.per_level * (lvl - 1)));
+    var l3 = Math.round(bl.tier3 + (bl.per_level * (lvl - 1)));
+    return 'Unsourced damage estimate: T1 ~' + l1 + ' &middot; T2 ~' + l2 + ' &middot; T3 ~' + l3 +
+      '<br><small>These are the widget’s own numbers, not published Draw Steel math — ' +
+      (role ? ('“' + Chronicle.escapeHtml(org.name) + '” is not a published organization')
+            : 'the published damage formula needs a role’s damage modifier') +
+      '. Pending the builder rework; check them against a published stat block before use.</small>';
   },
 
+  // _getSuggestedStats returns the Step 3 "suggested:" hints. `staminaSourced`
+  // tells the caller whether the Stamina figure came from the published formula
+  // so the hint can be labelled rather than presented as authoritative.
   _getSuggestedStats: function () {
     var org = this._getOrgTemplate();
-    if (!org) return { stamina: '?', speed: '?', stability: '?' };
+    if (!org) return { stamina: '?', speed: '?', stability: '?', staminaSourced: false };
+    var F = this._formulas();
+    var stam = F ? F.stamina(this.creature.level, org, this._getRoleTemplate()) : null;
+    if (stam && stam.value !== null) {
+      return { stamina: stam.value, speed: org.default_speed, stability: org.default_stability, staminaSourced: true };
+    }
     return {
       stamina: org.stamina_base + (org.stamina_per_level * this.creature.level),
       speed: org.default_speed,
-      stability: org.default_stability
+      stability: org.default_stability,
+      staminaSourced: false
     };
   },
 
@@ -1454,11 +1568,17 @@ Chronicle.register('monster-builder', {
 
     var panel = document.createElement('div');
     panel.className = 'mb-validation-panel';
-    panel.innerHTML = '<h4>Validation</h4>';
+    // Titled "Checks", not "Validation": the panel confirms a stat block is
+    // COMPLETE, it does not certify that its numbers are balanced. Calling it
+    // validation is what let unsourced arithmetic ship wearing a green tick.
+    panel.innerHTML = '<h4>Completeness checks</h4>';
 
     rules.forEach(function (rule) {
       var item = document.createElement('div');
-      var icon = rule.severity === 'error' ? '&#10060;' : rule.severity === 'warning' ? '&#9888;' : '&#8505;';
+      var icon = rule.severity === 'error' ? '&#10060;'
+        : rule.severity === 'warning' ? '&#9888;'
+        : rule.severity === 'provenance' ? '&#9432;'
+        : '&#8505;';
       item.className = 'mb-validation-item mb-v-' + rule.severity;
       item.innerHTML = '<span class="mb-v-icon">' + icon + '</span> ' + Chronicle.escapeHtml(rule.message);
       panel.appendChild(item);
@@ -1500,7 +1620,7 @@ Chronicle.register('monster-builder', {
     // read-only, so it never re-renders on keystroke either.
     calc.innerHTML =
       this._partyPanelHtml(profile) +
-      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Budget</h4>' +
+      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Strength</h4>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
         '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + st.partySize + '" min="1" max="10" style="width:50px"></label>' +
         '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + st.partyLevel + '" min="1" max="20" style="width:50px"></label>' +
@@ -1509,18 +1629,7 @@ Chronicle.register('monster-builder', {
 
     var output = calc.querySelector('.mb-ec-output');
     var refresh = function () {
-      // Grounded EV budget: party size x level x the standard EV-per-hero-level
-      // the engine derives from the org templates (docs/monster-builder.md
-      // \u00a72.1/\u00a74.1) \u2014 replaces the old crude partySize*partyLevel.
-      var budget = MonsterEngine.encounterBudget(st.partySize, st.partyLevel, self.orgTemplates);
-      var meter = MonsterEngine.evMeter(cr.ev, budget);
-      var pct = meter.budget ? Math.max(0, Math.min(100, Math.round(meter.ratio * 100))) : 0;
-      var orgName = Chronicle.escapeHtml(cr.organization || 'creature');
-      output.innerHTML =
-        '<strong>Budget:</strong> ' + meter.budget + ' EV (' + st.partySize + ' heroes \u00d7 level ' + st.partyLevel + ')<br>' +
-        '<strong>This ' + orgName + ':</strong> spent ' + meter.spent + ' / ' + meter.budget + ' EV' +
-        '<div style="height:6px;border-radius:3px;background:var(--color-border,#e5e7eb);margin:4px 0;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--color-primary,#7c3aed)"></div></div>' +
-        'Use <strong>~' + meter.copies + '</strong> of these for a balanced encounter (EV ' + meter.spent + ' each = ' + (meter.copies * meter.spent) + ' total).';
+      output.innerHTML = self._encounterMeterHtml(st);
     };
 
     calc.querySelector('.mb-ec-party').addEventListener('input', function () {
@@ -1534,6 +1643,53 @@ Chronicle.register('monster-builder', {
 
     refresh();
     container.appendChild(calc);
+  },
+
+  // _encounterMeterHtml builds the encounter-budget readout. It is a pure
+  // string builder so it can be tested off-DOM.
+  //
+  // It reports the party's PUBLISHED encounter strength (4 + 2 × level per hero)
+  // and names the published difficulty band the current spend falls into. It
+  // used to print `partySize × partyLevel × 4` — 1.67x the published strength at
+  // level 10 — and then tell the director that some multiple of the creature
+  // would make a balanced fight, which the widget had no basis to claim: it
+  // checks none of the published spending constraints (creature count per hero,
+  // the six-stat-block limit, minions in fours, star-of-the-show).
+  _encounterMeterHtml: function (st) {
+    var cr = this.creature;
+    var partyEs = MonsterEngine.encounterBudget(st.partySize, st.partyLevel, this.orgTemplates);
+    var meter = MonsterEngine.evMeter(cr.ev, partyEs);
+    var bandInfo = MonsterEngine.encounterBands(st.partySize, st.partyLevel);
+    var F = this._formulas();
+    var orgName = Chronicle.escapeHtml(cr.organization || 'creature');
+    var pct = meter.budget ? Math.max(0, Math.min(100, Math.round(meter.ratio * 100))) : 0;
+
+    if (!partyEs || !bandInfo) {
+      return '<em>The party’s encounter strength could not be computed for this size and level.</em>';
+    }
+
+    var total = meter.copies * meter.spent;
+    var band = F ? F.difficultyOf(total, bandInfo.partyEs, bandInfo.perHeroEs) : null;
+    var bandName = (band && band.value) ? band.value : null;
+    var std = bandInfo.bands.standard;
+
+    var evNote = '';
+    var prov = (this._provenance || {}).ev;
+    if (prov && !prov.sourced) {
+      evNote = '<div style="margin-top:4px;font-size:0.85em;opacity:0.8"><em>' +
+        Chronicle.escapeHtml(prov.note) + '</em></div>';
+    }
+
+    return '<strong>Party encounter strength:</strong> ' + bandInfo.partyEs + ' EV (' +
+        st.partySize + ' heroes × [4 + 2 × level ' + st.partyLevel + '])<br>' +
+      '<strong>A standard encounter</strong> spends ' + std.lower + '–' + std.upper + ' EV; ' +
+        'hard runs to ' + bandInfo.bands.hard.upper + '.<br>' +
+      '<strong>This ' + orgName + ':</strong> ' + meter.spent + ' EV each' +
+      '<div style="height:6px;border-radius:3px;background:var(--color-border,#e5e7eb);margin:4px 0;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--color-primary,#7c3aed)"></div></div>' +
+      '<strong>' + meter.copies + '</strong> of them cost ' + total + ' EV' +
+      (bandName ? (' — a <strong>' + Chronicle.escapeHtml(bandName) + '</strong> encounter by the published difficulty bands.') : '.') +
+      evNote +
+      '<div style="margin-top:6px;font-size:0.85em;opacity:0.8">This does not check the published spending limits — creatures per hero, the six-stat-block cap, buying minions in fours, or giving a leader or solo a third of the budget. Read them before you run it.</div>';
   },
 
   // _partyPanelHtml renders the read-only "party at a glance" panel above the
@@ -1617,17 +1773,30 @@ Chronicle.register('monster-builder', {
       }
     }
 
-    // W-rules (warnings)
+    // W-rules (warnings). A deviation warning is only raised against a figure
+    // the PUBLISHED formulas can actually produce. The old code compared against
+    // the widget's own per-organization tables and reported the difference as if
+    // the baseline were Draw Steel's — certifying arithmetic it could not source.
     var org = this._getOrgTemplate();
-    if (org) {
-      var suggestedStamina = org.stamina_base + (org.stamina_per_level * cr.level);
-      var deviation = Math.abs(cr.stamina - suggestedStamina) / suggestedStamina;
-      if (deviation > 0.3) {
-        rules.push({ severity: 'warning', message: 'Stamina (' + cr.stamina + ') deviates >30% from baseline (' + suggestedStamina + ').' });
+    var role = this._getRoleTemplate();
+    var F = this._formulas();
+    if (org && F) {
+      var pubStamina = F.stamina(cr.level, org, role);
+      if (pubStamina.value !== null) {
+        var deviation = Math.abs(cr.stamina - pubStamina.value) / pubStamina.value;
+        if (deviation > 0.3) {
+          rules.push({
+            severity: 'warning',
+            message: 'Stamina (' + cr.stamina + ') is more than 30% from the published formula’s ' + pubStamina.value + '.'
+          });
+        }
       }
-      var expectedEV = org.ev_multiplier * cr.level;
-      if (cr.ev !== expectedEV) {
-        rules.push({ severity: 'warning', message: 'EV (' + cr.ev + ') does not match formula (' + expectedEV + ').' });
+      var pubEV = F.encounterValue(cr.level, org);
+      if (pubEV.value !== null && cr.ev !== pubEV.value) {
+        rules.push({
+          severity: 'warning',
+          message: 'EV (' + cr.ev + ') does not match the published formula’s ' + pubEV.value + '.'
+        });
       }
     }
 
@@ -1652,6 +1821,26 @@ Chronicle.register('monster-builder', {
 
     if (hasSignature) {
       rules.push({ severity: 'info', message: 'Signature ability present.' });
+    }
+
+    // P-rules (provenance). These are not checks — they are the panel telling
+    // the director what it can and cannot vouch for. The standing disclaimer is
+    // unconditional on purpose: an empty panel used to read as a clean bill of
+    // health for numbers the widget had invented.
+    rules.push({
+      severity: 'provenance',
+      message: 'These are completeness checks, not a balance check. Nothing here certifies that this creature is a fair match for your party.'
+    });
+    var prov = this._provenance || {};
+    ['ev', 'stamina'].forEach(function (key) {
+      var p = prov[key];
+      if (p && !p.sourced && p.note) rules.push({ severity: 'provenance', message: p.note });
+    });
+    if (org && !F) {
+      rules.push({
+        severity: 'provenance',
+        message: 'The published-formula module did not load, so none of the figures on this creature could be checked against Draw Steel’s math.'
+      });
     }
 
     return rules;

@@ -172,9 +172,14 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
   - "How many of these vs. X heroes at level Y?" calculator
   - Uses EV formulas from organization-templates
 
-- [x] **2.5** Populate `data/creatures.json` with official example creatures
+- [x] **2.5** Populate `data/creatures.json` with example creatures
   - At least 7 examples (one per organization type)
-  - Sourced from CC-BY-4.0 Draw Steel content only
+  - ~~Sourced from CC-BY-4.0 Draw Steel content only~~ — **this line was wrong on
+    both counts and is corrected here.** Draw Steel is not CC-BY-4.0 (it is
+    reproduced under MCDM's DRAW STEEL Creator License; see `LICENSE` and
+    `data/NOTICE.md`), and the 35 creatures that shipped are not reproduced Draw
+    Steel monsters — they are example stat blocks written for this package, now
+    flagged `"source": "custom"`.
   - **File:** `data/creatures.json`
 
 ### Phase 2 Commit Checkpoint

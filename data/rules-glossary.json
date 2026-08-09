@@ -2,6 +2,7 @@
   {
     "slug": "frightened",
     "name": "Frightened",
+    "summary": "A frightened creature takes a bane on all power rolls against the source of their fear. The creature can't willingly move closer to the source of their fear.",
     "description": "A frightened creature takes a bane on all power rolls against the source of their fear. The creature can't willingly move closer to the source of their fear.",
     "properties": {
       "category": "condition"
@@ -10,6 +11,7 @@
   {
     "slug": "dazed",
     "name": "Dazed",
+    "summary": "A dazed creature can only do one thing on their turn: take an action, take a maneuver, or take a move action. They also can't take triggered actions or free triggered actions.",
     "description": "A dazed creature can only do one thing on their turn: take an action, take a maneuver, or take a move action. They also can't take triggered actions or free triggered actions.",
     "properties": {
       "category": "condition"
@@ -18,6 +20,7 @@
   {
     "slug": "slowed",
     "name": "Slowed",
+    "summary": "A slowed creature's speed is reduced to 2 and they can't benefit from bonuses to speed. They also can't shift.",
     "description": "A slowed creature's speed is reduced to 2 and they can't benefit from bonuses to speed. They also can't shift.",
     "properties": {
       "category": "condition"
@@ -26,6 +29,7 @@
   {
     "slug": "restrained",
     "name": "Restrained",
+    "summary": "A restrained creature's speed is 0 and they can't benefit from bonuses to speed. Attacks against a restrained creature gain an edge.",
     "description": "A restrained creature's speed is 0 and they can't benefit from bonuses to speed. Attacks against a restrained creature gain an edge.",
     "properties": {
       "category": "condition"
@@ -34,6 +38,7 @@
   {
     "slug": "weakened",
     "name": "Weakened",
+    "summary": "A weakened creature's power rolls and damage are halved.",
     "description": "A weakened creature's power rolls and damage are halved.",
     "properties": {
       "category": "condition"
@@ -42,6 +47,7 @@
   {
     "slug": "bleeding",
     "name": "Bleeding",
+    "summary": "A bleeding creature takes damage at the start of each of their turns equal to the bleeding value.",
     "description": "A bleeding creature takes damage at the start of each of their turns equal to the bleeding value.",
     "properties": {
       "category": "condition"
@@ -50,6 +56,7 @@
   {
     "slug": "burning",
     "name": "Burning",
+    "summary": "A burning creature takes fire damage at the start of each of their turns equal to the burning value.",
     "description": "A burning creature takes fire damage at the start of each of their turns equal to the burning value.",
     "properties": {
       "category": "condition"
@@ -58,6 +65,7 @@
   {
     "slug": "taunted",
     "name": "Taunted",
+    "summary": "A taunted creature takes a bane on attacks that don't include the source of the taunt as a target.",
     "description": "A taunted creature takes a bane on attacks that don't include the source of the taunt as a target.",
     "properties": {
       "category": "condition"
@@ -66,6 +74,7 @@
   {
     "slug": "prone",
     "name": "Prone",
+    "summary": "A prone creature is flat on the ground. They must spend half their movement to stand up. Melee attacks against them gain an edge; ranged attacks take a bane.",
     "description": "A prone creature is flat on the ground. They must spend half their movement to stand up. Melee attacks against them gain an edge; ranged attacks take a bane.",
     "properties": {
       "category": "condition"
@@ -74,6 +83,7 @@
   {
     "slug": "charmed",
     "name": "Charmed",
+    "summary": "A charmed creature can't attack the source of the charm and the source gains an edge on social interactions with the charmed creature.",
     "description": "A charmed creature can't attack the source of the charm and the source gains an edge on social interactions with the charmed creature.",
     "properties": {
       "category": "condition"
@@ -82,6 +92,7 @@
   {
     "slug": "poisoned",
     "name": "Poisoned",
+    "summary": "A poisoned creature takes a bane on all power rolls.",
     "description": "A poisoned creature takes a bane on all power rolls.",
     "properties": {
       "category": "condition"
@@ -90,6 +101,7 @@
   {
     "slug": "grabbed",
     "name": "Grabbed",
+    "summary": "A grabbed creature's speed is 0. The grabber can move the grabbed creature with them when they move. The grabbed creature can use an action to attempt to escape.",
     "description": "A grabbed creature's speed is 0. The grabber can move the grabbed creature with them when they move. The grabbed creature can use an action to attempt to escape.",
     "properties": {
       "category": "condition"
@@ -98,6 +110,7 @@
   {
     "slug": "hidden",
     "name": "Hidden",
+    "summary": "A hidden creature can't be seen or detected by the creatures they are hidden from. Attacks against a hidden creature take a bane; attacks by a hidden creature gain an edge.",
     "description": "A hidden creature can't be seen or detected by the creatures they are hidden from. Attacks against a hidden creature take a bane; attacks by a hidden creature gain an edge.",
     "properties": {
       "category": "condition"
@@ -106,6 +119,7 @@
   {
     "slug": "shift",
     "name": "Shift",
+    "summary": "A shift is a special movement that doesn't provoke opportunity attacks or free strikes. The creature moves the indicated number of squares.",
     "description": "A shift is a special movement that doesn't provoke opportunity attacks or free strikes. The creature moves the indicated number of squares.",
     "properties": {
       "category": "movement"
@@ -114,6 +128,7 @@
   {
     "slug": "push",
     "name": "Push",
+    "summary": "Forced movement that moves the target the indicated number of squares away from the source. The target doesn't provoke opportunity attacks from this movement.",
     "description": "Forced movement that moves the target the indicated number of squares away from the source. The target doesn't provoke opportunity attacks from this movement.",
     "properties": {
       "category": "movement"
@@ -122,6 +137,7 @@
   {
     "slug": "pull",
     "name": "Pull",
+    "summary": "Forced movement that moves the target the indicated number of squares toward the source. The target doesn't provoke opportunity attacks from this movement.",
     "description": "Forced movement that moves the target the indicated number of squares toward the source. The target doesn't provoke opportunity attacks from this movement.",
     "properties": {
       "category": "movement"
@@ -130,6 +146,7 @@
   {
     "slug": "eot",
     "name": "EoT",
+    "summary": "End of Turn. The effect lasts until the end of the affected creature's next turn, then ends automatically.",
     "description": "End of Turn. The effect lasts until the end of the affected creature's next turn, then ends automatically.",
     "properties": {
       "category": "duration"
@@ -138,7 +155,8 @@
   {
     "slug": "save-ends",
     "name": "Save Ends",
-    "description": "The effect persists until the affected creature succeeds on a resistance roll at the end of their turn (roll 2d10; 10+ ends the effect).",
+    "summary": "The effect persists until the affected creature succeeds on a saving throw at the end of their turn (roll a d10; 6 or higher ends the effect).",
+    "description": "The effect persists until the affected creature succeeds on a saving throw at the end of their turn (roll a d10; 6 or higher ends the effect).",
     "properties": {
       "category": "duration"
     }
@@ -146,6 +164,7 @@
   {
     "slug": "temporary-stamina",
     "name": "Temporary Stamina",
+    "summary": "Extra stamina layered on top of current stamina.",
     "description": "Extra stamina layered on top of current stamina. Damage reduces temporary stamina first. Temporary stamina doesn't stack; use the higher value. It expires at the end of the encounter.",
     "properties": {
       "category": "resource"
@@ -154,6 +173,7 @@
   {
     "slug": "damage-resistance",
     "name": "Damage Resistance",
+    "summary": "Reduces incoming damage by the indicated amount. Applied after all damage calculations. Multiple sources of damage resistance stack.",
     "description": "Reduces incoming damage by the indicated amount. Applied after all damage calculations. Multiple sources of damage resistance stack.",
     "properties": {
       "category": "resource"
@@ -162,6 +182,7 @@
   {
     "slug": "free-strike",
     "name": "Free Strike",
+    "summary": "A quick, automatic attack a creature can make outside their turn. Typically triggered by an enemy moving out of reach or as part of certain abilities.",
     "description": "A quick, automatic attack a creature can make outside their turn. Typically triggered by an enemy moving out of reach or as part of certain abilities.",
     "properties": {
       "category": "action"
@@ -170,6 +191,7 @@
   {
     "slug": "forced-movement",
     "name": "Forced Movement",
+    "summary": "Movement imposed on a creature by an outside force (push, pull, slide). Forced movement doesn't provoke opportunity attacks or free strikes.",
     "description": "Movement imposed on a creature by an outside force (push, pull, slide). Forced movement doesn't provoke opportunity attacks or free strikes.",
     "properties": {
       "category": "combat"
@@ -178,6 +200,7 @@
   {
     "slug": "power-roll",
     "name": "Power Roll",
+    "summary": "Roll 2d10 + characteristic vs. target's characteristic. Results: 11 or lower (Tier 1), 12-16 (Tier 2), 17+ (Tier 3). Edges add +2; banes subtract -2.",
     "description": "Roll 2d10 + characteristic vs. target's characteristic. Results: 11 or lower (Tier 1), 12-16 (Tier 2), 17+ (Tier 3). Edges add +2; banes subtract -2.",
     "properties": {
       "category": "combat"
@@ -186,6 +209,7 @@
   {
     "slug": "stability",
     "name": "Stability",
+    "summary": "Reduces forced movement. When a creature would be force-moved, reduce the distance by their stability value (minimum 0).",
     "description": "Reduces forced movement. When a creature would be force-moved, reduce the distance by their stability value (minimum 0).",
     "properties": {
       "category": "combat"
@@ -194,6 +218,7 @@
   {
     "slug": "winded",
     "name": "Winded",
+    "summary": "A creature is winded when their stamina drops to their winded value (half their maximum stamina) or below. Some abilities trigger or change when the creature is winded.",
     "description": "A creature is winded when their stamina drops to their winded value (half their maximum stamina) or below. Some abilities trigger or change when the creature is winded.",
     "properties": {
       "category": "combat"
@@ -202,6 +227,7 @@
   {
     "slug": "edge",
     "name": "Edge",
+    "summary": "An edge grants +2 to your power roll. Edges and banes never stack past two — a double edge bumps the result up a tier instead, and one edge and one bane cancel out.",
     "description": "An edge grants +2 to your power roll. Edges and banes never stack past two — a double edge bumps the result up a tier instead, and one edge and one bane cancel out.",
     "properties": {
       "category": "combat"
@@ -210,6 +236,7 @@
   {
     "slug": "bane",
     "name": "Bane",
+    "summary": "A bane imposes −2 on your power roll. Edges and banes never stack past two — a double bane drops the result down a tier instead, and one bane and one edge cancel out.",
     "description": "A bane imposes −2 on your power roll. Edges and banes never stack past two — a double bane drops the result down a tier instead, and one bane and one edge cancel out.",
     "properties": {
       "category": "combat"
@@ -218,6 +245,7 @@
   {
     "slug": "magic",
     "name": "Magic",
+    "summary": "An ability with the Magic keyword draws on magic. Some effects, creatures, and treasures interact specifically with Magic abilities.",
     "description": "An ability with the Magic keyword draws on magic. Some effects, creatures, and treasures interact specifically with Magic abilities.",
     "properties": {
       "category": "keyword"
@@ -226,6 +254,7 @@
   {
     "slug": "psionic",
     "name": "Psionic",
+    "summary": "An ability with the Psionic keyword draws on the power of the mind. Some effects interact specifically with Psionic abilities.",
     "description": "An ability with the Psionic keyword draws on the power of the mind. Some effects interact specifically with Psionic abilities.",
     "properties": {
       "category": "keyword"
@@ -234,6 +263,7 @@
   {
     "slug": "melee",
     "name": "Melee",
+    "summary": "A Melee ability can be used against targets within reach (adjacent unless a greater melee distance is noted).",
     "description": "A Melee ability can be used against targets within reach (adjacent unless a greater melee distance is noted).",
     "properties": {
       "category": "keyword"
@@ -242,6 +272,7 @@
   {
     "slug": "ranged",
     "name": "Ranged",
+    "summary": "A Ranged ability can be used against targets at a distance, up to its listed range.",
     "description": "A Ranged ability can be used against targets at a distance, up to its listed range.",
     "properties": {
       "category": "keyword"
@@ -250,6 +281,7 @@
   {
     "slug": "weapon",
     "name": "Weapon",
+    "summary": "A Weapon ability is made with a held weapon and benefits from your kit's weapon damage bonuses.",
     "description": "A Weapon ability is made with a held weapon and benefits from your kit's weapon damage bonuses.",
     "properties": {
       "category": "keyword"
@@ -258,6 +290,7 @@
   {
     "slug": "strike",
     "name": "Strike",
+    "summary": "A Strike ability makes one or more attacks against a target, typically dealing damage on a power roll.",
     "description": "A Strike ability makes one or more attacks against a target, typically dealing damage on a power roll.",
     "properties": {
       "category": "keyword"
@@ -266,9 +299,244 @@
   {
     "slug": "area",
     "name": "Area",
+    "summary": "An Area ability affects every valid target within a defined zone (a burst, cube, line, or wall).",
     "description": "An Area ability affects every valid target within a defined zone (a burst, cube, line, or wall).",
     "properties": {
       "category": "keyword"
+    }
+  },
+  {
+    "slug": "slide",
+    "name": "Slide",
+    "summary": "Forced movement that moves the target up to the indicated number of squares in any direction except vertically. Unlike a push or a pull, a slide doesn't have to be a straight line.",
+    "description": "Forced movement that moves the target up to the indicated number of squares in any direction except vertically. Unlike a push or a pull, a slide doesn't have to be a straight line.",
+    "properties": {
+      "category": "movement"
+    }
+  },
+  {
+    "slug": "saving-throw",
+    "name": "Saving Throw",
+    "summary": "A roll made at the end of your turn to shake off an effect that ends with a save. Roll a d10; on a 6 or higher the effect ends, otherwise it continues.",
+    "description": "A roll made at the end of your turn to shake off an effect that ends with a save. Roll a d10; on a 6 or higher the effect ends, otherwise it continues.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "potency",
+    "name": "Potency",
+    "summary": "An added effect lands only if its potency value is higher than the target's listed characteristic score.",
+    "description": "An added effect lands only if its potency value is higher than the target's listed characteristic score. Potencies are written as a characteristic letter, a less-than sign, and a value — M < WEAK, A < AVERAGE, R < STRONG. Your weak, average, and strong potency values are your highest characteristic score minus 2, minus 1, and unmodified.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "surge",
+    "name": "Surge",
+    "summary": "Stored momentum. Whenever you deal rolled damage you can spend up to 3 surges against one target, each dealing extra damage equal to your highest characteristic score;…",
+    "description": "Stored momentum. Whenever you deal rolled damage you can spend up to 3 surges against one target, each dealing extra damage equal to your highest characteristic score; alternatively, spend 2 surges to raise one potency by 1 for one target. Any surges left over are lost at the end of combat.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "recovery",
+    "name": "Recovery",
+    "summary": "A second wind you can spend. Your recovery value is one-third of your Stamina maximum rounded down, and spending a Recovery regains that much Stamina. Your number of Recoveries…",
+    "description": "A second wind you can spend. Your recovery value is one-third of your Stamina maximum rounded down, and spending a Recovery regains that much Stamina. Your number of Recoveries comes from your class, and finishing a respite restores all of them.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "respite",
+    "name": "Respite",
+    "summary": "24 uninterrupted hours of rest plus one respite activity.",
+    "description": "24 uninterrupted hours of rest plus one respite activity. Finishing a respite restores all your Stamina and Recoveries and converts your Victories into Experience. A night's sleep is not a respite.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "damage-immunity",
+    "name": "Damage Immunity",
+    "summary": "Reduces damage of the stated type by the immunity's value, to a minimum of 0; an immunity of \"all\" ignores that damage entirely.",
+    "description": "Reduces damage of the stated type by the immunity's value, to a minimum of 0; an immunity of \"all\" ignores that damage entirely. Immunity is applied last when calculating damage, and only the highest applicable immunity counts.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "damage-weakness",
+    "name": "Damage Weakness",
+    "summary": "The mirror of damage immunity — you take extra damage of the stated type equal to the weakness value.",
+    "description": "The mirror of damage immunity — you take extra damage of the stated type equal to the weakness value. Weakness is applied before immunity, and only the highest applicable weakness counts.",
+    "properties": {
+      "category": "resource"
+    }
+  },
+  {
+    "slug": "concealment",
+    "name": "Concealment",
+    "summary": "Darkness, fog, invisibility, and any other effect that fully obscures a creature without protecting their physical form grants concealment.",
+    "description": "Darkness, fog, invisibility, and any other effect that fully obscures a creature without protecting their physical form grants concealment. You can still target a creature who has concealment as long as they aren't hidden, but strikes against them take a bane.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "cover",
+    "name": "Cover",
+    "summary": "A target has cover when you have line of effect to them but at least half their form is blocked by a solid object such as a tree, a wall, or an overturned table.",
+    "description": "A target has cover when you have line of effect to them but at least half their form is blocked by a solid object such as a tree, a wall, or an overturned table. Damage-dealing abilities used against a target with cover take a bane.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "difficult-terrain",
+    "name": "Difficult Terrain",
+    "summary": "Thick underbrush, rubble, webs, and similar obstacles create difficult terrain.",
+    "description": "Thick underbrush, rubble, webs, and similar obstacles create difficult terrain. It costs 1 additional square of movement to enter a square of difficult terrain. Forced movement ignores it.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "flanking",
+    "name": "Flanking",
+    "summary": "You are flanking an enemy when you and at least one ally are adjacent to them on opposite sides.",
+    "description": "You are flanking an enemy when you and at least one ally are adjacent to them on opposite sides. While flanking, you gain an edge on melee strikes against that enemy. You must have line of effect to the enemy and be able to take triggered actions to gain or grant the benefit.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "critical-hit",
+    "name": "Critical Hit",
+    "summary": "An ability roll made as a main action that comes up a natural 19 or 20 — the total on the dice before adding your characteristic score or any other modifier — is a critical hit.",
+    "description": "An ability roll made as a main action that comes up a natural 19 or 20 — the total on the dice before adding your characteristic score or any other modifier — is a critical hit. You immediately take an additional main action after resolving the power roll, even off your turn and even while dazed. Rolls made as maneuvers or other action types can't crit.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "dying",
+    "name": "Dying",
+    "summary": "You are dying while your Stamina is 0 or lower.",
+    "description": "You are dying while your Stamina is 0 or lower. A dying creature is bleeding and that instance of the condition can't be removed until they stop dying, and they can't use the Catch Breath maneuver in combat. If your Stamina falls to the negative of your winded value, you die.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "surprised",
+    "name": "Surprised",
+    "summary": "A creature who isn't ready for combat when it starts is surprised until the end of the first combat round.",
+    "description": "A creature who isn't ready for combat when it starts is surprised until the end of the first combat round. A surprised creature can't take triggered actions or free triggered actions, and ability rolls made against them gain an edge.",
+    "properties": {
+      "category": "condition"
+    }
+  },
+  {
+    "slug": "triggered-action",
+    "name": "Triggered Action",
+    "summary": "An action you can take only when its stated trigger occurs, on your turn or another creature's. You get one triggered action per round.",
+    "description": "An action you can take only when its stated trigger occurs, on your turn or another creature's. You get one triggered action per round.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "free-triggered-action",
+    "name": "Free Triggered Action",
+    "summary": "Follows the same rules as a triggered action but doesn't count against your one-per-round limit. Anything that stops you taking triggered actions also stops free triggered actions.",
+    "description": "Follows the same rules as a triggered action but doesn't count against your one-per-round limit. Anything that stops you taking triggered actions also stops free triggered actions.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "main-action",
+    "name": "Main Action",
+    "summary": "The heaviest of the three things you get on your turn.",
+    "description": "The heaviest of the three things you get on your turn. Most class, kit, and treasure abilities are main actions, as are Charge, Defend, Heal, and Free Strike. You can convert a main action into a maneuver or a move action.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "maneuver",
+    "name": "Maneuver",
+    "summary": "One of the three things you get on your turn, involving less focus and exertion than a main action.",
+    "description": "One of the three things you get on your turn, involving less focus and exertion than a main action. Aid Attack, Catch Breath, Escape Grab, Grab, Hide, Knockback, Stand Up, and Use Consumable are maneuvers.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "move-action",
+    "name": "Move Action",
+    "summary": "The part of your turn spent getting around the battlefield: Advance, Disengage, or Ride. You can break the movement up before, after, or between your maneuver and main action.",
+    "description": "The part of your turn spent getting around the battlefield: Advance, Disengage, or Ride. You can break the movement up before, after, or between your maneuver and main action.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "disengage",
+    "name": "Disengage",
+    "summary": "A move action. You shift 1 square. Certain kits, class features, and ancestry traits let you shift further when you disengage.",
+    "description": "A move action. You shift 1 square. Certain kits, class features, and ancestry traits let you shift further when you disengage.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "catch-breath",
+    "name": "Catch Breath",
+    "summary": "A maneuver. You spend a Recovery and regain Stamina equal to your recovery value. A dying creature can't use it in combat, though allies can still help them spend Recoveries.",
+    "description": "A maneuver. You spend a Recovery and regain Stamina equal to your recovery value. A dying creature can't use it in combat, though allies can still help them spend Recoveries.",
+    "properties": {
+      "category": "action"
+    }
+  },
+  {
+    "slug": "echelon",
+    "name": "Echelon",
+    "summary": "The four tiers of play, each covering a band of levels: 1st echelon is 1st to 3rd level, 2nd echelon is 4th to 6th level, 3rd echelon is 7th to 9th level, and 4th echelon is 10th…",
+    "description": "The four tiers of play, each covering a band of levels: 1st echelon is 1st to 3rd level, 2nd echelon is 4th to 6th level, 3rd echelon is 7th to 9th level, and 4th echelon is 10th level. Bonuses that scale per echelon — such as a kit's Stamina bonus — increase as your hero crosses into each band.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "encounter-value",
+    "name": "Encounter Value",
+    "summary": "Every Director-controlled creature has an encounter value (EV), the number of budget points it costs to buy that creature for a combat encounter.",
+    "description": "Every Director-controlled creature has an encounter value (EV), the number of budget points it costs to buy that creature for a combat encounter. The EV printed for a minion covers four minions together, not one.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "encounter-strength",
+    "name": "Encounter Strength",
+    "summary": "A party's encounter strength (ES) is the benchmark the Director buys monsters against.",
+    "description": "A party's encounter strength (ES) is the benchmark the Director buys monsters against. Each hero's encounter strength is 4 plus 2 for each of their levels, so a 3rd-level hero is worth 10; add every hero together for the party's ES. Retainers and other NPCs fighting alongside the heroes count as heroes of their own level.",
+    "properties": {
+      "category": "combat"
+    }
+  },
+  {
+    "slug": "malice",
+    "name": "Malice",
+    "summary": "Malice is the Director's resource, the counterpart to a hero's Heroic Resource, spent to activate monsters' most powerful abilities.",
+    "description": "Malice is the Director's resource, the counterpart to a hero's Heroic Resource, spent to activate monsters' most powerful abilities. At the start of combat the Director gains Malice equal to the average number of Victories per hero, then at the start of each combat round gains Malice equal to the number of heroes in the battle plus the round number. A hero who dies stops generating Malice, and any unused Malice is lost at the end of an encounter.",
+    "properties": {
+      "category": "resource"
     }
   }
 ]

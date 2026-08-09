@@ -1,5 +1,6 @@
 [
   {
+    "slug": "goblin-sniper",
     "name": "Goblin Sniper",
     "summary": "L1 Artillery Minion",
     "description": "A small, cunning goblin that pelts enemies with arrows from cover, relying on numbers rather than individual strength.",
@@ -31,10 +32,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "goblin-sniper"
+    "source": "custom"
   },
   {
+    "slug": "kobold-torchbearer",
     "name": "Kobold Torchbearer",
     "summary": "L1 Support Minion",
     "description": "A skittish kobold that carries alchemical torches, providing light and minor healing salves to its allies.",
@@ -66,10 +67,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "kobold-torchbearer"
+    "source": "custom"
   },
   {
+    "slug": "skeleton-archer",
     "name": "Skeleton Archer",
     "summary": "L2 Artillery Minion",
     "description": "An animated skeleton armed with a longbow, firing with eerie precision despite its lack of living eyes.",
@@ -92,6 +93,7 @@
       "presence": 1,
       "free_strike": "3 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Longbow Volley\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -102,10 +104,10 @@
       "level-2",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "skeleton-archer"
+    "source": "custom"
   },
   {
+    "slug": "cultist-acolyte",
     "name": "Cultist Acolyte",
     "summary": "L2 Hexer Minion",
     "description": "A fanatical low-ranking cultist who channels minor hexes and curses to weaken the enemies of their dark patron.",
@@ -137,10 +139,10 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "cultist-acolyte"
+    "source": "custom"
   },
   {
+    "slug": "zombie-shambler",
     "name": "Zombie Shambler",
     "summary": "L3 Brute Minion",
     "description": "A rotting corpse animated by dark magic, slow but relentless in its pursuit of the living.",
@@ -163,6 +165,7 @@
       "presence": 1,
       "free_strike": "4 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -173,10 +176,10 @@
       "level-3",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "zombie-shambler"
+    "source": "custom"
   },
   {
+    "slug": "skeleton-warrior",
     "name": "Skeleton Warrior",
     "summary": "L1 Brute Horde",
     "description": "An animated skeleton wielding a rusted sword and battered shield, dangerous in numbers.",
@@ -199,6 +202,7 @@
       "presence": 1,
       "free_strike": "3 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": "",
       "immunities": "Poison"
@@ -209,10 +213,10 @@
       "level-1",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "skeleton-warrior"
+    "source": "custom"
   },
   {
+    "slug": "goblin-skirmisher",
     "name": "Goblin Skirmisher",
     "summary": "L1 Harrier Horde",
     "description": "A quick and dirty-fighting goblin that darts in with a shiv, stabs, and retreats before retaliation.",
@@ -244,10 +248,10 @@
       "level-1",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "goblin-skirmisher"
+    "source": "custom"
   },
   {
+    "slug": "wolf",
     "name": "Wolf",
     "summary": "L2 Ambusher Horde",
     "description": "A cunning predator that hunts in packs, circling prey and striking when they sense weakness.",
@@ -280,10 +284,10 @@
       "animal",
       "beast"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "wolf"
+    "source": "custom"
   },
   {
+    "slug": "bandit-thug",
     "name": "Bandit Thug",
     "summary": "L3 Brute Horde",
     "description": "A brutish outlaw who relies on intimidation and crude weapons to overwhelm travelers.",
@@ -315,10 +319,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "bandit-thug"
+    "source": "custom"
   },
   {
+    "slug": "orc-raider",
     "name": "Orc Raider",
     "summary": "L4 Harrier Horde",
     "description": "A fast-moving orc warrior that charges into battle with reckless aggression, striking hard and moving on.",
@@ -350,10 +354,10 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "orc-raider"
+    "source": "custom"
   },
   {
+    "slug": "radenwight-reaver",
     "name": "Radenwight Reaver",
     "summary": "L2 Harrier Platoon",
     "description": "A vicious rat-folk pirate who fights with twin blades and acrobatic ferocity.",
@@ -385,10 +389,10 @@
       "level-2",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "radenwight-reaver"
+    "source": "custom"
   },
   {
+    "slug": "hobgoblin-soldier",
     "name": "Hobgoblin Soldier",
     "summary": "L3 Defender Platoon",
     "description": "A disciplined hobgoblin warrior trained in formation fighting, wielding a longsword and heavy shield.",
@@ -420,10 +424,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "hobgoblin-soldier"
+    "source": "custom"
   },
   {
+    "slug": "ogre",
     "name": "Ogre",
     "summary": "L4 Brute Platoon",
     "description": "A massive, dim-witted giant-kin that crushes foes with an enormous club.",
@@ -455,10 +459,10 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "ogre"
+    "source": "custom"
   },
   {
+    "slug": "dark-elf-ranger",
     "name": "Dark Elf Ranger",
     "summary": "L4 Ambusher Platoon",
     "description": "A stealthy dark elf who strikes from the shadows with poisoned blades, vanishing before the enemy can respond.",
@@ -491,10 +495,10 @@
       "humanoid",
       "fey"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "dark-elf-ranger"
+    "source": "custom"
   },
   {
+    "slug": "minotaur-warrior",
     "name": "Minotaur Warrior",
     "summary": "L5 Brute Platoon",
     "description": "A towering bull-headed warrior that charges headlong into battle, goring enemies with its massive horns.",
@@ -526,10 +530,10 @@
       "level-5",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "minotaur-warrior"
+    "source": "custom"
   },
   {
+    "slug": "shadow-assassin",
     "name": "Shadow Assassin",
     "summary": "L3 Ambusher Elite",
     "description": "A deadly killer who steps between shadows, appearing behind victims for lethal strikes before melting back into darkness.",
@@ -562,10 +566,10 @@
       "humanoid",
       "shadow"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "shadow-assassin"
+    "source": "custom"
   },
   {
+    "slug": "troll",
     "name": "Troll",
     "summary": "L4 Brute Elite",
     "description": "A towering regenerating monster with massive claws. Only fire and acid can stop its relentless healing.",
@@ -588,6 +592,7 @@
       "presence": 1,
       "free_strike": "15 damage",
       "traits": "Regeneration: The troll regains 10 stamina at the start of each of its turns. If the troll takes fire or acid damage, this trait does not function until the start of its next turn.",
+      "traits_display": "Regeneration: The troll regains 10 stamina at the start of each of its turns. If the troll takes fire or acid damage, this trait does not function until the start of its next turn.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": ""
     },
@@ -597,10 +602,10 @@
       "level-4",
       "giant"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "troll"
+    "source": "custom"
   },
   {
+    "slug": "medusa-archer",
     "name": "Medusa Archer",
     "summary": "L5 Artillery Elite",
     "description": "A serpent-haired archer whose petrifying gaze can turn victims to stone, while picking off distant foes with enchanted arrows.",
@@ -633,10 +638,10 @@
       "humanoid",
       "monstrosity"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "medusa-archer"
+    "source": "custom"
   },
   {
+    "slug": "mind-flayer-adept",
     "name": "Mind Flayer Adept",
     "summary": "L6 Controller Elite",
     "description": "A tentacled aberration from the deep places of the world, dominating minds and feeding on the psychic energy of sentient beings.",
@@ -669,10 +674,10 @@
       "aberration",
       "psionic"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "mind-flayer-adept"
+    "source": "custom"
   },
   {
+    "slug": "iron-golem",
     "name": "Iron Golem",
     "summary": "L7 Defender Elite",
     "description": "A massive construct of enchanted iron, created to guard ancient vaults. Immune to most magic and nearly indestructible.",
@@ -695,6 +700,7 @@
       "presence": 2,
       "free_strike": "24 damage",
       "traits": "Construct: Immune to poison damage, psychic damage, and the {@condition charmed} and {@condition frightened} conditions.",
+      "traits_display": "Construct: Immune to poison damage, psychic damage, and the charmed and frightened conditions.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Shield Wall\"}, {\"name\": \"Intercept\"}]",
       "villain_actions_json": "",
       "immunities": "Poison, Psychic"
@@ -705,10 +711,10 @@
       "level-7",
       "construct"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "iron-golem"
+    "source": "custom"
   },
   {
+    "slug": "goblin-war-chief",
     "name": "Goblin War Chief",
     "summary": "L3 Support Leader",
     "description": "A surprisingly cunning goblin who leads through a mix of intimidation and tactical brilliance, directing goblin hordes with barked commands.",
@@ -740,10 +746,10 @@
       "level-3",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "goblin-war-chief"
+    "source": "custom"
   },
   {
+    "slug": "hobgoblin-warlord",
     "name": "Hobgoblin Warlord",
     "summary": "L4 Controller Leader",
     "description": "A tactical mastermind who coordinates disciplined hobgoblin forces with iron-fisted precision.",
@@ -775,10 +781,10 @@
       "level-4",
       "humanoid"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "hobgoblin-warlord"
+    "source": "custom"
   },
   {
+    "slug": "vampire-lord",
     "name": "Vampire Lord",
     "summary": "L5 Hexer Leader",
     "description": "An ancient undead noble who drains the life force of the living while commanding lesser undead servants.",
@@ -801,6 +807,7 @@
       "presence": 2,
       "free_strike": "18 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Hex Bolt\"}, {\"name\": \"Venom Bite\"}]",
       "villain_actions_json": "[{\"name\": \"Charming Gaze\", \"order\": \"opener\", \"effect\": \"The Vampire Lord targets one enemy within 10 (Presence vs. Intuition). Tier 1: {@condition slowed} ({@duration eot}). Tier 2: Dazed ({@duration eot}). Tier 3: Charmed ({@duration save-ends}); the target treats the Vampire Lord as an ally.\"}, {\"name\": \"Life Drain Wave\", \"order\": \"escalation\", \"effect\": \"Each enemy within 3 takes 8 necrotic damage. The Vampire Lord regains stamina equal to the total damage dealt.\"}, {\"name\": \"Rise, My Servants\", \"order\": \"closer\", \"effect\": \"The Vampire Lord summons 2 Skeleton Warrior hordes in unoccupied spaces within 10. Each existing undead ally within 10 regains 10 stamina.\"}]",
       "immunities": "Poison"
@@ -811,10 +818,10 @@
       "level-5",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "vampire-lord"
+    "source": "custom"
   },
   {
+    "slug": "fire-giant-champion",
     "name": "Fire Giant Champion",
     "summary": "L7 Brute Leader",
     "description": "A towering giant wreathed in flames who leads fire giant war parties with brutal strength and volcanic fury.",
@@ -848,10 +855,10 @@
       "giant",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "fire-giant-champion"
+    "source": "custom"
   },
   {
+    "slug": "lich-overlord",
     "name": "Lich Overlord",
     "summary": "L8 Controller Leader",
     "description": "An ancient spellcaster who transcended death through forbidden rituals, now commanding vast armies of undead with terrifying arcane power.",
@@ -874,6 +881,7 @@
       "presence": 0,
       "free_strike": "27 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Mind Lash\"}, {\"name\": \"Psychic Scream\"}, {\"name\": \"Hex Bolt\"}]",
       "villain_actions_json": "[{\"name\": \"Necrotic Pulse\", \"order\": \"opener\", \"effect\": \"Each enemy within 5 takes 10 necrotic damage and is {@condition slowed} ({@duration eot}). Each undead ally within 10 regains 8 stamina.\"}, {\"name\": \"Dominate Undead\", \"order\": \"escalation\", \"effect\": \"The Lich Overlord summons a squad of 4 Skeleton Warrior hordes in unoccupied spaces within 15. All undead allies within 10 can immediately {@movement shift} 3 and make a {@action free-strike}.\"}, {\"name\": \"Soul Harvest\", \"order\": \"closer\", \"effect\": \"The Lich targets all enemies within 10 (Reason vs. Intuition). Tier 1: 10 necrotic damage. Tier 2: 16 necrotic damage; {@condition weakened} ({@duration save-ends}). Tier 3: 22 necrotic damage; {@condition weakened} and {@condition dazed} ({@duration save-ends}). The Lich regains stamina equal to half the total damage dealt.\"}]",
       "immunities": "Poison"
@@ -884,10 +892,10 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "lich-overlord"
+    "source": "custom"
   },
   {
+    "slug": "young-fire-drake",
     "name": "Young Fire Drake",
     "summary": "L5 Brute Solo",
     "description": "A juvenile dragon brimming with volcanic fury. Though not yet fully grown, it can immolate an entire adventuring party.",
@@ -910,6 +918,7 @@
       "presence": 1,
       "free_strike": "24 damage",
       "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
+      "traits_display": "Draconic Resilience: The creature has damage-resistance 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Breath Weapon\"}]",
       "villain_actions_json": "[{\"name\": \"Wing Buffet\", \"order\": \"opener\", \"effect\": \"Each creature within 3 must make an Agility check. Tier 1: 12 damage and {@movement push} 3, {@condition prone}. Tier 2: 8 damage and {@movement push} 2. Tier 3: No effect. The drake then flies up to its speed.\"}, {\"name\": \"Flame Torrent\", \"order\": \"escalation\", \"effect\": \"The drake breathes a 5-cube line of fire. All creatures in the area: Might vs. Agility. Tier 1: 10 fire damage. Tier 2: 18 fire damage. Tier 3: 26 fire damage; {@condition burning} 5 ({@duration save-ends}).\"}, {\"name\": \"Volcanic Fury\", \"order\": \"closer\", \"effect\": \"The drake makes a Crushing Blow attack against up to 3 targets, then uses Breath Weapon. Until the start of the drake's next turn, any creature that hits the drake with a melee attack takes 8 fire damage.\"}]",
       "immunities": "Fire"
@@ -921,10 +930,10 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "young-fire-drake"
+    "source": "custom"
   },
   {
+    "slug": "beholder-tyrant",
     "name": "Beholder Tyrant",
     "summary": "L6 Artillery Solo",
     "description": "A floating orb of nightmares with a central eye and numerous eyestalks, each capable of unleashing a different devastating ray.",
@@ -956,10 +965,10 @@
       "level-6",
       "aberration"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "beholder-tyrant"
+    "source": "custom"
   },
   {
+    "slug": "adult-dragon",
     "name": "Adult Dragon",
     "summary": "L7 Controller Solo",
     "description": "A fully mature dragon of immense intellect and power, capable of reshaping the battlefield with elemental devastation and cunning tactics.",
@@ -982,6 +991,7 @@
       "presence": 0,
       "free_strike": "32 damage",
       "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
+      "traits_display": "Draconic Resilience: The creature has damage-resistance 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Mind Lash\"}, {\"name\": \"Breath Weapon\"}, {\"name\": \"Crushing Blow\"}]",
       "villain_actions_json": "[{\"name\": \"Frightful Presence\", \"order\": \"opener\", \"effect\": \"All enemies within 10: Presence vs. Intuition. Tier 1: {@condition frightened} ({@duration eot}). Tier 2: {@condition frightened} ({@duration save-ends}); the target must move away on their next turn. Tier 3: {@condition frightened} ({@duration save-ends}); {@condition dazed} ({@duration eot}). This effect can only be used once per encounter.\"}, {\"name\": \"Elemental Tempest\", \"order\": \"escalation\", \"effect\": \"The dragon creates a 4-cube storm zone within 15. All creatures in the zone: Reason vs. Agility. Tier 1: 10 elemental damage. Tier 2: 18 elemental damage; {@condition slowed} ({@duration eot}). Tier 3: 26 elemental damage; {@condition restrained} ({@duration eot}). The zone persists for 1 round, dealing 8 damage to creatures entering or starting their turn in it.\"}, {\"name\": \"Cataclysmic Breath\", \"order\": \"closer\", \"effect\": \"The dragon uses an empowered breath weapon in a 7-cube line. All creatures in area: Might vs. Agility. Tier 1: 14 elemental damage. Tier 2: 24 elemental damage; {@condition prone}. Tier 3: 36 elemental damage; {@condition prone} and {@condition dazed} ({@duration save-ends}). The dragon then flies up to its speed without provoking free strikes.\"}]"
     },
@@ -991,10 +1001,10 @@
       "level-7",
       "dragon"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "adult-dragon"
+    "source": "custom"
   },
   {
+    "slug": "death-knight",
     "name": "Death Knight",
     "summary": "L8 Defender Solo",
     "description": "A fallen champion raised as an undead horror, combining devastating martial skill with dark necromantic power. It fights with grim purpose, shielding its undead forces.",
@@ -1017,6 +1027,7 @@
       "presence": 2,
       "free_strike": "36 damage",
       "traits": "Undead: Immune to poison damage and the {@condition poisoned} condition.",
+      "traits_display": "Undead: Immune to poison damage and the poisoned condition.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Shield Wall\"}, {\"name\": \"Retaliating Strike\"}, {\"name\": \"Intercept\"}]",
       "villain_actions_json": "[{\"name\": \"Abyssal Challenge\", \"order\": \"opener\", \"effect\": \"All enemies within 5 are {@condition taunted} ({@duration save-ends}). The Death Knight gains {@resource damage-resistance} 5 until the start of its next turn. Any {@condition taunted} creature that attacks a target other than the Death Knight takes 8 necrotic damage.\"}, {\"name\": \"Unholy Smite\", \"order\": \"escalation\", \"effect\": \"The Death Knight makes a melee attack against up to 3 targets within reach. Each: Might vs. Agility. Tier 1: 10 necrotic damage. Tier 2: 18 necrotic damage; {@condition weakened} ({@duration eot}). Tier 3: 26 necrotic damage; {@condition weakened} ({@duration save-ends}). The Death Knight regains 10 stamina for each target hit.\"}, {\"name\": \"Army of the Dead\", \"order\": \"closer\", \"effect\": \"The Death Knight raises all dead creatures within 10 as Zombie Shambler minions (up to 8). Each undead ally within 10 gains 15 {@resource temporary-stamina} and can immediately make a {@action free-strike}.\"}]",
       "immunities": "Poison"
@@ -1027,13 +1038,13 @@
       "level-8",
       "undead"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "death-knight"
+    "source": "custom"
   },
   {
+    "slug": "ancient-wyrm",
     "name": "Ancient Wyrm",
     "summary": "L10 Brute Solo",
-    "description": "The apex of dragonkind \u2014 a primordial being of catastrophic power whose mere presence warps reality. Entire kingdoms tremble at the sound of its wings.",
+    "description": "The apex of dragonkind — a primordial being of catastrophic power whose mere presence warps reality. Entire kingdoms tremble at the sound of its wings.",
     "properties": {
       "level": 10,
       "organization": "Solo",
@@ -1053,6 +1064,7 @@
       "presence": 1,
       "free_strike": "44 damage",
       "traits": "Draconic Resilience: The creature has {@resource damage-resistance} 5 against all damage except its vulnerability.",
+      "traits_display": "Draconic Resilience: The creature has damage-resistance 5 against all damage except its vulnerability.",
       "abilities_json": "[{\"name\": \"Crushing Blow\"}, {\"name\": \"Breath Weapon\"}, {\"name\": \"Trampling Charge\"}]",
       "villain_actions_json": "[{\"name\": \"Cataclysmic Landing\", \"order\": \"opener\", \"effect\": \"The Wyrm crashes down. All creatures within 5: Might vs. Agility. Tier 1: 16 damage, {@movement push} 3, {@condition prone}. Tier 2: 10 damage, {@movement push} 2. Tier 3: No effect. The ground within 5 becomes difficult terrain.\"}, {\"name\": \"Primordial Storm\", \"order\": \"escalation\", \"effect\": \"The Wyrm unleashes elemental devastation in a 6-cube zone within 20. All creatures: Might vs. Agility. Tier 1: 20 damage. Tier 2: 36 damage; {@condition burning} 10 ({@duration eot}). Tier 3: 52 damage; {@condition burning} 10 ({@duration save-ends}) and {@condition prone}. The zone persists for 2 rounds.\"}, {\"name\": \"World Breaker\", \"order\": \"closer\", \"effect\": \"The Wyrm makes Crushing Blow against up to 4 targets, then breathes in a 10-cube line. Breath: Might vs. Agility. Tier 1: 22 damage. Tier 2: 40 damage. Tier 3: 60 damage; {@condition prone} and {@condition dazed} ({@duration save-ends}). The Wyrm regains 40 stamina.\"}]",
       "immunities": "Fire"
@@ -1064,10 +1076,10 @@
       "dragon",
       "fire"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "ancient-wyrm"
+    "source": "custom"
   },
   {
+    "slug": "rat-swarm",
     "name": "Rat Swarm",
     "summary": "L1 Harrier Swarm",
     "description": "A writhing mass of disease-carrying rats that overwhelms prey through sheer numbers, flowing around obstacles like a living tide.",
@@ -1090,6 +1102,7 @@
       "presence": -1,
       "free_strike": "4 damage",
       "traits": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
+      "traits_display": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
       "abilities_json": "[{\"name\": \"Quick Strike\"}]",
       "villain_actions_json": ""
     },
@@ -1100,10 +1113,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "rat-swarm"
+    "source": "custom"
   },
   {
+    "slug": "bat-swarm",
     "name": "Bat Swarm",
     "summary": "L2 Ambusher Swarm",
     "description": "A cloud of shrieking bats that descends from the darkness, disorienting prey with echolocation screams and razor-sharp claws.",
@@ -1126,6 +1139,7 @@
       "presence": -2,
       "free_strike": "6 damage",
       "traits": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
+      "traits_display": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
       "abilities_json": "[{\"name\": \"Ambush Strike\"}]",
       "villain_actions_json": ""
     },
@@ -1136,10 +1150,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "bat-swarm"
+    "source": "custom"
   },
   {
+    "slug": "spider-swarm",
     "name": "Spider Swarm",
     "summary": "L3 Controller Swarm",
     "description": "Hundreds of venomous spiders moving as one seething carpet, trailing sticky webs and injecting paralytic venom.",
@@ -1162,6 +1176,7 @@
       "presence": 0,
       "free_strike": "8 damage",
       "traits": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
+      "traits_display": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
       "abilities_json": "[{\"name\": \"Web Shot\"}, {\"name\": \"Venom Bite\"}]",
       "villain_actions_json": ""
     },
@@ -1172,10 +1187,10 @@
       "animal",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "spider-swarm"
+    "source": "custom"
   },
   {
+    "slug": "locust-swarm",
     "name": "Locust Swarm",
     "summary": "L4 Artillery Swarm",
     "description": "A buzzing cloud of razor-winged locusts that strips flesh from bone at range, each insect carrying a tiny spark of elemental fury.",
@@ -1198,6 +1213,7 @@
       "presence": 1,
       "free_strike": "10 damage",
       "traits": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
+      "traits_display": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
       "abilities_json": "[{\"name\": \"Longbow Volley\"}]",
       "villain_actions_json": ""
     },
@@ -1209,10 +1225,10 @@
       "swarm",
       "elemental"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "locust-swarm"
+    "source": "custom"
   },
   {
+    "slug": "shadow-swarm",
     "name": "Shadow Swarm",
     "summary": "L5 Hexer Swarm",
     "description": "A coiling mass of living darkness that feeds on fear, draining warmth and hope from all it touches.",
@@ -1235,6 +1251,7 @@
       "presence": 2,
       "free_strike": "12 damage",
       "traits": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
+      "traits_display": "Swarm: Immune to single-target effects. Takes double damage from area attacks. Can occupy the same space as other creatures.",
       "abilities_json": "[{\"name\": \"Hex Bolt\"}, {\"name\": \"Mind Lash\"}]",
       "villain_actions_json": ""
     },
@@ -1245,7 +1262,6 @@
       "shadow",
       "swarm"
     ],
-    "source": "Draw Steel CC-BY-4.0, MCDM Productions",
-    "slug": "shadow-swarm"
+    "source": "custom"
   }
 ]

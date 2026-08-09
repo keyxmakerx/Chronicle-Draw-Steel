@@ -1,0 +1,429 @@
+[
+  {
+    "slug": "burrowing",
+    "name": "Burrowing",
+    "summary": "The animal can burrow.",
+    "description": "The animal can burrow.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 2,
+      "upgrade": {
+        "cost": 1,
+        "text": "The animal can burrow through stone, creating a tunnel of their size in each square of stone they move through."
+      },
+      "upgrade_display": "cost: 1"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "climbing",
+    "name": "Climbing",
+    "summary": "The animal can automatically climb at full speed while moving.",
+    "description": "The animal can automatically climb at full speed while moving.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "flight",
+    "name": "Flight",
+    "summary": "The animal can fly, and their stability decreases by 2 (to a minimum of 0).",
+    "description": "The animal can fly, and their {@combat stability} decreases by 2 (to a minimum of 0).",
+    "properties": {
+      "group": "Mobility",
+      "cost": 2,
+      "upgrade": {
+        "cost": 1,
+        "text": "The animal can also hover."
+      },
+      "upgrade_display": "cost: 1"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "leaping",
+    "name": "Leaping",
+    "summary": "On their turn, the animal can high jump or long jump up to half their speed. This jump can allow the animal to move more squares than their speed.",
+    "description": "On their turn, the animal can high jump or long jump up to half their speed. This jump can allow the animal to move more squares than their speed.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "slinking",
+    "name": "Slinking",
+    "summary": "The animal can use a move action to shift up to 3 squares, even while prone.",
+    "description": "The animal can use a {@action move-action|move action} to {@movement shift} up to 3 squares, even while {@condition prone}.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "swiftness",
+    "name": "Swiftness",
+    "summary": "The animal has a +2 bonus to speed, and they ignore difficult terrain.",
+    "description": "The animal has a +2 bonus to speed, and they ignore {@combat difficult-terrain|difficult terrain}.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 1,
+      "repeatable": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "swimming",
+    "name": "Swimming",
+    "summary": "The animal can automatically swim at full speed while moving.",
+    "description": "The animal can automatically swim at full speed while moving.",
+    "properties": {
+      "group": "Mobility",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "camouflage",
+    "name": "Camouflage",
+    "summary": "The animal can attempt to hide even while observed. While no enemy has line of effect to the animal, they can automatically hide at the end of their turn.",
+    "description": "The animal can attempt to hide even while observed. While no enemy has line of effect to the animal, they can automatically hide at the end of their turn.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fearsome",
+    "name": "Fearsome",
+    "summary": "As a maneuver, the animal makes an imposing display.",
+    "description": "As a {@action maneuver}, the animal makes an imposing display. Each enemy within 2 squares of the animal who has I < 1 must {@movement shift} 3 squares in a straight line away from the animal.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pack",
+    "name": "Pack",
+    "summary": "While adjacent to an ally, the animal can't be flanked or be made frightened.",
+    "description": "While adjacent to an ally, the animal can't be {@combat flanking|flanked} or be made {@condition frightened}.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "plated",
+    "name": "Plated",
+    "summary": "The animal has a +2 bonus to stability, and melee strikes against them take a bane.",
+    "description": "The animal has a +2 bonus to {@combat stability}, and melee strikes against them take a {@combat bane}.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "spiny",
+    "name": "Spiny",
+    "summary": "Whenever an adjacent enemy grabs the animal or uses a melee ability against them, that enemy takes 3 damage.",
+    "description": "Whenever an adjacent enemy grabs the animal or uses a melee ability against them, that enemy takes 3 damage.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "stench",
+    "name": "Stench",
+    "summary": "At the start of the animal's turn, each enemy adjacent to the animal who has M < 1 must shift 1 square away from the animal.",
+    "description": "At the start of the animal's turn, each enemy adjacent to the animal who has M < 1 must {@movement shift} 1 square away from the animal.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "thick-hide",
+    "name": "Thick Hide",
+    "summary": "The animal starts any combat encounter with 10 temporary Stamina.",
+    "description": "The animal starts any combat encounter with 10 {@resource temporary-stamina|temporary Stamina}.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1,
+      "repeatable": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "unrelenting",
+    "name": "Unrelenting",
+    "summary": "Once per combat, when the animal is reduced to 0 Stamina, they can choose to either remain alive with 1 Stamina or immediately move up to their speed and make a free strike before…",
+    "description": "Once per combat, when the animal is reduced to 0 Stamina, they can choose to either remain alive with 1 Stamina or immediately move up to their speed and make a {@action free-strike|free strike} before dying.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "wiggly",
+    "name": "Wiggly",
+    "summary": "The animal ignores opportunity attacks and gains an edge on the Escape Grab maneuver.",
+    "description": "The animal ignores opportunity attacks and gains an {@combat edge} on the Escape Grab {@action maneuver}.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "withdraw",
+    "name": "Withdraw",
+    "summary": "Whenever the animal takes damage, they can use a triggered action to halve that damage and all other damage they take until the start of their next turn.",
+    "description": "Whenever the animal takes damage, they can use a {@action triggered-action|triggered action} to halve that damage and all other damage they take until the start of their next turn.",
+    "properties": {
+      "group": "Defensive",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "charger",
+    "name": "Charger",
+    "summary": "The animal's signature ability has the Charge keyword, and they gain an edge on that ability if it is used as part of the Charge main action.",
+    "description": "The animal's signature ability has the Charge keyword, and they gain an {@combat edge} on that ability if it is used as part of the Charge {@action main-action|main action}.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "frenzy",
+    "name": "Frenzy",
+    "summary": "The animal gains an edge on strikes against creatures who are bleeding or winded.",
+    "description": "The animal gains an {@combat edge} on strikes against creatures who are {@condition bleeding} or {@combat winded}.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "grappler",
+    "name": "Grappler",
+    "summary": "If the target of the animal's signature ability has A < 1, they are grabbed by the animal.",
+    "description": "If the target of the animal's signature ability has A < 1, they are {@condition grabbed} by the animal.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1,
+      "upgrade": {
+        "cost": 1,
+        "text": "An enemy grabbed by the animal takes a {@combat bane} on the Escape Grab maneuver."
+      },
+      "upgrade_display": "cost: 1"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hunter",
+    "name": "Hunter",
+    "summary": "The animal ignores concealment.",
+    "description": "The animal ignores {@combat concealment}.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "multilimb",
+    "name": "Multilimb",
+    "summary": "The animal can target one additional creature or object whenever they make a free strike, use the Grab maneuver, or use the Knockback maneuver.",
+    "description": "The animal can target one additional creature or object whenever they make a {@action free-strike|free strike}, use the Grab {@action maneuver}, or use the Knockback maneuver.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 2,
+      "repeatable": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pouncer",
+    "name": "Pouncer",
+    "summary": "As a maneuver, the animal jumps up to 3 squares.",
+    "description": "As a {@action maneuver}, the animal jumps up to 3 squares. If they land on an enemy their size or smaller, that enemy is knocked {@condition prone} and the animal can make a {@action free-strike|free strike} against them.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "power",
+    "name": "Power",
+    "summary": "Whenever the animal force moves a target, they have a +2 bonus to the forced movement distance.",
+    "description": "Whenever the animal force moves a target, they have a +2 bonus to the {@combat forced-movement|forced movement} distance.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "projectile",
+    "name": "Projectile",
+    "summary": "The animal's signature ability gains the Ranged keyword and adds Ranged 10 to its distance.",
+    "description": "The animal's signature ability gains the Ranged keyword and adds Ranged 10 to its distance.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 2,
+      "optional": "The animal's signature ability can deal acid or cold damage."
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "reach",
+    "name": "Reach",
+    "summary": "The animal's signature ability gains a +2 bonus to distance.",
+    "description": "The animal's signature ability gains a +2 bonus to distance.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1,
+      "repeatable": 2,
+      "optional": "The animal's signature ability can deal fire or sonic damage."
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "venom",
+    "name": "Venom",
+    "summary": "The animal's signature ability deals an extra 2 poison damage, and if the target has M < 1, they are weakened (save ends).",
+    "description": "The animal's signature ability deals an extra 2 poison damage, and if the target has M < 1, they are {@condition weakened} ({@duration save-ends|save ends}).",
+    "properties": {
+      "group": "Offensive",
+      "cost": 1
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "web",
+    "name": "Web",
+    "summary": "The animal gains the Web ability: an Area, Weapon maneuver with a distance of 3 cube within 1, targeting each creature in the area.",
+    "description": "The animal gains the Web ability: an Area, Weapon {@action maneuver} with a distance of 3 cube within 1, targeting each creature in the area. Power Roll + highest characteristic — 11 or lower: A < 0 {@condition restrained} ({@duration save-ends|save ends}); 12-16: A < 1 restrained (save ends); 17+: A < 2 restrained (save ends). Effect: the area is {@combat difficult-terrain|difficult terrain} for enemies until the end of the encounter.",
+    "properties": {
+      "group": "Offensive",
+      "cost": 2,
+      "granted_ability": {
+        "name": "Web",
+        "keywords": [
+          "Area",
+          "Weapon"
+        ],
+        "action_type": "Maneuver",
+        "distance": "3 cube within 1",
+        "target": "Each creature in the area",
+        "power_roll": "highest characteristic",
+        "tier1": "A < 0 {@condition restrained} ({@duration save-ends|save ends})",
+        "tier2": "A < 1 {@condition restrained} ({@duration save-ends|save ends})",
+        "tier3": "A < 2 {@condition restrained} ({@duration save-ends|save ends})",
+        "effect": "The area is {@combat difficult-terrain|difficult terrain} for enemies until the end of the encounter."
+      },
+      "granted_ability_display": "Web — keywords: Area, Weapon; action type: Maneuver; distance: 3 cube within 1; target: Each creature in the area; power roll: highest characteristic; tier1: A < 0 restrained (save ends); tier2: A < 1 restrained (save ends); tier3: A < 2 restrained (save ends); effect: The area is difficult terrain for enemies until the end of the encounter."
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "death-fumes",
+    "name": "Death Fumes",
+    "summary": "Whenever the animal takes damage, each creature adjacent to the animal who has M < 1 takes damage equal to half the creature's current Stamina.",
+    "description": "Whenever the animal takes damage, each creature adjacent to the animal who has M < 1 takes damage equal to half the creature's current Stamina.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 10
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "elemental",
+    "name": "Elemental",
+    "summary": "The animal has an affinity for one of the following damage types: acid, cold, corruption, fire, lightning, poison.",
+    "description": "The animal has an affinity for one of the following damage types: acid, cold, corruption, fire, lightning, poison. The animal has {@resource damage-immunity|damage immunity} 3 to the chosen damage type, and their strikes deal the chosen damage type instead of their original damage type.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "gelatinous",
+    "name": "Gelatinous",
+    "summary": "The animal can move through spaces as if they were size 1T.",
+    "description": "The animal can move through spaces as if they were size 1T. Whenever the animal takes damage, they can use a {@action triggered-action|triggered action} to separate into two animals. Each new animal has the same statistics as the original but has half the original's current Stamina.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hypnosis",
+    "name": "Hypnosis",
+    "summary": "As a maneuver, the animal targets one enemy within 5 squares with their gaze, movements, or vocalizations.",
+    "description": "As a {@action maneuver}, the animal targets one enemy within 5 squares with their gaze, movements, or vocalizations. If the enemy has R < 1, they are {@condition dazed} ({@duration save-ends|save ends}).",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "imposer",
+    "name": "Imposer",
+    "summary": "The animal's size increases by 1 (to a minimum of size 2), and they gain a +2 bonus to stability. Additionally, the animal gains a +3 damage bonus to strikes.",
+    "description": "The animal's size increases by 1 (to a minimum of size 2), and they gain a +2 bonus to {@combat stability}. Additionally, the animal gains a +3 damage bonus to strikes.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pass-through",
+    "name": "Pass Through",
+    "summary": "The animal can move through solid matter, and strikes made against them take a bane.",
+    "description": "The animal can move through solid matter, and strikes made against them take a {@combat bane}. If the animal ends their turn inside solid matter, they are shunted out into the space from which they entered it.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  },
+  {
+    "slug": "translation",
+    "name": "Translation",
+    "summary": "The animal can teleport.",
+    "description": "The animal can teleport.",
+    "properties": {
+      "group": "Supernatural",
+      "cost": 2,
+      "upgrade": {
+        "cost": 1,
+        "text": "The animal can also hover."
+      },
+      "upgrade_display": "cost: 1"
+    },
+    "source": "Draw Steel Monsters Book, ch. 2 (Monsters — Animals) (mcdm.monsters.v1), via Steel Compendium"
+  }
+]

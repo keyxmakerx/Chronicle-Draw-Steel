@@ -92,9 +92,14 @@ test('no shared weakness → damage left untyped (never invents one)', () => {
   assert.match(s.rationale.damage, /untyped/i);
 });
 
-// ── Tier auto-fill: tierN + per_level*(level-1), Math.round ──────────────────
-test('ability tiers auto-fill from the org baseline at the chosen level (leader @ L5 = 18/22/26)', () => {
-  // 4×L5 → budget 80; elite/leader (EV 40) fit, tie broken toward leader (villain actions).
+// ── Tier auto-fill: the PUBLISHED damage formula (DS-MB-HONESTY) ─────────────
+// These used to be data/damage-baselines.json, whose own `source` is "custom"
+// and which runs up to 2.4x the published numbers. The baseline is now
+// (4 + level + damage modifier) × tier modifier, rounded up, and the strike
+// add-on (the highest characteristic) is returned separately as `strikeTiers`.
+test('ability tiers auto-fill from the published damage formula (leader @ L5)', () => {
+  // 4×L5 → published party encounter strength 56; elite/leader (EV 28) fit,
+  // tie broken toward leader (villain actions).
   const s = suggestFor([
     hero({ level: 5, might: 3, agility: 0, reason: 2, intuition: 2, presence: 2 }),
     hero({ level: 5, might: 3, agility: 1, reason: 2, intuition: 2, presence: 2 }),
@@ -102,20 +107,25 @@ test('ability tiers auto-fill from the org baseline at the chosen level (leader 
     hero({ level: 5, might: 2, agility: 1, reason: 1, intuition: 1, presence: 1 }),
   ]);
   assert.equal(s.organization, 'leader');
-  // leader baseline: t1 6, t2 10, t3 14, per_level 3 → +3*(5-1)=+12.
-  assert.deepEqual(s.tiers, { tier1: 18, tier2: 22, tier3: 26 });
-  assert.match(s.rationale.tiers, /base \+ per-level/i);
+  // Leader supplies its own damage modifier of +1: base 4 + 5 + 1 = 10,
+  // × 0.6 / 1.1 / 1.4 rounded up.
+  assert.deepEqual(s.tiers, { tier1: 6, tier2: 11, tier3: 14 });
+  // A leader at level 5 is 2nd echelon: highest characteristic 1 + 2 + 1 = 4.
+  assert.deepEqual(s.strikeTiers, { tier1: 10, tier2: 15, tier3: 18 });
+  assert.equal(s.tiersSourced, true);
+  assert.match(s.rationale.tiers, /published formula/i);
+  assert.ok(s.tierNotes.some((n) => /strike/i.test(n)), 'the strike adjustment rides with the tiers');
 });
 
-test('a right-sized party lands on Solo (6×L5 → Solo, exactly fills the budget)', () => {
+test('a right-sized party lands on Solo (6×L5 → Solo, exactly spends the encounter strength)', () => {
   const six = [];
   for (let i = 0; i < 6; i++) six.push(hero({ level: 5, might: 3, agility: 1, reason: 2, intuition: 2, presence: 2 }));
   const s = suggestFor(six);
-  assert.equal(s.organization, 'solo');     // solo EV 120 == budget 120
-  assert.equal(s.budget, 120);
+  assert.equal(s.organization, 'solo');     // solo EV 84 == party ES 84
+  assert.equal(s.budget, 84);
   assert.equal(s.copies, 1);
-  // solo baseline: t1 8, t2 14, t3 20, per_level 4 → +4*(5-1)=+16.
-  assert.deepEqual(s.tiers, { tier1: 24, tier2: 30, tier3: 36 });
+  // Solo supplies its own damage modifier of +2: base 4 + 5 + 2 = 11.
+  assert.deepEqual(s.tiers, { tier1: 7, tier2: 13, tier3: 16 });
 });
 
 // ── Level band = round(levelAvg), UNSCALED by intent (R3.2) ──────────────────
@@ -163,7 +173,7 @@ test('null party profile degrades cleanly (manual build)', () => {
 });
 
 // ── Budget grounding sanity: matches encounterBudget(size, level) ────────────
-test('the suggestion budget equals the grounded encounterBudget', () => {
+test('the suggestion budget equals the published party encounter strength', () => {
   const party = [
     hero({ level: 5, might: 2, agility: 1, reason: 2, intuition: 2, presence: 2 }),
     hero({ level: 5, might: 2, agility: 1, reason: 2, intuition: 2, presence: 2 }),
@@ -171,6 +181,6 @@ test('the suggestion budget equals the grounded encounterBudget', () => {
     hero({ level: 5, might: 2, agility: 1, reason: 2, intuition: 2, presence: 2 }),
   ];
   const s = suggestFor(party);
-  assert.equal(s.budget, Engine.encounterBudget(4, 5, ORGS)); // 4 × 5 × 4 = 80
-  assert.equal(s.budget, 80);
+  assert.equal(s.budget, Engine.encounterBudget(4, 5, ORGS)); // 4 × (4 + 2×5) = 56
+  assert.equal(s.budget, 56);
 });
