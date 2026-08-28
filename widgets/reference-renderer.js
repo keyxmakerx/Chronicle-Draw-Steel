@@ -33,9 +33,22 @@ var DrawSteelRefRenderer = (function () {
       self._loaded = true;
       return Promise.resolve();
     }
+    // Campaign-scoped is the only shape Chronicle actually serves. The
+    // basePath fallback survives for a host that serves the package's files
+    // statically, but callers in this repo now pass '' — the URL they used to
+    // pass ('/api/v1/campaigns/:id/extensions/drawsteel/assets/') was never a
+    // Chronicle route, and the extension-asset route that does exist refuses
+    // .json. Without a campaign id and without a real basePath there is no
+    // source, and the catch below leaves an empty glossary rather than
+    // pretending otherwise.
     var url = this._campaignId
-      ? '/campaigns/' + this._campaignId + '/systems/drawsteel/rules-glossary'
-      : this._basePath + 'data/rules-glossary.json';
+      ? '/campaigns/' + encodeURIComponent(this._campaignId) + '/systems/drawsteel/rules-glossary'
+      : (this._basePath ? this._basePath + 'data/rules-glossary.json' : '');
+    if (!url) {
+      self._glossary = {};
+      self._loaded = true;
+      return Promise.resolve();
+    }
     var fetchFn = this._campaignId && typeof Chronicle !== 'undefined' && Chronicle.apiFetch
       ? Chronicle.apiFetch
       : fetch;

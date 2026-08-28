@@ -24,6 +24,38 @@
 (function () {
   'use strict';
 
+  // ── data fetching ────────────────────────────────────────────────────────
+
+  // dataUrl builds the ONLY path Chronicle actually serves package data files
+  // on: GET /campaigns/:id/systems/drawsteel/data/<file>.json, handled by
+  // SystemDataAPI (Chronicle internal/systems/routes.go, handler.go).
+  //
+  // WHAT THIS REPLACED, AND WHY IT COULD NEVER HAVE WORKED. Every widget in
+  // this package used to build
+  //   '/api/v1/campaigns/' + cid + '/extensions/drawsteel/assets/'
+  // with '/extensions/drawsteel/assets/' as its fallback. Both are dead for
+  // JSON, for three independent reasons:
+  //
+  //   1. Chronicle has no /api/v1/campaigns/:id/extensions/... route at all.
+  //   2. The one real extension-asset route (ServeAsset) allowlists
+  //      .svg .png .webp .jpg .jpeg .css .js — it answers 400 for .json.
+  //   3. ServeAsset resolves under the EXTENSIONS directory, and Draw Steel
+  //      installs as a SYSTEM package (systems.LoadAdditionalDir), so it is
+  //      not there to be found either way.
+  //
+  // character-sheet.js already used the systems route and worked; everything
+  // else silently did not. There is deliberately no fallback now: a URL that
+  // cannot resolve is worse than an honest failure, because a widget that
+  // fetches it reports "HTTP 400" instead of "this mount has no campaign".
+  //
+  // Returns null when there is no campaign id, because in that case no route
+  // exists and the caller must say so rather than guess at one.
+  function dataUrl(file, campaignId) {
+    if (!campaignId) return null;
+    return '/campaigns/' + encodeURIComponent(campaignId) +
+      '/systems/drawsteel/data/' + file;
+  }
+
   // ── escaping / text helpers ──────────────────────────────────────────────
 
   // esc HTML-escapes & < > using Chronicle's helper when present, else a local
@@ -779,23 +811,30 @@
       this._setBody(buildLoading());
 
       var cid = this.config.campaignId;
-      var base = cid
-        ? '/api/v1/campaigns/' + cid + '/extensions/drawsteel/assets/'
-        : '/extensions/drawsteel/assets/';
 
-      function getJson(path) {
-        return fetch(base + path).then(function (r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + path);
+      function getJson(file) {
+        var url = dataUrl(file, cid);
+        if (!url) {
+          // No campaign id on the mount means no route exists. Say that,
+          // rather than fetching a path that cannot resolve and reporting
+          // its HTTP status as though the server were at fault.
+          return Promise.reject(new Error(
+            'this mount has no campaign id, so ' + file + ' cannot be loaded'));
+        }
+        var fetchFn = (typeof Chronicle !== 'undefined' && Chronicle &&
+          typeof Chronicle.apiFetch === 'function') ? Chronicle.apiFetch : fetch;
+        return fetchFn(url).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + file);
           return r.json();
         });
       }
 
       Promise.all([
-        getJson('data/rulebook-frontpage.json'),
-        getJson('data/rules-glossary.json'),
+        getJson('rulebook-frontpage.json'),
+        getJson('rules-glossary.json'),
         // Examples are an enhancement — a missing/failed file must not blank the
         // page, so it degrades to an empty map (buttons render, play is inert).
-        getJson('data/rulebook-examples.json').catch(function () { return []; })
+        getJson('rulebook-examples.json').catch(function () { return []; })
       ]).then(function (res) {
         var items = unwrap(res[0]);
         var glossary = unwrap(res[1]);

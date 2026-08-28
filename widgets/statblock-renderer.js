@@ -8,10 +8,12 @@ Chronicle.register('statblock-renderer', {
     this.el = el;
     this.config = config;
     this.creature = null;
-    var base = config.campaignId
-      ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
-      : '/extensions/drawsteel/assets/';
-    this._ref = new DrawSteelRefRenderer(base, config.campaignId);
+    // The old second argument built '/api/v1/campaigns/:id/extensions/drawsteel/
+    // assets/', a route Chronicle does not have. It only ever fed the renderer's
+    // no-campaign fallback, so this worked by accident whenever a campaign id
+    // was present and failed silently when it was not. The renderer owns the
+    // real path now (see reference-renderer.js).
+    this._ref = new DrawSteelRefRenderer('', config.campaignId);
 
     Promise.all([this._loadEntity(), this._ref.load()]).then(function () {
       self._ref.injectStyles();
