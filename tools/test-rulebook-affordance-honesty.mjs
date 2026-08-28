@@ -40,16 +40,19 @@ const player = readFileSync(W('rulebook-example-player.js'), 'utf8');
 // Attributes the engine or player genuinely bind a listener to.
 function boundAttributes() {
   const found = new Set();
-  // NOTE the (?:All)? — `querySelectorAll?` applies the ? to the final 'l',
-  // so it misses plain querySelector(...) and reported data-rb-search, which
-  // IS bound, as an undocumented binding.
-  const re = /querySelector(?:All)?\('\[(data-rb[a-z-]*)\]'\)/g;
+  // Any quoted selector argument containing [data-rb...] counts: the engine
+  // binds through querySelector/querySelectorAll AND through its _closest
+  // helper, and uses compound selectors ('[data-rb-flap-group].rb-flapopen').
+  // Two earlier, narrower regexes each produced a false accusation —
+  // `querySelectorAll?` (the ? binds to the final 'l') missed plain
+  // querySelector and indicted data-rb-search; anchoring on ]') missed
+  // _closest and compound selectors and indicted data-rb-flap-group. Both
+  // attributes were bound all along.
+  const re = /\('\[(data-rb[a-z-]*)\][^']*'\)/g;
   for (const src of [engine, player]) {
     let m;
     while ((m = re.exec(src)) !== null) found.add(m[1]);
   }
-  // The flap trigger is queried relative to its row rather than from the root.
-  if (/data-rb-flap-trigger/.test(engine)) found.add('data-rb-flap-trigger');
   return found;
 }
 
@@ -74,8 +77,16 @@ test('no button is rendered live-looking but inert', () => {
     const end = parts[i].indexOf('</button>');
     const markup = end === -1 ? parts[i].slice(0, 400) : parts[i].slice(0, end);
 
-    const wired = [...bound].some((a) => markup.includes(a));
-    const declaredDead = /\bdisabled\b/.test(markup);
+    // Attribute-token matching, twice over:
+    //  - a bound attribute counts only as a real token (followed by =, space,
+    //    quote or '>'), so a bound name that PREFIXES an unbound one cannot
+    //    wire it by accident;
+    //  - `disabled` counts only when it is not the tail of `aria-disabled`:
+    //    an aria-disabled-only button still receives clicks — it IS the
+    //    inert-but-live-looking defect, not a declaration of deadness.
+    const attrToken = (a) => new RegExp('(^|[\\s"\'])' + a + '([\\s=>"\']|$)').test(markup);
+    const wired = [...bound].some(attrToken);
+    const declaredDead = /(?<!aria-)\bdisabled\b/.test(markup);
     // A button whose attribute is interpolated (' + attr + ') cannot be judged
     // statically; the relChips test below judges its builder instead.
     const computed = /\+ attr \+/.test(markup);
@@ -95,7 +106,7 @@ test('a control marked pending is marked for the reader, not just the source', (
   // how the Lair parts already do it.
   const soonButtons = (frontpage.split('<button').slice(1))
     .map((c) => { const e = c.indexOf('</button>'); return e === -1 ? c.slice(0, 400) : c.slice(0, e); })
-    .filter((b) => /\bdisabled\b/.test(b));
+    .filter((b) => /(?<!aria-)\bdisabled\b/.test(b));
   assert.ok(soonButtons.length > 0, 'expected at least one pending control');
   for (const b of soonButtons) {
     assert.ok(/rb-soon|aria-disabled/.test(b),
@@ -107,14 +118,20 @@ test('a control marked pending is marked for the reader, not just the source', (
 test('the example player returns one shape, mounted or not', () => {
   const P = require('../widgets/rulebook-example-player.js');
   const nullRoot = Object.keys(P.mount(null, {})).sort();
-  // The real mount's shape, read from the source's single return site.
-  const m = player.match(/return \{\s*destroy:[^}]*\}/g) || [];
-  assert.ok(m.length >= 1, 'could not find the mount return shape');
-
+  // Extract the KEYS of every mount-return object literal and require each
+  // site to expose the same set — a length check alone would pass a return
+  // that swapped collapseAll for some other key.
+  const sites = player.match(/return \{\s*destroy:[^}]*\}/g) || [];
+  assert.ok(sites.length >= 2, `expected both mount return sites, found ${sites.length}`);
+  for (const site of sites) {
+    const keys = [...site.matchAll(/(\w+)\s*:/g)].map((mm) => mm[1]).sort();
+    assert.deepEqual(keys, nullRoot,
+      'every mount return site must expose the same keys; a shape that ' +
+      'differs by input is a trap for the first caller that keeps a ' +
+      'null-mount around:\n' + site.replace(/\s+/g, ' '));
+  }
   assert.deepEqual(nullRoot, ['collapseAll', 'destroy', 'play', 'stopAll'],
-    'the null-root mount must return the same keys as a real one; it used to ' +
-    'omit collapseAll, so calling it threw a TypeError instead of no-opping — ' +
-    "and rulebook-frontpage's onClose('wing') hook is exactly such a caller");
+    'the mount shape itself changed — update this pin deliberately, not by drift');
 });
 
 test('the fold engine documents only bindings it has, or says which it lacks', () => {
@@ -127,8 +144,12 @@ test('the fold engine documents only bindings it has, or says which it lacks', (
 
   for (const attr of new Set(documented)) {
     if (bound.has(attr)) continue;
+    // Scope the disclaimer search to THIS attribute's own entry: from its
+    // bracket to the next documented attribute's bracket. A fixed lookahead
+    // let a neighbour's "MARKER ONLY" vouch for a different unbound one.
     const idx = header.indexOf('[' + attr + ']');
-    const nearby = header.slice(idx, idx + 500);
+    const nextIdx = header.indexOf('[data-', idx + attr.length + 2);
+    const nearby = header.slice(idx, nextIdx === -1 ? header.length : nextIdx);
     assert.match(nearby, /MARKER ONLY|never queries/,
       `the header documents [${attr}] as part of the contract, but nothing binds ` +
       `it. Either wire it or say plainly that it is a marker the caller must ` +

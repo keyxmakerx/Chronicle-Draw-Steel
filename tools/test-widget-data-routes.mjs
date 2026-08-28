@@ -59,8 +59,14 @@ const DATA_WIDGETS = [
 // the systems route when it had not. A stripper that does not understand
 // string literals cannot be trusted on a codebase that talks about globs.
 //
-// Regex literals are not tracked; none of these files contains one whose body
-// could be mistaken for a comment opener.
+// Regex literals ARE tracked, imperfectly but conservatively: after a
+// character that can end an expression (identifier, ')', ']', quote), a '/'
+// is division; anywhere else it opens a regex literal, which is copied
+// through verbatim honouring escapes and classes. Without this, the walker
+// desynced on `.replace(/"/g, '&quot;')` — the quote inside the regex opened
+// phantom string mode and swallowed real code, exactly the failure the
+// data/*.json phantom-comment bug already demonstrated once. The self-test
+// below pins it.
 function stripComments(src) {
   let out = '';
   let i = 0;
@@ -90,11 +96,43 @@ function stripComments(src) {
       i += 2;
       continue;
     }
+    if (c === '/') {
+      // Division or regex? Look back at the last significant character.
+      let j = out.length - 1;
+      while (j >= 0 && /\s/.test(out[j])) j--;
+      const prev = j >= 0 ? out[j] : '';
+      const isDivision = /[\w)\]'"`]/.test(prev);
+      if (!isDivision) {
+        // Regex literal: copy through, honouring escapes and char classes.
+        out += c;
+        i++;
+        let inClass = false;
+        while (i < src.length) {
+          if (src[i] === '\\') { out += src[i] + (src[i + 1] || ''); i += 2; continue; }
+          out += src[i];
+          if (src[i] === '[') inClass = true;
+          else if (src[i] === ']') inClass = false;
+          else if (src[i] === '/' && !inClass) { i++; break; }
+          i++;
+        }
+        continue;
+      }
+    }
     out += c;
     i++;
   }
   return out;
 }
+
+test('stripComments survives a regex literal containing a quote', () => {
+  const sample = `var x = s.replace(/"/g, '&quot;');\nvar MARKER_AFTER_REGEX = 1; // gone\nvar y = '/extensions/kept-in-string/';`;
+  const out = stripComments(sample);
+  assert.ok(out.includes('MARKER_AFTER_REGEX'),
+    'code after a quote-bearing regex literal was swallowed — the walker desynced');
+  assert.ok(!out.includes('// gone'), 'line comments must still strip');
+  assert.ok(out.includes('/extensions/kept-in-string/'),
+    'string contents must survive (the guard reads them)');
+});
 
 test('no widget builds a URL under the dead extension-asset path', () => {
   for (const f of DATA_WIDGETS) {
@@ -110,14 +148,24 @@ test('no widget builds a URL under the dead extension-asset path', () => {
 });
 
 test('every data fetch uses the systems route Chronicle actually serves', () => {
-  // The two that read data/*.json by name must name the systems path.
-  for (const f of ['rulebook-frontpage.js', 'monster-builder.js', 'character-sheet.js']) {
+  // Not just "mentions the path": the URL must be BUILT campaign-first, as
+  // '/campaigns/' + <id> + '/systems/drawsteel/data/<file>'. A repoint to a
+  // plausible sibling ('/api/v1/campaigns/:id/systems/...' does not exist
+  // either) would keep a loose substring check green while every fetch 404s.
+  const buildRe = /'\/campaigns\/'\s*\+\s*encodeURIComponent\([^)]+\)\s*\+\s*'\/systems\/drawsteel\/data\/'/;
+  for (const f of ['rulebook-frontpage.js', 'monster-builder.js']) {
     const code = stripComments(readFileSync(W(f), 'utf8'));
-    assert.ok(
-      code.includes("'/systems/drawsteel/data/'") ||
-      code.includes("/systems/drawsteel/data/"),
-      `${f} no longer builds the systems data route`);
+    assert.match(code, buildRe,
+      `${f} no longer builds '/campaigns/' + encodeURIComponent(id) + '/systems/drawsteel/data/'`);
+    assert.ok(!/['"]\/api\/v1\/campaigns\/['"]?\s*\+[^;]*systems\/drawsteel\/data/.test(code),
+      `${f} prefixes the systems data route with /api/v1, which has no route behind it`);
   }
+  // character-sheet builds its one data URL inline with a plain campaignId.
+  const cs = stripComments(readFileSync(W('character-sheet.js'), 'utf8'));
+  assert.ok(cs.includes("'/systems/drawsteel/data/skills.json'"),
+    'character-sheet.js no longer builds the systems data route');
+  assert.ok(!cs.includes("+ 'data/skills.json'"),
+    "character-sheet.js regrew the base + 'data/skills.json' fallback, which has no route behind it");
 });
 
 test('monster-builder fetches data over the systems route, and says so when it cannot', async () => {
@@ -137,6 +185,13 @@ test('monster-builder fetches data over the systems route, and says so when it c
   };
   vm.runInNewContext(readFileSync(W('monster-builder.js'), 'utf8'), sandbox);
   assert.ok(widget && typeof widget._fetchData === 'function', 'widget did not register');
+
+  // The receiver is hand-built, so pin the key agreement statically too: if
+  // init stores the id under a different name than _fetchData reads, this
+  // test's own receiver would hide the drift.
+  const src = readFileSync(W('monster-builder.js'), 'utf8');
+  assert.ok(src.includes('this._campaignId = config.campaignId'),
+    'init no longer stores this._campaignId; update _fetchData and this test together');
 
   const ctx = { _campaignId: 'camp-1', _fetchData: widget._fetchData };
   await ctx._fetchData('creature-keywords.json');

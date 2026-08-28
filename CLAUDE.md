@@ -46,7 +46,10 @@ has read the licence and confirmed.
 - All widgets use `Chronicle.register('slug', { init, destroy, ... })`
 - Use `Chronicle.apiFetch()` for API calls
 - Use `Chronicle.escapeHtml()` for XSS safety
-- Reference data loaded via `fetch(base + 'data/...')` where base is the extension asset path
+- Reference data is fetched from `/campaigns/:id/systems/drawsteel/data/<file>.json`
+  (Chronicle's `SystemDataAPI` — the ONLY route that serves these files; the old
+  "extension asset path" bases never had a route behind them and are forbidden by
+  `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch
 - Styles injected as `<style>` tag (no separate CSS files for widgets)
 - Use CSS custom properties with fallbacks for dark mode: `var(--bg-primary, #fff)`
 

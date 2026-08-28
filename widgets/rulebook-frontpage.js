@@ -388,7 +388,11 @@
       // use: dimmed, not-allowed, and a "soon" badge. A control that cannot
       // act must not look like one that can.
       '.rb-exbtn--soon{opacity:.55;cursor:not-allowed}',
-      '.rb-exbtn--soon:hover{border-color:var(--rb-edge);transform:none}',
+      // Two selectors, not one: .rb-rel:hover is declared LATER at equal
+      // specificity, so a disabled related-chip needs the double-class rule
+      // to actually win — with the single rule the dead chip still lit up
+      // with the live-chip hover treatment.
+      '.rb-exbtn--soon:hover,.rb-rel.rb-exbtn--soon:hover{border-color:var(--rb-edge);color:var(--rb-mut);transform:none}',
       '.rb-relrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:10px;' +
         'border-top:1px dashed var(--rb-edge);align-items:center}',
       '.rb-rellbl{font:800 9px/1 inherit;letter-spacing:.1em;color:var(--rb-mut2)}',

@@ -65,7 +65,10 @@ var DrawSteelRefRenderer = (function () {
         self._loaded = true;
       })
       .catch(function () {
-        _glossaryCache = {};
+        // Degrade THIS instance, but do not poison the module cache: caching
+        // {} here made one transient failure (a network blip, a 503) freeze
+        // every later renderer on the page into an empty glossary for the
+        // rest of its life, with no retry path.
         self._glossary = {};
         self._loaded = true;
       });

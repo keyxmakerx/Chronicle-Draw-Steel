@@ -303,8 +303,10 @@ var RulebookExamplePlayer = (function () {
     var noop = function () {};
     // The null-root mount must return the SAME shape as a real one. It used
     // to omit collapseAll, so a caller that mounted without a root and later
-    // called it got a TypeError instead of a no-op — and rulebook-frontpage's
-    // engine onClose('wing') hook is exactly such a caller.
+    // called it got a TypeError instead of a no-op. No current caller hits
+    // this (rulebook-frontpage only mounts with a real element), which is
+    // exactly why a shape that differs by input is a trap: the first caller
+    // to keep a null-mount around finds out at runtime, not in review.
     if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop };
     var opts = options || {};
     var win = (typeof window !== 'undefined') ? window : null;
