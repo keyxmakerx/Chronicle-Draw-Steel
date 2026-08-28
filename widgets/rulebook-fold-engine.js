@@ -39,6 +39,13 @@
  *   [data-rb-reader]          the trigger block that unfolds into the reader.
  *   [data-rb-reader-sheet]    the reader sheet element (position:fixed).
  *   [data-rb-veil]            the veil element behind reader/lair folds.
+ *                             MARKER ONLY — the engine never queries it.
+ *                             To make the veil dismiss the reader, the
+ *                             caller must ALSO put data-rb-close-reader
+ *                             on it (rulebook-frontpage does). Listed
+ *                             here as a contract attribute for years
+ *                             while nothing bound it, which reads as a
+ *                             promise the engine does not keep.
  *   [data-rb-close-wing|flap|reader]   dismiss buttons (crease ✕, rope, rx).
  *   [data-rb-search]          the search <input> (face-down fold + block dim).
  *   [data-rb-tile]            a searchable card; data-rb-tags="space joined".

@@ -296,11 +296,16 @@ var RulebookExamplePlayer = (function () {
   }
 
   // mount wires the [data-rbx-*] triggers onto `root` and returns
-  // { destroy, play, stopAll }. Everything DOM/timer-touching lives here so the
+  // { destroy, play, stopAll, collapseAll }. Everything DOM/timer-touching lives
+  // here so the
   // module body stays DOM-free and require()-able in Node.
   function mount(root, options) {
     var noop = function () {};
-    if (!root) return { destroy: noop, play: noop, stopAll: noop };
+    // The null-root mount must return the SAME shape as a real one. It used
+    // to omit collapseAll, so a caller that mounted without a root and later
+    // called it got a TypeError instead of a no-op — and rulebook-frontpage's
+    // engine onClose('wing') hook is exactly such a caller.
+    if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop };
     var opts = options || {};
     var win = (typeof window !== 'undefined') ? window : null;
     var examples = opts.examples || {};
