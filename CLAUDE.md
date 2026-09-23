@@ -39,7 +39,7 @@ cannot quietly reintroduce the incorrect claim.
 position is reasoned from this repo's history and the Steel Compendium's
 reliance, not verified. **Never invent or paraphrase licence terms**, and leave
 the limitation sections in `LICENSE` / `data/NOTICE.md` in place until a human
-has read the licence and confirmed.
+has read the licence and confirmed (#53).
 
 ## Widget Patterns
 
@@ -102,8 +102,9 @@ value, **2.3×** on Stamina and **2.4×** on damage — and a panel headed
 "Validation" presented them to a director as balanced. Wrong numbers wearing a
 green tick are worse than no numbers.
 
-- **`widgets/monster-formulas.js` (`DrawSteelFormulas`) is the only place the
-  published formulas are evaluated.** Every return is
+- **The `DrawSteelFormulas` section of `widgets/monster-engine.js` is the only
+  place the published formulas are evaluated.** (It was `widgets/monster-formulas.js`
+  until 2026-08-08; the header of that section says why it moved.) Every return is
   `{ value, sourced, source, notes }`. `sourced: false` means the published data
   does not cover this input and `value` is `null` — the module never returns a
   plausible-looking guess.
@@ -123,7 +124,7 @@ green tick are worse than no numbers.
 - Pinned by `tools/test-monster-formulas.mjs` (the module against the shipped
   `monster-building.json` / `encounter-building.json`) and
   `tools/test-monster-builder-honesty.mjs` (the widget's claims). A full rebuild
-  of the builder is separate work — do not treat this as the rework.
+  of the builder is separate work (#49) — do not treat this as the rework.
 
 ## @Reference Syntax
 

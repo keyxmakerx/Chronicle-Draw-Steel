@@ -10,7 +10,7 @@
 >
 > **§3.2's EV/budget arithmetic below is superseded.** `ev_multiplier` and
 > `hero_ratio` were this package's own invention; the published formulas now live in
-> `widgets/monster-formulas.js` and are the only place they may be evaluated. See
+> the `DrawSteelFormulas` section of `widgets/monster-engine.js` and are the only place they may be evaluated. See
 > CLAUDE.md → "The builder's math must carry its own provenance".
 
 > Status: **DRAFT for review.** This is a design proposal, not shipped code.
