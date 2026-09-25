@@ -106,6 +106,36 @@ Chronicle.register('monster-builder', {
     );
   },
 
+  // _parseAbilities normalizes stored ability JSON to an array of objects.
+  // The render/validate paths call .filter/.some/.forEach on creature.abilities
+  // directly, so a hand-edited or corrupted stored value (not an array, or an
+  // array holding a non-object entry) must never reach them unnormalized.
+  _parseAbilities: function (raw) {
+    var arr;
+    try { arr = JSON.parse(raw); } catch (e) { return []; }
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (a) { return a !== null && typeof a === 'object'; });
+  },
+
+  // _boundCreatureFields returns a size-capped copy of a creature so a
+  // runaway name or ability/trait list can't be written to an entity or the
+  // public bestiary. Defense in depth: Chronicle's server is the real limit
+  // enforcer. Pure — never mutates the creature passed in.
+  _boundCreatureFields: function (cr) {
+    var MAX_NAME = 200, MAX_LIST = 50;
+    var capArray = function (arr) {
+      return Array.isArray(arr) && arr.length > MAX_LIST ? arr.slice(0, MAX_LIST) : arr;
+    };
+    var bounded = {};
+    for (var k in cr) { if (cr.hasOwnProperty(k)) bounded[k] = cr[k]; }
+    bounded.name = String(cr.name || '').slice(0, MAX_NAME);
+    bounded.level = Math.max(1, Math.min(20, Number(cr.level) || 1));
+    bounded.abilities = capArray(cr.abilities);
+    bounded.traits = capArray(cr.traits);
+    bounded.villain_actions = capArray(cr.villain_actions);
+    return bounded;
+  },
+
   // _loadParty reads the live campaign party via the pure MonsterParty module
   // and stores the derived profile for the Party panel + budget seeding. It
   // never blocks the builder: any failure or absence degrades to manual mode.
@@ -181,7 +211,7 @@ Chronicle.register('monster-builder', {
     var self = this;
     if (!this.config.entityId || !this.config.campaignId) return Promise.resolve();
 
-    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entities/' + this.config.entityId;
+    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entities/' + encodeURIComponent(this.config.entityId);
     return Chronicle.apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (entity) {
@@ -219,7 +249,7 @@ Chronicle.register('monster-builder', {
           }
         }
         if (f.abilities_json) {
-          try { self.creature.abilities = JSON.parse(f.abilities_json); } catch (e) { /* keep empty */ }
+          self.creature.abilities = self._parseAbilities(f.abilities_json);
         }
         if (f.villain_actions_json) {
           try {
@@ -1991,7 +2021,7 @@ Chronicle.register('monster-builder', {
   // key was silently dropped on write. free_strike_damage is included so a manual
   // free-strike override round-trips instead of being recomputed on reload.
   _buildFieldsData: function () {
-    var cr = this.creature;
+    var cr = this._boundCreatureFields(this.creature);
     return {
       level: cr.level,
       organization: cr.organization,
@@ -2045,18 +2075,24 @@ Chronicle.register('monster-builder', {
       self._onSaveSuccess();
     }).catch(function (err) {
       self._setSaveStatus('error');
-      alert(err && err.message ? err.message : 'Could not save creature. Please try again.');
+      // A server-sourced message is never shown verbatim — only a fixed,
+      // safe string reaches the user; the real error stays in the console
+      // for diagnostics. A message this widget generated itself (e.g. the
+      // entity type isn't installed) is safe and still useful to show.
+      if (typeof console !== 'undefined') console.warn('Monster Builder: save failed', err);
+      alert((err && !err.fromServer && err.message) ? err.message : 'Could not save creature. Please try again.');
     });
   },
 
   _updateEntity: function (fieldsData) {
     var self = this;
-    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entities/' + this.config.entityId;
+    var name = this._boundCreatureFields(this.creature).name;
+    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entities/' + encodeURIComponent(this.config.entityId);
     return Chronicle.apiFetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: this.creature.name,
+        name: name,
         type_label: 'drawsteel-creature',
         is_private: this._entityIsPrivate,
         fields_data: fieldsData
@@ -2064,7 +2100,7 @@ Chronicle.register('monster-builder', {
     }).then(function (res) {
       if (!res.ok) {
         return self._apiError(res, 'Could not save creature. Please try again.').then(function (msg) {
-          throw new Error(msg);
+          var e = new Error(msg); e.fromServer = true; throw e;
         });
       }
     });
@@ -2074,13 +2110,14 @@ Chronicle.register('monster-builder', {
   // entity, and stores the returned id so later saves switch to PUT.
   _createEntity: function (fieldsData) {
     var self = this;
+    var name = this._boundCreatureFields(this.creature).name;
     return this._resolveEntityTypeId().then(function (typeId) {
-      var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
+      var url = '/api/v1/campaigns/' + encodeURIComponent(self.config.campaignId) + '/entities';
       return Chronicle.apiFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: self.creature.name,
+          name: name,
           entity_type_id: typeId,
           type_label: 'drawsteel-creature',
           is_private: self._entityIsPrivate,
@@ -2090,7 +2127,7 @@ Chronicle.register('monster-builder', {
     }).then(function (res) {
       if (!res.ok) {
         return self._apiError(res, 'Could not create creature. Please try again.').then(function (msg) {
-          throw new Error(msg);
+          var e = new Error(msg); e.fromServer = true; throw e;
         });
       }
       return res.json();
@@ -2105,7 +2142,7 @@ Chronicle.register('monster-builder', {
   // first type. We match the `drawsteel-creature` slug (falling back to the
   // "Creature" name) and error clearly if the type isn't installed.
   _resolveEntityTypeId: function () {
-    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entity-types';
+    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entity-types';
     return Chronicle.apiFetch(url)
       .then(function (r) {
         if (!r.ok) throw new Error('Could not load entity types for this campaign.');
@@ -2148,7 +2185,7 @@ Chronicle.register('monster-builder', {
   // a statblock without one) and carries level/organization/role so the bestiary
   // can index and filter the publication.
   _buildStatblock: function () {
-    var cr = this.creature;
+    var cr = this._boundCreatureFields(this.creature);
     return {
       name: cr.name,
       level: cr.level,
@@ -2192,8 +2229,9 @@ Chronicle.register('monster-builder', {
       return;
     }
 
+    var boundName = this._boundCreatureFields(this.creature).name;
     var body = {
-      name: this.creature.name,
+      name: boundName,
       statblock_json: this._buildStatblock(),
       visibility: this._publishVisibility || 'draft'
     };
@@ -2211,18 +2249,21 @@ Chronicle.register('monster-builder', {
         return null;
       }
       if (!res.ok) {
+        // Log the real reason for diagnostics; show only a fixed, safe string.
         return self._apiError(res, 'Could not publish to the bestiary.').then(function (msg) {
-          self._setPublishMsg(msg, 'error');
+          if (typeof console !== 'undefined') console.warn('Monster Builder: publish failed', msg);
+          self._setPublishMsg('Could not publish to the bestiary. Please try again.', 'error');
           return null;
         });
       }
       return res.json().then(function (pub) {
         var where = self._publishVisibility === 'published' ? 'the public bestiary' : 'My Creations (private)';
-        var name = (pub && pub.name) ? pub.name : self.creature.name;
+        var name = (pub && pub.name) ? pub.name : boundName;
         self._setPublishMsg('Published "' + name + '" to ' + where + '.', 'ok');
       });
     }).catch(function (err) {
-      self._setPublishMsg(err && err.message ? err.message : 'Could not publish to the bestiary.', 'error');
+      if (typeof console !== 'undefined') console.warn('Monster Builder: publish failed', err);
+      self._setPublishMsg('Could not publish to the bestiary. Please try again.', 'error');
     });
   },
 
