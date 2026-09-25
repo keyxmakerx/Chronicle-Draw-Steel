@@ -230,6 +230,49 @@ test('bestiary-browser: _boundCreatureFields clamps level, truncates name, caps 
   assert.equal(cr.abilities.length, 80, 'must not mutate the source creature');
 });
 
+test('bestiary-browser: _parseJSON falls back on a valid-JSON-but-non-array value', () => {
+  // JSON.parse('"oops not an array"') succeeds and yields a string, which
+  // has .length but not .filter/.forEach — must fall back, not pass through.
+  assert.deepEqual(bb._parseJSON(JSON.stringify('oops not an array'), []), []);
+  assert.deepEqual(bb._parseJSON('42', []), []);
+  assert.deepEqual(bb._parseJSON('{"a":1}', []), []);
+});
+
+test('bestiary-browser: _parseJSON keeps well-formed array entries and drops junk entries', () => {
+  const raw = JSON.stringify([{ name: 'Bite' }, null, 'junk', 42, { name: 'Claw' }]);
+  const parsed = bb._parseJSON(raw, []);
+  assert.equal(parsed.length, 2);
+  assert.equal(parsed[0].name, 'Bite');
+  assert.equal(parsed[1].name, 'Claw');
+});
+
+test('bestiary-browser: _normalizeEntity never yields a villain_actions that throws on .filter', () => {
+  const entity = { id: '1', name: 'X', fields_data: { villain_actions_json: JSON.stringify('oops not an array') } };
+  const cr = bb._normalizeEntity.call(bb, entity);
+  assert.ok(Array.isArray(cr.villain_actions));
+  assert.doesNotThrow(function () { cr.villain_actions.filter(function (v) { return v.name; }); });
+});
+
+// ── statblock-renderer.js ───────────────────────────────────────────────
+
+require('../widgets/statblock-renderer.js');
+const sr = Chronicle.registry['statblock-renderer'];
+
+test('statblock-renderer: _parseJSON falls back on a valid-JSON-but-non-array value', () => {
+  assert.deepEqual(sr._parseJSON(JSON.stringify('oops not an array'), []), []);
+});
+
+test('statblock-renderer: _loadEntity never yields a villain_actions that throws on .filter', () => {
+  Chronicle.apiFetch = fetchMock(function () {
+    return okJson({ id: '1', name: 'X', fields_data: { villain_actions_json: JSON.stringify('oops not an array') } });
+  });
+  const inst = Object.assign(Object.create(sr), { config: { campaignId: '1', entityId: '1' } });
+  return sr._loadEntity.call(inst).then(function () {
+    assert.ok(Array.isArray(inst.creature.villain_actions));
+    assert.doesNotThrow(function () { inst.creature.villain_actions.filter(function (v) { return v.name; }); });
+  });
+});
+
 // ── character-sheet.js ──────────────────────────────────────────────────
 
 globalThis.window = { Chronicle: makeChronicle() };

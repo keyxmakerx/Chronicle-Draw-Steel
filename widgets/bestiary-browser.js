@@ -290,9 +290,20 @@ Chronicle.register('bestiary-browser', {
     return String(val).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
   },
 
+  // Every caller passes an array fallback (traits/abilities/villain_actions,
+  // all rendered with .filter/.forEach) — a stored value that parses as
+  // valid JSON but isn't an array (e.g. a JSON-encoded string) must fall
+  // back too, and a null/non-object array entry must never reach the
+  // renderer's dotted property access unfiltered.
   _parseJSON: function (val, fallback) {
     if (!val) return fallback;
-    try { return JSON.parse(val); } catch (e) { return fallback; }
+    var parsed;
+    try { parsed = JSON.parse(val); } catch (e) { return fallback; }
+    if (Array.isArray(fallback)) {
+      if (!Array.isArray(parsed)) return fallback;
+      return parsed.filter(function (item) { return item !== null && typeof item === 'object'; });
+    }
+    return parsed;
   },
 
   _capitalize: function (s) {
