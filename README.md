@@ -82,7 +82,7 @@ Every `data/*.json` file is a JSON array of these objects. Required fields: `slu
 
 ### Adding a Creature
 1. Add an entry to `data/creatures.json` following the schema in `docs/DATA-SCHEMA.md`
-2. Calculate stats using the formulas in `data/organization-templates.json` and `data/role-templates.json`
+2. Calculate stats with the `DrawSteelFormulas` section of `widgets/monster-engine.js` (published math; see `docs/DATA-SCHEMA.md` → "Stat Calculation") — not `data/organization-templates.json` / `data/role-templates.json`, which are this package's own legacy estimates
 3. Use `{@category term}` syntax for rule references in ability text
 4. Validate: `python3 -c "import json; json.load(open('data/creatures.json'))"`
 
