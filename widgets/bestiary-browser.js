@@ -225,10 +225,13 @@ Chronicle.register('bestiary-browser', {
         self.state.creatures = items.map(function (e) { return self._normalizeEntity(e); });
       })
       .catch(function (err) {
+        // A server-sourced message is never shown verbatim, same as the
+        // import/delete/save/publish paths below — only a fixed, safe
+        // string reaches the user; the real error stays in the console.
         console.warn('Bestiary Browser: bestiary fetch failed; falling back to unavailable panel', err);
         self.state.creatures = [];
         self._bestiaryUnavailable = true;
-        self._bestiaryUnavailableMessage = (err && err.message) ? err.message : 'Community Bestiary is not available on this instance. Try using campaign source instead.';
+        self._bestiaryUnavailableMessage = 'Community Bestiary is not available on this instance. Try using campaign source instead.';
       });
   },
 
