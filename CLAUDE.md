@@ -52,6 +52,7 @@ has read the licence and confirmed (#53).
   `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch
 - Styles injected as `<style>` tag (no separate CSS files for widgets)
 - Use CSS custom properties with fallbacks for dark mode: `var(--bg-primary, #fff)`
+- Comments say why, briefly: the rule the code obeys and why, in a few lines. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning.
 
 ## Data Format
 
