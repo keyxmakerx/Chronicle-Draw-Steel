@@ -2,24 +2,20 @@
  * Draw Steel Rulebook Front Page — the editorial spread widget.
  *
  * Design contract: Cordinator mockups/rulebook-v10-table.html. Builds the
- * canonical DOM the reusable RulebookFoldEngine wires; it owns rendering only
- * — every fold interaction (wing / flap / reader takeover / search /
- * cross-hops / Esc) is delegated to the engine via the data-attribute
+ * canonical DOM the reusable RulebookFoldEngine wires; owns rendering only —
+ * every fold interaction is delegated to the engine via its data-attribute
  * contract.
  *
  * Data (fetched at init, defensively unwrapped):
  *   data/rulebook-frontpage.json  — ReferenceItem[] blocks keyed by
- *                                    properties.kind (hero/characteristic/
- *                                    conditions/worked-scene).
- *   data/rules-glossary.json      — condition full text + the rollup roster.
+ *                                    properties.kind.
+ *   data/rules-glossary.json      — condition full text + rollup roster.
  *
- * ES5 only (var / function expressions; no arrow fns, template literals, or
- * Array.from / Object.assign). Styles inject as ONE scoped <style> (class
- * guard). All data-derived text is escaped before it enters innerHTML.
+ * ES5 only. Styles inject as ONE scoped <style>. All data-derived text is
+ * escaped before it enters innerHTML.
  *
- * Only examples with a `.play` script are wired to RulebookExamplePlayer; the
- * rest render disabled and "soon"-badged, same treatment as the still-pending
- * Lair parts. Long-form reader chapters beyond the seed blocks are out of scope.
+ * Only examples with a `.play` script wire to RulebookExamplePlayer; the
+ * rest render disabled and "soon"-badged.
  */
 (function () {
   'use strict';

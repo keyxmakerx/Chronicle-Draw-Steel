@@ -458,34 +458,29 @@ var MonsterEngine = (function () {
  * ---------------------------------------------------------------------------
  * THIS SECTION IS NOT PART OF THE ENGINE AND MUST SURVIVE ITS REWRITE.
  *
- * It lives here (moved from widgets/monster-formulas.js) rather than in its
- * own file because Chronicle's manifest validator (internal/systems/manifest.go)
- * caps text_renderers at 5, and a sixth entry fails the whole package to load.
- * `DrawSteelFormulas` remains its own global with its own API and its own
- * tests, and it is the honest-math layer the builder and engine are measured
- * against. When the builder/engine rewrite lands, lift this section out
- * whole — it is deliberately free of engine state.
+ * Lives here (not its own file) because Chronicle's manifest validator caps
+ * text_renderers at 5. `DrawSteelFormulas` is its own global with its own
+ * API and tests — the honest-math layer the builder/engine are measured
+ * against. Lift it out whole when the builder/engine rewrite lands; it is
+ * deliberately free of engine state.
  * =========================================================================== */
 /**
  * Draw Steel published monster/encounter formulas — the SOURCED math.
  *
- * The monster builder previously used invented numbers (per-organization
- * Stamina/EV multipliers and data/damage-baselines.json, whose own `source`
- * is the string "custom") that disagreed with the published formulas in
- * data/monster-building.json / data/encounter-building.json by up to 2.4x.
- * This module is the single place the published formulas are evaluated, and
- * is deliberately not the monster engine.
+ * The single place the published formulas (data/monster-building.json /
+ * data/encounter-building.json) are evaluated, deliberately separate from
+ * the monster engine, which previously used invented numbers that disagreed
+ * with these by up to 2.4x.
  *
- * Every return carries its own provenance:
- *   { value, sourced, source, notes }
+ * Every return carries its own provenance: { value, sourced, source, notes }.
  * `sourced === false` means the published data does not cover this input
- * (e.g. Swarm, an organization original to this package with no published
- * modifiers). A caller rendering a value with `sourced === false` MUST say so
- * in the UI. Nothing here guesses: an uncovered input returns a null value.
+ * (e.g. Swarm, an organization original to this package). A caller rendering
+ * such a value MUST say so in the UI — nothing here guesses; an uncovered
+ * input returns a null value.
  *
  * Loading: attaches the `DrawSteelFormulas` global via the manifest
- * `text_renderers` section (loaded before widget scripts, same seam as
- * MonsterEngine); in Node it exports the same object for `node --test`.
+ * `text_renderers` section (same seam as MonsterEngine); in Node it exports
+ * the same object for `node --test`.
  */
 var DrawSteelFormulas = (function () {
   'use strict';

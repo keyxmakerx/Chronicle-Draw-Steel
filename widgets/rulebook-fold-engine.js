@@ -1,60 +1,47 @@
 /**
  * Draw Steel Rulebook Fold Engine — the reusable fold interaction module.
  *
- * Design contract: cordinator mockups/rulebook-v10-table.html.
- * A reusable, content-agnostic module: it knows nothing about
- * characteristics, conditions, or the Power Roll — only three physical fold
- * moves and how they coordinate:
+ * Design contract: cordinator mockups/rulebook-v10-table.html. A reusable,
+ * content-agnostic module: it knows nothing about characteristics,
+ * conditions, or the Power Roll — only three physical fold moves:
  *
- *   1. WING  — a panel hinged to a card's edge that folds out OVER its
- *              neighbours (rotateY spring). Left-column cards wing right,
- *              right-column cards wing left; the caller declares the side.
- *   2. FLAP  — a list row unfolds a panel DOWN over the rows beneath (rotateX).
+ *   1. WING   — a panel hinged to a card's edge, folds out OVER its
+ *               neighbours (rotateY). Caller declares left/right side.
+ *   2. FLAP   — a list row unfolds a panel DOWN over rows beneath (rotateX).
  *   3. READER — a block unfolds into a centred reading sheet (FLIP takeover
- *              with a veil behind).
+ *               with a veil behind).
  *
- * Only ONE fold is open at a time. Opening any fold closes the others; Esc
- * (and the veil / outside taps) fold back with the priority flap -> wing ->
- * reader. Under the mobile breakpoint wings open DOWNWARD full-width
- * (flap-style) instead of sideways, with the same crease + dismissal.
+ * Only ONE fold is open at a time; opening any closes the others. Esc (and
+ * the veil / outside taps) fold back with priority flap -> wing -> reader.
+ * Below the mobile breakpoint, wings open DOWNWARD full-width (flap-style).
  *
- * SPLIT ON PURPOSE:
- *   - a PURE state machine (createState / reduce / escapePriority / wingSide /
- *     clampWingWidth / isMobileWidth / tileMatches / blockMatches / motionAllowed)
- *     with no DOM access, so it is unit-tested headless
- *     (tools/test-rulebook-fold-engine.mjs, `node --test`); and
- *   - a DOM controller `mount(root, options)` that wires events onto a DOM the
- *     CALLER builds using the data-attribute contract below, and drives it
- *     through the pure reducer.
+ * SPLIT ON PURPOSE: a PURE state machine (createState / reduce / etc.) with
+ * no DOM access, unit-tested headless (tools/test-rulebook-fold-engine.mjs);
+ * and a DOM controller `mount(root, options)` that wires events onto DOM the
+ * CALLER builds via the data-attribute contract below, driving it through
+ * the pure reducer.
  *
  * DOM CONTRACT (all queried within `root`; every hook optional):
- *   [data-rb-wing]            a card that hosts a wing. Child `.rb-wing` is the
- *                             panel. Optional data-rb-side="left|right" (default
- *                             right), data-rb-dim="<selector>" for a block to dim
- *                             while open, data-rb-wing-max="<px>" width cap.
- *   [data-rb-flap]            a list row that hosts a flap. Child `.rb-flap` is
- *                             the panel; the clickable trigger is `.rb-flap-trigger`
- *                             (falls back to the row itself). Rows sharing a
- *                             [data-rb-flap-group] ancestor dim their siblings.
- *   [data-rb-reader]          the trigger block that unfolds into the reader.
+ *   [data-rb-wing]            hosts a wing; child `.rb-wing` is the panel.
+ *                             data-rb-side="left|right" (default right),
+ *                             data-rb-dim="<selector>", data-rb-wing-max="<px>".
+ *   [data-rb-flap]            hosts a flap; child `.rb-flap` is the panel,
+ *                             trigger is `.rb-flap-trigger` (else the row).
+ *                             Rows sharing [data-rb-flap-group] dim siblings.
+ *   [data-rb-reader]          trigger block that unfolds into the reader.
  *   [data-rb-reader-sheet]    the reader sheet element (position:fixed).
- *   [data-rb-veil]            the veil element behind reader/lair folds.
- *                             MARKER ONLY — the engine never queries it.
- *                             To make the veil dismiss the reader, the
- *                             caller must ALSO put data-rb-close-reader
- *                             on it (rulebook-frontpage does).
- *   [data-rb-close-wing|flap|reader]   dismiss buttons (crease ✕, rope, rx).
- *   [data-rb-search]          the search <input> (face-down fold + block dim).
- *   [data-rb-tile]            a searchable card; data-rb-tags="space joined".
- *   [data-rb-block]           a searchable block (dims when it has no match).
- *   [data-rb-goto-reader]     cross-hop: close current fold, open the reader.
- *   [data-rb-goto-card="id"]  cross-hop: open the wing on the card with that id.
- *   [data-rb-goto-flap="id"]  cross-hop: open the flap on the row with that id.
+ *   [data-rb-veil]            marker only — engine never queries it; to
+ *                             dismiss the reader the caller must also put
+ *                             data-rb-close-reader on it.
+ *   [data-rb-close-wing|flap|reader]   dismiss buttons.
+ *   [data-rb-search]          search <input> (face-down fold + block dim).
+ *   [data-rb-tile]            searchable card; data-rb-tags="space joined".
+ *   [data-rb-block]           searchable block (dims on no match).
+ *   [data-rb-goto-reader/card="id"/flap="id"]   cross-hops between folds.
  *
- * Loading: in the browser this attaches the `RulebookFoldEngine` global, served
- * via the manifest `text_renderers` section which loads BEFORE widget scripts
- * (the same seam DrawSteelRefRenderer / MonsterEngine use). In Node it exports
- * the same object so the state machine is unit-tested off-DOM.
+ * Loading: attaches the `RulebookFoldEngine` global via the manifest
+ * `text_renderers` section, loaded BEFORE widget scripts (same seam as
+ * MonsterEngine); exports the same object in Node for headless testing.
  */
 var RulebookFoldEngine = (function () {
   'use strict';

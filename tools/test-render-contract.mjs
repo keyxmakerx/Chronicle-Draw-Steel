@@ -2,24 +2,13 @@
 //
 // Run: node --test tools/test-render-contract.mjs
 //
-// Every other test in tools/ checks that the data is CORRECT; this one checks
-// that it is VISIBLE — a manifest field naming a key the data doesn't carry
-// renders as a silent blank with no test failure otherwise.
+// Other tests in tools/ check that the data is CORRECT; this one checks that
+// it is VISIBLE. Chronicle's internal/systems only shows manifest.Categories
+// (handler.go Index()), prints propString(item.Properties, field.Key) =
+// fmt.Sprintf("%v", …) (or "" if absent) for every declared field, and prints
+// root item.Source in the detail header.
 //
-// The renderer is Chronicle's internal/systems package:
-//
-//   handler.go   Index()  iterates manifest.Categories ONLY, so a data file
-//                         with no category is not in the browser at all.
-//   handler.go   CategoryList()/ItemDetail() look the category up by slug and
-//                         load data/<slug>.json through the JSON provider.
-//   system_pages.templ    prints propString(item.Properties, field.Key) for
-//                         every field the category declares, in the list table
-//                         AND the detail card, and prints the ROOT item.Source
-//                         in the detail header.
-//   template_helpers.go   propString = fmt.Sprintf("%v", props[key]), or "" if
-//                         the key is absent.
-//
-// So the failure modes this file exists to catch are:
+// Failure modes this file catches:
 //   1. a declared field key the data does not carry     -> silent blank
 //   2. a declared field key whose value is not a scalar -> "map[…]" / "<nil>"
 //   3. a data file with no category                     -> invisible entirely
