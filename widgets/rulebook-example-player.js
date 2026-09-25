@@ -296,11 +296,18 @@ var RulebookExamplePlayer = (function () {
   }
 
   // mount wires the [data-rbx-*] triggers onto `root` and returns
-  // { destroy, play, stopAll }. Everything DOM/timer-touching lives here so the
+  // { destroy, play, stopAll, collapseAll }. Everything DOM/timer-touching lives
+  // here so the
   // module body stays DOM-free and require()-able in Node.
   function mount(root, options) {
     var noop = function () {};
-    if (!root) return { destroy: noop, play: noop, stopAll: noop };
+    // The null-root mount must return the SAME shape as a real one. It used
+    // to omit collapseAll, so a caller that mounted without a root and later
+    // called it got a TypeError instead of a no-op. No current caller hits
+    // this (rulebook-frontpage only mounts with a real element), which is
+    // exactly why a shape that differs by input is a trap: the first caller
+    // to keep a null-mount around finds out at runtime, not in review.
+    if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop };
     var opts = options || {};
     var win = (typeof window !== 'undefined') ? window : null;
     var examples = opts.examples || {};

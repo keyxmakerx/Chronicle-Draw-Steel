@@ -24,6 +24,38 @@
 (function () {
   'use strict';
 
+  // ── data fetching ────────────────────────────────────────────────────────
+
+  // dataUrl builds the ONLY path Chronicle actually serves package data files
+  // on: GET /campaigns/:id/systems/drawsteel/data/<file>.json, handled by
+  // SystemDataAPI (Chronicle internal/systems/routes.go, handler.go).
+  //
+  // WHAT THIS REPLACED, AND WHY IT COULD NEVER HAVE WORKED. Every widget in
+  // this package used to build
+  //   '/api/v1/campaigns/' + cid + '/extensions/drawsteel/assets/'
+  // with '/extensions/drawsteel/assets/' as its fallback. Both are dead for
+  // JSON, for three independent reasons:
+  //
+  //   1. Chronicle has no /api/v1/campaigns/:id/extensions/... route at all.
+  //   2. The one real extension-asset route (ServeAsset) allowlists
+  //      .svg .png .webp .jpg .jpeg .css .js — it answers 400 for .json.
+  //   3. ServeAsset resolves under the EXTENSIONS directory, and Draw Steel
+  //      installs as a SYSTEM package (systems.LoadAdditionalDir), so it is
+  //      not there to be found either way.
+  //
+  // character-sheet.js already used the systems route and worked; everything
+  // else silently did not. There is deliberately no fallback now: a URL that
+  // cannot resolve is worse than an honest failure, because a widget that
+  // fetches it reports "HTTP 400" instead of "this mount has no campaign".
+  //
+  // Returns null when there is no campaign id, because in that case no route
+  // exists and the caller must say so rather than guess at one.
+  function dataUrl(file, campaignId) {
+    if (!campaignId) return null;
+    return '/campaigns/' + encodeURIComponent(campaignId) +
+      '/systems/drawsteel/data/' + file;
+  }
+
   // ── escaping / text helpers ──────────────────────────────────────────────
 
   // esc HTML-escapes & < > using Chronicle's helper when present, else a local
@@ -352,6 +384,15 @@
         'background:color-mix(in srgb,var(--tc,var(--rb-combat)) 9%,transparent);' +
         'border:1px solid color-mix(in srgb,var(--tc,var(--rb-combat)) 32%,transparent)}',
       '.rb-exbtn.rb-ghost{color:var(--rb-mut);background:var(--rb-box2);border-color:var(--rb-edge)}',
+      // Pending affordances carry the same treatment the Lair parts already
+      // use: dimmed, not-allowed, and a "soon" badge. A control that cannot
+      // act must not look like one that can.
+      '.rb-exbtn--soon{opacity:.55;cursor:not-allowed}',
+      // Two selectors, not one: .rb-rel:hover is declared LATER at equal
+      // specificity, so a disabled related-chip needs the double-class rule
+      // to actually win — with the single rule the dead chip still lit up
+      // with the live-chip hover treatment.
+      '.rb-exbtn--soon:hover,.rb-rel.rb-exbtn--soon:hover{border-color:var(--rb-edge);color:var(--rb-mut);transform:none}',
       '.rb-relrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:10px;' +
         'border-top:1px dashed var(--rb-edge);align-items:center}',
       '.rb-rellbl{font:800 9px/1 inherit;letter-spacing:.1em;color:var(--rb-mut2)}',
@@ -478,6 +519,20 @@
       if (r.goto === 'reader') attr = 'data-rb-goto-reader';
       else if (r.goto === 'flap') attr = 'data-rb-goto-flap="' + escAttr(r.target) + '"';
       else if (r.goto === 'card') attr = 'data-rb-goto-card="' + escAttr(r.target) + '"';
+
+      if (!attr) {
+        // An unrecognised r.goto used to emit a chip with an EMPTY attribute:
+        // styled and labelled like its live siblings, bound by nothing. The
+        // authored data decides which branch is taken, so a typo in one entry
+        // produced one silently dead chip among working ones. Render it
+        // disabled instead — the page should never offer a hop it cannot make.
+        html += '<button class="rb-rel rb-exbtn--soon" type="button" ' +
+          'disabled aria-disabled="true">' +
+          esc(r.icon) + ' ' + esc(r.label) +
+          ' <span class="rb-soon">soon</span></button>';
+        continue;
+      }
+
       html += '<button class="rb-rel" type="button" ' + attr + '>' +
         esc(r.icon) + ' ' + esc(r.label) + '</button>';
     }
@@ -485,8 +540,10 @@
   }
 
   // buildTile renders one characteristic card + its hinged wing. idx decides the
-  // hinge side (even column wings right, odd column wings left). Example buttons
-  // are inert placeholders (seam: data-rb-example); related chips are live.
+  // hinge side (even column wings right, odd column wings left). Related chips
+  // are live. Example buttons are live only where the authored example carries
+  // a .play slug; the rest, and the chapter button, render disabled + "soon"
+  // so the page never offers a control that cannot act.
   function buildTile(item, idx) {
     var p = item.properties || {};
     var side = (idx % 2 === 1) ? 'left' : 'right';
@@ -507,13 +564,32 @@
         scripts += '<div class="rbx-script" id="rbx-' + escAttr(x.play) + '" ' +
           'data-rbx-script="' + escAttr(x.play) + '" aria-live="polite"></div>';
       } else {
-        // Unwired examples stay inert placeholders (a later slice may script them).
-        ex += '<button class="rb-exbtn" type="button" data-rb-example>' +
-          esc(x.icon) + ' ' + esc(x.label) + '</button>';
+        // Unwired examples: no script exists for them yet (4 of the 6 authored
+        // examples have no .play). They used to render identically to the
+        // playable ones and simply do nothing on click — a comment declared
+        // them a seam, but only to whoever read the source. Now they are
+        // disabled and badged, like the Lair parts below.
+        ex += '<button class="rb-exbtn rb-exbtn--soon" type="button" ' +
+          'data-rb-example disabled aria-disabled="true">' +
+          esc(x.icon) + ' ' + esc(x.label) +
+          ' <span class="rb-soon">soon</span></button>';
       }
     }
-    ex += '<button class="rb-exbtn rb-ghost" type="button">📖 ' +
-      esc(p.chapterLabel || 'Full chapter') + '</button>';
+    // The chapter button. There is exactly ONE reader in this page (the hero
+    // block's), so this cannot be wired to data-rb-goto-reader the way the
+    // related chips are: a button labelled "Might chapter" that opens the
+    // Power Roll reader is a different lie, not a fix. Five of the eight
+    // authored entries carry properties.chapterLabel, so the intent is real
+    // and per-characteristic chapters are simply not built yet.
+    //
+    // Until they are, it is disabled and badged. Previously it rendered on
+    // EVERY tile as a live-looking control with no data attribute and no
+    // handler anywhere in the repo — the only dead affordance here that had
+    // no comment declaring it one.
+    ex += '<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button" ' +
+      'disabled aria-disabled="true">📖 ' +
+      esc(p.chapterLabel || 'Full chapter') +
+      ' <span class="rb-soon">soon</span></button>';
 
     var rel = related.length
       ? '<div class="rb-relrow"><span class="rb-rellbl">RELATED →</span>' + relChips(related) + '</div>'
@@ -779,23 +855,30 @@
       this._setBody(buildLoading());
 
       var cid = this.config.campaignId;
-      var base = cid
-        ? '/api/v1/campaigns/' + cid + '/extensions/drawsteel/assets/'
-        : '/extensions/drawsteel/assets/';
 
-      function getJson(path) {
-        return fetch(base + path).then(function (r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + path);
+      function getJson(file) {
+        var url = dataUrl(file, cid);
+        if (!url) {
+          // No campaign id on the mount means no route exists. Say that,
+          // rather than fetching a path that cannot resolve and reporting
+          // its HTTP status as though the server were at fault.
+          return Promise.reject(new Error(
+            'this mount has no campaign id, so ' + file + ' cannot be loaded'));
+        }
+        var fetchFn = (typeof Chronicle !== 'undefined' && Chronicle &&
+          typeof Chronicle.apiFetch === 'function') ? Chronicle.apiFetch : fetch;
+        return fetchFn(url).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + file);
           return r.json();
         });
       }
 
       Promise.all([
-        getJson('data/rulebook-frontpage.json'),
-        getJson('data/rules-glossary.json'),
+        getJson('rulebook-frontpage.json'),
+        getJson('rules-glossary.json'),
         // Examples are an enhancement — a missing/failed file must not blank the
         // page, so it degrades to an empty map (buttons render, play is inert).
-        getJson('data/rulebook-examples.json').catch(function () { return []; })
+        getJson('rulebook-examples.json').catch(function () { return []; })
       ]).then(function (res) {
         var items = unwrap(res[0]);
         var glossary = unwrap(res[1]);

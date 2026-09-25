@@ -52,12 +52,16 @@
   // loaded once at mount so skill chips can show a definition tooltip. Module
   // singleton like the reference renderer (one DS system per page).
   var skillDefs = null;
-  function loadSkillDefs(base, campaignId) {
+  function loadSkillDefs(campaignId) {
     if (skillDefs) return Promise.resolve();
-    var url = campaignId
-      ? '/campaigns/' + campaignId + '/systems/drawsteel/data/skills.json'
-      : base + 'data/skills.json';
-    var fetchFn = (campaignId && Chronicle.apiFetch) ? Chronicle.apiFetch : fetch;
+    // Campaign-scoped is the only route Chronicle serves for this file. The
+    // old no-campaign fallback ('/systems/drawsteel/data/skills.json', built
+    // off a base parameter) has never had a route behind it,
+    // so without a campaign id the honest behaviour is the degraded one the
+    // .catch below already provides: empty defs, no tooltips, no fake fetch.
+    if (!campaignId) { skillDefs = {}; return Promise.resolve(); }
+    var url = '/campaigns/' + encodeURIComponent(campaignId) + '/systems/drawsteel/data/skills.json';
+    var fetchFn = Chronicle.apiFetch || fetch;
     return fetchFn(url)
       .then(function (r) { return r.json(); })
       .then(function (arr) {
@@ -2200,14 +2204,13 @@
       var entityObj = parseJsonAttr(ds.fieldsData, null);
       var children = parseJsonAttr(ds.children, []);
 
-      // System content namespace (NOT extensions/assets — drawsteel is a System).
-      // Only the non-campaign fallbacks of the glossary/skills loaders use this;
-      // the live campaign paths hit /campaigns/:id/systems/drawsteel/... directly.
-      var base = campaignId
-        ? '/campaigns/' + campaignId + '/systems/drawsteel/'
-        : '/systems/drawsteel/';
+      // The renderer owns the real glossary route and degrades to an empty
+      // glossary when there is no campaign id. The basePath argument used to
+      // carry '/systems/drawsteel/' as a no-campaign fallback, but that URL
+      // has never had a route behind it — passing '' makes the degradation
+      // explicit instead of dressed up as a fetch.
       refRenderer = (typeof DrawSteelRefRenderer !== 'undefined')
-        ? new DrawSteelRefRenderer(base, campaignId)
+        ? new DrawSteelRefRenderer('', campaignId)
         : null;
 
       injectStyles();
@@ -2238,7 +2241,7 @@
           claimed: ds.claimed === 'true' || ds.claimed === '1'
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
-        Promise.all([loadRef, loadSkillDefs(base, campaignId)]).then(function () {
+        Promise.all([loadRef, loadSkillDefs(campaignId)]).then(function () {
           if (refRenderer) refRenderer.injectStyles();
           mountSheet(self, el, data);
         });

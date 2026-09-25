@@ -52,11 +52,8 @@ Chronicle.register('monster-builder', {
       traits: []
     };
 
-    var base = config.campaignId
-      ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
-      : '/extensions/drawsteel/assets/';
-    this._assetBase = base;
-    this._ref = new DrawSteelRefRenderer(base, config.campaignId);
+    this._campaignId = config.campaignId;
+    this._ref = new DrawSteelRefRenderer('', config.campaignId);
     this._saveStatus = 'clean';
 
     // Encounter-calculator state lives on the instance so it survives step
@@ -127,31 +124,33 @@ Chronicle.register('monster-builder', {
     });
   },
 
-  // _fetchData loads a single reference JSON file from the extension's asset
-  // path. Draw Steel ships its reference data as data/*.json (CLAUDE.md
-  // "Widget Patterns"); these are static package assets, not campaign data, so
-  // they are fetched directly rather than through the entity API. We try the
-  // configured asset base first, then fall back to the instance-global
-  // /extensions/drawsteel/assets/ path so the data resolves whether or not the
-  // current context exposes a campaign-scoped asset route.
+  // _fetchData loads a single reference JSON file over the ONLY path Chronicle
+  // actually serves package data on: GET
+  // /campaigns/:id/systems/drawsteel/data/<file>.json (SystemDataAPI).
+  //
+  // It used to try '/api/v1/campaigns/:id/extensions/drawsteel/assets/data/…'
+  // and then fall back to '/extensions/drawsteel/assets/data/…'. BOTH were
+  // dead, so every load here failed and the builder showed its _dataError
+  // diagnostic: Chronicle has no /api/v1/…/extensions route; the real
+  // extension-asset route allowlists .svg .png .webp .jpg .jpeg .css .js and
+  // answers 400 for .json; and it resolves under the extensions directory
+  // while Draw Steel installs as a system package. A two-candidate walk over
+  // two dead URLs reads like robustness and delivers none, which is why there
+  // is no fallback now.
   _fetchData: function (file) {
-    var candidates = [];
-    if (this._assetBase) candidates.push(this._assetBase + 'data/' + file);
-    var globalPath = '/extensions/drawsteel/assets/data/' + file;
-    if (candidates.indexOf(globalPath) === -1) candidates.push(globalPath);
-
-    var tryNext = function (i) {
-      if (i >= candidates.length) {
-        return Promise.reject(new Error('could not load data/' + file));
-      }
-      return fetch(candidates[i], { credentials: 'same-origin' })
-        .then(function (r) {
-          if (!r.ok) throw new Error(candidates[i] + ' -> ' + r.status);
-          return r.json();
-        })
-        .catch(function () { return tryNext(i + 1); });
-    };
-    return tryNext(0);
+    if (!this._campaignId) {
+      return Promise.reject(new Error(
+        'this mount has no campaign id, so data/' + file + ' cannot be loaded'));
+    }
+    var url = '/campaigns/' + encodeURIComponent(this._campaignId) +
+      '/systems/drawsteel/data/' + file;
+    var fetchFn = (typeof Chronicle !== 'undefined' && Chronicle &&
+      typeof Chronicle.apiFetch === 'function') ? Chronicle.apiFetch : fetch;
+    return fetchFn(url, { credentials: 'same-origin' })
+      .then(function (r) {
+        if (!r.ok) throw new Error(url + ' -> ' + r.status);
+        return r.json();
+      });
   },
 
   // _loadReferenceData populates every reference collection from data/*.json.
