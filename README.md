@@ -155,8 +155,8 @@ Read it before planning any work on `widgets/bestiary-browser.js`,
   package's **widgets**, not that plugin. `docs/implementation-checklist.md` marks
   that plugin — and the "Publish to Bestiary" button that shipped in
   `widgets/monster-builder.js` — as *not done*; it is wrong on both counts.
-- **`widgets/monster-formulas.js` stays the only place published formulas are
-  evaluated**, and every rendered figure keeps its `sourced` provenance flag. See
+- **The `DrawSteelFormulas` section of `widgets/monster-engine.js` stays the only
+  place published formulas are evaluated**, and every rendered figure keeps its `sourced` provenance flag. See
   CLAUDE.md → "The builder's math must carry its own provenance".
 - **`data/creatures.json` is 35 example fixtures, not a seed corpus.** Nothing loads
   it, every `source` is `"custom"`, its abilities are bare names, and against the

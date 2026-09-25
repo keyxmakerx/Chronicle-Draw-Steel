@@ -39,7 +39,7 @@ cannot quietly reintroduce the incorrect claim.
 position is reasoned from this repo's history and the Steel Compendium's
 reliance, not verified. **Never invent or paraphrase licence terms**, and leave
 the limitation sections in `LICENSE` / `data/NOTICE.md` in place until a human
-has read the licence and confirmed.
+has read the licence and confirmed (#53).
 
 ## Widget Patterns
 
@@ -105,8 +105,9 @@ value, **2.3×** on Stamina and **2.4×** on damage — and a panel headed
 "Validation" presented them to a director as balanced. Wrong numbers wearing a
 green tick are worse than no numbers.
 
-- **`widgets/monster-formulas.js` (`DrawSteelFormulas`) is the only place the
-  published formulas are evaluated.** Every return is
+- **The `DrawSteelFormulas` section of `widgets/monster-engine.js` is the only
+  place the published formulas are evaluated.** (It was `widgets/monster-formulas.js`
+  until 2026-08-08; the header of that section says why it moved.) Every return is
   `{ value, sourced, source, notes }`. `sourced: false` means the published data
   does not cover this input and `value` is `null` — the module never returns a
   plausible-looking guess.
@@ -126,7 +127,7 @@ green tick are worse than no numbers.
 - Pinned by `tools/test-monster-formulas.mjs` (the module against the shipped
   `monster-building.json` / `encounter-building.json`) and
   `tools/test-monster-builder-honesty.mjs` (the widget's claims). A full rebuild
-  of the builder is separate work — do not treat this as the rework.
+  of the builder is separate work (#49) — do not treat this as the rework.
 
 ## @Reference Syntax
 
@@ -142,3 +143,62 @@ green tick are worse than no numbers.
 - `"api_version": "1"` is the API compatibility version (separate concept)
 - Widget entries use `"script_file"` (not `"file"`) for JS paths
 - `"text_renderers"` section is forward-compatible (Chronicle platform support pending)
+
+## Working with this project
+
+These rules come from the old coordination repo (Cordinator), which is now a
+frozen archive. The same block is in the CLAUDE.md of Chronicle, the Foundry
+module and the Draw Steel package; change all three together. The binding
+tenets the PR templates name (T-B1 security first, T-B2 plugin isolation, T-B3
+production-grade UI, T-B4 docs for humans and AI alike) are defined in
+Cordinator's `decisions/2026-05-21-core-tenets.md`.
+
+**With the operator** (the maintainer, who reviews and deploys):
+- Explain things in plain language, without code. Give each trade-off in one sentence.
+- Give live checks as click-paths: the exact URL, what to click, and what working
+  and broken look like. Docker, OS and network commands are fine; never ask the
+  operator to read code or run a test suite.
+- The operator checks things later, not while you wait. Put checks in an issue
+  labelled `needs-operator`, and when work is blocked on them, name the exact action.
+- Decide and recommend. Don't offer a menu of options for things you can judge;
+  ask only about real product, visual or scheduling choices.
+- Stop at natural stopping points rather than interrupting with status questions.
+- UI work gets a mockup first, and a mockup the operator signed stays the contract
+  until they sign a new one. A decision about motion is shown as playable clips,
+  never stills.
+
+**Safety**
+- Chronicle runs in production. Verify, then fix; back up before deploys; put
+  anything risky behind an operator step. Security wins every tie.
+- A merged PR is not a deployed fix. Deploy settings and gates are separate steps
+  with their own checks.
+
+**Verify before you claim**
+- Read the source in the same turn before naming files, lines, identifiers or wire
+  values. Verify a wire contract from the code that consumes it.
+- Check any claim about state (open, merged, shipped, deployed) against git or
+  GitHub first. A claim measured against another repo is true only on the day it
+  was measured.
+- A root cause is a guess until the code confirms it; a bug-fix PR says why the bug
+  existed. When the scope is unclear, start by reading, not changing.
+- CI red with local green on the same commit means an environment difference until
+  proven otherwise.
+- If a rule can't be followed or the task is wrong, stop and say so instead of
+  pressing on.
+
+**Scope and reporting**
+- The PR description is what gets reviewed: what and why, the load-bearing lines,
+  honest deviations, the exact test commands and their pass counts.
+- Stay inside the task. Open an issue for anything else; ship the smallest useful
+  change and split the follow-ups.
+
+**Sessions**
+- Big agent fleets are welcome for work that splits cleanly, but run them on a
+  lighter model. Never fan a large fleet out on the most expensive model; keep
+  that for the few agents that need it. Usage is a real limit.
+- One session per piece of work, ended when it ships. Don't sit in a loop polling
+  for CI or PR events.
+- Work only on the branch you were given. Never push to another branch without
+  explicit permission.
+- File the issue before handing work on, and never point anyone at something that
+  hasn't landed.

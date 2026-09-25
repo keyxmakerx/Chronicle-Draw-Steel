@@ -244,7 +244,9 @@ interactivity. Rolls etc. are a someday-thing.
   `SteelCompendium/data-md`): current DS **1.0** ruleset, machine-extractable Markdown+
   YAML, **no scraping**. Licensed under MCDM's **Draw Steel Creator License** — quoting
   rules text in our open-source `data/*.json` is permitted **provided** we include the
-  verbatim DSCL attribution `NOTICE` and don't imply MCDM endorsement. Pin a commit SHA.
+  verbatim DSCL attribution `NOTICE` and don't imply MCDM endorsement. (That is this
+  project's position, not a checked reading of the licence: see the caveat in
+  `data/NOTICE.md` and #53.) Pin a commit SHA.
   Conditions (9) + skills (~55, grouped, with descriptions) come out cleanly; ability
   **keywords** (Magic/Melee/Ranged/Weapon/Strike/Area/Charge…) are NOT discrete files →
   curate ~10–15 by hand once.

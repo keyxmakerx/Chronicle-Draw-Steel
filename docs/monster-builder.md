@@ -230,8 +230,8 @@ File: `data/organization-templates.json`
 > **2.3×** on Stamina and **2.4×** on ability damage. The widget presented them
 > through a panel labelled "Validation".
 >
-> The builder now evaluates the published formulas via
-> `widgets/monster-formulas.js`:
+> The builder now evaluates the published formulas via the `DrawSteelFormulas`
+> section of `widgets/monster-engine.js`:
 >
 > | Figure | Published formula |
 > |---|---|
