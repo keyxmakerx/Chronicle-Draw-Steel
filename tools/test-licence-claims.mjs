@@ -1,25 +1,15 @@
-// test-licence-claims.mjs — the package may not claim someone else's rules text
-// is Creative Commons.
+// test-licence-claims.mjs — the package may not claim someone else's rules
+// text is Creative Commons.
 //
 // Run: node --test tools/test-licence-claims.mjs
 //
-// This package reproduces DRAW STEEL rules text under MCDM's DRAW STEEL Creator
-// License. For most of its life it *also* declared itself CC-BY-4.0 — in
-// LICENSE, README.md, manifest.json's `license` and `description`, all 35
-// `source` strings in creatures.json (which Chronicle prints on every creature
-// page), and three docs. That is a misrepresentation of what a downstream user
-// may do with the package, and it survived for months because nothing was
-// watching for it. This file watches.
-//
-// The rule is not "never say CC-BY". The package's OWN work — widgets/, tools/,
-// docs/, manifest.json, and the data entries flagged "source": "custom" — is
-// genuinely CC-BY-4.0, and saying so is correct. The rule is that every mention
-// must be SCOPED: near the mention, in plain words, it must be clear that it is
-// this package's own work being licensed, or that a past CC-BY claim is being
-// corrected. An unscoped mention reads as a claim over the rules text.
-//
-// See LICENSE (the two-part statement) and data/NOTICE.md ("The CC-BY-4.0
-// misstatement, and where it was corrected").
+// This package reproduces Draw Steel rules text under MCDM's DRAW STEEL
+// Creator License, not Creative Commons. The package's OWN work (widgets/,
+// tools/, docs/, manifest.json, entries flagged "source": "custom") IS
+// CC-BY-4.0, so the rule is not "never say CC-BY": every mention must be
+// SCOPED, reading clearly as this package's own work or as a correction of
+// the old CC-BY claim, never as a claim over the rules text. See LICENSE and
+// data/NOTICE.md.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';

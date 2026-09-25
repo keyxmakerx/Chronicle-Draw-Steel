@@ -3,46 +3,38 @@
  *
  * Design contract: Cordinator mockups/rulebook-v10-table.html. A reusable,
  * CONTENT-AGNOSTIC ES5 module: it knows nothing about Might, the Power Roll,
- * or the Lich's Lair — only how to render + play a "script": a little scene where
+ * or the Lich's Lair — only how to render + play a "script": tokens slide in
+ * and glow on their line, lines light one by one, the ROLL line ticks dice
+ * to scripted values and steps its math out with its why, and the tier
+ * stamps on. ↻ replay is always available; under prefers-reduced-motion
+ * everything reveals instantly.
  *
- *   1. character tokens SLIDE IN and the acting token GLOWS on its line,
- *   2. lines light one by one (director gold / player purple / roll amber),
- *   3. the ROLL line ticks its dice through faces, settles on the scripted
- *      values, steps the math out piece by piece WITH its why
- *      ("= 12 · +2 Might · (it's a Might test) · → 14") and the tier STAMPS on,
- *   4. ↻ replay is always available, and
- *   5. under prefers-reduced-motion everything reveals INSTANTLY, fully readable.
+ * Scripts are DATA (data/rulebook-examples.json, ReferenceItem[]). The
+ * consuming widget hands the player a { slug: scriptData } map and mounts it
+ * on a root built with the data-attribute contract below; scripts render
+ * lazily on first play.
  *
- * Scripts are DATA (data/rulebook-examples.json, ReferenceItem[]). The consuming
- * widget hands the player a { slug: scriptData } map and mounts it on a root the
- * widget built with the data-attribute contract below; the player renders each
- * script lazily on first play.
- *
- * SPLIT ON PURPOSE (mirrors rulebook-fold-engine.js):
- *   - PURE, DOM-free logic (tokenForLine / isRoll / rollRevealOrder / planScript /
- *     richText / buildScriptHtml) unit-tested headless
- *     (tools/test-rulebook-example-player.mjs, `node --test`); and
- *   - a DOM controller mount(root, options) that wires the triggers and drives
- *     the animation timers.
+ * SPLIT ON PURPOSE (mirrors rulebook-fold-engine.js): PURE, DOM-free logic
+ * unit-tested headless (tools/test-rulebook-example-player.mjs), and a DOM
+ * controller mount(root, options) that wires triggers and animation timers.
  *
  * DOM CONTRACT (all queried within `root`; every hook optional):
- *   [data-rbx-play="slug"]     a button that renders (once) + plays the script
- *                              `slug` into the nearest [data-rbx-script="slug"].
- *                              Optional data-rbx-show / data-rbx-hide = an element
- *                              id to reveal / hide first (the Lair drill-in).
- *   [data-rbx-script="slug"]   the (initially empty) container the script renders
- *                              into; gains `rbx-on` while shown.
- *   [data-rbx-replay]          a button inside a rendered script that replays it.
- *   [data-rbx-back]            reverses a play button's show/hide (Lair overview).
+ *   [data-rbx-play="slug"]     plays script `slug` into the nearest
+ *                              [data-rbx-script="slug"]; optional
+ *                              data-rbx-show/hide = element id to reveal/hide
+ *                              first (the Lair drill-in).
+ *   [data-rbx-script="slug"]   the container the script renders into; gains
+ *                              `rbx-on` while shown.
+ *   [data-rbx-replay]          replays a rendered script.
+ *   [data-rbx-back]            reverses a play button's show/hide.
  *
- * Loading: attaches the `RulebookExamplePlayer` global, served via the manifest
- * `text_renderers` section so it loads BEFORE widget scripts (same seam as
- * RulebookFoldEngine / MonsterEngine). In Node it exports the same object so the
- * pure logic is unit-tested off-DOM.
+ * Loading: attaches the `RulebookExamplePlayer` global via the manifest
+ * `text_renderers` section, loaded BEFORE widget scripts (same seam as
+ * RulebookFoldEngine / MonsterEngine); exports the same object in Node.
  *
- * Text markup (authored, trusted repo data — still escaped first, then promoted):
- *   **bold**  -> <b>            (ink emphasis: numbers, ability names)
- *   ~~dmg~~   -> combat accent   (the "what happened" beat: damage, prone, …)
+ * Text markup (authored, trusted repo data — escaped first, then promoted):
+ *   **bold**  -> <b>            (numbers, ability names)
+ *   ~~dmg~~   -> combat accent  (damage, prone, …)
  */
 var RulebookExamplePlayer = (function () {
   'use strict';

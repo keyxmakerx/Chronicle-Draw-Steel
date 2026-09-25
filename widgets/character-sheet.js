@@ -10,31 +10,21 @@
  * `drawsteel-character → character-sheet` depends on it):
  *   Chronicle.register('character-sheet', { init, destroy })
  *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children}
- *     - fieldsData parses to the entity object ({ name, custom_fields, … })
  *
- * RENDER MODEL: the sheet mounts via Chronicle's dynamic-surface frame
- * (`Chronicle.surface`) rather than one big innerHTML string. Each section is
- * a box renderer (`registerBox('ds-*', fn)`); the frame owns the box chrome
- * (collapsible title bar, motion, localStorage view state), so renderers emit
- * INNER content only (no `.cs-card` wrapper), reusing the existing `cs-*`
- * styles. The schema is built per-mount from the entity data and only
- * includes boxes that have content, so empty sections are absent rather than
- * rendered as empty titled boxes.
+ * Mounts via Chronicle's dynamic-surface frame (`Chronicle.surface`): each
+ * section is a box renderer (`registerBox('ds-*', fn)`) emitting INNER
+ * content only — the frame owns box chrome. Only boxes with content are
+ * included, so empty sections are absent, not empty titled boxes.
  *
- * The Abilities box is a master–detail: a grouped rail + a detail pane that
- * fills with a small bare card on row click and grows to a two-section big
- * card (rules + computed "For <hero>" odds) on card click. Wired via one
- * delegated listener (the surface frame re-renders box bodies, so no
- * per-node listeners); selection state lives in the DOM.
+ * The Abilities box is a master-detail (rail + detail pane) wired via one
+ * delegated listener, since the frame re-renders box bodies.
  *
- * READ-ONLY: Foundry is the source of truth; Chronicle mirrors fields_data
- * one-way. This widget never writes/saves.
+ * READ-ONLY: Foundry is the source of truth; this widget never writes/saves.
  *
- * LAYOUT: cross-system surfaces still mount as Chronicle blocks via the
- * reserved slot points appended after the surface (character_skills /
- * character_inventory / character_purchase_history); inert + hidden until
- * Chronicle's block registry surfaces a stable hydration path. Names are
- * placeholders — coordinate with the Chronicle dev before relying on them.
+ * LAYOUT: cross-system slot points (character_skills / character_inventory /
+ * character_purchase_history) are appended after the surface, inert + hidden
+ * until Chronicle's block registry has a stable hydration path. Names are
+ * placeholders.
  */
 (function () {
   'use strict';

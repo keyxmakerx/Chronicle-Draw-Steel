@@ -1,23 +1,19 @@
 #!/usr/bin/env node
-// build-render-fields.mjs — regenerate everything that exists so Chronicle's
-// reference browser can actually display this package.
+// build-render-fields.mjs — regenerate everything so Chronicle's reference
+// browser can display this package.
 //
 //   node tools/build-render-fields.mjs          # rewrite data/*.json + manifest.json
 //   node tools/build-render-fields.mjs --check  # exit 1 if anything is stale
 //
-// Four transformations, all idempotent, all driven by CATEGORIES in
-// tools/_render-fields.mjs, and all pinned by tools/test-render-contract.mjs:
-//
-//   1. properties.source -> root source, since the item-detail header renders
-//      the root Source field (system_pages.templ), not anything in properties.
-//   2. A derived one-line `summary`, which the list table prints for every row.
-//   3. A scalar `<key>_display` twin beside every nested property a category
-//      declares as a column, because propString formats an object as
-//      `map[…]`. Plus the two aggregate columns, `details_display` and
+// Four idempotent transforms, all driven by CATEGORIES in
+// tools/_render-fields.mjs, pinned by tools/test-render-contract.mjs:
+//   1. properties.source -> root source (the detail header renders root Source).
+//   2. A derived one-line `summary` for the list table.
+//   3. A scalar `<key>_display` twin for every nested column property, since
+//      propString formats an object as `map[…]`; plus `details_display` and
 //      `provenance_display`.
-//   4. manifest.json's `categories` array, regenerated from CATEGORIES with
-//      every field key resolved against the real data, so the manifest can
-//      never name a key the data does not carry.
+//   4. manifest.json's `categories`, regenerated from CATEGORIES so it can
+//      never name a key the data doesn't carry.
 //
 // Structured values are never removed: widgets and the Foundry sync read them.
 
