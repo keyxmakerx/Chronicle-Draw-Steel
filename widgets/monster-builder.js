@@ -11,7 +11,7 @@ Chronicle.register('monster-builder', {
     this.steps = ['Identity', 'Organization & Role', 'Statistics', 'Abilities', 'Free Strike', 'Villain Actions', 'Traits'];
     // Reference data is loaded from data/*.json at init (see _loadReferenceData),
     // never hard-coded inline. The data files are the single source of truth, so
-    // updating a file is enough — there is no second copy to keep in sync (B-8).
+    // updating a file is enough — there is no second copy to keep in sync.
     // These start empty and are populated before the first render.
     this.orgTemplates = [];
     this.roleTemplates = [];
@@ -57,14 +57,14 @@ Chronicle.register('monster-builder', {
     this._saveStatus = 'clean';
 
     // Encounter-calculator state lives on the instance so it survives step
-    // navigation instead of resetting every time Step 3 re-renders (B-7).
+    // navigation instead of resetting every time Step 3 re-renders.
     this._encounterState = { partySize: 4, partyLevel: this.creature.level };
-    // The derived party profile (redo Phase 0), populated by _loadParty before
+    // The derived party profile, populated by _loadParty before
     // first render; null = no heroes read / manual mode.
     this._partyProfile = null;
 
-    // Phase 2 suggestion state (redo Q2/Q3, R3). `_intent` is the director's
-    // recorded difficulty (display-only — R3.2, no scaling). `_suggestion` is the
+    // Suggestion state. `_intent` is the director's recorded difficulty
+    // (display-only, no scaling). `_suggestion` is the
     // last MonsterSuggestion applied (drives the rationale-chip panel);
     // `_suggestionDamage` is the editable suggested damage type (immune-warned).
     this._intent = 'standard';
@@ -124,19 +124,9 @@ Chronicle.register('monster-builder', {
     });
   },
 
-  // _fetchData loads a single reference JSON file over the ONLY path Chronicle
-  // actually serves package data on: GET
-  // /campaigns/:id/systems/drawsteel/data/<file>.json (SystemDataAPI).
-  //
-  // It used to try '/api/v1/campaigns/:id/extensions/drawsteel/assets/data/…'
-  // and then fall back to '/extensions/drawsteel/assets/data/…'. BOTH were
-  // dead, so every load here failed and the builder showed its _dataError
-  // diagnostic: Chronicle has no /api/v1/…/extensions route; the real
-  // extension-asset route allowlists .svg .png .webp .jpg .jpeg .css .js and
-  // answers 400 for .json; and it resolves under the extensions directory
-  // while Draw Steel installs as a system package. A two-candidate walk over
-  // two dead URLs reads like robustness and delivers none, which is why there
-  // is no fallback now.
+  // Loads a single reference JSON file over the ONLY path Chronicle actually
+  // serves package data on: GET /campaigns/:id/systems/drawsteel/data/<file>.json
+  // (SystemDataAPI). No fallback path — none exists.
   _fetchData: function (file) {
     if (!this._campaignId) {
       return Promise.reject(new Error(
@@ -202,7 +192,7 @@ Chronicle.register('monster-builder', {
         self._canPublish = true;
         self.creature.name = entity.name || '';
         // Chronicle returns custom fields under the `fields_data` key; earlier
-        // code read the wrong key (B-2), so every saved creature loaded blank.
+        // code must read the same key or every saved creature loads blank.
         var f = entity.fields_data;
         if (!f) return;
         var numFields = ['level', 'ev', 'stamina', 'winded', 'speed', 'stability',
@@ -215,7 +205,7 @@ Chronicle.register('monster-builder', {
           if (f[k] !== undefined) self.creature[k] = f[k];
         });
         // Normalize legacy single-letter sizes (T/S/M/L/H/G) saved by earlier
-        // builds to the DATA-SCHEMA multi-hex notation (1T/1S/1M/1L/2/3) (B-6).
+        // builds to the DATA-SCHEMA multi-hex notation (1T/1S/1M/1L/2/3).
         self.creature.size = self._normalizeSize(self.creature.size);
         // Parse JSON fields
         if (f.keywords && typeof f.keywords === 'string') {
@@ -250,7 +240,7 @@ Chronicle.register('monster-builder', {
 
   // Canonical Draw Steel size notation (docs/DATA-SCHEMA.md) paired with
   // friendly display labels. The notation string is what gets stored on the
-  // entity; the label is only for the dropdown (B-6).
+  // entity; the label is only for the dropdown.
   _sizeOptions: [
     { value: '1T', label: '1T — Tiny' },
     { value: '1S', label: '1S — Small' },
@@ -572,7 +562,7 @@ Chronicle.register('monster-builder', {
 
     // Bestiary publish controls — visibility toggle + publish button. Both are
     // disabled until a successful save exists, since publishing references the
-    // saved entity (B-9). Default visibility is private (draft).
+    // saved entity. Default visibility is private (draft).
     var vis = document.createElement('select');
     vis.className = 'mb-input mb-publish-vis';
     vis.title = 'Bestiary visibility';
@@ -657,7 +647,7 @@ Chronicle.register('monster-builder', {
       '<div id="mb-step2-warn" class="mb-inline-warn" style="display:none"></div>' +
       this._dataErrorBanner() +
       // "Build to complement the party" lives ABOVE the org cards so it is
-      // reachable BEFORE an organization is selected (R3.6) — its job includes
+      // reachable BEFORE an organization is selected — its job includes
       // suggesting the org, so it must not be gated behind one.
       this._complementSectionHtml() +
       '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
@@ -706,7 +696,7 @@ Chronicle.register('monster-builder', {
     this._bindComplement(c);
   },
 
-  // ── Phase 2: party-aware suggestion (redo Q2/Q3, R3) ──────
+  // ── Party-aware suggestion ──────
 
   // _complementSectionHtml renders the "Build to complement the party" control
   // block that sits above the org cards. With a party it shows the intent
@@ -736,7 +726,7 @@ Chronicle.register('monster-builder', {
       '</div>';
   },
 
-  // _suggestionPanelHtml renders the mandatory per-field rationale chips (Q2)
+  // _suggestionPanelHtml renders the mandatory per-field rationale chips
   // for the last-applied suggestion, plus the editable (immune-warned) damage
   // type and any degradation caveats. Returns '' when nothing has been built.
   _suggestionPanelHtml: function () {
@@ -807,7 +797,7 @@ Chronicle.register('monster-builder', {
     }
     var dmg = c.querySelector('#mb-complement-damage');
     if (dmg) {
-      // Live, non-blocking immune warning (Q3) — never prevents save.
+      // Live, non-blocking immune warning — never prevents save.
       dmg.addEventListener('input', function () { self._checkImmuneDamage(this.value); });
       // On commit, record the type and rewrite the suggested ability's tiers.
       dmg.addEventListener('change', function () {
@@ -842,7 +832,7 @@ Chronicle.register('monster-builder', {
   // _applyPartySuggestion runs the pure engine against the derived profile and
   // writes the result into the creature model (level/org/role + a signature
   // ability carrying the baseline tiers), then re-renders so the org/role cards
-  // reflect the pick and the rationale chips appear. Nothing is locked (Q2).
+  // reflect the pick and the rationale chips appear. Nothing is locked.
   _applyPartySuggestion: function () {
     if (!this._partyProfile || typeof MonsterEngine === 'undefined') return;
     var s = MonsterEngine.suggest(this._partyProfile, this._intent, {
@@ -1243,19 +1233,15 @@ Chronicle.register('monster-builder', {
     return (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) ? DrawSteelFormulas : null;
   },
 
-  // _recalcAuto fills EV and Stamina from the PUBLISHED formulas
-  // (the DrawSteelFormulas section of widgets/monster-engine.js) and records, per
-  // figure, whether the number
-  // shown is published or the widget's own. It used to fill both from invented
-  // per-organization tables — `ev_multiplier * level` and
-  // `stamina_base + stamina_per_level * level` — which ran 1.67x and up to 2.3x
-  // off the published math while the checks panel presented them as validated.
+  // Fills EV and Stamina from the PUBLISHED formulas (the DrawSteelFormulas
+  // section of widgets/monster-engine.js) and records, per figure, whether the
+  // number shown is published or the widget's own.
   //
-  // Where the published formula cannot be evaluated (Swarm, which is original to
-  // this package; or before a role is chosen, since published role modifiers
-  // span 10-30 and no midpoint is defensible) the legacy figure is kept as a
-  // usable starting point and FLAGGED unsourced. Nothing here is allowed to be
-  // shown without its provenance.
+  // Where the published formula cannot be evaluated (Swarm, original to this
+  // package; or before a role is chosen, since published role modifiers span
+  // 10-30 and no midpoint is defensible) the legacy figure is kept as a usable
+  // starting point and FLAGGED unsourced. Nothing here is shown without its
+  // provenance.
   _recalcAuto: function () {
     var org = this._getOrgTemplate();
     var role = this._getRoleTemplate();
@@ -1354,13 +1340,12 @@ Chronicle.register('monster-builder', {
     return best;
   },
 
-  // _getDamageHints shows the PUBLISHED baseline damage for the current
-  // organization and role — (4 + level + damage modifier) × tier modifier,
-  // halved for horde and minion — and names the two published adjustments it
-  // has not applied, because they depend on the ability the director is writing.
-  // It used to print data/damage-baselines.json, whose own `source` is "custom"
-  // and which runs up to 2.4x the published figures; that table now appears only
-  // for an organization the published rules do not define, clearly labelled.
+  // Shows the PUBLISHED baseline damage for the current organization and role
+  // — (4 + level + damage modifier) × tier modifier, halved for horde and
+  // minion — and names the two published adjustments it has not applied,
+  // since they depend on the ability the director is writing.
+  // data/damage-baselines.json (`source: "custom"`, up to 2.4x the published
+  // figures) appears only for an organization the published rules don't define.
   _getDamageHints: function () {
     var org = this._getOrgTemplate();
     if (!org) return '';
@@ -1596,11 +1581,11 @@ Chronicle.register('monster-builder', {
 
     var profile = this._partyProfile;
     // Party size/level persist on the instance so they survive step navigation
-    // and validation re-renders instead of resetting to defaults (B-7).
+    // and validation re-renders instead of resetting to defaults.
     var st = this._encounterState;
-    // Seed the encounter inputs from the LIVE party once (redo Phase 0); the
+    // Seed the encounter inputs from the LIVE party once; the
     // director can still override, and with no party we keep today's hand-typed
-    // values as the manual fallback (redo Q4 ruling).
+    // values as the manual fallback.
     if (profile && !st._seededFromParty) {
       if (profile.size) st.partySize = profile.size;
       if (profile.levelAvg !== null && profile.levelAvg !== undefined) {
@@ -1615,7 +1600,7 @@ Chronicle.register('monster-builder', {
     calc.className = 'mb-encounter-calc';
     // The structure is built once; only .mb-ec-output is rewritten on input, so
     // the number fields keep focus while typing instead of losing it every
-    // keystroke to a full innerHTML rebuild (B-7). The party panel above it is
+    // keystroke to a full innerHTML rebuild. The party panel above it is
     // read-only, so it never re-renders on keystroke either.
     calc.innerHTML =
       this._partyPanelHtml(profile) +
@@ -1644,16 +1629,12 @@ Chronicle.register('monster-builder', {
     container.appendChild(calc);
   },
 
-  // _encounterMeterHtml builds the encounter-budget readout. It is a pure
-  // string builder so it can be tested off-DOM.
-  //
-  // It reports the party's PUBLISHED encounter strength (4 + 2 × level per hero)
-  // and names the published difficulty band the current spend falls into. It
-  // used to print `partySize × partyLevel × 4` — 1.67x the published strength at
-  // level 10 — and then tell the director that some multiple of the creature
-  // would make a balanced fight, which the widget had no basis to claim: it
-  // checks none of the published spending constraints (creature count per hero,
-  // the six-stat-block limit, minions in fours, star-of-the-show).
+  // Builds the encounter-budget readout. Pure string builder so it can be
+  // tested off-DOM. Reports the party's PUBLISHED encounter strength
+  // (4 + 2 × level per hero) and names the published difficulty band the
+  // current spend falls into. Checks none of the published spending
+  // constraints (creature count per hero, six-stat-block limit, minions in
+  // fours, star-of-the-show) — does not claim the result is balanced.
   _encounterMeterHtml: function (st) {
     var cr = this.creature;
     var partyEs = MonsterEngine.encounterBudget(st.partySize, st.partyLevel, this.orgTemplates);
@@ -1691,11 +1672,10 @@ Chronicle.register('monster-builder', {
       '<div style="margin-top:6px;font-size:0.85em;opacity:0.8">This does not check the published spending limits — creatures per hero, the six-stat-block cap, buying minions in fours, or giving a leader or solo a third of the budget. Read them before you run it.</div>';
   },
 
-  // _partyPanelHtml renders the read-only "party at a glance" panel above the
-  // budget meter: the derived profile with an honest per-stat coverage caveat,
-  // or a manual-mode note when no drawsteel-character entities were found (redo
-  // Phase 0 + Q4 ruling: graceful manual fallback, never average nulls as zeros).
-  // Every dynamic string (immunities/weaknesses come from hero data) is escaped.
+  // Renders the read-only "party at a glance" panel above the budget meter:
+  // the derived profile with an honest per-stat coverage caveat, or a
+  // manual-mode note when no drawsteel-character entities were found — never
+  // average nulls as zeros. Every dynamic string is escaped.
   _partyPanelHtml: function (profile) {
     var esc = Chronicle.escapeHtml;
     if (!profile) {
@@ -1726,7 +1706,7 @@ Chronicle.register('monster-builder', {
     if (profile.immunities && profile.immunities.length) {
       rows.push('<strong>Immune to (avoid):</strong> ' + esc(profile.immunities.join(', ')));
     }
-    // Honest coverage caveat: name any stat not present on every hero (Q4).
+    // Honest coverage caveat: name any stat not present on every hero.
     var caveats = [];
     var covKeys = ['level', 'stamina_max'].concat(MonsterParty.STAT_KEYS);
     var full = profile.size + ' of ' + profile.size;
@@ -2007,9 +1987,9 @@ Chronicle.register('monster-builder', {
   // ── Save ────────────────────────────────────────────────
 
   // _buildFieldsData assembles the fields_data map persisted on the entity.
-  // Chronicle reads custom fields under the `fields_data` key (B-2/B-3); the old
+  // Chronicle reads custom fields under the `fields_data` key; the old
   // key was silently dropped on write. free_strike_damage is included so a manual
-  // free-strike override round-trips instead of being recomputed on reload (B-10).
+  // free-strike override round-trips instead of being recomputed on reload.
   _buildFieldsData: function () {
     var cr = this.creature;
     return {
@@ -2055,7 +2035,7 @@ Chronicle.register('monster-builder', {
     this._setSaveStatus('saving');
 
     // PUT updates an existing entity; POST creates one when none is configured
-    // (B-4). Chronicle has no partial-update route for entities (B-3) — the old
+    // Chronicle has no partial-update route for entities — the old
     // request method never matched a handler, so saves silently no-op'd.
     var promise = this.config.entityId
       ? this._updateEntity(fieldsData)
@@ -2091,7 +2071,7 @@ Chronicle.register('monster-builder', {
   },
 
   // _createEntity resolves the Draw Steel creature entity type, POSTs a new
-  // entity, and stores the returned id so later saves switch to PUT (B-4).
+  // entity, and stores the returned id so later saves switch to PUT.
   _createEntity: function (fieldsData) {
     var self = this;
     return this._resolveEntityTypeId().then(function (typeId) {
@@ -2161,7 +2141,7 @@ Chronicle.register('monster-builder', {
     }, 2000);
   },
 
-  // ── Bestiary publish (B-9) ───────────────────────────────
+  // ── Bestiary publish ───────────────────────────────
 
   // _buildStatblock produces the freeform statblock object stored on the
   // bestiary publication. It MUST include a top-level `name` (the server rejects

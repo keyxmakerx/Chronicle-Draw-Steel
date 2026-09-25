@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 /**
- * XSS regression tests for widgets/reference-renderer.js (DS-SEC-FIXES-R1).
+ * XSS regression tests for widgets/reference-renderer.js.
  *
- * Covers audit findings:
- *   H-6 (reference-renderer.js:117) — the resolved glossary label (entry.name)
- *       was inserted into HTML element content UNESCAPED. A malicious package /
- *       systems-data glossary entry could inject script into every renderer that
- *       resolves a {@category term} token (statblock, character sheet, bestiary).
- *   L-5 (reference-renderer.js:93-94) — scanText used the glossary description as
- *       a String.replace *replacement* string, so a `$1`/`$&` in the description
- *       was interpreted as a replacement pattern (data-integrity bug).
+ * The resolved glossary label (entry.name) must be escaped before insertion
+ * into HTML element content: unescaped, a malicious glossary entry can inject
+ * script into every renderer resolving a {@category term} token (statblock,
+ * character sheet, bestiary). scanText must also not pass the glossary
+ * description as a String.replace *replacement* string, where a `$1`/`$&`
+ * would be interpreted as a replacement pattern.
  *
  * Run: `node --test tools/test-reference-renderer.mjs`
  */

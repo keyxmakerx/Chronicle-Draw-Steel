@@ -122,15 +122,12 @@ ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
 `damage-baselines.json` and `rulebook-examples.json` — carries a real root
 `source`.
 
-**A citation also has to be true about the *licence*.** Until the licensing
-correction, every entry in `creatures.json` carried
-`"source": "Draw Steel CC-BY-4.0, MCDM Productions"`, and Chronicle printed that
-string on all 35 creature pages. Both halves were wrong: Draw Steel is not
-CC-BY-4.0 (see `LICENSE` and `data/NOTICE.md`), and those 35 creatures are not
-reproduced Draw Steel monsters — they are example stat blocks written for this
-package's monster-builder and bestiary widgets. They now carry
-`"source": "custom"`. The evidence and the trademark caveat are recorded in
-`data/NOTICE.md` → "creatures.json is example content".
+**A citation also has to be true about the *licence*.** All 35 `creatures.json`
+entries carry `"source": "custom"`: Draw Steel is not CC-BY-4.0 (see `LICENSE`
+and `data/NOTICE.md`), and these creatures are not reproduced Draw Steel
+monsters — they are example stat blocks written for this package's
+monster-builder and bestiary widgets. The evidence and the trademark caveat
+are recorded in `data/NOTICE.md` → "creatures.json is example content".
 
 | Field | Type | Meaning |
 |-------|------|---------|

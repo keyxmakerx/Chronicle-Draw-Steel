@@ -1,13 +1,9 @@
 /**
  * Draw Steel Monster Engine — pure encounter math for the monster builder.
  *
- * Phase 1 scope: the grounded EV budget only (party size + level -> EV budget).
  * Every number traces to docs/monster-builder.md's encounter rules and the
- * organization templates (data/organization-templates.json). NO Draw Steel math
- * is invented here.
- *
- * Later phases (suggestion engine, potency, tier fill) extend this module rather
- * than relocate it, so it is created now as the single home for builder math.
+ * organization templates (data/organization-templates.json). No Draw Steel
+ * math is invented here.
  *
  * Loading: in the browser this attaches the `MonsterEngine` global, served via
  * the manifest `text_renderers` section which loads BEFORE widget scripts (the
@@ -17,16 +13,15 @@
 var MonsterEngine = (function () {
   'use strict';
 
-  // formulas() resolves DrawSteelFormulas — the module holding the PUBLISHED
-  // Draw Steel math (the DrawSteelFormulas SECTION at the foot of this file,
-  // merged from widgets/monster-formulas.js). In the browser it is a global
-  // loaded ahead of this file via the manifest's text_renderers section; under
-  // `node --test` it is required directly. Resolved lazily so load order in
-  // either environment cannot leave this file holding a stale null.
+  // Resolves DrawSteelFormulas, the module holding the PUBLISHED Draw Steel
+  // math (the DrawSteelFormulas SECTION at the foot of this file). In the
+  // browser it is a global loaded ahead of this file via the manifest's
+  // text_renderers section; under `node --test` it is required directly.
+  // Resolved lazily so load order in either environment cannot leave this
+  // file holding a stale null.
   function formulas() {
     if (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) return DrawSteelFormulas;
     if (typeof require === 'function') {
-      // Merged into this file 2026-08-08 (see the DrawSteelFormulas SECTION below).
       try { return module.exports && module.exports.Formulas ? module.exports.Formulas : null; } catch (e) { return null; }
     }
     return null;
@@ -46,18 +41,13 @@ var MonsterEngine = (function () {
     return heroes / creatures;
   }
 
-  // standardEvPerHeroLevel is NO LONGER part of the budget path — the published
-  // encounter-strength formula replaced it (see encounterBudget). It is kept
-  // because it is the honest description of the shipped org templates' internal
-  // consistency, and its tests document that relationship.
-  //
-  // standardEvPerHeroLevel derives, straight from the org templates, the EV a
-  // single hero-level is worth against a "standard" (1:1) opponent. For every
-  // org tier `ev_multiplier / heroesPerCreature` equals the Platoon multiplier
-  // of 4 (Platoon is the 1:1 "standard" org, docs/monster-builder.md §2.1/§4.1)
-  // — EXCEPT the Minion, whose squad EV is an intentional outlier. We take the
-  // MEDIAN of that ratio across all orgs so the Minion cannot skew it. The
-  // result (4 for the shipped data) is the grounded "EV per hero per level".
+  // Not part of the budget path — encounterBudget uses the published
+  // encounter-strength formula instead. Kept because it documents the shipped
+  // org templates' internal consistency: for every org tier,
+  // `ev_multiplier / heroesPerCreature` equals the Platoon multiplier of 4
+  // (Platoon is the 1:1 "standard" org, docs/monster-builder.md §2.1/§4.1)
+  // except the Minion, an intentional outlier. Takes the MEDIAN of that ratio
+  // across all orgs so the Minion cannot skew it.
   function standardEvPerHeroLevel(orgTemplates) {
     var ratios = [];
     var list = orgTemplates || [];
@@ -75,17 +65,12 @@ var MonsterEngine = (function () {
     return ratios.length % 2 ? ratios[mid] : (ratios[mid - 1] + ratios[mid]) / 2;
   }
 
-  // encounterBudget is the party's PUBLISHED encounter strength: the sum over
-  // heroes of 4 + (2 x hero level) (data/encounter-building.json,
-  // "encounter-strength"). It is also the floor of the published standard
-  // difficulty band, whose ceiling is one more hero's worth of strength —
-  // encounterBands() returns the whole ladder.
-  //
-  // This REPLACES the widget's old `size x level x 4`, which ran 1.67x the
-  // published strength at level 10 (160 against 96 for four heroes) and was
-  // presented to directors as a balanced budget. `orgTemplates` is accepted for
-  // call-site compatibility and no longer read — the published formula depends
-  // only on the party.
+  // The party's PUBLISHED encounter strength: the sum over heroes of
+  // 4 + (2 x hero level) (data/encounter-building.json, "encounter-strength").
+  // Also the floor of the published standard difficulty band, whose ceiling is
+  // one more hero's worth of strength — encounterBands() returns the whole
+  // ladder. `orgTemplates` is accepted for call-site compatibility and no
+  // longer read — the published formula depends only on the party.
   function encounterBudget(partySize, partyLevel, orgTemplates) {   // eslint-disable-line no-unused-vars
     var F = formulas();
     if (!F) return 0;
@@ -107,13 +92,11 @@ var MonsterEngine = (function () {
     return bands.value === null ? null : { partyEs: party.value, perHeroEs: perHero.value, bands: bands.value };
   }
 
-  // creatureEV is a single creature's PUBLISHED encounter value:
+  // A single creature's PUBLISHED encounter value:
   //   ((2 x level) + 4) x organization modifier, rounded up.
-  // The old `level x ev_multiplier` ran 1.67x high at level 10 (a level 10 solo
-  // was priced at 240 against a published 144). Returns 0 — "cannot be priced"
-  // — for an organization the published rules do not define, which is how Swarm
-  // (original to this package) drops out of the automatic picks rather than
-  // being quietly costed with invented math.
+  // Returns 0 — "cannot be priced" — for an organization the published rules
+  // do not define, which is how Swarm (original to this package) drops out of
+  // the automatic picks rather than being quietly costed with invented math.
   function creatureEV(level, org) {
     var F = formulas();
     if (!F) return 0;
@@ -121,9 +104,8 @@ var MonsterEngine = (function () {
     return ev.value === null ? 0 : ev.value;
   }
 
-  // villainActionCount reads the data-driven villain-action requirement for an
-  // org template (leaders/solos = 3, all others = 0). This value replaces the
-  // hardcoded 'leader'/'solo' string checks throughout the builder.
+  // Reads the data-driven villain-action requirement for an org template
+  // (leaders/solos = 3, all others = 0).
   function villainActionCount(org) {
     if (!org || typeof org.villain_action_count !== 'number') return 0;
     return org.villain_action_count;
@@ -145,14 +127,14 @@ var MonsterEngine = (function () {
     return { spent: safeEv, budget: safeB, copies: Math.max(1, Math.round(safeB / safeEv)), ratio: safeEv / safeB };
   }
 
-  // ── Phase 2: the suggestion engine ────────────────────────────────────────
+  // ── The suggestion engine ─────────────────────────────────────────────────
   //
   // suggest(partyProfile, intent, data) turns the derived PartyProfile into a
-  // fully pre-filled, fully-overridable monster suggestion (redo Q2/Q3, R3).
-  // Every filled field carries a `rationale` string (Q2: the chip is mandatory).
-  // Potency and intent-scaling are DESCOPED (R3.1/R3.2) — no invented DS math.
+  // fully pre-filled, fully-overridable monster suggestion. Every filled field
+  // carries a mandatory `rationale` string. Potency and intent-scaling are out
+  // of scope — no invented Draw Steel math.
 
-  // titleCase upper-cases the first letter of a stat/name for chip display.
+  // Upper-cases the first letter of a stat/name for chip display.
   function titleCase(s) {
     if (!s || typeof s !== 'string') return '';
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -164,9 +146,8 @@ var MonsterEngine = (function () {
     return Math.round(Number(n) * f) / f;
   }
 
-  // normalizeIntent coerces the intent selector value to one of the four known
-  // difficulties, defaulting to 'standard'. Intent is RECORDED only — it never
-  // scales any number in P2 (R3.2).
+  // Coerces the intent selector value to one of the four known difficulties,
+  // defaulting to 'standard'. Intent is recorded only — it never scales any number.
   function normalizeIntent(intent) {
     var allowed = { trivial: 1, standard: 1, hard: 1, boss: 1 };
     var v = (typeof intent === 'string') ? intent.toLowerCase() : '';
@@ -198,7 +179,7 @@ var MonsterEngine = (function () {
     return out;
   }
 
-  // pickRole implements the role rule + R3.5 fallback chain:
+  // Role fallback chain:
   //   1. the role whose primary_stat === the party's weakest defense;
   //   2. else walk to the next-weakest defense that HAS a matching role
   //      (substituted = true), naming the substitution;
@@ -220,11 +201,10 @@ var MonsterEngine = (function () {
     return { role: null, targetedDefense: null, substituted: false };
   }
 
-  // pickOrganization chooses the single creature that best challenges the party:
-  // the org with the LARGEST creature-EV that still fits the total budget (the
-  // biggest single monster that fits). Ties break toward more villain actions
-  // (the dispatch's "use villain_action_count"), then data order. If nothing
-  // fits (a tiny/low party), the lightest org is used instead.
+  // Chooses the single creature that best challenges the party: the org with
+  // the largest creature-EV that still fits the total budget. Ties break
+  // toward more villain actions, then data order. If nothing fits (a
+  // tiny/low party), the lightest org is used instead.
   function pickOrganization(budget, level, orgTemplates) {
     var list = orgTemplates || [];
     var best = null, bestEV = -1, bestVA = -1;
@@ -246,9 +226,9 @@ var MonsterEngine = (function () {
     return null;
   }
 
-  // pickDamageTypes prefers the party's shared weaknesses and NEVER returns a
-  // type in the party's immunity union (Q3). Empty when there is no exploitable
-  // weakness — the engine leaves damage untyped rather than invent one.
+  // Prefers the party's shared weaknesses and never returns a type in the
+  // party's immunity union. Empty when there is no exploitable weakness — the
+  // engine leaves damage untyped rather than invent one.
   function pickDamageTypes(partyProfile) {
     var weaknesses = partyProfile.weaknesses || [];
     var immunities = partyProfile.immunities || [];
@@ -272,12 +252,11 @@ var MonsterEngine = (function () {
     return { types: types, rationale: rationale };
   }
 
-  // legacyTierValues applies data/damage-baselines.json as
-  // tierN + per_level*(level-1). That file's own `source` is the string
-  // "custom": the numbers are this package's invention and run as much as 2.4x
-  // the published damage formula (a level 8 solo tier 3 of 48 against a
-  // published 20). It survives ONLY as the labelled fallback for an
-  // organization the published rules do not define, never as a silent default.
+  // Applies data/damage-baselines.json as tierN + per_level*(level-1). That
+  // file's `source` is the string "custom": these numbers are this package's
+  // invention and run up to 2.4x the published damage formula. Survives only
+  // as the labelled fallback for an organization the published rules don't
+  // define, never as a silent default.
   function legacyTierValues(bl, level) {
     var scale = (Number(bl.per_level) || 0) * (level - 1);
     return {
@@ -318,7 +297,7 @@ var MonsterEngine = (function () {
       };
     }
 
-    // Level band ← round(levelAvg); intent does NOT scale it (R3.2).
+    // Level band ← round(levelAvg); intent does NOT scale it.
     var level, levelRationale;
     if (partyProfile.levelAvg !== null && partyProfile.levelAvg !== undefined && isFinite(partyProfile.levelAvg)) {
       level = Math.round(partyProfile.levelAvg);
@@ -357,7 +336,7 @@ var MonsterEngine = (function () {
       notes.push('Could not fit an organization to the party’s encounter strength.');
     }
 
-    // Role ← primary_stat === weakest defense, with the R3.5 fallback chain.
+    // Role ← primary_stat === weakest defense, with the fallback chain above.
     var roleResult = pickRole(partyProfile, roleTemplates);
     var role = roleResult.role ? roleResult.role.slug : null;
     var roleRationale;
@@ -390,7 +369,7 @@ var MonsterEngine = (function () {
       targetRationale = 'Power-roll target unknown — the party’s defenses could not be read.';
     }
 
-    // Damage types ← party weaknesses, never an immunity (Q3).
+    // Damage types ← party weaknesses, never an immunity.
     var dmg = pickDamageTypes(partyProfile);
 
     // Ability tiers ← the PUBLISHED damage formula (4 + level + damage modifier)
@@ -428,7 +407,7 @@ var MonsterEngine = (function () {
       if (organization) notes.push('No damage tiers could be computed for organization ' + organization + '.');
     }
 
-    // Intent ← recorded only (R3.2); it changes nothing here.
+    // Intent ← recorded only; it changes nothing here.
     var intentRationale = 'Intent recorded: ' + titleCase(chosenIntent) +
       '. Difficulty scaling is pending sourced rules — it does not change these numbers yet.';
 
@@ -475,51 +454,34 @@ var MonsterEngine = (function () {
 
 
 /* ===========================================================================
- * SECTION: DrawSteelFormulas — the PUBLISHED math (merged 2026-08-08)
+ * SECTION: DrawSteelFormulas — the PUBLISHED math
  * ---------------------------------------------------------------------------
  * THIS SECTION IS NOT PART OF THE ENGINE AND MUST SURVIVE ITS REWRITE.
  *
- * It lived at widgets/monster-formulas.js until Chronicle's manifest validator
- * rejected the package outright: internal/systems/manifest.go caps
- * text_renderers at 5 and registering the formulas as a sixth made the WHOLE
- * package fail to load — no categories, no widgets, no reference data. The
- * package must fit the platform contract, and fitting it here costs the
- * operator nothing, whereas raising Chronicle's cap would cost them a redeploy.
- *
- * The separation the original file argued for is preserved as a SECTION rather
- * than a file: `DrawSteelFormulas` remains its own global with its own API and
- * its own tests, and it is the honest-math layer that the builder and engine
- * (both scheduled for rewrite under DS-MONSTER-BUILDER-REWORK-R1 / DS-MB-REDO-P01)
- * are measured against. When that rewrite lands, lift this section out whole —
- * it is deliberately free of engine state.
+ * It lives here (moved from widgets/monster-formulas.js) rather than in its
+ * own file because Chronicle's manifest validator (internal/systems/manifest.go)
+ * caps text_renderers at 5, and a sixth entry fails the whole package to load.
+ * `DrawSteelFormulas` remains its own global with its own API and its own
+ * tests, and it is the honest-math layer the builder and engine are measured
+ * against. When the builder/engine rewrite lands, lift this section out
+ * whole — it is deliberately free of engine state.
  * =========================================================================== */
 /**
  * Draw Steel published monster/encounter formulas — the SOURCED math.
  *
- * WHY THIS FILE EXISTS
- * --------------------
- * The monster builder shipped with its own invented numbers (a per-organization
- * `stamina_base + stamina_per_level * level` table, `ev_multiplier * level`,
- * `partySize * partyLevel * 4`, and the level-1 damage table in
- * data/damage-baselines.json, whose own `source` is the string "custom"). Those
- * numbers disagree with the published formulas that now ship in
- * data/monster-building.json and data/encounter-building.json — by up to 2.3x on
- * Stamina and 2.4x on damage tiers — and the widget presented them through a
- * validation panel that called the result balanced.
+ * The monster builder previously used invented numbers (per-organization
+ * Stamina/EV multipliers and data/damage-baselines.json, whose own `source`
+ * is the string "custom") that disagreed with the published formulas in
+ * data/monster-building.json / data/encounter-building.json by up to 2.4x.
+ * This module is the single place the published formulas are evaluated, and
+ * is deliberately not the monster engine.
  *
- * This module is the single place the published formulas are evaluated. It is
- * deliberately NOT the monster engine: the builder and its engine are scheduled
- * for a rewrite (DS-MONSTER-BUILDER-REWORK-R1 / DS-MB-REDO-P01). This file only
- * makes the numbers honest in the meantime.
- *
- * EVERY RETURN CARRIES ITS OWN PROVENANCE. A result is
+ * Every return carries its own provenance:
  *   { value, sourced, source, notes }
- * where `sourced === false` means "the published data does not cover this input"
- * (the Swarm organization is original to this package and has no published
- * modifiers, so it can never be sourced). A caller that renders a value with
- * `sourced === false` MUST say so in the UI — that is the whole point of the
- * flag. Nothing here is allowed to guess: an uncovered input returns a null
- * value, not a plausible one.
+ * `sourced === false` means the published data does not cover this input
+ * (e.g. Swarm, an organization original to this package with no published
+ * modifiers). A caller rendering a value with `sourced === false` MUST say so
+ * in the UI. Nothing here guesses: an uncovered input returns a null value.
  *
  * Loading: attaches the `DrawSteelFormulas` global via the manifest
  * `text_renderers` section (loaded before widget scripts, same seam as
@@ -652,9 +614,9 @@ var DrawSteelFormulas = (function () {
     return result(Math.ceil(((10 * lvl) + rm.value) * som), true, SOURCE, rm.notes.slice());
   }
 
-  // staminaOptionalBonus is the published "if you want more Stamina" top-up:
-  // (3 x level) + 3, for any non-minion monster. Returned separately so the
-  // baseline is never silently inflated by it.
+  // Published "if you want more Stamina" top-up: (3 x level) + 3, for any
+  // non-minion monster. Returned separately so the baseline is never silently
+  // inflated by it.
   function staminaOptionalBonus(level, org) {
     var lvl = finiteNum(level);
     if (lvl === null || lvl <= 0) return result(null, false, null, []);
@@ -666,13 +628,10 @@ var DrawSteelFormulas = (function () {
 
   // ── Damage tiers ──────────────────────────────────────────────────────────
 
-  // damageTiers evaluates the published baseline
-  //   (4 + level + damage modifier) x tier modifier, rounded up,
-  // then applies the published halving for horde and minion monsters. The two
-  // remaining published adjustments are NOT applied here and are returned as
-  // notes, because they depend on facts this function is not given: a strike
-  // adds the creature's highest characteristic, and an ability that hits more
-  // or fewer targets than expected is multiplied by 0.8 / 0.5 / 1.2.
+  // Published baseline: (4 + level + damage modifier) x tier modifier, rounded
+  // up, then halved for horde/minion. The strike bonus (add highest
+  // characteristic) and target-count adjustment (x0.8/0.5/1.2) depend on facts
+  // this function isn't given, so they are returned as notes instead of applied.
   function damageTiers(level, org, role) {
     var lvl = finiteNum(level);
     if (lvl === null || lvl <= 0) {
@@ -731,8 +690,8 @@ var DrawSteelFormulas = (function () {
 
   // ── Encounter strength and budget ─────────────────────────────────────────
 
-  // heroEncounterStrength is the published per-hero encounter strength:
-  // 4 + (2 x hero level). Retainers count as heroes.
+  // Published per-hero encounter strength: 4 + (2 x hero level). Retainers
+  // count as heroes.
   function heroEncounterStrength(level) {
     var lvl = finiteNum(level);
     if (lvl === null || lvl < 1) return result(null, false, null, ['A hero level of 1 or more is required.']);
@@ -760,10 +719,10 @@ var DrawSteelFormulas = (function () {
     return result(size * per.value, true, ENCOUNTER_SOURCE, []);
   }
 
-  // budgetBands returns the published difficulty bands expressed in EV, given a
-  // party's encounter strength and one hero's. `upper: null` means unbounded.
-  // These mirror data/encounter-building.json's difficulty entries exactly, and
-  // tools/test-monster-formulas.mjs pins them against that file.
+  // Published difficulty bands expressed in EV, given a party's encounter
+  // strength and one hero's. `upper: null` means unbounded. Mirrors
+  // data/encounter-building.json's difficulty entries; pinned by
+  // tools/test-monster-formulas.mjs.
   function budgetBands(partyEs, oneHeroEs) {
     var p = finiteNum(partyEs);
     var h = finiteNum(oneHeroEs);
@@ -777,9 +736,8 @@ var DrawSteelFormulas = (function () {
     }, true, ENCOUNTER_SOURCE, []);
   }
 
-  // difficultyOf names the published band a given spend falls into, so the UI
-  // can report what the director has actually built instead of asserting that
-  // some number is "balanced".
+  // Names the published band a given spend falls into, so the UI can report
+  // what was actually built instead of asserting some number is "balanced".
   function difficultyOf(spent, partyEs, oneHeroEs) {
     var bands = budgetBands(partyEs, oneHeroEs);
     var s = finiteNum(spent);
@@ -816,9 +774,9 @@ var DrawSteelFormulas = (function () {
 
 
 // Test seam: expose both APIs for Node unit tests. Inert in a browser (no
-// CommonJS `module`), so the widget runtime is unchanged. DrawSteelFormulas is
-// re-exported under its own key so `require('./monster-engine.js').Formulas`
-// reaches the published math without importing engine state.
+// CommonJS `module`). DrawSteelFormulas is re-exported under its own key so
+// `require('./monster-engine.js').Formulas` reaches the published math
+// without importing engine state.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = (typeof MonsterEngine !== 'undefined') ? MonsterEngine : {};
   if (typeof DrawSteelFormulas !== 'undefined') {

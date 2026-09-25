@@ -1,11 +1,11 @@
 /**
  * Draw Steel Rulebook Front Page — the editorial spread widget.
  *
- * Ports the SIGNED design contract (Cordinator mockups/rulebook-v10-table.html,
- * v10.1) into a Chronicle widget. This file builds the FROZEN canonical DOM the
- * reusable RulebookFoldEngine wires; it owns rendering only — every fold
- * interaction (wing / flap / reader takeover / search / cross-hops / Esc) is
- * delegated to the engine via the data-attribute contract.
+ * Design contract: Cordinator mockups/rulebook-v10-table.html. Builds the
+ * canonical DOM the reusable RulebookFoldEngine wires; it owns rendering only
+ * — every fold interaction (wing / flap / reader takeover / search /
+ * cross-hops / Esc) is delegated to the engine via the data-attribute
+ * contract.
  *
  * Data (fetched at init, defensively unwrapped):
  *   data/rulebook-frontpage.json  — ReferenceItem[] blocks keyed by
@@ -17,9 +17,9 @@
  * Array.from / Object.assign). Styles inject as ONE scoped <style> (class
  * guard). All data-derived text is escaped before it enters innerHTML.
  *
- * OUT OF SCOPE this slice (clean seams left, no behaviour): the staged example
- * player (example buttons + Lair parts render as inert placeholders), glossary
- * hover-cards, and long-form reader chapters beyond the seed blocks.
+ * Only examples with a `.play` script are wired to RulebookExamplePlayer; the
+ * rest render disabled and "soon"-badged, same treatment as the still-pending
+ * Lair parts. Long-form reader chapters beyond the seed blocks are out of scope.
  */
 (function () {
   'use strict';
@@ -28,28 +28,10 @@
 
   // dataUrl builds the ONLY path Chronicle actually serves package data files
   // on: GET /campaigns/:id/systems/drawsteel/data/<file>.json, handled by
-  // SystemDataAPI (Chronicle internal/systems/routes.go, handler.go).
-  //
-  // WHAT THIS REPLACED, AND WHY IT COULD NEVER HAVE WORKED. Every widget in
-  // this package used to build
-  //   '/api/v1/campaigns/' + cid + '/extensions/drawsteel/assets/'
-  // with '/extensions/drawsteel/assets/' as its fallback. Both are dead for
-  // JSON, for three independent reasons:
-  //
-  //   1. Chronicle has no /api/v1/campaigns/:id/extensions/... route at all.
-  //   2. The one real extension-asset route (ServeAsset) allowlists
-  //      .svg .png .webp .jpg .jpeg .css .js — it answers 400 for .json.
-  //   3. ServeAsset resolves under the EXTENSIONS directory, and Draw Steel
-  //      installs as a SYSTEM package (systems.LoadAdditionalDir), so it is
-  //      not there to be found either way.
-  //
-  // character-sheet.js already used the systems route and worked; everything
-  // else silently did not. There is deliberately no fallback now: a URL that
-  // cannot resolve is worse than an honest failure, because a widget that
-  // fetches it reports "HTTP 400" instead of "this mount has no campaign".
-  //
-  // Returns null when there is no campaign id, because in that case no route
-  // exists and the caller must say so rather than guess at one.
+  // SystemDataAPI (Chronicle internal/systems/routes.go, handler.go). No
+  // fallback path — none exists. Returns null when there is no campaign id,
+  // because in that case no route exists and the caller must say so rather
+  // than guess at one.
   function dataUrl(file, campaignId) {
     if (!campaignId) return null;
     return '/campaigns/' + encodeURIComponent(campaignId) +
@@ -81,9 +63,9 @@
 
   // TERM_RE matches the repo's authored cross-reference syntax {@category slug}
   // with an optional |display override (the same shape reference-renderer.js
-  // parses) — reused here purely for AUTHORING; the rulebook renders + wires its
-  // own dotted glossary terms (see Step-0 note in the PR), it does not reuse the
-  // reference-renderer's CSS-::after tooltip.
+  // parses) — reused here purely for AUTHORING; the rulebook renders + wires
+  // its own dotted glossary terms and does not reuse the reference-renderer's
+  // CSS-::after tooltip.
   var TERM_RE = /\{@(\w+)\s+([^|}]+)(?:\|([^}]+))?\}/g;
 
   // richProse is rich() plus glossary-term promotion: it turns {@cat slug|disp}
@@ -346,7 +328,7 @@
       '.rb-part:hover{border-color:var(--rb-grn);transform:translateY(-2px)}',
       '.rb-pn{font:750 11.5px/1.2 inherit}',
       '.rb-pd{font:500 10px/1.35 inherit;color:var(--rb-mut);flex:1}',
-      // Parts 2–4 (a P3 slice): visible but not yet playable.
+      // Parts 2–4: visible but not yet playable.
       '.rb-part--soon{opacity:.55;cursor:not-allowed}',
       '.rb-part--soon:hover{border-color:var(--rb-edge);transform:none}',
       '.rb-soon{font:800 8px/1 inherit;letter-spacing:.08em;color:var(--rb-mut2);' +
@@ -427,8 +409,8 @@
       '.rb-err b{color:var(--rb-ink);display:block;margin-bottom:5px;font-size:14px}',
       '.rb-err code{font:600 11px/1.5 ui-monospace,monospace;color:var(--rb-mut)}',
       // Mobile: wings fold DOWN over the block instead of sideways. The engine
-      // sets an inline width + left so the panel spans the FULL block (booked P1
-      // fix r28) — the left:0/right:0/width:auto here is only the no-JS fallback.
+      // sets an inline width + left so the panel spans the FULL block — the
+      // left:0/right:0/width:auto here is only the no-JS fallback.
       '@media(max-width:640px){' +
         '.rb-wing.rb-wing--down{left:0;right:0;width:auto;top:calc(100% - 3px);' +
           'transform:perspective(1000px) rotateX(-88deg);transform-origin:top center;' +
@@ -521,11 +503,8 @@
       else if (r.goto === 'card') attr = 'data-rb-goto-card="' + escAttr(r.target) + '"';
 
       if (!attr) {
-        // An unrecognised r.goto used to emit a chip with an EMPTY attribute:
-        // styled and labelled like its live siblings, bound by nothing. The
-        // authored data decides which branch is taken, so a typo in one entry
-        // produced one silently dead chip among working ones. Render it
-        // disabled instead — the page should never offer a hop it cannot make.
+        // An unrecognised r.goto renders disabled — the page should never
+        // offer a hop it cannot make.
         html += '<button class="rb-rel rb-exbtn--soon" type="button" ' +
           'disabled aria-disabled="true">' +
           esc(r.icon) + ' ' + esc(r.label) +
@@ -564,11 +543,8 @@
         scripts += '<div class="rbx-script" id="rbx-' + escAttr(x.play) + '" ' +
           'data-rbx-script="' + escAttr(x.play) + '" aria-live="polite"></div>';
       } else {
-        // Unwired examples: no script exists for them yet (4 of the 6 authored
-        // examples have no .play). They used to render identically to the
-        // playable ones and simply do nothing on click — a comment declared
-        // them a seam, but only to whoever read the source. Now they are
-        // disabled and badged, like the Lair parts below.
+        // Unwired examples (no .play script yet) render disabled and badged,
+        // like the Lair parts below — never a live-looking dead control.
         ex += '<button class="rb-exbtn rb-exbtn--soon" type="button" ' +
           'data-rb-example disabled aria-disabled="true">' +
           esc(x.icon) + ' ' + esc(x.label) +
@@ -578,14 +554,9 @@
     // The chapter button. There is exactly ONE reader in this page (the hero
     // block's), so this cannot be wired to data-rb-goto-reader the way the
     // related chips are: a button labelled "Might chapter" that opens the
-    // Power Roll reader is a different lie, not a fix. Five of the eight
-    // authored entries carry properties.chapterLabel, so the intent is real
-    // and per-characteristic chapters are simply not built yet.
-    //
-    // Until they are, it is disabled and badged. Previously it rendered on
-    // EVERY tile as a live-looking control with no data attribute and no
-    // handler anywhere in the repo — the only dead affordance here that had
-    // no comment declaring it one.
+    // Power Roll reader would be wrong. Per-characteristic chapters are not
+    // built yet, so it is disabled and badged rather than rendered as a
+    // live-looking control with no handler.
     ex += '<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button" ' +
       'disabled aria-disabled="true">📖 ' +
       esc(p.chapterLabel || 'Full chapter') +
@@ -711,8 +682,8 @@
     for (var i = 0; i < parts.length; i++) {
       var pt = parts[i] || {};
       if (pt.play) {
-        // A wired part (part 1 this slice): drill in — reveal the part view, hide
-        // the overview, and play the script (the player owns data-rbx-*).
+        // A wired part: drill in — reveal the part view, hide the overview,
+        // and play the script (the player owns data-rbx-*).
         partHtml += '<button class="rb-part" type="button" data-rbx-play="' + escAttr(pt.play) + '" ' +
           'data-rbx-show="rb-lair-part" data-rbx-hide="rb-lair-overview">' +
           '<span>' + esc(pt.emoji) + '</span>' +
@@ -720,7 +691,7 @@
           '<span class="rb-pd">' + esc(pt.note) + '</span>' +
           '<span>▶</span></button>';
       } else {
-        // Parts 2–4 are a P3 slice — shown but marked "soon", not yet playable.
+        // Parts 2–4 are shown but marked "soon", not yet playable.
         partHtml += '<button class="rb-part rb-part--soon" type="button" disabled aria-disabled="true">' +
           '<span>' + esc(pt.emoji) + '</span>' +
           '<span class="rb-pn">' + esc(pt.name) + '</span>' +

@@ -273,7 +273,7 @@ test('isMobileWidth: a custom breakpoint is honoured', () => {
   assert.equal(E.isMobileWidth(800, 800), false);
 });
 
-// ── mobileWingWidth (booked P1 fix r28: mobile wings are FULL-BLOCK-width) ────
+// mobileWingWidth: mobile wings are full-block-width.
 test('mobileWingWidth: derives full block width from viewport minus 2× page padding', () => {
   // 390px phone: 390 − 2×18 = 354 (the .rb-wrap content width).
   assert.equal(E.mobileWingWidth({ viewportWidth: 390 }), 354);

@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 /**
- * XSS regression tests for widgets/monster-builder.js (DS-SEC-FIXES-R1).
+ * XSS regression tests for widgets/monster-builder.js.
  *
  * The monster-builder loads OTHER users' creatures via _loadExistingEntity
  * (config.entityId -> fields_data), so its editor/preview render paths are a
  * stored-XSS surface (Scribe author -> Scribe/GM editor), not just self-XSS.
- *
- * Covers audit findings:
- *   H-5 (monster-builder.js:862 etc.) — value="" inputs escaped with escapeHtml
- *       (keeps quotes) -> attribute breakout. Now escapeAttr.
- *   H-5 (monster-builder.js:892) — spend_vp emitted via `|| 0` (no coercion) into
- *       a value attribute -> tag injection. Now Number()-coerced.
- *   H-5 (monster-builder.js:1397) — preview cr.size raw. Now escaped.
+ * Every value interpolated into an HTML attribute must go through
+ * escapeAttr (escapeHtml alone does not escape quotes, allowing attribute
+ * breakout), and every numeric field must be coerced with Number() before
+ * emission.
  *
  * Run: `node --test tools/test-monster-builder.mjs`
  */

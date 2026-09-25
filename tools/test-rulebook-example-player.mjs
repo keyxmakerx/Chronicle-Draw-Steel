@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /**
- * Unit tests for the PURE logic of widgets/rulebook-example-player.js.
- *
- * Covers the headless, DOM-free surface — the staged-example sequencing that the
- * dispatch pins (line sequencing, roll-step ordering, the reduced-motion path),
- * plus the safe text-markup promoter and the script HTML builder. The DOM
- * controller mount() needs a browser and is not exercised here.
+ * Unit tests for the pure logic of widgets/rulebook-example-player.js: the
+ * headless, DOM-free surface — staged-example sequencing (line order, roll-step
+ * order, the reduced-motion path), the safe text-markup promoter, and the
+ * script HTML builder. The DOM controller mount() needs a browser and is not
+ * exercised here.
  *
  * Run: `node --test tools/test-rulebook-example-player.mjs`
  */

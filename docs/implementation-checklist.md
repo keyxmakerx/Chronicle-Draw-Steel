@@ -476,6 +476,6 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
 
 **Key design docs to re-read:**
 - Monster Builder mechanics: `docs/monster-builder.md` §2–4
-- Bestiary data model: `Chronicle/docs/bestiary/design.md` §3
-- API security: `Chronicle/docs/bestiary/api-security.md` §3
+- Bestiary data model: [Chronicle `docs/bestiary/design.md`](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md) §3 (deleted from Chronicle once built; this is its last version)
+- API security: [Chronicle `docs/bestiary/api-security.md`](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/api-security.md) §3
 - Foundry sync mapping: `docs/foundry-creature-sync.md` §4

@@ -1,15 +1,15 @@
 /**
  * Draw Steel Monster Party — pure party read + profile derivation.
  *
- * One job: turn the campaign's live hero entities (drawsteel-character) into a
+ * Turns the campaign's live hero entities (drawsteel-character) into a
  * PartyProfile the monster builder reasons about. Two parts:
- *   - fetchParty(cid[, apiFetch]) — the two-step syncapi read (resolve the hero
+ *   - fetchParty(cid[, apiFetch]) — two-step syncapi read (resolve the hero
  *     type id, then page through the entities carrying fields_data inline).
- *   - deriveParty(heroes) — PURE: reduce fields_data to a PartyProfile.
+ *   - deriveParty(heroes) — pure: reduce fields_data to a PartyProfile.
  *
- * Redo ruling Q4 (BINDING): heroes missing a stat are skipped PER-STAT and the
- * profile carries an honest `coverage` map — never average nulls as zeros, which
- * would poison weakest-defense targeting. No heroes -> null (manual mode).
+ * Heroes missing a stat are skipped per-stat, and the profile carries an
+ * honest `coverage` map — never average nulls as zeros, which would poison
+ * weakest-defense targeting. No heroes -> null (manual mode).
  *
  * Loading mirrors DrawSteelRefRenderer: browser attaches the `MonsterParty`
  * global (served via manifest text_renderers, loaded before the widget); Node

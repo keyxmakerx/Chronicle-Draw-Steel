@@ -50,15 +50,14 @@ test('standardEvPerHeroLevel is unskewed by the Minion outlier (median, not mean
   assert.equal(Engine.standardEvPerHeroLevel(ORGS), 4);
 });
 
-// ── Engine: encounter budget = the PUBLISHED party encounter strength ───────
-// This replaced `partySize × partyLevel × 4`, which ran 1.67x the published
-// strength at level 10 and was labelled a balanced budget in the UI. The
-// published formula is 4 + (2 × hero level) per hero (DS-MB-HONESTY).
+// Encounter budget must be the published party encounter strength, never
+// `partySize × partyLevel × 4`: the published formula is
+// 4 + (2 × hero level) per hero.
 test('encounterBudget = the published party encounter strength, summed per hero', () => {
   assert.equal(Engine.encounterBudget(4, 5, ORGS), 56);   // 4 × (4 + 2×5)
   assert.equal(Engine.encounterBudget(3, 7, ORGS), 54);   // 3 × (4 + 2×7)
   assert.equal(Engine.encounterBudget(1, 1, ORGS), 6);    // 1 × (4 + 2×1)
-  assert.equal(Engine.encounterBudget(4, 10, ORGS), 96);  // the old widget said 160
+  assert.equal(Engine.encounterBudget(4, 10, ORGS), 96);
 });
 
 test('encounterBudget degrades to 0 on bad inputs', () => {

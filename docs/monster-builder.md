@@ -3,7 +3,7 @@
 > **Status:** Draft
 > **Author:** Chronicle Team
 > **Last Updated:** 2026-03-24
-> **Related:** [Community Bestiary](../../Chronicle/docs/bestiary/design.md) | [API & Security](../../Chronicle/docs/bestiary/api-security.md) | [Foundry Sync](./foundry-creature-sync.md)
+> **Related:** [Community Bestiary](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md) | [API & Security](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/api-security.md) | [Foundry Sync](./foundry-creature-sync.md)
 
 ---
 
@@ -20,7 +20,7 @@ The Monster Builder is a fully automated creature authoring tool built into the 
 - Support all 7 organization types: Minion, Horde, Platoon, Elite, Leader, Solo, Swarm
 - Support all 9 roles: Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
 - Full Foundry VTT sync as NPC actors (see [Foundry Sync spec](./foundry-creature-sync.md))
-- Publish to Community Bestiary (see [Bestiary design](../../Chronicle/docs/bestiary/design.md))
+- Publish to Community Bestiary (see [Bestiary design](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md))
 
 ### Non-Goals (for now)
 
@@ -222,55 +222,21 @@ This category holds example/template abilities that users can browse and use as 
 
 File: `data/organization-templates.json`
 
-> **⚠️ §4.1, §4.2 and §4.6 below are SUPERSEDED and are kept only as a record of
-> what the builder used to do.** The tables in those three sections were this
-> package's own invention. They were never Draw Steel's, and they disagree with
-> the published formulas — now shipped in `data/monster-building.json` and
-> `data/encounter-building.json` — by up to **1.67×** on encounter value,
-> **2.3×** on Stamina and **2.4×** on ability damage. The widget presented them
-> through a panel labelled "Validation".
->
-> The builder now evaluates the published formulas via the `DrawSteelFormulas`
-> section of `widgets/monster-engine.js`:
->
-> | Figure | Published formula |
-> |---|---|
-> | Encounter value | `ceil(((2 × level) + 4) × organization modifier)` |
-> | Stamina | `ceil(((10 × level) + role modifier) × Stamina organization modifier)` |
-> | Ability damage | `ceil((4 + level + damage modifier) × tier modifier)`, halved for horde and minion |
-> | Party encounter strength | `4 + (2 × hero level)` per hero, summed |
->
-> Where a published formula cannot be evaluated — **Swarm** is original to this
-> package and has no published modifiers, and the Stamina formula needs a role —
-> the old table is still used as a starting point and is **labelled unsourced on
-> screen**. A full rebuild of the builder is separate work
-> (`DS-MONSTER-BUILDER-REWORK-R1`).
+The builder evaluates the published Draw Steel formulas via the
+`DrawSteelFormulas` section of `widgets/monster-engine.js`:
 
-### 4.1 EV Formulas — SUPERSEDED (unsourced; see the notice above)
-
-| Organization | EV Formula |
+| Figure | Published formula |
 |---|---|
-| Minion | level × 1 |
-| Horde | level × 2 |
-| Platoon | level × 4 |
-| Elite | level × 8 |
-| Leader | level × 8 |
-| Solo | level × 24 |
-| Swarm | level × 4 |
+| Encounter value | `ceil(((2 × level) + 4) × organization modifier)` |
+| Stamina | `ceil(((10 × level) + role modifier) × Stamina organization modifier)` |
+| Ability damage | `ceil((4 + level + damage modifier) × tier modifier)`, halved for horde and minion |
+| Party encounter strength | `4 + (2 × hero level)` per hero, summed |
 
-### 4.2 Stamina Baselines — SUPERSEDED (unsourced; see the notice above)
-
-Formula: `base + (level × multiplier)`
-
-| Organization | Base | Per-Level Multiplier | Example L5 |
-|---|---|---|---|
-| Minion | 5 | 2 | 15 |
-| Horde | 8 | 3 | 23 |
-| Platoon | 20 | 6 | 50 |
-| Elite | 40 | 10 | 90 |
-| Leader | 40 | 10 | 90 |
-| Solo | 80 | 20 | 180 |
-| Swarm | 20 | 6 | 50 |
+Where a published formula cannot be evaluated — **Swarm** is original to this
+package and has no published modifiers, and the Stamina formula needs a role —
+the builder falls back to this package's own estimate (`data/damage-baselines.json`
+and the `organization-templates.json` fields below) and **labels it unsourced
+on screen**. See CLAUDE.md → "The builder's math must carry its own provenance".
 
 ### 4.3 Default Speed/Stability by Organization
 
@@ -310,26 +276,10 @@ Formula: `level + primary_characteristic_modifier` damage, melee range 1.
 
 Example: Level 5 Brute (Might +4) → Free Strike: 9 damage.
 
-### 4.6 Ability Damage Baselines — SUPERSEDED (unsourced; see the notice above)
-
-Power-roll tier damage per organization. Values are the **level-1 baseline**;
-`per-level` is the increment added to each tier for every level above 1
-(T1 = roll of 11 or less, T2 = 12–16, T3 = 17+).
-
-| Organization | T1 (≤11) | T2 (12–16) | T3 (17+) | Per level |
-|---|---|---|---|---|
-| Minion | 2 | 3 | 4 | +1 |
-| Horde | 3 | 5 | 7 | +1.5 |
-| Platoon | 4 | 7 | 10 | +2 |
-| Elite | 6 | 10 | 14 | +3 |
-| Leader | 6 | 10 | 14 | +3 |
-| Solo | 8 | 14 | 20 | +4 |
-| Swarm | 4 | 7 | 10 | +2 |
-
-_Generated from `data/damage-baselines.json`, whose own `source` field is the
-literal string `"custom"` — these numbers are this package's, not MCDM's. The
-builder now uses the published damage formula instead; this table survives only
-as the labelled fallback for an organization the published rules never defined._
+Ability damage baselines (the unsourced fallback used when the published
+formula cannot be evaluated) live in `data/damage-baselines.json`, whose own
+`source` field is the literal string `"custom"` — those numbers are this
+package's, not MCDM's.
 
 ---
 
@@ -514,15 +464,7 @@ All reference data files follow Chronicle's standard format:
 
 ## 8. Open Questions
 
-1. **Minion squad mechanics:** Should the builder support defining squad attack abilities (where all minions contribute)? Or just individual minion statblocks?
-
-2. **Swarm damage scaling:** Swarms in Draw Steel deal more damage at higher stamina. Should the builder auto-generate "while above winded" / "while below winded" damage variants?
-
-3. **Creature art:** Should the builder integrate with Chronicle's media system for creature artwork, or just a URL field?
-
-4. **Ability templates library:** How many pre-built ability templates should we ship? Should abilities be fork-able from the reference data?
-
-5. **Version compatibility:** If the Draw Steel Foundry system updates its NPC data model, how do we handle backwards compatibility in the sync adapter?
+Open work: #54.
 
 ---
 
@@ -536,4 +478,4 @@ All reference data files follow Chronicle's standard format:
 | Widget JS API | Chronicle Core | Existing Chronicle.register() system |
 | Entity custom fields API | Chronicle Core | Existing sync API |
 | Structured creature sync | Chronicle Core | **NEW** — needed for Foundry abilities/VAs |
-| Community Bestiary addon | Chronicle Core | **NEW** — needed for publishing |
+| Community Bestiary addon | Chronicle Core | Shipped (`internal/plugins/bestiary`) — publishing works |

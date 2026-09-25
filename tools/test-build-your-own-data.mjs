@@ -4,14 +4,13 @@
 //
 // Run: node --test tools/test-build-your-own-data.mjs
 //
-// These four files exist so an operator can invent an ancestry or a creature and
-// know the result is legal. Two failure modes are silent and both are fatal to
-// that purpose. The first is provenance drift: an entry that was derived for this
-// package losing its "source": "custom" flag and reading as published Draw Steel
-// rules (data/NOTICE.md is the contract). The second is derivation drift: the
-// tables that were computed from other files in data/ — the ancestry point
-// budgets, the role and organization modifiers — quietly disagreeing with the
-// files they were computed from. Both render fine and are simply wrong.
+// These four files exist so an operator can invent an ancestry or a creature
+// and know the result is legal. Two silent failure modes are guarded here:
+// provenance drift (an entry losing its "source": "custom" flag and reading
+// as published Draw Steel rules — data/NOTICE.md is the contract), and
+// derivation drift (a table computed from another data/ file, e.g. ancestry
+// point budgets or role/organization modifiers, disagreeing with the file it
+// was computed from). Both render fine and are simply wrong.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -63,11 +62,10 @@ test('every file is an array of ReferenceItems with unique slugs', () => {
 });
 
 test('domain-specific fields live inside properties, never at the root', () => {
-  // CLAUDE.md "Data Format" and docs/DATA-SCHEMA.md: the root carries only the
-  // ReferenceItem keys Chronicle reads off the root, and every DOMAIN field goes
-  // in properties. `summary` and `source` are root keys because that is where the
-  // renderer looks: system_pages.templ prints item.Summary in the list table and
-  // item.Source in the detail header, never properties.summary/source.
+  // CLAUDE.md "Data Format": the root carries only the ReferenceItem keys
+  // Chronicle reads off the root (system_pages.templ prints item.Summary and
+  // item.Source, never properties.summary/source); every domain field goes in
+  // properties.
   const allowed = new Set(['slug', 'name', 'summary', 'description', 'properties', 'tags', 'source']);
   for (const [file, data] of Object.entries(FILES)) {
     for (const e of data) {

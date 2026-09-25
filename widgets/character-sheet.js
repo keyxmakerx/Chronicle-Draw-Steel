@@ -2,36 +2,36 @@
  * Draw Steel Character Sheet Widget — dynamic-surface adopter.
  *
  * Mounts on a drawsteel-character entity page via Chronicle's manifest-driven
- * renderer registration (CH4.5). Reads entity fields_data + children from the
- * mount div's data attributes for first paint without an API call; falls back
- * to the entities API when embedded as a plain widget (pre-CH4.5).
+ * renderer registration. Reads entity fields_data + children from the mount
+ * div's data attributes for first paint without an API call; falls back to
+ * the entities API when embedded as a plain widget.
  *
  * MOUNT CONTRACT (do not change — the manifest binding
- * `drawsteel-character → character-sheet` and CH4.5's renderer depend on it):
+ * `drawsteel-character → character-sheet` depends on it):
  *   Chronicle.register('character-sheet', { init, destroy })
  *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children}
  *     - fieldsData parses to the entity object ({ name, custom_fields, … })
  *
- * RENDER MODEL (2026-06-22): instead of one big innerHTML string, the sheet
- * mounts via Chronicle's dynamic-surface frame (`Chronicle.surface`). Each of
- * the former sections is a SYSTEM box renderer (`registerBox('ds-*', fn)`); the
- * frame owns the box chrome (collapsible title bar, motion, localStorage view
- * state). Renderers therefore emit INNER content only (no `.cs-card` wrapper),
- * reusing the existing `cs-*` styles. The schema is built per-mount from the
- * entity data and only includes boxes that have content, so empty sections are
- * absent rather than rendered as empty titled boxes.
+ * RENDER MODEL: the sheet mounts via Chronicle's dynamic-surface frame
+ * (`Chronicle.surface`) rather than one big innerHTML string. Each section is
+ * a box renderer (`registerBox('ds-*', fn)`); the frame owns the box chrome
+ * (collapsible title bar, motion, localStorage view state), so renderers emit
+ * INNER content only (no `.cs-card` wrapper), reusing the existing `cs-*`
+ * styles. The schema is built per-mount from the entity data and only
+ * includes boxes that have content, so empty sections are absent rather than
+ * rendered as empty titled boxes.
  *
- * DYNAMIC WIN: the Abilities box is a master–detail — a grouped rail + a detail
- * pane that fills with a small bare card on row click and grows to a two-section
- * big card (rules + computed "For <hero>" odds) on card click. All wired via one
- * delegated listener (the surface frame re-renders box bodies, so no per-node
- * listeners); selection state lives in the DOM.
+ * The Abilities box is a master–detail: a grouped rail + a detail pane that
+ * fills with a small bare card on row click and grows to a two-section big
+ * card (rules + computed "For <hero>" odds) on card click. Wired via one
+ * delegated listener (the surface frame re-renders box bodies, so no
+ * per-node listeners); selection state lives in the DOM.
  *
  * READ-ONLY: Foundry is the source of truth; Chronicle mirrors fields_data
  * one-way. This widget never writes/saves.
  *
- * LAYOUT / Option C: cross-system surfaces still mount as Chronicle blocks via
- * the reserved slot points appended after the surface (character_skills /
+ * LAYOUT: cross-system surfaces still mount as Chronicle blocks via the
+ * reserved slot points appended after the surface (character_skills /
  * character_inventory / character_purchase_history); inert + hidden until
  * Chronicle's block registry surfaces a stable hydration path. Names are
  * placeholders — coordinate with the Chronicle dev before relying on them.
@@ -54,11 +54,9 @@
   var skillDefs = null;
   function loadSkillDefs(campaignId) {
     if (skillDefs) return Promise.resolve();
-    // Campaign-scoped is the only route Chronicle serves for this file. The
-    // old no-campaign fallback ('/systems/drawsteel/data/skills.json', built
-    // off a base parameter) has never had a route behind it,
-    // so without a campaign id the honest behaviour is the degraded one the
-    // .catch below already provides: empty defs, no tooltips, no fake fetch.
+    // Campaign-scoped is the only route Chronicle serves for this file. With
+    // no campaign id the honest behaviour is the degraded one the .catch
+    // below already provides: empty defs, no tooltips, no fake fetch.
     if (!campaignId) { skillDefs = {}; return Promise.resolve(); }
     var url = '/campaigns/' + encodeURIComponent(campaignId) + '/systems/drawsteel/data/skills.json';
     var fetchFn = Chronicle.apiFetch || fetch;
@@ -83,7 +81,7 @@
   // inside a "…" attribute (else a value with a double-quote breaks out and
   // injects an event handler). Prefers the platform helper; falls back to a
   // self-contained implementation so the widget stays robust across Chronicle
-  // versions and testable off-browser. (DS-SEC-FIXES-R1: H-1, M-4, M-5, L-1, L-2)
+  // versions and testable off-browser.
   function escAttr(s) {
     s = (s == null) ? '' : String(s);
     if (Chronicle && Chronicle.escapeAttr) return Chronicle.escapeAttr(s);
@@ -228,7 +226,7 @@
       pills += '<span class="cs-pill">Visibility: ' + esc(String(data.visibility)) + '</span>';
     }
 
-    // v3 action affordances + live dot (display-first; behavior is a follow-up).
+    // Action affordances + live dot are deliberately inert (docs/CHARACTER-SHEET-DESIGN.md).
     var soon = ' title="Coming later — not implemented yet"';
     var actions = '<div class="cs-header-actions">' +
       '<button type="button" class="cs-act cs-act--primary cs-act--soon" data-cs-act="roll"' + soon + '><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
@@ -561,11 +559,11 @@
     var name = k.name ? '<div class="cs-kit-name">' + esc(String(k.name)) + '</div>' : '';
     return name + dmg + bonusHtml || ph('No kit details.');
   }
-  // ── Abilities: bare "Option D" master–detail (the locked design) ──────────
+  // ── Abilities: bare master–detail ─────────────────────────────────────────
   // A grouped list (master rail) + a detail pane. Clicking a row fills the pane
   // with an even-smaller BARE card; hovering the card lifts+glows; clicking it
   // grows the two-section big card (① rules ② "For <hero>" odds). Monochrome
-  // with a single violet accent. See docs/CHARACTER-SHEET-DESIGN.md.
+  // with a single violet accent. Design contract: docs/CHARACTER-SHEET-DESIGN.md.
   //
   // rAbilities emits ONLY the static shell (rail rows + a resting pane). The
   // pane is populated imperatively by attachInteractions (which closes over the
@@ -1012,13 +1010,12 @@
   // safeEvalArith evaluates a pure-arithmetic string ("2 + 3") after @chr was
   // substituted. The input is regex-restricted to digits/space/+-*/() and then
   // parsed by a tiny hand-written recursive-descent evaluator — NO Function /
-  // eval (the package's zero-dynamic-code goal; audit L-3). Grammar: decimal
-  // numbers, binary + - * /, unary + -, parentheses. Returns a finite number,
-  // or null on empty / gate-fail / parse-error / non-finite result (e.g.
-  // division by zero) — matching the prior Function()-based fallback semantics.
-  // Never throws: pathological input (deep paren/unary-sign nesting) that
-  // would otherwise overflow the call stack is also folded into the "returns
-  // null" contract via a try/catch around the parse (DS-BETA-HARDENING-R2).
+  // eval, ever. Grammar: decimal numbers, binary + - * /, unary + -,
+  // parentheses. Returns a finite number, or null on empty / gate-fail /
+  // parse-error / non-finite result (e.g. division by zero). Never throws:
+  // pathological input (deep paren/unary-sign nesting) that would otherwise
+  // overflow the call stack is also folded into the "returns null" contract
+  // via a try/catch around the parse.
   function safeEvalArith(s) {
     s = String(s == null ? '' : s).trim();
     // Belt-and-suspenders: keep the original character gate.
@@ -1106,7 +1103,6 @@
       // exceed the call stack — degrade to null like any other parse
       // failure instead of throwing an uncaught RangeError through
       // substituteFormula -> tierFragments -> the card render.
-      // See DS-BETA-HARDENING-R2.
       return null;
     }
     skipSpace();
@@ -1309,7 +1305,7 @@
   }
 
   // ── empty-state placeholder ──────────────────────────────────────────────
-  // v3: every section ALWAYS renders (no content gating) so the sheet's
+  // Every section ALWAYS renders (no content gating) so the sheet's
   // structure, spacing, and chrome are visible even on a sparse hero. A section
   // with no data shows this muted placeholder instead of vanishing.
   function ph(text) { return '<div class="cs-placeholder">' + esc(text) + '</div>'; }
@@ -1365,12 +1361,12 @@
       boxDef('ds-header', '', 'ds-header', 'expanded', { pinned: true })
     ] } ] });
 
-    // Row 2 — main column (8) + side column (4). v3: ALL sections always render;
+    // Row 2 — main column (8) + side column (4). ALL sections always render;
     // each box's renderer shows a placeholder when its data is absent, so the
-    // sheet's full structure is visible even on a fresh/unsynced hero.
-    // v3.1: Vitals is now a composite box (stamina + recoveries + heroic
-    // resource + Roll Might + characteristics), so the standalone Characteristics
-    // and Heroic-Resource boxes are folded in and dropped here.
+    // sheet's full structure is visible even on a fresh/unsynced hero. Vitals
+    // is a composite box (stamina + recoveries + heroic resource + Roll Might
+    // + characteristics) — there are no standalone Characteristics or
+    // Heroic-Resource boxes.
     var main = [
       boxDef('ds-vitals', 'Vitals', 'ds-vitals', 'expanded', { pinned: true }),
       boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded')
@@ -1613,19 +1609,13 @@
   }
 
   // ── tooltips (viewport-clamped) ──────────────────────────────────────────
-  // Both glossary-term tooltips (.ds-ref[data-ref-tip], from reference-renderer.js
-  // — ability tier text, feature descriptions) and definition tooltips
-  // ([data-tip] — skill chips, ability keyword badges) used to be pure-CSS
-  // `content:attr(...)::after` popovers centered on the trigger. That breaks two
-  // ways: (1) any ancestor with overflow:hidden/auto (.ds-big, .ds-rail,
-  // .cs-feature) clips the popover outright since position:absolute doesn't
-  // escape an ancestor's overflow clip, and (2) centering via
-  // `left:50%;transform:translateX(-50%)` with no viewport awareness pushes the
-  // box off-screen near any edge (narrow rail, mobile width, first/last row).
-  // Fix: one shared floating tooltip element appended to <body> (escapes every
-  // ancestor's overflow) and positioned with position:fixed from a pure,
-  // unit-testable placement function — never the CSS popover for anything
-  // inside .ds-sheet (suppressed below in injectStyles).
+  // Glossary-term tooltips (.ds-ref[data-ref-tip], from reference-renderer.js)
+  // and definition tooltips ([data-tip]) render via one shared floating
+  // element appended to <body> (escapes any ancestor's overflow clip) and
+  // positioned with position:fixed from a pure, unit-testable placement
+  // function — never a CSS popover, which an ancestor with overflow:hidden
+  // would clip and which has no viewport awareness near an edge. The CSS
+  // popover is suppressed below in injectStyles.
   var TIP_SELECTOR = '[data-tip], .ds-ref[data-ref-tip]';
   var TIP_MARGIN = 8;
   var TIP_GAP = 7;
@@ -1774,8 +1764,8 @@
       });
     });
     Array.prototype.forEach.call(el.querySelectorAll('.cs-stat-value'), countUp);
-    // v3.1: the recovery dots + heroic-resource pips fade/rise in just after the
-    // bars, so the new Vitals glyphs reveal intentionally rather than snapping in.
+    // Recovery dots + heroic-resource pips fade/rise in just after the bars,
+    // so the Vitals glyphs reveal intentionally rather than snapping in.
     Array.prototype.forEach.call(el.querySelectorAll('.cs-dots, .cs-hr-pips'), function (n, i) {
       n.style.opacity = '0';
       n.style.transform = 'translateY(3px)';
@@ -1803,7 +1793,7 @@
     playEntrance(el);
   }
 
-  // ── API fetch fallback (pre-CH4.5 embed without data attributes) ───
+  // ── API fetch fallback (embed without data attributes) ───
 
   function fetchEntity(cid, eid) {
     var url = '/api/v1/campaigns/' + cid + '/entities/' + eid;
@@ -1833,12 +1823,12 @@
     var css = [
       // ── Base (the frame's .cs-surface owns layout; we only set type/color) ──
       '.ds-sheet { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); }',
-      // v3.1 sheet ACCENT (the "highlight"). Scoped to the sheet and driven by an
-      // overridable var so a future owner-page setting can recolor it (and add
-      // highlight 2/3) by setting --ds-accent / --ds-accent-rgb on .ds-sheet —
-      // no CSS change needed. Default = violet.
+      // Sheet ACCENT (the "highlight"). Scoped to the sheet and driven by an
+      // overridable var so an owner-page setting can recolor it by setting
+      // --ds-accent / --ds-accent-rgb on .ds-sheet — no CSS change needed.
+      // Default = violet.
       '.ds-sheet { --color-accent: var(--ds-accent, #a855f7); --color-accent-rgb: var(--ds-accent-rgb, 168,85,247); }',
-      // v3.1 Vitals composite: stamina/recoveries/HR/roll on the left, the
+      // Vitals composite: stamina/recoveries/HR/roll on the left, the
       // characteristics grid on the right (stacks on narrow widths).
       '.cs-vitals { display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-start; }',
       '.cs-vitals-main { flex:1 1 180px; min-width:170px; display:flex; flex-direction:column; gap:10px; }',
@@ -1917,12 +1907,9 @@
       '.ds-rail__filter::placeholder { color:var(--color-text-muted,#9ca3af); }',
       '.ds-rail__filter:focus { outline:none; border-color:var(--color-accent,#a855f7); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,168,85,247),0.18); }',
       '.ds-rail__empty { padding:14px; text-align:center; font-size:12px; color:var(--color-text-muted,#9ca3af); }',
-      // group label is a collapse toggle button (caret + label + count). Given a
-      // background/radius/heavier weight so it reads as a distinct SECTION header
-      // rather than another row in the list — it was previously differentiated
-      // from a .ds-li row by font-size alone, which read as the same kind of
-      // element at a glance (operator report: sections indistinguishable from
-      // ability entries).
+      // Group label is a collapse toggle button (caret + label + count). Given
+      // a background/radius/heavier weight so it reads as a distinct SECTION
+      // header rather than another row in the list.
       '.ds-ab-grp__label { display:flex; align-items:center; gap:7px; width:calc(100% - 12px); text-align:left; border:0; cursor:pointer; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-secondary,#6b7280); background:var(--color-bg-tertiary,#f3f4f6); border-radius:6px; margin:6px 6px 4px; padding:7px 9px; }',
       '.ds-ab-grp__label:hover { color:var(--color-text-primary,#111827); background:rgba(var(--color-accent-rgb,168,85,247),0.12); }',
       '.ds-ab-grp__label:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
@@ -2068,10 +2055,10 @@
       '.cs-empty-icon { width:48px; height:48px; border-radius:9999px; background:var(--color-bg-tertiary,#f3f4f6); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:20px; color:var(--color-text-muted,#9ca3af); }',
       '.cs-empty-title { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 4px; }',
       '.cs-empty-desc { font-size:14px; color:var(--color-text-secondary,#6b7280); max-width:24rem; margin:0 auto; }',
-      // v3: muted placeholder shown by a section that has no data yet, so the
+      // Muted placeholder shown by a section that has no data yet, so the
       // sheet always shows its full structure instead of collapsing.
       '.cs-placeholder { color:var(--color-text-muted,#9ca3af); font-size:13px; font-style:italic; padding:6px 2px; }',
-      // ── v3 Combat panel ──
+      // ── Combat panel ──
       '.cs-cond-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }',
       '.cs-cond { display:inline-flex; align-items:center; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
       '.cs-cond--danger { background:rgba(220,38,38,0.12); color:#dc2626; }',
@@ -2148,13 +2135,8 @@
       '  .cs-damage-label { width:auto; padding-top:0; }',
       '}',
       // ── Motion / animation layer (entrance + ambient; reduce-motion aware) ──
-      // Inventory (see playEntrance for the JS-driven ones):
-      //   1. staggered box entrance   2. low-stamina stamina-bar pulse
-      //   3. (retired in v3.1 — was the heroic-resource BAR shimmer; HR is now
-      //      pips, so this rule is inert and kept only as a no-op)
-      //   4. level-badge sheen   5. stat-card hover lift   6. portrait hover zoom
-      //   7. v3.1: stamina-bar fill + characteristic count-up + recovery-dot /
-      //      heroic-pip fade-rise reveal (all in playEntrance, skipped on reduce-motion)
+      // See playEntrance for the JS-driven entrance animations (stamina-bar
+      // fill, characteristic count-up, recovery-dot / heroic-pip reveal).
       // 1. Staggered box entrance (class + per-box delay set in playEntrance).
       '@keyframes ds-box-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }',
       '.ds-sheet .cs-box.ds-anim-in { animation:ds-box-in 380ms cubic-bezier(.2,.7,.2,1) both; }',
@@ -2205,10 +2187,8 @@
       var children = parseJsonAttr(ds.children, []);
 
       // The renderer owns the real glossary route and degrades to an empty
-      // glossary when there is no campaign id. The basePath argument used to
-      // carry '/systems/drawsteel/' as a no-campaign fallback, but that URL
-      // has never had a route behind it — passing '' makes the degradation
-      // explicit instead of dressed up as a fetch.
+      // glossary when there is no campaign id; the basePath argument has no
+      // route behind it, so passing '' makes the degradation explicit.
       refRenderer = (typeof DrawSteelRefRenderer !== 'undefined')
         ? new DrawSteelRefRenderer('', campaignId)
         : null;

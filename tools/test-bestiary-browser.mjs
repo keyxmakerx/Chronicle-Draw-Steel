@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * XSS regression tests for widgets/bestiary-browser.js (DS-SEC-FIXES-R1).
+ * XSS regression tests for widgets/bestiary-browser.js.
  *
- * Covers audit findings:
- *   C-1 client half (bestiary-browser.js:546-547) — creature.organization/role
- *       were injected raw into card.innerHTML via _capitalize (no escaping).
- *       Any authenticated user could publish a creature whose organization field
- *       carries HTML and hit every user browsing the community bestiary on load.
- *   H-4 (bestiary-browser.js:918/922) — cr.size raw in the statblock modal.
+ * Any authenticated user can publish a creature, so creature fields
+ * (organization, role, size, etc.) are attacker-controlled and must be
+ * escaped before card.innerHTML or the statblock modal render them —
+ * an unescaped field would run for every user browsing the community
+ * bestiary.
  *
  * Run: `node --test tools/test-bestiary-browser.mjs`
  */

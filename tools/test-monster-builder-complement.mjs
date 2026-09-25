@@ -1,16 +1,16 @@
-// test-monster-builder-complement.mjs — wiring tests for the Phase 2
-// "Build to complement the party" controls in widgets/monster-builder.js
-// (DS-MB-REDO-P02). Off-DOM, minimal-instance style (same as
-// test-monster-builder.mjs): call the widget methods on an Object.create(def)
-// instance with just enough state, no full init().
+// test-monster-builder-complement.mjs — wiring tests for the "Build to
+// complement the party" controls in widgets/monster-builder.js. Off-DOM,
+// minimal-instance style (same as test-monster-builder.mjs): call the widget
+// methods on an Object.create(def) instance with just enough state, no full
+// init().
 //
 // Run: node --test tools/test-monster-builder-complement.mjs
 //
-// Covers: the button is reachable BEFORE an org is selected (R3.6), manual
-// mode hides it gracefully, applying a suggestion writes level/org/role + a
-// signature ability carrying the baseline tiers (Q2 auto-fill, nothing locked),
-// the rationale-chip panel renders per-field, and the immune-damage warning is
-// non-blocking (Q3).
+// Covers: the button is reachable before an org is selected, manual mode
+// hides it gracefully, applying a suggestion writes level/org/role plus a
+// signature ability carrying the baseline tiers (nothing locked), the
+// rationale-chip panel renders per-field, and the immune-damage warning is
+// non-blocking.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -87,10 +87,9 @@ test('applying the suggestion writes level/org/role + a signature ability with b
   assert.equal(sig.length, 1, 'exactly one suggested signature ability');
   assert.equal(sig[0].type, 'signature');
   assert.match(sig[0].power_roll, /Agility vs\. Agility/);   // attack-stat vs. target-defense
-  // Published damage formula at leader/L5: base 4 + 5 + 1 = 10 → 6/11/14, plus
-  // the highest characteristic (+4) because this ability is authored as a
-  // strike → 10/15/18. The old figures (18/22/26) came from the widget's own
-  // damage-baselines.json, whose `source` is the string "custom" (DS-MB-HONESTY).
+  // Published damage formula at leader/L5: base 4 + 5 + 1 = 10 -> 6/11/14,
+  // plus the highest characteristic (+4) because this ability is authored as
+  // a strike -> 10/15/18. Never data/damage-baselines.json (source: "custom").
   assert.match(sig[0].tier1, /^10\b/);
   assert.match(sig[0].tier2, /^15\b/);
   assert.match(sig[0].tier3, /^18\b/);

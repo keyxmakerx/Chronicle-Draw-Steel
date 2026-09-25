@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 /**
- * XSS regression tests for widgets/statblock-renderer.js (DS-SEC-FIXES-R1).
- *
- * Covers audit findings:
- *   H-3 (statblock-renderer.js:156) — cr.size (user-authored custom field) was
- *       inserted into element content unescaped -> stored XSS in every viewer.
- *   L-4 (statblock-renderer.js:236) — spend_vp emitted without Number() coercion
- *       (gated only by `> 0`); now coerced.
+ * XSS regression tests for widgets/statblock-renderer.js: pins that
+ * user-authored custom fields (e.g. cr.size) are escaped before insertion
+ * into element content, and that spend_vp is Number()-coerced before render.
  *
  * Run: `node --test tools/test-statblock-renderer.mjs`
  */

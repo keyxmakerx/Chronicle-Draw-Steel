@@ -2,9 +2,8 @@
  * Shared Node test harness for the register-pattern widgets (statblock-renderer,
  * bestiary-browser, monster-builder). These widgets call Chronicle.register at
  * module load and build HTML into DOM nodes, so testing them off-browser needs a
- * minimal `document`/`Chronicle` shim. Used by the DS-SEC-FIXES-R1 XSS
- * regression tests. No jsdom dependency — just enough surface for the render
- * paths under test (innerHTML assignment, createElement, insertBefore, etc.).
+ * minimal `document`/`Chronicle` shim. No jsdom dependency — just enough surface
+ * for the render paths under test (innerHTML assignment, createElement, etc.).
  */
 
 // A tiny DOM element stand-in: records innerHTML/textContent so tests can assert
