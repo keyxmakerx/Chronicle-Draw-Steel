@@ -211,16 +211,16 @@ citation naming the book and chapter (the shape used elsewhere in `data/` is
 | `faction` | string | No | Faction affiliation |
 | `immunities` | string | No | Damage/condition immunities |
 
-### Stat Calculation Formulas
+### Stat Calculation
 
-Stats are derived from `organization-templates.json` and `role-templates.json`:
-
-- **Stamina** = `org.stamina_base + (org.stamina_per_level * level)`
-- **Winded** = `stamina // 2`
-- **EV** = `org.ev_multiplier * level`
-- **Speed** = `org.default_speed`
-- **Stability** = `org.default_stability`
-- **Characteristics** = `role.characteristics[stat]`, with +1 to primary stat per 3 levels above 1
+`stamina`, `ev`, `winded`, `speed`, `stability` and the characteristics are not
+computed from a formula documented here. The published Draw Steel math is
+evaluated only by the `DrawSteelFormulas` section of `widgets/monster-engine.js`,
+against the published `data/monster-building.json` and
+`data/encounter-building.json` — see that section and CLAUDE.md → "The
+builder's math must carry its own provenance". `organization-templates.json`
+and `role-templates.json` hold this package's own legacy estimates
+(`source: "custom"`), not published formulas, and must not be treated as one.
 
 ## creature-abilities.json
 
@@ -598,18 +598,10 @@ for f in sorted(glob.glob('data/*.json')):
 print('All valid')
 "
 
-# Creature formula validation
-python3 -c "
-import json
-orgs = {o['slug']: o for o in json.load(open('data/organization-templates.json'))}
-for c in json.load(open('data/creatures.json')):
-    p = c['properties']
-    org = orgs[p['organization'].lower()]
-    assert p['stamina'] == org['stamina_base'] + org['stamina_per_level'] * p['level']
-    assert p['ev'] == org['ev_multiplier'] * p['level']
-    assert p['winded'] == p['stamina'] // 2
-print('All 35 creatures pass formula validation')
-"
+# Creature stats against the published formulas: tools/test-monster-formulas.mjs
+# (DrawSteelFormulas in widgets/monster-engine.js vs. monster-building.json /
+# encounter-building.json), not the legacy organization-templates.json numbers.
+node --test tools/test-monster-formulas.mjs
 
 # Build-your-own data: provenance flags, @references, and the derived tables
 node --test tools/test-build-your-own-data.mjs
