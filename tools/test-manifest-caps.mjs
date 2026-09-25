@@ -1,26 +1,14 @@
 // test-manifest-caps.mjs — pins this package's manifest against the platform
-// limits Chronicle enforces at LOAD time.
+// limits Chronicle enforces at LOAD time (internal/systems/manifest.go,
+// `ValidateManifest`). Exceeding a cap does not truncate or warn — it errors,
+// and the whole package fails to load: no categories, no widgets, no
+// reference data, no tooltips.
 //
-// WHY THIS FILE EXISTS
-// --------------------
-// On 2026-08-08 a fix added a sixth `text_renderers` entry. Chronicle caps them
-// at five (`internal/systems/manifest.go`), and `ValidateManifest` does not
-// truncate or warn — it ERRORS, and `loader.go` then logs "skipping invalid
-// system manifest" and moves on. The package did not degrade: it failed to load
-// **entirely**. No categories, no widgets, no reference data, no tooltips. The
-// explicit-install path returns "invalid manifest" outright.
-//
-// The whole 264-test suite was green while this was true, because nothing here
-// knew the platform had limits at all. Every test asked "is our data correct?"
-// and none asked "will the host accept it?" — so the package was verified in
-// perfect isolation from the only thing that has to accept it.
-//
-// KEEPING THIS IN SYNC. These numbers mirror the consts in Chronicle's
-// internal/systems/manifest.go. They are duplicated deliberately: this package
-// ships and versions separately from Chronicle, so it cannot import them. If
-// Chronicle raises a cap, this file may be relaxed to match — but NEVER relax it
-// to make a red test green without checking the host constant first. A package
-// that exceeds a live cap is not "slightly over"; it is entirely absent.
+// These numbers mirror the consts in Chronicle's manifest.go and are
+// duplicated deliberately: this package ships and versions separately, so it
+// cannot import them. If Chronicle raises a cap, relax this file to match —
+// but never relax it to make a red test green without checking the host
+// constant first.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,7 +19,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'));
 
-// Mirrors internal/systems/manifest.go. Verified against that file 2026-08-08.
+// Mirrors internal/systems/manifest.go.
 const CAPS = {
   categories: 20,
   fields_per_category: 100,
@@ -70,10 +58,9 @@ test('every other declared collection is within its cap', () => {
 });
 
 test('every text_renderer and widget points at a file that exists', () => {
-  // The cap is not the only way to be unloadable: a renderer naming a file that
-  // was merged away or renamed is a 404 at mount time, which is the same defect
-  // wearing a different hat (and is exactly how the merge that fixed the cap
-  // could have gone wrong).
+  // A renderer or widget naming a file that was merged away or renamed is a
+  // 404 at mount time — the same unloadable-package failure as an over-cap
+  // manifest.
   const missing = [];
   for (const r of manifest.text_renderers || []) {
     const f = r.file;

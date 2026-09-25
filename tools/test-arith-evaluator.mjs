@@ -1,18 +1,12 @@
 #!/usr/bin/env node
 /**
- * Pin tests for the character sheet's arithmetic evaluator (`safeEvalArith`).
- *
- * Written to LOCK current behavior BEFORE the L-3 hardening swap (DS-BETA-
- * HARDENING item 1) of the `Function()`-based evaluator for a hand-written ES5
- * recursive-descent parser, and to guard it forever after. The main suite's
- * assertions hold for BOTH the old `Function()` impl and the new parser on
- * every real (authored-formula) input. Two narrow, intentional divergence
- * classes are carved out and pinned separately below instead: out-of-grammar
- * JS quirks the old Function() happened to accept, and adjacent-sign inputs
- * (e.g. `3--2`) that were a strict-mode SyntaxError under Function() but are
- * valid unary chains under the new grammar. DS-BETA-HARDENING-R2 additionally
- * added a try/catch crash guard around the parse; see the pathological-input
- * tests at the end of this file.
+ * Pin tests for the character sheet's arithmetic evaluator (`safeEvalArith`),
+ * a hand-written ES5 recursive-descent parser (not `Function()`/`eval`, to
+ * avoid evaluating arbitrary JS from authored data). Two narrow divergences
+ * from naive JS semantics are pinned separately below: out-of-grammar JS
+ * quirks that now reject, and adjacent-sign inputs (e.g. `3--2`) that are
+ * valid unary chains under this grammar. A try/catch crash guard around the
+ * parse is pinned by the pathological-input tests at the end of this file.
  *
  * Real inputs are authored tier-damage formulas after `@chr` substitution
  * (`"2 + @chr"` → `"2 + 3"`); see `substituteFormula` and the tier `value`
@@ -113,41 +107,30 @@ test('non-string input is coerced via String()', () => {
   assert.equal(ev(42), 42);
 });
 
-// ── Post-L-3-swap: out-of-grammar inputs the old Function() happened to accept
-// (JS-engine quirks) now reject cleanly. The parser implements only the
-// documented grammar (+ - * / parens unary); this is a deliberate, safer
-// narrowing — no authored damage formula uses these, and the caller degrades to
-// the raw substituted string when the evaluator returns null. See the
-// DS-BETA-HARDENING report §1.
+// Out-of-grammar inputs the old Function()-based evaluator happened to accept
+// (JS-engine quirks) now reject cleanly: the parser implements only the
+// documented grammar (+ - * / parens unary). No authored damage formula uses
+// these; the caller degrades to the raw substituted string on null.
 test('out-of-grammar JS quirks now reject (post-L-3 narrowing)', () => {
   assert.equal(ev('2**3'), null);   // old Function() → 8 (exponentiation)
   assert.equal(ev('08'), null);     // old Function() → strict-mode octal SyntaxError → null (unchanged)
 });
 
-// ── Post-L-3-swap: adjacent-sign inputs (DS-BETA-HARDENING-R2, INTENTIONAL
-// divergence). Under the old Function()-based evaluator these were a
-// strict-mode SyntaxError (`--`/`+++` parse as pre-decrement/pre-increment on
-// a non-identifier) → caught → null. The new grammar has no increment/
-// decrement operators, only a unary +/- that can stack, so adjacent signs are
-// valid unary chains: `3--2` = 3 - (-2) = 5, `2+++3` = 2 + (+3) = 5,
-// `--5` = -(-5) = 5. Reachable from real authored data via `N-@chr` with a
-// negative characteristic (legal in Draw Steel). The new result is arguably
-// more correct (standard math-expression semantics) but IS a behavior change
-// from the old impl, so it's pinned here rather than folded into the "holds
-// for both impls" main suite. See post-merge review of #35, LOW finding 2.
+// Intentional divergence from the old Function()-based evaluator: the new
+// grammar has only a stacking unary +/-, no increment/decrement operators, so
+// adjacent signs are valid unary chains: `3--2` = 3 - (-2) = 5,
+// `2+++3` = 2 + (+3) = 5, `--5` = -(-5) = 5. Reachable from real data via
+// `N-@chr` with a negative characteristic (legal in Draw Steel).
 test('adjacent-sign inputs are valid unary chains (old Function() impl: null via SyntaxError)', () => {
   assert.equal(ev('3--2'), 5);
   assert.equal(ev('2+++3'), 5);
   assert.equal(ev('--5'), 5);
 });
 
-// ── DS-BETA-HARDENING-R2: crash guard. Pathological nesting/chains that pass
-// the character gate could overflow the call stack in the hand-written
-// recursive-descent parser (parseFactor recurses once per '(' and once per
-// unary sign, with no depth limit). safeEvalArith now wraps the parse in a
-// try/catch and degrades to null — matching every other parse-failure path —
-// instead of throwing an uncaught RangeError through substituteFormula ->
-// tierFragments -> the card render.
+// Crash guard: pathological nesting/chains that pass the character gate could
+// overflow the call stack (parseFactor recurses once per '(' and once per
+// unary sign, no depth limit). safeEvalArith wraps the parse in a try/catch
+// and degrades to null instead of throwing an uncaught RangeError.
 test('pathological paren nesting degrades to null, does not throw', () => {
   var deep = '('.repeat(4000) + '1' + ')'.repeat(4000);
   assert.doesNotThrow(function () { ev(deep); });
@@ -155,11 +138,8 @@ test('pathological paren nesting degrades to null, does not throw', () => {
 });
 
 test('pathological unary-sign chain degrades to null, does not throw', () => {
-  // Empirically, this Node build overflows the stack on a unary chain
-  // somewhere between 9,500 and 10,000 signs (parseFactor recurses once per
-  // sign, ~1 frame/char); 50,000 gives comfortable headroom above that
-  // boundary across Node versions/platforms without being needlessly slow
-  // (~1-3ms once it degrades to null).
+  // parseFactor recurses once per sign (~1 frame/char); 50,000 gives headroom
+  // above the stack-overflow boundary across Node versions/platforms.
   var chain = '-'.repeat(50000) + '5';
   assert.doesNotThrow(function () { ev(chain); });
   assert.equal(ev(chain), null);

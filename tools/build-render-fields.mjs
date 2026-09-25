@@ -8,23 +8,16 @@
 // Four transformations, all idempotent, all driven by CATEGORIES in
 // tools/_render-fields.mjs, and all pinned by tools/test-render-contract.mjs:
 //
-//   1. properties.source -> root source. ReferenceItem has a dedicated root
-//      Source field and the item-detail header renders THAT
-//      (system_pages.templ: `if item.Source != ""`). Provenance parked in
-//      properties never reached the page. creatures.json, organization-
-//      templates.json and role-templates.json already put it at the root; this
-//      brings the rest of the tree into line rather than teaching Chronicle a
-//      second place to look.
-//   2. A derived one-line `summary`, which the list table prints for every row
-//      and which only creatures.json had authored.
-//   3. A scalar `<key>_display` twin beside every nested property that a
-//      category declares as a column, because propString formats an object as
+//   1. properties.source -> root source, since the item-detail header renders
+//      the root Source field (system_pages.templ), not anything in properties.
+//   2. A derived one-line `summary`, which the list table prints for every row.
+//   3. A scalar `<key>_display` twin beside every nested property a category
+//      declares as a column, because propString formats an object as
 //      `map[…]`. Plus the two aggregate columns, `details_display` and
 //      `provenance_display`.
 //   4. manifest.json's `categories` array, regenerated from CATEGORIES with
-//      every field key resolved against the real data. The manifest naming a
-//      key the data does not carry is the defect this whole file exists to
-//      make impossible; generating it means the two cannot disagree.
+//      every field key resolved against the real data, so the manifest can
+//      never name a key the data does not carry.
 //
 // Structured values are never removed: widgets and the Foundry sync read them.
 
@@ -77,22 +70,18 @@ function rebuildProperties(properties, category, flattened = new Set()) {
   const authored = Object.fromEntries(
     Object.entries(properties)
       .filter(([k]) => !isDerived(k))
-      // A JSON null is indistinguishable from an absent key for every consumer
-      // in this package, and propString renders it as the literal "<nil>" — so
-      // `"melee_damage_bonus": null` would print "<nil>" in the Melee Damage
-      // column of 3 of 21 kits. Dropping the key makes those cells correctly
-      // empty and lets the column be declared at all.
+      // A JSON null is treated as absent: propString renders it as the
+      // literal "<nil>", so a null value must be dropped for the column to
+      // render as an empty cell instead.
       .filter(([, v]) => v !== null),
   );
 
   const columnKeys = new Set((category?.columns || []).map(([k]) => k));
 
-  // A `_display` twin for a column value Chronicle cannot print as it stands:
-  // a nested value (propString would emit "map[…]"), or ANY value in a column
-  // that carries reference markup somewhere in the file (propString would emit
-  // "{@combat dying}" verbatim). Everything else either is already a printable
-  // scalar or belongs in the folded Details column, and a twin for it would put
-  // the same sentence on the page twice.
+  // A `_display` twin for a column value propString cannot print as-is: a
+  // nested value, or any value in a column that carries reference markup
+  // anywhere in the file. Everything else is already a printable scalar or
+  // belongs in the folded Details column.
   const out = {};
   for (const [k, v] of Object.entries(authored)) {
     out[k] = v;

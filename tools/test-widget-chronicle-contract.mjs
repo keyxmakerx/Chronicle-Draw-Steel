@@ -1,33 +1,17 @@
 #!/usr/bin/env node
 /**
- * Contract tests for the two widgets that displayed NOTHING against a real
- * Chronicle instance. Both were tiny contract breaks, not deep defects — the
- * code ran fine, it just spoke a shape Chronicle does not emit.
+ * Contract tests for bestiary-browser.js and statblock-renderer.js against
+ * the shapes Chronicle's handlers actually emit. These tests DRIVE the
+ * widgets (mount via init / call _loadEntity) against payloads shaped exactly
+ * like Chronicle's real responses, and assert on what rendered.
  *
- * These tests DRIVE the widgets (mount via init / call _loadEntity) against
- * payloads shaped exactly like the ones Chronicle's handlers return, and assert
- * on what actually rendered.
+ *   ListEntities (internal/plugins/syncapi/api_handler.go) reads only
+ *   type_id / page / per_page / q — an unknown query param is ignored — and
+ *   returns the envelope {"data":[…],"total":N,"page":P,"per_page":PP}, with
+ *   per_page defaulting to 20 and capped at 100.
  *
- *   bestiary-browser.js campaign mode — three breaks in _fetchCreatures:
- *     1. `?preset=drawsteel-creature`. ListEntities
- *        (internal/plugins/syncapi/api_handler.go) reads type_id / page /
- *        per_page / q only; an unknown param is ignored, so nothing was
- *        filtered and the wrong entity type could come back.
- *     2. The envelope. The handler returns
- *        {"data":[…],"total":N,"page":P,"per_page":PP}; the widget read
- *        `data.entities || data.results || []` — neither key exists, so the
- *        list was ALWAYS empty. This is the zero.
- *     3. No pagination. per_page defaults to 20 and is capped at 100, so even a
- *        correct unwrap showed at most 20 of N.
- *     (plus: entity custom fields arrive as `fields_data`, never
- *      `custom_fields`, so every stat fell back to its default.)
- *
- *   statblock-renderer.js — `if (!entity.custom_fields) return;`. Chronicle's
- *     Entity (internal/plugins/entities/model.go) has no `custom_fields` key at
- *     all; it emits `fields_data`. The guard early-returned on every real
- *     response and the widget rendered its empty state forever.
- *
- * Each test names the OLD assumption it would fail under.
+ *   Chronicle's Entity (internal/plugins/entities/model.go) has no
+ *   `custom_fields` key; it emits `fields_data`.
  *
  * Run: `node --test tools/test-widget-chronicle-contract.mjs`
  */

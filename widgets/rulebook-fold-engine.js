@@ -1,10 +1,10 @@
 /**
  * Draw Steel Rulebook Fold Engine — the reusable fold interaction module.
  *
- * Ports the SIGNED rulebook design contract (cordinator mockups/
- * rulebook-v10-table.html, v10.1) into a reusable, content-agnostic module.
- * It knows NOTHING about characteristics, conditions, or the Power Roll — it
- * only knows three physical fold moves and how they coordinate:
+ * Design contract: cordinator mockups/rulebook-v10-table.html.
+ * A reusable, content-agnostic module: it knows nothing about
+ * characteristics, conditions, or the Power Roll — only three physical fold
+ * moves and how they coordinate:
  *
  *   1. WING  — a panel hinged to a card's edge that folds out OVER its
  *              neighbours (rotateY spring). Left-column cards wing right,
@@ -42,10 +42,7 @@
  *                             MARKER ONLY — the engine never queries it.
  *                             To make the veil dismiss the reader, the
  *                             caller must ALSO put data-rb-close-reader
- *                             on it (rulebook-frontpage does). Listed
- *                             here as a contract attribute for years
- *                             while nothing bound it, which reads as a
- *                             promise the engine does not keep.
+ *                             on it (rulebook-frontpage does).
  *   [data-rb-close-wing|flap|reader]   dismiss buttons (crease ✕, rope, rx).
  *   [data-rb-search]          the search <input> (face-down fold + block dim).
  *   [data-rb-tile]            a searchable card; data-rb-tags="space joined".
@@ -186,9 +183,9 @@ var RulebookFoldEngine = (function () {
     return Number(width) < bp;
   }
 
-  // mobileWingWidth sizes a downward mobile wing to the FULL width of its block
-  // (the booked P1 fix, r28): under the breakpoint the wing must span the block,
-  // not the cramped card-column it hinges from. When the caller can measure the
+  // mobileWingWidth sizes a downward mobile wing to the FULL width of its block:
+  // under the breakpoint the wing must span the block, not the cramped
+  // card-column it hinges from. When the caller can measure the
   // block it passes `blockWidth` (the block is full-bleed on mobile, so this IS
   // "viewport minus the page's horizontal padding"); otherwise the rule is
   // derived from the viewport (`viewportWidth − 2×pagePadding`). Never clamped to
@@ -511,7 +508,7 @@ var RulebookFoldEngine = (function () {
       var wing = host && host.querySelector('.rb-wing');
       if (!wing) return;
       if (isMobileWidth(win.innerWidth, breakpoint)) {
-        // Mobile (booked P1 fix r28): the wing folds DOWNWARD and must span the
+        // Mobile: the wing folds DOWNWARD and must span the
         // whole block (viewport minus page padding), not the cramped card column
         // it hinges from. Measure the block so the panel matches the real layout
         // whatever the page padding is; nudge its left edge to the block's left.

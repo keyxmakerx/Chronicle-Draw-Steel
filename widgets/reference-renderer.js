@@ -8,8 +8,6 @@
  *   ref.load().then(function () {
  *     var html = ref.renderText(Chronicle.escapeHtml(someText));
  *   });
- *
- * Future: Chronicle platform text_renderers integration via entry_point.
  */
 /* global Chronicle */
 var DrawSteelRefRenderer = (function () {
@@ -33,14 +31,9 @@ var DrawSteelRefRenderer = (function () {
       self._loaded = true;
       return Promise.resolve();
     }
-    // Campaign-scoped is the only shape Chronicle actually serves. The
-    // basePath fallback survives for a host that serves the package's files
-    // statically, but callers in this repo now pass '' — the URL they used to
-    // pass ('/api/v1/campaigns/:id/extensions/drawsteel/assets/') was never a
-    // Chronicle route, and the extension-asset route that does exist refuses
-    // .json. Without a campaign id and without a real basePath there is no
-    // source, and the catch below leaves an empty glossary rather than
-    // pretending otherwise.
+    // Campaign-scoped is the only shape Chronicle actually serves (SystemDataAPI);
+    // basePath is a fallback for a host serving the package statically. With
+    // neither, there is no source and the catch below leaves an empty glossary.
     var url = this._campaignId
       ? '/campaigns/' + encodeURIComponent(this._campaignId) + '/systems/drawsteel/rules-glossary'
       : (this._basePath ? this._basePath + 'data/rules-glossary.json' : '');
@@ -65,30 +58,25 @@ var DrawSteelRefRenderer = (function () {
         self._loaded = true;
       })
       .catch(function () {
-        // Degrade THIS instance, but do not poison the module cache: caching
-        // {} here made one transient failure (a network blip, a 503) freeze
-        // every later renderer on the page into an empty glossary for the
-        // rest of its life, with no retry path.
+        // Degrade this instance only; don't cache {} into _glossaryCache, or one
+        // transient fetch failure freezes every later renderer with no retry.
         self._glossary = {};
         self._loaded = true;
       });
   };
 
-  // getEntry looks up a glossary entry by slug/term (case-insensitive). Used to
-  // attach a definition tooltip to a bare term (e.g. an ability keyword badge)
-  // that isn't wrapped in {@…} syntax. Returns null until the glossary loads.
+  // Looks up a glossary entry by slug/term (case-insensitive), for attaching a
+  // tooltip to a bare term not wrapped in {@…} syntax. Null until loaded.
   RefRenderer.prototype.getEntry = function (termId) {
     if (!this._glossary || termId == null) return null;
     return this._glossary[String(termId).toLowerCase().trim()] || null;
   };
 
-  // scanText wraps BARE rule terms (DS conditions) found in already-escaped PLAIN
-  // text — for synced Foundry prose that has no {@…} markup of its own. Conservative
-  // by design: conditions only (unambiguous), whole-word, first occurrence of each.
-  // MUST be given plain escaped text with no existing ds-ref spans (else it could
-  // match inside a tooltip attribute) — the caller guarantees this for cleaned
-  // synced text. Keywords are handled separately via keyword badges, so they are
-  // NOT scanned here (too common in prose).
+  // Wraps bare condition terms found in already-escaped plain text (for synced
+  // Foundry prose with no {@…} markup) — conditions only, whole-word, first
+  // occurrence of each. Caller must guarantee no existing ds-ref spans in the
+  // input, or a match could land inside a tooltip attribute. Keywords are
+  // handled separately via badges and are not scanned here.
   RefRenderer.prototype.scanText = function (escapedHtml) {
     if (!this._loaded || !escapedHtml || !this._glossary) return escapedHtml || '';
     if (!this._scanList) {
@@ -106,9 +94,8 @@ var DrawSteelRefRenderer = (function () {
     this._scanList.forEach(function (t) {
       var re = new RegExp('\\b(' + t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'i');
       if (re.test(html)) {
-        // L-5: use a function replacer so a `$`-sequence in the glossary
-        // description (t.def) or in the matched term is treated literally, not
-        // as a String.replace replacement pattern ($1, $&, $`, $').
+        // Function replacer so a `$`-sequence in t.def or the matched term is
+        // literal, not a String.replace pattern ($1, $&, $`, $').
         html = html.replace(re, function (m, g1) {
           return '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
             ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">' + g1 + '</span>';
@@ -129,9 +116,8 @@ var DrawSteelRefRenderer = (function () {
         var displayName = displayOverride || termId;
         return '<span class="ds-ref ds-ref--unknown">' + displayName + '</span>';
       }
-      // H-6: displayOverride comes from the caller's ALREADY-escaped input text
-      // (renderText's contract), so it is safe as-is; entry.name comes from the
-      // glossary data (untrusted) and must be escaped before it becomes HTML.
+      // displayOverride is already-escaped (renderText's input contract); entry.name
+      // comes from glossary data (untrusted) and must be escaped before use as HTML.
       var label = displayOverride || _escHtml(entry.name);
       var tip = entry.description || '';
       tip = tip.replace(/"/g, '&quot;');
@@ -142,12 +128,9 @@ var DrawSteelRefRenderer = (function () {
     });
   };
 
-  // applyToContainer resolves every {@category term} reference inside an
-  // already-rendered DOM element, in place, swapping the tokens for ref spans.
-  // Callers (e.g. the character sheet) build escaped HTML, insert it, then call
-  // this to light up references. Guarded: a no-op until the glossary has loaded
-  // (and renderText itself re-checks _loaded), so a failed load degrades to
-  // plain tokens rather than throwing.
+  // Resolves every {@category term} reference inside an already-rendered DOM
+  // element, in place. No-op until the glossary has loaded, so a failed load
+  // degrades to plain tokens rather than throwing.
   RefRenderer.prototype.applyToContainer = function (el) {
     if (!el || !this._loaded) return;
     el.innerHTML = this.renderText(el.innerHTML);
@@ -161,12 +144,10 @@ var DrawSteelRefRenderer = (function () {
     return str.replace(/[^a-z0-9_-]/g, '');
   }
 
-  // _escHtml escapes a string for safe insertion into HTML *element content*
-  // (matches Chronicle.escapeHtml: escapes & < > only). Kept self-contained so
-  // the renderer can escape untrusted glossary values without depending on the
-  // platform Chronicle global (and so the Node tests can exercise it directly).
-  // H-6: the resolved glossary label (entry.name) is attacker-influenceable
-  // (a malicious package / systems-data glossary entry) and must be escaped.
+  // Escapes a string for HTML element content (& < > only, matches
+  // Chronicle.escapeHtml). Self-contained so it works without the Chronicle
+  // global and is testable from Node. Glossary entry.name is untrusted
+  // (attacker-controlled systems-data) and must go through this before use as HTML.
   function _escHtml(str) {
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;')

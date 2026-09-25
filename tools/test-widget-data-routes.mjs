@@ -2,29 +2,16 @@
 /**
  * The data-route contract for every widget that loads a data/*.json file.
  *
- * WHY THIS EXISTS. Four of the five data-loading widgets fetched their JSON
- * from URLs Chronicle has never served:
+ * Chronicle serves packaged data at exactly one route (SystemDataAPI):
  *
- *     /api/v1/campaigns/:id/extensions/drawsteel/assets/data/<file>.json
- *     /extensions/drawsteel/assets/data/<file>.json          (the "fallback")
+ *     GET /campaigns/:id/systems/drawsteel/data/<file>.json
  *
- * Three independent reasons each one is dead:
- *   1. Chronicle has no /api/v1/campaigns/:id/extensions/... route at all.
- *   2. Its real extension-asset route (ServeAsset) allowlists
- *      .svg .png .webp .jpg .jpeg .css .js and answers 400 for .json.
- *   3. ServeAsset resolves under the EXTENSIONS directory, while Draw Steel
- *      installs as a SYSTEM package, so it is not there either.
- *
- * rulebook-frontpage had no fallback and so rendered its error panel every
- * time it was mounted; monster-builder walked two dead candidates and showed
- * its data-error diagnostic. character-sheet used the systems route and
- * worked, which is the shape everything uses now:
- *
- *     GET /campaigns/:id/systems/drawsteel/data/<file>.json   (SystemDataAPI)
- *
- * The failure mode this guards is silent: a widget that fetches a URL with no
- * route behind it looks like a server problem, not a client bug, and every
- * unit test in this repo passed the whole time it was broken.
+ * Its extension-asset route (ServeAsset) only allowlists
+ * .svg .png .webp .jpg .jpeg .css .js (400s on .json) and resolves under the
+ * EXTENSIONS directory, not SYSTEM packages — so any widget fetching under
+ * `extensions/drawsteel/assets/` or `/api/v1/campaigns/:id/extensions/...`
+ * hits a route that does not exist. That failure is silent: it looks like a
+ * server problem, not a client bug, and no other test catches it.
  *
  * Run: `node --test tools/test-widget-data-routes.mjs`
  */
@@ -49,24 +36,18 @@ const DATA_WIDGETS = [
 ];
 
 // Strip comments so the prose explaining the dead route cannot trip the guard
-// that forbids it.
-//
-// This walks the source instead of running two regexes over it, because the
-// regex version was wrong in a way worth remembering: these files contain the
-// literal text `data/*.json` in both comments and a user-facing string, and
-// the `/*` inside it opened a block comment that swallowed real code up to the
-// next `*/`. The guard then reported that monster-builder had stopped building
-// the systems route when it had not. A stripper that does not understand
-// string literals cannot be trusted on a codebase that talks about globs.
+// that forbids it. Walks the source rather than using two regexes: these
+// files contain the literal text `data/*.json` inside strings too, and a
+// naive `/*` match inside it would open a block comment that swallows real
+// code up to the next `*/`. String literals are tracked so that doesn't
+// happen.
 //
 // Regex literals ARE tracked, imperfectly but conservatively: after a
 // character that can end an expression (identifier, ')', ']', quote), a '/'
-// is division; anywhere else it opens a regex literal, which is copied
-// through verbatim honouring escapes and classes. Without this, the walker
-// desynced on `.replace(/"/g, '&quot;')` — the quote inside the regex opened
-// phantom string mode and swallowed real code, exactly the failure the
-// data/*.json phantom-comment bug already demonstrated once. The self-test
-// below pins it.
+// is division; anywhere else it opens a regex literal, copied through
+// verbatim honouring escapes and classes — otherwise something like
+// `.replace(/"/g, '&quot;')` desyncs the walker into phantom string mode.
+// The self-test below pins it.
 function stripComments(src) {
   let out = '';
   let i = 0;

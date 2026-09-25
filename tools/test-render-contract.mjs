@@ -2,12 +2,9 @@
 //
 // Run: node --test tools/test-render-contract.mjs
 //
-// Every other test in tools/ checks that the data is CORRECT. This one checks
-// that it is VISIBLE, which is a different property and was the one that failed.
-// 632 entries of sourced, cross-referenced, verified rules data shipped with a
-// manifest that named `traits` on a file carrying `signature_traits` and
-// `purchased_traits`, so the Traits column and the Traits row were empty for 12
-// of 12 ancestries. Nothing errored. Every existing test passed.
+// Every other test in tools/ checks that the data is CORRECT; this one checks
+// that it is VISIBLE — a manifest field naming a key the data doesn't carry
+// renders as a silent blank with no test failure otherwise.
 //
 // The renderer is Chronicle's internal/systems package:
 //
@@ -278,10 +275,7 @@ test('every list row has a summary to show', () => {
 // `{@combat dying}` is input to widgets/reference-renderer.js, which turns it
 // into a hover-tooltip span. Chronicle's reference browser has no such step —
 // system_pages.templ prints propString(...) and item.Summary as literal text —
-// so a marker that reaches a rendered field is four characters of syntax in the
-// middle of a rules sentence. Measured against the real render path, 435 of 519
-// abilities did exactly that, and so did every ancestry and every kit: 1,835
-// markers on the list pages, 1,870 on the detail pages.
+// so a marker that reaches a rendered field prints as raw syntax mid-sentence.
 //
 // The markers are NOT removed from the data. The structured value keeps them,
 // because that is what the widgets resolve; only the generated `_display` twin
@@ -388,11 +382,9 @@ test('flattenRefs resolves a marker to the words the widget would show', () => {
   assert.equal(flattenRefs('{not a marker}'), '{not a marker}');
 });
 
-// RESIDUE, deliberately not asserted away: the root `description` still carries
-// its markers, and the item-detail page prints it verbatim (83 markers across
-// the tree as of this commit). It is the authored source the widgets resolve
-// into tooltips and there is no `description_display` slot on Chronicle's
-// ReferenceItem to point at, so the package cannot flatten it without deleting
-// the interactive rendering. The fix belongs in Chronicle — resolving markers in
-// propString/templ — and is booked in the Cordinator dispatch on package
-// reference markup. These twins are the interim.
+// RESIDUE, deliberately not asserted away: the root `description` still
+// carries its markers and the item-detail page prints it verbatim — there is
+// no `description_display` slot on Chronicle's ReferenceItem to point at, so
+// flattening it here would delete the interactive rendering.
+// TODO(keyxmakerx/Chronicle#629): resolve markers in propString/templ so the
+// twins are no longer needed.

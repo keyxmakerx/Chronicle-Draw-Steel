@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 /**
- * XSS regression tests for widgets/character-sheet.js (DS-SEC-FIXES-R1).
+ * XSS regression tests for widgets/character-sheet.js.
  *
- * Covers audit findings:
- *   H-1 (character-sheet.js:187) — portrait_url/name in src=""/alt="" via esc()
- *       (escapeHtml keeps quotes) -> attribute-breakout XSS. Now escAttr + URL
- *       scheme validation.
- *   H-2 (character-sheet.js:498/509/521) — fmt() emitted kit_details_json values
- *       raw for non-numeric input. Now escaped.
- *   L-1/L-2/M-4/M-5 — the escAttr helper that backs the aria-label / href /
- *       data-tip attribute sinks.
+ * Any value interpolated into an HTML attribute (portrait_url/name in
+ * src=""/alt="", aria-label, href, data-tip) must go through escAttr, not
+ * escapeHtml — escapeHtml keeps quotes, allowing attribute breakout — and
+ * portrait_url must additionally pass URL scheme validation. fmt() must
+ * escape kit_details_json values for non-numeric input rather than emitting
+ * them raw.
  *
  * Run: `node --test tools/test-character-sheet-xss.mjs`
  */

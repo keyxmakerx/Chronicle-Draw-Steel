@@ -2,23 +2,16 @@
 /**
  * Every control the rulebook renders must either DO something or SAY it cannot.
  *
- * The rulebook front page renders zero listeners of its own: it emits a frozen
- * DOM whose interactivity comes entirely from two globals loaded before it,
- * RulebookFoldEngine and RulebookExamplePlayer, which bind by attribute
- * selector. A button that carries none of those attributes is inert, and
- * nothing in the page says so.
- *
- * Three such buttons shipped. The worst was "📖 Full chapter", appended to
- * EVERY characteristic tile with no data attribute, no id, and no handler
- * anywhere in the repo — and, unlike the others, no comment declaring it a
- * placeholder. Four example buttons were inert too; a source comment called
- * them a seam, which tells the developer and not the reader. Meanwhile the
- * Lair parts in the same file already did this correctly: disabled,
- * aria-disabled, and a visible "soon" badge.
+ * The rulebook front page renders zero listeners of its own: it emits a
+ * frozen DOM whose interactivity comes entirely from two globals loaded
+ * before it, RulebookFoldEngine and RulebookExamplePlayer, which bind by
+ * attribute selector. A button carrying none of those attributes is inert,
+ * and must instead be marked disabled/aria-disabled with a visible label
+ * (the pattern the Lair parts already use).
  *
  * The wired-attribute list below is DERIVED from what the engine and player
- * actually query, not hard-coded, so deleting a binding moves this guard with
- * it rather than leaving a stale allowlist behind.
+ * actually query, not hard-coded, so deleting a binding moves this guard
+ * with it rather than leaving a stale allowlist behind.
  *
  * Run: `node --test tools/test-rulebook-affordance-honesty.mjs`
  */
@@ -41,13 +34,10 @@ const player = readFileSync(W('rulebook-example-player.js'), 'utf8');
 function boundAttributes() {
   const found = new Set();
   // Any quoted selector argument containing [data-rb...] counts: the engine
-  // binds through querySelector/querySelectorAll AND through its _closest
-  // helper, and uses compound selectors ('[data-rb-flap-group].rb-flapopen').
-  // Two earlier, narrower regexes each produced a false accusation —
-  // `querySelectorAll?` (the ? binds to the final 'l') missed plain
-  // querySelector and indicted data-rb-search; anchoring on ]') missed
-  // _closest and compound selectors and indicted data-rb-flap-group. Both
-  // attributes were bound all along.
+  // binds through querySelector/querySelectorAll, its _closest helper, and
+  // compound selectors ('[data-rb-flap-group].rb-flapopen'), so a narrower
+  // pattern anchored to one of those forms would misreport a bound attribute
+  // as unbound.
   const re = /\('\[(data-rb[a-z-]*)\][^']*'\)/g;
   for (const src of [engine, player]) {
     let m;
@@ -77,13 +67,11 @@ test('no button is rendered live-looking but inert', () => {
     const end = parts[i].indexOf('</button>');
     const markup = end === -1 ? parts[i].slice(0, 400) : parts[i].slice(0, end);
 
-    // Attribute-token matching, twice over:
-    //  - a bound attribute counts only as a real token (followed by =, space,
-    //    quote or '>'), so a bound name that PREFIXES an unbound one cannot
-    //    wire it by accident;
-    //  - `disabled` counts only when it is not the tail of `aria-disabled`:
-    //    an aria-disabled-only button still receives clicks — it IS the
-    //    inert-but-live-looking defect, not a declaration of deadness.
+    // A bound attribute counts only as a real token (followed by =, space,
+    // quote or '>'), so a name that prefixes another cannot wire it by
+    // accident. `disabled` counts only when not the tail of `aria-disabled`:
+    // an aria-disabled-only button still receives clicks, so it IS the
+    // inert-but-live-looking defect, not a declaration of deadness.
     const attrToken = (a) => new RegExp('(^|[\\s"\'])' + a + '([\\s=>"\']|$)').test(markup);
     const wired = [...bound].some(attrToken);
     const declaredDead = /(?<!aria-)\bdisabled\b/.test(markup);

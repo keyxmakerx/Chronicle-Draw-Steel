@@ -1,18 +1,11 @@
 // test-monster-builder-honesty.mjs — the monster builder must not present
-// unsourced arithmetic as validated Draw Steel math (DS-MB-HONESTY).
+// unsourced arithmetic as validated Draw Steel math.
 //
-// Background: the builder shipped four numbers of its own invention — a
-// per-organization Stamina table, `ev_multiplier * level` for encounter value,
-// `partySize * partyLevel * 4` for the encounter budget, and the level-1 damage
-// table in data/damage-baselines.json (whose own `source` is the literal string
-// "custom"). They disagree with the published formulas now shipped in
-// data/monster-building.json and data/encounter-building.json by as much as
-// 2.3x (Stamina) and 2.4x (damage tiers), and the widget wrapped them in a
-// "Validation" panel and told the director the result was "balanced".
-//
-// This file pins the fix: where the published formula can be evaluated the
-// widget uses it, and where it cannot the widget says so instead of certifying.
-// The full builder rewrite is separate work (DS-MONSTER-BUILDER-REWORK-R1).
+// Where the published formula (data/monster-building.json,
+// data/encounter-building.json) can be evaluated the widget must use it;
+// where it cannot, the widget must say so instead of certifying a number it
+// invented (see CLAUDE.md -> "The builder's math must carry its own
+// provenance"). TODO(keyxmakerx/Chronicle-Draw-Steel#49): full builder rewrite.
 //
 // Run: node --test tools/test-monster-builder-honesty.mjs
 

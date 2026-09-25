@@ -137,13 +137,9 @@ test('cleanFoundryProse preserves paragraph breaks for the reading view', () => 
   assert.equal(out, 'First line.\n\nSecond surge 1.');
 });
 
-// ── clampTooltipPos (viewport-clamped tooltip placement) ──────────────────
-// Regression coverage for the "hover content gets cut off" report: glossary
-// tooltips and definition popovers used to be pure-CSS ::after content
-// centered on the trigger with no viewport awareness, so they clipped inside
-// overflow:hidden ancestors (.ds-big, .ds-rail, .cs-feature) and ran off-screen
-// near any edge. clampTooltipPos is the pure placement math backing the real,
-// JS-positioned .ds-tipbox that replaced them (see attachTooltips).
+// clampTooltipPos is the pure placement math for JS-positioned .ds-tipbox
+// tooltips (see attachTooltips), keeping them clear of overflow:hidden
+// ancestors (.ds-big, .ds-rail, .cs-feature) and the viewport edge.
 test('clampTooltipPos centers above the anchor when there is room on every side', () => {
   const pos = cs.clampTooltipPos(
     { left: 360, top: 300, bottom: 320, width: 40, height: 20 },

@@ -1,15 +1,15 @@
-// test-monster-suggest.mjs — off-DOM tests for the Phase 2 suggestion engine
-// (DS-MB-REDO-P02). Exercises MonsterEngine.suggest against fixture parties
-// built through the real deriveParty pipeline and the shipped reference data.
+// test-monster-suggest.mjs — off-DOM tests for MonsterEngine.suggest, against
+// fixture parties built through the real deriveParty pipeline and the shipped
+// reference data.
 //
 // Run: node --test tools/test-monster-suggest.mjs
 //
-// Covers (per the dispatch acceptance + rulings): weakestDefense->role
-// targeting, the R3.5 fallback chain (incl. an intuition-weak party with NO
-// matching role), immunity avoidance, weakness preference, tier auto-fill via
-// tierN + per_level*(level-1), budget/org-only degradation, and that every
-// filled field carries a rationale (Q2). Potency + intent-scaling are descoped
-// (R3.1/R3.2) — the intent selector must NOT change any number.
+// Covers: weakestDefense->role targeting, the fallback chain (incl. an
+// intuition-weak party with no matching role), immunity avoidance, weakness
+// preference, tier auto-fill via tierN + per_level*(level-1), budget/org-only
+// degradation, and that every filled field carries a rationale. Potency and
+// intent-scaling are out of scope — the intent selector must not change any
+// number.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -92,11 +92,11 @@ test('no shared weakness → damage left untyped (never invents one)', () => {
   assert.match(s.rationale.damage, /untyped/i);
 });
 
-// ── Tier auto-fill: the PUBLISHED damage formula (DS-MB-HONESTY) ─────────────
-// These used to be data/damage-baselines.json, whose own `source` is "custom"
-// and which runs up to 2.4x the published numbers. The baseline is now
-// (4 + level + damage modifier) × tier modifier, rounded up, and the strike
-// add-on (the highest characteristic) is returned separately as `strikeTiers`.
+// Tier auto-fill uses the published damage formula, never
+// data/damage-baselines.json (source: "custom"; see CLAUDE.md -> "The
+// builder's math must carry its own provenance"): baseline is
+// (4 + level + damage modifier) × tier modifier, rounded up, with the strike
+// add-on (highest characteristic) returned separately as `strikeTiers`.
 test('ability tiers auto-fill from the published damage formula (leader @ L5)', () => {
   // 4×L5 → published party encounter strength 56; elite/leader (EV 28) fit,
   // tie broken toward leader (villain actions).

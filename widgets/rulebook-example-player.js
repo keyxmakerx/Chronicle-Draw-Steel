@@ -1,10 +1,9 @@
 /**
  * Draw Steel Rulebook Example Player — the staged "at the table" player.
  *
- * Ports the SIGNED design contract's staged example (Cordinator mockups/
- * rulebook-v10-table.html, v10.1 — renders/rb9-example.gif) into a reusable,
- * CONTENT-AGNOSTIC ES5 module. It knows nothing about Might, the Power Roll, or
- * the Lich's Lair — only how to render + play a "script": a little scene where
+ * Design contract: Cordinator mockups/rulebook-v10-table.html. A reusable,
+ * CONTENT-AGNOSTIC ES5 module: it knows nothing about Might, the Power Roll,
+ * or the Lich's Lair — only how to render + play a "script": a little scene where
  *
  *   1. character tokens SLIDE IN and the acting token GLOWS on its line,
  *   2. lines light one by one (director gold / player purple / roll amber),
@@ -301,12 +300,8 @@ var RulebookExamplePlayer = (function () {
   // module body stays DOM-free and require()-able in Node.
   function mount(root, options) {
     var noop = function () {};
-    // The null-root mount must return the SAME shape as a real one. It used
-    // to omit collapseAll, so a caller that mounted without a root and later
-    // called it got a TypeError instead of a no-op. No current caller hits
-    // this (rulebook-frontpage only mounts with a real element), which is
-    // exactly why a shape that differs by input is a trap: the first caller
-    // to keep a null-mount around finds out at runtime, not in review.
+    // The null-root mount must return the SAME shape as a real one, or a
+    // caller that mounts without a root gets a TypeError instead of a no-op.
     if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop };
     var opts = options || {};
     var win = (typeof window !== 'undefined') ? window : null;
