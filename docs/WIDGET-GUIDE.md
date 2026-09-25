@@ -1,6 +1,10 @@
 # Widget Configuration Guide
 
-This package provides three interactive widgets that can be added to entity page layouts via Chronicle's customizer.
+This package provides four interactive widgets — Monster Builder, Bestiary Browser,
+Statblock Renderer, and Rulebook Front Page — plus three shared utility modules
+(below), addable to entity page layouts via Chronicle's customizer. The Character
+Sheet widget (`widgets/character-sheet.js`) is documented separately, in
+`docs/CHARACTER-SHEET-DESIGN.md`.
 
 ## Adding Widgets
 
@@ -60,8 +64,9 @@ A searchable, filterable creature catalog with card grid display and popup statb
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
-| `source` | string | `"campaign"` | Data source: `"campaign"` (campaign entities) or `"bestiary"` (community bestiary) |
+| `source` | string | `"bestiary"` | Data source: `"campaign"` (campaign entities) or `"bestiary"` (community bestiary) |
 | `per_page` | number | `20` | Number of creatures per page |
+| `editable` | boolean | `true` | Whether Import/Export/Create/Edit/Delete actions are shown |
 
 ### Features
 - **Search** — Full-text search by creature name
@@ -119,9 +124,9 @@ related chips hop across fold types, and `✕ / Esc / tap-outside` always folds 
 **downward, spanning the full width of their block** (viewport minus page padding —
 not the cramped card column). Honours `prefers-reduced-motion`.
 
-**Staged examples** (P2): the Might card's two example buttons, the reader's
+**Staged examples:** the Might card's two example buttons, the reader's
 "▶ Watch the table play it" seam, and the Lich's Lair part 1 play the worked scenes
-via the `RulebookExamplePlayer` module (see below). **Glossary hover cards** (P2): dotted
+via the `RulebookExamplePlayer` module (see below). **Glossary hover cards:** dotted
 `.rb-hl` terms in the prose (authored with `{@category slug}` markup) show a quick card
 (term · category chip · body) sourced from `rules-glossary.json`, on hover/focus/tap,
 dismissed by `Esc` / outside-tap / scroll — driven by the fold engine's `terms` map.
@@ -140,15 +145,14 @@ dismissed by `Esc` / outside-tap / scroll — driven by the fold engine's `terms
   `properties.category === "condition"`), looked up by slug — a single source of truth
   shared with the @reference tooltip system.
 
-### Placement / Cutover
+### Placement
 
-This widget is **additive** — it introduces a NEW rules surface and demolishes nothing.
-There is no pre-existing rules-browser widget; the only prior rules surface is the
-`reference-renderer.js` tooltip utility + the glossary data, both of which this widget
-reuses. Place it via the layout customizer on a **campaign dashboard** or a dedicated
-**"Rules" page** as the entry point. Later slices (staged example player, glossary
-hover-cards, long-form chapters, Lair transcripts, deep glossary search) extend this
-surface; the widget leaves clean seams for each.
+There is no other rules-browser widget; the prior rules surface was the
+`reference-renderer.js` tooltip utility plus the glossary data, both of which this
+widget reuses. Place it via the layout customizer on a **campaign dashboard** or a
+dedicated **"Rules" page** as the entry point. Long-form chapters, Lair transcripts,
+and deep glossary search are not yet built; the widget leaves clean seams for them.
+Open work: #48.
 
 ---
 
@@ -227,12 +231,11 @@ Not a standalone widget — this is a shared utility loaded by the other three w
 
 ## Common Patterns
 
-### Asset Base Path
-All widgets construct the asset path from `config.campaignId`:
+### Data Route
+Widgets fetch reference data from Chronicle's `SystemDataAPI`, the only route
+that serves `data/*.json` — there is no campaign id → no fetch (degrade honestly):
 ```javascript
-var base = config.campaignId
-  ? '/api/v1/campaigns/' + config.campaignId + '/extensions/drawsteel/assets/'
-  : '/extensions/drawsteel/assets/';
+var url = '/campaigns/' + encodeURIComponent(campaignId) + '/systems/drawsteel/data/' + file;
 ```
 
 ### API Calls

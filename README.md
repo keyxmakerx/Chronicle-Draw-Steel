@@ -4,12 +4,13 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 
 ## What's Included
 
-### Reference Data (35 creatures, 23 abilities, 25 rules)
-- **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10
+### Reference Data
+- **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10 — example stat blocks (`"source": "custom"`), not reproduced Draw Steel monsters
 - **23 template abilities** — signature, action, maneuver, triggered, and villain-action types
+- **519 hero abilities, 12 ancestries, 21 kits** — the nine classes' abilities, kit signature abilities, and common actions
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
 - **7 organization templates** — the published organization and Stamina modifiers, plus default speed/stability (Swarm is this package's own, and carries no published modifiers)
-- **25 rules glossary entries** — conditions, movement, durations, resources, combat terms
+- **60 rules glossary entries + 57 skills** — conditions, movement, durations, resources, combat terms, and the five Draw Steel skill groups
 - **23 creature keywords** — Dragon, Undead, Humanoid, Elemental, etc.
 
 ### Entity Presets
@@ -20,6 +21,8 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **Monster Builder** — 7-step creature authoring with stats auto-filled from the published formulas, completeness checks, damage hints, an encounter-strength calculator, and full preview. It does not certify balance: figures the published rules do not cover are labelled unsourced on screen. See `docs/WIDGET-GUIDE.md`.
 - **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal statblocks, and campaign import
 - **Statblock Renderer** — read-only formatted creature statblock display for entity pages
+- **Character Sheet** — read-only hero reference sheet synced from Foundry (abilities, skills, kit, features). See `docs/CHARACTER-SHEET-DESIGN.md`.
+- **Rulebook Front Page** — an interactive rules page (power roll, characteristics, conditions). See `docs/WIDGET-GUIDE.md`.
 
 ### @Reference Cross-Links
 Ability text uses `{@category term}` syntax (like D&D Beyond) that renders as styled tooltips on hover:
@@ -50,7 +53,7 @@ The `reference-renderer.js` utility handles parsing and rendering. All 35 creatu
 After enabling the Draw Steel system:
 1. Open any entity page (or create a new Creature entity)
 2. Click the layout customizer
-3. Under **Extensions**, find Monster Builder, Bestiary Browser, or Statblock Renderer
+3. Under **Extensions**, find the Draw Steel widget you want
 4. Drag the widget into your layout
 
 ## Data Format
@@ -113,62 +116,43 @@ To publish: **Actions → Release → Run workflow**, enter the version (e.g.
 ```
 manifest.json              Package manifest (categories, presets, widgets, text_renderers)
 data/
-  creatures.json           35 example creatures (see the rewrite dispatch below)
+  creatures.json           35 example creatures ("source": "custom", not published monsters)
   creature-abilities.json  23 template abilities
   rules-glossary.json      60 rules definitions for @references
   organization-templates.json  7 org types (stamina/EV formulas)
   role-templates.json      9 roles (characteristic baselines)
   damage-baselines.json    Damage scaling by tier and organization
   creature-keywords.json   23 creature type keywords
-  ability-keywords.json    9 ability type keywords
+  ability-keywords.json    24 ability/keyword definitions
   abilities.json           519 hero abilities
   ancestries.json          12 ancestries
   kits.json                21 kits
+  skills.json              57 skills
 widgets/
   monster-builder.js       7-step creature authoring wizard
+  monster-engine.js        Published Draw Steel formulas (the only place they're evaluated)
+  monster-party.js         Party-aware suggestion data (fetch + derive)
   bestiary-browser.js      Filterable creature catalog
   statblock-renderer.js    Formatted statblock display
+  character-sheet.js       Read-only hero reference sheet
+  rulebook-frontpage.js    Interactive rules page
+  rulebook-fold-engine.js  Shared fold/glossary-hover interaction module
+  rulebook-example-player.js  Shared worked-example playback module
   reference-renderer.js    Shared @reference parsing utility
 docs/
   DATA-SCHEMA.md           Data file schemas and validation
   WIDGET-GUIDE.md          Widget configuration guide
-  PROJECT-HANDOFF.md       Architecture and status overview
+  CHARACTER-SHEET-DESIGN.md  Character sheet design decisions
+  FOUNDRY-SYNC-MAP.md      Foundry ↔ Chronicle field map (hero)
   monster-builder.md       Monster Builder design document
-  foundry-creature-sync.md Foundry VTT sync specification
-  implementation-checklist.md  Implementation roadmap (STALE — see below)
+  foundry-creature-sync.md Foundry VTT creature-sync specification
+  implementation-checklist.md  Implementation roadmap
 ```
 
-## Planned: the bestiary + monster-builder rewrite
+## Open work: the bestiary + monster-builder rewrite
 
 The community bestiary browser, the monster builder, and the Foundry creature-sync
-leg are booked for a rewrite. The plan of record is the coordinator dispatch
-**`C-BESTIARY-REWRITE`** (`Cordinator/dispatches/chronicle/C-BESTIARY-REWRITE.md`).
-It is **unsigned** — ten blocks `[BR-1]`…`[BR-10]` await a coordinator ruling, and
-none of them is an executor's to open.
-
-Read it before planning any work on `widgets/bestiary-browser.js`,
-`widgets/monster-builder.js`, `data/creatures.json`, or the creature preset's
-`foundry_path` annotations. Four things it settles that are easy to get wrong here:
-
-- **Chronicle's `internal/plugins/bestiary` is shipped and working** (3,252 lines of
-  Go, JSON-only, sanitised on write *and* read, multi-system). The rewrite is this
-  package's **widgets**, not that plugin. `docs/implementation-checklist.md` marks
-  that plugin — and the "Publish to Bestiary" button that shipped in
-  `widgets/monster-builder.js` — as *not done*; it is wrong on both counts.
-- **The `DrawSteelFormulas` section of `widgets/monster-engine.js` stays the only
-  place published formulas are evaluated**, and every rendered figure keeps its `sourced` provenance flag. See
-  CLAUDE.md → "The builder's math must carry its own provenance".
-- **`data/creatures.json` is 35 example fixtures, not a seed corpus.** Nothing loads
-  it, every `source` is `"custom"`, its abilities are bare names, and against the
-  published formulas in `data/monster-building.json` only 2 of 30 EV values and
-  **0 of 30** Stamina values agree (the other 5 entries are `Swarm`, which has no
-  published organization modifier at all). `[BR-6]` rules its fate.
-- **The Foundry creature leg does not exist yet in either repo**, and three documents
-  (`docs/foundry-creature-sync.md` §4.1, `manifest.json`'s creature preset, and the
-  Foundry module's `API-CONTRACT.md`) give three different, unverified `foundry_path`
-  maps. `docs/FOUNDRY-SYNC-MAP.md` is the *hero* map and is the only one verified
-  against the Draw Steel system source. `[BR-7]`/`[BR-8]` rule direction, conflict
-  resolution, and where the paths get verified.
+leg are due a rewrite. Open work: #54.
 
 ## License
 

@@ -202,7 +202,7 @@ doesn't "fix" them backward.
 | Heroic resource name | `system.hero.resource.name` | `class` item → `system.class.system.primary` |
 | Heroic resource max | *(nonexistent)* | **No actor field — REMOVED.** DS heroic resources have no fixed max (you accumulate); the sheet shows a bare count of `system.hero.primary.value`. |
 
-### ✅ Declared in Phase C (manifest, branch `claude/chronicle-sheet-sync-j2m9s4`)
+### ✅ Declared in Phase C (manifest)
 
 These require the Foundry adapter's `normalizeFoundryValue` (Set/Collection → JSON)
 to land too — Sets serialize to `{}` without it.

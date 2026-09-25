@@ -16,7 +16,7 @@
 > **Status:** Draft
 > **Author:** Chronicle Team
 > **Last Updated:** 2026-03-24
-> **Related:** [Monster Builder](./monster-builder.md) | [Community Bestiary](../../Chronicle/docs/bestiary/design.md)
+> **Related:** [Monster Builder](./monster-builder.md) | [Community Bestiary](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md)
 
 ---
 

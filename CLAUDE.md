@@ -106,8 +106,7 @@ value, **2.3×** on Stamina and **2.4×** on damage — and a panel headed
 green tick are worse than no numbers.
 
 - **The `DrawSteelFormulas` section of `widgets/monster-engine.js` is the only
-  place the published formulas are evaluated.** (It was `widgets/monster-formulas.js`
-  until 2026-08-08; the header of that section says why it moved.) Every return is
+  place the published formulas are evaluated.** Every return is
   `{ value, sourced, source, notes }`. `sourced: false` means the published data
   does not cover this input and `value` is `null` — the module never returns a
   plausible-looking guess.
@@ -127,7 +126,7 @@ green tick are worse than no numbers.
 - Pinned by `tools/test-monster-formulas.mjs` (the module against the shipped
   `monster-building.json` / `encounter-building.json`) and
   `tools/test-monster-builder-honesty.mjs` (the widget's claims). A full rebuild
-  of the builder is separate work (#49) — do not treat this as the rework.
+  of the builder is separate work (#50) — do not treat this as the rework.
 
 ## @Reference Syntax
 

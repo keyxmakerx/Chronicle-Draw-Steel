@@ -48,7 +48,6 @@ const MAY_MENTION_CC = new Set([
   'manifest.json',
   'data/NOTICE.md',
   'docs/DATA-SCHEMA.md',
-  'docs/PROJECT-HANDOFF.md',
   'docs/implementation-checklist.md',
   'tools/test-licence-claims.mjs', // this file
   // package.json's `description` states BOTH positions in one sentence — Creator
