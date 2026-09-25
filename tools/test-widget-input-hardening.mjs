@@ -138,6 +138,30 @@ test('monster-builder: abilities_json keeps well-formed entries and drops junk e
   });
 });
 
+test('monster-builder: a malformed traits shape does not become a non-array', () => {
+  Chronicle.apiFetch = fetchMock(function () {
+    // Valid JSON, but a string rather than an array — must not survive as-is.
+    return okJson({ id: 5, fields_data: { traits: JSON.stringify('oops not an array') } });
+  });
+  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
+  return mb._loadExistingEntity.call(inst).then(function () {
+    assert.ok(Array.isArray(inst.creature.traits), 'traits must normalize to an array');
+    assert.equal(inst.creature.traits.length, 0);
+    assert.doesNotThrow(function () { inst.creature.traits.forEach(function () {}); });
+  });
+});
+
+test('monster-builder: legacy plain-text (non-JSON) traits still wrap as a single trait', () => {
+  Chronicle.apiFetch = fetchMock(function () {
+    return okJson({ id: 5, fields_data: { traits: 'Keen Senses. Sees in the dark.' } });
+  });
+  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
+  return mb._loadExistingEntity.call(inst).then(function () {
+    assert.equal(inst.creature.traits.length, 1);
+    assert.equal(inst.creature.traits[0].description, 'Keen Senses. Sees in the dark.');
+  });
+});
+
 test('monster-builder: _boundCreatureFields clamps level, truncates name, caps list length', () => {
   const abilities = [];
   for (let i = 0; i < 80; i++) abilities.push({ name: 'A' + i, type: 'melee' });

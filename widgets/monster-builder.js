@@ -117,6 +117,19 @@ Chronicle.register('monster-builder', {
     return arr.filter(function (a) { return a !== null && typeof a === 'object'; });
   },
 
+  // _parseTraits mirrors _parseAbilities for the traits field, but keeps the
+  // legacy fallback of wrapping a plain-text (non-JSON) stored value as a
+  // single trait. A value that parses as valid JSON but isn't an array (e.g.
+  // a JSON-encoded string) must never reach .forEach unnormalized.
+  _parseTraits: function (raw) {
+    var arr;
+    try { arr = JSON.parse(raw); } catch (e) {
+      return typeof raw === 'string' ? [{ name: '', description: raw }] : [];
+    }
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (t) { return t !== null && typeof t === 'object'; });
+  },
+
   // _boundCreatureFields returns a size-capped copy of a creature so a
   // runaway name or ability/trait list can't be written to an entity or the
   // public bestiary. Defense in depth: Chronicle's server is the real limit
@@ -258,9 +271,7 @@ Chronicle.register('monster-builder', {
           } catch (e) { /* keep defaults */ }
         }
         if (f.traits) {
-          try { self.creature.traits = JSON.parse(f.traits); } catch (e) {
-            self.creature.traits = typeof f.traits === 'string' ? [{ name: '', description: f.traits }] : [];
-          }
+          self.creature.traits = self._parseTraits(f.traits);
         }
       })
       .catch(function (err) {
