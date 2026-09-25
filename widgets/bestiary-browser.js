@@ -79,6 +79,36 @@ Chronicle.register('bestiary-browser', {
     );
   },
 
+  // _entityUrl builds a campaign entity API path. campaignId/entityId are
+  // normally numeric ids from Chronicle's own config or entity data, but
+  // percent-encoding keeps a stray "/" or "?" from reshaping the request path.
+  _entityUrl: function (campaignId, entityId) {
+    var url = '/api/v1/campaigns/' + encodeURIComponent(campaignId) + '/entities';
+    if (entityId !== undefined && entityId !== null && entityId !== '') {
+      url += '/' + encodeURIComponent(entityId);
+    }
+    return url;
+  },
+
+  // _boundCreatureFields returns a size-capped copy of a creature so an
+  // oversized name or ability/trait list from an import can't be written to
+  // an entity's fields_data. Defense in depth: Chronicle's server is the
+  // real limit enforcer. Pure — never mutates the creature passed in.
+  _boundCreatureFields: function (cr) {
+    var MAX_NAME = 200, MAX_LIST = 50;
+    var capArray = function (arr) {
+      return Array.isArray(arr) && arr.length > MAX_LIST ? arr.slice(0, MAX_LIST) : arr;
+    };
+    var bounded = {};
+    for (var k in cr) { if (cr.hasOwnProperty(k)) bounded[k] = cr[k]; }
+    bounded.name = String(cr.name || '').slice(0, MAX_NAME);
+    bounded.level = Math.max(1, Math.min(20, Number(cr.level) || 1));
+    bounded.abilities = capArray(cr.abilities);
+    bounded.traits = capArray(cr.traits);
+    bounded.villain_actions = capArray(cr.villain_actions);
+    return bounded;
+  },
+
   // ── Data Loading ──
 
   _deriveKeywords: function () {
@@ -119,7 +149,7 @@ Chronicle.register('bestiary-browser', {
   // slug/name fallbacks the monster builder already uses.
   _resolveCreatureTypeId: function () {
     var self = this;
-    var url = '/api/v1/campaigns/' + this.config.campaignId + '/entity-types';
+    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entity-types';
     return Chronicle.apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (body) {
@@ -145,7 +175,7 @@ Chronicle.register('bestiary-browser', {
   _fetchEntityPages: function (typeId) {
     var self = this;
     var acc = [];
-    var base = '/api/v1/campaigns/' + this.config.campaignId + '/entities?per_page=100';
+    var base = this._entityUrl(this.config.campaignId) + '?per_page=100';
     if (typeId) base += '&type_id=' + encodeURIComponent(typeId);
     var MAX_PAGES = 50;
 
@@ -195,10 +225,13 @@ Chronicle.register('bestiary-browser', {
         self.state.creatures = items.map(function (e) { return self._normalizeEntity(e); });
       })
       .catch(function (err) {
+        // A server-sourced message is never shown verbatim, same as the
+        // import/delete/save/publish paths below — only a fixed, safe
+        // string reaches the user; the real error stays in the console.
         console.warn('Bestiary Browser: bestiary fetch failed; falling back to unavailable panel', err);
         self.state.creatures = [];
         self._bestiaryUnavailable = true;
-        self._bestiaryUnavailableMessage = (err && err.message) ? err.message : 'Community Bestiary is not available on this instance. Try using campaign source instead.';
+        self._bestiaryUnavailableMessage = 'Community Bestiary is not available on this instance. Try using campaign source instead.';
       });
   },
 
@@ -260,9 +293,20 @@ Chronicle.register('bestiary-browser', {
     return String(val).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
   },
 
+  // Every caller passes an array fallback (traits/abilities/villain_actions,
+  // all rendered with .filter/.forEach) — a stored value that parses as
+  // valid JSON but isn't an array (e.g. a JSON-encoded string) must fall
+  // back too, and a null/non-object array entry must never reach the
+  // renderer's dotted property access unfiltered.
   _parseJSON: function (val, fallback) {
     if (!val) return fallback;
-    try { return JSON.parse(val); } catch (e) { return fallback; }
+    var parsed;
+    try { parsed = JSON.parse(val); } catch (e) { return fallback; }
+    if (Array.isArray(fallback)) {
+      if (!Array.isArray(parsed)) return fallback;
+      return parsed.filter(function (item) { return item !== null && typeof item === 'object'; });
+    }
+    return parsed;
   },
 
   _capitalize: function (s) {
@@ -939,25 +983,36 @@ Chronicle.register('bestiary-browser', {
         if (!self.config.campaignId) { alert('No campaign selected.'); return; }
         // CreateEntity binds {name, entity_type_id, fields_data} and rejects a
         // zero entity_type_id outright; `preset`/`custom_fields` are not read.
+        // The source creature is another user's published bestiary entry, so
+        // bound its fields before writing them into this campaign.
+        var bounded = self._boundCreatureFields(creature);
         var typeId = self._creatureTypeId;
-        var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities';
+        var url = self._entityUrl(self.config.campaignId);
         var start = typeId
           ? Promise.resolve(typeId)
           : self._resolveCreatureTypeId().then(function (id) { self._creatureTypeId = id; return id; });
         start.then(function (id) {
           if (!id) throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign.');
-          var payload = { name: creature.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: self._toFieldsData(creature) };
+          var payload = { name: bounded.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: self._toFieldsData(bounded) };
           return Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         })
           .then(function (res) {
             if (!res.ok) {
               return self._apiError(res, 'Could not import this creature. Please try again.').then(function (msg) {
-                throw new Error(msg);
+                var e = new Error(msg); e.fromServer = true; throw e;
               });
             }
             importBtn.textContent = 'Imported!'; importBtn.disabled = true;
           })
-          .catch(function (err) { alert(err && err.message ? err.message : 'Could not import this creature. Please try again.'); });
+          .catch(function (err) {
+            // A server-sourced message is never shown verbatim — only a
+            // fixed, safe string reaches the user; the real error stays in
+            // the console for diagnostics. A message this widget generated
+            // itself (e.g. the entity type isn't installed) is safe and
+            // still useful to show.
+            if (typeof console !== 'undefined') console.warn('Bestiary Browser: import failed', err);
+            alert((err && !err.fromServer && err.message) ? err.message : 'Could not import this creature. Please try again.');
+          });
       });
       actions.appendChild(importBtn);
     }
@@ -983,12 +1038,12 @@ Chronicle.register('bestiary-browser', {
       deleteBtn.style.cssText = 'margin-left:auto;';
       deleteBtn.addEventListener('click', function () {
         if (!confirm('Delete "' + creature.name + '"? This cannot be undone.')) return;
-        var url = '/api/v1/campaigns/' + self.config.campaignId + '/entities/' + creature.id;
+        var url = self._entityUrl(self.config.campaignId, creature.id);
         Chronicle.apiFetch(url, { method: 'DELETE' })
           .then(function (res) {
             if (res && res.ok === false) {
               return self._apiError(res, 'Could not delete this creature. Please try again.').then(function (msg) {
-                throw new Error(msg);
+                var e = new Error(msg); e.fromServer = true; throw e;
               });
             }
             self.state.creatures = self.state.creatures.filter(function (c) { return c.id !== creature.id; });
@@ -998,7 +1053,12 @@ Chronicle.register('bestiary-browser', {
             self._renderCount();
             self._renderPagination();
           })
-          .catch(function (err) { alert(err && err.message ? err.message : 'Could not delete this creature. Please try again.'); });
+          .catch(function (err) {
+            // Server-sourced text is never shown verbatim; see the import
+            // handler above for why a client-generated message still is.
+            if (typeof console !== 'undefined') console.warn('Bestiary Browser: delete failed', err);
+            alert((err && !err.fromServer && err.message) ? err.message : 'Could not delete this creature. Please try again.');
+          });
       });
       actions.appendChild(deleteBtn);
     }

@@ -1786,7 +1786,7 @@
   // ── API fetch fallback (embed without data attributes) ───
 
   function fetchEntity(cid, eid) {
-    var url = '/api/v1/campaigns/' + cid + '/entities/' + eid;
+    var url = '/api/v1/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid);
     return Chronicle.apiFetch(url).then(function (res) {
       if (!res.ok) {
         return res.json().then(
@@ -2221,7 +2221,11 @@
         finish(entityObj);
       } else if (entityId && campaignId) {
         fetchEntity(campaignId, entityId).then(finish).catch(function (err) {
-          renderError(el, (err && err.message) ? err.message : 'Failed to load character.');
+          // The server's message is never shown verbatim — only a fixed,
+          // safe string reaches the user; the real error stays in the
+          // console for diagnostics.
+          if (typeof console !== 'undefined') console.warn('Character Sheet: entity load failed', err);
+          renderError(el, 'Failed to load character.');
         });
       } else {
         renderError(el, 'No entity context available.');
@@ -2261,7 +2265,7 @@
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
       esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rHeader: rHeader, rKit: rKit,
-      clampTooltipPos: clampTooltipPos
+      clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity
     };
   }
 })();
