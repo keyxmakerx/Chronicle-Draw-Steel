@@ -2,20 +2,11 @@
 
 ## Large File Strategy
 
-When creating new files expected to be **over ~200 lines**, do NOT write the entire file in a single Write call. This causes timeouts and stalls. Instead:
-
-1. **Write a skeleton first** (~100-200 lines) with the full structure but placeholder method bodies (`/* placeholder */`)
-2. **Fill in methods incrementally** using Edit, one method or small group at a time
-3. **Each Edit should be under ~100 lines of new content** to stay within comfortable output limits
-4. **Validate syntax** after all edits with `node -c <file>` (JS) or equivalent
-
-This applies to any file: widgets, modules, large configs, etc.
+For any new file expected over ~200 lines (widget, module, config), don't write it in one Write call — it times out. Write a skeleton first (~100-200 lines, placeholder method bodies), fill in methods incrementally with Edit (under ~100 new lines per edit), then validate with `node -c <file>`.
 
 ## Project Structure
 
-- `widgets/` - Chronicle widget JS files using `Chronicle.register()` pattern (ES5, `var` not `let/const`, no arrow functions)
-- `data/` - Reference JSON data (creature keywords, org templates, role templates, etc.)
-- `manifest.json` - Package manifest with categories, entity presets, and widget registrations
+`widgets/` - Chronicle widget JS (ES5, `var` not `let/const`, no arrow functions), via `Chronicle.register()`. `data/` - reference JSON (creature keywords, org templates, role templates, etc.). `manifest.json` - package manifest: categories, entity presets, widget registrations.
 
 ## Licensing — two positions, never flattened into one
 
@@ -43,106 +34,49 @@ has read the licence and confirmed (#53).
 
 ## Widget Patterns
 
-- All widgets use `Chronicle.register('slug', { init, destroy, ... })`
-- Use `Chronicle.apiFetch()` for API calls
-- Use `Chronicle.escapeHtml()` for XSS safety
-- Reference data is fetched from `/campaigns/:id/systems/drawsteel/data/<file>.json`
-  (Chronicle's `SystemDataAPI` — the ONLY route that serves these files; the old
-  "extension asset path" bases never had a route behind them and are forbidden by
-  `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch
-- Styles injected as `<style>` tag (no separate CSS files for widgets)
-- Use CSS custom properties with fallbacks for dark mode: `var(--bg-primary, #fff)`
-- Comments say why, briefly: the rule the code obeys and why, in a few lines. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning.
+- Widgets use `Chronicle.register('slug', { init, destroy, ... })`, `Chronicle.apiFetch()` for API calls, `Chronicle.escapeHtml()` for XSS safety.
+- Reference data comes only from `/campaigns/:id/systems/drawsteel/data/<file>.json` (Chronicle's `SystemDataAPI`; old "extension asset path" bases have no route and are forbidden by `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch.
+- Styles are an injected `<style>` tag, no separate CSS files. Use CSS custom properties with dark-mode fallbacks: `var(--bg-primary, #fff)`.
+- Comments say why, briefly, in a few lines: the rule the code obeys and why. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning.
 
 ## Data Format
 
-- All `data/*.json` files MUST be JSON arrays of ReferenceItem objects
-- Required fields: `slug` (string, unique), `name` (string), `source` (string — provenance, or the exact string `"custom"`)
-- Optional fields: `description` (string), `summary` (string), `properties` (object), `tags` (array)
-- Domain-specific fields go inside `properties`, not at root level. The root
-  carries only the keys Chronicle's ReferenceItem reads there — `slug`, `name`,
-  `summary`, `description`, `properties`, `tags`, `source`. `summary` and
-  `source` are root fields because the renderer reads them there and never
-  looks in `properties`.
-- See `docs/DATA-SCHEMA.md` for full schemas
+- Every `data/*.json` file is a JSON array of ReferenceItem objects. Required: `slug` (unique string), `name` (string), `source` (provenance string, or the exact string `"custom"`). Optional: `description`, `summary`, `properties` (object), `tags` (array).
+- Domain-specific fields go inside `properties`, not at root — the root carries only the keys ReferenceItem reads there (`slug`, `name`, `summary`, `description`, `properties`, `tags`, `source`). `summary`/`source` are root fields because the renderer reads them there, never inside `properties`.
+- Full schemas: `docs/DATA-SCHEMA.md`.
 
 ## Rendering: data has to be shaped for the consumer
 
-Chronicle's reference browser (`internal/systems`) renders a property through
-`propString` = `fmt.Sprintf("%v", props[key])`, which returns `""` for an absent
-key and Go-syntax garbage (`map[…]`, `[…]`, `<nil>`) for anything that is not a
-scalar. It only shows categories declared in `manifest.json`. So:
+Chronicle's reference browser (`internal/systems`) renders a property via `propString` = `fmt.Sprintf("%v", props[key])`: `""` for an absent key, Go-syntax garbage (`map[…]`, `[…]`, `<nil>`) for anything not a scalar. It only shows categories declared in `manifest.json`. Rules:
 
-- **A manifest field key must exist in the data and hold a scalar.** A key that
-  doesn't renders as a blank column and a missing detail row, silently — this is
-  the defect that shipped 632 correct entries with an empty Traits column.
-- **A data file with no manifest category is invisible entirely.**
-- Nested values get a generated scalar `<key>_display` twin; the manifest points
-  at the twin, widgets keep reading the structured value.
-- **`{@category term}` markup is not a renderer contract Chronicle knows.** Only
-  `widgets/reference-renderer.js` resolves it; `propString` prints it verbatim,
-  so 435 of 519 abilities printed `{@combat dying}` mid-sentence — right data,
-  wrong renderer, every test green. A key carrying markup anywhere in its file
-  gets a `_display` twin **even when it is already a scalar**, and the manifest
-  points at the twin. Only the twins (plus the derived `summary`) are flattened:
-  the structured value and the root `description` keep their markers, because
-  stripping them at source would delete the tooltips to fix the flat text. The
-  decision is per file, not per entry — a per-entry verdict would declare the
-  bare key whenever the first carrier happened to be marker-free.
+- A manifest field key must exist in the data and hold a scalar, or it renders as a silent blank column and missing detail row.
+- A data file with no manifest category is invisible entirely.
+- Nested values get a generated scalar `<key>_display` twin; the manifest points at the twin, widgets keep reading the structured value.
+- `{@category term}` markup (below) is not a contract `propString` knows — only `widgets/reference-renderer.js` resolves it; `propString` prints it verbatim. A key carrying markup anywhere in its file gets a `_display` twin **even if already scalar**, and the manifest points at the twin. Only the twins (plus derived `summary`) are flattened; the structured value and root `description` keep their markers for the tooltips. The decision is per file, not per entry.
 
-**After editing `data/*.json` by hand, run `node tools/build-render-fields.mjs`.**
-It regenerates the derived fields AND `manifest.json`'s `categories` from the
-single `CATEGORIES` declaration in `tools/_render-fields.mjs`.
-`tools/test-render-contract.mjs` fails CI on any of the above.
+After editing `data/*.json` by hand, run `node tools/build-render-fields.mjs`: it regenerates the derived fields and `manifest.json`'s `categories` from the single `CATEGORIES` declaration in `tools/_render-fields.mjs`. `tools/test-render-contract.mjs` enforces all of the above in CI.
 
 ## The builder's math must carry its own provenance
 
-The monster builder computed four figures with numbers this package invented —
-`ev_multiplier × level` for encounter value, `stamina_base + stamina_per_level ×
-level` for Stamina, `partySize × partyLevel × 4` for the encounter budget, and
-`data/damage-baselines.json` (whose own `source` is the literal string
-`"custom"`) for ability damage. They ran up to **1.67×** the published encounter
-value, **2.3×** on Stamina and **2.4×** on damage — and a panel headed
-"Validation" presented them to a director as balanced. Wrong numbers wearing a
-green tick are worse than no numbers.
+The monster builder derives four figures (encounter value, Stamina, encounter
+budget, ability damage). Some inputs (e.g. `data/damage-baselines.json`, whose
+own `source` is the literal string `"custom"`) are this package's own numbers,
+not MCDM's — a figure built from them is an estimate, not a published result,
+and must say so.
 
-- **The `DrawSteelFormulas` section of `widgets/monster-engine.js` is the only
-  place the published formulas are evaluated.** Every return is
-  `{ value, sourced, source, notes }`. `sourced: false` means the published data
-  does not cover this input and `value` is `null` — the module never returns a
-  plausible-looking guess.
-- **A caller that renders an unsourced figure MUST say so in the UI.** That is
-  what the flag is for. `_recalcAuto` records per-figure provenance on
-  `this._provenance`, the checks panel emits it as `severity: 'provenance'`
-  rows, and Step 3 labels the Stamina hint either "published formula:" or
-  "unsourced estimate:".
-- **The panel is titled "Completeness checks", never "Validation".** It carries
-  a standing, unconditional line saying it is not a balance check — an empty
-  panel used to read as a clean bill of health. A deviation warning is raised
-  only against a figure the published formulas can actually produce.
-- **Swarm is not a published organization** (it is a creature keyword); its
-  `organization_modifier` and `stamina_organization_modifier` are `null`, and it
-  is the reason the legacy tables still exist at all — as a labelled fallback,
-  never a silent default.
-- Pinned by `tools/test-monster-formulas.mjs` (the module against the shipped
-  `monster-building.json` / `encounter-building.json`) and
-  `tools/test-monster-builder-honesty.mjs` (the widget's claims). A full rebuild
-  of the builder is separate work (#50) — do not treat this as the rework.
+- `DrawSteelFormulas` in `widgets/monster-engine.js` is the only place published formulas are evaluated. Every return is `{ value, sourced, source, notes }`; `sourced: false` means published data doesn't cover this input and `value` is `null` — never a plausible-looking guess.
+- A caller that renders an unsourced figure must say so in the UI: `_recalcAuto` records per-figure provenance on `this._provenance`, the checks panel emits it as `severity: 'provenance'` rows, and Step 3 labels the Stamina hint either "published formula:" or "unsourced estimate:".
+- The panel is titled "Completeness checks", never "Validation", with a standing, unconditional line saying it is not a balance check. A deviation warning fires only against a figure the published formulas can actually produce.
+- Swarm is not a published organization (it's a creature keyword); its `organization_modifier` and `stamina_organization_modifier` are `null` — the reason the legacy tables still exist, as a labelled fallback, never a silent default.
+- Pinned by `tools/test-monster-formulas.mjs` (module vs. shipped `monster-building.json` / `encounter-building.json`) and `tools/test-monster-builder-honesty.mjs` (widget's claims). A full builder rebuild is separate work (#50).
 
 ## @Reference Syntax
 
-- Use `{@category term}` in text fields for rule cross-references
-- Categories: `condition`, `movement`, `duration`, `resource`, `action`, `combat`
-- Every term must have a matching entry in `data/rules-glossary.json`
-- Display override: `{@condition taunted|taunts}` renders as "taunts"
-- The shared utility `widgets/reference-renderer.js` handles parsing/rendering
+`{@category term}` in text fields marks a rule cross-reference; categories are `condition`, `movement`, `duration`, `resource`, `action`, `combat`. Every term needs a matching entry in `data/rules-glossary.json`. Display override: `{@condition taunted|taunts}` renders as "taunts". `widgets/reference-renderer.js` handles parsing/rendering.
 
 ## Manifest
 
-- No `"version"` field — version comes from GitHub release tags
-- `"api_version": "1"` is the API compatibility version (separate concept)
-- Widget entries use `"script_file"` (not `"file"`) for JS paths
-- `"text_renderers"` section is forward-compatible (Chronicle platform support pending)
+No `"version"` field (comes from GitHub release tags); `"api_version": "1"` is a separate API compatibility version. Widget entries use `"script_file"`, not `"file"`. `"text_renderers"` is forward-compatible (Chronicle platform support pending).
 
 ## Working with this project
 
