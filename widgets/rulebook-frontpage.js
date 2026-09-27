@@ -301,6 +301,16 @@
       // against outside siblings like the veil (z-index 60). Without this, the
       // sheet's own z-index:62 (above) never mattered and the veil still won.
       '[data-rb-wing-mode="sheet"][data-rb-wing].is-open{z-index:63}',
+      // The open sheet is a FIXED child of this same host card — without this,
+      // the host's own body (kicker/heading/description/chips) still painted
+      // behind it, leaving a small copy of the card visible on top of the
+      // dimming veil. visibility (not display) so closing needs no reflow to
+      // bring it back; not gated on prefers-reduced-motion, since it is a
+      // same-tick swap, not a travelled distance (unlike the FLIP itself).
+      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-kick,' +
+        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>h3,' +
+        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-d,' +
+        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-chips{visibility:hidden}',
       '[data-rb-wing].is-open .rb-unf,[data-rb-wing].is-open .rb-openmark{animation:none;opacity:.4}',
       // Crease (sticky header inside the wing) + close chip + body text + foldnote.
       '.rb-crease{position:sticky;top:-12px;margin:-12px -15px 8px;padding:8px 15px;display:flex;' +
@@ -763,7 +773,7 @@
         '<h3>' + esc(p.emoji) + ' ' + esc(scene.name) + '</h3>' +
         '<div class="rb-d">' + esc(scene.description) + '</div>' +
         '<div class="rb-chips">' + chipHtml + '</div>' +
-        '<div class="rb-wing">' +
+        '<div class="rb-wing" role="dialog" aria-modal="true" aria-label="' + escAttr(scene.name) + '">' +
           '<div class="rb-crease">' + esc(p.emoji) + ' ' +
             esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
             '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +

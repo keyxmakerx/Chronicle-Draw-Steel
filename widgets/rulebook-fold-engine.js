@@ -278,6 +278,7 @@ var RulebookFoldEngine = (function () {
     var listeners = [];              // tracked for a clean destroy()
     var _openWingEl = null, _openFlapEl = null, _reading = false;
     var _readerReturnFocus = null;   // element focus returns to when the reader closes
+    var _wingReturnFocus = null;     // same contract, for the one wing that is a full dialog (the sheet)
     var _hopTimer = null;            // cross-hop deferral (cancelled on destroy)
     var _destroyed = false;          // guards deferred callbacks after teardown
 
@@ -361,7 +362,24 @@ var RulebookFoldEngine = (function () {
       _openWingEl = host;
       host.classList.add('is-open');
       host.setAttribute('aria-expanded', 'true');
-      if (_isSheet(host)) _openSheet(host); else _applyWingGeometry(host);
+      if (_isSheet(host)) {
+        _openSheet(host);
+        // The sheet is a real dialog (role="dialog" in the caller's markup) —
+        // same focus contract as the reader: remember where to send focus
+        // back, then move it into the sheet so it isn't left behind on a now-
+        // hidden host (see the .is-open>.rb-kick/h3/.rb-d/.rb-chips hide, above).
+        var wing = host.querySelector('.rb-wing');
+        var d = root.ownerDocument;
+        _wingReturnFocus = (d && d.activeElement) || host;
+        var firstCtl = wing && wing.querySelector('[data-rb-close-wing], button, [tabindex], a[href]');
+        if (firstCtl && firstCtl.focus) firstCtl.focus();
+        else if (wing && wing.focus) {
+          if (wing.getAttribute('tabindex') == null) wing.setAttribute('tabindex', '-1');
+          wing.focus();
+        }
+      } else {
+        _applyWingGeometry(host);
+      }
       var group = _closest(host, '[data-rb-wing-group]');
       if (group) group.classList.add('rb-dimmed');
       var dimSel = host.getAttribute('data-rb-dim');
@@ -398,6 +416,12 @@ var RulebookFoldEngine = (function () {
       // only wings set rb-dimmed (search uses rb-nomatch), so clearing is safe
       var dimmed = root.querySelectorAll('.rb-dimmed');
       for (var i = 0; i < dimmed.length; i++) dimmed[i].classList.remove('rb-dimmed');
+      // Focus comes home once the card is back (same contract as the reader).
+      if (wasSheet) {
+        if (_wingReturnFocus && _wingReturnFocus.focus) _wingReturnFocus.focus();
+        else if (host.focus) host.focus();
+        _wingReturnFocus = null;
+      }
       onClose(FOLD.WING);
     }
 
@@ -598,6 +622,18 @@ var RulebookFoldEngine = (function () {
       if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
     }
+    // _trapWingTab is the same contract as _trapReaderTab, for the one wing
+    // that is a full dialog (the sheet) rather than a hinge-over panel.
+    function _trapWingTab(e) {
+      var wing = _openWingEl && _openWingEl.querySelector('.rb-wing');
+      if (!wing) return;
+      var f = wing.querySelectorAll('a[href],button:not([disabled]),input,[tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      var active = root.ownerDocument ? root.ownerDocument.activeElement : null;
+      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+    }
     function _closeAll() {
       if (state.wing) dispatch({ type: 'CLOSE_WING' });
       if (state.flap) dispatch({ type: 'CLOSE_FLAP' });
@@ -736,6 +772,7 @@ var RulebookFoldEngine = (function () {
         // Esc closes the hover card first (it sits above the folds), then folds.
         if (e.key === 'Escape') { if (_hcardOpen) { _hideHcard(); return; } dispatch({ type: 'ESCAPE' }); return; }
         if (_reading && e.key === 'Tab') { _trapReaderTab(e); return; }
+        if (_openWingEl && _isSheet(_openWingEl) && e.key === 'Tab') { _trapWingTab(e); return; }
         // "/" focuses search — but never when typing in another editable field
         // on the host page, and never with a modifier held.
         if (e.key === '/' && !_reading && !e.ctrlKey && !e.metaKey && !e.altKey && searchEl &&

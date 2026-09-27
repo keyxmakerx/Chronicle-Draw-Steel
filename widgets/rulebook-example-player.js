@@ -102,14 +102,28 @@ var RulebookExamplePlayer = (function () {
     return isArr(p.lines) ? p.lines : [];
   }
 
+  // startMaliceOf reads a script's own starting Malice: the rest value shown
+  // before anything plays, and what stepping all the way back returns to. 0
+  // when the script has no Malice concept (most scripts aren't a solo boss).
+  function startMaliceOf(data) {
+    var p = (data && (data.properties || data)) || {};
+    return typeof p.startMalice === 'number' ? p.startMalice : 0;
+  }
+
   // computeTableState folds every lines[]._effects from beat 0 through
   // uptoIndex (inclusive) into the Lair table/lesson state. Pure and
   // deterministic, so "stepping back puts the table back as it was" (#732) is
   // always a fresh, correct recompute rather than an incremental undo that can
   // drift. uptoIndex -1 means "nothing played yet" (every field at its rest
-  // value).
-  function computeTableState(lines, uptoIndex) {
-    var st = { stamina: {}, squadCount: null, squadFallen: 0, captainUp: null, malice: null, victories: 0, tally: null };
+  // value) — malice rests at the script's own startMalice (0 when it has
+  // none), not an unset null, since a solo boss's Malice pool exists before
+  // its first spend.
+  function computeTableState(lines, uptoIndex, startMalice) {
+    var st = {
+      stamina: {}, squadCount: null, squadFallen: 0, captainUp: null,
+      malice: (typeof startMalice === 'number' ? startMalice : 0),
+      victories: 0, tally: null
+    };
     var list = lines || [];
     for (var i = 0; i <= uptoIndex && i < list.length; i++) {
       var fx = list[i] && list[i]._effects;
@@ -262,9 +276,11 @@ var RulebookExamplePlayer = (function () {
   // by lesson.kind. Every field is SAMPLE text authored for this widget, not
   // Draw Steel rules text (CLAUDE.md) — the visible "sample" tag says so too.
   // The live counters (data-rbx-*) start at their rest value; playContainer
-  // fills them in as the script plays.
-  function buildLesson(lesson) {
+  // fills them in as the script plays. startMalice is the played script's own
+  // rest value for the Malice counter (0 when it has none).
+  function buildLesson(lesson, startMalice) {
     var l = lesson || {};
+    var maliceRest = typeof startMalice === 'number' ? startMalice : 0;
     var body = '<p>' + richTerm(l.lede) + '</p>';
     if (l.kind === 'montage') {
       body += '<div class="rbx-tallyrow"><span class="rbx-tlbl">SUCCESSES</span>' +
@@ -281,7 +297,8 @@ var RulebookExamplePlayer = (function () {
         '<b>' + esc(cap.name) + '</b><span>' + richTerm(cap.note) + '</span></div>';
     } else if (l.kind === 'solo') {
       var spends = isArr(l.malice && l.malice.spends) ? l.malice.spends : [];
-      body += '<div class="rbx-malicerow"><span class="rbx-tlbl">MALICE</span><b data-rbx-malice>0</b></div>';
+      body += '<div class="rbx-malicerow"><span class="rbx-tlbl">MALICE</span><b data-rbx-malice>' +
+        esc(String(maliceRest)) + '</b></div>';
       var ledger = '';
       for (var j = 0; j < spends.length; j++) {
         var sp = spends[j] || {};
@@ -299,8 +316,10 @@ var RulebookExamplePlayer = (function () {
   // buildLairExtras renders the table (hero roster + Stamina) and the
   // rules-in-play chips beside a Lair part's script, plus its teaching
   // lesson. `lair` is { table, rulesInPlay, lessons } from the worked-scene's
-  // ReferenceItem; `partKey` is the part's own slug ("p1".."p4").
-  function buildLairExtras(partKey, lair) {
+  // ReferenceItem; `partKey` is the part's own slug ("p1".."p4"). startMalice
+  // is the PLAYED SCRIPT's own rest value (a different JSON file than `lair`),
+  // passed through so the lesson's Malice counter starts right, not at 0.
+  function buildLairExtras(partKey, lair, startMalice) {
     var cfg = lair || {};
     var heroes = isArr(cfg.table && cfg.table.heroes) ? cfg.table.heroes : [];
     var rip = isArr(cfg.rulesInPlay && cfg.rulesInPlay[partKey]) ? cfg.rulesInPlay[partKey] : [];
@@ -324,7 +343,7 @@ var RulebookExamplePlayer = (function () {
         '<div class="rbx-heroes">' + heroRows + '</div></div>' : '') +
       (chips ? '<div class="rbx-rip"><div class="rbx-tlbl">RULES IN PLAY</div>' +
         '<div class="rbx-chiprow">' + chips + '</div></div>' : '') +
-      (lesson ? buildLesson(lesson) : '');
+      (lesson ? buildLesson(lesson, startMalice) : '');
   }
 
   // ── stylesheet ────────────────────────────────────────────────────────────
@@ -563,7 +582,7 @@ var RulebookExamplePlayer = (function () {
       if (!data) return;
       container.innerHTML = buildScriptHtml(data);
       var partKey = lairParts[slug];
-      if (partKey) container.insertAdjacentHTML('beforeend', buildLairExtras(partKey, lair));
+      if (partKey) container.insertAdjacentHTML('beforeend', buildLairExtras(partKey, lair, startMaliceOf(data)));
       container.setAttribute('data-rbx-rendered', '1');
       if (typeof lair.bindTerms === 'function') lair.bindTerms(container.querySelectorAll('[data-rb-term]'));
       var rep = container.querySelector('[data-rbx-replay]');
@@ -646,7 +665,7 @@ var RulebookExamplePlayer = (function () {
       if (index >= 0 && lineEls[index]) { lineEls[index].classList.add('rbx-now'); setTok(stage, lineEls[index].getAttribute('data-rbx-kind')); }
       else setTok(stage, null);
       st.index = index;
-      _applyTableState(container, computeTableState(lines, index));
+      _applyTableState(container, computeTableState(lines, index, startMaliceOf(examples[slug])));
       _updateCtl(container, slug);
     }
 
@@ -669,7 +688,7 @@ var RulebookExamplePlayer = (function () {
       l.classList.add('rbx-shown', 'rbx-now');
       setTok(stage, l.getAttribute('data-rbx-kind'));
       st.index = next;
-      _applyTableState(container, computeTableState(lines, next));
+      _applyTableState(container, computeTableState(lines, next, startMaliceOf(examples[slug])));
       _updateCtl(container, slug);
       function current() { return !destroyed && container.__rbx === st && !st.paused; }
       if (l.className.indexOf('rbx-rl') >= 0) {
@@ -714,7 +733,7 @@ var RulebookExamplePlayer = (function () {
       resetScript(container);
       var lines = linesOf(examples[slug]);
       container.__rbx = { index: -1, paused: false, timer: null };
-      _applyTableState(container, computeTableState(lines, -1));
+      _applyTableState(container, computeTableState(lines, -1, startMaliceOf(examples[slug])));
       _updateCtl(container, slug);
       var stage = container.querySelector('.rbx-stage');
 
@@ -802,7 +821,7 @@ var RulebookExamplePlayer = (function () {
     ROLL_AFTER_MS: ROLL_AFTER_MS, LINE_MS: LINE_MS,
     esc: esc, richText: richText, richTerm: richTerm,
     isRoll: isRoll, tokenForLine: tokenForLine, rollRevealOrder: rollRevealOrder,
-    linesOf: linesOf, computeTableState: computeTableState,
+    linesOf: linesOf, computeTableState: computeTableState, startMaliceOf: startMaliceOf,
     planScript: planScript, buildScriptHtml: buildScriptHtml,
     buildLesson: buildLesson, buildLairExtras: buildLairExtras,
     mount: mount

@@ -103,6 +103,18 @@ test('buildLair: renders a hover-card term chip per teaches entry', () => {
   assert.match(html, /data-rb-term="malice"[^>]*>Malice</);
 });
 
+// ── buildLair: the open sheet is a real dialog, not just a styled panel ─────
+test('buildLair: the sheet carries dialog semantics — role, aria-modal, and an aria-label naming the scene', () => {
+  const html = F.buildLair(SCENE);
+  assert.match(html, /<div class="rb-wing" role="dialog" aria-modal="true" aria-label="The Lich's Lair">/);
+});
+
+test('buildLair: dialog semantics sit on the sheet itself, not the host card', () => {
+  const html = F.buildLair(SCENE);
+  const hostOpenTag = html.slice(0, html.indexOf('<div class="rb-wing"'));
+  assert.ok(!/role="dialog"/.test(hostOpenTag), 'the host card (the trigger) must not itself claim to be the dialog');
+});
+
 // ── buildLairConfig: the example player's Lair context ───────────────────────
 test('buildLairConfig: maps script slug -> part slug, and passes table/rulesInPlay/lessons through', () => {
   const cfg = F.buildLairConfig(SCENE);

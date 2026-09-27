@@ -230,6 +230,59 @@ test('computeTableState: a line with no _effects is skipped, not an error', () =
   assert.doesNotThrow(() => P.computeTableState(null, 5));
 });
 
+// ── startMalice: the rest value a solo boss's Malice counter must show ──────
+test('startMaliceOf: reads properties.startMalice, defaulting to 0 when absent', () => {
+  assert.equal(P.startMaliceOf({ properties: { startMalice: 4 } }), 4);
+  assert.equal(P.startMaliceOf({ properties: {} }), 0);
+  assert.equal(P.startMaliceOf({}), 0);
+  assert.equal(P.startMaliceOf(null), 0);
+  // Flat shape (mirrors linesOf's own contract).
+  assert.equal(P.startMaliceOf({ startMalice: 2 }), 2);
+});
+
+test('computeTableState: rest (-1) starts Malice at the script\'s startMalice, not 0', () => {
+  const lines = [{ _effects: [{ type: 'malice', value: 4 }] }];
+  assert.equal(P.computeTableState(lines, -1, 4).malice, 4);
+  // No startMalice passed (most scripts have none) -> the old default, 0.
+  assert.equal(P.computeTableState(lines, -1).malice, 0);
+});
+
+test('computeTableState: stepping all the way back returns Malice to startMalice, not 0', () => {
+  const lines = [
+    { _effects: [{ type: 'malice', value: 4 }] },
+    { _effects: [{ type: 'malice', value: 1 }] },
+  ];
+  const forward = P.computeTableState(lines, 1, 4);
+  assert.equal(forward.malice, 1);
+  const backToRest = P.computeTableState(lines, -1, 4);
+  assert.equal(backToRest.malice, 4);
+});
+
+test('buildLesson: a solo lesson\'s Malice counter starts at startMalice, not a hardcoded 0', () => {
+  const lesson = { kind: 'solo', title: 'The lich\'s card', lede: 'x', malice: { spends: [] } };
+  const rest = P.buildLesson(lesson, 4);
+  assert.match(rest, /<b data-rbx-malice>4<\/b>/);
+  // No startMalice (most lessons aren't a solo boss) -> unchanged default of 0.
+  const noStart = P.buildLesson(lesson);
+  assert.match(noStart, /<b data-rbx-malice>0<\/b>/);
+});
+
+test('buildLairExtras: threads startMalice through to the solo lesson it renders', () => {
+  const lair = { table: { heroes: [] }, lessons: { p3: { kind: 'solo', title: 'x', lede: 'y', malice: { spends: [] } } } };
+  const html = P.buildLairExtras('p3', lair, 4);
+  assert.match(html, /<b data-rbx-malice>4<\/b>/);
+});
+
+test('the-lich-fight seed data: its startMalice actually reaches the rendered Malice counter', () => {
+  const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
+  const lich = raw.find((r) => r.slug === 'the-lich-fight');
+  const frontpage = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-frontpage.json'), 'utf8'));
+  const scene = frontpage.find((i) => i.properties && i.properties.kind === 'worked-scene');
+  const lair = { lessons: scene.properties.lessons, table: {}, rulesInPlay: {} };
+  const html = P.buildLairExtras('p3', lair, P.startMaliceOf(lich));
+  assert.match(html, new RegExp('<b data-rbx-malice>' + lich.properties.startMalice + '</b>'));
+});
+
 // ── richTerm: glossary-term promotion for the Lair's teaching-panel prose ────
 test('richTerm: promotes {@cat slug} into the shared .rb-hl hover term', () => {
   const out = P.richTerm('a {@combat minion|minion} squad');
