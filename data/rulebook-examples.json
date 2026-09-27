@@ -94,7 +94,10 @@
         "foe": { "fig": "🏰", "label": "THE LAIR" }
       },
       "lines": [
-        { "speaker": "DIRECTOR", "kind": "dir", "text": "The barrow mouth breathes cold. Getting in unseen is a **montage**." },
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "The barrow mouth breathes cold. Getting in unseen is a {@action montage-test|montage}.",
+          "_effects": [{ "type": "tally", "success": 0, "failure": 0 }]
+        },
         { "speaker": "SERA", "kind": "pc", "text": "I read the ward-glyphs — Reason test." },
         {
           "speaker": "ROLL", "kind": "roll", "dice": [6, 9], "tier": "TIER 3",
@@ -103,9 +106,124 @@
             { "text": "+2 **Reason**" },
             { "text": "(glyphs are lore)", "why": true },
             { "text": "→ **17**" }
+          ],
+          "_effects": [{ "type": "tally", "success": 1, "failure": 0 }]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The wards part like curtains — ~~one success~~." },
+        { "speaker": "ORDEN", "kind": "pc", "text": "I try to keep pace at the rear — but I clip a loose stone." },
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "~~A scrape, a curse~~ — one failure, but the party's already inside.",
+          "_effects": [{ "type": "tally", "success": 1, "failure": 1 }]
+        }
+      ]
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "minion-skirmish",
+    "name": "Minion skirmish",
+    "description": "The Lich's Lair, part 2 — a minion squad and its captain, sample script.",
+    "properties": {
+      "icon": "⚔",
+      "title": "Part 2 — Minion skirmish",
+      "stage": {
+        "pc": { "fig": "🪓", "label": "KAELEN" },
+        "foe": { "fig": "🥷", "label": "CULTIST SQUAD" }
+      },
+      "lines": [
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "Four cultists spill from the side passage — a {@combat minion|minion} squad, their adept close behind.",
+          "_effects": [{ "type": "squad", "count": 4 }, { "type": "captain", "up": true }]
+        },
+        { "speaker": "KAELEN", "kind": "pc", "text": "Two are in reach — Brutal Slam!" },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [9, 7], "tier": "TIER 3",
+          "steps": [
+            { "text": "= **16**" },
+            { "text": "+2 **Might**" },
+            { "text": "(her ability keys off Might)", "why": true },
+            { "text": "→ **18**" }
+          ],
+          "_effects": [{ "type": "minion", "fallen": 2 }]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "~~Two cultists drop~~ — the squad's shared pool is thin now." },
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "The last two rush Kaelen while their {@combat captain|adept} barks them on.",
+          "_effects": [{ "type": "stamina", "target": "kaelen", "pct": 82 }]
+        },
+        { "speaker": "KAELEN", "kind": "pc", "text": "Finish it — free strike as they close!" },
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "~~The squad falls~~ — the adept alone now, and thinking better of it.",
+          "_effects": [{ "type": "minion", "fallen": 2 }, { "type": "captain", "up": false }]
+        }
+      ]
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "the-lich-fight",
+    "name": "The lich fight",
+    "description": "The Lich's Lair, part 3 — a solo boss spending Malice, sample script.",
+    "properties": {
+      "icon": "💀",
+      "title": "Part 3 — The lich fight",
+      "startMalice": 4,
+      "stage": {
+        "pc": { "fig": "📐", "label": "SERA" },
+        "foe": { "fig": "💀", "label": "THE LICH" }
+      },
+      "lines": [
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "The lich rises from its throne, {@resource malice|Malice} already crackling at its fingers.",
+          "_effects": [{ "type": "malice", "value": 4 }]
+        },
+        { "speaker": "SERA", "kind": "pc", "text": "I hit it with a Reason blast before it can act!" },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [8, 6], "tier": "TIER 2",
+          "steps": [
+            { "text": "= **14**" },
+            { "text": "+2 **Reason**" },
+            { "text": "(her ability keys off Reason)", "why": true },
+            { "text": "→ **16**" }
           ]
         },
-        { "speaker": "DIRECTOR", "kind": "dir", "text": "The wards part like curtains — ~~one success~~." }
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "It spends 3 Malice for an extra action — and curses the party.",
+          "_effects": [{ "type": "malice", "value": 1 }, { "type": "stamina", "target": "sera", "pct": 70 }]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "~~Sera staggers~~ under the curse — but the lich is running low on Malice." }
+      ]
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "aftermath",
+    "name": "Aftermath",
+    "description": "The Lich's Lair, part 4 — victories tallied, then a respite, sample script.",
+    "properties": {
+      "icon": "🏆",
+      "title": "Part 4 — Aftermath",
+      "stage": {
+        "pc": { "fig": "🛡", "label": "THE PARTY" },
+        "foe": { "fig": "🏰", "label": "THE LAIR" }
+      },
+      "lines": [
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "The lich's crown clatters to the floor. The lair falls silent.",
+          "_effects": [{ "type": "stamina", "target": "sera", "pct": 100 }, { "type": "stamina", "target": "kaelen", "pct": 100 }]
+        },
+        { "speaker": "ORDEN", "kind": "pc", "text": "That's one for the tally — Victory test?" },
+        {
+          "speaker": "ROLL", "kind": "roll", "dice": [5, 9], "tier": "TIER 3",
+          "steps": [
+            { "text": "= **14**" },
+            { "text": "+2 **Presence**" },
+            { "text": "(rallying the party counts as Presence)", "why": true },
+            { "text": "→ **16**" }
+          ],
+          "_effects": [{ "type": "victories", "value": 1 }]
+        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "One {@resource victories|Victory}, banked. ~~Back to town for a respite~~ — Recoveries and Stamina reset, Victories become Experience." }
       ]
     },
     "source": "custom"

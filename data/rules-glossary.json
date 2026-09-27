@@ -538,5 +538,55 @@
     "properties": {
       "category": "resource"
     }
+  },
+  {
+    "slug": "montage-test",
+    "name": "Montage Test",
+    "summary": "A big job — sneaking in, crossing a wasteland — played as a run of smaller tests instead of one roll.",
+    "description": "A montage test turns one big job that would otherwise be hand-waved — getting into a barrow unseen, crossing a hostile desert — into a run of individual tests. Each hero tackles a stretch of it their own way, with whatever skill fits the moment. The Director decides how many successes the party needs to pull it off and how many failures it can absorb; a failure is pressure, not a stop, and whichever total fills first decides how the job goes.",
+    "properties": {
+      "category": "action"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "minion",
+    "name": "Minion",
+    "summary": "A weak solo creature that fights in a squad — the squad shares one Stamina pool and loses a minion each time it drops by that much.",
+    "description": "A minion is weak on its own but dangerous in numbers. A squad of minions shares a single Stamina pool: each time damage empties one minion's worth of that pool, one minion in the squad falls, so a single big hit can carry on and drop more than one. Minions never take conditions that would only slow them down, and a minion's listed encounter value covers a small group of them, not one.",
+    "properties": {
+      "category": "combat"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "captain",
+    "name": "Captain",
+    "summary": "A stronger creature leading a squad of minions — the minions fight harder while their captain is still standing.",
+    "description": "A captain is a sturdier creature placed in charge of a squad of minions. While their captain is alive and near them, the squad's minions fight noticeably harder — the exact bonus is the captain's own trait. Taking the captain down (or moving the squad out of its reach) is usually the fastest way to blunt the whole squad at once.",
+    "properties": {
+      "category": "combat"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "solo",
+    "name": "Solo Creature",
+    "summary": "A single powerful creature built to stand in for a whole encounter's worth of monsters.",
+    "description": "A solo creature is built to fight an entire party by itself, in place of a room full of smaller monsters. It has a large Stamina pool, extra actions each round, and its own Malice-fuelled abilities, so a fight against one plays very differently from a fight against a crowd — the party is spending its resources against one relentless threat instead of thinning a group.",
+    "properties": {
+      "category": "combat"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "victories",
+    "name": "Victories",
+    "summary": "A running tally of the fights a party has come through — spent on a respite for lasting rewards.",
+    "description": "Victories are a running tally of the notable fights and challenges a party has come through. They build up across a session and are spent when the party takes a respite, where they convert into Experience Points the party can use for lasting rewards between adventures. They aren't a resource spent mid-combat.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "custom"
   }
 ]

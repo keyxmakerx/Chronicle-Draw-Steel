@@ -26,7 +26,14 @@
         { "type": "p", "text": "An {@combat edge} is +2; a {@combat bane} −2. They never stack past two — doubles move the tier instead; one of each cancels. Natural 19–20 is a **critical**: tier 3 and you immediately act again." },
         { "type": "h3", "text": "Tests use it too" },
         { "type": "p", "text": "No target numbers — the tier IS the outcome. Tier 1 fails forward at a cost, tier 2 succeeds with a wrinkle, tier 3 is clean. Skills grant an edge when they apply." }
-      ]
+      ],
+      "readerExtras": {
+        "example": "kaelen-swings",
+        "related": [
+          { "icon": "💪", "label": "Might (the card)", "goto": "card", "target": "t-might" },
+          { "icon": "🩸", "label": "Grabbed (the flap)", "goto": "flap", "target": "cond-grabbed" }
+        ]
+      }
     }
   },
   {
@@ -153,11 +160,78 @@
       "chips": ["🚪 Into the lair", "⚔ Minions", "💀 The lich", "🏆 Aftermath"],
       "intro": "Each part teaches the rules it touches. Pick where to drop in:",
       "parts": [
-        { "emoji": "🚪", "name": "Into the lair", "note": "tests · montage", "play": "into-the-lair" },
-        { "emoji": "⚔", "name": "Minion skirmish", "note": "squads · captains" },
-        { "emoji": "💀", "name": "The lich fight", "note": "solo boss · malice" },
-        { "emoji": "🏆", "name": "Aftermath", "note": "victories · respite" }
-      ]
+        { "slug": "p1", "emoji": "🚪", "name": "Into the lair", "note": "tests · montage", "play": "into-the-lair" },
+        { "slug": "p2", "emoji": "⚔", "name": "Minion skirmish", "note": "squads · captains", "play": "minion-skirmish" },
+        { "slug": "p3", "emoji": "💀", "name": "The lich fight", "note": "solo boss · malice", "play": "the-lich-fight" },
+        { "slug": "p4", "emoji": "🏆", "name": "Aftermath", "note": "victories · respite", "play": "aftermath" }
+      ],
+      "teaches": {
+        "chips": [
+          { "key": "montage", "label": "Montage tests", "term": "montage-test", "stops": ["p1"] },
+          { "key": "minions", "label": "Minions", "term": "minion", "stops": ["p2"] },
+          { "key": "captain", "label": "Captains", "term": "captain", "stops": ["p2"] },
+          { "key": "solo", "label": "Solo creatures", "term": "solo", "stops": ["p3"] },
+          { "key": "malice", "label": "Malice", "term": "malice", "stops": ["p3"] },
+          { "key": "victories", "label": "Victories", "term": "victories", "stops": ["p4"] },
+          { "key": "respite", "label": "Respite", "term": "respite", "stops": ["p4"] }
+        ]
+      },
+      "table": {
+        "heroes": [
+          { "slug": "orden", "fig": "🛡", "name": "Orden" },
+          { "slug": "kaelen", "fig": "🪓", "name": "Kaelen" },
+          { "slug": "sera", "fig": "📐", "name": "Sera" },
+          { "slug": "mira", "fig": "🏹", "name": "Mira" }
+        ]
+      },
+      "rulesInPlay": {
+        "p1": [ { "key": "montage", "label": "Montage tests", "term": "montage-test" } ],
+        "p2": [
+          { "key": "minions", "label": "Minions", "term": "minion" },
+          { "key": "captain", "label": "Captains", "term": "captain" }
+        ],
+        "p3": [
+          { "key": "solo", "label": "Solo creatures", "term": "solo" },
+          { "key": "malice", "label": "Malice", "term": "malice" }
+        ],
+        "p4": [
+          { "key": "victories", "label": "Victories", "term": "victories" },
+          { "key": "respite", "label": "Respite", "term": "respite" }
+        ]
+      },
+      "lessons": {
+        "_sample": "Every lesson below is sample teaching text written for this widget, not Draw Steel rules text.",
+        "p1": {
+          "kind": "montage",
+          "title": "Montage test",
+          "lede": "A {@action montage-test|montage test} turns one big job — getting into a barrow unseen — into a run of tests. Each hero tackles it their own way, with whatever skill fits.",
+          "after": "The Director decides how many successes the party needs and how many failures it can afford. A failure isn't the end of the job — it's pressure, and whichever total fills first decides how the job goes."
+        },
+        "p2": {
+          "kind": "squad",
+          "title": "The minion squad",
+          "lede": "{@combat minion|Minions} are weak alone and dangerous together. A squad shares one Stamina pool: each time the pool drops by one minion's worth, one of them falls.",
+          "squad": { "fig": "🥷", "name": "Cultists", "count": 4 },
+          "captain": { "fig": "🥋", "name": "Cult Adept", "note": "while their {@combat captain|captain} still stands, the squad fights harder" }
+        },
+        "p3": {
+          "kind": "solo",
+          "title": "The lich's card",
+          "lede": "A {@combat solo|solo creature} stands in for a whole encounter by itself — a big Stamina pool, extra actions, and {@resource malice|Malice}-fuelled abilities.",
+          "malice": {
+            "spends": [
+              { "cost": 3, "buys": "an extra action this round" },
+              { "cost": 5, "buys": "a curse that weakens the whole party" }
+            ]
+          }
+        },
+        "p4": {
+          "kind": "aftermath",
+          "title": "Victories and the respite",
+          "lede": "The party tallies {@resource victories|Victories} for the fight, then can call a {@resource respite|respite} to convert them into lasting rewards and recover.",
+          "after": "A respite isn't just a long rest — it's the moment Victories turn into Experience and every Recovery comes back."
+        }
+      }
     }
   }
 ]

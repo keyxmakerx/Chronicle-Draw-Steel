@@ -146,11 +146,14 @@ test('buildScriptHtml: data text is escaped (no raw injection)', () => {
 });
 
 // ── the seed data is well-formed against the shape the player consumes ───────
-test('seed data/rulebook-examples.json: 4 scripts, each a valid stage + lines scene', () => {
+test('seed data/rulebook-examples.json: 7 scripts, each a valid stage + lines scene', () => {
   const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
-  assert.ok(Array.isArray(raw) && raw.length === 4, 'four seeded scripts');
+  assert.ok(Array.isArray(raw) && raw.length === 7, 'seven seeded scripts (v10.4 adds the Lair parts 2-4)');
   const slugs = raw.map((r) => r.slug).sort();
-  assert.deepEqual(slugs, ['bursting-the-door', 'into-the-lair', 'kaelen-swings', 'the-grapple']);
+  assert.deepEqual(slugs, [
+    'aftermath', 'bursting-the-door', 'into-the-lair', 'kaelen-swings',
+    'minion-skirmish', 'the-grapple', 'the-lich-fight',
+  ]);
   for (const item of raw) {
     assert.ok(item.slug && item.name, 'ReferenceItem slug + name');
     const p = item.properties || {};
@@ -164,4 +167,149 @@ test('seed data/rulebook-examples.json: 4 scripts, each a valid stage + lines sc
     const order = P.rollRevealOrder(roll[0]);
     assert.equal(order[order.length - 1].type, 'tier', `${item.slug} reveals the tier last`);
   }
+});
+
+test('the-lich-fight seeds startMalice, a new v10.4 field', () => {
+  const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
+  const lich = raw.find((r) => r.slug === 'the-lich-fight');
+  assert.equal(typeof lich.properties.startMalice, 'number');
+});
+
+// ── computeTableState: the Lair table/lesson state, replayed from _effects ──
+const EFFECT_LINES = [
+  { _effects: [{ type: 'squad', count: 4 }, { type: 'captain', up: true }] },
+  { _effects: [{ type: 'minion', fallen: 2 }] },
+  { _effects: [{ type: 'stamina', target: 'kaelen', pct: 82 }] },
+  { _effects: [{ type: 'minion', fallen: 2 }, { type: 'captain', up: false }] },
+];
+
+test('computeTableState: -1 is the rest state (nothing applied yet)', () => {
+  const st = P.computeTableState(EFFECT_LINES, -1);
+  assert.deepEqual(st.stamina, {});
+  assert.equal(st.squadCount, null);
+  assert.equal(st.squadFallen, 0);
+  assert.equal(st.captainUp, null);
+});
+
+test('computeTableState: folds every effect up to and including uptoIndex', () => {
+  const mid = P.computeTableState(EFFECT_LINES, 1);
+  assert.equal(mid.squadCount, 4);
+  assert.equal(mid.squadFallen, 2);
+  assert.equal(mid.captainUp, true);   // not yet set false (that's beat 3)
+
+  const end = P.computeTableState(EFFECT_LINES, 3);
+  assert.equal(end.squadFallen, 4);    // 2 + 2, cumulative across beats
+  assert.equal(end.captainUp, false);
+  assert.equal(end.stamina.kaelen, 82);
+});
+
+test('computeTableState: stepping "back" (a smaller uptoIndex) recomputes rather than undoing', () => {
+  const forward = P.computeTableState(EFFECT_LINES, 3);
+  const back = P.computeTableState(EFFECT_LINES, 1);
+  assert.notDeepEqual(forward, back);
+  // Recomputing at the SAME index twice is always identical (pure function) —
+  // the property that makes "back" safe to call repeatedly.
+  assert.deepEqual(back, P.computeTableState(EFFECT_LINES, 1));
+});
+
+test('computeTableState: malice/tally are absolute (last write), victories accumulate', () => {
+  const lines = [
+    { _effects: [{ type: 'malice', value: 4 }] },
+    { _effects: [{ type: 'malice', value: 1 }] },
+    { _effects: [{ type: 'victories', value: 1 }] },
+    { _effects: [{ type: 'victories', value: 1 }] },
+    { _effects: [{ type: 'tally', success: 1, failure: 0 }] },
+  ];
+  assert.equal(P.computeTableState(lines, 1).malice, 1);
+  assert.equal(P.computeTableState(lines, 3).victories, 2);
+  assert.deepEqual(P.computeTableState(lines, 4).tally, { success: 1, failure: 0 });
+});
+
+test('computeTableState: a line with no _effects is skipped, not an error', () => {
+  assert.doesNotThrow(() => P.computeTableState([{ text: 'no effects here' }], 0));
+  assert.doesNotThrow(() => P.computeTableState(null, 5));
+});
+
+// ── startMalice: the rest value a solo boss's Malice counter must show ──────
+test('startMaliceOf: reads properties.startMalice, defaulting to 0 when absent', () => {
+  assert.equal(P.startMaliceOf({ properties: { startMalice: 4 } }), 4);
+  assert.equal(P.startMaliceOf({ properties: {} }), 0);
+  assert.equal(P.startMaliceOf({}), 0);
+  assert.equal(P.startMaliceOf(null), 0);
+  // Flat shape (mirrors linesOf's own contract).
+  assert.equal(P.startMaliceOf({ startMalice: 2 }), 2);
+});
+
+test('computeTableState: rest (-1) starts Malice at the script\'s startMalice, not 0', () => {
+  const lines = [{ _effects: [{ type: 'malice', value: 4 }] }];
+  assert.equal(P.computeTableState(lines, -1, 4).malice, 4);
+  // No startMalice passed (most scripts have none) -> the old default, 0.
+  assert.equal(P.computeTableState(lines, -1).malice, 0);
+});
+
+test('computeTableState: stepping all the way back returns Malice to startMalice, not 0', () => {
+  const lines = [
+    { _effects: [{ type: 'malice', value: 4 }] },
+    { _effects: [{ type: 'malice', value: 1 }] },
+  ];
+  const forward = P.computeTableState(lines, 1, 4);
+  assert.equal(forward.malice, 1);
+  const backToRest = P.computeTableState(lines, -1, 4);
+  assert.equal(backToRest.malice, 4);
+});
+
+test('buildLesson: a solo lesson\'s Malice counter starts at startMalice, not a hardcoded 0', () => {
+  const lesson = { kind: 'solo', title: 'The lich\'s card', lede: 'x', malice: { spends: [] } };
+  const rest = P.buildLesson(lesson, 4);
+  assert.match(rest, /<b data-rbx-malice>4<\/b>/);
+  // No startMalice (most lessons aren't a solo boss) -> unchanged default of 0.
+  const noStart = P.buildLesson(lesson);
+  assert.match(noStart, /<b data-rbx-malice>0<\/b>/);
+});
+
+test('buildLairExtras: threads startMalice through to the solo lesson it renders', () => {
+  const lair = { table: { heroes: [] }, lessons: { p3: { kind: 'solo', title: 'x', lede: 'y', malice: { spends: [] } } } };
+  const html = P.buildLairExtras('p3', lair, 4);
+  assert.match(html, /<b data-rbx-malice>4<\/b>/);
+});
+
+test('the-lich-fight seed data: its startMalice actually reaches the rendered Malice counter', () => {
+  const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
+  const lich = raw.find((r) => r.slug === 'the-lich-fight');
+  const frontpage = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-frontpage.json'), 'utf8'));
+  const scene = frontpage.find((i) => i.properties && i.properties.kind === 'worked-scene');
+  const lair = { lessons: scene.properties.lessons, table: {}, rulesInPlay: {} };
+  const html = P.buildLairExtras('p3', lair, P.startMaliceOf(lich));
+  assert.match(html, new RegExp('<b data-rbx-malice>' + lich.properties.startMalice + '</b>'));
+});
+
+// ── richTerm: glossary-term promotion for the Lair's teaching-panel prose ────
+test('richTerm: promotes {@cat slug} into the shared .rb-hl hover term', () => {
+  const out = P.richTerm('a {@combat minion|minion} squad');
+  assert.match(out, /class="rb-hl" data-rb-term="minion"/);
+  assert.ok(out.includes('>minion<'), 'the display label defaults to the term');
+});
+
+test('richTerm: escapes HTML first, so authored data cannot inject markup', () => {
+  const out = P.richTerm('<img src=x onerror=alert(1)> {@combat malice}');
+  assert.ok(!/<img/i.test(out));
+  assert.ok(/&lt;img/.test(out));
+});
+
+// ── buildLairExtras / buildLesson: the table + rules-in-play + teaching panel ─
+test('buildLairExtras: renders the hero roster, rules-in-play chips, and the lesson', () => {
+  const lair = {
+    table: { heroes: [{ slug: 'kaelen', fig: '🪓', name: 'Kaelen' }] },
+    rulesInPlay: { p2: [{ key: 'minions', label: 'Minions', term: 'minion' }] },
+    lessons: { p2: { kind: 'squad', title: 'The minion squad', lede: 'lede text', squad: { fig: '🥷', count: 2 }, captain: { fig: '🥋', name: 'Adept', note: 'note' } } },
+  };
+  const html = P.buildLairExtras('p2', lair);
+  assert.ok(html.includes('data-rbx-hero="kaelen"'), 'the hero bar carries its slug');
+  assert.ok(html.includes('data-rb-term="minion"'), 'the rules-in-play chip is a glossary term');
+  assert.equal((html.match(/data-rbx-minion="/g) || []).length, 2, 'one minion icon per squad.count');
+  assert.ok(/rbx-tagsample/.test(html), 'the lesson is labelled a sample');
+});
+
+test('buildLairExtras: a script with no matching Lair part renders nothing extra', () => {
+  assert.equal(P.buildLairExtras('p9', { table: { heroes: [] } }), '');
 });

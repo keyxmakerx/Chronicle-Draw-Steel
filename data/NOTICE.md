@@ -216,6 +216,23 @@ shape every published ancestry actually has, written down. Both carry
 `description` that they are not published rules. The other six entries in that
 file are published rules text with their real provenance.
 
+**`rules-glossary.json` contains five custom entries: `montage-test`, `minion`,
+`captain`, `solo`, and `victories`.** They exist for the same reason the
+`malice` / `encounter-value` / `encounter-strength` additions above do: the
+Lich's Lair worked example (`rulebook-frontpage.json`'s "THIS SCENE TEACHES →"
+chips and `rulebook-examples.json`'s played scripts) cross-references all five
+constantly, and the glossary had no term for any of them yet. Unlike those
+three, these five are not reproduced published text. `minion`, `solo`, and
+`victories` name organizations and awards this package already sources
+elsewhere (`monster-building.json`, `organization-templates.json`,
+`encounter-building.json`); `captain` and `montage-test` describe published
+mechanics the same worked example leans on. For all five, the wording here —
+written for the hover-card and the example player's live Malice/Victories
+counters — is this package's own, not copied from a book. All five carry
+`"source": "custom"`. The other sixty entries in the file are published rules
+text with their real provenance (the same sixty `docs/DATA-SCHEMA.md` →
+"Provenance" tracks as still pending a per-entry citation, not as custom).
+
 **`monster-building.json`, `encounter-building.json`, and `animal-traits.json`
 contain no custom content.** Every entry is published rules text or a published
 number. As with `kits.json`, the only non-published thing about them is the
