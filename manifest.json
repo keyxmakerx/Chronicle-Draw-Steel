@@ -4,7 +4,7 @@
   "description": "Reference data and entity presets for the Draw Steel RPG. Rules text is reproduced under the DRAW STEEL Creator License; DRAW STEEL (c) 2024 MCDM Productions, LLC. An independent product, not affiliated with MCDM. See data/NOTICE.md.",
   "author": "Chronicle Team",
   "license": "DRAW STEEL Creator License (rules text) / CC-BY-4.0 (this package's own work)",
-  "icon": "fa-swords",
+  "icon": "fa-dragon",
   "api_version": "1",
   "status": "available",
   "foundry_system_id": "draw-steel",
