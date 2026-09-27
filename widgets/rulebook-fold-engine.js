@@ -25,6 +25,12 @@
  *   [data-rb-wing]            hosts a wing; child `.rb-wing` is the panel.
  *                             data-rb-side="left|right" (default right),
  *                             data-rb-dim="<selector>", data-rb-wing-max="<px>".
+ *                             data-rb-wing-mode="sheet" (the Lich's Lair):
+ *                             the panel does not hinge over neighbours — it
+ *                             FLIPs (transform + opacity only, no width/height
+ *                             tween) from the host's own rect to a fixed,
+ *                             viewport-centred box laid out at final size, so
+ *                             it never reflows and sits centred at every size.
  *   [data-rb-flap]            hosts a flap; child `.rb-flap` is the panel,
  *                             trigger is `.rb-flap-trigger` (else the row).
  *                             Rows sharing [data-rb-flap-group] dim siblings.
@@ -38,6 +44,13 @@
  *   [data-rb-tile]            searchable card; data-rb-tags="space joined".
  *   [data-rb-block]           searchable block (dims on no match).
  *   [data-rb-goto-reader/card="id"/flap="id"]   cross-hops between folds.
+ *   [data-rb-term]            a glossary term (name/category/body supplied by
+ *                             the `terms` mount option); mount() wires every
+ *                             one present at mount time. mount() also returns
+ *                             `bindTerms(list)` so content rendered LATER
+ *                             (e.g. a lazily-played example script) can wire
+ *                             its own [data-rb-term] nodes to the SAME shared
+ *                             hover card without a second implementation.
  *
  * Loading: attaches the `RulebookFoldEngine` global via the manifest
  * `text_renderers` section, loaded BEFORE widget scripts (same seam as
@@ -278,6 +291,8 @@ var RulebookFoldEngine = (function () {
     var terms = opts.terms || {};
     var hcardEl = root.querySelector('[data-rb-hcard]');
     var _hcardOpen = false;
+    var _hcardRestTimer = null;   // "grows out of the word after the pointer RESTS" (mockup)
+    var HCARD_REST_MS = 350;
 
     function prefersReduced() {
       return !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -294,12 +309,59 @@ var RulebookFoldEngine = (function () {
     }
 
     // ── wing DOM ops ─────────────────────────────────────────────────────
+    // A wing host carrying data-rb-wing-mode="sheet" (the Lich's Lair) does not
+    // hinge over its neighbours — it travels from its own card to a fixed,
+    // viewport-centred box laid out at FINAL size, and the open/close motion is
+    // a pure FLIP (transform + opacity only, never a width/height tween) so
+    // nothing inside it ever reflows and it sits centred at every viewport size.
+    function _isSheet(host) { return !!(host && host.getAttribute('data-rb-wing-mode') === 'sheet'); }
+    function _sheetFinalRect() {
+      var w = Math.min(940, win.innerWidth - 36);
+      var h = Math.min(win.innerHeight * 0.86, 700);
+      return { left: Math.max(18, (win.innerWidth - w) / 2), top: Math.max(14, (win.innerHeight - h) / 2), width: w, height: h };
+    }
+    // _flipTransform returns the transform that makes an element laid out at
+    // `actual` look like it sits at `look` instead (classic FLIP invert).
+    function _flipTransform(look, actual) {
+      var sx = actual.width ? look.width / actual.width : 1;
+      var sy = actual.height ? look.height / actual.height : 1;
+      var dx = (look.left + look.width / 2) - (actual.left + actual.width / 2);
+      var dy = (look.top + look.height / 2) - (actual.top + actual.height / 2);
+      return 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')';
+    }
+    function _openSheet(host) {
+      var wing = host.querySelector('.rb-wing');
+      if (!wing) return;
+      var cardRect = host.getBoundingClientRect();
+      var sheetRect = _sheetFinalRect();
+      wing.style.left = sheetRect.left + 'px';
+      wing.style.top = sheetRect.top + 'px';
+      wing.style.width = sheetRect.width + 'px';
+      wing.style.height = sheetRect.height + 'px';
+      wing.style.right = 'auto';
+      root.classList.add('rb-lair-open');
+      if (prefersReduced()) { wing.style.transform = 'none'; return; }
+      wing.style.transition = 'none';
+      wing.style.transform = _flipTransform(cardRect, sheetRect);   // look like the card first...
+      void wing.offsetWidth;                                        // ...force it to render...
+      wing.style.transition = '';
+      wing.style.transform = '';                                    // ...then animate to identity
+    }
+    // _resizeSheet keeps an OPEN sheet centred across a viewport resize —
+    // pure re-layout, no FLIP (it is already open, nothing to travel from).
+    function _resizeSheet(host) {
+      var wing = host.querySelector('.rb-wing');
+      if (!wing) return;
+      var r = _sheetFinalRect();
+      wing.style.left = r.left + 'px'; wing.style.top = r.top + 'px';
+      wing.style.width = r.width + 'px'; wing.style.height = r.height + 'px';
+    }
     function _domOpenWing(host) {
       if (!host) return;
       _openWingEl = host;
       host.classList.add('is-open');
       host.setAttribute('aria-expanded', 'true');
-      _applyWingGeometry(host);           // sizes/places the panel (mobile vs desktop)
+      if (_isSheet(host)) _openSheet(host); else _applyWingGeometry(host);
       var group = _closest(host, '[data-rb-wing-group]');
       if (group) group.classList.add('rb-dimmed');
       var dimSel = host.getAttribute('data-rb-dim');
@@ -309,13 +371,30 @@ var RulebookFoldEngine = (function () {
     function _domCloseWing() {
       if (!_openWingEl) return;
       var host = _openWingEl; _openWingEl = null;
+      var wing = host.querySelector('.rb-wing');
+      var wasSheet = _isSheet(host);
+      if (wasSheet && wing) {
+        root.classList.remove('rb-lair-open');
+        if (!prefersReduced()) {
+          var sheetRect = {
+            left: parseFloat(wing.style.left) || 0, top: parseFloat(wing.style.top) || 0,
+            width: parseFloat(wing.style.width) || 0, height: parseFloat(wing.style.height) || 0
+          };
+          var cardRect = host.getBoundingClientRect();
+          wing.style.transform = _flipTransform(cardRect, sheetRect);   // travel back into the card
+        } else {
+          wing.style.transform = 'none';
+        }
+      }
       host.classList.remove('is-open');
       host.setAttribute('aria-expanded', 'false');
-      var wing = host.querySelector('.rb-wing');
       // Clear every inline geometry the open path may have set (width always;
       // left/right only on the mobile down path) so the closed panel returns to
       // the stylesheet's defaults and a later desktop open is not mis-placed.
-      if (wing) { wing.style.width = ''; wing.style.left = ''; wing.style.right = ''; wing.classList.remove('rb-wing--down'); }
+      // A sheet's left/top/width/height are left alone: they are invisible once
+      // closed, and the next open recomputes them fresh — clearing them here
+      // would collapse the box mid fold-back.
+      if (wing && !wasSheet) { wing.style.width = ''; wing.style.left = ''; wing.style.right = ''; wing.classList.remove('rb-wing--down'); }
       // only wings set rb-dimmed (search uses rb-nomatch), so clearing is safe
       var dimmed = root.querySelectorAll('.rb-dimmed');
       for (var i = 0; i < dimmed.length; i++) dimmed[i].classList.remove('rb-dimmed');
@@ -344,6 +423,10 @@ var RulebookFoldEngine = (function () {
     }
 
     // ── reader DOM ops (FLIP takeover) ───────────────────────────────────
+    // Same FLIP contract as the Lair sheet (_openSheet below): left/top/width/
+    // height are set to their FINAL value up front — text is laid out at final
+    // width from frame 1, so it never reflows — and only transform + opacity
+    // animate the "grows out of the hero block" motion.
     function _setSheetRect(r) {
       if (!readerSheet || !r) return;
       readerSheet.style.left = r.left + 'px';
@@ -356,18 +439,17 @@ var RulebookFoldEngine = (function () {
       _reading = true;
       readerTrigger.setAttribute('aria-expanded', 'true');
       var from = readerTrigger.getBoundingClientRect();
-      var w = Math.min(940, win.innerWidth - 36);
-      var h = Math.min(win.innerHeight * 0.86, 700);
-      var to = { left: Math.max(18, (win.innerWidth - w) / 2), top: Math.max(14, (win.innerHeight - h) / 2), width: w, height: h };
-      if (prefersReduced()) {                       // no FLIP; jump to final rect
-        _setSheetRect(to); root.classList.add('rb-reading');
+      var to = _sheetFinalRect();
+      _setSheetRect(to);
+      root.classList.add('rb-reading');
+      if (prefersReduced()) {
+        readerSheet.style.transform = 'none';
       } else {
         readerSheet.style.transition = 'none';
-        _setSheetRect(from);
-        void readerSheet.offsetWidth;               // force reflow so `from` sticks
+        readerSheet.style.transform = _flipTransform(from, to);
+        void readerSheet.offsetWidth;               // force it to render before...
         readerSheet.style.transition = '';
-        root.classList.add('rb-reading');
-        _setSheetRect(to);
+        readerSheet.style.transform = '';            // ...animating to identity
       }
       // Move focus into the dialog and remember where to send it back.
       var d = root.ownerDocument;
@@ -384,7 +466,14 @@ var RulebookFoldEngine = (function () {
       if (!_reading) return;
       _reading = false;
       if (readerTrigger) readerTrigger.setAttribute('aria-expanded', 'false');
-      if (readerSheet && readerTrigger) _setSheetRect(readerTrigger.getBoundingClientRect());
+      if (readerSheet && readerTrigger) {
+        if (!prefersReduced()) {
+          var backTo = readerSheet.getBoundingClientRect();   // current (final) box
+          readerSheet.style.transform = _flipTransform(readerTrigger.getBoundingClientRect(), backTo);
+        } else {
+          readerSheet.style.transform = 'none';
+        }
+      }
       root.classList.remove('rb-reading');
       // Return focus to wherever it was before the dialog opened.
       if (_readerReturnFocus && _readerReturnFocus.focus) _readerReturnFocus.focus();
@@ -423,6 +512,29 @@ var RulebookFoldEngine = (function () {
       hcardEl.classList.remove('is-open');
       hcardEl.setAttribute('aria-hidden', 'true');
       _hcardOpen = false;
+    }
+    function _clearHcardRestTimer() { if (_hcardRestTimer) { win.clearTimeout(_hcardRestTimer); _hcardRestTimer = null; } }
+    // _bindTermHover wires one glossary term element to the shared hover card:
+    // hover WAITS for the pointer to rest (HCARD_REST_MS) before growing the
+    // card, and leaving the term vanishes it immediately; focus/click/keydown
+    // show it right away (keyboard + touch never wait on a "rest" they can't
+    // perform). Exported as bindTerms() below so content rendered AFTER mount
+    // (e.g. a lazily-played example script) gets the identical behaviour
+    // instead of a second, drifting implementation.
+    function _bindTermHover(t) {
+      on(t, 'mouseenter', function () {
+        _clearHcardRestTimer();
+        _hcardRestTimer = win.setTimeout(function () { _hcardRestTimer = null; _showHcard(t); }, HCARD_REST_MS);
+      });
+      on(t, 'mouseleave', function () { _clearHcardRestTimer(); _hideHcard(); });
+      on(t, 'focus', function () { _clearHcardRestTimer(); _showHcard(t); });
+      on(t, 'blur', function () { _clearHcardRestTimer(); _hideHcard(); });
+      on(t, 'click', function (e) { e.stopPropagation(); _clearHcardRestTimer(); _showHcard(t); });
+      on(t, 'keydown', function (e) { if (_isActivateKey(e)) { e.preventDefault(); _clearHcardRestTimer(); _showHcard(t); } });
+    }
+    function bindTerms(list) {
+      if (!hcardEl || !list) return;
+      each(list, function (t) { _bindTermHover(t); });
     }
 
     // dispatch runs an action through the PURE reducer, then applies each
@@ -554,13 +666,7 @@ var RulebookFoldEngine = (function () {
     // terms are author-focusable (tabindex in the markup) so this is keyboard-
     // reachable; the card content is looked up in the `terms` map at mount.
     if (hcardEl) {
-      each(root.querySelectorAll('[data-rb-term]'), function (t) {
-        on(t, 'mouseenter', function () { _showHcard(t); });
-        on(t, 'focus', function () { _showHcard(t); });
-        on(t, 'blur', function () { _hideHcard(); });
-        on(t, 'click', function (e) { e.stopPropagation(); _showHcard(t); });
-        on(t, 'keydown', function (e) { if (_isActivateKey(e)) { e.preventDefault(); _showHcard(t); } });
-      });
+      each(root.querySelectorAll('[data-rb-term]'), function (t) { _bindTermHover(t); });
     }
 
     // dismiss buttons (crease ✕, rope, rx, veil-as-close-reader)
@@ -641,16 +747,14 @@ var RulebookFoldEngine = (function () {
     // keep an open fold correctly sized across resizes / orientation changes
     on(win, 'resize', function () {
       if (_hcardOpen) _hideHcard();   // its fixed position would be stale
-      if (_openWingEl) _applyWingGeometry(_openWingEl);
-      if (_reading && readerSheet) {
-        var w = Math.min(940, win.innerWidth - 36), h = Math.min(win.innerHeight * 0.86, 700);
-        _setSheetRect({ left: Math.max(18, (win.innerWidth - w) / 2), top: Math.max(14, (win.innerHeight - h) / 2), width: w, height: h });
-      }
+      if (_openWingEl) { if (_isSheet(_openWingEl)) _resizeSheet(_openWingEl); else _applyWingGeometry(_openWingEl); }
+      if (_reading && readerSheet) _setSheetRect(_sheetFinalRect());
     });
 
     function destroy() {
       _destroyed = true;
       if (_hopTimer) { win.clearTimeout(_hopTimer); _hopTimer = null; }
+      _clearHcardRestTimer();
       for (var i = 0; i < listeners.length; i++) {
         var L = listeners[i];
         try { L.t.removeEventListener(L.type, L.fn, L.o); } catch (e) {}
@@ -660,7 +764,7 @@ var RulebookFoldEngine = (function () {
       state = createState();
     }
 
-    return { destroy: destroy };
+    return { destroy: destroy, bindTerms: bindTerms };
   }
 
   // _closest is an ES5-safe Element.closest (some embedded webviews lack it).

@@ -34,6 +34,21 @@
       '/systems/drawsteel/data/' + file;
   }
 
+  // refBrowserUrl builds Chronicle's OWN reference-browser page route
+  // (internal/systems/routes.go's CategoryList: GET
+  // /campaigns/:id/systems/:mod/:cat — no query-filter param exists on it, so
+  // this can only open a whole category, never a single search result).
+  // "rules-glossary" is the closest REAL category to "Full chapter" / a
+  // characteristic's own rules — there is no manifest category for
+  // characteristics themselves, and inventing one would be exactly the kind
+  // of route this package's data-format rules forbid. No campaign id -> no
+  // route exists, same reasoning as dataUrl.
+  function refBrowserUrl(campaignId, category) {
+    if (!campaignId) return null;
+    return '/campaigns/' + encodeURIComponent(campaignId) +
+      '/systems/drawsteel/' + (category || 'rules-glossary');
+  }
+
   // ── escaping / text helpers ──────────────────────────────────────────────
 
   // esc HTML-escapes & < > using Chronicle's helper when present, else a local
@@ -258,17 +273,34 @@
         'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s .55s}',
       '.rb-wing::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;' +
         'background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--tc,var(--bc)) 60%,transparent),transparent)}',
-      '.rb-wing--wide{width:540px;max-height:74vh}',
-      // Left-hinged variant (right-column cards + the Lair).
+      // Left-hinged variant (right-column cards).
       '[data-rb-side="left"] .rb-wing{left:auto;right:calc(100% - 3px);border-radius:14px 0 14px 14px;' +
         'transform-origin:right center;transform:perspective(1100px) rotateY(88deg);' +
         'box-shadow:-26px 26px 60px rgba(0,0,0,.68)}',
       '[data-rb-side="left"] .rb-wing::before{left:auto;right:0}',
+      // Sheet variant (the Lich's Lair, req. "sits centred at every size"): no
+      // hinge, no seam — the engine FLIPs it (transform+opacity only, JS sets
+      // the final centred left/top/width/height) so it never reflows.
+      // z-index:62 (over the veil's 60): a fixed-position child does not
+      // inherit its host's stacking, so without this the veil — which must
+      // paint OVER the rest of the page — also painted over the sheet, and
+      // every click on it landed on the veil instead (found by the Playwright
+      // harness, not by eye).
+      '[data-rb-wing-mode="sheet"] .rb-wing{position:fixed;top:0;left:0;right:auto;max-height:none;z-index:62;' +
+        'transform:none;transform-origin:center center;border-radius:18px;box-shadow:var(--rb-sh)}',
+      '[data-rb-wing-mode="sheet"] .rb-wing::before{display:none}',
+      '.rb-root.rb-lair-open .rb-veil{opacity:1;pointer-events:auto}',
       // Open state (engine adds .is-open to the [data-rb-wing] host).
       '[data-rb-wing].is-open>.rb-wing{transform:none;opacity:1;visibility:visible;pointer-events:auto;' +
         'transition:transform .55s var(--rb-spring),opacity .3s,visibility 0s 0s}',
       '[data-rb-wing].is-open{z-index:46;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--tc,var(--bc)) 40%,transparent);' +
         'border-color:color-mix(in srgb,var(--tc,var(--bc)) 65%,var(--rb-edge))}',
+      // .rb-blk (the host) is position:relative + z-index -> it establishes ITS
+      // OWN stacking context, so a position:fixed descendant's z-index is only
+      // compared WITHIN that context — the host's own z-index is what counts
+      // against outside siblings like the veil (z-index 60). Without this, the
+      // sheet's own z-index:62 (above) never mattered and the veil still won.
+      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open{z-index:63}',
       '[data-rb-wing].is-open .rb-unf,[data-rb-wing].is-open .rb-openmark{animation:none;opacity:.4}',
       // Crease (sticky header inside the wing) + close chip + body text + foldnote.
       '.rb-crease{position:sticky;top:-12px;margin:-12px -15px 8px;padding:8px 15px;display:flex;' +
@@ -318,6 +350,8 @@
       '.rb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}',
       '.rb-chip{font:700 10px/1 inherit;color:var(--rb-ink2);background:var(--rb-box2);' +
         'border:1px solid var(--rb-edge);padding:5px 9px;border-radius:99px}',
+      '.rb-chip[data-rb-term]{cursor:help;border-color:color-mix(in srgb,var(--rb-grn) 35%,var(--rb-edge))}',
+      '.rb-teaches{margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--rb-edge)}',
       '.rb-parts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}',
       '.rb-part{display:flex;align-items:center;gap:9px;border:1px solid var(--rb-edge);border-radius:11px;' +
         'background:var(--rb-box2);padding:9px 11px;transition:border-color .2s,transform .2s}',
@@ -333,15 +367,17 @@
       // if the example player module is absent (the player also defines this).
       '.rbx-hidden{display:none!important}'
     );
-    // Reader takeover (FLIP: engine sets inline left/top/width/height) + veil.
+    // Reader takeover: the engine sets inline left/top/width/height to their
+    // FINAL value up front (final-size layout from frame 1, so the multi-
+    // column prose never reflows) and animates the "grows out of the hero
+    // block" motion with transform + opacity only (a FLIP), never a
+    // left/top/width/height tween — the same contract the Lair sheet uses.
     s.push(
       '.rb-reader{position:fixed;z-index:70;border:1px solid var(--rb-edge);border-radius:18px;' +
         'background:var(--rb-box);box-shadow:var(--rb-sh);opacity:0;visibility:hidden;pointer-events:none;overflow:auto;' +
-        'transition:left .55s var(--rb-spring),top .55s var(--rb-spring),width .55s var(--rb-spring),' +
-        'height .55s var(--rb-spring),opacity .25s,visibility 0s .55s}',
+        'transform:none;transition:transform .55s var(--rb-spring),opacity .25s,visibility 0s .55s}',
       '.rb-root.rb-reading .rb-reader{opacity:1;visibility:visible;pointer-events:auto;' +
-        'transition:left .55s var(--rb-spring),top .55s var(--rb-spring),width .55s var(--rb-spring),' +
-        'height .55s var(--rb-spring),opacity .25s,visibility 0s 0s}',
+        'transition:transform .55s var(--rb-spring),opacity .25s,visibility 0s 0s}',
       '.rb-rh{display:flex;align-items:center;gap:10px;padding:11px 16px;position:sticky;top:0;z-index:2;' +
         'border-bottom:1px solid var(--rb-edge2);background:var(--rb-box2)}',
       '.rb-rope{font:700 11.5px/1 inherit;color:var(--rb-mut);padding:6px 10px;' +
@@ -519,7 +555,7 @@
   // are live. Example buttons are live only where the authored example carries
   // a .play slug; the rest, and the chapter button, render disabled + "soon"
   // so the page never offers a control that cannot act.
-  function buildTile(item, idx) {
+  function buildTile(item, idx, campaignId) {
     var p = item.properties || {};
     var side = (idx % 2 === 1) ? 'left' : 'right';
     var marker = side === 'left' ? '⤪' : '⤢';
@@ -548,15 +584,23 @@
       }
     }
     // The chapter button. There is exactly ONE reader in this page (the hero
-    // block's), so this cannot be wired to data-rb-goto-reader the way the
-    // related chips are: a button labelled "Might chapter" that opens the
-    // Power Roll reader would be wrong. Per-characteristic chapters are not
-    // built yet, so it is disabled and badged rather than rendered as a
-    // live-looking control with no handler.
-    ex += '<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button" ' +
-      'disabled aria-disabled="true">📖 ' +
-      esc(p.chapterLabel || 'Full chapter') +
-      ' <span class="rb-soon">soon</span></button>';
+    // block's), so it cannot open a "Might chapter" reader that doesn't exist.
+    // Chronicle's reference browser has no per-characteristic category either
+    // (internal/systems/manifest.go — abilities/ancestries/…/rules-glossary,
+    // nothing named for a characteristic), so this links to the closest REAL
+    // category, Rules Glossary, rather than inventing a route. A mount with no
+    // campaign id has no route at all (dataUrl's own reasoning) and falls back
+    // to the same honest disabled/"soon" state as before.
+    var chapterUrl = refBrowserUrl(campaignId);
+    if (chapterUrl) {
+      ex += '<a class="rb-exbtn rb-ghost" href="' + escAttr(chapterUrl) + '" ' +
+        'target="_blank" rel="noopener">📖 ' + esc(p.chapterLabel || 'Full chapter') + '</a>';
+    } else {
+      ex += '<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button" ' +
+        'disabled aria-disabled="true">📖 ' +
+        esc(p.chapterLabel || 'Full chapter') +
+        ' <span class="rb-soon">soon</span></button>';
+    }
 
     var rel = related.length
       ? '<div class="rb-relrow"><span class="rb-rellbl">RELATED →</span>' + relChips(related) + '</div>'
@@ -582,9 +626,9 @@
       '</div>';
   }
 
-  function buildChars(chars) {
+  function buildChars(chars, campaignId) {
     var tiles = '';
-    for (var i = 0; i < chars.length; i++) tiles += buildTile(chars[i], i);
+    for (var i = 0; i < chars.length; i++) tiles += buildTile(chars[i], i, campaignId);
     return '<div class="rb-blk rb-chars" data-rb-block style="--i:1;--rot:1.5deg;--bc:var(--rb-pur)">' +
         '<div class="rb-kick"><span class="rb-no">2</span>' +
           'CHARACTERISTICS · tap a card — its wing slides out over the others</div>' +
@@ -662,32 +706,46 @@
       '</div>';
   }
 
-  // buildLair renders the worked-scene block whose wide wing folds left over the
-  // Conditions block (data-rb-dim=".rb-conds"). Part buttons are inert
-  // placeholders (seam: data-rb-part) — the staged player is out of scope.
+  // buildLair renders the worked-scene block. Its panel does not hinge over a
+  // neighbour like the characteristic wings — data-rb-wing-mode="sheet" tells
+  // the fold engine to FLIP it from this card to a fixed, viewport-centred
+  // board instead (req. "the Lich's Lair sits centred at every size"). Every
+  // part now carries its own `play` script (p1 wired since v10.3; p2-p4 are
+  // new sample scripts, #48).
   function buildLair(scene) {
     var p = scene.properties || {};
     var chips = isArr(p.chips) ? p.chips : [];
     var parts = isArr(p.parts) ? p.parts : [];
+    var teaches = isArr(p.teaches && p.teaches.chips) ? p.teaches.chips : [];
 
     var chipHtml = '';
     for (var c = 0; c < chips.length; c++) {
       chipHtml += '<span class="rb-chip">' + esc(chips[c]) + '</span>';
     }
-    var partHtml = '';
+    var teachHtml = '';
+    for (var t = 0; t < teaches.length; t++) {
+      var tc = teaches[t] || {};
+      teachHtml += '<span class="rb-chip" data-rb-term="' + escAttr(tc.term) + '" tabindex="0" ' +
+        'aria-describedby="rb-hcard">' + esc(tc.label) + '</span>';
+    }
+    var partHtml = '', scriptsHtml = '';
     for (var i = 0; i < parts.length; i++) {
       var pt = parts[i] || {};
       if (pt.play) {
         // A wired part: drill in — reveal the part view, hide the overview,
-        // and play the script (the player owns data-rbx-*).
+        // and play the script (the player owns data-rbx-*). Every part gets
+        // its OWN script container (same parent) so the player's "switch
+        // sibling scripts off" already handles moving between parts.
         partHtml += '<button class="rb-part" type="button" data-rbx-play="' + escAttr(pt.play) + '" ' +
           'data-rbx-show="rb-lair-part" data-rbx-hide="rb-lair-overview">' +
           '<span>' + esc(pt.emoji) + '</span>' +
           '<span class="rb-pn">' + esc(pt.name) + '</span>' +
           '<span class="rb-pd">' + esc(pt.note) + '</span>' +
           '<span>▶</span></button>';
+        scriptsHtml += '<div class="rbx-script" id="rbx-' + escAttr(pt.play) + '" ' +
+          'data-rbx-script="' + escAttr(pt.play) + '" aria-live="polite"></div>';
       } else {
-        // Parts 2–4 are shown but marked "soon", not yet playable.
+        // No script authored for this part yet — shown but marked "soon".
         partHtml += '<button class="rb-part rb-part--soon" type="button" disabled aria-disabled="true">' +
           '<span>' + esc(pt.emoji) + '</span>' +
           '<span class="rb-pn">' + esc(pt.name) + '</span>' +
@@ -696,8 +754,7 @@
       }
     }
 
-    return '<div class="rb-blk rb-lair" id="t-lair" data-rb-block data-rb-wing ' +
-        'data-rb-side="left" data-rb-dim=".rb-conds" data-rb-wing-max="540" ' +
+    return '<div class="rb-blk rb-lair" id="t-lair" data-rb-block data-rb-wing data-rb-wing-mode="sheet" ' +
         'data-rb-tags="lich lair adventure worked scene boss minions montage" ' +
         'style="--i:3;--rot:1deg;--bc:var(--rb-grn);--tc:var(--rb-grn)">' +
         '<span class="rb-openmark">⤪ play</span>' +
@@ -706,22 +763,39 @@
         '<h3>' + esc(p.emoji) + ' ' + esc(scene.name) + '</h3>' +
         '<div class="rb-d">' + esc(scene.description) + '</div>' +
         '<div class="rb-chips">' + chipHtml + '</div>' +
-        '<div class="rb-wing rb-wing--wide">' +
+        '<div class="rb-wing">' +
           '<div class="rb-crease">' + esc(p.emoji) + ' ' +
             esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
             '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +
           '<div id="rb-lair-overview">' +
             '<p>' + esc(p.intro) + '</p>' +
+            (teachHtml ? '<div class="rb-teaches"><span class="rb-rellbl">THIS SCENE TEACHES →</span>' +
+              '<div class="rb-chips">' + teachHtml + '</div></div>' : '') +
             '<div class="rb-parts">' + partHtml + '</div>' +
           '</div>' +
           '<div id="rb-lair-part" class="rbx-hidden">' +
             '<button class="rbx-lairback" type="button" data-rbx-back ' +
               'data-rbx-show="rb-lair-overview" data-rbx-hide="rb-lair-part">← lair overview</button>' +
-            '<div class="rbx-script" id="rbx-into-the-lair" data-rbx-script="into-the-lair" aria-live="polite"></div>' +
+            scriptsHtml +
           '</div>' +
           '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
         '</div>' +
       '</div>';
+  }
+
+  // buildLairConfig extracts the example player's Lair context (table roster,
+  // rules-in-play chips, teaching lessons, and which script slug belongs to
+  // which part) straight from the worked-scene ReferenceItem, so the widget
+  // has one source of truth instead of two parallel copies.
+  function buildLairConfig(scene) {
+    var p = (scene && scene.properties) || {};
+    var parts = isArr(p.parts) ? p.parts : [];
+    var partsBySlug = {};
+    for (var i = 0; i < parts.length; i++) {
+      var pt = parts[i] || {};
+      if (pt.play && pt.slug) partsBySlug[pt.play] = pt.slug;
+    }
+    return { partsBySlug: partsBySlug, table: p.table || {}, rulesInPlay: p.rulesInPlay || {}, lessons: p.lessons || {} };
   }
 
   // ── render: reader takeover + veil overlays ──────────────────────────────
@@ -750,6 +824,23 @@
       else body += '<p>' + richProse(b.text) + '</p>';
     }
 
+    // readerExtras (v10.4): the worked example + cross-hop chips are DATA now
+    // (hero.properties.readerExtras), not hard-coded to one specific example
+    // or two specific chips — a future hero entry can carry its own.
+    var extras = p.readerExtras || {};
+    var exampleSlug = extras.example;
+    var related = isArr(extras.related) ? extras.related : [];
+    var exampleHtml = exampleSlug
+      ? '<div class="rb-exrow"><button class="rb-exbtn" type="button" ' +
+          'data-rbx-play="' + escAttr(exampleSlug) + '" aria-controls="rbx-' + escAttr(exampleSlug) + '">' +
+          '▶ Watch the table play it</button></div>' +
+        '<div class="rbx-script" id="rbx-' + escAttr(exampleSlug) + '" ' +
+          'data-rbx-script="' + escAttr(exampleSlug) + '" aria-live="polite"></div>'
+      : '';
+    var relatedHtml = related.length
+      ? '<div class="rb-relrow"><span class="rb-rellbl">RELATED →</span>' + relChips(related) + '</div>'
+      : '';
+
     return veil +
       '<div class="rb-reader" data-rb-reader-sheet role="dialog" aria-modal="true" ' +
         'aria-labelledby="rb-reader-title">' +
@@ -761,21 +852,17 @@
         '<div class="rb-rbody">' +
           '<h2 id="rb-reader-title">' + esc(hero.name) + '</h2>' +
           '<div class="rb-rcols">' + body + '</div>' +
-          '<div class="rb-exrow"><button class="rb-exbtn" type="button" ' +
-            'data-rbx-play="kaelen-swings" aria-controls="rbx-kaelen-swings">' +
-            '▶ Watch the table play it</button></div>' +
-          '<div class="rbx-script" id="rbx-kaelen-swings" data-rbx-script="kaelen-swings" aria-live="polite"></div>' +
-          '<div class="rb-relrow"><span class="rb-rellbl">RELATED →</span>' +
-            '<button class="rb-rel" type="button" data-rb-goto-card="t-might">💪 Might (the card)</button>' +
-            '<button class="rb-rel" type="button" data-rb-goto-flap="cond-grabbed">🩸 Grabbed (the flap)</button>' +
-          '</div>' +
+          exampleHtml +
+          relatedHtml +
         '</div>' +
       '</div>';
   }
 
   // buildContent buckets the blocks by kind, orders them, and assembles the
-  // frozen canonical DOM (top / wrap[mast,legend,grid] / overlays).
-  function buildContent(items, glossary) {
+  // frozen canonical DOM (top / wrap[mast,legend,grid] / overlays). Returns
+  // { html, scene } — the caller needs the raw worked-scene item too, to build
+  // the example player's Lair config (buildLairConfig).
+  function buildContent(items, glossary, campaignId) {
     var sorted = items.slice().sort(function (a, b) { return orderOf(a) - orderOf(b); });
     var hero = null, chars = [], conds = null, scene = null;
     for (var i = 0; i < sorted.length; i++) {
@@ -792,22 +879,24 @@
         '<span><b>⤢/⤪ small cards</b> → a wing stays hinged to the card and slides out OVER its neighbors</span>' +
         '<span><b>⤵ list rows</b> → a flap slides down over the rows beneath</span>' +
         '<span><b>⤢ the lead story</b> → unfolds into the reading sheet</span>' +
+        '<span><b>🏰 the Lich\'s Lair</b> → travels to the middle of the screen, centred at every size</span>' +
         '<span><b>✕ / Esc / outside</b> → always folds back</span>' +
       '</div>';
 
-    return buildTop() +
+    var html = buildTop() +
       '<div class="rb-wrap">' +
         '<div class="rb-mast"><h1>The Rules</h1>' +
           '<p>the front page of the book — every block folds out its own way</p></div>' +
         legend +
         '<div class="rb-grid">' +
           (hero ? buildHero(hero) : '') +
-          (chars.length ? buildChars(chars) : '') +
+          (chars.length ? buildChars(chars, campaignId) : '') +
           (conds ? buildConds(conds, glossary) : '') +
           (scene ? buildLair(scene) : '') +
         '</div>' +
       '</div>' +
       buildReader(hero);
+    return { html: html, scene: scene };
   }
 
   // ── widget registration ──────────────────────────────────────────────────
@@ -853,7 +942,9 @@
         self._glossary = glossary;
         self._examples = buildExamplesMap(unwrap(res[2]));
         self._terms = buildTermsMap(glossary);
-        self._setBody(buildContent(items, glossary));
+        var built = buildContent(items, glossary, cid);
+        self._lair = buildLairConfig(built.scene);
+        self._setBody(built.html);
         self._mountEngine(el);
         self._mountPlayer(el);
       }).catch(function (err) {
@@ -906,10 +997,18 @@
 
     // _mountPlayer wires the staged example player over the built DOM when the
     // global is present; absent it, the example buttons are inert (degrade).
+    // Runs AFTER _mountEngine so this._fold.bindTerms exists: the Lair's
+    // teaching-panel prose and rules-in-play chips are rendered lazily by the
+    // player, and share the SAME hover card the engine wired at mount, not a
+    // second implementation.
     _mountPlayer: function (el) {
       if (typeof RulebookExamplePlayer !== 'undefined' && RulebookExamplePlayer &&
           typeof RulebookExamplePlayer.mount === 'function') {
-        try { this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {} }); } catch (e) {
+        try {
+          var lair = this._lair || {};
+          lair.bindTerms = (this._fold && typeof this._fold.bindTerms === 'function') ? this._fold.bindTerms : null;
+          this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {}, lair: lair });
+        } catch (e) {
           if (typeof console !== 'undefined' && console.warn) {
             console.warn('Rulebook Front Page: example player mount failed', e);
           }
@@ -947,4 +1046,18 @@
       while (tmp.firstChild) el.appendChild(tmp.firstChild);
     }
   });
+
+  // Test seam: expose the pure builder functions for Node unit tests
+  // (tools/test-rulebook-frontpage.mjs). Chronicle.register() above runs
+  // unconditionally at load time, so a test must set global.Chronicle before
+  // require()-ing this file — same reasoning as the fold engine / example
+  // player's own test seams. Inert in a browser (no CommonJS `module`).
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      dataUrl: dataUrl, refBrowserUrl: refBrowserUrl,
+      buildContent: buildContent, buildLairConfig: buildLairConfig,
+      buildTile: buildTile, buildLair: buildLair, buildReader: buildReader,
+      richProse: richProse, esc: esc, escAttr: escAttr
+    };
+  }
 })();
