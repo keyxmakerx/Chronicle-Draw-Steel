@@ -1,0 +1,119 @@
+title: Building Encounters
+director: true
+intro: Spending a budget on a fair fight.
+pages:
+  - title: Six steps
+    blocks:
+      - text: |
+          Building a combat encounter runs in six steps. None of it is exact
+          science, so adjust for your table.
+      - type: flaps
+        items:
+          - title: 1. Think
+            text: What is the premise of the fight? Who is here and why?
+          - title: 2. Choose a difficulty
+            text: Trivial, easy, standard, hard or extreme. See the page after next.
+          - title: 3. Find the party's strength
+            text: Add up every hero's encounter strength.
+          - title: 4. Set the budget
+            text: The difficulty and the party's strength together give a budget.
+          - title: 5. Spend it
+            text: Each creature costs its encounter value. Dynamic terrain objects come out of the same budget.
+          - title: 6. Build initiative groups
+            text: Group the foes so each group acts on the same turn.
+  - title: Encounter strength
+    blocks:
+      - text: |
+          Each hero's [[encounter strength]] is 4 plus 2 for each of their
+          levels. A 3rd-level hero is worth 10, so five of them make a party
+          of 50.
+
+          For every 2 Victories the heroes have earned on average, add the
+          strength of one more hero of the party's level. When that pushes
+          the budget up, prefer a more expensive creature to extra bodies.
+      - type: example
+        title: Five heroes at level 3
+        steps:
+          - 'One hero at level 3 is 4 + (2 x 3), which is 10.'
+          - 'Five heroes make a party strength of 50.'
+          - 'A standard encounter budget runs from 50 up to 60, the party plus one more hero.'
+  - title: Difficulty
+    blocks:
+      - text: |
+          Each difficulty is a band of budget, measured against the party's
+          strength and the strength of one hero.
+      - type: flaps
+        items:
+          - title: Trivial
+            text: |
+              Less than the party's strength minus one hero. No real
+              challenge, and no Victories unless you decide otherwise.
+          - title: Easy
+            text: |
+              Between that and the party's strength. Worth 1 Victory.
+          - title: Standard
+            text: |
+              From the party's strength up to the party's plus one hero. The
+              most common fight, worth 1 Victory.
+          - title: Hard
+            text: |
+              Up to the party's strength plus three heroes. Often a
+              climactic fight with a leader and followers. Worth 2 Victories.
+          - title: Extreme
+            text: |
+              More than a hard budget. Heroes are unlikely to survive it if
+              they fight to the end, so use it rarely. Worth 2 or more
+              Victories.
+  - title: Spending the budget
+    blocks:
+      - text: |
+          Every creature costs its [[encounter value|encounter value]]. Mix
+          roles to keep a fight lively.
+
+          - Pick creatures no more than 2 levels above the heroes. Allow 3
+            if they average 6 or more Victories. A solo creature should be at
+            most 1 level above the party's average.
+          - [[Minion|Minions]] are bought four at a time, and at least two
+            sets are a good idea. Arrange them in squads of up to eight.
+          - Use no more than eight creatures per hero. Past three per hero,
+            make at least half of them minions.
+          - Keep to about six kinds of stat block or fewer.
+      - type: note
+        text: |
+          For a creature that stays the star of the show, set up a hard fight
+          and choose a leader or solo whose encounter value is at least a third
+          of the budget.
+  - title: Initiative groups and shortcuts
+    blocks:
+      - text: |
+          Put the foes in initiative groups. Each group acts together. Aim for
+          a group's total value to land between one hero's strength and two
+          heroes'. Without a solo creature, about as many groups as heroes
+          works well, give or take one or two.
+
+          **Quick building** skips the arithmetic. Start from the party's size
+          plus one hero for every 2 Victories, and treat each as a hero slot.
+          Fill slots at these rates.
+      - type: cards
+        items:
+          - title: Minions
+            summary: 8 creatures per slot.
+            text: Eight minions fill one hero slot.
+          - title: Hordes
+            summary: 2 creatures per slot.
+            text: Two hordes fill one hero slot.
+          - title: Platoons
+            summary: 1 creature per slot.
+            text: One platoon creature fills one hero slot.
+          - title: Elites and leaders
+            summary: 1 creature per 2 slots.
+            text: One elite or leader fills two hero slots.
+          - title: Solos
+            summary: 1 creature per 6 slots.
+            text: |
+              One solo fills six hero slots, plus one more for every level it
+              is above the heroes.
+      - type: note
+        text: |
+          Add one or two dynamic terrain objects to a standard-or-easier
+          fight, and two or three to a hard or extreme one.

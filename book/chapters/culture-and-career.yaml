@@ -1,0 +1,18 @@
+title: Culture and Career
+intro: Where you grew up and what you did before the adventure.
+pages:
+  - title: Background
+    blocks:
+      - text: |
+          Culture and career describe the life your hero led before the story
+          starts. This package does not yet carry their rules, so this chapter
+          is a placeholder.
+
+          It will grow as the package adds more rules.
+      - type: callout
+        title: In the meantime
+        text: |
+          Skills are the part of your background the package does cover. The
+          Lore group includes a Culture skill, for knowing a culture's
+          customs, folktales and taboos. See the Tests chapter for the full
+          skill list.

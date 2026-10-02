@@ -1,0 +1,26 @@
+title: Making a Hero
+intro: Who you are, where you come from, what you do and how you fight.
+pages:
+  - title: The steps
+    blocks:
+      - text: |
+          A hero is built from a handful of choices, and each has its own
+          chapter in this book.
+
+          - **Ancestry** gives you a people, a size and a few traits.
+          - **Culture and career** say where you grew up and what you did.
+          - **Class** is your calling, and the resource that powers it.
+          - **Kit** is your fighting style: armor, weapon and a signature move.
+          - **Perks and complications** add small talents and a little trouble.
+  - title: Five scores, one total
+    blocks:
+      - text: |
+          Your five characteristics (Might, Agility, Reason, Intuition and
+          Presence) are small numbers that you add to power rolls. Your class
+          and the kit you carry decide which ones you lean on, so look at the
+          characteristic named in the abilities you like before you decide
+          where to put your best scores.
+      - text: |
+          Derived numbers follow from your choices. Your size, speed and
+          stability start from your ancestry, a kit adds to speed, stability
+          and Stamina, and your recovery value is a third of your Stamina.

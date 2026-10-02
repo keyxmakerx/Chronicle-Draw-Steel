@@ -1,0 +1,154 @@
+title: Monsters
+director: true
+intro: Foes, and what the players get to see of them.
+pages:
+  - title: How monsters are sorted
+    blocks:
+      - text: |
+          Every monster has an **organization** and a **role**. The
+          organization says how many of them make a group. The role says what
+          they are good at.
+      - type: cards
+        items:
+          - title: Minion
+            summary: Weak alone, dangerous in a squad.
+            text: |
+              A [[minion]] squad shares one Stamina pool and loses a creature
+              each time damage empties one creature's worth of it.
+          - title: Horde
+            summary: Fights in pairs.
+            text: Two hordes fill one hero slot in quick building.
+          - title: Platoon
+            summary: One for one.
+            text: A single standard creature.
+          - title: Elite
+            summary: A tougher single creature.
+            text: Fills two hero slots in quick building.
+          - title: Leader
+            summary: Commands a group.
+            text: |
+              Fills two hero slots like an elite, with actions of its own. A
+              [[captain]] is a creature that leads a squad of minions.
+          - title: Solo
+            summary: A fight on its own.
+            text: |
+              A [[solo creature]] stands in for a whole encounter, with a big
+              Stamina pool and extra actions each round.
+          - title: Swarm
+            summary: A cloud of small animals.
+            text: Swarms should favor area abilities and take up more space.
+  - title: Roles
+    blocks:
+      - type: flaps
+        items:
+          - title: Ambusher
+            text: Strikes from concealment with devastating opening attacks.
+          - title: Artillery
+            text: Heavy ranged damage, but vulnerable up close.
+          - title: Brute
+            text: High damage and tough, but slow or predictable.
+          - title: Controller
+            text: Shapes the battlefield with conditions and forced movement.
+          - title: Defender
+            text: A tanky front-liner that protects allies and holds space.
+          - title: Harrier
+            text: Fast and mobile, darting in and out.
+          - title: Hexer
+            text: Debuffs and conditions, often at range or with magic.
+          - title: Mount
+            text: Built to carry a rider and boost their mobility.
+          - title: Support
+            text: Heals, buffs or repositions allies instead of dealing damage.
+  - title: Reading the numbers
+    blocks:
+      - text: |
+          A monster's **level** sets its power, and its **encounter value**
+          sets its price. Published stat blocks are not meant to be adjusted.
+
+          - A monster's highest characteristic, and its power roll bonus, is
+            1 plus its echelon. A level 5 monster is in the second echelon,
+            so its best characteristic is +3.
+          - Encounter value is ((2 x level) + 4) times the organization
+            modifier.
+          - Stamina is about ((10 x level) plus a role modifier) times a
+            separate Stamina multiplier for the organization.
+      - type: note
+        text: |
+          The monster builder widget does these sums for you, and labels any
+          figure the published formulas do not cover. The numbers in the cards
+          below come from this package's own creature list.
+  - title: Goblin Sniper
+    blocks:
+      - type: creature
+        name: Goblin Sniper
+        tagline: Level 1 artillery minion
+        look: A small, cunning goblin crouched behind cover with a shortbow.
+        notice:
+          - It would rather shoot from a distance than fight up close.
+          - It is rarely alone. Snipers come in numbers.
+        stats:
+          - label: Organization
+            value: Minion, encounter value 1
+          - label: Stamina
+            value: 7 (winded at 3)
+          - label: Speed
+            value: 5
+          - label: Stability
+            value: 0
+          - label: Might
+            value: -2
+          - label: Agility
+            value: 1
+          - label: Reason
+            value: 3
+          - label: Intuition
+            value: 0
+          - label: Presence
+            value: 1
+          - label: Free strike
+            value: 2 damage
+          - label: Ability
+            value: Shortbow Shot
+        note: |
+          Minions are bought four at a time. Buy at least two sets, and keep
+          the squad together so one big hit can drop several.
+  - title: Troll
+    blocks:
+      - type: creature
+        name: Troll
+        tagline: Level 4 brute elite
+        look: A towering giant, bigger than any hero at the table.
+        notice:
+          - Wounds close on it as you watch.
+          - Flame and acid seem to give it pause.
+        stats:
+          - label: Organization
+            value: Elite, encounter value 32
+          - label: Stamina
+            value: 80 (winded at 40)
+          - label: Size
+            value: 2L
+          - label: Speed
+            value: 5
+          - label: Stability
+            value: 2
+          - label: Might
+            value: 4
+          - label: Agility
+            value: 0
+          - label: Reason
+            value: -1
+          - label: Intuition
+            value: 0
+          - label: Presence
+            value: 1
+          - label: Free strike
+            value: 15 damage
+          - label: Trait
+            value: Regeneration, regains 10 Stamina at the start of each of its turns
+          - label: Ability
+            value: Crushing Blow
+        note: |
+          Regeneration stops until the start of the troll's next turn if it
+          takes fire or acid damage, so make sure your players have a way to
+          find that out.

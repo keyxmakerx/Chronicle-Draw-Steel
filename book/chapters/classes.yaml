@@ -1,0 +1,81 @@
+title: Classes
+intro: Your calling, and the resource that powers it.
+pages:
+  - title: Nine classes
+    blocks:
+      - text: |
+          A class is the heart of a hero. It gives you abilities, and most of
+          them cost a class-specific **Heroic Resource**. The resource name
+          is different for each class.
+      - type: cards
+        items:
+          - title: Censor
+            summary: Heroic Resource, Wrath.
+            text: Spend Wrath to power your heroic abilities.
+          - title: Conduit
+            summary: Heroic Resource, Piety.
+            text: Spend Piety to power your heroic abilities.
+          - title: Elementalist
+            summary: Heroic Resource, Essence.
+            text: |
+              Spend Essence to power your heroic abilities. Elementalist
+              abilities are keyed to Reason, and many carry an element keyword
+              such as fire, earth or void.
+          - title: Fury
+            summary: Heroic Resource, Ferocity.
+            text: |
+              Spend Ferocity to power your heroic abilities. Fury abilities
+              often run on Might, like the signature ability Brutal Slam.
+          - title: "Null"
+            summary: Heroic Resource, Discipline.
+            text: Spend Discipline to power your heroic abilities.
+          - title: Shadow
+            summary: Heroic Resource, Insight.
+            text: Spend Insight to power your heroic abilities.
+          - title: Tactician
+            summary: Heroic Resource, Focus.
+            text: Spend Focus to power your heroic abilities.
+          - title: Talent
+            summary: Heroic Resource, Clarity.
+            text: |
+              Spend Clarity to power your heroic abilities. Talent abilities
+              often run on Presence.
+          - title: Troubadour
+            summary: Heroic Resource, Drama.
+            text: |
+              Spend Drama to power your heroic abilities. Performance
+              abilities are magical presentations that allies can join.
+  - title: Reading an ability
+    blocks:
+      - text: |
+          Abilities are written in a fixed order, so once you can read one you
+          can read them all.
+
+          - **Name and type.** A signature ability has no cost. A heroic ability has a cost in your Heroic
+            Resource.
+          - **Keywords.** Tags such as [[magic]], [[psionic]], [[melee]],
+            [[ranged]], [[weapon]], [[strike]] and [[area]] say how it works
+            and what interacts with it.
+          - **Action type.** Main action, maneuver, triggered action and so
+            on. See the Combat chapter.
+          - **Distance and target.** How far it reaches and what it can hit.
+          - **Power roll.** The characteristic you add, and what happens at
+            each of the three tiers.
+          - **Effect.** Anything that happens regardless of the roll.
+      - type: callout
+        title: Potency
+        text: |
+          Many effects read like "M < WEAK". That is a [[potency]] check: the
+          added effect lands only if your potency beats the target's score in
+          that characteristic.
+  - title: Surges and recoveries
+    blocks:
+      - text: |
+          Two resources show up in almost every class.
+
+          - [[Surge|Surges]] are stored momentum. When you deal rolled
+            damage you can spend up to three against one target, each adding
+            damage equal to your highest characteristic. Leftover surges are
+            lost when the fight ends.
+          - [[Recovery|Recoveries]] heal you. You get a number of them from
+            your class, and a [[respite]] refills them all.

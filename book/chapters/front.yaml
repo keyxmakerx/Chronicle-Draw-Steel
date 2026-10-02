@@ -1,0 +1,8 @@
+title: Welcome
+intro: The one-page tour of the rules.
+pages:
+  - title: The front page
+    wide: true
+    blocks:
+      - type: widget
+        widget: rulebook-frontpage

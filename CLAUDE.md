@@ -6,7 +6,7 @@ For any new file expected over ~200 lines (widget, module, config), don't write 
 
 ## Project Structure
 
-`widgets/` - Chronicle widget JS (ES5, `var` not `let/const`, no arrow functions), via `Chronicle.register()`. `data/` - reference JSON (creature keywords, org templates, role templates, etc.). `manifest.json` - package manifest: categories, entity presets, widget registrations.
+`widgets/` - Chronicle widget JS (ES5, `var` not `let/const`, no arrow functions), via `Chronicle.register()`. `data/` - reference JSON (creature keywords, org templates, role templates, etc.). `manifest.json` - package manifest: categories, entity presets, widget registrations. `book/` - the Rulebook book Chronicle renders on the Rules page (YAML; format in Chronicle's `docs/system-rulebook-book.md`). Chronicle checks it when the page opens; there is no YAML check in this repo's CI yet.
 
 ## Licensing — two positions, never flattened into one
 

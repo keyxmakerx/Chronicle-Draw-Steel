@@ -1,0 +1,48 @@
+title: Running the Game
+director: true
+intro: Malice, pacing and keeping the table moving.
+pages:
+  - title: Malice
+    blocks:
+      - text: |
+          [[Malice]] is your resource, the counterpart to a hero's Heroic
+          Resource. You spend it to unleash a monster's most powerful
+          abilities.
+
+          - At the start of a fight you gain Malice equal to the average
+            number of Victories per hero.
+          - At the start of each round you gain Malice equal to the number of
+            heroes in the fight plus the round number.
+          - A hero who falls stops generating Malice for you.
+          - Anything you have not spent when the fight ends is lost.
+      - type: note
+        text: |
+          Because the round number is added every round, Malice climbs as a
+          fight drags on. Long fights give the monsters more to spend.
+  - title: Pacing a session
+    blocks:
+      - text: |
+          Heroes can usually handle somewhere between 4 and 6 Victories'
+          worth of fights before they need a [[respite]] to refresh their
+          Stamina and recoveries. Treasure, dice and the mix of monsters all
+          move that number, so treat it as a guide rather than a rule.
+      - type: callout
+        title: Victories at a glance
+        text: |
+          Easy and standard fights are worth 1 Victory, hard fights 2, and
+          extreme fights 2 or more. Trivial fights earn none unless you
+          decide otherwise.
+  - title: Party size
+    blocks:
+      - text: |
+          The rules were made and tested for three to six heroes, counting
+          retainers.
+
+          - With three or fewer, consider giving the heroes retainers. Small
+            parties struggle against solo creatures and big groups of minions.
+          - With seven or more, solo creatures stop living up to their name.
+            Give them lackeys or extra dynamic terrain.
+      - type: note
+        text: |
+          A retainer or other NPC fighting beside the heroes counts as a hero
+          of their own level when you work out encounter strength.
