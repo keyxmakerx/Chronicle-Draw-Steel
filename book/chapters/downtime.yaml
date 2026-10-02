@@ -1,0 +1,16 @@
+title: Downtime
+intro: What happens between adventures.
+pages:
+  - title: Respite
+    blocks:
+      - text: |
+          A [[respite]] is 24 uninterrupted hours of rest plus one respite
+          activity. A night's sleep on its own does not count.
+
+          Finishing one restores all your Stamina and all your recoveries, and
+          it converts your [[victories]] into Experience.
+      - type: callout
+        title: More to come
+        text: |
+          Projects, crafting and research are not in the package yet, so this
+          chapter will grow as the package adds more rules.

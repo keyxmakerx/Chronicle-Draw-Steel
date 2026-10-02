@@ -1,0 +1,92 @@
+title: The Basics
+intro: One roll settles almost everything. Learn it here and you know the game.
+pages:
+  - title: The power roll
+    blocks:
+      - text: |
+          When the outcome is uncertain, you roll two ten-sided dice, add one
+          of your five characteristics, and read which of three tiers the total
+          lands in. There is no plain miss: the lowest tier is a weak result,
+          not nothing.
+
+          Try it below. The band your total lands in lights up.
+      - type: roll
+        dice: 2d10
+        label: Power roll
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: 11 or lower. The weakest result.
+          - max: 16
+            label: Tier 2
+            text: 12 to 16. A solid result.
+          - label: Tier 3
+            text: 17 or higher. The strongest result.
+      - type: callout
+        title: Remember
+        text: |
+          An ability or test tells you which characteristic to add and what
+          each tier does. You read the tier, then do what that line says.
+  - title: Edges and banes
+    blocks:
+      - text: |
+          Circumstances push a roll up or down. An [[edge]] adds 2 to the
+          roll and a [[bane]] takes 2 away.
+
+          - Edges and banes never stack past two.
+          - A **double edge** raises the result by a whole tier instead.
+          - A **double bane** lowers it by a whole tier instead.
+          - One edge and one bane cancel each other out.
+      - type: callout
+        title: Critical hits
+        text: |
+          A [[critical hit|critical]] happens when the two dice alone, before
+          any bonus, total 19 or 20 on a roll made as a main action. You then
+          get an extra main action straight away.
+  - title: Five characteristics
+    blocks:
+      - text: Every hero has five characteristics. Which one you add depends on what you are trying to do.
+      - type: cards
+        items:
+          - title: Might
+            summary: Smash, grapple, resist.
+            text: |
+              Might drives melee damage, forced movement, breaking things and
+              resisting being grabbed.
+          - title: Agility
+            summary: Dodge, tumble, aim.
+            text: |
+              Agility covers ranged finesse, keeping your balance, moving
+              unseen and getting out of the way.
+          - title: Reason
+            summary: Deduce, recall, unravel.
+            text: |
+              Reason is for lore, deduction, puzzles and rituals. Elementalist
+              abilities run on it.
+          - title: Intuition
+            summary: Sense, spot, hold your nerve.
+            text: |
+              Intuition covers perception, reading a room, noticing what is
+              hidden and standing firm against fear.
+          - title: Presence
+            summary: Lead, negotiate, inspire.
+            text: |
+              Presence is force of personality: negotiation, leading and
+              inspiring allies. Talent abilities run on it.
+  - title: Numbers you will meet
+    blocks:
+      - text: |
+          - **Stamina** is your health. You are [[winded]] when it drops to
+            half your maximum, and [[dying]] when it reaches zero.
+          - A [[recovery]] is a second wind. Spending one heals you for a third
+            of your maximum Stamina, rounded down.
+          - [[Stability]] shortens any forced movement against you.
+          - A [[saving throw]] is a d10 rolled at the end of your turn. On a 6
+            or higher, an effect that says "save ends" stops.
+      - type: callout
+        title: Echelons
+        text: |
+          Play is split into four bands of levels, called [[echelon|echelons]]:
+          levels 1 to 3, 4 to 6, 7 to 9, and level 10. Some bonuses grow each
+          time you enter a new one.

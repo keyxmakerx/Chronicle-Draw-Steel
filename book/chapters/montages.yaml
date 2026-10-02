@@ -1,0 +1,23 @@
+title: Montages
+intro: A long effort, played in a handful of rolls.
+pages:
+  - title: Montage tests
+    blocks:
+      - text: |
+          A [[montage test|montage]] turns one big job, such as sneaking into
+          a barrow or crossing a wasteland, into a run of smaller tests.
+
+          - Each hero tackles a stretch of the job in their own way, using
+            whichever skill fits.
+          - The Director decides how many successes the party needs and how
+            many failures it can absorb.
+          - A failure is pressure, not a stop. Whichever total fills first
+            decides how the job turns out.
+      - type: example
+        title: Into the lair
+        steps:
+          - 'Director: The barrow mouth breathes cold. Getting in unseen is a montage test. Tally: 0 successes, 0 failures.'
+          - 'Sera: I read the ward-glyphs. That is a Reason test.'
+          - 'Roll: 6 and 9 make 15, plus Reason 2 gives 17. That is Tier 3.'
+          - 'Director: The wards part like curtains. One success.'
+          - 'Orden tries to keep pace at the back but clips a loose stone. One failure, but the party is already inside.'

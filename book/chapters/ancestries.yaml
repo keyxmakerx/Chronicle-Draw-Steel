@@ -1,0 +1,83 @@
+title: Ancestries
+intro: The peoples of the world and what each one brings to a hero.
+pages:
+  - title: Choosing an ancestry
+    blocks:
+      - text: |
+          There are twelve ancestries. Each one gives you a **signature
+          trait** for free, plus a budget of **ancestry points** to spend on
+          its optional **purchased traits**.
+
+          Unless an ancestry says otherwise, a hero is size 1M, has speed 5
+          and has stability 0. Most ancestries give 3 points. Memonek and
+          polder give 4, and revenant gives 2.
+      - type: callout
+        title: Revenants are special
+        text: |
+          Nobody starts life as a revenant. A hero of any ancestry can return
+          from death as one, keeping the size of the life they had before.
+  - title: Peoples, part one
+    blocks:
+      - type: cards
+        items:
+          - title: Devil
+            summary: Horned, tailed, silver-tongued. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait, Silver Tongue, gives you an
+              interpersonal skill and helps you read what an NPC wants during
+              a negotiation.
+          - title: Dragon Knight
+            summary: Draconic and muscled, 6 to 7 feet tall. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Wyrmplate.
+          - title: Dwarf
+            summary: Short and stout, with stone in their flesh. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Runic Carving.
+          - title: Hakaan
+            summary: Stone-giant descendants, over 9 feet tall. 3 points.
+            text: |
+              The largest ancestry, size 1L, speed 5. The signature trait is
+              Big!
+          - title: High Elf
+            summary: Tall and willowy, with metal inlays. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is High Elf Glamor.
+          - title: Human
+            summary: The most numerous people, and able to sense the supernatural. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Detect the Supernatural.
+  - title: Peoples, part two
+    blocks:
+      - type: cards
+        items:
+          - title: Memonek
+            summary: A people of metal, marble and glass. 4 points.
+            text: |
+              Size 1M, speed 5. Two signature traits: Fall Lightly and
+              Lightweight.
+          - title: Orc
+            summary: Green-toned, with colored lines of energy in their veins. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Relentless.
+          - title: Polder
+            summary: The smallest ancestry, under three and a half feet. 4 points.
+            text: |
+              Size 1S, speed 5. Two signature traits: Shadowmeld and Small!
+          - title: Revenant
+            summary: Returned from death to finish unfinished business. 2 points.
+            text: |
+              Size as in your previous life, speed 5. Two signature traits:
+              Former Life and Tough But Withered.
+          - title: Time Raider
+            summary: Four-armed, one-eyed, often psionic. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Psychic Scar.
+          - title: Wode Elf
+            summary: Lithe and furred, hidden by a natural glamor. 3 points.
+            text: |
+              Size 1M, speed 5. The signature trait is Wode Elf Glamor.
+      - type: note
+        text: |
+          The full trait lists, costs and quick-build suggestions for each
+          ancestry are in the Ancestries category of the reference browser.

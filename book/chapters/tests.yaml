@@ -1,0 +1,58 @@
+title: Tests
+intro: When something matters outside a fight, you roll a test.
+pages:
+  - title: Making a test
+    blocks:
+      - text: |
+          A test is a [[power roll]] made outside combat. The Director names
+          the characteristic that fits the task, and the tier you land in is
+          the outcome: a low tier goes badly, a high tier goes well. Having a
+          fitting skill gives you an edge.
+      - type: example
+        title: Bursting the door
+        steps:
+          - 'Director: The iron door is barred, and the chanting beyond it is getting faster.'
+          - 'Orden: I hit it shoulder-first. That is a Might test.'
+          - 'Roll: the dice show 7 and 5, which makes 12.'
+          - 'Add 2 for Orden''s Might, because this is a Might test. The total is 14.'
+          - 'Director: 14 is Tier 2. The bar splinters and you are through, but the noise carries.'
+  - title: Skills
+    blocks:
+      - text: |
+          Skills are sorted into five groups. A skill that fits the task gives
+          you an edge on the test.
+
+          There are fifty-seven in all. The cards on the next page name them.
+  - title: Skill groups, part one
+    blocks:
+      - type: cards
+        items:
+          - title: Crafting
+            summary: Make things.
+            text: |
+              Alchemy, Architecture, Blacksmithing, Carpentry, Cooking,
+              Fletching, Forgery, Jewelry, Mechanics, Tailoring.
+          - title: Exploration
+            summary: Move through and survive the world.
+            text: |
+              Climb, Drive, Endurance, Gymnastics, Heal, Jump, Lift, Navigate,
+              Ride, Swim.
+          - title: Interpersonal
+            summary: Deal with other people.
+            text: |
+              Brag, Empathize, Flirt, Gamble, Handle Animals, Interrogate,
+              Intimidate, Lead, Lie, Music, Perform, Persuade, Read Person.
+  - title: Skill groups, part two
+    blocks:
+      - type: cards
+        items:
+          - title: Intrigue
+            summary: Sneak, hide and steal.
+            text: |
+              Alertness, Conceal Object, Disguise, Eavesdrop, Escape Artist,
+              Hide, Pick Lock, Pick Pocket, Sabotage, Search, Sneak, Track.
+          - title: Lore
+            summary: Know things.
+            text: |
+              Criminal Underworld, Culture, History, Magic, Monsters, Nature,
+              Psionics, Religion, Rumors, Society, Strategy, Timescape.

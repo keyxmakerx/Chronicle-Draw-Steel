@@ -1,0 +1,14 @@
+title: Negotiation
+intro: Talking your way through, one argument at a time.
+pages:
+  - title: Negotiation
+    blocks:
+      - text: |
+          A negotiation is a conversation with stakes, where heroes try to
+          bring an NPC around to what they want. Presence is the characteristic
+          most tied to negotiation, and some ancestry traits help here: a devil's
+          Silver Tongue, for one, gives an edge on tests to discover what an NPC
+          wants and what pushes them away.
+
+          This package does not yet carry the full negotiation rules, so this
+          chapter will grow as it adds more.

@@ -1,0 +1,139 @@
+title: Combat
+intro: How a fight runs, from the first turn to the last.
+pages:
+  - title: Your turn
+    blocks:
+      - text: |
+          On your turn you get three things: a **main action**, a
+          **maneuver** and a **move action**. You can spread your movement
+          before, after or between the other two, and you can swap a main
+          action for a maneuver or a move action if you prefer.
+
+          Tap a heading to see what belongs under it.
+      - type: flaps
+        items:
+          - title: Main action
+            text: |
+              The heaviest part of your turn. Most class and kit abilities are
+              main actions, along with Charge, Defend, Heal and Free Strike.
+          - title: Maneuver
+            text: |
+              Lighter than a main action. Aid Attack, Catch Breath, Escape
+              Grab, Grab, Hide, Knockback, Stand Up and Use Consumable are
+              maneuvers.
+          - title: Move action
+            text: |
+              Getting around the battlefield: Advance, Disengage or Ride.
+          - title: Triggered action
+            text: |
+              Something you can do only when its stated trigger happens, on
+              your turn or anyone else's. You get one each round.
+          - title: Free triggered action
+            text: |
+              Works like a triggered action, but does not use up your one per
+              round.
+  - title: A turn in play
+    blocks:
+      - type: example
+        title: Kaelen swings
+        steps:
+          - 'Director: The bugbear rounds on you, Kaelen. Make your attack.'
+          - 'Kaelen: I use Brutal Slam as my main action. It is a Might ability, so I roll.'
+          - 'Roll: the dice show 8 and 8, which makes 16.'
+          - 'Add Kaelen''s Might of 2. The total is 18.'
+          - 'Tier 3 starts at 17, so the bugbear takes the strongest result: 9 + Might damage (11) and is pushed 4 squares.'
+      - type: callout
+        title: Moving without being punished
+        text: |
+          A [[shift]] is a special movement that does not provoke free
+          strikes. [[Disengage]] is a move action that shifts you 1 square.
+          A [[free strike]] is a quick, automatic attack you can make outside
+          your turn, usually when an enemy leaves your reach.
+  - title: Forced movement
+    blocks:
+      - text: |
+          Some effects move a creature rather than letting it choose.
+
+          - [[Push]] moves a target away from the source.
+          - [[Pull]] moves a target toward the source.
+          - [[Slide]] moves a target up to a number of squares in any
+            horizontal direction, not necessarily in a straight line.
+
+          Forced movement never provokes free strikes, and
+          [[stability]] shortens how far it carries you.
+      - type: callout
+        title: Durations
+        text: |
+          "EoT" means an effect ends at the end of the affected creature's
+          next turn. "Save ends" means it lasts until the creature passes a
+          saving throw.
+  - title: Conditions
+    blocks:
+      - text: Tap a condition to see what it does.
+      - type: flaps
+        items:
+          - title: Bleeding
+            text: Take damage at the start of each of your turns equal to the bleeding value.
+          - title: Burning
+            text: Take fire damage at the start of each of your turns equal to the burning value.
+          - title: Charmed
+            text: You cannot attack the source of the charm, and the source gains an edge on social interactions with you.
+          - title: Dazed
+            text: On your turn you may do only one thing, an action, a maneuver or a move. You cannot take triggered actions.
+          - title: Frightened
+            text: You take a bane on power rolls against the source of your fear and cannot willingly move closer to it.
+          - title: Grabbed
+            text: Your speed is 0, the grabber can move you with them, and you can use an action to try to escape.
+          - title: Hidden
+            text: Others cannot see or detect you. Attacks against you take a bane and your attacks gain an edge.
+          - title: Poisoned
+            text: You take a bane on all power rolls.
+          - title: Prone
+            text: Standing costs half your movement. Melee attacks against you gain an edge and ranged attacks take a bane.
+          - title: Restrained
+            text: Your speed is 0, you cannot benefit from speed bonuses, and attacks against you gain an edge.
+          - title: Slowed
+            text: Your speed is reduced to 2, you cannot benefit from speed bonuses and you cannot shift.
+          - title: Taunted
+            text: You take a bane on attacks that do not include the source of the taunt as a target.
+          - title: Weakened
+            text: Your power rolls and damage are halved.
+          - title: Surprised
+            text: |
+              You were not ready when combat began. You cannot take triggered
+              actions, and rolls against you gain an edge, until the end of
+              the first round.
+  - title: Position and terrain
+    blocks:
+      - text: |
+          Where you stand changes the dice.
+
+          - **Cover.** If at least half of a target is blocked by something
+            solid, damage-dealing abilities against it take a bane.
+          - **Concealment.** Darkness, fog and similar effects mean strikes
+            against the target take a bane.
+          - **Flanking.** With an ally adjacent to the enemy on the opposite
+            side, you gain an edge on melee strikes against it.
+          - **Difficult terrain.** Entering a square costs 1 extra square of
+            movement. Forced movement ignores it.
+      - type: callout
+        title: Damage adjustments
+        text: |
+          Temporary Stamina absorbs damage first. Damage resistance reduces
+          incoming damage, and immunity and weakness adjust damage of a named
+          type. Check the glossary entries for the order they apply in.
+  - title: Hurt, dying and healing
+    blocks:
+      - text: |
+          You are [[winded]] at half your maximum Stamina. At 0 or lower you
+          are [[dying]]: you count as bleeding, and you cannot use Catch
+          Breath during combat. If your Stamina falls to the negative of your
+          winded value, you die.
+
+          [[Catch Breath]] is a maneuver. You spend a recovery and regain
+          Stamina equal to your recovery value. Allies can still help a dying
+          hero spend recoveries.
+      - type: note
+        text: |
+          Surprise matters for monsters too. A surprised creature cannot take
+          triggered actions, and rolls against it gain an edge.

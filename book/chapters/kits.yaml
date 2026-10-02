@@ -1,0 +1,138 @@
+title: Kits
+intro: Your fighting style, your armor and your weapons.
+pages:
+  - title: What a kit does
+    blocks:
+      - text: |
+          A kit says what you wear and carry, and it adjusts your numbers:
+          Stamina, speed, stability, damage and reach. It also hands you a
+          **signature ability** of its own.
+
+          There are twenty-one kits. The next pages sort them by the armor
+          they give.
+      - type: callout
+        title: Stamina bonus
+        text: |
+          A kit's Stamina bonus is given per [[echelon]], so it grows as
+          your hero crosses into each new band of levels. The card shows the
+          per-echelon figure.
+  - title: No armor
+    blocks:
+      - type: cards
+        items:
+          - title: Arcane Archer
+            summary: Bow and magic. Signature, Exploding Arrow.
+            text: |
+              No armor, a bow. Speed +1, ranged damage +2, disengage +1,
+              ranged distance +10.
+          - title: Martial Artist
+            summary: Fast unarmed fighting. Signature, Battle Grace.
+            text: |
+              No armor, unarmed strikes. Stamina +3, speed +3, melee damage
+              +2, disengage +1.
+          - title: Panther
+            summary: Balanced protection, speed and damage. Signature, Devastating Rush.
+            text: |
+              No armor, a heavy weapon. Stamina +6, speed +1, stability +1,
+              melee damage +0/+0/+4.
+          - title: Pugilist
+            summary: Brawler and boxer. Signature, Let's Dance.
+            text: |
+              No armor, unarmed strikes. Stamina +6, speed +2, stability +1,
+              melee damage +1.
+          - title: Sniper
+            summary: Takes down enemies from afar. Signature, Patient Shot.
+            text: |
+              No armor, a bow. Speed +1, ranged damage +0/+0/+4, disengage +1.
+          - title: Whirlwind
+            summary: A whip for mobility and reach. Signature, Extension of My Arm.
+            text: |
+              No armor, a whip. Speed +3, melee damage +1, disengage +1.
+  - title: Light armor
+    blocks:
+      - type: cards
+        items:
+          - title: Battlemind
+            summary: Lightly armored and hard to move. Signature, Unmooring.
+            text: |
+              Light armor, a medium weapon. Stamina +3, speed +2, stability
+              +1, melee damage +2.
+          - title: Cloak and Dagger
+            summary: Throwable light weapons, concealed by a cloak. Signature, Fade.
+            text: |
+              Light armor, a light weapon. Stamina +3, speed +2, melee and
+              ranged damage +1, disengage +1.
+          - title: Rapid-Fire
+            summary: Many arrows into nearby enemies. Signature, Two Shot.
+            text: |
+              Light armor, a bow. Stamina +3, speed +1, ranged damage +2,
+              disengage +1.
+          - title: Retiarius
+            summary: Net in one hand, trident in the other. Signature, Net and Stab.
+            text: |
+              Light armor, an ensnaring weapon and a polearm. Stamina +3,
+              speed +1, melee damage +2, disengage +1.
+          - title: Stick and Robe
+            summary: A reach weapon and plenty of movement. Signature, Where I Want You.
+            text: |
+              Light armor, a polearm. Stamina +3, speed +2, melee damage +1,
+              disengage +1.
+          - title: Swashbuckler
+            summary: Mobile and hard-hitting in melee. Signature, Fancy Footwork.
+            text: |
+              Light armor, a medium weapon. Stamina +3, speed +3, melee
+              damage +2, disengage +1.
+          - title: Raider
+            summary: Light armor and a shield, full mobility. Signature, Raider's Awe.
+            text: |
+              Light armor and a shield, a light weapon. Stamina +6, speed +1,
+              melee and ranged damage +1, disengage +1.
+          - title: Spellsword
+            summary: Melee strikes with a little magic. Signature, Leaping Lightning.
+            text: |
+              Light armor and a shield, a medium weapon. Stamina +6, speed
+              +1, stability +1, melee damage +2.
+  - title: Medium and heavy armor
+    blocks:
+      - type: cards
+        items:
+          - title: Dual Wielder
+            summary: Two weapons at once. Signature, Double Strike.
+            text: |
+              Medium armor, light and medium weapons. Stamina +6, speed +2,
+              melee damage +2, disengage +1.
+          - title: Guisarmier
+            summary: A polearm and sturdy armor. Signature, Forward Thrust, Backward Smash.
+            text: |
+              Medium armor, a polearm. Stamina +6, stability +1, melee damage
+              +2.
+          - title: Ranger
+            summary: Switch easily between melee and ranged. Signature, Hamstring Shot.
+            text: |
+              Medium armor, a bow and a medium weapon. Stamina +6, speed +1,
+              melee and ranged damage +1, disengage +1.
+          - title: Sword and Board
+            summary: A shield that doubles as a weapon. Signature, Shield Bash.
+            text: |
+              Medium armor and a shield, a medium weapon. Stamina +9,
+              stability +1, melee damage +2, disengage +1.
+          - title: Mountain
+            summary: Heavy armor, heavy weapon, immovable. Signature, Pain for Pain.
+            text: |
+              Heavy armor, a heavy weapon. Stamina +9, stability +2, melee
+              damage +0/+0/+4.
+          - title: Shining Armor
+            summary: The most protection a kit offers. Signature, Protective Attack.
+            text: |
+              Heavy armor and a shield, a medium weapon. Stamina +12,
+              stability +1, melee damage +2.
+          - title: Warrior Priest
+            summary: A weapon imbued with divine power. Signature, Weakening Brand.
+            text: |
+              Heavy armor, a light weapon. Stamina +9, speed +1, stability +1,
+              melee damage +1.
+      - type: note
+        text: |
+          The bonuses here come from the Kits category of the reference
+          browser. Open that category for the exact equipment and
+          signature ability text.

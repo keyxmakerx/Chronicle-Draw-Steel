@@ -125,6 +125,7 @@ both halves:
 | Material | Position |
 |----------|----------|
 | The Draw Steel rules text in `data/` (the table at the top of this file) | Reproduced under the **DRAW STEEL Creator License**. This package cannot sublicense it; a redistributor relies on the same licence and carries the same attribution. |
+| The Rulebook book in `book/` | Written in this package's own words, but it summarises the rules above and repeats their terms, figures and short rule statements, so it is held to the same position as the rules text rather than claimed as this package's own work. |
 | This package's own work — `widgets/*.js`, `tools/*.mjs`, `docs/*`, `manifest.json`, and every data entry flagged `"source": "custom"` or field named in `properties.custom_fields` | **CC-BY-4.0**, © the Chronicle Draw Steel contributors. |
 
 Keeping those apart is why the provenance contract below exists: the licensing

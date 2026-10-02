@@ -1,0 +1,18 @@
+title: Rewards
+intro: What the party takes away from a hard day's work.
+pages:
+  - title: Victories and Experience
+    blocks:
+      - text: |
+          [[Victories]] are a running tally of the fights and challenges a
+          party has come through. They are not spent mid-combat. When the
+          party takes a respite, they turn into Experience, which the party
+          can use for lasting rewards.
+
+          A fight earns Victories according to its difficulty. See the
+          Director's chapter on building encounters for the numbers.
+      - type: callout
+        title: Treasure
+        text: |
+          Treasure, titles and renown are not in the package yet, so this
+          chapter will grow as the package adds more rules.
