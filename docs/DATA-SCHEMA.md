@@ -109,7 +109,7 @@ Five files predate the rule and are still pending:
 
 | File | Entries | Why still pending |
 |------|---------|-------------------|
-| `rules-glossary.json` | 60 | Sourcing each term means citing a book and chapter per condition, read off the published text |
+| `rules-glossary.json` | 65 | Sourcing each term means citing a book and chapter per condition, read off the published text |
 | `skills.json` | 57 | As above |
 | `creature-abilities.json` | 23 | Template abilities; whether each is reproduced or authored has to be checked, not guessed |
 | `creature-keywords.json` | 23 | As above |
