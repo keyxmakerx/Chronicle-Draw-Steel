@@ -793,6 +793,14 @@
       ]
     }
   ],
+  "dm_screen": {
+    "party": [
+      { "label": "Stamina", "current": "stamina_current", "max": "stamina_max", "warn_below": 0.5 },
+      { "label": "Recoveries", "current": "recoveries", "max": "recoveries_max", "warn_below": 0.34 },
+      { "label": "Heroic resource", "label_field": "heroic_resource_name", "current": "heroic_resource_current" }
+    ],
+    "conditions": { "category": "rules-glossary", "property": "category", "value": "condition" }
+  },
   "relation_presets": [
     {
       "slug": "ally",
