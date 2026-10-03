@@ -114,7 +114,7 @@ To publish: **Actions → Release → Run workflow**, enter the version (e.g.
 ## Project Structure
 
 ```
-manifest.json              Package manifest (categories, presets, widgets, text_renderers)
+manifest.json              Package manifest (categories, presets, widgets, text_renderers, dm_screen)
 data/
   creatures.json           35 example creatures ("source": "custom", not published monsters)
   creature-abilities.json  23 template abilities
