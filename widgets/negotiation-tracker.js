@@ -435,7 +435,9 @@
     return out;
   }
 
-  Chronicle.register('negotiation-tracker', {
+  // One Tracker per mounted element: boot.js calls init/destroy on the shared
+  // registration object, so per-panel state must not live on it.
+  var Tracker = {
     init: function (el, config) {
       var self = this;
       var ds = el.dataset || {};
@@ -660,6 +662,20 @@
         self.busy = false;
         if (!self.dead) self._render();
       });
+    }
+  };
+
+  Chronicle.register('negotiation-tracker', {
+    init: function (el, config) {
+      var t = Object.create(Tracker);
+      el.__negotiationTracker = t;
+      t.init(el, config);
+    },
+    destroy: function (el) {
+      var t = el && el.__negotiationTracker;
+      if (!t) return;
+      el.__negotiationTracker = null;
+      t.destroy(el);
     }
   });
 })();
