@@ -10,11 +10,18 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx) provid
 - **519 hero abilities, 12 ancestries, 21 kits** — the nine classes' abilities, kit signature abilities, and common actions
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
 - **7 organization templates** — the published organization and Stamina modifiers, plus default speed/stability (Swarm is this package's own, and carries no published modifiers)
-- **60 rules glossary entries + 57 skills** — conditions, movement, durations, resources, combat terms, and the five Draw Steel skill groups
+- **65 rules glossary entries + 57 skills** — conditions, movement, durations, resources, combat terms, and the five Draw Steel skill groups
 - **23 creature keywords** — Dragon, Undead, Humanoid, Elemental, etc.
+- **54 negotiation entries** — the published negotiation rules: starting attitudes, motivations and pitfalls, argument outcomes, offers by Interest, and the procedure (Heroes Book ch. 11)
+
+### Rulebook
+The `book/` folder is a Rulebook book: Chronicle's Rules page opens it as a page-turning rulebook with a Player's book and a Director's book, including a Negotiation chapter. The format is in Chronicle's `docs/system-rulebook-book.md`.
+
+### DM Screen
+The manifest's `dm_screen` block tells Chronicle's DM Screen what to show for each hero: Stamina, Recoveries and the heroic resource as meters, the class under the hero's name, the hero's current conditions (from the sheet's `conditions_json`), and the condition entries of the rules glossary for rules lookup.
 
 ### Entity Presets
-- **Hero** — full Foundry VTT sync with `foundry_path` annotations (class, ancestry, level, all 5 characteristics, stamina, recoveries, speed, stability)
+- **Hero** — full Foundry VTT sync with `foundry_path` annotations (class, ancestry, level, all 5 characteristics, stamina, recoveries, speed, stability). Wealth is a standing, not a purse: Chronicle's shop room refuses to spend it like coins
 - **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
 
 ### Interactive Widgets
@@ -42,6 +49,9 @@ The `reference-renderer.js` utility handles parsing and rendering. All 35 creatu
 2. Add this repository URL
 3. Install the latest release
 4. Go to **Campaign Settings > General > Game System** and select "Draw Steel"
+
+### Updating
+Install the newer release from **Admin > Packages**. Chronicle adds the sheet fields the update introduces to the entity types of campaigns already using Draw Steel; it never restores a field a GM deleted, and it does not create entity types or change existing fields.
 
 ### Via Manual Upload
 1. Download the latest release ZIP from GitHub Releases
@@ -118,7 +128,7 @@ manifest.json              Package manifest (categories, presets, widgets, text_
 data/
   creatures.json           35 example creatures ("source": "custom", not published monsters)
   creature-abilities.json  23 template abilities
-  rules-glossary.json      60 rules definitions for @references
+  rules-glossary.json      65 rules definitions for @references
   organization-templates.json  7 org types (stamina/EV formulas)
   role-templates.json      9 roles (characteristic baselines)
   damage-baselines.json    Damage scaling by tier and organization
@@ -128,6 +138,10 @@ data/
   ancestries.json          12 ancestries
   kits.json                21 kits
   skills.json              57 skills
+  negotiation.json         54 negotiation rules entries
+book/
+  book.yaml                Rulebook cover, theme and chapter list
+  chapters/                One YAML file per chapter
 widgets/
   monster-builder.js       7-step creature authoring wizard
   monster-engine.js        Published Draw Steel formulas (the only place they're evaluated)
