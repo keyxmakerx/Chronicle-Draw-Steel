@@ -1,7 +1,7 @@
 # Widget Configuration Guide
 
-This package provides four interactive widgets — Monster Builder, Bestiary Browser,
-Statblock Renderer, and Rulebook Front Page — plus three shared utility modules
+This package provides five interactive widgets — Monster Builder, Bestiary Browser,
+Statblock Renderer, Rulebook Front Page, and Negotiation Tracker — plus three shared utility modules
 (below), addable to entity page layouts via Chronicle's customizer. The Character
 Sheet widget (`widgets/character-sheet.js`) is documented separately, in
 `docs/CHARACTER-SHEET-DESIGN.md`.
@@ -102,6 +102,29 @@ A read-only formatted statblock display for a single creature entity.
 
 ### Usage
 Place on a creature entity page alongside or instead of the raw field editor. Provides a clean read-only view of the creature's complete stat block.
+
+---
+
+## Negotiation Tracker
+
+**Slug:** `negotiation-tracker` · **File:** `widgets/negotiation-tracker.js`
+
+Runs a negotiation on an NPC page. Chronicle mounts it below the title of NPC
+pages when this system is enabled (manifest `entity_panels`), so there is
+nothing to place by hand.
+
+### Config Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `entity_id` | string | — | The NPC page (auto-set by Chronicle) |
+| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
+
+### Features
+- GM: starting attitude, Interest and Patience pips (click to set), Impression, motivations and pitfalls (mark found), the offer for the current interest, arguments applied with the published outcomes, a log, show/hide for players, Start over
+- Players: a read-only card with the meters (only once the GM shows them) and the motivations and pitfalls the party has found
+- All numbers come from `data/negotiation.json`
+- State is saved on the NPC through Chronicle's system-state route (`.../system-state/drawsteel/negotiation`): a `gm` half and a `public` half. The widget re-derives `public` from `gm` on every save, and players only ever read `public`. An older Chronicle without that route shows players nothing and the GM one line.
 
 ---
 

@@ -962,6 +962,31 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "negotiation-tracker",
+      "name": "Negotiation Tracker",
+      "description": "Runs a Draw Steel negotiation on an NPC page: interest and patience, motivations and pitfalls, arguments and a log. Players see only what the GM chooses to show.",
+      "icon": "fa-handshake",
+      "script_file": "widgets/negotiation-tracker.js",
+      "config": [
+        {
+          "key": "entity_id",
+          "label": "Entity ID",
+          "type": "string"
+        },
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "entity_panels": [
+    {
+      "widget": "negotiation-tracker",
+      "applies_to": "npc"
     }
   ],
   "renderers": [
