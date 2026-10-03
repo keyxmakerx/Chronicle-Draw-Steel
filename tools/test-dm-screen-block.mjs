@@ -45,6 +45,14 @@ test('party meters pass Chronicle validation and name real sheet fields', () => 
   }
 });
 
+test('hero subtitle and conditions name real sheet fields', () => {
+  for (const key of ['hero_subtitle', 'hero_conditions']) {
+    if (block[key] === undefined) continue;
+    assert.match(block[key], FIELD_KEY, `${key} "${block[key]}" is not a field key`);
+    assert.ok(sheetFields.has(block[key]), `${key} "${block[key]}" is not a field of the character preset`);
+  }
+});
+
 test('conditions point at a declared category whose data has conditions', () => {
   const c = block.conditions;
   assert.match(c.category, SLUG);

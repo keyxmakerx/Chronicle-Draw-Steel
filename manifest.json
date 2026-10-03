@@ -799,6 +799,8 @@
       { "label": "Recoveries", "current": "recoveries", "max": "recoveries_max", "warn_below": 0.34 },
       { "label": "Heroic resource", "label_field": "heroic_resource_name", "current": "heroic_resource_current" }
     ],
+    "hero_subtitle": "class",
+    "hero_conditions": "conditions_json",
     "conditions": { "category": "rules-glossary", "property": "category", "value": "condition" }
   },
   "relation_presets": [
