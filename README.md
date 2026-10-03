@@ -162,7 +162,7 @@ material. See [LICENSE](LICENSE) for the full statement and
 
 **The Draw Steel rules text in `data/`** — glossary, skills, ancestries, kits,
 abilities, ability keywords, the ancestry point-buy, the monster-making and
-encounter-building formulas, and the animal traits — is reproduced under MCDM's
+encounter-building formulas, the animal traits, and the negotiation rules — is reproduced under MCDM's
 **DRAW STEEL Creator License**. It is *not* Creative Commons material: MCDM has not
 released Draw Steel under any CC licence, and there is no Draw Steel SRD.
 

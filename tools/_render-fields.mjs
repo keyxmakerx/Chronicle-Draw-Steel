@@ -424,6 +424,23 @@ export const CATEGORIES = [
     ],
   },
   {
+    file: 'negotiation.json',
+    slug: 'negotiation',
+    name: 'Negotiation',
+    icon: 'fa-handshake',
+    fold: true,
+    // `interest` / `patience` hold a starting value on attitudes and offers
+    // but a per-argument change on argument outcomes; `tiers` holds the
+    // per-power-roll-tier changes as a nested value (rendered via its twin).
+    columns: [
+      ['kind', 'Kind', 'string'],
+      ['interest', 'Interest', 'number'],
+      ['patience', 'Patience', 'number'],
+      ['response', 'Response', 'string'],
+      ['tiers', 'Tier Changes', 'string'],
+    ],
+  },
+  {
     file: 'rules-glossary.json',
     slug: 'rules-glossary',
     name: 'Rules Glossary',

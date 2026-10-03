@@ -17,6 +17,7 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `monster-building.json` | The monster-making formulas: role/damage and organization modifier tables, the EV, Stamina, and damage-tier equations, characteristics and potency, target-count adjustment, Instant Solo Creature, reskinning, and the animal-trait point budget | *Monsters Book* ch. 1 (Monster Basics), ch. 2 (Monsters — Animals) |
 | `encounter-building.json` | The six-step encounter-building procedure: the five difficulty tiers with their budget bands and Victory awards, encounter strength and its table, budget spending rules, creature level and count limits, initiative groups, and Quick Encounter Building | *Monsters Book* ch. 1 (Monster Basics) |
 | `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
+| `negotiation.json` | The negotiation rules: the six starting attitudes with their Interest and Patience, the twelve motivations and pitfalls, the argument outcomes, the offer at each Interest level, and the procedural rules (when to negotiate, stats, opening, uncovering motivations, making arguments, Renown and Impression, ending) | *Heroes Book* ch. 11 (Negotiation) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -71,6 +72,14 @@ Three glossary entries were added alongside them: `encounter-value` and
 Strength", and `malice` from the "Malice" and "Earning Malice" sections. They
 exist because the build-your-own text refers to all three constantly and the
 tooltip system had definitions for neither.
+
+`negotiation.json` comes from `Rules/Chapters/Negotiation.md` in
+`SteelCompendium/data-md` (`source: mcdm.heroes.v1`), the same repository and
+licence attribution as the files above. The Starting Attitudes and Impression
+tables, the Interest 0-5 offers, the argument power-roll tables and the twelve
+motivation/pitfall descriptions were converted from that file; the tier numbers
+in `properties.tiers` and the interest/patience values are encodings of the
+published text, not new rules.
 
 The keyword definitions in `ability-keywords.json` come from
 `Rules/Chapters/Classes.md` ("Ability Keywords") for the core keywords,
@@ -175,6 +184,16 @@ ability's former name, which is editorial rather than rules text and is dropped;
 the `echelon` glossary entry keeps only the four level bands, dropping the passage's
 examples of what heroes do at each echelon because those name setting locations and
 an in-world figure.
+
+The Negotiation chapter's "Sample Negotiation" (a worked scene with named
+characters, a named barony and guild, and a played transcript) is **not**
+reproduced, and neither are the example arguments printed under each motivation
+(they name characters, places, gods and invented items) or the chapter's other
+named-setting examples. Where a rule paragraph carried such an example sentence,
+the sentence was dropped and the rule text kept; the per-Interest example
+paragraphs ("the guildmaster...") are likewise omitted, which is why the Interest 4
+entry begins its second paragraph at "It's possible that the heroes could push for
+a little more".
 
 ## Custom (non-published) content
 
@@ -288,6 +307,12 @@ generic tags for operator-authored content. The other twenty-two entries are
 published definitions and carry their real provenance. Two published elements —
 Air and Water — are deliberately absent: Draw Steel 1.0 ships no elementalist
 specialization for them, so no ability in this package carries those keywords.
+
+**`negotiation.json` contains no custom content.** Every entry is published
+rules text and carries its real provenance in its root `source`. The non-published
+parts are the *shape*: `properties.kind`, the numeric `interest`/`patience` and
+`tiers` encodings, the `list` of motivation names, and the `impression_table`
+rows.
 
 **`kits.json` contains no custom content.** All twenty-one entries — description,
 equipment line, every bonus, and every signature ability — are published rules text

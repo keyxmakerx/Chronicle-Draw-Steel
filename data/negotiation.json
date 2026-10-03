@@ -1,0 +1,860 @@
+[
+  {
+    "slug": "attitude-hostile",
+    "name": "Hostile",
+    "summary": "Openly opposed to the heroes. Barely willing to listen.",
+    "description": "Openly opposed to the heroes. Barely willing to listen.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 1,
+      "patience": 2
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "attitude-suspicious",
+    "name": "Suspicious",
+    "summary": "Doubts the heroes' motives but is willing to listen.",
+    "description": "Doubts the heroes' motives but is willing to listen.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 2,
+      "patience": 2
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "attitude-neutral",
+    "name": "Neutral",
+    "summary": "Doesn't feel one way or the other. Would probably rather be somewhere else, but doesn't want to be rude.",
+    "description": "Doesn't feel one way or the other. Would probably rather be somewhere else, but doesn't want to be rude.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 2,
+      "patience": 3
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "attitude-open",
+    "name": "Open",
+    "summary": "Willing to listen, willing to help, as long as the heroes aren't asking too much.",
+    "description": "Willing to listen, willing to help, as long as the heroes aren't asking too much.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 3,
+      "patience": 3
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "attitude-friendly",
+    "name": "Friendly",
+    "summary": "The heroes seem like the NPC's people. The NPC is willing to give them the benefit of the doubt.",
+    "description": "The heroes seem like the NPC's people. The NPC is willing to give them the benefit of the doubt.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 3,
+      "patience": 4
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "attitude-trusting",
+    "name": "Trusting",
+    "summary": "The NPC has reason to take the heroes at their word and will help if the characters don't screw this up.",
+    "description": "The NPC has reason to take the heroes at their word and will help if the characters don't screw this up.",
+    "properties": {
+      "kind": "attitude",
+      "interest": 3,
+      "patience": 5
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-benevolence",
+    "name": "Benevolence",
+    "summary": "An NPC with the benevolence motivation believes in sharing what they have with others.",
+    "description": "An NPC with the benevolence motivation believes in sharing what they have with others. However, an NPC involved in a negotiation must be limited in their benevolence, so that they don't just give the heroes what they need.\n\nSometimes an NPC's benevolence might extend only to a specific group of people, so that a benevolent pirate captain might share their plunder freely with the rest of their crew—but they're still plundering! Other times, an NPC's charity might be limited by the fact that they don't have much to give. A benevolent NPC might be hesitant to give the heroes help because they believe their limited resources are more necessary or could do more good somewhere else.\n\nAn NPC with the benevolence pitfall has a cynical view of the world, believing that no creature has a right to anything just by being alive. The idea of helping others because it's the right thing to do is a preposterous, immature, or inexperienced idea to be laughed off or snuffed out.\n\nArguments that appeal to a benevolence motivation contend that if the NPC strikes a deal with the heroes, the people the NPC cares about will benefit from the deal.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-discovery",
+    "name": "Discovery",
+    "summary": "An NPC with the discovery motivation wants to learn new lore, explore forgotten places, break ground with new experiments, or uncover artifacts lost to time.",
+    "description": "An NPC with the discovery motivation wants to learn new lore, explore forgotten places, break ground with new experiments, or uncover artifacts lost to time. Their curiosity and quest for knowledge might be driven by a specific goal, such as seeking the cure for a rare disease or a portal to a specific far-off world. Or they could be a naturally inquisitive person who simply wants to understand all they can about the timescape.\n\nAn NPC with the discovery pitfall has no interest in finding new places, peoples, or ideas. It might be that the unknown scares them or makes them so uncomfortable that they'd rather remain ignorant. Alternatively, a previous pursuit of discovery might have turned out poorly for them.\n\nArguments that appeal to a discovery motivation contend that striking a deal with the heroes will allow the NPC to gain new knowledge or acquire unique property.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-freedom",
+    "name": "Freedom",
+    "summary": "An NPC with the freedom motivation wants no authority above them and desires no authority over others.",
+    "description": "An NPC with the freedom motivation wants no authority above them and desires no authority over others. They might already have personal freedom and wish to maintain that status quo, or they might wish to liberate themself or others from someone else's authority.\n\nAn NPC with the freedom pitfall believes that a world without authority is one in turmoil and chaos. They might even believe that they are the right person to rule, and that their ideals should be the ones that become the law of the land.\n\nArguments that appeal to a freedom motivation contend that by helping the heroes, an NPC will maintain or grant freedom to themself or other people.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-greed",
+    "name": "Greed",
+    "summary": "An NPC with the greed motivation desires wealth and resources above almost anything else.",
+    "description": "An NPC with the greed motivation desires wealth and resources above almost anything else. Sometimes these NPCs are misers, much like wyrms who hoard coins and gems but never spend or donate them. Others flaunt their wealth, viewing it as a sign of their station in life.\n\nGreed-driven NPCs might share their wealth with a select group of people they love, such as a noble lord who indulges his children's every desire. Some NPCs might be greedy for resources other than money, such as a demon who wants to collect and devour souls, or a troll lord who hungers endlessly for the flesh of others.\n\nAn NPC with the greed pitfall has no interest in accumulating wealth or other resources, and becomes offended if anyone tries to buy their partnership. They hold their ideals above material desires.\n\nArguments that appeal to a greed motivation contend that helping the heroes will increase the NPC's wealth or assets.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-higher-authority",
+    "name": "Higher Authority",
+    "summary": "An NPC with the higher authority motivation remains staunchly loyal to a person or force they perceive as more important than themself.",
+    "description": "An NPC with the higher authority motivation remains staunchly loyal to a person or force they perceive as more important than themself. This higher authority could be an organization, a deity or being of great power, a formal leader such as a noble or monarch, a mystical presence or force the NPC might not fully understand, or a person the NPC sees as an informal authority figure (an older sibling, a personal hero, and so forth).\n\nAn NPC with the higher authority pitfall scoffs at the idea of serving another. The NPC might not believe that all people should be free, but they certainly believe that they personally shouldn't have to answer to anyone.\n\nArguments that appeal to a higher authority motivation contend that it's in the interest of the higher authority for the NPC to strike a deal with the heroes. A hero might even tell the NPC that if the higher authority were in the NPC's position, they would take the deal.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-justice",
+    "name": "Justice",
+    "summary": "An NPC with the justice motivation wants to see the righteous rewarded and the wicked punished, however subjective their sense of who or what is good and evil.",
+    "description": "An NPC with the justice motivation wants to see the righteous rewarded and the wicked punished, however subjective their sense of who or what is good and evil. A priest who venerates a god of nature might believe that all who protect plants and animals are righteous, and that those who harvest natural resources as miners and lumberjacks do must die. Having a justice motivation doesn't necessarily make an NPC kind or charitable.\n\nAn NPC with the justice pitfall doesn't believe that the timescape is an inherently just place, and has no interest in making it one. The world is eternal conflict, there is no such thing as justice, and anyone who thinks otherwise is a naive fool.\n\nArguments that appeal to a justice motivation position the heroes on the good side of an NPC's sense of right and wrong.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-legacy",
+    "name": "Legacy",
+    "summary": "An NPC with the legacy motivation desires fame while alive and acclaim that lasts long after their death.",
+    "description": "An NPC with the legacy motivation desires fame while alive and acclaim that lasts long after their death. They hope others will know and remember their deeds, great or terrible. Some of these NPCs might even seek immortality through deification or undeath, so that the eventual shedding of their mortal coil doesn't prevent them from continuing to make history.\n\nAn NPC with a legacy pitfall cares nothing about leaving a personal mark on the world. To them, such vain thinking is nothing but a waste of time.\n\nArguments that appeal to a legacy motivation contend that striking a deal with the heroes increases the likelihood that people will talk about the NPC for centuries to come.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-peace",
+    "name": "Peace",
+    "summary": "An NPC with the peace motivation wants calm in their life.",
+    "description": "An NPC with the peace motivation wants calm in their life. Under typical circumstances, they want to be left alone to run their business, farm, kingdom, criminal empire, or whatever small slice of the timescape is theirs. Some such NPCs don't have peace and need help obtaining it, while others want their peaceful status quo to be maintained.\n\nAn NPC with the peace pitfall hates being bored. They want excitement, drama, and danger in their life. For them, there's nothing worse than the status quo.\n\nArguments that appeal to a peace motivation contend that helping the heroes will earn the NPC some peace, at least for a little while.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-power",
+    "name": "Power",
+    "summary": "An NPC with the power motivation covets the authority of others.",
+    "description": "An NPC with the power motivation covets the authority of others. They want to increase their influence, no matter how great it already is, and maintain their domain. They might seek power through conquering others, the collection of artifacts, or through the infusion of supernatural rituals—though why choose one method when all three together achieve the best results? Some such NPCs are world-traversing tyrants, but the petty administrators of village organizations and shrines can covet power just as hungrily.\n\nAn NPC with the power pitfall has no interest in authority for themself. They might respect the authority of others, but they hate the thought of ruling over other people and roundly reject any suggestion of the idea.\n\nArguments that appeal to a power motivation contend that working with the heroes will increase or protect the NPC's power.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-protection",
+    "name": "Protection",
+    "summary": "An NPC with the protection motivation has land, people, information, items, or an organization they want protected above all else.",
+    "description": "An NPC with the protection motivation has land, people, information, items, or an organization they want protected above all else. Keeping their charge safe is a duty they hold dear, and aiding in that protection earns their favor. Most people have friends or family they wish to protect, but an NPC with the protection motivation believes in doing so at any cost.\n\nAn NPC with the protection pitfall is happy to leave others to fend for themselves. They don't believe it's their responsibility to protect anyone other than themself, and might be outright disgusted at the thought of risking their life or their property to protect others.\n\nArguments that appeal to a protection motivation contend that helping the heroes allows an NPC to better protect their charge.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-revelry",
+    "name": "Revelry",
+    "summary": "An NPC with the revelry motivation just wants to have fun.",
+    "description": "An NPC with the revelry motivation just wants to have fun. They enjoy socializing at parties, thrill-seeking, or indulging in other hedonistic activities. Getting pleasure out of life while spending time with people they like is paramount to such NPCs.\n\nAn NPC with the revelry pitfall sees social encounters and hedonism as a waste of time. They take pleasure only in work or in building their own skills and character. Others who suggest immature debauchery are not worth their time.\n\nArguments that appeal to the revelry motivation contend that striking a deal with the heroes will allow the NPC to get back to reveling sooner, longer, or harder.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivation-vengeance",
+    "name": "Vengeance",
+    "summary": "An NPC with the vengeance motivation wants to harm another who has hurt them.",
+    "description": "An NPC with the vengeance motivation wants to harm another who has hurt them. Their desire for revenge could be proportional to the harm that was inflicted upon them, or they might wish to pay back their pain with interest. In some cases, a desire for vengeance can be satisfied only by the death of another, but an NPC might wish to pay back their own suffering with embarrassment, career failure, or some other less permanent pain.\n\nAn NPC with the vengeance pitfall believes that revenge solves nothing. They might have gained this belief firsthand, or they might simply not have the ambition to seek revenge—and they take a dim view of others who do.\n\nArguments that appeal to the vengeance motivation contend that the NPC can gain payback for their pain by helping the heroes.",
+    "properties": {
+      "kind": "motivation"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "argument-appeal-to-motivation",
+    "name": "Appeal to Motivation",
+    "summary": "If an argument doesn't include a pitfall and appeals to one of the NPC's motivations that hasn't already been appealed to, the hero making the argument can make an medium test to…",
+    "description": "If an argument doesn't include a pitfall and appeals to one of the NPC's motivations that hasn't already been appealed to, the hero making the argument can make an medium test to attempt to sway the NPC with the argument. Depending on the argument, this can be a Reason, Intuition, or Presence test using any applicable skill—most commonly a skill from the interpersonal skill group. The test has the following outcomes:\n\nPower Roll + Reason, Intuition, or Presence:\n\n≤11: The NPC's patience decreases by 1.\n12-16: The NPC's interest increases by 1, and their patience decreases by 1.\n17+: The NPC's interest increases by 1, and their patience doesn't change.\n\nAt the Director's discretion, a particularly well-roleplayed or well-reasoned argument automatically counts as a tier 3 outcome without a test. Good roleplaying should be rewarded!",
+    "properties": {
+      "kind": "argument-outcome",
+      "test": "medium",
+      "roll": "Power Roll + Reason, Intuition, or Presence",
+      "tiers": {
+        "t1": {
+          "interest": 0,
+          "patience": -1
+        },
+        "t2": {
+          "interest": 1,
+          "patience": -1
+        },
+        "t3": {
+          "interest": 1,
+          "patience": 0
+        }
+      },
+      "tiers_display": "t1: interest: 0; patience: -1; t2: interest: 1; patience: -1; t3: interest: 1; patience: 0",
+      "details_display": "test — medium · roll — Power Roll + Reason, Intuition, or Presence"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "argument-motivation-reused",
+    "name": "Appeal to a Motivation Already Appealed To",
+    "summary": "If the heroes attempt to appeal to a motivation that's already been appealed to, the NPC's interest remains the same and their patience decreases by 1.",
+    "description": "If the heroes attempt to appeal to a motivation that's already been appealed to, the NPC's interest remains the same and their patience decreases by 1.",
+    "properties": {
+      "kind": "argument-outcome",
+      "interest": 0,
+      "patience": -1
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "argument-no-motivation",
+    "name": "No Motivation or Pitfall",
+    "summary": "If an argument doesn't include one of the NPC's motivations or pitfalls, the hero who makes the argument must make a more difficult test to appeal to the NPC.",
+    "description": "If an argument doesn't include one of the NPC's motivations or pitfalls, the hero who makes the argument must make a more difficult test to appeal to the NPC. The test has the following outcomes:\n\nPower Roll + Reason, Intuition, or Presence:\n\n≤11: The NPC's patience decreases by 1, and their interest decreases by 1.\n12-16: The NPC's patience decreases by 1.\n17+: The NPC's interest increases by 1, and their patience decreases by 1.\n\nEffect: On a natural 19 or 20, the NPC's patience remains the same.\n\nIf the heroes try to use the same argument without a pitfall or motivation twice, the test automatically obtains a tier 1 outcome.",
+    "properties": {
+      "kind": "argument-outcome",
+      "test": "more difficult",
+      "roll": "Power Roll + Reason, Intuition, or Presence",
+      "tiers": {
+        "t1": {
+          "interest": -1,
+          "patience": -1
+        },
+        "t2": {
+          "interest": 0,
+          "patience": -1
+        },
+        "t3": {
+          "interest": 1,
+          "patience": -1
+        }
+      },
+      "tiers_display": "t1: interest: -1; patience: -1; t2: interest: 0; patience: -1; t3: interest: 1; patience: -1",
+      "details_display": "test — more difficult · roll — Power Roll + Reason, Intuition, or Presence"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "argument-pitfall-used",
+    "name": "Pitfall Used",
+    "summary": "If an argument uses one of the NPC's pitfalls, it automatically fails and the NPC's interest and patience each decrease by 1.",
+    "description": "If an argument uses one of the NPC's pitfalls, it automatically fails and the NPC's interest and patience each decrease by 1. The NPC might also warn the heroes not to treat them in such a way again.",
+    "properties": {
+      "kind": "argument-outcome",
+      "interest": -1,
+      "patience": -1
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "argument-caught-in-lie",
+    "name": "Caught in a Lie",
+    "summary": "If a hero lies to an NPC with an argument that fails to increase the NPC's interest, the Director can decide that the NPC catches the lie and is offended by it.",
+    "description": "If a hero lies to an NPC with an argument that fails to increase the NPC's interest, the Director can decide that the NPC catches the lie and is offended by it. The NPC's interest decreases by 1, in addition to any decrease imposed by the failure.",
+    "properties": {
+      "kind": "argument-outcome",
+      "interest": -1
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-5",
+    "name": "Interest 5",
+    "summary": "If the NPC's interest is 5, they offer everything the heroes initially asked for—and then sweeten the deal.",
+    "description": "If the NPC's interest is 5, they offer everything the heroes initially asked for—and then sweeten the deal. This represents the best possible outcome for the heroes. If they offered to perform any services or make payments as part of the deal, the NPC might waive those obligations, allowing the heroes to get what they want for free. Alternatively, the NPC might hold the heroes to any offers they made and instead offer an extra service or item on top of what was asked for.\n\nThe NPC should let the heroes know that this is the best offer they can make.",
+    "properties": {
+      "kind": "offer",
+      "interest": 5,
+      "response": "Yes, and..."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-4",
+    "name": "Interest 4",
+    "summary": "If the NPC's interest is 4, they offer the heroes everything they asked for but won't sweeten the deal.",
+    "description": "If the NPC's interest is 4, they offer the heroes everything they asked for but won't sweeten the deal. The NPC also accepts anything the heroes have offered as part of the deal with this outcome.\n\nIt's possible that the heroes could push for a little more, provided the NPC has the patience for another argument. A Director could prompt the heroes to push for more by having the NPC ask a leading question, such as, \"Is there anything else?\" or \"What else do you want from me?\"",
+    "properties": {
+      "kind": "offer",
+      "interest": 4,
+      "response": "Yes."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-3",
+    "name": "Interest 3",
+    "summary": "If the NPC's interest is 3, they offer the heroes what they want in exchange for everything the heroes offered...",
+    "description": "If the NPC's interest is 3, they offer the heroes what they want in exchange for everything the heroes offered... then they ask for a little extra, such as a favor or a payment from the characters.",
+    "properties": {
+      "kind": "offer",
+      "interest": 3,
+      "response": "Yes, but..."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-2",
+    "name": "Interest 2",
+    "summary": "If the NPC's interest is 2, the NPC can't give the heroes what they want.",
+    "description": "If the NPC's interest is 2, the NPC can't give the heroes what they want. However, they are willing to offer other less impactful goods or services in exchange for whatever the heroes have promised.",
+    "properties": {
+      "kind": "offer",
+      "interest": 2,
+      "response": "No, but..."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-1",
+    "name": "Interest 1",
+    "summary": "If the NPC's interest is 1, they outright reject the heroes' idea without a counteroffer. If the NPC still has patience, they might press the heroes for a better deal.",
+    "description": "If the NPC's interest is 1, they outright reject the heroes' idea without a counteroffer. If the NPC still has patience, they might press the heroes for a better deal.",
+    "properties": {
+      "kind": "offer",
+      "interest": 1,
+      "response": "No."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "offer-interest-0",
+    "name": "Interest 0",
+    "summary": "If an NPC's interest is 0, they offer nothing, refuse to negotiate further, and seek to harm the heroes.",
+    "description": "If an NPC's interest is 0, they offer nothing, refuse to negotiate further, and seek to harm the heroes. The NPC might attack immediately, or they could take a different approach, perhaps spreading malicious rumors about the characters, sending assassins after them, or otherwise making their lives difficult. If the heroes don't want to be at odds with the NPC, they'll need to offer a valuable gift or undertake a quest just to make amends.\n\nIt is impossible to continue a negotiation when an NPC's interest drops to 0.",
+    "properties": {
+      "kind": "offer",
+      "interest": 0,
+      "response": "No, and..."
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "negotiation-overview",
+    "name": "Negotiation",
+    "summary": "Negotiation is a framework for important roleplaying encounters in which the heroes want to convince an NPC to take a particular course of action, such as lending the heroes an…",
+    "description": "Negotiation is a framework for important roleplaying encounters in which the heroes want to convince an NPC to take a particular course of action, such as lending the heroes an artifact or pardoning a prisoner. This framework tracks the NPC's interest in the hero's arguments and their patience, so that the Director know what the NPC is willing to offer and when it's time to end the scene. This framework shouldn't replace roleplaying (though it certainly can if your group doesn't enjoy that part of RPGs). It's here to help players and Directors understand the structure of a give and take conversation and give some rules that can make a high-stakes conversation even more dramatic!",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "when-to-negotiate",
+    "name": "When to Negotiate",
+    "summary": "In order for a negotiation to occur, an NPC must have an interest in negotiating with the heroes—but must also have a reason to not simply jump on board with whatever the heroes…",
+    "description": "In order for a negotiation to occur, an NPC must have an interest in negotiating with the heroes—but must also have a reason to not simply jump on board with whatever the heroes propose. Negotiations happen only when an NPC has that internal tension between interest and reluctance.\n\nHeroes aren't expected to use the negotiation rules every time one character tries to convince an NPC to see things their way. For instance, if a hero wants information about a cult leader from a captured cultist, a single Presence test using the Lie skill or a Might test using Intimidate is likely all that's needed. A character who wants to flirt with the local alchemist to obtain a free Healing Potion likely just needs to make a Presence test using the Flirt skill.\n\nBy contrast, negotiations typically involve all the heroes interacting with one or more important named NPCs who can provide information, items, or services that dramatically change the course of an adventure. Often, this involves the heroes seeking an item of great power, a retainer or companion, the services of an influential organization or nation, or a plot-twist-worthy piece of information.\n\nTo negotiate successfully, the heroes must make persuasive arguments to convince NPCs to do what they want. \"Do it or we kill you\" is a threat that might well accompany a single Might test using the Intimidate skill, but it's not a negotiating tactic.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "limits-of-negotiation",
+    "name": "Limits of Negotiation",
+    "summary": "Some players might instinctively feel that the negotiation rules should give them something akin to mind-control superpowers.",
+    "description": "Some players might instinctively feel that the negotiation rules should give them something akin to mind-control superpowers. They're not used to imagining NPCs complexly, and might attempt to negotiate in situations where negotiation is either completely unreasonable or literally impossible. A negotiation typically can't convince a queen to hand over her crown to the heroes and name them the new rulers of the land, or inspire a dragon to fork over every piece of treasure in their hoard. Negotiations only work when the heroes ask for something from an NPC that the NPC is willing to seriously consider giving them.\n\nNegotiation is not a process that changes an NPC's character. Rather, the heroes are trying to make an NPC understand how behaving differently would be in character. You might well be able to get the hitherto loyal lieutenant of an evil boss to reconsider the error of their ways. That's a classic dramatic trope. But even then, you're not changing their character—you're convincing them that their current evil ways are out of character. \"Is this who you are? Is this how you want to be remembered?!\"\n\nIf some players want to use the negotiation system as a means to an end by having their characters say, \"Just do what we tell you, or else!\", you can remind them that that's not how most people, including NPCs, work. Any heroes who open with that attitude are likely to lose the negotiation before it begins.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "threat-of-violence",
+    "name": "The Threat of Violence",
+    "summary": "In the real world, negotiations rarely come with a threat of immediate violence.",
+    "description": "In the real world, negotiations rarely come with a threat of immediate violence. Ambassadors don't usually get into fistfights. But this is a heroic fantasy RPG, featuring heroes who are armed to the teeth and able to alter reality with their minds. The threat of violence is already implied. Everyone involved knows that the characters could draw steel at any moment.\n\nThe Director typically assumes that the underlying potential for events to turn violent is already factored into every negotiation. However, if the heroes decide to bring that threat to the forefront, then they've exited the realm of negotiation and have entered into a different type of relationship—and it's probably time to draw steel.\n\nNegotiation is about persuading someone to help you willingly because you've convinced them that meeting your objectives is a good idea. Working with you is wise or logical, or might make them look good. A hero can absolutely threaten someone with violence and force them to do what they want, but this is an incredibly temporary state. A threatened NPC isn't willingly doing what they've been asked. They're doing it on threat of violence, and will comply only while that threat is evident—after which, they'll likely go back to their previous behavior as soon as they think they can get away with it.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "negotiation-stats",
+    "name": "Negotiation Stats",
+    "summary": "During negotiation, the Director assigns NPCs four temporary statistics and features—interest, patience, motivations, and pitfalls.",
+    "description": "During negotiation, the Director assigns NPCs four temporary statistics and features—interest, patience, motivations, and pitfalls. The heroes can strike a favorable deal if they maximize an NPC's interest by making arguments that invoke the NPC's motivations and avoid their pitfalls—but they have to do all that before the NPC's patience wears out.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "interest",
+    "name": "Interest",
+    "summary": "An NPC's interest represents how eager they are to make a deal with the heroes.",
+    "description": "An NPC's interest represents how eager they are to make a deal with the heroes. Interest is graded on a scale of 0 (no interest) to 5 (the most possible interest). When a negotiation begins, an NPC's interest is between 1 and 4. If the NPC's interest goes to 5, they make a final offer and the negotiation ends (see Keep Going or Stop). If the NPC's interest drops to 0, they end a negotiation without offering the heroes any deal.\n\nInterest increases and decreases during the negotiation based on the arguments the heroes make.",
+    "properties": {
+      "kind": "rule",
+      "minimum": 0,
+      "maximum": 5,
+      "starting_minimum": 1,
+      "starting_maximum": 4,
+      "details_display": "minimum — 0 · maximum — 5 · starting minimum — 1 · starting maximum — 4"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "patience",
+    "name": "Patience",
+    "summary": "An NPC's patience represents how much time and effort they're willing to devote to a negotiation.",
+    "description": "An NPC's patience represents how much time and effort they're willing to devote to a negotiation. Patience is graded on a scale of 0 to 5, with each NPC starting a negotiation with their patience higher than 0. If an NPC's patience reaches 0, the NPC makes a final offer and negotiation ends (see Keep Going or Stop).\n\nPatience can decrease each time the heroes make an argument during a negotiation.",
+    "properties": {
+      "kind": "rule",
+      "minimum": 0,
+      "maximum": 5,
+      "details_display": "minimum — 0 · maximum — 5"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "language-and-patience",
+    "name": "Language and Patience",
+    "summary": "If one or more heroes negotiating with an NPC can communicate in the NPC's native language (not including Caelian), then the NPC's patience increases by 1 at the start of the…",
+    "description": "If one or more heroes negotiating with an NPC can communicate in the NPC's native language (not including Caelian), then the NPC's patience increases by 1 at the start of the negotiation (to a maximum of 5). If three or more heroes negotiating with an NPC can communicate in the NPC's native language, the NPC's patience increases by 2 (to a maximum of 5). Chapter 4: Background has information on some of the languages in the game.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "motivations",
+    "name": "Motivations",
+    "summary": "Each NPC has at least two motivations the heroes can appeal to with their arguments.",
+    "description": "Each NPC has at least two motivations the heroes can appeal to with their arguments. Arguments that appeal to an NPC's motivation require an easier power roll to increase the NPC's interest. Arguments that don't appeal to a motivation require a more difficult power roll. See Making Arguments below for more information.\n\nEach motivation can be successfully appealed to only once during a negotiation. To successfully appeal to a motivation, the heroes must use the motivation in an argument without mentioning one of the NPC's pitfalls or being caught in a lie.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pitfalls",
+    "name": "Pitfalls",
+    "summary": "Pitfalls are motivations that spark ire, discomfort, shame, fear, or some other negative response in an NPC.",
+    "description": "Pitfalls are motivations that spark ire, discomfort, shame, fear, or some other negative response in an NPC. Using a pitfall in an argument causes an NPC's interest and patience to wane. Each NPC has at least one pitfall, and many have at least two.\n\nPitfalls and motivations are two sides of the same concept. They're presented below as a single list, because what might be a motivation for one NPC is a pitfall for another. Whenever the heroes make an argument, they risk stumbling into one of an NPC's pitfalls unless they do their research beforehand or read the NPC well.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "list-of-motivations-and-pitfalls",
+    "name": "List of Motivations and Pitfalls",
+    "summary": "An NPC can have any of the following twelve motivations or pitfalls.",
+    "description": "An NPC can have any of the following twelve motivations or pitfalls.",
+    "properties": {
+      "kind": "rule",
+      "list": [
+        "Benevolence",
+        "Discovery",
+        "Freedom",
+        "Greed",
+        "Higher Authority",
+        "Justice",
+        "Legacy",
+        "Peace",
+        "Power",
+        "Protection",
+        "Revelry",
+        "Vengeance"
+      ],
+      "details_display": "list — Benevolence, Discovery, Freedom, Greed, Higher Authority, Justice, Legacy, Peace, Power, Protection, Revelry, Vengeance"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "npcs-change-over-time",
+    "name": "NPCs Change Over Time",
+    "summary": "Just like the heroes, NPCs in negotiations are complex individuals who can change over time.",
+    "description": "Just like the heroes, NPCs in negotiations are complex individuals who can change over time. It's possible that the heroes might have to negotiate with the same NPC for several different favors during the course of a campaign, over which time the NPC's motivations and pitfalls might change. If the heroes turn a bandit captain with the greed and power motivations into a temporary ally, that criminal might learn from them, changing their ways to rob only those who exploit the poor and giving those earnings to people in need. The next time the heroes negotiate with the bandit captain, they have the benevolence and protection motivations.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "opening-a-negotiation",
+    "name": "Opening a Negotiation",
+    "summary": "A negotiation begins when the heroes ask something of an NPC and the Director deems that the circumstances require a negotiation.",
+    "description": "A negotiation begins when the heroes ask something of an NPC and the Director deems that the circumstances require a negotiation. Those circumstances always involve the heroes requiring assistance that could change the course of the adventure, and having the NPC conflicted about working with them. Unlike combat, which can be thrust upon the heroes by violent allies or unexpected circumstances, the heroes must be the ones to willingly start a negotiation. Characters must want something from an NPC. Otherwise they have no reason to negotiate!\n\nThe Director can decide that an NPC who has something the players want could show up at their door and ask if the heroes want to negotiate. But it's always okay for the characters to say, \"Not interested,\" and refuse to do so.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "stop-combat-start-negotiation",
+    "name": "Stop Combat, Start Negotiation",
+    "summary": "If a hero wants to halt hostilities to negotiate with the other side, they can use a maneuver to make a hard Presence test (or another applicable test, as the Director determines)…",
+    "description": "If a hero wants to halt hostilities to negotiate with the other side, they can use a maneuver to make a hard Presence test (or another applicable test, as the Director determines) in an attempt to stop combat and start a negotiation. The test has a chance of success only if the Director believes the other side is willing and capable of negotiating. A foe who has the upper hand, who hates the heroes beyond measure, or who lacks sapience is unlikely to negotiate.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "starting-stats",
+    "name": "Starting Stats",
+    "summary": "An NPC's starting negotiation stats depend on their attitude toward the heroes, as shown on the Negotiation Starting Attitudes table (the attitude entries in this file), and can…",
+    "description": "An NPC's starting negotiation stats depend on their attitude toward the heroes, as shown on the Negotiation Starting Attitudes table (the attitude entries in this file), and can be adjusted by the Director as they see fit. A naturally irascible NPC might have lower patience, while a hostile NPC with a greater-than-expected stake in the negotiation topic might have a higher-than-typical interest.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "uncovering-motivations",
+    "name": "Uncovering Motivations",
+    "summary": "If a hero wishes to figure out an NPC's motivations, they can begin by simply asking, \"What do you want out of this deal?\" In response, the NPC can willingly hint at or reveal one…",
+    "description": "If a hero wishes to figure out an NPC's motivations, they can begin by simply asking, \"What do you want out of this deal?\" In response, the NPC can willingly hint at or reveal one of their motivations, usually by asking for something. For instance, a monarch NPC with the greed motivation and a penchant for collecting rare animals might suggest that the heroes retrieving a griffon egg would earn the monarch's gratitude. The Director can also decide that during the natural course of the negotiation, the NPC might offer up similar suggestions without the heroes asking, provided the NPC already has an interest of 3 or higher.\n\nIf an NPC isn't as forthcoming, or if the heroes want to learn one of the NPC's pitfalls, a hero can make a Reason, Intuition, or Presence test while interacting with the NPC during the negotiation, based on the tactics used to draw out the NPC. The test has the following outcomes:\n\nPower Roll + Reason, Intuition, or Presence:\n\n≤11: The hero learns no information regarding the NPC's motivations or pitfalls, and the NPC realizes the hero is trying to read them and becomes annoyed. As a consequence, the NPC's patience is reduced by 1.\n12-16: The hero learns no information regarding the NPC's motivations or pitfalls.\n17+: The hero learns one of the NPC's motivations or pitfalls (their choice).\n\nAfter this test is made, the heroes can't make another test to determine the same NPC's motivations or pitfalls until they make an argument to the NPC or the negotiation ends.",
+    "properties": {
+      "kind": "rule",
+      "roll": "Power Roll + Reason, Intuition, or Presence",
+      "tiers": {
+        "t1": {
+          "interest": 0,
+          "patience": -1
+        },
+        "t2": {
+          "interest": 0,
+          "patience": 0
+        },
+        "t3": {
+          "interest": 0,
+          "patience": 0
+        }
+      },
+      "tiers_display": "t1: interest: 0; patience: -1; t2: interest: 0; patience: 0; t3: interest: 0; patience: 0",
+      "details_display": "roll — Power Roll + Reason, Intuition, or Presence"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "outside-of-negotiation",
+    "name": "Outside of Negotiation",
+    "summary": "While the heroes can discover an NPC's motivations or pitfalls through tests made during negotiation, they can employ other methods of investigating motivations or pitfalls before…",
+    "description": "While the heroes can discover an NPC's motivations or pitfalls through tests made during negotiation, they can employ other methods of investigating motivations or pitfalls before negotiation. Research or a little reconnaissance (for instance, reading the NPC's diary or talking to their closest friends) can reveal quite a bit about a person!",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "making-arguments",
+    "name": "Making Arguments",
+    "summary": "As part of their initial request to an NPC in a negotiation, a hero makes an argument as to why the NPC should give the heroes what they want.",
+    "description": "As part of their initial request to an NPC in a negotiation, a hero makes an argument as to why the NPC should give the heroes what they want. The hero might offer to do something in exchange as part of their argument, such as clearing bandits from a forest, handing over a piece of treasure, or slaying a dragon for the NPC. Or instead of offering something, the hero could attempt to convince the NPC that it's in their own best interest to help—or even that it's a moral imperative. For example, a hero could appeal to a knight's sense of duty, the potential wealth a mercenary could make, or the final wish of a queen's dearly departed grandmother as part of an argument. NPCs who admire the heroes are more likely to respond to compliments and buttering up, while those who fear the heroes are more likely to respond to intimidation and awe.\n\nArguments need a justification as to why they're true. If a hero makes half an argument, the NPC might follow up with questions such as, \"Why do you say that?\" or \"What makes you think that's true?\" to get the full argument from them.\n\nOne hero makes an argument to an NPC, but the players can discuss the details of the argument out of character beforehand. It's up to the group to decide how much discussion to have before making an argument, and to decide what argument the players think will best sway the NPC.\n\nThis is a good topic for discussion before a group actually gets into a negotiation, so everyone knows the other players' thoughts. Some groups have the most fun without any around-the-table discussion, while others prefer being able to strategize as often as possible.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "appealing-to-multiple-motivations",
+    "name": "Appealing to Multiple Motivations",
+    "summary": "If a hero makes an argument that appears to appeal to more than one of an NPC's motivations, the Director can ask for clarification.",
+    "description": "If a hero makes an argument that appears to appeal to more than one of an NPC's motivations, the Director can ask for clarification. After listing the motivations it seemed as though the player was trying to appeal to, they can ask the player to pick one from the list. If the player had another motivation in mind, it's up to the Director whether the argument appealed to that specific motivation or not.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "everyone-can-participate",
+    "name": "Everyone Can Participate",
+    "summary": "Since Reason and Intuition with creatively applied skills can be used to make arguments, all heroes can actively participate in the process of negotiation.",
+    "description": "Since Reason and Intuition with creatively applied skills can be used to make arguments, all heroes can actively participate in the process of negotiation. The hero with the highest Presence who has the Persuade skill doesn't automatically have to be the one who makes all the tests.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "renown-and-negotiation",
+    "name": "Renown and Negotiation",
+    "summary": "Renown determines whether a hero's fame (or infamy) has any sway over an NPC.",
+    "description": "Renown determines whether a hero's fame (or infamy) has any sway over an NPC. A hero's reputation can make a negotiation easier, provided that hero knows how to capitalize on it.\n\nDuring a negotiation, an NPC has an Impression score that determines the amount of Renown needed to influence them with fame alone (see Renown in Chapter 13: Rewards). This score matters only if the NPC knows of the heroes. A dragon who slumbered away the last hundred years and was just woken up to negotiate can't be influenced by a hero's Renown. If the NPC does know of the hero and has an Impression score that is equal to or lower than the hero's Renown, the NPC can be influenced by that hero's reputation.\n\nThe higher an NPC's Impression score, the harder they are to influence with Renown. A small-time brigand has a lower Impression score than a monarch who meets with powerful and famous people all the time. The NPCs and Impression table provides examples of different archetypical NPC Impression scores. If a creature has a level, then their Impression score equals their level unless the Director deems otherwise.",
+    "properties": {
+      "kind": "rule",
+      "impression_table": [
+        {
+          "impression": 1,
+          "example_npcs": "Brigand leader, commoner, shop owner"
+        },
+        {
+          "impression": 2,
+          "example_npcs": "Knight, local guildmaster, professor"
+        },
+        {
+          "impression": 3,
+          "example_npcs": "Cult leader, locally known mage, noble lord"
+        },
+        {
+          "impression": 4,
+          "example_npcs": "Assassin, baron, locally famous entertainer"
+        },
+        {
+          "impression": 5,
+          "example_npcs": "Captain of the watch in a large city, high priest, viscount"
+        },
+        {
+          "impression": 6,
+          "example_npcs": "Count, warlord"
+        },
+        {
+          "impression": 7,
+          "example_npcs": "Marquis, world-renowned entertainer"
+        },
+        {
+          "impression": 8,
+          "example_npcs": "Duke, spymaster"
+        },
+        {
+          "impression": 9,
+          "example_npcs": "Archmage, prince"
+        },
+        {
+          "impression": 10,
+          "example_npcs": "Demon lord, monarch"
+        },
+        {
+          "impression": 11,
+          "example_npcs": "Archdevil, archfey, demigod"
+        },
+        {
+          "impression": 12,
+          "example_npcs": "Deity, titan"
+        }
+      ],
+      "details_display": "impression table — impression: 1; example npcs: Brigand leader, commoner, shop owner · impression: 2; example npcs: Knight, local guildmaster, professor · impression: 3; example npcs: Cult leader, locally known mage, noble lord · impression: 4; example npcs: Assassin, baron, locally famous entertainer · impression: 5; example npcs: Captain of the watch in a large city, high priest, viscount · impression: 6; example npcs: Count, warlord · impression: 7; example npcs: Marquis, world-renowned entertainer · impression: 8; example npcs: Duke, spymaster · impression: 9; example npcs: Archmage, prince · impression: 10; example npcs: Demon lord, monarch · impression: 11; example npcs: Archdevil, archfey, demigod · impression: 12; example npcs: Deity, titan"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fame-or-infamy",
+    "name": "Fame or Infamy?",
+    "summary": "If a hero has enough Renown for their score to influence an NPC during negotiation, the Director decides if the hero is famous or infamous to the NPC.",
+    "description": "If a hero has enough Renown for their score to influence an NPC during negotiation, the Director decides if the hero is famous or infamous to the NPC. If the NPC appreciates a character's deeds and views them as a hero who makes the world a better place, that hero is famous to them. If the NPC believes the hero's accomplishments make the world worse and views them as an enemy, the hero is infamous to the NPC.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "influencing-tests",
+    "name": "Influencing Tests",
+    "summary": "If a hero is famous to an NPC, they gain an edge on tests when making arguments to which the Flirt, Lead, or Persuade skill could be applied.",
+    "description": "If a hero is famous to an NPC, they gain an edge on tests when making arguments to which the Flirt, Lead, or Persuade skill could be applied. If they are infamous to the NPC, they gain an edge on tests when making arguments to which the Brag, Interrogate, or Intimidate skill could be applied. A hero gains this edge even if they don't have the appropriate skill.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "npc-response-and-offer",
+    "name": "NPC Response and Offer",
+    "summary": "After a hero makes an argument, an NPC responds in one of three ways: - An NPC responds positively if the heroes increase the NPC's interest.",
+    "description": "After a hero makes an argument, an NPC responds in one of three ways:\n\n- An NPC responds positively if the heroes increase the NPC's interest. \"That's an excellent point.\" \"You've given me much to consider.\" \"Fair enough.\" \"Makes sense to me.\"\n- An NPC responds negatively if the heroes decrease their interest. \"I don't buy that.\" \"Poppycock!\" \"I hear you, but I disagree.\" \"That's not going to sway me.\"\n- An NPC responds with impatience if the heroes fail to increase or decrease their interest. \"I've heard that before.\" \"Are you going to offer me anything real?\" \"This debate is tiresome.\" \"BORING!\"\n\nUnless the NPC is deceitful, it should be clear to the heroes if their argument helped convince the NPC, if they need to take a new approach, or if the argument actually did more harm than good.\n\nThe initial response should come with an offer (or a refusal to make an offer) based on the NPC's current interest. If a hero's argument reduces an NPC's patience to 0, the NPC lets the heroes know that this is their final offer.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "keep-going-or-stop",
+    "name": "Keep Going or Stop",
+    "summary": "If an NPC still has patience after making an offer and their interest is between 1 and 4, the heroes can make another argument to attempt to improve the deal.",
+    "description": "If an NPC still has patience after making an offer and their interest is between 1 and 4, the heroes can make another argument to attempt to improve the deal. Alternatively, they can accept the offer and end the negotiation. Let the players drive this decision. You can always have an NPC show they have patience remaining by asking, \"Is there anything else?\"\n\nIf the NPC's patience is 0 or their interest is 5, then the offer the NPC makes is their final offer to the characters. The heroes can accept the offer or not, but either way, the negotiation ends.\n\nIf the NPC's interest is 0, the NPC ends the negotiation without accepting a deal. The heroes can walk away from a negotiation without accepting a deal at any time.",
+    "properties": {
+      "kind": "rule"
+    },
+    "tags": [
+      "negotiation"
+    ],
+    "source": "Draw Steel Heroes Book, ch. 11 (mcdm.heroes.v1), via Steel Compendium"
+  }
+]
