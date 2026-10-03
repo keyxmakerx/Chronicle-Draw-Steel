@@ -503,6 +503,22 @@ published table for 1–8 heroes at levels 1–10. `quick-encounter-building` ca
 `fill_rates` (how many creatures of each organization fill one hero slot) and
 `difficulty_adjustments`.
 
+## negotiation.json
+
+The published negotiation rules (Heroes Book ch. 11). Fifty-four entries, each
+with `properties.kind`:
+
+| `kind` | Entries | Fields |
+|--------|---------|--------|
+| `attitude` | The six starting attitudes (Hostile, Suspicious, Neutral, Open, Friendly, Trusting) | `interest`, `patience`: the NPC's starting values |
+| `motivation` | The twelve motivations/pitfalls | none beyond `kind`; `description` holds the motivation, pitfall and appeal text |
+| `argument-outcome` | Appeal to motivation, motivation already appealed to, no motivation or pitfall, pitfall used, caught in a lie | `tiers` = `{t1, t2, t3}` each `{interest, patience}` deltas for the power-roll cases (`test`, `roll` name the test); `interest`/`patience` deltas for the cases with no roll |
+| `offer` | One per Interest level 0-5 | `interest` (the level), `response` (the published "Yes, and..." label) |
+| `rule` | The procedural rules | text in `description`; `interest`/`patience` carry `minimum`/`maximum`, `uncovering-motivations` carries `roll` and `tiers` (patience only), `renown-and-negotiation` carries `impression_table` |
+
+Deltas are signed numbers, `0` meaning no change. The chapter's worked "Sample
+Negotiation" is not reproduced (see `data/NOTICE.md`).
+
 ## animal-traits.json
 
 The published animal-trait menu — 35 traits an operator buys to build a custom

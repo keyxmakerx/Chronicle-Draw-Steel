@@ -152,6 +152,19 @@
       ]
     },
     {
+      "slug": "negotiation",
+      "name": "Negotiation",
+      "icon": "fa-handshake",
+      "fields": [
+        { "key": "kind", "label": "Kind", "type": "string" },
+        { "key": "interest", "label": "Interest", "type": "number" },
+        { "key": "patience", "label": "Patience", "type": "number" },
+        { "key": "response", "label": "Response", "type": "string" },
+        { "key": "tiers_display", "label": "Tier Changes", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
       "slug": "rules-glossary",
       "name": "Rules Glossary",
       "icon": "fa-book",
