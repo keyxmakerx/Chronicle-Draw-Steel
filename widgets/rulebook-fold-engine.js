@@ -31,19 +31,11 @@
  *                             there and opens panel by panel (transform,
  *                             clip-path and opacity only, so nothing reflows).
  *                             Inside a sheet host:
- *     [data-rb-sheet-side="left|right"]  side panels: beside the board on a
- *                             wide screen, in [data-rb-sheet-below] (inside
- *                             the board) on a narrower one, bottom sheets
- *                             behind [data-rb-sheet-tabs] on a phone (tab
- *                             label: data-rb-sheet-tab). Which ones the view
- *                             wants: mount().setSheetCompanions({left,right}).
- *     [data-rb-sheet-home]    the board's way back to its first view; the
- *                             phone tab bar's first tab presses it.
- *     [data-rb-sheet-surface|cover|shade|crease|foldshade|handle|body]
+ *     [data-rb-sheet-surface|cover|shade|crease|body]
  *                             the board's clipped surface, the map's outside,
- *                             its fold shading, a side panel's crease shade,
- *                             a bottom sheet's close handle, and the board's
- *                             scrolling body.
+ *                             its fold shading, and the board's scrolling
+ *                             body. mount({ onSettle }) hears when the board
+ *                             has landed, open and flat.
  *   [data-rb-flap]            hosts a flap; child `.rb-flap` is the panel,
  *                             trigger is `.rb-flap-trigger` (else the row).
  *                             Rows sharing [data-rb-flap-group] dim siblings.
@@ -219,27 +211,20 @@ var RulebookFoldEngine = (function () {
   }
 
   // ── sheet layout (the board a sheet-mode wing opens into) ───────────────
-  // The board's own sizing budget: a 640px column, two 256px side panels
-  // hinged on its edges with a 16px gap, and a 16px margin to the viewport.
+  // The board is one column: at most 760px wide with a 16px margin to the
+  // viewport, or the whole screen inside an 8px inset on a phone.
   var SHEET = {
-    CONTENT_W: 640, SIDE_W: 256, GAP: 16, MARGIN: 16,
-    MAX_H: 700, H_FRAC: 0.86, PHONE_MAX: 880, PHONE_INSET: 8, RADIUS: 18
+    CONTENT_W: 760, MARGIN: 16,
+    MAX_H: 640, H_FRAC: 0.86, PHONE_MAX: 560, PHONE_INSET: 8, RADIUS: 18
   };
 
-  // sheetMode decides where a sheet's side panels go at a viewport width:
-  // 'side' beside the board when both fit, 'below' inside the board under
-  // its content when they don't, 'phone' as bottom sheets behind a tab bar
-  // at the same width the front page's grid collapses to one column.
+  // sheetMode: 'phone' fills the screen, 'wide' centres a column.
   function sheetMode(viewportWidth) {
     var vw = Number(viewportWidth) || 0;
-    if (vw <= SHEET.PHONE_MAX) return 'phone';
-    var need = 2 * SHEET.SIDE_W + 2 * SHEET.GAP + SHEET.CONTENT_W + 2 * SHEET.MARGIN;
-    return vw >= need ? 'side' : 'below';
+    return vw <= SHEET.PHONE_MAX ? 'phone' : 'wide';
   }
 
-  // sheetLayout is where the board and its side panels rest, centred in the
-  // visible viewport. Side rects are null unless the mode puts them beside
-  // the board; a side panel is as tall as its content, capped at the board.
+  // sheetLayout is where the board rests, centred in the visible viewport.
   function sheetLayout(opts) {
     var o = opts || {};
     var vw = Math.max(0, Number(o.viewportWidth) || 0);
@@ -254,12 +239,7 @@ var RulebookFoldEngine = (function () {
       var h = Math.max(0, Math.min(vh * SHEET.H_FRAC, SHEET.MAX_H));
       board = { left: (vw - w) / 2, top: Math.max(SHEET.MARGIN, (vh - h) / 2), width: w, height: h };
     }
-    var out = { mode: mode, board: board, left: null, right: null };
-    if (mode === 'side') {
-      out.left = { left: board.left - SHEET.GAP - SHEET.SIDE_W, top: board.top, width: SHEET.SIDE_W, maxHeight: board.height };
-      out.right = { left: board.left + board.width + SHEET.GAP, top: board.top, width: SHEET.SIDE_W, maxHeight: board.height };
-    }
-    return out;
+    return { mode: mode, board: board };
   }
 
   // sheetFoldGeometry describes the board as a folded map lying on its card:
@@ -352,6 +332,8 @@ var RulebookFoldEngine = (function () {
     var breakpoint = opts.breakpoint != null ? opts.breakpoint : MOBILE_BREAKPOINT;
     var onOpen = typeof opts.onOpen === 'function' ? opts.onOpen : function () {};
     var onClose = typeof opts.onClose === 'function' ? opts.onClose : function () {};
+    // onSettle(kind, id) fires once a sheet has landed, open and flat.
+    var onSettle = typeof opts.onSettle === 'function' ? opts.onSettle : function () {};
 
     var state = createState();
     var listeners = [];              // tracked for a clean destroy()
@@ -493,8 +475,8 @@ var RulebookFoldEngine = (function () {
       return f;
     }
 
-    // _sheetFor collects one sheet host's parts once: the board (its .rb-wing),
-    // the side panels ([data-rb-sheet-side]) and the phone tab bar.
+    // _sheetFor collects one sheet host's parts once: the board (its .rb-wing)
+    // and the surface the fold clips.
     function _sheetFor(host) {
       if (host.__rbSheet) return host.__rbSheet;
       var panel = host.querySelector('.rb-wing');
@@ -502,46 +484,25 @@ var RulebookFoldEngine = (function () {
       // The surface is what the fold clips; the panel itself carries the
       // travel and the shadow, so the shadow is never clipped away.
       var s = { host: host, panel: panel, surf: panel.querySelector('[data-rb-sheet-surface]') || panel,
-        sides: [], tabs: host.querySelector('[data-rb-sheet-tabs]'),
-        film: null, geo: null, mode: null, want: null, landed: false, reduced: false, returnFocus: null };
-      each(host.querySelectorAll('[data-rb-sheet-side]'), function (el) { s.sides.push(el); });
+        film: null, geo: null, mode: null, landed: false, reduced: false, returnFocus: null };
       host.__rbSheet = s;
       return s;
     }
-    function _sideKey(side) { return side.getAttribute('data-rb-sheet-side') === 'left' ? 'left' : 'right'; }
-    function _isSheetPart(s, el) {
-      if (el === s.panel || el === s.tabs) return true;
-      for (var i = 0; i < s.sides.length; i++) if (s.sides[i] === el) return true;
-      return false;
-    }
-    // _faceOf is the card's own face: everything in the host but the board,
-    // its side panels and its tab bar. It fades as the map covers it, so the
-    // card is never drawn twice.
+    // _faceOf is the card's own face: everything in the host but the board.
+    // It fades as the map covers it, so the card is never drawn twice.
     function _faceOf(s) {
       var out = [];
-      each(s.host.children, function (c) { if (!_isSheetPart(s, c)) out.push(c); });
+      each(s.host.children, function (c) { if (c !== s.panel) out.push(c); });
       return out;
     }
 
-    // _layoutSheet puts the board and its side panels where they rest for the
-    // current viewport: beside the board ('side'), inside it under its content
-    // ('below'), or as bottom sheets ('phone').
+    // _layoutSheet puts the board where it rests for the current viewport.
     function _layoutSheet(s) {
       var L = sheetLayout({ viewportWidth: _viewW(), viewportHeight: _viewH() });
       s.mode = L.mode;
       s.host.setAttribute('data-rb-sheet-mode', L.mode);
       _place(s.panel, L.board);
       s.panel.style.right = 'auto';
-      var below = s.panel.querySelector('[data-rb-sheet-below]');
-      each(s.sides, function (side) {
-        var home = (L.mode === 'below' && below) ? below : s.host;
-        if (side.parentNode !== home) home.appendChild(side);
-        var r = L[_sideKey(side)];
-        side.style.left = r ? r.left + 'px' : '';
-        side.style.top = r ? r.top + 'px' : '';
-        side.style.width = r ? r.width + 'px' : '';
-        side.style.maxHeight = r ? r.maxHeight + 'px' : '';
-      });
       return L;
     }
 
@@ -645,15 +606,13 @@ var RulebookFoldEngine = (function () {
         },
         opened: function () {
           s.landed = true;
-          _syncSides(s);
+          onSettle(FOLD.WING, s.host.id || '');
         },
         closed: function () {
-          s.landed = false; s.want = null;
+          s.landed = false;
           s.host.classList.remove('is-open', 'rb-sheet-away');
           root.classList.remove('rb-lair-open');
           s.panel.style.pointerEvents = '';
-          each(s.sides, function (side) { _cancel(side.__rbAnims); side.__rbAnims = null; side.__rbFolding = false; side.classList.remove('is-shown'); });
-          _buildTabs(s);
           // Focus comes home once the card is back, never scrolling the page.
           var back = s.returnFocus; s.returnFocus = null;
           if (back && back.focus) back.focus({ preventScroll: true });
@@ -661,81 +620,6 @@ var RulebookFoldEngine = (function () {
           onClose(FOLD.WING);
         }
       };
-    }
-
-    // _swingSide unfolds a side panel out of the board's edge (or folds it
-    // back in): it is laid out beside the board first and turns flat from
-    // ~88°, so its text never reflows. Interrupted, it turns round in place.
-    function _swingSide(s, side, show) {
-      var shown = side.classList.contains('is-shown');
-      var running = side.__rbAnims && _isRunning(side.__rbAnims[0]);
-      if (running) {
-        if (side.__rbFolding !== !show) { side.__rbFolding = !show; each(side.__rbAnims, function (a) { if (a) a.reverse(); }); }
-        return;
-      }
-      if (show === shown) return;
-      if (s.reduced || typeof side.animate !== 'function') { _toggle(side, 'is-shown', show); return; }
-      var fold = 'perspective(1300px) rotateY(' + (_sideKey(side) === 'left' ? -88 : 88) + 'deg)';
-      var o = { duration: SHEET_MS.wing, easing: EASE_UNFOLD };
-      side.classList.add('is-shown');
-      side.__rbFolding = !show;
-      var list = [
-        _mk(side, [{ transform: fold }, { transform: 'perspective(1300px) rotateY(0deg)' }], o, show ? 1 : -1),
-        _mk(side.querySelector('[data-rb-sheet-foldshade]'), [{ opacity: 1 }, { opacity: 0 }], o, show ? 1 : -1)];
-      side.__rbAnims = list;
-      _whenDone(list, function () {
-        if (side.__rbAnims !== list) return;
-        _cancel(list); side.__rbAnims = null;
-        if (side.__rbFolding) side.classList.remove('is-shown');
-        side.__rbFolding = false;
-      });
-    }
-
-    // _syncSides shows the side panels the current view wants, the way the
-    // current mode shows them. On a phone they wait behind the tab bar.
-    function _syncSides(s) {
-      each(s.sides, function (side) {
-        var want = !!(s.landed && s.want && s.want[_sideKey(side)]);
-        if (s.mode === 'side') _swingSide(s, side, want);
-        else if (s.mode === 'below') _toggle(side, 'is-shown', want);
-        else _toggle(side, 'is-shown', false);
-      });
-      _buildTabs(s);
-    }
-
-    // _buildTabs fills the phone tab bar: the board's home view (when it
-    // marks one with [data-rb-sheet-home]) and one tab per wanted side panel.
-    function _buildTabs(s) {
-      var bar = s.tabs;
-      if (!bar) return;
-      bar.innerHTML = '';
-      var any = s.want && (s.want.left || s.want.right);
-      var on = s.landed && s.mode === 'phone' && any;
-      _toggle(bar, 'is-shown', !!on);
-      _toggle(s.panel, 'rb-sheet-tabbed', !!on);
-      if (!on) return;
-      var d = root.ownerDocument;
-      function add(label, key) {
-        var b = d.createElement('button');
-        b.type = 'button';
-        b.textContent = label;
-        b.setAttribute('data-rb-sheet-tab-for', key);
-        if (key !== 'home') b.setAttribute('aria-pressed', 'false');
-        bar.appendChild(b);
-      }
-      var home = s.panel.querySelector('[data-rb-sheet-home]');
-      if (home) add(home.getAttribute('data-rb-sheet-tab') || 'Back', 'home');
-      each(s.sides, function (side) {
-        if (s.want[_sideKey(side)]) add(side.getAttribute('data-rb-sheet-tab') || _sideKey(side), _sideKey(side));
-      });
-    }
-    // _phoneSide opens one bottom sheet (closing the other), or closes it.
-    function _phoneSide(s, key, open) {
-      each(s.sides, function (side) { _toggle(side, 'is-shown', !!open && _sideKey(side) === key); });
-      if (s.tabs) each(s.tabs.querySelectorAll('[data-rb-sheet-tab-for]'), function (b) {
-        var k = b.getAttribute('data-rb-sheet-tab-for');
-        if (k !== 'home') b.setAttribute('aria-pressed', (!!open && k === key) ? 'true' : 'false');
-      });
     }
 
     function _openSheet(host) {
@@ -753,9 +637,6 @@ var RulebookFoldEngine = (function () {
       var s = _sheetFor(host);
       if (!s) return;
       s.landed = false;
-      _buildTabs(s);
-      if (s.mode === 'side') each(s.sides, function (side) { _swingSide(s, side, false); });
-      else if (s.mode === 'phone') _phoneSide(s, null, false);
       if (s.film && s.film.running) { s.film.play(-1); return; }
       s.reduced = prefersReduced() || typeof s.panel.animate !== 'function';
       s.film = _film(_sheetSteps(s), _sheetHooks(s));
@@ -769,33 +650,17 @@ var RulebookFoldEngine = (function () {
       if (s.film && s.film.running) s.film.finish();
       if (_openWingEl !== host) return;
       _layoutSheet(s);
-      _syncSides(s);
-    }
-    // setSheetCompanions tells the open sheet which side panels its current
-    // view has ({ left, right }; null for none). They come out once it lands.
-    function setSheetCompanions(want) {
-      var host = (_openWingEl && _isSheet(_openWingEl)) ? _openWingEl : null;
-      if (!host) return;
-      var s = _sheetFor(host);
-      if (!s) return;
-      s.want = want ? { left: !!want.left, right: !!want.right } : null;
-      _syncSides(s);
     }
     // _sheetFocusables is what Tab cycles through while a sheet is open: the
-    // board, any side panel that is showing, and the tab bar.
+    // board's own visible controls.
     function _sheetFocusables(s) {
       var out = [];
-      var sel = 'a[href],button:not([disabled]),input,[tabindex]:not([tabindex="-1"])';
-      var roots = [s.panel];
-      each(s.sides, function (side) { if (side.classList.contains('is-shown') && !s.panel.contains(side)) roots.push(side); });
-      if (s.tabs) roots.push(s.tabs);
-      each(roots, function (r) {
-        each(r.querySelectorAll(sel), function (el) {
-          if (!el.getClientRects().length) return;
-          var cs = win.getComputedStyle ? win.getComputedStyle(el) : null;
-          if (cs && cs.visibility === 'hidden') return;
-          out.push(el);
-        });
+      var sel = 'a[href],button:not([disabled]),input,summary,[tabindex]:not([tabindex="-1"])';
+      each(s.panel.querySelectorAll(sel), function (el) {
+        if (!el.getClientRects().length) return;
+        var cs = win.getComputedStyle ? win.getComputedStyle(el) : null;
+        if (cs && cs.visibility === 'hidden') return;
+        out.push(el);
       });
       return out;
     }
@@ -1049,9 +914,8 @@ var RulebookFoldEngine = (function () {
       else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
     }
     // _trapWingTab is the same contract as _trapReaderTab, for the one wing
-    // that is a full dialog (the sheet): Tab wraps round its board, its
-    // showing side panels and its tab bar, and focus that has slipped out of
-    // them is brought back in.
+    // that is a full dialog (the sheet): Tab wraps round its board, and focus
+    // that has slipped out of it is brought back in.
     function _trapWingTab(e) {
       var s = _openWingEl && _sheetFor(_openWingEl);
       if (!s) return;
@@ -1109,22 +973,6 @@ var RulebookFoldEngine = (function () {
       on(host, 'click', function () { if (_openWingEl !== host) dispatch({ type: 'OPEN_WING', id: host.id || '' }, host); });
       on(host, 'keydown', function (e) {
         if (_isActivateKey(e) && _openWingEl !== host) { e.preventDefault(); dispatch({ type: 'OPEN_WING', id: host.id || '' }, host); }
-      });
-    });
-    // sheets: the phone tab bar (Back + one tab per side panel) and each
-    // bottom sheet's own close handle
-    each(root.querySelectorAll('[data-rb-wing-mode="sheet"]'), function (host) {
-      var s = _sheetFor(host);
-      if (!s) return;
-      if (s.tabs) on(s.tabs, 'click', function (e) {
-        var b = _closest(e.target, '[data-rb-sheet-tab-for]');
-        if (!b) return;
-        var k = b.getAttribute('data-rb-sheet-tab-for');
-        if (k === 'home') { var home = s.panel.querySelector('[data-rb-sheet-home]'); if (home) home.click(); return; }
-        _phoneSide(s, k, b.getAttribute('aria-pressed') !== 'true');
-      });
-      each(host.querySelectorAll('[data-rb-sheet-handle]'), function (h) {
-        on(h, 'click', function (e) { e.stopPropagation(); _phoneSide(s, null, false); });
       });
     });
     // flaps: tap a row to unfold; tap the open row again to fold back (toggle)
@@ -1261,7 +1109,6 @@ var RulebookFoldEngine = (function () {
         var s = h.__rbSheet;
         if (!s) return;
         if (s.film) { s.film.gen++; each(s.film.anims, function (l) { _cancel(l); }); s.film.running = false; }
-        each(s.sides, function (side) { _cancel(side.__rbAnims); side.__rbAnims = null; });
         h.classList.remove('is-open', 'rb-sheet-away');
         root.classList.remove('rb-lair-open');
         h.__rbSheet = null;
@@ -1269,7 +1116,7 @@ var RulebookFoldEngine = (function () {
       state = createState();
     }
 
-    return { destroy: destroy, bindTerms: bindTerms, setSheetCompanions: setSheetCompanions };
+    return { destroy: destroy, bindTerms: bindTerms };
   }
 
   // _closest is an ES5-safe Element.closest (some embedded webviews lack it).

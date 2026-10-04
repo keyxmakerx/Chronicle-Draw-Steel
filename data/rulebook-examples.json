@@ -10,6 +10,41 @@
         "pc": { "fig": "🛡", "label": "ORDEN" },
         "foe": { "fig": "🚪", "label": "THE DOOR" }
       },
+      "scene": {
+        "backdrop": "gate",
+        "pieces": [
+          { "id": "orden", "kit": "shield", "x": 150, "y": 160, "card": "orden", "label": "Orden" },
+          { "id": "door", "kit": "door", "x": 350, "y": 140, "card": "door", "label": "The iron door" },
+          { "id": "slash", "kit": "slash", "x": 300, "y": 150, "show": [4] },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 172, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [3, 3], "card": "tier", "label": "Tier 2 ribbon" },
+          { "id": "flag", "kit": "flag", "x": 400, "y": 200, "show": [4], "text": "The bar splinters", "card": "what", "label": "What happened" },
+          { "id": "rubble", "kit": "rubble", "x": 30, "y": 242 }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "door", "do": "shake" }] },
+          { "line": 1, "cues": [{ "who": "orden", "do": "wind" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [] },
+          {
+            "line": 3,
+            "cues": [{ "who": "orden", "do": "lunge" }, { "who": "slash", "do": "burst" }, { "who": "door", "do": "burst", "hold": true }, { "who": "door", "do": "fall", "hold": true }]
+          }
+        ],
+        "cards": {
+          "orden": {
+            "kicker": "HERO",
+            "title": "Orden",
+            "stats": [["Might", "+2"], ["This test", "Might test"]],
+            "from": "frontpage:characteristic-might",
+            "says": [1]
+          },
+          "door": { "kicker": "OBSTACLE", "title": "The iron door", "says": [0, 3] },
+          "what": { "kicker": "WHAT HAPPENED", "title": "The bar splinters", "says": [3] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
+      },
       "lines": [
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The iron door is barred — and the chanting is getting faster." },
         { "speaker": "ORDEN", "kind": "pc", "text": "I hit it shoulder-first. Might test!" },
@@ -38,6 +73,30 @@
         "pc": { "fig": "🪓", "label": "KAELEN" },
         "foe": { "fig": "🥷", "label": "CULTIST" }
       },
+      "scene": {
+        "backdrop": "hall",
+        "pieces": [
+          { "id": "kaelen", "kit": "knight", "x": 150, "y": 160, "card": "kaelen", "label": "Kaelen" },
+          { "id": "cultist", "kit": "cultist", "x": 380, "y": 150, "face": -1, "card": "cultist", "label": "The cultist" },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 172, "show": [1, 1], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [2, 2], "card": "tier", "label": "Tier 3 ribbon" },
+          { "id": "flag", "kit": "flag", "x": 400, "y": 205, "show": [3], "text": "Prone", "card": "what", "label": "What happened" },
+          { "id": "ledge", "kit": "ledge", "x": 30, "y": 242 }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "cultist", "do": "lunge" }] },
+          { "line": 1, "cues": [{ "who": "kaelen", "do": "wind" }] },
+          { "line": 1, "tier": true, "cues": [] },
+          { "line": 2, "cues": [{ "who": "kaelen", "do": "step" }, { "who": "cultist", "do": "prone", "hold": true }] }
+        ],
+        "cards": {
+          "kaelen": { "kicker": "HERO", "title": "Kaelen", "stats": [["Might", "+2"]], "from": "frontpage:characteristic-might" },
+          "cultist": { "kicker": "MONSTER", "title": "The cultist", "says": [0, 2], "links": ["glossary:grabbed"] },
+          "what": { "kicker": "WHAT HAPPENED", "from": "glossary:prone", "says": [2] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
+      },
       "lines": [
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The cultist lunges to grab you off the ledge." },
         {
@@ -64,6 +123,45 @@
       "stage": {
         "pc": { "fig": "🪓", "label": "KAELEN" },
         "foe": { "fig": "👹", "label": "BUGBEAR" }
+      },
+      "scene": {
+        "backdrop": "hall",
+        "pieces": [
+          { "id": "rune", "kit": "rune", "x": 330, "y": 190 },
+          { "id": "skeleton-1", "kit": "skeleton-archer", "x": 70, "y": 50, "card": "skeleton", "label": "Skeleton archer" },
+          { "id": "skeleton-2", "kit": "skeleton-archer", "x": 478, "y": 50, "flip": true, "card": "skeleton", "label": "Skeleton archer" },
+          { "id": "brazier", "kit": "brazier", "x": 452, "y": 118 },
+          { "id": "kaelen", "kit": "knight", "x": 150, "y": 150, "card": "kaelen", "label": "Kaelen" },
+          { "id": "bugbear", "kit": "bugbear", "x": 350, "y": 140, "face": -1, "card": "bugbear", "label": "The bugbear" },
+          { "id": "slash", "kit": "slash", "x": 300, "y": 145, "show": [4] },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 172, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [3, 3], "card": "tier", "label": "Tier 3 ribbon" },
+          { "id": "flag", "kit": "flag", "x": 384, "y": 190, "show": [4], "text": "7 damage · push", "card": "what", "label": "What happened" },
+          { "id": "rubble", "kit": "rubble", "x": 30, "y": 242 }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "bugbear", "do": "step" }] },
+          { "line": 1, "cues": [{ "who": "kaelen", "do": "wind" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [] },
+          {
+            "line": 3,
+            "cues": [
+              { "who": "kaelen", "do": "lunge" },
+              { "who": "slash", "do": "burst" },
+              { "who": "bugbear", "do": "knock", "hold": true },
+              { "who": "brazier", "do": "flare" }
+            ]
+          }
+        ],
+        "cards": {
+          "kaelen": { "kicker": "HERO", "title": "Kaelen", "stats": [["Might", "+2"], ["This swing", "Brutal Slam"]], "from": "frontpage:characteristic-might" },
+          "bugbear": { "kicker": "MONSTER", "title": "Bugbear", "role": "brute", "says": [0, 3] },
+          "skeleton": { "kicker": "MONSTER", "from": "creature:skeleton-archer" },
+          "what": { "kicker": "WHAT HAPPENED", "title": "7 damage and a push", "says": [3], "links": ["glossary:push", "glossary:forced-movement"] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
       },
       "lines": [
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The bugbear rounds on you, Kaelen — roll it." },
@@ -92,6 +190,44 @@
       "stage": {
         "pc": { "fig": "🛡", "label": "THE PARTY" },
         "foe": { "fig": "🏰", "label": "THE LAIR" }
+      },
+      "scene": {
+        "backdrop": "mouth",
+        "pieces": [
+          { "id": "rune", "kit": "rune", "x": 330, "y": 200 },
+          { "id": "glyphs", "kit": "glyphs", "x": 360, "y": 130, "card": "glyphs", "label": "The ward-glyphs" },
+          { "id": "orden", "kit": "shield", "x": 40, "y": 165, "card": "orden", "label": "Orden" },
+          { "id": "sera", "kit": "mage", "x": 190, "y": 150, "card": "sera", "label": "Sera" },
+          { "id": "stone", "kit": "stone", "x": 150, "y": 200 },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 190, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [3, 3], "card": "tier", "label": "Tier 3 ribbon" },
+          { "id": "success", "kit": "flag", "x": 400, "y": 215, "show": [4], "text": "1 success", "card": "success", "label": "One success" },
+          { "id": "failure", "kit": "flag", "x": 40, "y": 240, "show": [6], "text": "1 failure", "card": "failure", "label": "One failure" }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "glyphs", "do": "glow" }] },
+          { "line": 1, "cues": [{ "who": "sera", "do": "cast" }, { "who": "glyphs", "do": "glow" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [] },
+          { "line": 3, "cues": [{ "who": "glyphs", "do": "fade", "hold": true }] },
+          { "line": 4, "cues": [{ "who": "orden", "do": "trip" }, { "who": "stone", "do": "shake" }] },
+          { "line": 5, "cues": [] }
+        ],
+        "cards": {
+          "sera": {
+            "kicker": "HERO",
+            "title": "Sera",
+            "stats": [["Reason", "+2"], ["This test", "Reason test"]],
+            "from": "frontpage:characteristic-reason",
+            "says": [1]
+          },
+          "orden": { "kicker": "HERO", "title": "Orden", "says": [4] },
+          "glyphs": { "kicker": "OBSTACLE", "title": "The ward-glyphs", "says": [1, 3] },
+          "success": { "kicker": "MONTAGE", "title": "One success", "from": "glossary:montage-test", "says": [3] },
+          "failure": { "kicker": "MONTAGE", "title": "One failure", "from": "glossary:montage-test", "says": [5] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
       },
       "lines": [
         {
@@ -129,6 +265,81 @@
       "stage": {
         "pc": { "fig": "🪓", "label": "KAELEN" },
         "foe": { "fig": "🥷", "label": "CULTIST SQUAD" }
+      },
+      "scene": {
+        "backdrop": "hall",
+        "pieces": [
+          { "id": "adept", "kit": "adept", "x": 470, "y": 105, "face": -1, "card": "adept", "label": "The cult adept" },
+          { "id": "cultist-1", "kit": "cultist", "x": 280, "y": 130, "face": -1, "card": "cultist", "label": "Cultist" },
+          { "id": "cultist-2", "kit": "cultist", "x": 360, "y": 135, "face": -1, "card": "cultist", "label": "Cultist" },
+          { "id": "cultist-3", "kit": "cultist", "x": 310, "y": 190, "face": -1, "card": "cultist", "label": "Cultist" },
+          { "id": "cultist-4", "kit": "cultist", "x": 395, "y": 195, "face": -1, "card": "cultist", "label": "Cultist" },
+          { "id": "kaelen", "kit": "knight", "x": 110, "y": 175, "card": "kaelen", "label": "Kaelen" },
+          { "id": "slash", "kit": "slash", "x": 240, "y": 160, "show": [4, 4] },
+          { "id": "slash-2", "kit": "slash", "x": 250, "y": 195, "show": [7] },
+          { "id": "dice", "kit": "dice", "x": 150, "y": 240, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [3, 3], "card": "tier", "label": "Tier 3 ribbon" },
+          { "id": "squad", "kit": "flag", "x": 440, "y": 240, "show": [4, 6], "text": "Two drop", "card": "squad", "label": "Two cultists drop" },
+          { "id": "fallen", "kit": "flag", "x": 440, "y": 240, "show": [7], "text": "The squad falls", "card": "fallen", "label": "The squad falls" }
+        ],
+        "beats": [
+          {
+            "line": 0,
+            "cues": [
+              { "who": "cultist-1", "do": "step" },
+              { "who": "cultist-2", "do": "step" },
+              { "who": "cultist-3", "do": "step" },
+              { "who": "cultist-4", "do": "step" }
+            ]
+          },
+          { "line": 1, "cues": [{ "who": "kaelen", "do": "wind" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [] },
+          {
+            "line": 3,
+            "cues": [
+              { "who": "kaelen", "do": "lunge" },
+              { "who": "slash", "do": "burst" },
+              { "who": "cultist-1", "do": "fall", "hold": true },
+              { "who": "cultist-2", "do": "fall", "hold": true }
+            ]
+          },
+          {
+            "line": 4,
+            "cues": [
+              { "who": "cultist-3", "do": "step", "hold": true },
+              { "who": "cultist-4", "do": "step", "hold": true },
+              { "who": "adept", "do": "glow" },
+              { "who": "kaelen", "do": "stagger" }
+            ]
+          },
+          { "line": 5, "cues": [{ "who": "kaelen", "do": "wind" }] },
+          {
+            "line": 6,
+            "cues": [
+              { "who": "kaelen", "do": "lunge" },
+              { "who": "slash-2", "do": "burst" },
+              { "who": "cultist-3", "do": "fall", "hold": true },
+              { "who": "cultist-4", "do": "fall", "hold": true },
+              { "who": "adept", "do": "flee", "hold": true }
+            ]
+          }
+        ],
+        "cards": {
+          "kaelen": {
+            "kicker": "HERO",
+            "title": "Kaelen",
+            "stats": [["Might", "+2"], ["This swing", "Brutal Slam"]],
+            "from": "frontpage:characteristic-might",
+            "says": [1, 5]
+          },
+          "cultist": { "kicker": "MONSTER", "from": "creature:cultist-acolyte", "says": [0] },
+          "adept": { "kicker": "CAPTAIN", "title": "The cult adept", "from": "glossary:captain", "says": [4, 6] },
+          "squad": { "kicker": "WHAT HAPPENED", "title": "Two cultists drop", "from": "glossary:minion", "says": [3] },
+          "fallen": { "kicker": "WHAT HAPPENED", "title": "The squad falls", "says": [6], "links": ["glossary:minion", "glossary:captain"] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
       },
       "lines": [
         {
@@ -172,6 +383,37 @@
         "pc": { "fig": "📐", "label": "SERA" },
         "foe": { "fig": "💀", "label": "THE LICH" }
       },
+      "scene": {
+        "backdrop": "throne",
+        "pieces": [
+          { "id": "rune", "kit": "rune", "x": 190, "y": 215 },
+          { "id": "skeleton-1", "kit": "skeleton-archer", "x": 40, "y": 60, "card": "skeleton", "label": "Skeleton archer" },
+          { "id": "skeleton-2", "kit": "skeleton-archer", "x": 500, "y": 60, "flip": true, "card": "skeleton", "label": "Skeleton archer" },
+          { "id": "lich", "kit": "lich", "x": 345, "y": 115, "face": -1, "card": "lich", "label": "The lich" },
+          { "id": "sera", "kit": "mage", "x": 120, "y": 180, "card": "sera", "label": "Sera" },
+          { "id": "bolt", "kit": "bolt", "x": 300, "y": 140, "show": [3, 3] },
+          { "id": "curse", "kit": "curse", "x": 115, "y": 170, "show": [4, 4] },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 200, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 118, "show": [3, 3], "card": "tier", "label": "Tier 2 ribbon" },
+          { "id": "flag", "kit": "flag", "x": 400, "y": 220, "show": [4], "text": "3 Malice spent", "card": "malice", "label": "Malice spent" }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "lich", "do": "rise" }, { "who": "lich", "do": "glow" }] },
+          { "line": 1, "cues": [{ "who": "sera", "do": "cast" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [{ "who": "bolt", "do": "burst" }, { "who": "lich", "do": "shake" }] },
+          { "line": 3, "cues": [{ "who": "lich", "do": "cast" }, { "who": "curse", "do": "burst" }] },
+          { "line": 4, "cues": [{ "who": "sera", "do": "stagger" }] }
+        ],
+        "cards": {
+          "lich": { "kicker": "SOLO", "title": "The lich", "from": "glossary:solo", "says": [0, 3], "links": ["glossary:malice"] },
+          "sera": { "kicker": "HERO", "title": "Sera", "stats": [["Reason", "+2"]], "from": "frontpage:characteristic-reason", "says": [1] },
+          "skeleton": { "kicker": "MONSTER", "from": "creature:skeleton-archer" },
+          "malice": { "kicker": "WHAT HAPPENED", "from": "glossary:malice", "says": [3] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
+      },
       "lines": [
         {
           "speaker": "DIRECTOR", "kind": "dir", "text": "The lich rises from its throne, {@resource malice|Malice} already crackling at its fingers.",
@@ -207,6 +449,43 @@
       "stage": {
         "pc": { "fig": "🛡", "label": "THE PARTY" },
         "foe": { "fig": "🏰", "label": "THE LAIR" }
+      },
+      "scene": {
+        "backdrop": "hall",
+        "pieces": [
+          { "id": "crown", "kit": "crown", "x": 290, "y": 185, "card": "crown", "label": "The lich's crown" },
+          { "id": "orden", "kit": "shield", "x": 40, "y": 170, "card": "orden", "label": "Orden" },
+          { "id": "kaelen", "kit": "knight", "x": 150, "y": 160, "card": "kaelen", "label": "Kaelen" },
+          { "id": "sera", "kit": "mage", "x": 360, "y": 160, "card": "sera", "label": "Sera" },
+          { "id": "mira", "kit": "archer", "x": 470, "y": 170, "face": -1 },
+          { "id": "dice", "kit": "dice", "x": 265, "y": 232, "show": [2, 2], "card": "roll", "label": "The dice" },
+          { "id": "ribbon", "kit": "ribbon", "x": 206, "y": 108, "show": [3, 3], "card": "tier", "label": "Tier 3 ribbon" },
+          { "id": "flag", "kit": "flag", "x": 236, "y": 240, "show": [4], "text": "One Victory", "card": "victory", "label": "One Victory" }
+        ],
+        "beats": [
+          { "line": 0, "cues": [{ "who": "crown", "do": "drop", "hold": true }] },
+          { "line": 1, "cues": [{ "who": "orden", "do": "step" }] },
+          { "line": 2, "cues": [] },
+          { "line": 2, "tier": true, "cues": [] },
+          {
+            "line": 3,
+            "cues": [
+              { "who": "orden", "do": "cheer" },
+              { "who": "kaelen", "do": "cheer" },
+              { "who": "sera", "do": "cheer" },
+              { "who": "mira", "do": "cheer" }
+            ]
+          }
+        ],
+        "cards": {
+          "crown": { "kicker": "THE PRIZE", "title": "The lich's crown", "says": [0] },
+          "orden": { "kicker": "HERO", "title": "Orden", "stats": [["Presence", "+2"]], "from": "frontpage:characteristic-presence", "says": [1] },
+          "kaelen": { "kicker": "HERO", "title": "Kaelen", "from": "frontpage:characteristic-might" },
+          "sera": { "kicker": "HERO", "title": "Sera", "from": "frontpage:characteristic-reason" },
+          "victory": { "kicker": "WHAT HAPPENED", "from": "glossary:victories", "says": [3], "links": ["glossary:respite"] },
+          "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+          "tier": { "kicker": "RESULT", "from": "tier:hero-power-roll", "links": ["glossary:power-roll"] }
+        }
       },
       "lines": [
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The lich's crown clatters to the floor. The lair falls silent." },

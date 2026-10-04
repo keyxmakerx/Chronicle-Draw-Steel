@@ -380,40 +380,29 @@ test('blockMatches: an empty query matches; a hit is case-insensitive; a miss is
 });
 
 // ── the sheet's board: layout per width, and the folded-map geometry ─────────
-test('sheetMode: side panels beside the board at 1440, inside it at 900, bottom sheets at 390', () => {
-  assert.equal(E.sheetMode(1440), 'side');
-  assert.equal(E.sheetMode(900), 'below');
+test('sheetMode: one column everywhere; only a phone-width screen changes how it is framed', () => {
+  assert.equal(E.sheetMode(1440), 'wide');
+  assert.equal(E.sheetMode(900), 'wide');
   assert.equal(E.sheetMode(390), 'phone');
+  assert.equal(E.sheetMode(E.SHEET.PHONE_MAX), 'phone');
+  assert.equal(E.sheetMode(E.SHEET.PHONE_MAX + 1), 'wide');
 });
 
-test('sheetMode: the side layout starts exactly where two panels, the gaps and the margins fit', () => {
+test('sheetLayout (wide): the board is one centred column, no wider than the content width', () => {
   const S = E.SHEET;
-  const need = 2 * S.SIDE_W + 2 * S.GAP + S.CONTENT_W + 2 * S.MARGIN;
-  assert.equal(E.sheetMode(need), 'side');
-  assert.equal(E.sheetMode(need - 1), 'below');
-  assert.equal(E.sheetMode(S.PHONE_MAX), 'phone');
-  assert.equal(E.sheetMode(S.PHONE_MAX + 1), 'below');
-});
-
-test('sheetLayout (wide): the board is centred and both side panels sit inside the viewport, hinged on its edges', () => {
   const L = E.sheetLayout({ viewportWidth: 1440, viewportHeight: 900 });
-  const S = E.SHEET;
-  assert.equal(L.mode, 'side');
+  assert.deepEqual(Object.keys(L).sort(), ['board', 'mode'], 'a board and nothing beside it');
+  assert.equal(L.mode, 'wide');
   assert.equal(L.board.width, S.CONTENT_W);
   assert.equal(L.board.left + L.board.width / 2, 720, 'centred horizontally');
-  assert.equal(L.left.left + L.left.width + S.GAP, L.board.left, 'left panel ends one gap before the board');
-  assert.equal(L.right.left, L.board.left + L.board.width + S.GAP, 'right panel starts one gap after it');
-  assert.ok(L.left.left >= S.MARGIN && L.right.left + L.right.width <= 1440 - S.MARGIN, 'no panel leaves the viewport');
-  assert.equal(L.left.top, L.board.top);
-  assert.equal(L.left.maxHeight, L.board.height, 'a side panel is never taller than the board');
+  assert.ok(L.board.height <= S.MAX_H && L.board.height <= 900 * S.H_FRAC);
+  assert.ok(L.board.top >= S.MARGIN && L.board.top + L.board.height <= 900 - S.MARGIN);
+  const mid = E.sheetLayout({ viewportWidth: 700, viewportHeight: 900 });
+  assert.equal(mid.board.width, 700 - 2 * S.MARGIN, 'a narrower screen narrows the column inside its margins');
+  assert.equal(mid.board.left, S.MARGIN);
 });
 
-test('sheetLayout (narrower, phone): no side rects; the phone board fills the screen inside an inset', () => {
-  const mid = E.sheetLayout({ viewportWidth: 900, viewportHeight: 900 });
-  assert.equal(mid.mode, 'below');
-  assert.equal(mid.left, null);
-  assert.equal(mid.right, null);
-  assert.ok(mid.board.left >= E.SHEET.MARGIN && mid.board.left + mid.board.width <= 900 - E.SHEET.MARGIN);
+test('sheetLayout (phone): the board fills the screen inside an inset', () => {
   const ph = E.sheetLayout({ viewportWidth: 390, viewportHeight: 844 });
   assert.equal(ph.mode, 'phone');
   assert.deepEqual(ph.board, { left: 8, top: 8, width: 374, height: 828 });

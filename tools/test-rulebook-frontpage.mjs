@@ -89,7 +89,7 @@ test('buildLair: uses the FLIP sheet mode, not a hinge side, and carries no left
   assert.ok(!/data-rb-dim=/.test(html), 'a centred sheet has its own veil — dimming a neighbour block is a leftover from the old hinge design');
 });
 
-test('buildLair: every part (1-4) is wired to its own script, not marked "soon"', () => {
+test('buildLair: every part is wired to its own script, not marked "soon"', () => {
   const html = F.buildLair(SCENE);
   for (const slug of ['into-the-lair', 'minion-skirmish', 'the-lich-fight', 'aftermath']) {
     assert.ok(html.includes('data-rbx-play="' + slug + '"'), `part ${slug} is not wired to data-rbx-play`);
@@ -106,7 +106,7 @@ test('buildLair: renders a hover-card term chip per teaches entry', () => {
 // ── buildLair: the open sheet is a real dialog, not just a styled panel ─────
 test('buildLair: the sheet carries dialog semantics — role, aria-modal, and an aria-label naming the scene', () => {
   const html = F.buildLair(SCENE);
-  assert.match(html, /<div class="rb-wing" role="dialog" aria-modal="true" aria-label="The Lich's Lair">/);
+  assert.match(html, /<div class="rb-wing" role="dialog" aria-modal="true" aria-label="The Lich's Lair" data-rbx-board>/);
 });
 
 test('buildLair: dialog semantics sit on the sheet itself, not the host card', () => {
@@ -167,10 +167,14 @@ test('seed data/rulebook-frontpage.json: parts carry slug+play, and glossary ter
   assert.ok(scene, 'a worked-scene item exists');
 
   const parts = scene.properties.parts;
-  assert.equal(parts.length, 4);
+  assert.deepEqual(parts.map((p) => p.play), [
+    'bursting-the-door', 'the-grapple', 'kaelen-swings', 'into-the-lair', 'minion-skirmish', 'the-lich-fight', 'aftermath',
+  ], 'the seven parts, in the signed board\'s chip order');
   for (const part of parts) {
     assert.ok(part.slug && part.play, `part ${part.name} needs both a slug and a play script`);
   }
+  assert.ok(parts.some((p) => p.slug === scene.properties.openOn), 'openOn names one of the parts');
+  assert.equal(F.buildLairConfig(scene).openOn, 'kaelen-swings', 'the board opens on Kaelen swings, as signed');
 
   const terms = new Set();
   for (const chip of scene.properties.teaches.chips) terms.add(chip.term);
@@ -204,18 +208,30 @@ test('fold engine: opening or closing a sheet never scrolls the page', () => {
   assert.equal(bare, null, `sheet focus calls without preventScroll: ${bare}`);
 });
 
-// ── the board's side panels, folded-map cover and phone tab bar ─────────────
-test('buildLair: the table and rules in play are side panels of their own, not stacked under the script', () => {
+// ── the board: one column with a header, part chips, the scene and drawers ──
+test('buildLair: the board is one column: header, part chips, the parts, then two drawers', () => {
   const html = F.buildLair(SCENE);
-  assert.match(html, /data-rb-sheet-side="left"[^>]*data-rb-sheet-tab="Table"/);
-  assert.match(html, /data-rb-sheet-side="right"[^>]*data-rb-sheet-tab="Rules"/);
-  assert.ok(html.includes('data-rbx-lair-table'), 'the table panel is the player\'s table slot');
-  assert.ok(html.includes('data-rbx-lair-rules'), 'the rules panel is the player\'s rules slot');
-  assert.ok(html.includes('data-rb-sheet-below'), 'a place inside the board for a narrower screen');
-  assert.ok(html.includes('data-rb-sheet-tabs'), 'a tab bar for a phone');
-  // the side panels sit outside the board (dialog) markup, beside it
-  const board = html.slice(html.indexOf('<div class="rb-wing"'), html.indexOf('data-rb-sheet-side='));
-  assert.ok(!/data-rbx-lair-table/.test(board));
+  const order = ['data-rbx-board-title', 'data-rbx-board-replay', 'data-rb-close-wing', 'class="rb-lbparts"',
+    'data-rbx-script="into-the-lair"', 'data-rbx-lair-table', 'data-rbx-lair-rules'];
+  let at = -1;
+  for (const mark of order) {
+    const i = html.indexOf(mark);
+    assert.ok(i > at, `${mark} comes after the previous piece of the board`);
+    at = i;
+  }
+  assert.match(html, /<details><summary>THE TABLE<\/summary><div class="rb-lbin" data-rbx-lair-table>/);
+  assert.match(html, /<details><summary>RULES IN THIS PART<\/summary>/);
+  assert.ok(html.indexOf('data-rbx-lair-table') > html.indexOf('<div class="rb-wing"'), 'the drawers live inside the board');
+  for (const gone of ['data-rb-sheet-side', 'data-rb-sheet-tabs', 'data-rb-sheet-below', 'data-rbx-back', 'rb-lair-overview'])
+    assert.ok(!html.includes(gone), `${gone} belongs to the old side-panel board`);
+});
+
+test('buildLair: each part is a chip that plays its own board container', () => {
+  const html = F.buildLair(SCENE);
+  const chips = html.slice(html.indexOf('class="rb-lbparts"'), html.indexOf('data-rb-sheet-body'));
+  assert.equal((chips.match(/<button class="rb-lbchip" type="button" data-rbx-play=/g) || []).length, 4);
+  for (const slug of ['into-the-lair', 'aftermath'])
+    assert.ok(html.includes(`id="rbx-lair-${slug}" data-rbx-script="${slug}"`), `${slug} has an id the reader's container does not share`);
 });
 
 test('buildLair: the board opens from a folded map — a clipped surface, one map cover, its fold shading', () => {
@@ -224,26 +240,22 @@ test('buildLair: the board opens from a folded map — a clipped surface, one ma
   assert.equal((html.match(/data-rb-sheet-cover/g) || []).length, 1, 'one continuous map texture');
   for (const k of ['l', 'r', 't', 'b']) assert.ok(html.includes(`data-rb-sheet-shade="${k}"`), `shade ${k}`);
   for (const k of ['v1', 'v2', 'h1', 'h2']) assert.ok(html.includes(`data-rb-sheet-crease="${k}"`), `crease ${k}`);
-  assert.match(html, /data-rbx-back[^>]*data-rb-sheet-home/, 'the phone tab bar\'s first tab is the way back to the overview');
 });
 
-test('lairCompanions: a part gets the table when there is a roster, and rules when it names some', () => {
+test('buildLair: nothing of the board sits outside the sheet, so the card never grows', () => {
+  const html = F.buildLair(SCENE);
+  const wingAt = html.indexOf('<div class="rb-wing"');
+  assert.ok(html.endsWith('</div></div></div>'), 'the card closes straight after the sheet');
+  assert.ok(!/data-rbx-lair-|data-rbx-script/.test(html.slice(0, wingAt)), 'no slot before the sheet');
+  assert.ok(!/\.rb-lbside|\.rb-lbtabs/.test(F.css()), 'no side-panel or tab-bar styles remain');
+});
+
+test('buildLairConfig: carries the cover title and the part the board opens on, defaulting to the first', () => {
   const cfg = F.buildLairConfig(SCENE);
-  assert.deepEqual(F.lairCompanions(cfg, 'p3'), { left: true, right: true });
-  assert.deepEqual(F.lairCompanions(cfg, 'p1'), { left: true, right: false });
-  assert.equal(F.lairCompanions(cfg, null), null, 'the overview has no side panels');
-  assert.deepEqual(F.lairCompanions({}, 'p1'), { left: false, right: false });
-});
-
-// Before a mode places them, the side panels must be out of the card's flow:
-// in flow they made the card taller until the board opened, and the page
-// jumped when they left it.
-test('css: the side panels are out of the card\'s flow until a mode places them', () => {
-  const sheet = F.css();
-  const base = (sheet.match(/(?:^|\n)\s*\.rb-lbside\{[^}]*\}/) || [])[0];
-  assert.ok(base, 'the base side-panel rule exists');
-  assert.match(base, /position:fixed/);
-  assert.match(base, /visibility:hidden/);
+  assert.equal(cfg.title, "The Lich's Lair");
+  assert.equal(cfg.openOn, 'into-the-lair', 'no openOn: the first part');
+  const named = F.buildLairConfig({ ...SCENE, properties: { ...SCENE.properties, openOn: 'p3' } });
+  assert.equal(named.openOn, 'the-lich-fight');
 });
 
 test('css: once the map covers it, the card leaves an empty slot instead of a second copy', () => {
