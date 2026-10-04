@@ -491,7 +491,7 @@
         { "speaker": "DIRECTOR", "kind": "dir", "text": "The lich's crown clatters to the floor. The lair falls silent." },
         { "speaker": "ORDEN", "kind": "pc", "text": "That's one for the tally — Victory test?" },
         {
-          "speaker": "ROLL", "kind": "roll", "dice": [5, 9], "tier": "TIER 3",
+          "speaker": "ROLL", "kind": "roll", "dice": [5, 9], "tier": "TIER 2",
           "steps": [
             { "text": "= **14**" },
             { "text": "+2 **Presence**" },
