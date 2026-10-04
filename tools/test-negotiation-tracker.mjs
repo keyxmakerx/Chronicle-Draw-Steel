@@ -208,3 +208,26 @@ test('GM view needs isGm and the gm half from the server, and escapes the log', 
   const p = await mount({ isGm: true, state: { isGm: false, public: { shown: true, interest: 2, patience: 2, response: 'No, but...', motivationsFound: [], pitfallsFound: [] } } });
   assert.ok(!/Make the argument/.test(p.el.innerHTML));
 });
+
+test('GM card starts as a closed bar showing the meters, and opening is remembered per page', async () => {
+  const store = new Map();
+  globalThis.window = { localStorage: { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, v) } };
+  try {
+    const r = await mount({ isGm: true, state: { isGm: true, public: {}, gm: { attitude: 'open', interest: 2, patience: 3 } } });
+    assert.match(r.el.innerHTML, /class="dsn"/, 'closed by default');
+    assert.match(r.el.innerHTML, /aria-expanded="false"/);
+    assert.match(r.el.innerHTML, /Interest<\/span>.*<span>2<\/span>/s);
+    assert.match(r.el.innerHTML, /Hidden from players/);
+    assert.match(r.el.innerHTML, / inert>/, 'closed controls are out of the tab order');
+    r.el.__negotiationTracker._toggle();
+    assert.equal(store.get('dsn-open:e1'), '1');
+    const again = await mount({ isGm: true, state: { isGm: true, public: {}, gm: { attitude: 'open' } } });
+    assert.match(again.el.innerHTML, /class="dsn open"/, 'reopens where the GM left it');
+    // Blocked storage falls back to closed rather than failing.
+    globalThis.window = { localStorage: { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } };
+    const blocked = await mount({ isGm: true, state: { isGm: true, public: {}, gm: { attitude: 'open' } } });
+    assert.match(blocked.el.innerHTML, /class="dsn"/);
+  } finally {
+    delete globalThis.window;
+  }
+});
