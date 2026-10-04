@@ -35,3 +35,18 @@ parts:
       - running-the-game
       - building-encounters
       - monsters
+  - title: Rules index
+    chapters:
+      - index-abilities
+      - index-ancestries
+      - index-kits
+      - index-skills
+      - index-rule-words
+      - index-ability-keywords
+  - title: Director's index
+    director: true
+    chapters:
+      - index-creatures
+      - index-creature-abilities
+      - index-creature-keywords
+      - index-animal-traits
