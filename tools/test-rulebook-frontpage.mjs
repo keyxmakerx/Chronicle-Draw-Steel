@@ -203,3 +203,49 @@ test('fold engine: opening or closing a sheet never scrolls the page', () => {
   const bare = src.match(/(?:_wingReturnFocus|host|wing|firstCtl|readerSheet|firstBtn|_readerReturnFocus|readerTrigger)\.focus\(\)/g);
   assert.equal(bare, null, `sheet focus calls without preventScroll: ${bare}`);
 });
+
+// ── the board's side panels, folded-map cover and phone tab bar ─────────────
+test('buildLair: the table and rules in play are side panels of their own, not stacked under the script', () => {
+  const html = F.buildLair(SCENE);
+  assert.match(html, /data-rb-sheet-side="left"[^>]*data-rb-sheet-tab="Table"/);
+  assert.match(html, /data-rb-sheet-side="right"[^>]*data-rb-sheet-tab="Rules"/);
+  assert.ok(html.includes('data-rbx-lair-table'), 'the table panel is the player\'s table slot');
+  assert.ok(html.includes('data-rbx-lair-rules'), 'the rules panel is the player\'s rules slot');
+  assert.ok(html.includes('data-rb-sheet-below'), 'a place inside the board for a narrower screen');
+  assert.ok(html.includes('data-rb-sheet-tabs'), 'a tab bar for a phone');
+  // the side panels sit outside the board (dialog) markup, beside it
+  const board = html.slice(html.indexOf('<div class="rb-wing"'), html.indexOf('data-rb-sheet-side='));
+  assert.ok(!/data-rbx-lair-table/.test(board));
+});
+
+test('buildLair: the board opens from a folded map — a clipped surface, one map cover, its fold shading', () => {
+  const html = F.buildLair(SCENE);
+  assert.ok(html.includes('data-rb-sheet-surface'));
+  assert.equal((html.match(/data-rb-sheet-cover/g) || []).length, 1, 'one continuous map texture');
+  for (const k of ['l', 'r', 't', 'b']) assert.ok(html.includes(`data-rb-sheet-shade="${k}"`), `shade ${k}`);
+  for (const k of ['v1', 'v2', 'h1', 'h2']) assert.ok(html.includes(`data-rb-sheet-crease="${k}"`), `crease ${k}`);
+  assert.match(html, /data-rbx-back[^>]*data-rb-sheet-home/, 'the phone tab bar\'s first tab is the way back to the overview');
+});
+
+test('lairCompanions: a part gets the table when there is a roster, and rules when it names some', () => {
+  const cfg = F.buildLairConfig(SCENE);
+  assert.deepEqual(F.lairCompanions(cfg, 'p3'), { left: true, right: true });
+  assert.deepEqual(F.lairCompanions(cfg, 'p1'), { left: true, right: false });
+  assert.equal(F.lairCompanions(cfg, null), null, 'the overview has no side panels');
+  assert.deepEqual(F.lairCompanions({}, 'p1'), { left: false, right: false });
+});
+
+// Before a mode places them, the side panels must be out of the card's flow:
+// in flow they made the card taller until the board opened, and the page
+// jumped when they left it.
+test('css: the side panels are out of the card\'s flow until a mode places them', () => {
+  const sheet = F.css();
+  const base = (sheet.match(/(?:^|\n)\s*\.rb-lbside\{[^}]*\}/) || [])[0];
+  assert.ok(base, 'the base side-panel rule exists');
+  assert.match(base, /position:fixed/);
+  assert.match(base, /visibility:hidden/);
+});
+
+test('css: once the map covers it, the card leaves an empty slot instead of a second copy', () => {
+  assert.match(F.css(), /\.rb-lair\.rb-sheet-away\{visibility:hidden\}/);
+});

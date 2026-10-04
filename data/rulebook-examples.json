@@ -203,15 +203,13 @@
     "properties": {
       "icon": "🏆",
       "title": "Part 4 — Aftermath",
+      "startStamina": { "kaelen": 82, "sera": 70 },
       "stage": {
         "pc": { "fig": "🛡", "label": "THE PARTY" },
         "foe": { "fig": "🏰", "label": "THE LAIR" }
       },
       "lines": [
-        {
-          "speaker": "DIRECTOR", "kind": "dir", "text": "The lich's crown clatters to the floor. The lair falls silent.",
-          "_effects": [{ "type": "stamina", "target": "sera", "pct": 100 }, { "type": "stamina", "target": "kaelen", "pct": 100 }]
-        },
+        { "speaker": "DIRECTOR", "kind": "dir", "text": "The lich's crown clatters to the floor. The lair falls silent." },
         { "speaker": "ORDEN", "kind": "pc", "text": "That's one for the tally — Victory test?" },
         {
           "speaker": "ROLL", "kind": "roll", "dice": [5, 9], "tier": "TIER 3",
@@ -223,7 +221,10 @@
           ],
           "_effects": [{ "type": "victories", "value": 1 }]
         },
-        { "speaker": "DIRECTOR", "kind": "dir", "text": "One {@resource victories|Victory}, banked. ~~Back to town for a respite~~ — Recoveries and Stamina reset, Victories become Experience." }
+        {
+          "speaker": "DIRECTOR", "kind": "dir", "text": "One {@resource victories|Victory}, banked. ~~Back to town for a respite~~ — Recoveries and Stamina reset, Victories become Experience.",
+          "_effects": [{ "type": "stamina", "target": "sera", "pct": 100 }, { "type": "stamina", "target": "kaelen", "pct": 100 }]
+        }
       ]
     },
     "source": "custom"

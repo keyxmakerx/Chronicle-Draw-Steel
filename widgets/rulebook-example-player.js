@@ -27,6 +27,10 @@
  *                              `rbx-on` while shown.
  *   [data-rbx-replay]          replays a rendered script.
  *   [data-rbx-back]            reverses a play button's show/hide.
+ *   [data-rbx-lair-table]      optional panel for the Lair's table (roster +
+ *                              Stamina); absent, it renders with each part.
+ *   [data-rbx-lair-rules]      optional panel for the playing part's rules
+ *                              in play; absent, they render with each part.
  *
  * Loading: attaches the `RulebookExamplePlayer` global via the manifest
  * `text_renderers` section, loaded BEFORE widget scripts (same seam as
@@ -110,6 +114,22 @@ var RulebookExamplePlayer = (function () {
     return typeof p.startMalice === 'number' ? p.startMalice : 0;
   }
 
+  // startStaminaOf reads where a script's Stamina bars begin: { heroSlug:
+  // percent }, e.g. a later part opening on the wounds an earlier one left.
+  // Only finite numbers survive, clamped to 0-100; a hero it doesn't name
+  // starts full. {} when the script has none.
+  function startStaminaOf(data) {
+    var p = (data && (data.properties || data)) || {};
+    var src = p.startStamina, out = {};
+    if (!src || typeof src !== 'object' || isArr(src)) return out;
+    for (var k in src) {
+      if (!Object.prototype.hasOwnProperty.call(src, k)) continue;
+      var v = src[k];
+      if (typeof v === 'number' && isFinite(v)) out[k] = Math.max(0, Math.min(100, v));
+    }
+    return out;
+  }
+
   // computeTableState folds every lines[]._effects from beat 0 through
   // uptoIndex (inclusive) into the Lair table/lesson state. Pure and
   // deterministic, so "stepping back puts the table back as it was" (#732) is
@@ -117,10 +137,15 @@ var RulebookExamplePlayer = (function () {
   // drift. uptoIndex -1 means "nothing played yet" (every field at its rest
   // value) — malice rests at the script's own startMalice (0 when it has
   // none), not an unset null, since a solo boss's Malice pool exists before
-  // its first spend.
-  function computeTableState(lines, uptoIndex, startMalice) {
+  // its first spend; Stamina rests at the script's startStamina (full for
+  // any hero it doesn't name).
+  function computeTableState(lines, uptoIndex, startMalice, startStamina) {
+    var stamina = {};
+    if (startStamina && typeof startStamina === 'object') {
+      for (var k in startStamina) if (Object.prototype.hasOwnProperty.call(startStamina, k)) stamina[k] = startStamina[k];
+    }
     var st = {
-      stamina: {}, squadCount: null, squadFallen: 0, captainUp: null,
+      stamina: stamina, squadCount: null, squadFallen: 0, captainUp: null,
       malice: (typeof startMalice === 'number' ? startMalice : 0),
       victories: 0, tally: null
     };
@@ -313,18 +338,22 @@ var RulebookExamplePlayer = (function () {
       '<span class="rbx-tagsample">sample</span></div>' + body + '</div>';
   }
 
-  // buildLairExtras renders the table (hero roster + Stamina) and the
-  // rules-in-play chips beside a Lair part's script, plus its teaching
-  // lesson. `lair` is { table, rulesInPlay, lessons } from the worked-scene's
-  // ReferenceItem; `partKey` is the part's own slug ("p1".."p4"). startMalice
-  // is the PLAYED SCRIPT's own rest value (a different JSON file than `lair`),
-  // passed through so the lesson's Malice counter starts right, not at 0.
-  function buildLairExtras(partKey, lair, startMalice) {
+  // lairHeroes / lairRules read the worked scene's roster and one part's
+  // rules-in-play chips, tolerating either being absent.
+  function lairHeroes(lair) {
     var cfg = lair || {};
-    var heroes = isArr(cfg.table && cfg.table.heroes) ? cfg.table.heroes : [];
-    var rip = isArr(cfg.rulesInPlay && cfg.rulesInPlay[partKey]) ? cfg.rulesInPlay[partKey] : [];
-    var lesson = (cfg.lessons && cfg.lessons[partKey]) || null;
+    return isArr(cfg.table && cfg.table.heroes) ? cfg.table.heroes : [];
+  }
+  function lairRules(lair, partKey) {
+    var cfg = lair || {};
+    return isArr(cfg.rulesInPlay && cfg.rulesInPlay[partKey]) ? cfg.rulesInPlay[partKey] : [];
+  }
 
+  // buildLairTable renders the table: the hero roster with a Stamina bar
+  // each. The bars start full; playing a part paints its own state on them.
+  function buildLairTable(lair) {
+    var heroes = lairHeroes(lair);
+    if (!heroes.length) return '';
     var heroRows = '';
     for (var i = 0; i < heroes.length; i++) {
       var h = heroes[i] || {};
@@ -332,17 +361,36 @@ var RulebookExamplePlayer = (function () {
         '<span class="rbx-hnm">' + esc(h.name) + '</span>' +
         '<span class="rbx-bar"><i data-rbx-hero="' + escAttr(h.slug) + '" style="width:100%"></i></span></div>';
     }
+    return '<div class="rbx-table"><div class="rbx-tlbl">THE TABLE<span class="rbx-tagsample">sample</span></div>' +
+      '<div class="rbx-heroes">' + heroRows + '</div></div>';
+  }
+
+  // buildLairRules renders one part's rules-in-play chips, each a glossary
+  // term with a hover card. '' when the part names none.
+  function buildLairRules(lair, partKey) {
+    var rip = lairRules(lair, partKey);
     var chips = '';
     for (var c = 0; c < rip.length; c++) {
       var r = rip[c] || {};
       chips += '<span class="rb-chip" data-rb-term="' + escAttr(r.term) + '" tabindex="0" ' +
         'aria-describedby="rb-hcard">' + esc(r.label) + '</span>';
     }
+    return chips ? '<div class="rbx-rip"><div class="rbx-tlbl">RULES IN PLAY</div>' +
+      '<div class="rbx-chiprow">' + chips + '</div></div>' : '';
+  }
 
-    return (heroes.length ? '<div class="rbx-table"><div class="rbx-tlbl">THE TABLE<span class="rbx-tagsample">sample</span></div>' +
-        '<div class="rbx-heroes">' + heroRows + '</div></div>' : '') +
-      (chips ? '<div class="rbx-rip"><div class="rbx-tlbl">RULES IN PLAY</div>' +
-        '<div class="rbx-chiprow">' + chips + '</div></div>' : '') +
+  // buildLairExtras renders what sits with a Lair part's script: the table,
+  // the rules-in-play chips and its teaching lesson. `lair` is { table,
+  // rulesInPlay, lessons } from the worked-scene's ReferenceItem; `partKey`
+  // is the part's own slug ("p1".."p4"). startMalice is the PLAYED SCRIPT's
+  // own rest value (a different JSON file than `lair`), passed through so the
+  // lesson's Malice counter starts right, not at 0. `omit` leaves out the
+  // table and/or rules when the page gives them panels of their own.
+  function buildLairExtras(partKey, lair, startMalice, omit) {
+    var cfg = lair || {}, o = omit || {};
+    var lesson = (cfg.lessons && cfg.lessons[partKey]) || null;
+    return (o.table ? '' : buildLairTable(cfg)) +
+      (o.rules ? '' : buildLairRules(cfg, partKey)) +
       (lesson ? buildLesson(lesson, startMalice) : '');
   }
 
@@ -498,6 +546,15 @@ var RulebookExamplePlayer = (function () {
     // renders with no table/lesson extras, same as before v10.4.
     var lair = opts.lair || {};
     var lairParts = lair.partsBySlug || {};
+    // onPart(partKey | null) tells the page which Lair part is on screen
+    // (null: back to the overview), so it can bring out that part's panels.
+    var onPart = typeof lair.onPart === 'function' ? lair.onPart : null;
+    // The page may give the table and the rules in play panels of their own
+    // ([data-rbx-lair-table] / [data-rbx-lair-rules]); without them both
+    // render with each part's script, as before.
+    var tableSlot = root.querySelector('[data-rbx-lair-table]');
+    var rulesSlot = root.querySelector('[data-rbx-lair-rules]');
+    var activeLair = null;   // the Lair part's script container now driving the table
     // reducedMotion may be forced (tests); else read the media query live.
     var forcedReduced = (opts.reducedMotion != null) ? !!opts.reducedMotion : null;
 
@@ -539,11 +596,15 @@ var RulebookExamplePlayer = (function () {
     // table/lesson DOM hooks the container actually has (a script with no Lair
     // part has none, and every lookup here tolerates that).
     function _applyTableState(container, st) {
-      each(container.querySelectorAll('[data-rbx-hero]'), function (bar) {
-        var slug = bar.getAttribute('data-rbx-hero');
-        var pct = st.stamina[slug];
-        bar.style.width = (pct == null ? 100 : Math.max(0, Math.min(100, pct))) + '%';
-      });
+      function paintBars(scope) {
+        each(scope.querySelectorAll('[data-rbx-hero]'), function (bar) {
+          var slug = bar.getAttribute('data-rbx-hero');
+          var pct = st.stamina[slug];
+          bar.style.width = (pct == null ? 100 : Math.max(0, Math.min(100, pct))) + '%';
+        });
+      }
+      paintBars(container);
+      if (tableSlot && container === activeLair) paintBars(tableSlot);
       if (st.squadCount != null) {
         each(container.querySelectorAll('[data-rbx-minion]'), function (m, i) { _toggle(m, 'rbx-down', i < st.squadFallen); });
       }
@@ -582,7 +643,8 @@ var RulebookExamplePlayer = (function () {
       if (!data) return;
       container.innerHTML = buildScriptHtml(data);
       var partKey = lairParts[slug];
-      if (partKey) container.insertAdjacentHTML('beforeend', buildLairExtras(partKey, lair, startMaliceOf(data)));
+      if (partKey) container.insertAdjacentHTML('beforeend',
+        buildLairExtras(partKey, lair, startMaliceOf(data), { table: !!tableSlot, rules: !!rulesSlot }));
       container.setAttribute('data-rbx-rendered', '1');
       if (typeof lair.bindTerms === 'function') lair.bindTerms(container.querySelectorAll('[data-rb-term]'));
       var rep = container.querySelector('[data-rbx-replay]');
@@ -665,7 +727,7 @@ var RulebookExamplePlayer = (function () {
       if (index >= 0 && lineEls[index]) { lineEls[index].classList.add('rbx-now'); setTok(stage, lineEls[index].getAttribute('data-rbx-kind')); }
       else setTok(stage, null);
       st.index = index;
-      _applyTableState(container, computeTableState(lines, index, startMaliceOf(examples[slug])));
+      _applyTableState(container, computeTableState(lines, index, startMaliceOf(examples[slug]), startStaminaOf(examples[slug])));
       _updateCtl(container, slug);
     }
 
@@ -688,7 +750,7 @@ var RulebookExamplePlayer = (function () {
       l.classList.add('rbx-shown', 'rbx-now');
       setTok(stage, l.getAttribute('data-rbx-kind'));
       st.index = next;
-      _applyTableState(container, computeTableState(lines, next, startMaliceOf(examples[slug])));
+      _applyTableState(container, computeTableState(lines, next, startMaliceOf(examples[slug]), startStaminaOf(examples[slug])));
       _updateCtl(container, slug);
       function current() { return !destroyed && container.__rbx === st && !st.paused; }
       if (l.className.indexOf('rbx-rl') >= 0) {
@@ -733,7 +795,7 @@ var RulebookExamplePlayer = (function () {
       resetScript(container);
       var lines = linesOf(examples[slug]);
       container.__rbx = { index: -1, paused: false, timer: null };
-      _applyTableState(container, computeTableState(lines, -1, startMaliceOf(examples[slug])));
+      _applyTableState(container, computeTableState(lines, -1, startMaliceOf(examples[slug]), startStaminaOf(examples[slug])));
       _updateCtl(container, slug);
       var stage = container.querySelector('.rbx-stage');
 
@@ -782,11 +844,44 @@ var RulebookExamplePlayer = (function () {
       // against the `st` object it captured and stops the moment they differ.
       if (parent) each(parent.querySelectorAll('[data-rbx-script].rbx-on'), function (sib) { if (sib !== container) { sib.classList.remove('rbx-on'); sib.__rbx = null; bumpRun(sib); } });
       container.classList.add('rbx-on');
+      var partKey = lairParts[slug];
+      if (partKey) {
+        activeLair = container;
+        _showRules(partKey);
+      }
       playContainer(container, slug);
+      if (partKey && onPart) onPart(partKey);
+    }
+
+    // _showRules shows one part's chips in the rules panel (each part's
+    // group is rendered once, at mount, so its hover cards bind once).
+    function _showRules(partKey) {
+      if (!rulesSlot) return;
+      each(rulesSlot.querySelectorAll('[data-rbx-rules-part]'), function (g) {
+        _toggle(g, 'rbx-hidden', g.getAttribute('data-rbx-rules-part') !== partKey);
+      });
+    }
+
+    // The table and the rules in play get their own panels when the page
+    // provides them: filled once here, then repainted as each part plays.
+    if (tableSlot) tableSlot.innerHTML = buildLairTable(lair);
+    if (rulesSlot) {
+      var groups = '', seen = {};
+      for (var ps in lairParts) {
+        if (!Object.prototype.hasOwnProperty.call(lairParts, ps)) continue;
+        var pk = lairParts[ps];
+        if (seen[pk]) continue;
+        seen[pk] = true;
+        groups += '<div class="rbx-hidden" data-rbx-rules-part="' + escAttr(pk) + '">' + buildLairRules(lair, pk) + '</div>';
+      }
+      rulesSlot.innerHTML = groups;
+      if (typeof lair.bindTerms === 'function') lair.bindTerms(rulesSlot.querySelectorAll('[data-rb-term]'));
     }
 
     each(root.querySelectorAll('[data-rbx-play]'), function (btn) { on(btn, 'click', function (e) { e.stopPropagation(); handlePlay(btn); }); });
-    each(root.querySelectorAll('[data-rbx-back]'), function (btn) { on(btn, 'click', function (e) { e.stopPropagation(); applyShowHide(btn); }); });
+    each(root.querySelectorAll('[data-rbx-back]'), function (btn) {
+      on(btn, 'click', function (e) { e.stopPropagation(); applyShowHide(btn); if (onPart) onPart(null); });
+    });
 
     function stopAll() {
       if (win) { for (var i = 0; i < timeouts.length; i++) win.clearTimeout(timeouts[i]); for (var j = 0; j < intervals.length; j++) win.clearInterval(intervals[j]); }
@@ -822,6 +917,7 @@ var RulebookExamplePlayer = (function () {
     esc: esc, richText: richText, richTerm: richTerm,
     isRoll: isRoll, tokenForLine: tokenForLine, rollRevealOrder: rollRevealOrder,
     linesOf: linesOf, computeTableState: computeTableState, startMaliceOf: startMaliceOf,
+    startStaminaOf: startStaminaOf, buildLairTable: buildLairTable, buildLairRules: buildLairRules,
     planScript: planScript, buildScriptHtml: buildScriptHtml,
     buildLesson: buildLesson, buildLairExtras: buildLairExtras,
     mount: mount

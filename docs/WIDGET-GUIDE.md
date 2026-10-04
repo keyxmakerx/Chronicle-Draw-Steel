@@ -139,13 +139,19 @@ that folds open in three matched ways (the SIGNED `rulebook-v10` design):
 - **Five characteristic cards** → each folds a **hinged wing** out of its edge, over its
   neighbours (left-column cards wing right, right-column cards wing left).
 - **Condition rows** → each unfolds a **flap** down over the rows beneath.
-- **The Lich's Lair** worked-scene → wings left over the whole Conditions block.
+- **The Lich's Lair** worked-scene → the card travels to the middle of the screen as a folded
+  map and unfolds there, panel by panel, into a centred board. While a part plays, the table
+  (heroes + Stamina) and the rules in play sit in side panels hinged on the board's edges on a
+  wide screen (1216px and up), inside the board under the part on a narrower one, and in bottom
+  sheets behind a Map / Table / Rules tab bar on a phone (880px and under).
 
 Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
 related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
 (priority flap → wing → reader). Everything is tap-first; under 640px wings open
 **downward, spanning the full width of their block** (viewport minus page padding —
-not the cramped card column). Honours `prefers-reduced-motion`.
+not the cramped card column). Honours `prefers-reduced-motion`, and the breathing ⤢/⤵ marks
+slow to a standstill on Chronicle's `MotionRest` clock when the viewer steps away (without
+`MotionRest` they keep looping).
 
 **Staged examples:** the Might card's two example buttons, the reader's
 "▶ Watch the table play it" seam, and the Lich's Lair part 1 play the worked scenes
@@ -194,6 +200,12 @@ The module splits a **pure state machine** (`createState` / `reduce` / `escapePr
 `blockMatches` / `termCategoryColor` / `clampCardPosition`) from the DOM controller, so the fold
 logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`, `node --test`).
 
+**The sheet** (`data-rb-wing-mode="sheet"`, the Lich's Lair): `sheetMode` / `sheetLayout` place the
+board and its `[data-rb-sheet-side]` panels per viewport width, and `sheetFoldGeometry` gives the
+folded-map film its numbers; all three are pure and unit-tested. The caller says which side panels
+the current view has with `mount(...).setSheetCompanions({ left, right })`. Focus moves into the
+board on open and back to the card once it has folded home; the page never scrolls.
+
 **Mobile wings** (`mobileWingWidth`): under 640px a wing folds downward and spans the **full
 width of its block** (viewport minus page padding, measured from the `[data-rb-block]` ancestor),
 never the card column it hinges from.
@@ -222,10 +234,14 @@ available and `prefers-reduced-motion` reveals everything instantly.
 
 Scripts are **data** (`data/rulebook-examples.json`, ReferenceItem array; `properties.stage` +
 `properties.lines[]` with `speaker` / `kind` (`dir`|`pc`|`roll`) / `text` / `dice` / `steps` /
-`tier`). Text markup: `**bold**` and `~~dmg~~` (combat accent). The consumer builds the DOM
+`tier`, and optional `_effects` that move the Lair's table). A Lair script may also set
+`properties.startMalice` (where its Malice counter begins) and `properties.startStamina`
+(`{ heroSlug: percent }`, where its Stamina bars begin; a hero it doesn't name starts full). Text markup: `**bold**` and `~~dmg~~` (combat accent). The consumer builds the DOM
 (`[data-rbx-play="slug"]` buttons + `[data-rbx-script="slug"]` containers; optional
 `data-rbx-show` / `data-rbx-hide` for a drill-in and `data-rbx-back` to reverse it) and calls
-`RulebookExamplePlayer.mount(root, { examples })`. The module splits **pure logic**
+`RulebookExamplePlayer.mount(root, { examples })`. When the page has `[data-rbx-lair-table]` /
+`[data-rbx-lair-rules]` panels, the player fills them instead of rendering the table and rules
+with each script. The module splits **pure logic**
 (`planScript` / `rollRevealOrder` / `tokenForLine` / `isRoll` / `richText` / `buildScriptHtml`)
 from the DOM controller, unit-tested headless (`tools/test-rulebook-example-player.mjs`).
 

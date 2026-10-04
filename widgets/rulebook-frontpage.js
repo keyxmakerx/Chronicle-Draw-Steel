@@ -278,17 +278,17 @@
         'transform-origin:right center;transform:perspective(1100px) rotateY(88deg);' +
         'box-shadow:-26px 26px 60px rgba(0,0,0,.68)}',
       '[data-rb-side="left"] .rb-wing::before{left:auto;right:0}',
-      // Sheet variant (the Lich's Lair, req. "sits centred at every size"): no
-      // hinge, no seam — the engine FLIPs it (transform+opacity only, JS sets
-      // the final centred left/top/width/height) so it never reflows.
-      // z-index:62 (over the veil's 60): a fixed-position child does not
-      // inherit its host's stacking, so without this the veil — which must
-      // paint OVER the rest of the page — also painted over the sheet, and
-      // every click on it landed on the veil instead (found by the Playwright
-      // harness, not by eye).
+      // Sheet variant (the Lich's Lair board): no hinge, no seam. The engine
+      // sets its final centred left/top/width/height before anything moves
+      // and animates only transform, clip-path and opacity, so it never
+      // reflows. The panel carries the travel and a drop shadow; its surface
+      // (.rb-lbsurf) is what the fold clips, so the shadow is never clipped.
+      // z-index:62 sits over the veil's 60 (see the host's z-index below).
       '[data-rb-wing-mode="sheet"] .rb-wing{position:fixed;top:0;left:0;right:auto;max-height:none;z-index:62;' +
-        'transform:none;transform-origin:center center;border-radius:18px;box-shadow:var(--rb-sh)}',
+        'padding:0;overflow:visible;background:none;border:0;border-radius:18px;box-shadow:none;' +
+        'filter:drop-shadow(0 18px 34px rgba(0,0,0,.62));transform:none;transform-origin:center center;transition:none}',
       '[data-rb-wing-mode="sheet"] .rb-wing::before{display:none}',
+      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-wing{transition:none}',
       '.rb-root.rb-lair-open .rb-veil{opacity:1;pointer-events:auto}',
       // Open state (engine adds .is-open to the [data-rb-wing] host).
       '[data-rb-wing].is-open>.rb-wing{transform:none;opacity:1;visibility:visible;pointer-events:auto;' +
@@ -301,16 +301,10 @@
       // against outside siblings like the veil (z-index 60). Without this, the
       // sheet's own z-index:62 (above) never mattered and the veil still won.
       '[data-rb-wing-mode="sheet"][data-rb-wing].is-open{z-index:63}',
-      // The open sheet is a FIXED child of this same host card — without this,
-      // the host's own body (kicker/heading/description/chips) still painted
-      // behind it, leaving a small copy of the card visible on top of the
-      // dimming veil. visibility (not display) so closing needs no reflow to
-      // bring it back; not gated on prefers-reduced-motion, since it is a
-      // same-tick swap, not a travelled distance (unlike the FLIP itself).
-      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-kick,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>h3,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-d,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-chips{visibility:hidden}',
+      // Once the folded map covers the card, the card leaves an empty slot:
+      // the map is the card in your hands, never a second copy of it. The
+      // board inside sets its own visibility, so it stays on screen.
+      '.rb-lair.rb-sheet-away{visibility:hidden}',
       '[data-rb-wing].is-open .rb-unf,[data-rb-wing].is-open .rb-openmark{animation:none;opacity:.4}',
       // Crease (sticky header inside the wing) + close chip + body text + foldnote.
       '.rb-crease{position:sticky;top:-12px;margin:-12px -15px 8px;padding:8px 15px;display:flex;' +
@@ -368,12 +362,71 @@
       '.rb-chip[data-rb-term]{cursor:help;border-color:color-mix(in srgb,var(--rb-grn) 35%,var(--rb-edge))}',
       '.rb-teaches{margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--rb-edge)}',
       '.rb-parts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}',
+      // a phone-width board has room for one part per row
+      '@media(max-width:560px){.rb-parts{grid-template-columns:1fr}}',
       '.rb-part{display:flex;align-items:center;gap:9px;border:1px solid var(--rb-edge);border-radius:11px;' +
         'background:var(--rb-box2);padding:9px 11px;transition:border-color .2s,transform .2s}',
       '.rb-part:hover{border-color:var(--rb-grn);transform:translateY(-2px)}',
       '.rb-pn{font:750 11.5px/1.2 inherit}',
       '.rb-pd{font:500 10px/1.35 inherit;color:var(--rb-mut);flex:1}',
       // Parts 2–4: visible but not yet playable.
+      // The Lair board: its surface, scrolling body, and fold shading.
+      '.rb-lbsurf{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--rb-box);' +
+        'border:1.5px solid color-mix(in srgb,var(--rb-grn) 55%,var(--rb-edge));border-radius:18px}',
+      '.rb-lbsurf>.rb-crease{position:relative;top:auto;flex:none;margin:0;padding:10px 15px}',
+      '.rb-lbbody{flex:1 1 auto;min-height:0;overflow:auto;padding:12px 15px 14px}',
+      '.rb-wing.rb-sheet-tabbed .rb-lbbody{padding-bottom:70px}',
+      // The folded map's outside: one continuous map texture, shown only while it is folded.
+      '.rb-lbcover{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;display:grid;place-items:center;' +
+        'background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--rb-grn) 16%,transparent) 0 22%,transparent 23%),' +
+        'repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 25px),' +
+        'repeating-linear-gradient(25deg,rgba(0,0,0,.1) 0 1px,transparent 1px 30px),' +
+        'linear-gradient(160deg,color-mix(in srgb,var(--rb-grn) 16%,var(--rb-box2)),var(--rb-box3) 78%)}',
+      '.rb-lbcover i{font-style:normal;font-size:30px;opacity:.55;filter:saturate(.6)}',
+      // The paper's own shadow where it is still lifting: a band riding each opening edge.
+      '.rb-lbshade{position:absolute;left:0;top:0;z-index:8;pointer-events:none;opacity:0}',
+      '.rb-lbshade--l{background:linear-gradient(90deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--r{background:linear-gradient(270deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--t{background:linear-gradient(180deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--b{background:linear-gradient(0deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbcrease{position:absolute;z-index:6;pointer-events:none;opacity:0}',
+      '.rb-lbcrease--v{width:2px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.24),transparent)}',
+      '.rb-lbcrease--h{height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)}',
+      // The side panels: THE TABLE (left) and RULES IN PLAY (right). Hidden
+      // until the engine shows one; each sets its own visibility because the
+      // card around them is hidden while the board is out. Out of the card's
+      // flow until a mode places them, so they never make the card taller.
+      '.rb-lbside{position:fixed;left:0;top:0;visibility:hidden;cursor:default;background:var(--rb-box2);' +
+        'border:1px solid var(--rb-edge);border-radius:14px;padding:12px 14px}',
+      '.rb-lbside.is-shown{visibility:visible}',
+      '.rb-lbside .rbx-table,.rb-lbside .rbx-rip{margin-top:0;padding-top:0;border-top:0}',
+      '.rb-lbfoldshade{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;' +
+        'background:linear-gradient(90deg,rgba(2,4,9,.22),rgba(2,4,9,.68))}',
+      '.rb-lbside--left .rb-lbfoldshade{background:linear-gradient(270deg,rgba(2,4,9,.22),rgba(2,4,9,.68))}',
+      '.rb-lbhandle{display:none}',
+      // wide screen: panels beside the board, hinged on its edges across the gap
+      '[data-rb-sheet-mode="side"]>.rb-lbside{position:fixed;z-index:61;overflow:auto;box-shadow:0 18px 34px rgba(0,0,0,.5)}',
+      '[data-rb-sheet-mode="side"]>.rb-lbside--left{transform-origin:calc(100% + 16px) 50%}',
+      '[data-rb-sheet-mode="side"]>.rb-lbside--right{transform-origin:-16px 50%}',
+      // narrower: inside the board, under the part
+      '.rb-lbbelow{display:flex;gap:0 14px;flex-wrap:wrap}',
+      '.rb-lbbelow>.rb-lbside{position:relative;display:none;flex:1 1 230px;min-width:0}',
+      '.rb-lbbelow>.rb-lbside.is-shown{display:block;margin-top:14px}',
+      // phone: bottom sheets behind the tab bar
+      '[data-rb-sheet-mode="phone"]>.rb-lbside{position:fixed;z-index:64;left:0;right:0;top:auto;bottom:0;max-height:68vh;' +
+        'overflow:auto;border-radius:16px 16px 0 0;padding:6px 14px 72px;box-shadow:0 -18px 40px rgba(0,0,0,.55);' +
+        'transform:translateY(105%);transition:transform .4s var(--rb-spring),visibility 0s linear .4s}',
+      '[data-rb-sheet-mode="phone"]>.rb-lbside.is-shown{transform:none;transition:transform .4s var(--rb-spring),visibility 0s}',
+      '[data-rb-sheet-mode="phone"]>.rb-lbside .rb-lbhandle{display:grid;place-items:center;width:56px;height:24px;margin:0 auto 6px}',
+      '.rb-lbhandle::before{content:"";width:36px;height:4px;border-radius:3px;background:var(--rb-edge)}',
+      '.rb-lbtabs{position:fixed;left:8px;right:8px;bottom:8px;z-index:65;display:flex;gap:6px;' +
+        'background:var(--rb-box2);border:1px solid var(--rb-edge);border-radius:13px;padding:5px;box-shadow:var(--rb-sh);' +
+        'opacity:0;visibility:hidden;pointer-events:none;transform:translateY(8px);' +
+        'transition:opacity .2s,transform .3s var(--rb-spring),visibility 0s .3s}',
+      '.rb-lbtabs.is-shown{opacity:1;visibility:visible;pointer-events:auto;transform:none;' +
+        'transition:opacity .2s,transform .3s var(--rb-spring),visibility 0s}',
+      '.rb-lbtabs button{flex:1;font:750 10.5px/1 inherit;color:var(--rb-mut);padding:11px 4px;border-radius:9px;text-align:center}',
+      '.rb-lbtabs button[aria-pressed="true"]{color:var(--rb-ink);background:var(--rb-box3)}',
       '.rb-part--soon{opacity:.55;cursor:not-allowed}',
       '.rb-part--soon:hover{border-color:var(--rb-edge);transform:none}',
       '.rb-soon{font:800 8px/1 inherit;letter-spacing:.08em;color:var(--rb-mut2);' +
@@ -386,7 +439,7 @@
     // FINAL value up front (final-size layout from frame 1, so the multi-
     // column prose never reflows) and animates the "grows out of the hero
     // block" motion with transform + opacity only (a FLIP), never a
-    // left/top/width/height tween — the same contract the Lair sheet uses.
+    // left/top/width/height tween.
     s.push(
       '.rb-reader{position:fixed;z-index:70;border:1px solid var(--rb-edge);border-radius:18px;' +
         'background:var(--rb-box);box-shadow:var(--rb-sh);opacity:0;visibility:hidden;pointer-events:none;overflow:auto;' +
@@ -723,10 +776,10 @@
 
   // buildLair renders the worked-scene block. Its panel does not hinge over a
   // neighbour like the characteristic wings — data-rb-wing-mode="sheet" tells
-  // the fold engine to FLIP it from this card to a fixed, viewport-centred
-  // board instead (req. "the Lich's Lair sits centred at every size"). Every
-  // part now carries its own `play` script (p1 wired since v10.3; p2-p4 are
-  // new sample scripts, #48).
+  // the fold engine the card is a folded map: it travels to the middle of the
+  // screen and opens there into a fixed, centred board, with the table and
+  // the rules in play as side panels. Every part carries its own `play`
+  // script.
   function buildLair(scene) {
     var p = scene.properties || {};
     var chips = isArr(p.chips) ? p.chips : [];
@@ -778,23 +831,58 @@
         '<h3>' + esc(p.emoji) + ' ' + esc(scene.name) + '</h3>' +
         '<div class="rb-d">' + esc(scene.description) + '</div>' +
         '<div class="rb-chips">' + chipHtml + '</div>' +
+        // The board. It opens as a folded map: [data-rb-sheet-surface] is the
+        // paper the engine clips panel by panel, the cover is the map's
+        // outside, and the shades and creases are its fold shading.
         '<div class="rb-wing" role="dialog" aria-modal="true" aria-label="' + escAttr(scene.name) + '">' +
-          '<div class="rb-crease">' + esc(p.emoji) + ' ' +
-            esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
-            '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +
-          '<div id="rb-lair-overview">' +
-            '<p>' + esc(p.intro) + '</p>' +
-            (teachHtml ? '<div class="rb-teaches"><span class="rb-rellbl">THIS SCENE TEACHES →</span>' +
-              '<div class="rb-chips">' + teachHtml + '</div></div>' : '') +
-            '<div class="rb-parts">' + partHtml + '</div>' +
+          '<div class="rb-lbsurf" data-rb-sheet-surface>' +
+            '<div class="rb-crease">' + esc(p.emoji) + ' ' +
+              esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
+              '<button class="rb-x2" data-rb-close-wing aria-label="Close the worked scene">✕</button></div>' +
+            '<div class="rb-lbbody" data-rb-sheet-body>' +
+              '<div id="rb-lair-overview">' +
+                '<p>' + esc(p.intro) + '</p>' +
+                (teachHtml ? '<div class="rb-teaches"><span class="rb-rellbl">THIS SCENE TEACHES →</span>' +
+                  '<div class="rb-chips">' + teachHtml + '</div></div>' : '') +
+                '<div class="rb-parts">' + partHtml + '</div>' +
+              '</div>' +
+              '<div id="rb-lair-part" class="rbx-hidden">' +
+                '<button class="rbx-lairback" type="button" data-rbx-back data-rb-sheet-home data-rb-sheet-tab="Map" ' +
+                  'data-rbx-show="rb-lair-overview" data-rbx-hide="rb-lair-part">← lair overview</button>' +
+                scriptsHtml +
+              '</div>' +
+              // On a mid-width screen the side panels sit here, under the part.
+              '<div class="rb-lbbelow" data-rb-sheet-below></div>' +
+              '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
+            '</div>' +
+            '<div class="rb-lbshade rb-lbshade--l" data-rb-sheet-shade="l" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--r" data-rb-sheet-shade="r" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--t" data-rb-sheet-shade="t" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--b" data-rb-sheet-shade="b" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--v" data-rb-sheet-crease="v1" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--v" data-rb-sheet-crease="v2" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--h" data-rb-sheet-crease="h1" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--h" data-rb-sheet-crease="h2" aria-hidden="true"></div>' +
+            '<div class="rb-lbcover" data-rb-sheet-cover aria-hidden="true"><i>🧭</i></div>' +
           '</div>' +
-          '<div id="rb-lair-part" class="rbx-hidden">' +
-            '<button class="rbx-lairback" type="button" data-rbx-back ' +
-              'data-rbx-show="rb-lair-overview" data-rbx-hide="rb-lair-part">← lair overview</button>' +
-            scriptsHtml +
-          '</div>' +
-          '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
         '</div>' +
+        // The table (left) and the rules in play (right) while a part plays:
+        // panels hinged on the board's edges on a wide screen, inside the
+        // board on a narrower one, bottom sheets behind a tab bar on a phone.
+        // The example player fills them.
+        lairSide('left', 'Table', 'The table', '<div data-rbx-lair-table></div>') +
+        lairSide('right', 'Rules', 'Rules in play', '<div data-rbx-lair-rules></div>') +
+        '<div class="rb-lbtabs" data-rb-sheet-tabs></div>' +
+      '</div>';
+  }
+
+  // lairSide renders one of the Lair board's side panels around `inner`.
+  function lairSide(side, tab, label, inner) {
+    return '<div class="rb-lbside rb-lbside--' + side + '" data-rb-sheet-side="' + side + '" ' +
+        'data-rb-sheet-tab="' + escAttr(tab) + '" role="region" aria-label="' + escAttr(label) + '">' +
+        '<button class="rb-lbhandle" type="button" data-rb-sheet-handle aria-label="Close ' + escAttr(label.toLowerCase()) + '"></button>' +
+        inner +
+        '<div class="rb-lbfoldshade" data-rb-sheet-foldshade aria-hidden="true"></div>' +
       '</div>';
   }
 
@@ -811,6 +899,17 @@
       if (pt.play && pt.slug) partsBySlug[pt.play] = pt.slug;
     }
     return { partsBySlug: partsBySlug, table: p.table || {}, rulesInPlay: p.rulesInPlay || {}, lessons: p.lessons || {} };
+  }
+
+  // lairCompanions says which of the board's side panels a part has: the
+  // table when the scene has a roster, the rules panel when that part names
+  // rules in play. null (the overview) has neither.
+  function lairCompanions(cfg, partKey) {
+    if (!partKey) return null;
+    var c = cfg || {};
+    var heroes = c.table && isArr(c.table.heroes) ? c.table.heroes : [];
+    var rules = c.rulesInPlay && isArr(c.rulesInPlay[partKey]) ? c.rulesInPlay[partKey] : [];
+    return { left: heroes.length > 0, right: rules.length > 0 };
   }
 
   // ── render: reader takeover + veil overlays ──────────────────────────────
@@ -894,7 +993,7 @@
         '<span><b>⤢/⤪ small cards</b> → a wing stays hinged to the card and slides out OVER its neighbors</span>' +
         '<span><b>⤵ list rows</b> → a flap slides down over the rows beneath</span>' +
         '<span><b>⤢ the lead story</b> → unfolds into the reading sheet</span>' +
-        '<span><b>🏰 the Lich\'s Lair</b> → travels to the middle of the screen, centred at every size</span>' +
+        '<span><b>⤪ the worked scene</b> → the card travels to centre as a folded map, then unfolds panel by panel</span>' +
         '<span><b>✕ / Esc / outside</b> → always folds back</span>' +
       '</div>';
 
@@ -962,6 +1061,7 @@
         self._setBody(built.html);
         self._mountEngine(el);
         self._mountPlayer(el);
+        self._restLoops(el);
       }).catch(function (err) {
         if (typeof console !== 'undefined' && console.error) {
           console.error('Rulebook Front Page: load failed', err);
@@ -977,8 +1077,10 @@
       if (this._player && typeof this._player.destroy === 'function') {
         try { this._player.destroy(); } catch (e) { /* ignore */ }
       }
+      if (this._rest) { try { this._rest(); } catch (e) { /* ignore */ } }
       this._fold = null;
       this._player = null;
+      this._rest = null;
       if (el) el.innerHTML = '';
     },
 
@@ -1021,7 +1123,12 @@
           typeof RulebookExamplePlayer.mount === 'function') {
         try {
           var lair = this._lair || {};
-          lair.bindTerms = (this._fold && typeof this._fold.bindTerms === 'function') ? this._fold.bindTerms : null;
+          var fold = this._fold;
+          lair.bindTerms = (fold && typeof fold.bindTerms === 'function') ? fold.bindTerms : null;
+          // A part on screen brings out its side panels; the overview has none.
+          lair.onPart = function (partKey) {
+            if (fold && typeof fold.setSheetCompanions === 'function') fold.setSheetCompanions(lairCompanions(lair, partKey));
+          };
           this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {}, lair: lair });
         } catch (e) {
           if (typeof console !== 'undefined' && console.warn) {
@@ -1029,6 +1136,49 @@
           }
         }
       }
+    },
+
+    // _restLoops brings the page's looping animations (the breathing ⤢/⤵
+    // marks) to a standstill when the viewer steps away, on Chronicle's
+    // shared MotionRest clock, and wakes them with it. Without MotionRest
+    // (an older Chronicle) they loop as before; reduced motion already stops
+    // them in the stylesheet.
+    _restLoops: function (el) {
+      var MR = (typeof window !== 'undefined') ? window.MotionRest : null;
+      if (!MR || typeof MR.speed !== 'function' || typeof el.getAnimations !== 'function') return;
+      var timer = 0, raf = 0, stopped = false;
+      function loops() {
+        var out = [], all = el.getAnimations({ subtree: true });
+        for (var i = 0; i < all.length; i++) {
+          var t = all[i].effect && all[i].effect.getTiming ? all[i].effect.getTiming() : null;
+          if (t && t.iterations === Infinity) out.push(all[i]);
+        }
+        return out;
+      }
+      function apply(speed) {
+        var l = loops();
+        for (var i = 0; i < l.length; i++) if (l[i].playbackRate !== speed) l[i].playbackRate = speed;
+      }
+      // Every frame while the clock eases, a slow check while it runs at
+      // full speed, nothing once it is still (onWake starts it again).
+      function tick() {
+        timer = 0; raf = 0;
+        if (stopped) return;
+        var sp = MR.speed();
+        apply(sp);
+        if (MR.still()) return;
+        if (sp > 0 && sp < 1) raf = window.requestAnimationFrame(tick);
+        else timer = window.setTimeout(tick, 400);
+      }
+      function wake() { if (!timer && !raf) tick(); }
+      if (typeof MR.onWake === 'function') MR.onWake(wake);
+      tick();
+      this._rest = function () {
+        stopped = true;
+        if (timer) window.clearTimeout(timer);
+        if (raf) window.cancelAnimationFrame(raf);
+        if (typeof MR.offWake === 'function') MR.offWake(wake);
+      };
     },
 
     // _resetLair returns the Lair wing to its parts overview (used on wing close),
@@ -1070,7 +1220,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       dataUrl: dataUrl, refBrowserUrl: refBrowserUrl,
-      buildContent: buildContent, buildLairConfig: buildLairConfig,
+      buildContent: buildContent, buildLairConfig: buildLairConfig, lairCompanions: lairCompanions,
       buildTile: buildTile, buildLair: buildLair, buildReader: buildReader,
       richProse: richProse, esc: esc, escAttr: escAttr, css: css
     };
