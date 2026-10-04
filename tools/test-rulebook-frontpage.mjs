@@ -182,3 +182,24 @@ test('seed data/rulebook-frontpage.json: parts carry slug+play, and glossary ter
   const hero = items.find((i) => i.properties && i.properties.kind === 'hero');
   assert.ok(hero.properties.readerExtras && hero.properties.readerExtras.example, 'the hero carries readerExtras.example');
 });
+
+// An open Lair card must not keep (or ease out of) a transform: a transformed
+// ancestor is the containing block of the fixed sheet inside it, so the sheet
+// opened off-screen and focusing it scrolled the whole page.
+test('css: an open Lair card has no transform and no transform transition', () => {
+  const sheet = F.css();
+  const rules = sheet.match(/[^{}]*\.rb-lair\.is-open[^{}]*\{[^}]*\}/g) || [];
+  const open = rules.find((r) => /\.rb-lair\.is-open\s*,|\.rb-lair\.is-open\{/.test(r) && /cursor:default/.test(r));
+  assert.ok(open, 'the open-card rule exists');
+  assert.match(open, /\.rb-lair\.is-open:hover/, 'the rule also covers the hovered open card');
+  assert.match(open, /transform:none/);
+  const transition = (open.match(/transition:([^;}]*)/) || [])[1];
+  assert.ok(transition, 'the open card sets its own transition');
+  assert.doesNotMatch(transition, /transform/, 'no transform transition while open');
+});
+
+test('fold engine: opening or closing a sheet never scrolls the page', () => {
+  const src = readFileSync(join(HERE, '..', 'widgets', 'rulebook-fold-engine.js'), 'utf8');
+  const bare = src.match(/(?:_wingReturnFocus|host|wing|firstCtl|readerSheet|firstBtn|_readerReturnFocus|readerTrigger)\.focus\(\)/g);
+  assert.equal(bare, null, `sheet focus calls without preventScroll: ${bare}`);
+});

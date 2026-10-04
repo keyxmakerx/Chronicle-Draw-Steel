@@ -372,10 +372,12 @@ var RulebookFoldEngine = (function () {
         var d = root.ownerDocument;
         _wingReturnFocus = (d && d.activeElement) || host;
         var firstCtl = wing && wing.querySelector('[data-rb-close-wing], button, [tabindex], a[href]');
-        if (firstCtl && firstCtl.focus) firstCtl.focus();
+        // The sheet is fixed on screen, so focusing into it must never scroll
+        // the page (the reader below follows the same rule).
+        if (firstCtl && firstCtl.focus) firstCtl.focus({ preventScroll: true });
         else if (wing && wing.focus) {
           if (wing.getAttribute('tabindex') == null) wing.setAttribute('tabindex', '-1');
-          wing.focus();
+          wing.focus({ preventScroll: true });
         }
       } else {
         _applyWingGeometry(host);
@@ -418,8 +420,8 @@ var RulebookFoldEngine = (function () {
       for (var i = 0; i < dimmed.length; i++) dimmed[i].classList.remove('rb-dimmed');
       // Focus comes home once the card is back (same contract as the reader).
       if (wasSheet) {
-        if (_wingReturnFocus && _wingReturnFocus.focus) _wingReturnFocus.focus();
-        else if (host.focus) host.focus();
+        if (_wingReturnFocus && _wingReturnFocus.focus) _wingReturnFocus.focus({ preventScroll: true });
+        else if (host.focus) host.focus({ preventScroll: true });
         _wingReturnFocus = null;
       }
       onClose(FOLD.WING);
@@ -479,10 +481,10 @@ var RulebookFoldEngine = (function () {
       var d = root.ownerDocument;
       _readerReturnFocus = (d && d.activeElement) || readerTrigger;
       var firstBtn = readerSheet.querySelector('[data-rb-close-reader], button, [tabindex], a[href]');
-      if (firstBtn && firstBtn.focus) firstBtn.focus();
+      if (firstBtn && firstBtn.focus) firstBtn.focus({ preventScroll: true });
       else if (readerSheet.focus) {
         if (readerSheet.getAttribute('tabindex') == null) readerSheet.setAttribute('tabindex', '-1');
-        readerSheet.focus();
+        readerSheet.focus({ preventScroll: true });
       }
       onOpen(FOLD.READER, '');
     }
@@ -500,8 +502,8 @@ var RulebookFoldEngine = (function () {
       }
       root.classList.remove('rb-reading');
       // Return focus to wherever it was before the dialog opened.
-      if (_readerReturnFocus && _readerReturnFocus.focus) _readerReturnFocus.focus();
-      else if (readerTrigger && readerTrigger.focus) readerTrigger.focus();
+      if (_readerReturnFocus && _readerReturnFocus.focus) _readerReturnFocus.focus({ preventScroll: true });
+      else if (readerTrigger && readerTrigger.focus) readerTrigger.focus({ preventScroll: true });
       _readerReturnFocus = null;
       onClose(FOLD.READER);
     }

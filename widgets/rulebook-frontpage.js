@@ -354,7 +354,12 @@
       '.rb-lair{padding:13px 15px;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;' +
         'background:linear-gradient(160deg,color-mix(in srgb,var(--rb-grn) 8%,var(--rb-box)),var(--rb-box) 60%)}',
       '.rb-lair:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--bc) 50%,var(--rb-edge))}',
-      '.rb-lair.is-open{cursor:default}.rb-lair.is-open:hover{transform:none}',
+      // An open card has no transform and no transform transition: a
+      // transformed ancestor becomes the containing block of the fixed sheet
+      // inside it, so the sheet would open off-screen while the hover lift
+      // eased out, and focusing it would scroll the page.
+      '.rb-lair.is-open,.rb-lair.is-open:hover{cursor:default;transform:none;' +
+        'transition:border-color .2s,box-shadow .2s}',
       '.rb-lair h3{margin:8px 0 3px;font-size:15px;font-weight:850}',
       '.rb-lair .rb-d{font:500 11px/1.5 inherit;color:var(--rb-mut)}',
       '.rb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}',
@@ -1067,7 +1072,7 @@
       dataUrl: dataUrl, refBrowserUrl: refBrowserUrl,
       buildContent: buildContent, buildLairConfig: buildLairConfig,
       buildTile: buildTile, buildLair: buildLair, buildReader: buildReader,
-      richProse: richProse, esc: esc, escAttr: escAttr
+      richProse: richProse, esc: esc, escAttr: escAttr, css: css
     };
   }
 })();
