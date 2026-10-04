@@ -275,7 +275,17 @@
     '.dsn-log li { padding:2px 0; border-top:1px solid var(--color-border,#f3f4f6); }',
     '.dsn-over { font-weight:600; margin:0 0 12px; }',
     '.dsn-status { font-size:12px; color:var(--color-text-secondary,#6b7280); min-height:16px; }',
-    '@media (prefers-reduced-motion: reduce) { .dsn-pip { transition:none; } }'
+    '.dsn-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; width:100%; border:0; background:transparent; color:inherit; padding:0; text-align:left; }',
+    '.dsn-head h3 { margin:0; }',
+    '.dsn-sum { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px 12px; font-size:13px; color:var(--color-text-secondary,#6b7280); }',
+    '.dsn-sum .dsn-pip { width:10px; height:10px; border-width:1.5px; }',
+    '.dsn-chev { margin-left:auto; color:var(--color-text-secondary,#6b7280); transition:transform 0.22s ease; }',
+    '.dsn.open .dsn-chev { transform:rotate(180deg); }',
+    '.dsn-body { display:grid; grid-template-rows:0fr; transition:grid-template-rows 0.22s ease; }',
+    '.dsn.open .dsn-body { grid-template-rows:1fr; }',
+    '.dsn-body > div { overflow:hidden; min-height:0; }',
+    '.dsn-inner { padding-top:12px; }',
+    '@media (prefers-reduced-motion: reduce) { .dsn-pip, .dsn-chev, .dsn-body { transition:none; } }'
   ].join('\n');
 
   function esc(s) { return Chronicle.escapeHtml(s); }
@@ -399,7 +409,8 @@
     var parsed = parseSel(sel);
     var valid = sel === 'none' || sel === 'lie' || (parsed.slug && (gm.motivations.indexOf(parsed.slug) >= 0 || gm.pitfalls.indexOf(parsed.slug) >= 0));
     if (!valid) { sel = 'none'; parsed = { type: 'none', slug: '' }; }
-    var out = '<div class="dsn" role="region" aria-label="Negotiation"><h3>Negotiation</h3>';
+    var out = '<div class="dsn' + (ui.open ? ' open' : '') + '" role="region" aria-label="Negotiation">' +
+      headHtml(gm, ui.open) + '<div class="dsn-body" id="dsn-body"><div' + (ui.open ? '' : ' inert') + '><div class="dsn-inner">';
     out += '<div class="dsn-row"><span class="dsn-field"><label for="dsn-att">Starting attitude</label>' +
       '<select id="dsn-att" data-act="attitude" data-k="attitude"' + d + '>' + attOpts + '</select></span>' +
       '<span class="dsn-field"><label for="dsn-imp">Impression</label>' +
@@ -431,8 +442,29 @@
     out += '<div class="dsn-row"><button type="button" class="dsn-btn" data-act="show" data-k="show"' + d + '>' +
       (gm.shown ? 'Hide from players' : 'Show players the meters') + '</button>' +
       '<button type="button" class="dsn-btn" data-act="reset" data-k="reset"' + d + '>Start over</button>' +
-      '<span class="dsn-status" role="status" aria-live="polite">' + esc(ui.status) + '</span></div></div>';
+      '<span class="dsn-status" role="status" aria-live="polite">' + esc(ui.status) + '</span></div></div></div></div></div>';
     return out;
+  }
+
+  // headHtml is the one-line bar the GM sees by default: the meters at a
+  // glance, so the page isn't led by a full tracker on every visit.
+  function headHtml(gm, open) {
+    var state = gm.over ? 'Over' : (gm.shown ? 'Shown to players' : 'Hidden from players');
+    return '<button type="button" class="dsn-head" data-act="toggle" data-k="toggle" aria-expanded="' + !!open +
+      '" aria-controls="dsn-body"><h3>Negotiation</h3><span class="dsn-sum">' +
+      '<span class="dsn-meter"><span>Interest</span>' + pipsHtml(gm.interest, 'interest', 'Interest', false) + '<span>' + gm.interest + '</span></span>' +
+      '<span class="dsn-meter"><span>Patience</span>' + pipsHtml(gm.patience, 'patience', 'Patience', false) + '<span>' + gm.patience + '</span></span>' +
+      '<span>' + esc(state) + '</span></span><span class="dsn-chev" aria-hidden="true">&#9662;</span></button>';
+  }
+
+  // The open/closed choice is per page and per browser; storage can be
+  // missing or blocked, so every access is guarded and closed is the default.
+  function openKey(entityId) { return 'dsn-open:' + entityId; }
+  function readOpen(entityId) {
+    try { return window.localStorage.getItem(openKey(entityId)) === '1'; } catch (e) { return false; }
+  }
+  function writeOpen(entityId, open) {
+    try { window.localStorage.setItem(openKey(entityId), open ? '1' : '0'); } catch (e) { /* best effort */ }
   }
 
   // One Tracker per mounted element: boot.js calls init/destroy on the shared
@@ -447,7 +479,7 @@
       this.entityId = config.entity_id || config.entityId || ds.entityId || '';
       this.rules = null;
       this.gm = null;
-      this.ui = { sel: 'none', tier: 2, status: '' };
+      this.ui = { sel: 'none', tier: 2, status: '', open: false };
       this.busy = false;
       this.dirty = false;
       this.timer = null;
@@ -463,6 +495,7 @@
         if (ds.isGm === 'true') this._note('The negotiation tracker needs a campaign and an NPC page.');
         return;
       }
+      this.ui.open = readOpen(this.entityId);
       this._load();
     },
 
@@ -552,12 +585,30 @@
       }
     },
 
+    // _toggle flips the class on the live card instead of re-rendering, so
+    // the body animates open and closed.
+    _toggle: function () {
+      var open = !this.ui.open;
+      this.ui.open = open;
+      writeOpen(this.entityId, open);
+      var card = this.el.querySelector ? this.el.querySelector('.dsn') : null;
+      if (!card || !card.classList) { this._render(); return; }
+      card.classList.toggle('open', open);
+      var head = card.querySelector('.dsn-head');
+      if (head) head.setAttribute('aria-expanded', String(open));
+      var inner = card.querySelector('.dsn-body > div');
+      if (inner) { if (open) inner.removeAttribute('inert'); else inner.setAttribute('inert', ''); }
+    },
+
     // _handle routes delegated clicks and changes by data-act.
     _handle: function (e, type) {
-      if (!this.isGm || !this.gm || this.busy) return;
+      if (!this.isGm || !this.gm) return;
       var t = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
       if (!t) return;
       var act = t.getAttribute('data-act');
+      // Opening and closing works mid-save; it changes nothing on the server.
+      if (act === 'toggle' && type === 'click') { this._toggle(); return; }
+      if (this.busy) return;
       var rules = this.rules;
       var self = this;
       var value = t.value;
