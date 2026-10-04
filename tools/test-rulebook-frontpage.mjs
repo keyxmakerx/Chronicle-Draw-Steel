@@ -234,12 +234,56 @@ test('buildLair: each part is a chip that plays its own board container', () => 
     assert.ok(html.includes(`id="rbx-lair-${slug}" data-rbx-script="${slug}"`), `${slug} has an id the reader's container does not share`);
 });
 
-test('buildLair: the board opens from a folded map — a clipped surface, one map cover, its fold shading', () => {
+// ── the card is the closed pop-up book ───────────────────────────────────────
+test('buildLair: the card face is the closed book, with the title and description beside it', () => {
   const html = F.buildLair(SCENE);
-  assert.ok(html.includes('data-rb-sheet-surface'));
-  assert.equal((html.match(/data-rb-sheet-cover/g) || []).length, 1, 'one continuous map texture');
-  for (const k of ['l', 'r', 't', 'b']) assert.ok(html.includes(`data-rb-sheet-shade="${k}"`), `shade ${k}`);
-  for (const k of ['v1', 'v2', 'h1', 'h2']) assert.ok(html.includes(`data-rb-sheet-crease="${k}"`), `crease ${k}`);
+  const face = html.slice(0, html.indexOf('<div class="rb-wing"'));
+  assert.ok(face.includes('data-rb-sheet-token'), 'the closed book is the engine token');
+  assert.match(face, /<div class="rb-bkcover"><span>The Lich's Lair<\/span><\/div>/, 'the cover carries the scene name, as the board book does');
+  assert.match(face, /<div class="rb-bkspread" data-rb-sheet-tilt>/, 'the spread is what eases into the board book\'s tilt');
+  assert.equal((face.match(/data-rb-sheet-fade/g) || []).length, 2, 'the page edge and the shadow are the card\'s alone');
+  assert.match(face, /<div class="rb-bkslot" aria-hidden="true">/, 'the drawing is decoration; the card itself is the control');
+  assert.match(face, /<h3>🏰 The Lich's Lair<\/h3>/);
+  assert.match(face, /<div class="rb-d">d<\/div>/);
+  assert.ok(face.indexOf('data-rb-sheet-token') < face.indexOf('<h3>'), 'the book comes before the text');
+});
+
+test('buildLair: the host tells the engine where the book lands and which piece it tilts into', () => {
+  const html = F.buildLair(SCENE);
+  assert.match(html, /data-rb-sheet-land="\.rbx-on \.rbs-fit"/, 'the playing part\'s stage');
+  assert.match(html, /data-rb-sheet-land-tilt="\.rbs-spread"/);
+});
+
+test('buildLair: no folded-map pieces are left on the card or the board', () => {
+  const html = F.buildLair(SCENE);
+  for (const gone of ['data-rb-sheet-surface', 'data-rb-sheet-cover', 'data-rb-sheet-shade', 'data-rb-sheet-crease', 'rb-lbcover', 'rb-lbshade', 'rb-lbcrease'])
+    assert.ok(!html.includes(gone), `${gone} belonged to the folded map`);
+  assert.ok(!/\.rb-lbcover|\.rb-lbshade|\.rb-lbcrease/.test(F.css()), 'no folded-map styles remain');
+});
+
+// The hand-over is invisible only if the card's book is the scene's book:
+// the same stage, perspective and spread box. Read both stylesheets.
+test('css: the card book is drawn on the same stage as the scene book', () => {
+  const P = require('../widgets/rulebook-example-player.js');
+  const scene = P.sceneCss(), card = F.css();
+  const rule = (src, sel) => (src.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{([^}]*)\\}')) || [])[1] || '';
+  const prop = (body, k) => (body.match(new RegExp('(?:^|;)' + k + ':([^;]*)')) || [])[1];
+  for (const k of ['width', 'height']) assert.equal(prop(rule(card, '.rb-bkfit'), k), prop(rule(scene, '.rbs-fit'), k), `stage ${k}`);
+  for (const k of ['perspective', 'perspective-origin']) assert.equal(prop(rule(card, '.rb-bkbook'), k), prop(rule(scene, '.rbs-book'), k), k);
+  for (const k of ['left', 'top', 'width', 'height']) assert.equal(prop(rule(card, '.rb-bkspread'), k), prop(rule(scene, '.rbs-spread'), k), `spread ${k}`);
+  assert.equal(prop(rule(card, '.rb-bkpl'), 'transform'), prop(rule(scene, '.rbs-closed .rbs-pl'), 'transform'), 'the left page folds over the same way');
+  assert.equal(prop(rule(card, '.rb-bkcover'), 'transform'), prop(rule(scene, '.rbs-cover'), 'transform'), 'the cover sits on the page the same way');
+  assert.notEqual(prop(rule(card, '.rb-bkspread'), 'transform'), prop(rule(scene, '.rbs-spread'), 'transform'), 'only the tilt differs, the engine eases it');
+});
+
+test('css: a shut board takes no room, so a hovered card cannot widen the page', () => {
+  assert.match(F.css(), /\[data-rb-wing-mode="sheet"\]:not\(\.is-open\)>\.rb-wing\{display:none\}/);
+});
+
+test('css: the travelling book rides over the board only while the card is open', () => {
+  const css = F.css();
+  assert.match(css, /\.rb-lair\.is-open \.rb-bk\{z-index:64\}/);
+  assert.doesNotMatch((css.match(/\.rb-bk\{[^}]*\}/) || [''])[0], /z-index/, 'a closed card\'s book never sits over other folds');
 });
 
 test('buildLair: nothing of the board sits outside the sheet, so the card never grows', () => {
@@ -258,6 +302,8 @@ test('buildLairConfig: carries the cover title and the part the board opens on, 
   assert.equal(named.openOn, 'the-lich-fight');
 });
 
-test('css: once the map covers it, the card leaves an empty slot instead of a second copy', () => {
-  assert.match(F.css(), /\.rb-lair\.rb-sheet-away\{visibility:hidden\}/);
+test('css: once the book has landed on the board, the card keeps its text and an empty slot, not a second book', () => {
+  const css = F.css();
+  assert.match(css, /\.rb-lair\.rb-sheet-away \.rb-bk\{visibility:hidden\}/);
+  assert.doesNotMatch(css, /\.rb-lair\.rb-sheet-away\{/, 'the card itself stays');
 });

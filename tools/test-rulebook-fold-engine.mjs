@@ -379,7 +379,7 @@ test('blockMatches: an empty query matches; a hit is case-insensitive; a miss is
   assert.equal(E.blockMatches('The wizard casts a spell', 'necromancer'), false);
 });
 
-// ── the sheet's board: layout per width, and the folded-map geometry ─────────
+// ── the sheet's board: layout per width, and the token's travel ─────────────
 test('sheetMode: one column everywhere; only a phone-width screen changes how it is framed', () => {
   assert.equal(E.sheetMode(1440), 'wide');
   assert.equal(E.sheetMode(900), 'wide');
@@ -408,25 +408,31 @@ test('sheetLayout (phone): the board fills the screen inside an inset', () => {
   assert.deepEqual(ph.board, { left: 8, top: 8, width: 374, height: 828 });
 });
 
-test('sheetFoldGeometry: the folded map is a card-sized window in the board, offset onto the card', () => {
-  const card = { left: 900, top: 500, width: 400, height: 200 };
-  const board = { left: 400, top: 100, width: 640, height: 700 };
-  const g = E.sheetFoldGeometry(card, board, 18);
-  assert.equal(g.w0, 400);
-  assert.equal(g.h0, 200);
-  assert.equal(g.ix, 120);
-  assert.equal(g.iy, 250);
-  // the window's centre, moved by (dx, dy), lands on the card's centre
-  assert.equal(board.left + board.width / 2 + g.dx, card.left + card.width / 2);
-  assert.equal(board.top + board.height / 2 + g.dy, card.top + card.height / 2);
-  assert.equal(g.clipWin, 'inset(250px 120px 250px 120px round 18px)');
-  assert.equal(g.clipAcross, 'inset(250px 0px 250px 0px round 18px)');
-  assert.equal(g.clipFull, 'inset(0px 0px 0px 0px round 18px)');
+test('sheetTravel: the token lands exactly on its twin (top-left origin)', () => {
+  const from = { left: 900, top: 500, width: 350, height: 180 };
+  const to = { left: 400, top: 120, width: 700, height: 360 };
+  const t = E.sheetTravel(from, to, { left: 340, top: 100, width: 760, height: 640 });
+  assert.equal(t.k, 2);
+  assert.equal(from.left + t.dx, to.left);
+  assert.equal(from.top + t.dy, to.top);
+  assert.equal(from.height * t.k, to.height, 'the same shape, so one scale fits both sides');
+  assert.equal(t.fade, false);
+  assert.equal(t.transform, 'translate(-500px,-380px) scale(2)');
 });
 
-test('sheetFoldGeometry: a card wider than the board folds to the board width, never wider', () => {
-  const g = E.sheetFoldGeometry({ left: 0, top: 0, width: 500, height: 150 }, { left: 0, top: 0, width: 374, height: 828 });
-  assert.equal(g.w0, 374);
-  assert.equal(g.ix, 0);
-  assert.ok(g.band >= 24, 'the lifting-edge shadow keeps a visible width');
+test('sheetTravel: with no twin on the board the token heads for its middle and fades', () => {
+  const from = { left: 0, top: 0, width: 200, height: 100 };
+  const board = { left: 100, top: 50, width: 600, height: 400 };
+  for (const to of [null, { left: 0, top: 0, width: 0, height: 0 }]) {
+    const t = E.sheetTravel(from, to, board);
+    assert.equal(t.k, 1);
+    assert.equal(t.fade, true);
+    assert.equal(from.left + from.width / 2 + t.dx, board.left + board.width / 2);
+    assert.equal(from.top + from.height / 2 + t.dy, board.top + board.height / 2);
+  }
+});
+
+test('the folded-map geometry is gone', () => {
+  assert.equal(E.sheetFoldGeometry, undefined);
+  assert.equal(E.SHEET.RADIUS, undefined);
 });

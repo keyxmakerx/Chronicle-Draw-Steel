@@ -118,7 +118,9 @@ test('the example player returns one shape, mounted or not', () => {
       'differs by input is a trap for the first caller that keeps a ' +
       'null-mount around:\n' + site.replace(/\s+/g, ' '));
   }
-  assert.deepEqual(nullRoot, ['collapseAll', 'destroy', 'play', 'stopAll'],
+  // shut: the Lair board asks the player to close its book before the
+  // closed book flies back to the card.
+  assert.deepEqual(nullRoot, ['collapseAll', 'destroy', 'play', 'shut', 'stopAll'],
     'the mount shape itself changed — update this pin deliberately, not by drift');
 });
 
