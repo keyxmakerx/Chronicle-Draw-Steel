@@ -139,16 +139,24 @@ that folds open in three matched ways (the SIGNED `rulebook-v10` design):
 - **Five characteristic cards** → each folds a **hinged wing** out of its edge, over its
   neighbours (left-column cards wing right, right-column cards wing left).
 - **Condition rows** → each unfolds a **flap** down over the rows beneath.
-- **The Lich's Lair** worked-scene → wings left over the whole Conditions block.
+- **The Lich's Lair** worked-scene → the card travels to the middle of the screen as a folded
+  map and unfolds there, panel by panel, into a centred one-column board: a header (the part's
+  title, ↻ replay, ✕ close), a chip per part, the part's **pop-up book** with its caption line and
+  ◀ ⏸ ▶ controls, and two drawers, **THE TABLE** (heroes + Stamina) and **RULES IN THIS PART**.
+  The book stays shut while the map unfolds and opens once the board has landed, on the part the
+  worked-scene's `openOn` names. The same column is used at every width; a phone (560px and
+  under) frames it inside a small inset.
 
 Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
 related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
 (priority flap → wing → reader). Everything is tap-first; under 640px wings open
 **downward, spanning the full width of their block** (viewport minus page padding —
-not the cramped card column). Honours `prefers-reduced-motion`.
+not the cramped card column). Honours `prefers-reduced-motion`, and the breathing ⤢/⤵ marks
+slow to a standstill on Chronicle's `MotionRest` clock when the viewer steps away (without
+`MotionRest` they keep looping).
 
 **Staged examples:** the Might card's two example buttons, the reader's
-"▶ Watch the table play it" seam, and the Lich's Lair part 1 play the worked scenes
+"▶ Watch the table play it" seam, and the Lich's Lair's seven parts play the worked scenes
 via the `RulebookExamplePlayer` module (see below). **Glossary hover cards:** dotted
 `.rb-hl` terms in the prose (authored with `{@category slug}` markup) show a quick card
 (term · category chip · body) sourced from `rules-glossary.json`, on hover/focus/tap,
@@ -164,6 +172,10 @@ dismissed by `Esc` / outside-tap / scroll — driven by the fold engine's `terms
 
 - **Hero / characteristics / worked-scene** copy comes from `data/rulebook-frontpage.json`
   (ReferenceItem array; `properties.kind` = `hero` \| `characteristic` \| `conditions` \| `worked-scene`).
+  The worked-scene's `parts[]` (each `slug` + `play` script) are the board's chips in order, and
+  `openOn` is the part slug the board opens on (the first part when absent).
+- **Pop-up cards** quote `rules-glossary.json`, `creatures.json`, `role-templates.json` and the
+  front page's own blocks; the last three are optional (a card then shows only what its script says).
 - **Condition flap text** comes from `data/rules-glossary.json` (entries with
   `properties.category === "condition"`), looked up by slug — a single source of truth
   shared with the @reference tooltip system.
@@ -194,6 +206,14 @@ The module splits a **pure state machine** (`createState` / `reduce` / `escapePr
 `blockMatches` / `termCategoryColor` / `clampCardPosition`) from the DOM controller, so the fold
 logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`, `node --test`).
 
+**The sheet** (`data-rb-wing-mode="sheet"`, the Lich's Lair): `sheetMode` (`wide` \| `phone`) /
+`sheetLayout` place the one-column board per viewport, and `sheetFoldGeometry` gives the
+folded-map film its numbers; all three are pure and unit-tested. `mount(root, { onSettle })` hears
+`onSettle(kind, id)` once the board has landed open and flat (the front page opens its pop-up book
+then). Focus moves into the board on open and back to the card once it has folded home; Tab
+cycles the board's visible controls (drawer summaries included); the page never scrolls, and the
+open card keeps no transform.
+
 **Mobile wings** (`mobileWingWidth`): under 640px a wing folds downward and spans the **full
 width of its block** (viewport minus page padding, measured from the `[data-rb-block]` ancestor),
 never the card column it hinges from.
@@ -222,12 +242,80 @@ available and `prefers-reduced-motion` reveals everything instantly.
 
 Scripts are **data** (`data/rulebook-examples.json`, ReferenceItem array; `properties.stage` +
 `properties.lines[]` with `speaker` / `kind` (`dir`|`pc`|`roll`) / `text` / `dice` / `steps` /
-`tier`). Text markup: `**bold**` and `~~dmg~~` (combat accent). The consumer builds the DOM
+`tier`, and optional `_effects` that move the Lair's table). A Lair script may also set
+`properties.startMalice` (where its Malice counter begins) and `properties.startStamina`
+(`{ heroSlug: percent }`, where its Stamina bars begin; a hero it doesn't name starts full). Text markup: `**bold**` and `~~dmg~~` (combat accent). The consumer builds the DOM
 (`[data-rbx-play="slug"]` buttons + `[data-rbx-script="slug"]` containers; optional
 `data-rbx-show` / `data-rbx-hide` for a drill-in and `data-rbx-back` to reverse it) and calls
-`RulebookExamplePlayer.mount(root, { examples })`. The module splits **pure logic**
-(`planScript` / `rollRevealOrder` / `tokenForLine` / `isRoll` / `richText` / `buildScriptHtml`)
-from the DOM controller, unit-tested headless (`tools/test-rulebook-example-player.mjs`).
+`RulebookExamplePlayer.mount(root, { examples, lair, refs })`. When the page has
+`[data-rbx-lair-table]` / `[data-rbx-lair-rules]` panels, the player fills them instead of
+rendering the table and rules with each script. `play(slug, { hold: true })` puts a part on the
+board with its book shut; `play(slug)` opens it. The module splits **pure logic**
+(`planScript` / `rollRevealOrder` / `tokenForLine` / `isRoll` / `richText` / `buildScriptHtml`,
+and the scene functions below) from the DOM controller, unit-tested headless
+(`tools/test-rulebook-example-player.mjs`, `tools/test-rulebook-popup-scene.mjs`).
+
+### Pop-up scenes (the Lair board)
+
+Inside `[data-rbx-board]`, a script with a valid `properties.scene` plays as a paper pop-up
+book: the cover is the left page, the wall and paper pieces stand up on hinges as it opens, and
+each beat moves pieces. A script with no scene, or one `validateScene` cannot draw, falls back to
+the flat stage. The widget has no part-specific code; every scene is data drawn from one shared
+kit:
+
+```json
+"scene": {
+  "backdrop": "hall",
+  "pieces": [
+    { "id": "kaelen", "kit": "knight", "x": 150, "y": 150, "card": "kaelen", "label": "Kaelen" },
+    { "id": "bugbear", "kit": "bugbear", "x": 350, "y": 140, "face": -1, "card": "bugbear", "label": "The bugbear" },
+    { "id": "dice", "kit": "dice", "x": 265, "y": 172, "show": [2, 2], "card": "roll", "label": "The dice" },
+    { "id": "flag", "kit": "flag", "x": 384, "y": 190, "show": [4], "text": "7 damage", "card": "what", "label": "What happened" }
+  ],
+  "beats": [
+    { "line": 0, "cues": [{ "who": "bugbear", "do": "step" }] },
+    { "line": 2, "cues": [] },
+    { "line": 2, "tier": true, "cues": [] },
+    { "line": 3, "cues": [{ "who": "bugbear", "do": "knock", "hold": true }] }
+  ],
+  "cards": {
+    "kaelen": { "kicker": "HERO", "title": "Kaelen", "stats": [["Might", "+2"]], "from": "frontpage:characteristic-might" },
+    "bugbear": { "kicker": "MONSTER", "title": "Bugbear", "role": "brute", "says": [0, 3] },
+    "roll": { "kicker": "RULE", "from": "glossary:power-roll", "roll": true, "tiers": "hero-power-roll" },
+    "what": { "kicker": "WHAT HAPPENED", "says": [3], "links": ["glossary:push"] }
+  }
+}
+```
+
+- **`backdrop`**: the wall at the back of the spread — `hall`, `gate`, `mouth` or `throne`.
+- **`pieces[]`**: `id` (unique), `kit` (a `KIT` name: figures `knight` `shield` `mage` `archer`
+  `bugbear` `cultist` `adept` `lich` `skeleton-archer`; props `door` `brazier` `crown` `stone`
+  `glyphs` `slash` `bolt` `curse` `rubble` `ledge`; the flat `rune`; paper tags `dice` `ribbon`
+  `flag`), `x` (left edge) and `y` (the hinge line, 0 = back of the 600 × 250 spread, 250 =
+  front), optional `w`/`h`, `face: -1` (faces left), `flip` (mirrors the art), `show` (`[from]` or
+  `[from, to]`, beat indexes, inclusive; absent = always stands), `text` (a flag's words, from
+  the script), and `card` + `label` (the piece becomes a button opening that card). The dice
+  and ribbon draw the script's own dice, tier and total.
+- **`beats[]`**: each names a script `line` (never going back), an optional `tier: true` (this
+  beat stamps the roll's tier; a roll split into a dice beat and a tier beat), and `cues` of
+  `{ who, do, hold }`. `do` is one of `MOTIONS` (`step` `wind` `lunge` `knock` `fall` `prone`
+  `cast` `stagger` `rise` `burst` `trip` `cheer` `flare` `fade` `drop` `glow` `flee` `shake`). A cue
+  lasts its own beat; `hold` keeps it for the rest of the part. A fallen piece takes no clicks.
+  Without `beats` there is one beat per line.
+- **`cards{}`**: `kicker`, optional `title`, `from` (`glossary:` / `creature:` / `role:` /
+  `frontpage:` + slug, or `tier:` + a front-page hero slug for the band the roll landed in),
+  `role` (adds a role row linking its card), `tiers` (shows a hero block's tier bands), `roll`
+  (adds the script's dice, modifiers and total), `stats` (`[label, value]` pairs, the script's
+  sample numbers), `says` (line indexes the card quotes) and `links` (keyword refs). Rules text
+  comes only from the `from` entry, verbatim; any script number marks the card **SAMPLE**. A
+  piece with no data entry shows only what its script says.
+
+Keyword buttons in a card fold out a dark seal card (from the glossary, a role template, a
+creature's traits or a front-page block); a seal card links any glossary entry its own text
+names, and that stacks another card. Esc closes the top card, ✕ closes that card and those above
+it, a click outside closes them all; focus moves into each card and returns to its opener.
+Auto-advance pauses while a card is open. Under `prefers-reduced-motion` the book is simply open
+and cards simply appear; the scene's loops rest on `MotionRest` with the rest of the page.
 
 ---
 

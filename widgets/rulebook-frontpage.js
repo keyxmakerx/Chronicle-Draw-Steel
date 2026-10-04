@@ -278,17 +278,17 @@
         'transform-origin:right center;transform:perspective(1100px) rotateY(88deg);' +
         'box-shadow:-26px 26px 60px rgba(0,0,0,.68)}',
       '[data-rb-side="left"] .rb-wing::before{left:auto;right:0}',
-      // Sheet variant (the Lich's Lair, req. "sits centred at every size"): no
-      // hinge, no seam — the engine FLIPs it (transform+opacity only, JS sets
-      // the final centred left/top/width/height) so it never reflows.
-      // z-index:62 (over the veil's 60): a fixed-position child does not
-      // inherit its host's stacking, so without this the veil — which must
-      // paint OVER the rest of the page — also painted over the sheet, and
-      // every click on it landed on the veil instead (found by the Playwright
-      // harness, not by eye).
+      // Sheet variant (the Lich's Lair board): no hinge, no seam. The engine
+      // sets its final centred left/top/width/height before anything moves
+      // and animates only transform, clip-path and opacity, so it never
+      // reflows. The panel carries the travel and a drop shadow; its surface
+      // (.rb-lbsurf) is what the fold clips, so the shadow is never clipped.
+      // z-index:62 sits over the veil's 60 (see the host's z-index below).
       '[data-rb-wing-mode="sheet"] .rb-wing{position:fixed;top:0;left:0;right:auto;max-height:none;z-index:62;' +
-        'transform:none;transform-origin:center center;border-radius:18px;box-shadow:var(--rb-sh)}',
+        'padding:0;overflow:visible;background:none;border:0;border-radius:18px;box-shadow:none;' +
+        'filter:drop-shadow(0 18px 34px rgba(0,0,0,.62));transform:none;transform-origin:center center;transition:none}',
       '[data-rb-wing-mode="sheet"] .rb-wing::before{display:none}',
+      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-wing{transition:none}',
       '.rb-root.rb-lair-open .rb-veil{opacity:1;pointer-events:auto}',
       // Open state (engine adds .is-open to the [data-rb-wing] host).
       '[data-rb-wing].is-open>.rb-wing{transform:none;opacity:1;visibility:visible;pointer-events:auto;' +
@@ -301,16 +301,10 @@
       // against outside siblings like the veil (z-index 60). Without this, the
       // sheet's own z-index:62 (above) never mattered and the veil still won.
       '[data-rb-wing-mode="sheet"][data-rb-wing].is-open{z-index:63}',
-      // The open sheet is a FIXED child of this same host card — without this,
-      // the host's own body (kicker/heading/description/chips) still painted
-      // behind it, leaving a small copy of the card visible on top of the
-      // dimming veil. visibility (not display) so closing needs no reflow to
-      // bring it back; not gated on prefers-reduced-motion, since it is a
-      // same-tick swap, not a travelled distance (unlike the FLIP itself).
-      '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-kick,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>h3,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-d,' +
-        '[data-rb-wing-mode="sheet"][data-rb-wing].is-open>.rb-chips{visibility:hidden}',
+      // Once the folded map covers the card, the card leaves an empty slot:
+      // the map is the card in your hands, never a second copy of it. The
+      // board inside sets its own visibility, so it stays on screen.
+      '.rb-lair.rb-sheet-away{visibility:hidden}',
       '[data-rb-wing].is-open .rb-unf,[data-rb-wing].is-open .rb-openmark{animation:none;opacity:.4}',
       // Crease (sticky header inside the wing) + close chip + body text + foldnote.
       '.rb-crease{position:sticky;top:-12px;margin:-12px -15px 8px;padding:8px 15px;display:flex;' +
@@ -367,26 +361,63 @@
         'border:1px solid var(--rb-edge);padding:5px 9px;border-radius:99px}',
       '.rb-chip[data-rb-term]{cursor:help;border-color:color-mix(in srgb,var(--rb-grn) 35%,var(--rb-edge))}',
       '.rb-teaches{margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--rb-edge)}',
-      '.rb-parts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}',
-      '.rb-part{display:flex;align-items:center;gap:9px;border:1px solid var(--rb-edge);border-radius:11px;' +
-        'background:var(--rb-box2);padding:9px 11px;transition:border-color .2s,transform .2s}',
-      '.rb-part:hover{border-color:var(--rb-grn);transform:translateY(-2px)}',
-      '.rb-pn{font:750 11.5px/1.2 inherit}',
-      '.rb-pd{font:500 10px/1.35 inherit;color:var(--rb-mut);flex:1}',
-      // Parts 2–4: visible but not yet playable.
+      // The Lair board: its surface, scrolling body, and fold shading.
+      '.rb-lbsurf{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--rb-box);' +
+        'border:1.5px solid color-mix(in srgb,var(--rb-grn) 55%,var(--rb-edge));border-radius:18px}',
+      // One column: header, part chips, then the scrolling scene and drawers.
+      '.rb-lbhead{flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--rb-edge2)}',
+      '.rb-lbtitle{flex:1;min-width:0;font:650 17px/1.2 Spectral,Georgia,serif;color:var(--rb-ink);' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.rb-root .rb-ib{display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border-radius:8px;' +
+        'border:1px solid var(--rb-edge);background:var(--rb-box2);color:var(--rb-ink2);font-size:13px;cursor:pointer}',
+      '.rb-root .rb-ib:hover{background:var(--rb-box3)}',
+      '.rb-lbparts{flex:none;display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--rb-edge2);' +
+        'overflow-x:auto;scrollbar-width:none}',
+      '.rb-lbparts::-webkit-scrollbar{display:none}',
+      '.rb-root .rb-lbchip{flex:0 0 auto;border:1px solid var(--rb-edge);background:var(--rb-box2);color:var(--rb-ink2);' +
+        'border-radius:999px;padding:5px 11px;font:550 12.5px/1.2 inherit;cursor:pointer}',
+      '.rb-root .rb-lbchip:hover{border-color:var(--rb-combat)}',
+      '.rb-root .rb-lbchip[aria-current]{background:var(--rb-combat);border-color:var(--rb-combat);color:#1b1206;font-weight:700}',
+      '.rb-lbbody{flex:1 1 auto;min-height:0;overflow:auto;overflow-x:hidden;padding:0}',
+      '.rb-lbbody>.rbx-script{margin:12px 14px}',
+      '.rb-lbdrw{display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap}',
+      '.rb-lbdrw details{flex:1 1 240px;min-width:0;border:1px solid var(--rb-edge);border-radius:10px;background:var(--rb-box2)}',
+      '.rb-lbdrw summary{cursor:pointer;padding:9px 12px;font:750 12px/1.2 inherit;letter-spacing:.08em;color:var(--rb-mut);list-style:none}',
+      '.rb-lbdrw summary::-webkit-details-marker{display:none}',
+      '.rb-lbdrw summary::after{content:"▾";float:right}',
+      '.rb-lbdrw details[open] summary::after{content:"▴"}',
+      '.rb-lbdrw summary:focus-visible{outline:2px solid var(--rb-grn);outline-offset:-2px;border-radius:10px}',
+      '.rb-lbin{padding:0 12px 10px;font-size:13px;color:var(--rb-ink2)}',
+      '.rb-lbin .rbx-table,.rb-lbin .rbx-rip{margin-top:0;padding-top:0;border-top:0}',
+      // The folded map's outside: one continuous map texture, shown only while it is folded.
+      '.rb-lbcover{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;display:grid;place-items:center;' +
+        'background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--rb-grn) 16%,transparent) 0 22%,transparent 23%),' +
+        'repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 25px),' +
+        'repeating-linear-gradient(25deg,rgba(0,0,0,.1) 0 1px,transparent 1px 30px),' +
+        'linear-gradient(160deg,color-mix(in srgb,var(--rb-grn) 16%,var(--rb-box2)),var(--rb-box3) 78%)}',
+      '.rb-lbcover i{font-style:normal;font-size:30px;opacity:.55;filter:saturate(.6)}',
+      // The paper's own shadow where it is still lifting: a band riding each opening edge.
+      '.rb-lbshade{position:absolute;left:0;top:0;z-index:8;pointer-events:none;opacity:0}',
+      '.rb-lbshade--l{background:linear-gradient(90deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--r{background:linear-gradient(270deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--t{background:linear-gradient(180deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbshade--b{background:linear-gradient(0deg,rgba(2,4,9,.68),transparent)}',
+      '.rb-lbcrease{position:absolute;z-index:6;pointer-events:none;opacity:0}',
+      '.rb-lbcrease--v{width:2px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.24),transparent)}',
+      '.rb-lbcrease--h{height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)}',
       '.rb-part--soon{opacity:.55;cursor:not-allowed}',
-      '.rb-part--soon:hover{border-color:var(--rb-edge);transform:none}',
+      '.rb-root .rb-part--soon:hover{border-color:var(--rb-edge);transform:none}',
       '.rb-soon{font:800 8px/1 inherit;letter-spacing:.08em;color:var(--rb-mut2);' +
         'border:1px solid var(--rb-edge);padding:2.5px 5px;border-radius:99px}',
-      // Drill-in hidden state — a fallback so the Lair part view stays hidden even
-      // if the example player module is absent (the player also defines this).
+      // The player's hidden state, defined here too so anything it hides stays
+      // hidden even if the example player module is absent.
       '.rbx-hidden{display:none!important}'
     );
     // Reader takeover: the engine sets inline left/top/width/height to their
     // FINAL value up front (final-size layout from frame 1, so the multi-
     // column prose never reflows) and animates the "grows out of the hero
     // block" motion with transform + opacity only (a FLIP), never a
-    // left/top/width/height tween — the same contract the Lair sheet uses.
+    // left/top/width/height tween.
     s.push(
       '.rb-reader{position:fixed;z-index:70;border:1px solid var(--rb-edge);border-radius:18px;' +
         'background:var(--rb-box);box-shadow:var(--rb-sh);opacity:0;visibility:hidden;pointer-events:none;overflow:auto;' +
@@ -723,10 +754,11 @@
 
   // buildLair renders the worked-scene block. Its panel does not hinge over a
   // neighbour like the characteristic wings — data-rb-wing-mode="sheet" tells
-  // the fold engine to FLIP it from this card to a fixed, viewport-centred
-  // board instead (req. "the Lich's Lair sits centred at every size"). Every
-  // part now carries its own `play` script (p1 wired since v10.3; p2-p4 are
-  // new sample scripts, #48).
+  // the fold engine the card is a folded map: it travels to the middle of the
+  // screen and opens there into one fixed column, the board: a header, a
+  // chip per part, the part's pop-up scene with its caption and controls,
+  // and two drawers (the table, the rules in this part). Every part carries
+  // its own `play` script; the example player fills the board.
   function buildLair(scene) {
     var p = scene.properties || {};
     var chips = isArr(p.chips) ? p.chips : [];
@@ -747,25 +779,16 @@
     for (var i = 0; i < parts.length; i++) {
       var pt = parts[i] || {};
       if (pt.play) {
-        // A wired part: drill in — reveal the part view, hide the overview,
-        // and play the script (the player owns data-rbx-*). Every part gets
-        // its OWN script container (same parent) so the player's "switch
-        // sibling scripts off" already handles moving between parts.
-        partHtml += '<button class="rb-part" type="button" data-rbx-play="' + escAttr(pt.play) + '" ' +
-          'data-rbx-show="rb-lair-part" data-rbx-hide="rb-lair-overview">' +
-          '<span>' + esc(pt.emoji) + '</span>' +
-          '<span class="rb-pn">' + esc(pt.name) + '</span>' +
-          '<span class="rb-pd">' + esc(pt.note) + '</span>' +
-          '<span>▶</span></button>';
-        scriptsHtml += '<div class="rbx-script" id="rbx-' + escAttr(pt.play) + '" ' +
-          'data-rbx-script="' + escAttr(pt.play) + '" aria-live="polite"></div>';
+        // Every part gets its OWN script container (same parent) so the
+        // player's "switch sibling scripts off" handles moving between parts.
+        partHtml += '<button class="rb-lbchip" type="button" data-rbx-play="' + escAttr(pt.play) + '" ' +
+          'title="' + escAttr(pt.note) + '">' + esc(pt.name) + '</button>';
+        scriptsHtml += '<div class="rbx-script" id="rbx-lair-' + escAttr(pt.play) + '" ' +
+          'data-rbx-script="' + escAttr(pt.play) + '"></div>';
       } else {
         // No script authored for this part yet — shown but marked "soon".
-        partHtml += '<button class="rb-part rb-part--soon" type="button" disabled aria-disabled="true">' +
-          '<span>' + esc(pt.emoji) + '</span>' +
-          '<span class="rb-pn">' + esc(pt.name) + '</span>' +
-          '<span class="rb-pd">' + esc(pt.note) + '</span>' +
-          '<span class="rb-soon">soon</span></button>';
+        partHtml += '<button class="rb-lbchip rb-part--soon" type="button" disabled aria-disabled="true">' +
+          esc(pt.name) + ' <span class="rb-soon">soon</span></button>';
       }
     }
 
@@ -778,39 +801,61 @@
         '<h3>' + esc(p.emoji) + ' ' + esc(scene.name) + '</h3>' +
         '<div class="rb-d">' + esc(scene.description) + '</div>' +
         '<div class="rb-chips">' + chipHtml + '</div>' +
-        '<div class="rb-wing" role="dialog" aria-modal="true" aria-label="' + escAttr(scene.name) + '">' +
-          '<div class="rb-crease">' + esc(p.emoji) + ' ' +
-            esc(String(scene.name).toUpperCase()) + ' · UNFOLDED ' +
-            '<button class="rb-x2" data-rb-close-wing>✕</button></div>' +
-          '<div id="rb-lair-overview">' +
-            '<p>' + esc(p.intro) + '</p>' +
-            (teachHtml ? '<div class="rb-teaches"><span class="rb-rellbl">THIS SCENE TEACHES →</span>' +
-              '<div class="rb-chips">' + teachHtml + '</div></div>' : '') +
-            '<div class="rb-parts">' + partHtml + '</div>' +
+        // The board. It opens as a folded map: [data-rb-sheet-surface] is the
+        // paper the engine clips panel by panel, the cover is the map's
+        // outside, and the shades and creases are its fold shading.
+        '<div class="rb-wing" role="dialog" aria-modal="true" aria-label="' + escAttr(scene.name) + '" data-rbx-board>' +
+          '<div class="rb-lbsurf" data-rb-sheet-surface>' +
+            '<div class="rb-lbhead">' +
+              '<span class="rb-lbtitle" data-rbx-board-title>' + esc(p.emoji) + ' ' + esc(scene.name) + '</span>' +
+              '<button class="rb-ib" type="button" data-rbx-board-replay aria-label="Replay this part">↻</button>' +
+              '<button class="rb-ib" type="button" data-rb-close-wing aria-label="Close the worked scene">✕</button>' +
+            '</div>' +
+            '<div class="rb-lbparts" role="group" aria-label="Parts">' + partHtml + '</div>' +
+            '<div class="rb-lbbody" data-rb-sheet-body>' +
+              scriptsHtml +
+              '<div class="rb-lbdrw">' +
+                '<details><summary>THE TABLE</summary><div class="rb-lbin" data-rbx-lair-table></div></details>' +
+                '<details><summary>RULES IN THIS PART</summary><div class="rb-lbin">' +
+                  '<div data-rbx-lair-rules></div>' +
+                  (teachHtml ? '<div class="rb-teaches"><span class="rb-rellbl">THIS SCENE TEACHES →</span>' +
+                    '<div class="rb-chips">' + teachHtml + '</div></div>' : '') +
+                '</div></details>' +
+              '</div>' +
+            '</div>' +
+            '<div class="rb-lbshade rb-lbshade--l" data-rb-sheet-shade="l" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--r" data-rb-sheet-shade="r" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--t" data-rb-sheet-shade="t" aria-hidden="true"></div>' +
+            '<div class="rb-lbshade rb-lbshade--b" data-rb-sheet-shade="b" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--v" data-rb-sheet-crease="v1" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--v" data-rb-sheet-crease="v2" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--h" data-rb-sheet-crease="h1" aria-hidden="true"></div>' +
+            '<div class="rb-lbcrease rb-lbcrease--h" data-rb-sheet-crease="h2" aria-hidden="true"></div>' +
+            '<div class="rb-lbcover" data-rb-sheet-cover aria-hidden="true"><i>🧭</i></div>' +
           '</div>' +
-          '<div id="rb-lair-part" class="rbx-hidden">' +
-            '<button class="rbx-lairback" type="button" data-rbx-back ' +
-              'data-rbx-show="rb-lair-overview" data-rbx-hide="rb-lair-part">← lair overview</button>' +
-            scriptsHtml +
-          '</div>' +
-          '<div class="rb-foldnote">✕ · Esc · outside → folds back</div>' +
         '</div>' +
       '</div>';
   }
 
   // buildLairConfig extracts the example player's Lair context (table roster,
-  // rules-in-play chips, teaching lessons, and which script slug belongs to
-  // which part) straight from the worked-scene ReferenceItem, so the widget
-  // has one source of truth instead of two parallel copies.
+  // rules-in-play chips, teaching lessons, which script slug belongs to which
+  // part, the board's cover title and the part it opens on) straight from the
+  // worked-scene ReferenceItem, so the widget has one source of truth.
   function buildLairConfig(scene) {
     var p = (scene && scene.properties) || {};
     var parts = isArr(p.parts) ? p.parts : [];
-    var partsBySlug = {};
+    var partsBySlug = {}, first = null, openOn = null;
     for (var i = 0; i < parts.length; i++) {
       var pt = parts[i] || {};
-      if (pt.play && pt.slug) partsBySlug[pt.play] = pt.slug;
+      if (!pt.play || !pt.slug) continue;
+      partsBySlug[pt.play] = pt.slug;
+      if (!first) first = pt.play;
+      if (p.openOn && pt.slug === p.openOn) openOn = pt.play;
     }
-    return { partsBySlug: partsBySlug, table: p.table || {}, rulesInPlay: p.rulesInPlay || {}, lessons: p.lessons || {} };
+    return {
+      partsBySlug: partsBySlug, table: p.table || {}, rulesInPlay: p.rulesInPlay || {}, lessons: p.lessons || {},
+      title: (scene && scene.name) || '', openOn: openOn || first
+    };
   }
 
   // ── render: reader takeover + veil overlays ──────────────────────────────
@@ -894,7 +939,7 @@
         '<span><b>⤢/⤪ small cards</b> → a wing stays hinged to the card and slides out OVER its neighbors</span>' +
         '<span><b>⤵ list rows</b> → a flap slides down over the rows beneath</span>' +
         '<span><b>⤢ the lead story</b> → unfolds into the reading sheet</span>' +
-        '<span><b>🏰 the Lich\'s Lair</b> → travels to the middle of the screen, centred at every size</span>' +
+        '<span><b>⤪ the worked scene</b> → the card travels to centre as a folded map, then unfolds panel by panel</span>' +
         '<span><b>✕ / Esc / outside</b> → always folds back</span>' +
       '</div>';
 
@@ -949,7 +994,11 @@
         getJson('rules-glossary.json'),
         // Examples are an enhancement — a missing/failed file must not blank the
         // page, so it degrades to an empty map (buttons render, play is inert).
-        getJson('rulebook-examples.json').catch(function () { return []; })
+        getJson('rulebook-examples.json').catch(function () { return []; }),
+        // The pop-up scene's cards quote these; without them a card shows
+        // only what its script says.
+        getJson('creatures.json').catch(function () { return []; }),
+        getJson('role-templates.json').catch(function () { return []; })
       ]).then(function (res) {
         var items = unwrap(res[0]);
         var glossary = unwrap(res[1]);
@@ -957,11 +1006,13 @@
         self._glossary = glossary;
         self._examples = buildExamplesMap(unwrap(res[2]));
         self._terms = buildTermsMap(glossary);
+        self._refs = { glossary: glossary, creatures: unwrap(res[3]), roles: unwrap(res[4]), frontpage: items };
         var built = buildContent(items, glossary, cid);
         self._lair = buildLairConfig(built.scene);
         self._setBody(built.html);
         self._mountEngine(el);
         self._mountPlayer(el);
+        self._restLoops(el);
       }).catch(function (err) {
         if (typeof console !== 'undefined' && console.error) {
           console.error('Rulebook Front Page: load failed', err);
@@ -977,25 +1028,34 @@
       if (this._player && typeof this._player.destroy === 'function') {
         try { this._player.destroy(); } catch (e) { /* ignore */ }
       }
+      if (this._rest) { try { this._rest(); } catch (e) { /* ignore */ } }
       this._fold = null;
       this._player = null;
+      this._rest = null;
       if (el) el.innerHTML = '';
     },
 
     // _mountEngine hands the built DOM to the shared fold engine when present;
     // absent the global, the static spread stays readable (graceful degrade).
     // The engine also drives the glossary hover cards (terms map) and, on wing
-    // close, resets the Lair drill-in + halts any playing example.
+    // close, halts any playing example. The Lair board's part plays held
+    // (book shut) while the map unfolds, and opens once the board settles.
     _mountEngine: function (el) {
       var self = this;
+      function openOn() { return self._lair && self._lair.openOn; }
       if (typeof RulebookFoldEngine !== 'undefined' && RulebookFoldEngine &&
           typeof RulebookFoldEngine.mount === 'function') {
         try {
           this._fold = RulebookFoldEngine.mount(el, {
             terms: this._terms || {},
+            onOpen: function (kind, id) {
+              if (kind === 'wing' && id === 't-lair' && openOn() && self._player) self._player.play(openOn(), { hold: true });
+            },
+            onSettle: function (kind, id) {
+              if (kind === 'wing' && id === 't-lair' && openOn() && self._player) self._player.play(openOn());
+            },
             onClose: function (kind) {
               if (kind !== 'wing') return;
-              self._resetLair(el);
               if (self._player && typeof self._player.stopAll === 'function') self._player.stopAll();
               // Collapse played panels after the fold-back so reopening the wing
               // shows a clean default (mockup closeWings parity).
@@ -1021,8 +1081,9 @@
           typeof RulebookExamplePlayer.mount === 'function') {
         try {
           var lair = this._lair || {};
-          lair.bindTerms = (this._fold && typeof this._fold.bindTerms === 'function') ? this._fold.bindTerms : null;
-          this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {}, lair: lair });
+          var fold = this._fold;
+          lair.bindTerms = (fold && typeof fold.bindTerms === 'function') ? fold.bindTerms : null;
+          this._player = RulebookExamplePlayer.mount(el, { examples: this._examples || {}, lair: lair, refs: this._refs || {} });
         } catch (e) {
           if (typeof console !== 'undefined' && console.warn) {
             console.warn('Rulebook Front Page: example player mount failed', e);
@@ -1031,12 +1092,47 @@
       }
     },
 
-    // _resetLair returns the Lair wing to its parts overview (used on wing close),
-    // so reopening the wing always starts at the "pick a part" view.
-    _resetLair: function (el) {
-      var ov = el.querySelector('#rb-lair-overview'), pv = el.querySelector('#rb-lair-part');
-      if (ov) ov.classList.remove('rbx-hidden');
-      if (pv) pv.classList.add('rbx-hidden');
+    // _restLoops brings the page's looping animations (the breathing ⤢/⤵
+    // marks) to a standstill when the viewer steps away, on Chronicle's
+    // shared MotionRest clock, and wakes them with it. Without MotionRest
+    // (an older Chronicle) they loop as before; reduced motion already stops
+    // them in the stylesheet.
+    _restLoops: function (el) {
+      var MR = (typeof window !== 'undefined') ? window.MotionRest : null;
+      if (!MR || typeof MR.speed !== 'function' || typeof el.getAnimations !== 'function') return;
+      var timer = 0, raf = 0, stopped = false;
+      function loops() {
+        var out = [], all = el.getAnimations({ subtree: true });
+        for (var i = 0; i < all.length; i++) {
+          var t = all[i].effect && all[i].effect.getTiming ? all[i].effect.getTiming() : null;
+          if (t && t.iterations === Infinity) out.push(all[i]);
+        }
+        return out;
+      }
+      function apply(speed) {
+        var l = loops();
+        for (var i = 0; i < l.length; i++) if (l[i].playbackRate !== speed) l[i].playbackRate = speed;
+      }
+      // Every frame while the clock eases, a slow check while it runs at
+      // full speed, nothing once it is still (onWake starts it again).
+      function tick() {
+        timer = 0; raf = 0;
+        if (stopped) return;
+        var sp = MR.speed();
+        apply(sp);
+        if (MR.still()) return;
+        if (sp > 0 && sp < 1) raf = window.requestAnimationFrame(tick);
+        else timer = window.setTimeout(tick, 400);
+      }
+      function wake() { if (!timer && !raf) tick(); }
+      if (typeof MR.onWake === 'function') MR.onWake(wake);
+      tick();
+      this._rest = function () {
+        stopped = true;
+        if (timer) window.clearTimeout(timer);
+        if (raf) window.cancelAnimationFrame(raf);
+        if (typeof MR.offWake === 'function') MR.offWake(wake);
+      };
     },
 
     // _injectStyles adds the scoped stylesheet once (class guard).

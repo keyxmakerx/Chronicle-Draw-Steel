@@ -159,7 +159,11 @@
       "kickerNo": "4",
       "chips": ["🚪 Into the lair", "⚔ Minions", "💀 The lich", "🏆 Aftermath"],
       "intro": "Each part teaches the rules it touches. Pick where to drop in:",
+      "openOn": "swing",
       "parts": [
+        { "slug": "door", "emoji": "🚪", "name": "Bursting the door", "note": "tests · Might", "play": "bursting-the-door" },
+        { "slug": "grapple", "emoji": "⚔", "name": "The grapple", "note": "resisting · prone", "play": "the-grapple" },
+        { "slug": "swing", "emoji": "⚔️", "name": "Kaelen swings", "note": "power roll · tiers", "play": "kaelen-swings" },
         { "slug": "p1", "emoji": "🚪", "name": "Into the lair", "note": "tests · montage", "play": "into-the-lair" },
         { "slug": "p2", "emoji": "⚔", "name": "Minion skirmish", "note": "squads · captains", "play": "minion-skirmish" },
         { "slug": "p3", "emoji": "💀", "name": "The lich fight", "note": "solo boss · malice", "play": "the-lich-fight" },
@@ -185,6 +189,17 @@
         ]
       },
       "rulesInPlay": {
+        "door": [ { "key": "power-roll", "label": "Power roll", "term": "power-roll" } ],
+        "grapple": [
+          { "key": "power-roll", "label": "Power roll", "term": "power-roll" },
+          { "key": "grabbed", "label": "Grabbed", "term": "grabbed" },
+          { "key": "prone", "label": "Prone", "term": "prone" }
+        ],
+        "swing": [
+          { "key": "power-roll", "label": "Power roll", "term": "power-roll" },
+          { "key": "push", "label": "Push", "term": "push" },
+          { "key": "forced-movement", "label": "Forced movement", "term": "forced-movement" }
+        ],
         "p1": [ { "key": "montage", "label": "Montage tests", "term": "montage-test" } ],
         "p2": [
           { "key": "minions", "label": "Minions", "term": "minion" },

@@ -313,3 +313,68 @@ test('buildLairExtras: renders the hero roster, rules-in-play chips, and the les
 test('buildLairExtras: a script with no matching Lair part renders nothing extra', () => {
   assert.equal(P.buildLairExtras('p9', { table: { heroes: [] } }), '');
 });
+
+// ── startStamina: where a script's Stamina bars begin ───────────────────────
+test('startStaminaOf: reads properties.startStamina, keeping only finite numbers clamped to 0-100', () => {
+  assert.deepEqual(P.startStaminaOf({ properties: { startStamina: { kaelen: 82, sera: 70 } } }), { kaelen: 82, sera: 70 });
+  assert.deepEqual(P.startStaminaOf({ startStamina: { orden: 150, mira: -5 } }), { orden: 100, mira: 0 });
+  assert.deepEqual(P.startStaminaOf({ properties: { startStamina: { a: '50', b: null, c: NaN, d: 40 } } }), { d: 40 });
+  assert.deepEqual(P.startStaminaOf({ properties: { startStamina: [50] } }), {});
+  assert.deepEqual(P.startStaminaOf({ properties: {} }), {});
+  assert.deepEqual(P.startStaminaOf(null), {});
+});
+
+test('computeTableState: at rest (-1) the bars begin at startStamina; a hero it does not name stays full', () => {
+  const st = P.computeTableState([], -1, 0, { kaelen: 82, sera: 70 });
+  assert.deepEqual(st.stamina, { kaelen: 82, sera: 70 });
+  assert.equal(st.stamina.orden, undefined, 'unnamed heroes have no entry, which the table paints as full');
+});
+
+test('computeTableState: effects move the bars on from startStamina, and stepping back returns to it', () => {
+  const lines = [{ _effects: [{ type: 'stamina', target: 'sera', pct: 100 }] }];
+  assert.deepEqual(P.computeTableState(lines, 0, 0, { kaelen: 82, sera: 70 }).stamina, { kaelen: 82, sera: 100 });
+  assert.deepEqual(P.computeTableState(lines, -1, 0, { kaelen: 82, sera: 70 }).stamina, { kaelen: 82, sera: 70 });
+});
+
+test('computeTableState: never mutates the startStamina object it is given', () => {
+  const start = { sera: 70 };
+  P.computeTableState([{ _effects: [{ type: 'stamina', target: 'sera', pct: 100 }] }], 0, 0, start);
+  assert.deepEqual(start, { sera: 70 });
+});
+
+test('aftermath seed data: opens on the wounds parts 2 and 3 left, and the respite brings them back to full', () => {
+  const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
+  const after = raw.find((s) => s.slug === 'aftermath');
+  const lines = P.linesOf(after);
+  const start = P.startStaminaOf(after);
+  assert.deepEqual(P.computeTableState(lines, -1, 0, start).stamina, { kaelen: 82, sera: 70 });
+  assert.deepEqual(P.computeTableState(lines, lines.length - 1, 0, start).stamina, { kaelen: 100, sera: 100 });
+});
+
+// ── the table and rules in play in panels of their own ──────────────────────
+const LAIR = {
+  table: { heroes: [{ slug: 'orden', fig: 'O', name: 'Orden' }, { slug: 'sera', fig: 'S', name: 'Sera' }] },
+  rulesInPlay: { p2: [{ key: 'minions', label: 'Minions', term: 'minion' }] },
+  lessons: { p2: { kind: 'squad', title: 'Squad', lede: 'l', squad: { count: 1 } } },
+};
+
+test('buildLairTable: one Stamina bar per hero; nothing for an empty roster', () => {
+  const html = P.buildLairTable(LAIR);
+  assert.equal((html.match(/data-rbx-hero=/g) || []).length, 2);
+  assert.match(html, /THE TABLE/);
+  assert.equal(P.buildLairTable({ table: { heroes: [] } }), '');
+});
+
+test('buildLairRules: one hover-card chip per rule the part names; nothing for a part with none', () => {
+  assert.match(P.buildLairRules(LAIR, 'p2'), /data-rb-term="minion"[^>]*>Minions</);
+  assert.equal(P.buildLairRules(LAIR, 'p9'), '');
+});
+
+test('buildLairExtras: leaves out the table and rules when the page gives them panels, keeping the lesson', () => {
+  const html = P.buildLairExtras('p2', LAIR, 0, { table: true, rules: true });
+  assert.ok(!/data-rbx-hero=/.test(html), 'no table with the script when it has its own panel');
+  assert.ok(!/RULES IN PLAY/.test(html), 'no rules with the script when they have their own panel');
+  assert.match(html, /rbx-lesson/);
+  // Without panels everything still renders with the script, as before.
+  assert.match(P.buildLairExtras('p2', LAIR, 0), /data-rbx-hero=[\s\S]*RULES IN PLAY[\s\S]*rbx-lesson/);
+});

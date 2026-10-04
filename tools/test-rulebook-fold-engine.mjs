@@ -378,3 +378,55 @@ test('blockMatches: an empty query matches; a hit is case-insensitive; a miss is
   assert.equal(E.blockMatches('The wizard casts a spell', 'WIZARD'), true);
   assert.equal(E.blockMatches('The wizard casts a spell', 'necromancer'), false);
 });
+
+// ── the sheet's board: layout per width, and the folded-map geometry ─────────
+test('sheetMode: one column everywhere; only a phone-width screen changes how it is framed', () => {
+  assert.equal(E.sheetMode(1440), 'wide');
+  assert.equal(E.sheetMode(900), 'wide');
+  assert.equal(E.sheetMode(390), 'phone');
+  assert.equal(E.sheetMode(E.SHEET.PHONE_MAX), 'phone');
+  assert.equal(E.sheetMode(E.SHEET.PHONE_MAX + 1), 'wide');
+});
+
+test('sheetLayout (wide): the board is one centred column, no wider than the content width', () => {
+  const S = E.SHEET;
+  const L = E.sheetLayout({ viewportWidth: 1440, viewportHeight: 900 });
+  assert.deepEqual(Object.keys(L).sort(), ['board', 'mode'], 'a board and nothing beside it');
+  assert.equal(L.mode, 'wide');
+  assert.equal(L.board.width, S.CONTENT_W);
+  assert.equal(L.board.left + L.board.width / 2, 720, 'centred horizontally');
+  assert.ok(L.board.height <= S.MAX_H && L.board.height <= 900 * S.H_FRAC);
+  assert.ok(L.board.top >= S.MARGIN && L.board.top + L.board.height <= 900 - S.MARGIN);
+  const mid = E.sheetLayout({ viewportWidth: 700, viewportHeight: 900 });
+  assert.equal(mid.board.width, 700 - 2 * S.MARGIN, 'a narrower screen narrows the column inside its margins');
+  assert.equal(mid.board.left, S.MARGIN);
+});
+
+test('sheetLayout (phone): the board fills the screen inside an inset', () => {
+  const ph = E.sheetLayout({ viewportWidth: 390, viewportHeight: 844 });
+  assert.equal(ph.mode, 'phone');
+  assert.deepEqual(ph.board, { left: 8, top: 8, width: 374, height: 828 });
+});
+
+test('sheetFoldGeometry: the folded map is a card-sized window in the board, offset onto the card', () => {
+  const card = { left: 900, top: 500, width: 400, height: 200 };
+  const board = { left: 400, top: 100, width: 640, height: 700 };
+  const g = E.sheetFoldGeometry(card, board, 18);
+  assert.equal(g.w0, 400);
+  assert.equal(g.h0, 200);
+  assert.equal(g.ix, 120);
+  assert.equal(g.iy, 250);
+  // the window's centre, moved by (dx, dy), lands on the card's centre
+  assert.equal(board.left + board.width / 2 + g.dx, card.left + card.width / 2);
+  assert.equal(board.top + board.height / 2 + g.dy, card.top + card.height / 2);
+  assert.equal(g.clipWin, 'inset(250px 120px 250px 120px round 18px)');
+  assert.equal(g.clipAcross, 'inset(250px 0px 250px 0px round 18px)');
+  assert.equal(g.clipFull, 'inset(0px 0px 0px 0px round 18px)');
+});
+
+test('sheetFoldGeometry: a card wider than the board folds to the board width, never wider', () => {
+  const g = E.sheetFoldGeometry({ left: 0, top: 0, width: 500, height: 150 }, { left: 0, top: 0, width: 374, height: 828 });
+  assert.equal(g.w0, 374);
+  assert.equal(g.ix, 0);
+  assert.ok(g.band >= 24, 'the lifting-edge shadow keeps a visible width');
+});
