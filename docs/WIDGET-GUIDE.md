@@ -139,13 +139,16 @@ that folds open in three matched ways (the SIGNED `rulebook-v10` design):
 - **Five characteristic cards** → each folds a **hinged wing** out of its edge, over its
   neighbours (left-column cards wing right, right-column cards wing left).
 - **Condition rows** → each unfolds a **flap** down over the rows beneath.
-- **The Lich's Lair** worked-scene → the card travels to the middle of the screen as a folded
-  map and unfolds there, panel by panel, into a centred one-column board: a header (the part's
-  title, ↻ replay, ✕ close), a chip per part, the part's **pop-up book** with its caption line and
-  ◀ ⏸ ▶ controls, and two drawers, **THE TABLE** (heroes + Stamina) and **RULES IN THIS PART**.
-  The book stays shut while the map unfolds and opens once the board has landed, on the part the
-  worked-scene's `openOn` names. The same column is used at every width; a phone (560px and
-  under) frames it inside a small inset.
+- **The Lich's Lair** worked-scene → the card's face is the **closed pop-up book** (the scene's
+  own cover, drawn in the same 3D book, tilted on the card with its page edges showing) beside
+  the title and description. Opening it lifts the book off the card; it travels onto the board's
+  own closed book, easing into its tilt, and the centred one-column board appears round it: a
+  header (the part's title, ↻ replay, ✕ close), a chip per part, the part's **pop-up book** with
+  its caption line and ◀ ⏸ ▶ controls, and two drawers, **THE TABLE** (heroes + Stamina) and
+  **RULES IN THIS PART**. Then the cover opens, on the part the worked-scene's `openOn` names.
+  Closing shuts the book, the board fades away round it, and the book flies back onto its card.
+  The same column is used at every width; a phone (560px and under) frames it inside a small
+  inset.
 
 Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
 related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
@@ -207,12 +210,19 @@ The module splits a **pure state machine** (`createState` / `reduce` / `escapePr
 logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`, `node --test`).
 
 **The sheet** (`data-rb-wing-mode="sheet"`, the Lich's Lair): `sheetMode` (`wide` \| `phone`) /
-`sheetLayout` place the one-column board per viewport, and `sheetFoldGeometry` gives the
-folded-map film its numbers; all three are pure and unit-tested. `mount(root, { onSettle })` hears
-`onSettle(kind, id)` once the board has landed open and flat (the front page opens its pop-up book
-then). Focus moves into the board on open and back to the card once it has folded home; Tab
-cycles the board's visible controls (drawer summaries included); the page never scrolls, and the
-open card keeps no transform.
+`sheetLayout` place the one-column board per viewport, and `sheetTravel` gives the card's token
+(`[data-rb-sheet-token]`, the Lair's closed book) the move onto its twin on the board (the host's
+`data-rb-sheet-land` selector, tilting into `data-rb-sheet-land-tilt`, and trimmed by
+touchdown to the twin's clipping frame named by `data-rb-sheet-land-clip`, via the pure
+`sheetLandClip`, so the hand-over shows no edge the frame hides); these are pure and
+unit-tested, and the open/close film itself is driven over a fake DOM in
+`tools/test-rulebook-lair-book.mjs`. `mount(root, { onSettle, onShut })` hears
+`onSettle(kind, id)` once the board has landed (the front page opens its pop-up book then) and
+asks `onShut(kind, id)` for how many ms the board needs to shut its book before the film runs
+back (the player's `shut()` answers). Focus moves into the board on open and back to the card
+once the book is home; Tab cycles the board's visible controls (drawer summaries included); the
+page never scrolls, and the open card keeps no transform. Under reduced motion the board simply
+fades in and out and the book stays on its card.
 
 **Mobile wings** (`mobileWingWidth`): under 640px a wing folds downward and spans the **full
 width of its block** (viewport minus page padding, measured from the `[data-rb-block]` ancestor),
@@ -250,7 +260,8 @@ Scripts are **data** (`data/rulebook-examples.json`, ReferenceItem array; `prope
 `RulebookExamplePlayer.mount(root, { examples, lair, refs })`. When the page has
 `[data-rbx-lair-table]` / `[data-rbx-lair-rules]` panels, the player fills them instead of
 rendering the table and rules with each script. `play(slug, { hold: true })` puts a part on the
-board with its book shut; `play(slug)` opens it. The module splits **pure logic**
+board with its book shut; `play(slug)` opens it; `shut()` closes the board's open book and
+returns how long that takes (0 when none is open or motion is reduced). The module splits **pure logic**
 (`planScript` / `rollRevealOrder` / `tokenForLine` / `isRoll` / `richText` / `buildScriptHtml`,
 and the scene functions below) from the DOM controller, unit-tested headless
 (`tools/test-rulebook-example-player.mjs`, `tools/test-rulebook-popup-scene.mjs`).

@@ -27,15 +27,28 @@
  *                             data-rb-dim="<selector>", data-rb-wing-max="<px>".
  *                             data-rb-wing-mode="sheet" (the Lich's Lair):
  *                             the panel is a board laid out at final size,
- *                             centred; the card becomes a folded map, travels
- *                             there and opens panel by panel (transform,
- *                             clip-path and opacity only, so nothing reflows).
- *                             Inside a sheet host:
- *     [data-rb-sheet-surface|cover|shade|crease|body]
- *                             the board's clipped surface, the map's outside,
- *                             its fold shading, and the board's scrolling
- *                             body. mount({ onSettle }) hears when the board
- *                             has landed, open and flat.
+ *                             centred. The card's token lifts off the card
+ *                             and travels onto its twin on the board, then the
+ *                             board fades in round it (transform and opacity
+ *                             only, so nothing reflows). The host names the
+ *                             twin with data-rb-sheet-land="<selector>" and,
+ *                             optionally, the 3D piece whose tilt the token
+ *                             eases into with data-rb-sheet-land-tilt, and
+ *                             the twin's clipping frame (an ancestor) with
+ *                             data-rb-sheet-land-clip: the token is clipped
+ *                             to that frame as it lands, so whatever the
+ *                             frame hides of the twin never shows in flight.
+ *     [data-rb-sheet-token]   the piece of the card that travels (a 2D box
+ *                             the same shape as its twin on the board).
+ *     [data-rb-sheet-tilt]    inside the token: the 3D piece that eases into
+ *                             the twin's tilt on the way.
+ *     [data-rb-sheet-fade]    inside the token: detail only the card shows,
+ *                             faded out on the way.
+ *     [data-rb-sheet-body]    the board's scrolling body (back to the top on
+ *                             each open). mount({ onSettle }) hears when the
+ *                             board has landed and mount({ onShut }) is asked,
+ *                             before a close, how many ms the board needs to
+ *                             put its own content away first.
  *   [data-rb-flap]            hosts a flap; child `.rb-flap` is the panel,
  *                             trigger is `.rb-flap-trigger` (else the row).
  *                             Rows sharing [data-rb-flap-group] dim siblings.
@@ -215,7 +228,7 @@ var RulebookFoldEngine = (function () {
   // viewport, or the whole screen inside an 8px inset on a phone.
   var SHEET = {
     CONTENT_W: 760, MARGIN: 16,
-    MAX_H: 640, H_FRAC: 0.86, PHONE_MAX: 560, PHONE_INSET: 8, RADIUS: 18
+    MAX_H: 640, H_FRAC: 0.86, PHONE_MAX: 560, PHONE_INSET: 8
   };
 
   // sheetMode: 'phone' fills the screen, 'wide' centres a column.
@@ -242,26 +255,38 @@ var RulebookFoldEngine = (function () {
     return { mode: mode, board: board };
   }
 
-  // sheetFoldGeometry describes the board as a folded map lying on its card:
-  // the card-sized middle window of the board (clipped), the offset that puts
-  // that window over the card, and the clip-paths of each unfolding stage —
-  // middle panel, then the side panels, then top and bottom. Pure, so the
-  // film's numbers are unit-tested headless.
-  function sheetFoldGeometry(card, board, radius) {
-    var c = card || {}, b = board || {};
-    var bw = b.width || 0, bh = b.height || 0;
-    var w0 = Math.min(c.width || 0, bw), h0 = Math.min(c.height || 0, bh);
-    var ix = (bw - w0) / 2, iy = (bh - h0) / 2;
-    var r = radius != null ? radius : SHEET.RADIUS;
-    function inset(t, rt) { return 'inset(' + t + 'px ' + rt + 'px ' + t + 'px ' + rt + 'px round ' + r + 'px)'; }
-    return {
-      dx: ((c.left || 0) + (c.width || 0) / 2) - ((b.left || 0) + bw / 2),
-      dy: ((c.top || 0) + (c.height || 0) / 2) - ((b.top || 0) + bh / 2),
-      w: bw, h: bh, w0: w0, h0: h0, ix: ix, iy: iy,
-      // the shadow band that rides each opening edge
-      band: Math.max(24, Math.min(90, ix, iy)),
-      clipWin: inset(iy, ix), clipAcross: inset(iy, 0), clipFull: inset(0, 0)
-    };
+  // sheetTravel is the move that carries the card's token from where it
+  // rests (`from`) onto its twin on the board (`to`), both viewport boxes,
+  // with the token's transform-origin at its top-left corner. With no twin
+  // the token heads for the middle of the board at its own size and fades
+  // as it lands, so the board still opens. Pure, so the numbers are tested
+  // headless.
+  function sheetTravel(from, to, board) {
+    var f = from || {}, fw = Number(f.width) || 0, fh = Number(f.height) || 0;
+    var dx, dy, k = 1, fade = false;
+    if (to && Number(to.width) > 0 && fw > 0) {
+      dx = to.left - f.left; dy = to.top - f.top; k = to.width / fw;
+    } else {
+      var b = board || {};
+      dx = (b.left || 0) + (b.width || 0) / 2 - ((f.left || 0) + fw / 2);
+      dy = (b.top || 0) + (b.height || 0) / 2 - ((f.top || 0) + fh / 2);
+      fade = true;
+    }
+    return { dx: dx, dy: dy, k: k, fade: fade,
+      transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')' };
+  }
+
+
+  // sheetLandClip is the clip-path that trims the landed token to its
+  // twin's clipping frame. `to` is the landed token's viewport box, `frame`
+  // the frame's, `k` the token's scale; insets are in the token's own
+  // (unscaled) pixels, negative where the frame reaches past the token, so
+  // that side is not trimmed. Pure, so the numbers are tested headless.
+  function sheetLandClip(to, frame, k) {
+    var t = to || {}, f = frame || {}, s = Number(k) || 1;
+    function px(n) { return (Math.round(n / s * 100) / 100) + 'px'; }
+    var right = (t.left + t.width) - (f.left + f.width), bottom = (t.top + t.height) - (f.top + f.height);
+    return 'inset(' + px(f.top - t.top) + ' ' + px(right) + ' ' + px(bottom) + ' ' + px(f.left - t.left) + ')';
   }
 
   // ── glossary hover-card logic (content-agnostic; data supplied at mount) ────
@@ -332,8 +357,11 @@ var RulebookFoldEngine = (function () {
     var breakpoint = opts.breakpoint != null ? opts.breakpoint : MOBILE_BREAKPOINT;
     var onOpen = typeof opts.onOpen === 'function' ? opts.onOpen : function () {};
     var onClose = typeof opts.onClose === 'function' ? opts.onClose : function () {};
-    // onSettle(kind, id) fires once a sheet has landed, open and flat.
+    // onSettle(kind, id) fires once a sheet has landed on screen; onShut(kind,
+    // id) is asked as a sheet starts to close and returns how many ms its
+    // board needs to put its own content away before the film runs back.
     var onSettle = typeof opts.onSettle === 'function' ? opts.onSettle : function () {};
+    var onShut = typeof opts.onShut === 'function' ? opts.onShut : function () { return 0; };
 
     var state = createState();
     var listeners = [];              // tracked for a clean destroy()
@@ -389,18 +417,19 @@ var RulebookFoldEngine = (function () {
       var dy = (look.top + look.height / 2) - (actual.top + actual.height / 2);
       return 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')';
     }
-    // ── the sheet's film: the card is a folded map ──────────────────────
+    // ── the sheet's film: the card's token travels to the board ─────────
     // The board is laid out at its final place and size before anything
-    // moves. The card turns into the folded map where it lies (the board,
-    // clipped to a card-sized window under one continuous map texture), the
-    // map travels to the middle of the screen, then opens panel by panel —
-    // the side panels, then top and bottom — each lifting edge in shadow.
-    // Only transform, clip-path and opacity animate, so nothing inside the
-    // board reflows. A close is the same film backwards, and an interrupted
-    // film turns round from wherever it is.
-    var SHEET_MS = { xfade: 200, travel: 480, panel: 420, land: 380, wing: 460, fade: 180 };
-    var EASE_UNFOLD = 'cubic-bezier(.45,.05,.25,1)', EASE_INOUT = 'cubic-bezier(.55,.05,.3,1)';
-    var LIFT = ' translateY(-4px) scale(1.02)';
+    // moves, and the token is pinned (position:fixed) where it rests so no
+    // scrolling ancestor clips its flight. It lifts, travels onto its twin
+    // on the board while easing into the twin's tilt, then the board fades
+    // in round it and the token hands over. Only transform and opacity
+    // animate, so nothing reflows. A close first lets the board put its own
+    // content away (onShut), then plays the same film backwards; an
+    // interrupted film turns round from wherever it is.
+    var SHEET_MS = { lift: 180, travel: 560, reveal: 240, fade: 180 };
+    var EASE_INOUT = 'cubic-bezier(.55,.05,.3,1)';
+    var LIFT = 'translate(0px,-8px) scale(1)';
+    var CLIP_FREE = -400;   // an inset this far out clips nothing the token draws
 
     // The visible viewport, without a classic scrollbar (which innerWidth includes).
     function _viewW() { var d = root.ownerDocument, e = d && (d.scrollingElement || d.documentElement); return (e && e.clientWidth) || win.innerWidth; }
@@ -475,25 +504,16 @@ var RulebookFoldEngine = (function () {
       return f;
     }
 
-    // _sheetFor collects one sheet host's parts once: the board (its .rb-wing)
-    // and the surface the fold clips.
+    // _sheetFor collects one sheet host's parts once: the board (its
+    // .rb-wing) and the token that travels to it.
     function _sheetFor(host) {
       if (host.__rbSheet) return host.__rbSheet;
       var panel = host.querySelector('.rb-wing');
       if (!panel) return null;
-      // The surface is what the fold clips; the panel itself carries the
-      // travel and the shadow, so the shadow is never clipped away.
-      var s = { host: host, panel: panel, surf: panel.querySelector('[data-rb-sheet-surface]') || panel,
-        film: null, geo: null, mode: null, landed: false, reduced: false, returnFocus: null };
+      var s = { host: host, panel: panel, token: host.querySelector('[data-rb-sheet-token]'),
+        film: null, trip: null, mode: null, landed: false, reduced: false, returnFocus: null, shutMs: 0 };
       host.__rbSheet = s;
       return s;
-    }
-    // _faceOf is the card's own face: everything in the host but the board.
-    // It fades as the map covers it, so the card is never drawn twice.
-    function _faceOf(s) {
-      var out = [];
-      each(s.host.children, function (c) { if (c !== s.panel) out.push(c); });
-      return out;
     }
 
     // _layoutSheet puts the board where it rests for the current viewport.
@@ -506,88 +526,119 @@ var RulebookFoldEngine = (function () {
       return L;
     }
 
-    // _sizeFx sizes the paper's shadow bands and creases to this fold.
-    function _sizeFx(s) {
-      var g = s.geo, p = s.panel;
-      function set(sel, r) { var el = p.querySelector(sel); if (!el) return; for (var k in r) if (Object.prototype.hasOwnProperty.call(r, k)) el.style[k] = r[k] + 'px'; }
-      set('[data-rb-sheet-shade="l"]', { width: g.band, height: g.h0 });
-      set('[data-rb-sheet-shade="r"]', { width: g.band, height: g.h0 });
-      set('[data-rb-sheet-shade="t"]', { width: g.w, height: g.band });
-      set('[data-rb-sheet-shade="b"]', { width: g.w, height: g.band });
-      set('[data-rb-sheet-crease="v1"]', { left: g.ix - 1, top: 0, height: g.h });
-      set('[data-rb-sheet-crease="v2"]', { left: g.w - g.ix - 1, top: 0, height: g.h });
-      set('[data-rb-sheet-crease="h1"]', { top: g.iy - 1, left: 0, width: g.w });
-      set('[data-rb-sheet-crease="h2"]', { top: g.h - g.iy - 1, left: 0, width: g.w });
+    // _pinToken fixes the token on screen exactly where it rests in the
+    // card; _unpinToken hands it back to the card's own layout.
+    function _unpinToken(s) {
+      var t = s.token;
+      if (!t) return;
+      t.style.position = ''; t.style.left = ''; t.style.top = ''; t.style.width = ''; t.style.height = ''; t.style.margin = '';
+    }
+    function _pinToken(s) {
+      var t = s.token;
+      if (!t) return;
+      _unpinToken(s);
+      var r = t.getBoundingClientRect();
+      t.style.position = 'fixed'; t.style.margin = '0';
+      _place(t, { left: r.left, top: r.top, width: r.width, height: r.height });
+    }
+
+    // _landOf is the token's twin on the board: the first match of the
+    // host's data-rb-sheet-land selector that is laid out and on screen
+    // inside the board. A twin scrolled out of view does not count.
+    function _landOf(s) {
+      var sel = s.host.getAttribute('data-rb-sheet-land');
+      if (!sel) return null;
+      var pr = s.panel.getBoundingClientRect(), hit = null;
+      each(s.panel.querySelectorAll(sel), function (el) {
+        if (hit) return;
+        var r = el.getBoundingClientRect();
+        if (r.width > 0 && r.top >= pr.top - 1 && r.bottom <= pr.bottom + 1) hit = el;
+      });
+      return hit;
+    }
+
+    // _tripOf works out this film's travel once: where the twin is, and
+    // the tilt the token eases from and into.
+    function _tripOf(s) {
+      if (s.trip) return s.trip;
+      var land = _landOf(s), t = s.token;
+      var from = { left: parseFloat(t.style.left) || 0, top: parseFloat(t.style.top) || 0,
+        width: t.offsetWidth, height: t.offsetHeight };
+      var to = land ? land.getBoundingClientRect() : null;
+      var b = s.panel.getBoundingClientRect();
+      var trip = sheetTravel(from, to, { left: b.left, top: b.top, width: b.width, height: b.height });
+      var tilt = t.querySelector('[data-rb-sheet-tilt]'), tiltSel = s.host.getAttribute('data-rb-sheet-land-tilt');
+      var twin = (land && tiltSel) ? land.querySelector(tiltSel) : null;
+      if (tilt && twin && win.getComputedStyle) {
+        trip.tilt = tilt;
+        trip.tiltFrom = win.getComputedStyle(tilt).transform;
+        trip.tiltTo = win.getComputedStyle(twin).transform;
+      }
+      var clipSel = s.host.getAttribute('data-rb-sheet-land-clip');
+      var frame = (land && clipSel) ? _closest(land, clipSel) : null;
+      if (frame && to) trip.clip = sheetLandClip(to, frame.getBoundingClientRect(), trip.k);
+      s.trip = trip;
+      return trip;
+    }
+
+    // _tokenMoves animates the token from `a` (0 at rest, 1 landed) to `b`.
+    function _tokenMoves(s, a, b, o, dir) {
+      var tr = _tripOf(s), t = s.token, out = [];
+      function at(x) { return x ? tr.transform : LIFT; }
+      var kf = [{ transform: at(a), opacity: a && tr.fade ? 0 : 1 }, { transform: at(b), opacity: b && tr.fade ? 0 : 1 }];
+      out.push(_mk(t, kf, o, dir));
+      if (tr.clip) {
+        // Untrimmed for most of the flight, trimmed to the frame by touchdown.
+        var free = 'inset(' + CLIP_FREE + 'px ' + CLIP_FREE + 'px ' + CLIP_FREE + 'px ' + CLIP_FREE + 'px)';
+        var ck = [{ clipPath: a ? tr.clip : free }];
+        if (a !== b) ck.push({ clipPath: free, offset: 0.7 });
+        ck.push({ clipPath: b ? tr.clip : free });
+        out.push(_mk(t, ck, o, dir));
+      }
+      if (tr.tilt && tr.tiltFrom && tr.tiltTo) {
+        out.push(_mk(tr.tilt, [{ transform: a ? tr.tiltTo : tr.tiltFrom }, { transform: b ? tr.tiltTo : tr.tiltFrom }], o, dir));
+      }
+      each(t.querySelectorAll('[data-rb-sheet-fade]'), function (el) {
+        out.push(_mk(el, [{ opacity: a ? 0 : 1 }, { opacity: b ? 0 : 1 }], o, dir));
+      });
+      return out;
     }
 
     function _sheetSteps(s) {
-      var host = s.host, panel = s.panel, surf = s.surf;
-      function q(sel) { return panel.querySelector(sel); }
-      function T(extra) { return 'translate(' + s.geo.dx + 'px,' + s.geo.dy + 'px)' + (extra || ''); }
-      function show(sel, o, dir) { return _mk(q(sel), [{ opacity: 1 }, { opacity: 1 }], o, dir); }
-      if (s.reduced) {
+      var host = s.host, panel = s.panel;
+      if (s.reduced || !s.token) {
         // Reduced motion: the board crossfades in place and the card stays put.
         return [{ name: 'fade',
           enter: function (dir) { _toggle(root, 'rb-lair-open', dir > 0); },
           make: function (dir) { return [_mk(panel, [{ opacity: 0 }, { opacity: 1 }], { duration: SHEET_MS.fade, easing: 'linear' }, dir)]; } }];
       }
+      function hidden(o, dir) { return _mk(panel, [{ opacity: 0 }, { opacity: 0 }], o, dir); }
       return [
-        { name: 'fold',                              // the card becomes the folded map where it lies
+        { name: 'lift',                              // the token lifts off the card
+          make: function (dir) {
+            var o = { duration: SHEET_MS.lift, easing: 'ease-out' };
+            return [_mk(s.token, [{ transform: 'none' }, { transform: LIFT }], o, dir), hidden(o, dir)];
+          } },
+        { name: 'travel',                            // it travels onto its twin on the board
+          enter: function (dir) { _toggle(root, 'rb-lair-open', dir > 0); },
+          make: function (dir) {
+            var o = { duration: SHEET_MS.travel, easing: EASE_INOUT };
+            return _tokenMoves(s, 0, 1, o, dir).concat([hidden(o, dir)]);
+          } },
+        { name: 'reveal',                            // the board fades in round it, then the token hands over
           enter: function (dir) { if (dir < 0) host.classList.remove('rb-sheet-away'); },
           exit: function (dir) { if (dir > 0) host.classList.add('rb-sheet-away'); },
           make: function (dir) {
-            var g = s.geo, o = { duration: SHEET_MS.xfade, easing: 'linear' };
-            var list = [
-              _mk(panel, [{ opacity: 0, transform: T() }, { opacity: 1, transform: T() }], o, dir),
-              _mk(surf, [{ clipPath: g.clipWin }, { clipPath: g.clipWin }], o, dir),
-              show('[data-rb-sheet-cover]', o, dir)];
-            each(_faceOf(s), function (el) { list.push(_mk(el, [{ opacity: 1 }, { opacity: 0 }], o, dir)); });
-            return list;
+            var o = { duration: SHEET_MS.reveal, easing: 'linear' };
+            return _tokenMoves(s, 1, 1, o, dir).concat([_mk(panel, [{ opacity: 0 }, { opacity: 1 }], o, dir)]);
           } },
-        { name: 'travel',                            // it lifts off the page and travels to the middle
-          enter: function (dir) { _toggle(root, 'rb-lair-open', dir > 0); },
+        { name: 'shut',                              // closing: the board puts its content away first
+          enter: function (dir) {
+            if (dir < 0) s.shutMs = Math.max(0, Number(onShut(FOLD.WING, host.id || '')) || 0);
+          },
           make: function (dir) {
-            var g = s.geo, o = { duration: SHEET_MS.travel, easing: EASE_INOUT };
-            return [
-              _mk(panel, [{ transform: T() }, { transform: T(LIFT), offset: 0.2 }, { transform: 'none' }], o, dir),
-              _mk(surf, [{ clipPath: g.clipWin }, { clipPath: g.clipWin }], o, dir),
-              show('[data-rb-sheet-cover]', o, dir)];
-          } },
-        { name: 'across',                            // the side panels open out of the middle one
-          make: function (dir) {
-            var g = s.geo, o = { duration: SHEET_MS.panel, easing: EASE_INOUT }, B = g.band;
-            function band(x0, x1) {
-              return [{ transform: 'translate(' + x0 + 'px,' + g.iy + 'px)', opacity: 1 }, { opacity: 1, offset: 0.55 },
-                { transform: 'translate(' + x1 + 'px,' + g.iy + 'px)', opacity: 0 }];
-            }
-            return [
-              _mk(surf, [{ clipPath: g.clipWin }, { clipPath: g.clipAcross }], o, dir),
-              _mk(q('[data-rb-sheet-cover]'), [{ opacity: 1 }, { opacity: 0 }], o, dir),
-              _mk(q('[data-rb-sheet-shade="l"]'), band(g.ix, 0), o, dir),
-              _mk(q('[data-rb-sheet-shade="r"]'), band(g.w - g.ix - B, g.w - B), o, dir),
-              _mk(q('[data-rb-sheet-crease="v1"]'), [{ opacity: 0 }, { opacity: 1 }], o, dir),
-              _mk(q('[data-rb-sheet-crease="v2"]'), [{ opacity: 0 }, { opacity: 1 }], o, dir)];
-          } },
-        { name: 'down',                              // then the top and bottom panels
-          make: function (dir) {
-            var g = s.geo, o = { duration: SHEET_MS.panel, easing: EASE_INOUT }, B = g.band;
-            function band(y0, y1) {
-              return [{ transform: 'translate(0px,' + y0 + 'px)', opacity: 1 }, { opacity: 1, offset: 0.55 },
-                { transform: 'translate(0px,' + y1 + 'px)', opacity: 0 }];
-            }
-            return [
-              _mk(surf, [{ clipPath: g.clipAcross }, { clipPath: g.clipFull }], o, dir),
-              _mk(q('[data-rb-sheet-shade="t"]'), band(g.iy, 0), o, dir),
-              _mk(q('[data-rb-sheet-shade="b"]'), band(g.h - g.iy - B, g.h - B), o, dir),
-              show('[data-rb-sheet-crease="v1"]', o, dir), show('[data-rb-sheet-crease="v2"]', o, dir),
-              _mk(q('[data-rb-sheet-crease="h1"]'), [{ opacity: 0 }, { opacity: 1 }], o, dir),
-              _mk(q('[data-rb-sheet-crease="h2"]'), [{ opacity: 0 }, { opacity: 1 }], o, dir)];
-          } },
-        { name: 'land',                              // flat: the creases fade
-          make: function (dir) {
-            var o = { duration: SHEET_MS.land, easing: 'ease-out' }, out = [];
-            each(['v1', 'v2', 'h1', 'h2'], function (k) { out.push(_mk(q('[data-rb-sheet-crease="' + k + '"]'), [{ opacity: 1 }, { opacity: 0 }], o, dir)); });
-            return out;
+            if (dir > 0 || !s.shutMs) return [];
+            return [_mk(panel, [{ opacity: 1 }, { opacity: 1 }], { duration: s.shutMs }, dir)];
           } }
       ];
     }
@@ -596,16 +647,11 @@ var RulebookFoldEngine = (function () {
       return {
         start: function (dir, fresh) {
           s.panel.style.pointerEvents = dir > 0 ? '' : 'none';
-          if (fresh && !s.reduced) {
-            var c = s.host.getBoundingClientRect();
-            var b = { left: parseFloat(s.panel.style.left) || 0, top: parseFloat(s.panel.style.top) || 0,
-              width: s.panel.offsetWidth, height: s.panel.offsetHeight };
-            s.geo = sheetFoldGeometry({ left: c.left, top: c.top, width: c.width, height: c.height }, b, SHEET.RADIUS);
-            _sizeFx(s);
-          }
+          if (fresh && !s.reduced) { s.trip = null; _pinToken(s); }
         },
         opened: function () {
           s.landed = true;
+          _unpinToken(s);
           onSettle(FOLD.WING, s.host.id || '');
         },
         closed: function () {
@@ -613,6 +659,7 @@ var RulebookFoldEngine = (function () {
           s.host.classList.remove('is-open', 'rb-sheet-away');
           root.classList.remove('rb-lair-open');
           s.panel.style.pointerEvents = '';
+          _unpinToken(s);
           // Focus comes home once the card is back, never scrolling the page.
           var back = s.returnFocus; s.returnFocus = null;
           if (back && back.focus) back.focus({ preventScroll: true });
@@ -674,7 +721,7 @@ var RulebookFoldEngine = (function () {
         // The sheet is a real dialog (role="dialog" in the caller's markup) —
         // same focus contract as the reader: remember where to send focus
         // back, then move it into the sheet so it isn't left behind on the
-        // card, which hides once the map covers it.
+        // card, whose token travels onto the board.
         var wing = host.querySelector('.rb-wing');
         var d = root.ownerDocument;
         var sh = _sheetFor(host);
@@ -1111,6 +1158,7 @@ var RulebookFoldEngine = (function () {
         if (s.film) { s.film.gen++; each(s.film.anims, function (l) { _cancel(l); }); s.film.running = false; }
         h.classList.remove('is-open', 'rb-sheet-away');
         root.classList.remove('rb-lair-open');
+        _unpinToken(s);
         h.__rbSheet = null;
       });
       state = createState();
@@ -1147,7 +1195,8 @@ var RulebookFoldEngine = (function () {
     SHEET: SHEET,
     sheetMode: sheetMode,
     sheetLayout: sheetLayout,
-    sheetFoldGeometry: sheetFoldGeometry,
+    sheetTravel: sheetTravel,
+    sheetLandClip: sheetLandClip,
     termCategoryColor: termCategoryColor,
     clampCardPosition: clampCardPosition,
     tileMatches: tileMatches,

@@ -406,6 +406,7 @@ var RulebookExamplePlayer = (function () {
   var BOOK_DELAY_MS = 600;     // the closed book rests before it opens
   var FIRST_BEAT_MS = 2100;    // the book opens and its pieces stand up
   var CARD_OUT_MS = 300;       // a card slides or folds away
+  var SHUT_MS = 640;           // the cover turns back when the board closes
   var SPREAD_W = 600, SPREAD_H = 250;   // the open book's page spread, in scene px
 
   // The motions a beat can cue on a piece; each is a class the stylesheet draws.
@@ -1160,6 +1161,8 @@ var RulebookExamplePlayer = (function () {
         'transition:transform 1100ms cubic-bezier(.6,.05,.25,1)}',
       '.rbs-pr{left:300px;border-radius:0 6px 6px 0;box-shadow:inset 26px 0 30px -18px rgba(40,30,55,.5)}',
       '.rbs-closed .rbs-pl{transform:rotateY(180deg) translateZ(-2px)}',
+      // closing the board turns the cover back quicker than it opened
+      '.rbs-shutting .rbs-pl{transition-duration:' + SHUT_MS + 'ms;transition-timing-function:cubic-bezier(.5,0,.4,1)}',
       // the cover is the left page's back: dark violet, a skull, green lettering
       '.rbs-cover{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:6px;transform:rotateY(180deg) translateZ(1px);backface-visibility:hidden;' +
         'background:radial-gradient(circle at 50% 40%,#2c2240,#140e1d 75%);box-shadow:inset 0 0 0 6px #1d1528,inset 0 0 0 7px ' + LICH + ',0 0 0 3px #2a2236}',
@@ -1478,14 +1481,15 @@ var RulebookExamplePlayer = (function () {
   }
 
   // mount wires the [data-rbx-*] triggers onto `root` and returns
-  // { destroy, play, stopAll, collapseAll }. Everything DOM/timer-touching lives
+  // { destroy, play, stopAll, collapseAll, shut }. Everything DOM/timer-touching lives
   // here so the
   // module body stays DOM-free and require()-able in Node.
   function mount(root, options) {
     var noop = function () {};
+    var none = function () { return 0; };
     // The null-root mount must return the SAME shape as a real one, or a
     // caller that mounts without a root gets a TypeError instead of a no-op.
-    if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop };
+    if (!root) return { destroy: noop, play: noop, stopAll: noop, collapseAll: noop, shut: none };
     var opts = options || {};
     var win = (typeof window !== 'undefined') ? window : null;
     var examples = opts.examples || {};
@@ -1724,7 +1728,7 @@ var RulebookExamplePlayer = (function () {
       _bvFit(c);
       var sc = _q(c, '.rbs-scene');
       sc.classList.add('rbs-closed');
-      sc.classList.remove('rbs-opening');
+      sc.classList.remove('rbs-opening', 'rbs-shutting');
       _bvApply(c, -1);
       var who = _q(c, '[data-rbs-who]'), tx = _q(c, '[data-rbs-tx]');
       if (who) { who.className = 'rbs-who rbs-dir'; who.textContent = ''; }
@@ -1747,7 +1751,7 @@ var RulebookExamplePlayer = (function () {
         var sc = _q(c, '.rbs-scene');
         _bvFit(c);
         if (!reduced) sc.classList.add('rbs-opening');
-        sc.classList.remove('rbs-closed');
+        sc.classList.remove('rbs-closed', 'rbs-shutting');
         st.open = true;
         _bvApply(c, -1);
         _timeout(function () {
@@ -1768,10 +1772,30 @@ var RulebookExamplePlayer = (function () {
       if (!st.open) {
         st.open = true; st.hold = false;
         var sc = _q(c, '.rbs-scene');
-        sc.classList.remove('rbs-closed', 'rbs-opening');
+        sc.classList.remove('rbs-closed', 'rbs-opening', 'rbs-shutting');
       }
       _bvShow(c, slug, n);
       _bvSchedule(c, slug);
+    }
+    // shut closes the board's open book where it is (its cards go, its
+    // pieces fold, the cover turns back) so the closed book can leave the
+    // board. Returns how long that takes: 0 when no book is open or under
+    // reduced motion.
+    function shut() {
+      var c = activeBoard, st = c && c.__rbx;
+      if (!st || !st.board) return 0;
+      var sc = _q(c, '.rbs-scene'), was = st.open;
+      if (st.timer && win) win.clearTimeout(st.timer);
+      _cardsClear(c);
+      // A fresh state object: a pending open or beat sees it is stale and stops.
+      c.__rbx = { index: st.index, paused: true, timer: null, hold: true, open: false, board: true };
+      if (!sc || !was) return 0;
+      var quick = !prefersReduced();
+      sc.classList.remove('rbs-opening');
+      if (quick) sc.classList.add('rbs-shutting');
+      sc.classList.add('rbs-closed');
+      _bvApply(c, -1);
+      return quick ? SHUT_MS : 0;
     }
     function _bvTogglePause(c, slug) {
       var st = c.__rbx;
@@ -2229,7 +2253,7 @@ var RulebookExamplePlayer = (function () {
       if (c) { c.classList.add('rbx-on'); playContainer(c, slug); }
     }
 
-    return { destroy: destroy, play: play, stopAll: stopAll, collapseAll: collapseAll };
+    return { destroy: destroy, play: play, stopAll: stopAll, collapseAll: collapseAll, shut: shut };
   }
 
   return {
