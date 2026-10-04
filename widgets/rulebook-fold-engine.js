@@ -33,7 +33,11 @@
  *                             only, so nothing reflows). The host names the
  *                             twin with data-rb-sheet-land="<selector>" and,
  *                             optionally, the 3D piece whose tilt the token
- *                             eases into with data-rb-sheet-land-tilt.
+ *                             eases into with data-rb-sheet-land-tilt, and
+ *                             the twin's clipping frame (an ancestor) with
+ *                             data-rb-sheet-land-clip: the token is clipped
+ *                             to that frame as it lands, so whatever the
+ *                             frame hides of the twin never shows in flight.
  *     [data-rb-sheet-token]   the piece of the card that travels (a 2D box
  *                             the same shape as its twin on the board).
  *     [data-rb-sheet-tilt]    inside the token: the 3D piece that eases into
@@ -273,6 +277,18 @@ var RulebookFoldEngine = (function () {
   }
 
 
+  // sheetLandClip is the clip-path that trims the landed token to its
+  // twin's clipping frame. `to` is the landed token's viewport box, `frame`
+  // the frame's, `k` the token's scale; insets are in the token's own
+  // (unscaled) pixels, negative where the frame reaches past the token, so
+  // that side is not trimmed. Pure, so the numbers are tested headless.
+  function sheetLandClip(to, frame, k) {
+    var t = to || {}, f = frame || {}, s = Number(k) || 1;
+    function px(n) { return (Math.round(n / s * 100) / 100) + 'px'; }
+    var right = (t.left + t.width) - (f.left + f.width), bottom = (t.top + t.height) - (f.top + f.height);
+    return 'inset(' + px(f.top - t.top) + ' ' + px(right) + ' ' + px(bottom) + ' ' + px(f.left - t.left) + ')';
+  }
+
   // ── glossary hover-card logic (content-agnostic; data supplied at mount) ────
 
   // TERM_CAT_COLORS maps a glossary category to its accent token — the hover
@@ -413,6 +429,7 @@ var RulebookFoldEngine = (function () {
     var SHEET_MS = { lift: 180, travel: 560, reveal: 240, fade: 180 };
     var EASE_INOUT = 'cubic-bezier(.55,.05,.3,1)';
     var LIFT = 'translate(0px,-8px) scale(1)';
+    var CLIP_FREE = -400;   // an inset this far out clips nothing the token draws
 
     // The visible viewport, without a classic scrollbar (which innerWidth includes).
     function _viewW() { var d = root.ownerDocument, e = d && (d.scrollingElement || d.documentElement); return (e && e.clientWidth) || win.innerWidth; }
@@ -557,6 +574,9 @@ var RulebookFoldEngine = (function () {
         trip.tiltFrom = win.getComputedStyle(tilt).transform;
         trip.tiltTo = win.getComputedStyle(twin).transform;
       }
+      var clipSel = s.host.getAttribute('data-rb-sheet-land-clip');
+      var frame = (land && clipSel) ? _closest(land, clipSel) : null;
+      if (frame && to) trip.clip = sheetLandClip(to, frame.getBoundingClientRect(), trip.k);
       s.trip = trip;
       return trip;
     }
@@ -567,6 +587,14 @@ var RulebookFoldEngine = (function () {
       function at(x) { return x ? tr.transform : LIFT; }
       var kf = [{ transform: at(a), opacity: a && tr.fade ? 0 : 1 }, { transform: at(b), opacity: b && tr.fade ? 0 : 1 }];
       out.push(_mk(t, kf, o, dir));
+      if (tr.clip) {
+        // Untrimmed for most of the flight, trimmed to the frame by touchdown.
+        var free = 'inset(' + CLIP_FREE + 'px ' + CLIP_FREE + 'px ' + CLIP_FREE + 'px ' + CLIP_FREE + 'px)';
+        var ck = [{ clipPath: a ? tr.clip : free }];
+        if (a !== b) ck.push({ clipPath: free, offset: 0.7 });
+        ck.push({ clipPath: b ? tr.clip : free });
+        out.push(_mk(t, ck, o, dir));
+      }
       if (tr.tilt && tr.tiltFrom && tr.tiltTo) {
         out.push(_mk(tr.tilt, [{ transform: a ? tr.tiltTo : tr.tiltFrom }, { transform: b ? tr.tiltTo : tr.tiltFrom }], o, dir));
       }
@@ -1168,6 +1196,7 @@ var RulebookFoldEngine = (function () {
     sheetMode: sheetMode,
     sheetLayout: sheetLayout,
     sheetTravel: sheetTravel,
+    sheetLandClip: sheetLandClip,
     termCategoryColor: termCategoryColor,
     clampCardPosition: clampCardPosition,
     tileMatches: tileMatches,

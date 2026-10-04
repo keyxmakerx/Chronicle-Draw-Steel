@@ -795,11 +795,12 @@
   // neighbour like the characteristic wings — data-rb-wing-mode="sheet" tells
   // the fold engine the card's closed book lifts off and lands on the
   // board's own closed book (data-rb-sheet-land: the playing part's stage,
-  // tilting into its spread), and the board, one fixed column, appears round
-  // it: a header, a chip per part, the part's pop-up scene with its caption
-  // and controls, and two drawers (the table, the rules in this part). Every
-  // part carries its own `play` script; the example player fills the board
-  // and opens the book.
+  // tilting into its spread, trimmed to the scene's frame as it lands, since
+  // the frame hides the closed book's lower edge), and the board, one fixed
+  // column, appears round it: a header, a chip per part, the part's pop-up
+  // scene with its caption and controls, and two drawers (the table, the
+  // rules in this part). Every part carries its own `play` script; the
+  // example player fills the board and opens the book.
   function buildLair(scene) {
     var p = scene.properties || {};
     var parts = isArr(p.parts) ? p.parts : [];
@@ -829,7 +830,7 @@
     }
 
     return '<div class="rb-blk rb-lair" id="t-lair" data-rb-block data-rb-wing data-rb-wing-mode="sheet" ' +
-        'data-rb-sheet-land=".rbx-on .rbs-fit" data-rb-sheet-land-tilt=".rbs-spread" ' +
+        'data-rb-sheet-land=".rbx-on .rbs-fit" data-rb-sheet-land-tilt=".rbs-spread" data-rb-sheet-land-clip=".rbs-scene" ' +
         'data-rb-tags="lich lair adventure worked scene boss minions montage" ' +
         'style="--i:3;--rot:1deg;--bc:var(--rb-grn);--tc:var(--rb-grn)">' +
         '<span class="rb-openmark">⤪ play</span>' +

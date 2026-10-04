@@ -64,6 +64,7 @@ function el(tag, attrs, kids, rect) {
     getClientRects() { return [this.rect]; },
     get offsetWidth() { return this.rect.width; }, get offsetHeight() { return this.rect.height; },
     get id() { return this.attrs.id || ''; },
+    matches(sel) { return matches(this, sel); },
     focus(o) { DOC.activeElement = this; this.focusOpts = o; },
     animate(kf, opts) {
       const a = { el: this, kf, opts, playState: 'running', playbackRate: 1, onfinish: null,
@@ -114,13 +115,15 @@ function mount(opts) {
   const spread = el('div', { class: 'rbs-spread' });
   spread.computed.transform = 'matrix3d(scene)';
   const fit = el('div', { class: 'rbs-fit' }, [spread], { left: 400, top: 200, width: 700, height: 360 });
-  const script = el('div', { class: o.twin ? 'rbx-script rbx-on' : 'rbx-script' }, [fit]);
+  // the scene frame clips the closed book's lower edge, as the real one does
+  const frame = el('div', { class: 'rbs-scene' }, [fit], { left: 340, top: 200, width: 760, height: 340 });
+  const script = el('div', { class: o.twin ? 'rbx-script rbx-on' : 'rbx-script' }, [frame]);
   const close = el('button', { 'data-rb-close-wing': '' });
   const body = el('div', { 'data-rb-sheet-body': '' }, [script]);
   const panel = el('div', { class: 'rb-wing', role: 'dialog' }, [el('div', {}, [close]), body], { left: 340, top: 130, width: 760, height: 640 });
   const host = el('div', { class: 'rb-blk rb-lair', id: 't-lair', 'data-rb-block': '', 'data-rb-wing': '',
     'data-rb-wing-mode': attr('data-rb-wing-mode'), 'data-rb-sheet-land': attr('data-rb-sheet-land'),
-    'data-rb-sheet-land-tilt': attr('data-rb-sheet-land-tilt') }, [el('div', { class: 'rb-lairface' }, [token]), panel],
+    'data-rb-sheet-land-tilt': attr('data-rb-sheet-land-tilt'), 'data-rb-sheet-land-clip': attr('data-rb-sheet-land-clip') }, [el('div', { class: 'rb-lairface' }, [token]), panel],
   { left: 845, top: 327, width: 427, height: 246 });
   const root = el('div', { class: 'rb-root' }, [host]);
   root.ownerDocument = DOC;
@@ -137,6 +140,7 @@ test('the card names a twin the engine can find, and is a sheet', () => {
   assert.equal(attr('data-rb-wing-mode'), 'sheet');
   assert.equal(attr('data-rb-sheet-land'), '.rbx-on .rbs-fit');
   assert.equal(attr('data-rb-sheet-land-tilt'), '.rbs-spread');
+  assert.equal(attr('data-rb-sheet-land-clip'), '.rbs-scene', 'the scene frame that hides the book\'s lower edge');
 });
 
 test('opening: the book is pinned where it lies, lifts, then travels onto the board book', () => {
@@ -157,6 +161,10 @@ test('opening: the book is pinned where it lies, lifts, then travels onto the bo
   assert.equal(travel.kf[1].transform, 'translate(-470px,-170px) scale(2)', 'lands exactly on the board book');
   const tilt = ANIMS.find((a) => a.el === c.tilt);
   assert.deepEqual(tilt.kf.map((k) => k.transform), ['matrix3d(card)', 'matrix3d(scene)'], 'eases into the scene book\'s tilt');
+  const clip = tokenAnims(c).find((a) => a.kf[0].clipPath);
+  assert.deepEqual(clip.kf.map((k) => k.clipPath), ['inset(-400px -400px -400px -400px)', 'inset(-400px -400px -400px -400px)',
+    'inset(0px 0px 10px -30px)'], 'untrimmed in flight, trimmed to the scene frame by touchdown');
+  assert.equal(clip.kf[1].offset, 0.7);
   const fade = ANIMS.find((a) => a.el.attrs['data-rb-sheet-fade'] != null);
   assert.deepEqual(fade.kf.map((k) => k.opacity), [1, 0], 'the card-only page edge fades on the way');
   finish();
@@ -200,6 +208,7 @@ test('no book on the board: the book heads for the middle and fades, and the boa
   const travel = tokenAnims(c)[1];
   assert.equal(travel.kf[1].opacity, 0);
   assert.match(travel.kf[1].transform, /scale\(1\)$/);
+  assert.ok(!tokenAnims(c).some((a) => a.kf[0].clipPath), 'nothing to trim against');
   finish();
   assert.deepEqual(c.calls, ['open:t-lair', 'settle:t-lair']);
   c.api.destroy();

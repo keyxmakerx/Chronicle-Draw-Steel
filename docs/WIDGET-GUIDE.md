@@ -212,7 +212,9 @@ logic is unit-tested headless (`tools/test-rulebook-fold-engine.mjs`, `node --te
 **The sheet** (`data-rb-wing-mode="sheet"`, the Lich's Lair): `sheetMode` (`wide` \| `phone`) /
 `sheetLayout` place the one-column board per viewport, and `sheetTravel` gives the card's token
 (`[data-rb-sheet-token]`, the Lair's closed book) the move onto its twin on the board (the host's
-`data-rb-sheet-land` selector, tilting into `data-rb-sheet-land-tilt`); all three are pure and
+`data-rb-sheet-land` selector, tilting into `data-rb-sheet-land-tilt`, and trimmed by
+touchdown to the twin's clipping frame named by `data-rb-sheet-land-clip`, via the pure
+`sheetLandClip`, so the hand-over shows no edge the frame hides); these are pure and
 unit-tested, and the open/close film itself is driven over a fake DOM in
 `tools/test-rulebook-lair-book.mjs`. `mount(root, { onSettle, onShut })` hears
 `onSettle(kind, id)` once the board has landed (the front page opens its pop-up book then) and

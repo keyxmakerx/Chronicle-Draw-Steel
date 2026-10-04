@@ -432,6 +432,14 @@ test('sheetTravel: with no twin on the board the token heads for its middle and 
   }
 });
 
+test('sheetLandClip: trims the landed token to its twin\'s frame, in the token\'s own pixels', () => {
+  const to = { left: 400, top: 200, width: 700, height: 360 };
+  // a frame 60px wider on the left, flush on the right, 12px shorter than the stage, token scaled by 2
+  assert.equal(E.sheetLandClip(to, { left: 340, top: 200, width: 760, height: 348 }, 2), 'inset(0px 0px 6px -30px)');
+  // a frame that holds the whole token trims nothing
+  assert.equal(E.sheetLandClip(to, { left: 0, top: 0, width: 2000, height: 2000 }, 1), 'inset(-200px -900px -1440px -400px)');
+});
+
 test('the folded-map geometry is gone', () => {
   assert.equal(E.sheetFoldGeometry, undefined);
   assert.equal(E.SHEET.RADIUS, undefined);
