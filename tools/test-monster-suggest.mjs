@@ -6,7 +6,7 @@
 //
 // Covers: weakestDefense->role targeting, the fallback chain (incl. an
 // intuition-weak party with no matching role), immunity avoidance, weakness
-// preference, tier auto-fill via tierN + per_level*(level-1), budget/org-only
+// preference, tier auto-fill from the published damage formula, budget/org-only
 // degradation, and that every filled field carries a rationale. Potency and
 // intent-scaling are out of scope — the intent selector must not change any
 // number.
@@ -24,8 +24,7 @@ const Party = require('../widgets/monster-party.js');
 const load = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8'));
 const ORGS = load('organization-templates.json');
 const ROLES = load('role-templates.json');
-const BASELINES = load('damage-baselines.json')[0].properties.baselines;
-const DATA = { orgTemplates: ORGS, roleTemplates: ROLES, baselines: BASELINES };
+const DATA = { orgTemplates: ORGS, roleTemplates: ROLES };
 
 const hero = (f) => ({ fields_data: f });
 const suggestFor = (heroes, intent) => Engine.suggest(Party.deriveParty(heroes), intent || 'standard', DATA);
@@ -92,8 +91,7 @@ test('no shared weakness → damage left untyped (never invents one)', () => {
   assert.match(s.rationale.damage, /untyped/i);
 });
 
-// Tier auto-fill uses the published damage formula, never
-// data/damage-baselines.json (source: "custom"; see CLAUDE.md -> "The
+// Tier auto-fill uses the published damage formula (see CLAUDE.md -> "The
 // builder's math must carry its own provenance"): baseline is
 // (4 + level + damage modifier) × tier modifier, rounded up, with the strike
 // add-on (highest characteristic) returned separately as `strikeTiers`.

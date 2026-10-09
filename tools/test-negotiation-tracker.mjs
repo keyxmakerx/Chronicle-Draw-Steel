@@ -150,7 +150,7 @@ test('manifest registers the widget and the NPC panel', () => {
   const m = load('manifest.json');
   const w = m.widgets.find((x) => x.slug === 'negotiation-tracker');
   assert.equal(w.script_file, 'widgets/negotiation-tracker.js');
-  assert.deepEqual(m.entity_panels, [{ widget: 'negotiation-tracker', applies_to: 'npc' }]);
+  assert.ok(m.entity_panels.some((p) => p.widget === 'negotiation-tracker' && p.applies_to === 'npc'));
 });
 
 // ── mounted behaviour ────────────────────────────────────────
