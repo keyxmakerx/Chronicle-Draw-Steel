@@ -1,0 +1,87 @@
+title: Players Screen
+intro: The rules you reach for in the middle of a game, on one page.
+pages:
+  - title: At the table
+    wide: true
+    columns: true
+    blocks:
+      - type: roll
+        dice: 2d10
+        label: Power roll
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: 11 or lower. The weakest result.
+          - max: 16
+            label: Tier 2
+            text: 12 to 16. A solid result.
+          - label: Tier 3
+            text: 17 or higher. The strongest result.
+      - type: callout
+        title: Edges and banes
+        text: |
+          An [[edge]] adds 2 to the roll and a [[bane]] takes 2 away.
+
+          - A **double edge** raises the result by a whole tier instead.
+          - A **double bane** lowers it by a whole tier instead.
+          - One edge and one bane cancel each other out.
+      - type: cards
+        items:
+          - title: Main action
+            summary: Most abilities.
+            text: |
+              The heaviest part of your turn. Most class and kit abilities are
+              main actions, along with Charge, Defend, Heal and Free Strike.
+          - title: Maneuver
+            summary: Something quick.
+            text: |
+              Lighter than a main action. Aid Attack, Catch Breath, Escape
+              Grab, Grab, Hide, Knockback, Stand Up and Use Consumable are
+              maneuvers.
+          - title: Move action
+            summary: Get around.
+            text: |
+              Getting around the battlefield: Advance, Disengage or Ride.
+          - title: Triggered action
+            summary: One each round.
+            text: |
+              Something you can do only when its stated trigger happens, on
+              your turn or anyone else's. You get one each round.
+      - text: |
+          - **Stamina** is your health. You are [[winded]] when it drops to
+            half your maximum, and [[dying]] when it reaches zero.
+          - A [[recovery]] heals you for a third of your maximum Stamina,
+            rounded down.
+          - A [[saving throw]] is a d10 rolled at the end of your turn. On a 6
+            or higher, an effect that says "save ends" stops.
+      - type: cards
+        items:
+          - title: Bleeding
+            text: A bleeding creature takes damage at the start of each of their turns equal to the bleeding value.
+          - title: Burning
+            text: A burning creature takes fire damage at the start of each of their turns equal to the burning value.
+          - title: Charmed
+            text: A charmed creature can't attack the source of the charm and the source gains an edge on social interactions with the charmed creature.
+          - title: Dazed
+            text: "A dazed creature can only do one thing on their turn: take an action, take a maneuver, or take a move action. They also can't take triggered actions or free triggered actions."
+          - title: Frightened
+            text: A frightened creature takes a bane on all power rolls against the source of their fear. The creature can't willingly move closer to the source of their fear.
+          - title: Grabbed
+            text: A grabbed creature's speed is 0. The grabber can move the grabbed creature with them when they move. The grabbed creature can use an action to attempt to escape.
+          - title: Hidden
+            text: A hidden creature can't be seen or detected by the creatures they are hidden from. Attacks against a hidden creature take a bane; attacks by a hidden creature gain an edge.
+          - title: Poisoned
+            text: A poisoned creature takes a bane on all power rolls.
+          - title: Prone
+            text: A prone creature is flat on the ground. They must spend half their movement to stand up. Melee attacks against them gain an edge; ranged attacks take a bane.
+          - title: Restrained
+            text: A restrained creature's speed is 0 and they can't benefit from bonuses to speed. Attacks against a restrained creature gain an edge.
+          - title: Slowed
+            text: A slowed creature's speed is reduced to 2 and they can't benefit from bonuses to speed. They also can't shift.
+          - title: Surprised
+            text: A creature who isn't ready for combat when it starts is surprised until the end of the first combat round.
+          - title: Taunted
+            text: A taunted creature takes a bane on attacks that don't include the source of the taunt as a target.
+          - title: Weakened
+            text: A weakened creature's power rolls and damage are halved.

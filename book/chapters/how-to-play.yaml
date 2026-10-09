@@ -1,0 +1,49 @@
+title: How to Play
+intro: One roll settles almost everything. Learn it here and you know the game.
+pages:
+  - title: Start here
+    blocks:
+      - text: |
+          This handbook has a chapter for each part of the game. The tabs
+          along the top go straight to the ones you will use most, and the
+          Players Screen keeps the rules you need mid-fight on one page.
+
+          Words with a dotted underline explain themselves when you point at
+          them or tap them.
+      - type: links
+        title: Where to next
+        items:
+          - title: Making a hero
+            summary: Build your character, one choice at a time.
+            chapter: making-a-hero
+          - title: Players Screen
+            summary: The rules you reach for at the table.
+            chapter: players-screen
+          - title: The Basics
+            summary: The power roll, edges and banes.
+            chapter: basics
+          - title: Combat
+            summary: How a fight runs.
+            chapter: combat
+  - title: Try a roll
+    blocks:
+      - text: |
+          When the outcome is uncertain, you roll two ten-sided dice, add one
+          of your five characteristics, and read which of three tiers the total
+          lands in. There is no plain miss: the lowest tier is a weak result,
+          not nothing.
+
+          Try it below. The band your total lands in lights up.
+      - type: roll
+        dice: 2d10
+        label: Power roll
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: 11 or lower. The weakest result.
+          - max: 16
+            label: Tier 2
+            text: 12 to 16. A solid result.
+          - label: Tier 3
+            text: 17 or higher. The strongest result.
