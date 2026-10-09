@@ -225,6 +225,7 @@ Chronicle.register('bestiary-browser', {
           var items = self._unwrapList(data);
           acc = acc.concat(items);
           var total = (data && typeof data.total === 'number') ? data.total : acc.length;
+          self.state.unloaded = Math.max(0, total - acc.length);
           if (items.length === 0 || acc.length >= total || n >= 40) return acc;
           return page(n + 1);
         });
@@ -925,7 +926,8 @@ Chronicle.register('bestiary-browser', {
     if (total === 0) { this._countEl.textContent = '0 creatures'; return; }
     var start = s.page * s.perPage + 1;
     var end = Math.min(start + s.perPage - 1, total);
-    this._countEl.textContent = start + '-' + end + ' of ' + total + ' creatures';
+    this._countEl.textContent = start + '-' + end + ' of ' + total + ' creatures' +
+      (s.unloaded ? ' (' + s.unloaded + ' more in the bestiary not loaded)' : '');
   },
 
   // _openModal shows a creature. A bestiary summary first fetches its full

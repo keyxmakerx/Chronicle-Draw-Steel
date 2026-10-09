@@ -155,7 +155,9 @@ var DrawSteelStatblock = (function () {
     var out = { org: org, role: role, ev: null, stamina: null, free_strike: null, damage: null, hc: null };
     if (!F || !org || c.level === null) return out;
     function measure(result, stored) {
-      var st = !result.sourced || result.value === null ? 'own' : (stored === result.value ? 'formula' : 'changed');
+      var st = !result.sourced || result.value === null ? 'own'
+        : (stored === null || stored === undefined) ? null
+        : (stored === result.value ? 'formula' : 'changed');
       return { state: st, value: result.value, sourced: result.sourced, source: result.source, notes: result.notes || [] };
     }
     out.ev = measure(F.encounterValue(c.level, org), c.ev);
@@ -462,6 +464,7 @@ var DrawSteelStatblock = (function () {
       keywords: (c.keywords || []).join(', '), faction: c.faction || '',
       stamina: c.stamina, winded: c.winded, speed: c.speed, stability: c.stability,
       immunities: (c.immunities || []).join(', '), free_strike: c.free_strike || '',
+      weaknesses: (c.weaknesses || []).join(', '),
       traits: JSON.stringify((c.traits || []).slice(0, MAX_LIST)),
       abilities_json: JSON.stringify((c.abilities || []).slice(0, MAX_LIST)),
       villain_actions_json: JSON.stringify((c.villain_actions || []).slice(0, MAX_LIST))
@@ -613,9 +616,9 @@ StatblockPanel.prototype.say = function (msg, kind) {
   m.textContent = msg;
 };
 
-// publish posts the stat block to the instance's community bestiary. The server
-// stamps the campaign's system from source_campaign_id; only a fixed message is
-// ever shown for a failure.
+// publish posts the stat block to the instance's community bestiary, named as a
+// Draw Steel creature so the bestiary's Draw Steel search finds it; only a fixed
+// message is ever shown for a failure.
 StatblockPanel.prototype.publish = function (visibility) {
   var self = this, S = DrawSteelStatblock;
   var c = S.normalize(this.fields());
@@ -624,6 +627,7 @@ StatblockPanel.prototype.publish = function (visibility) {
     name: String(name || '').slice(0, 200),
     statblock_json: S.toStatblock(name, c),
     visibility: visibility === 'published' ? 'published' : 'draft',
+    system_id: 'drawsteel',
     source_campaign_id: this.cid,
     source_entity_id: this.eid
   };

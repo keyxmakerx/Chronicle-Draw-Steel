@@ -72,11 +72,11 @@ A searchable, filterable creature catalog with card grid display and popup statb
 - **Sort** — Level, name, EV
 - **Card Grid** — Visual cards with org-colored borders showing key stats
 - **Modal Statblock** — Click a card to see the full formatted statblock
-- **Import** — "Import to Campaign" creates the creature as an entity in your campaign
+- **Add to this campaign** — creates a Creature page with every stat block field filled
 - **Export** — Download creature data as JSON
 
 ### Usage
-Best placed on a campaign dashboard or dedicated "Bestiary" page. In `"campaign"` source mode, it shows creatures already in your campaign. In `"bestiary"` mode, it shows the community bestiary for importing.
+Best placed on a campaign dashboard or dedicated "Bestiary" page. In `"campaign"` source mode, it shows creatures already in your campaign. In `"bestiary"` mode, it shows the community bestiary's Draw Steel creatures to add.
 
 ---
 

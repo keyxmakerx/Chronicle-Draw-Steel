@@ -39,7 +39,10 @@ var DrawSteelCreatureEditor = (function () {
     var S = SB();
     var c = S.normalize(src || {});
     if (c.level === null) c.level = 1;
-    var st = { name: name || c.name || '', c: c, own: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] } };
+    var st = { name: name || c.name || '', c: c, own: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] }, base: {} };
+    // Chronicle replaces a page's fields wholesale on save, so fields this
+    // editor doesn't own are carried through untouched.
+    if (src && typeof src === 'object' && !Array.isArray(src)) Object.keys(src).forEach(function (k) { st.base[k] = src[k]; });
     var pr = S.provenance(c, st.refs);
     ['ev', 'stamina', 'free_strike'].forEach(function (k) {
       var stored = k === 'free_strike' ? S.freeStrikeNumber(c.free_strike) : c[k];
@@ -207,7 +210,10 @@ var DrawSteelCreatureEditor = (function () {
     c.abilities = c.abilities.slice(0, 50);
     c.traits = (c.traits || []).filter(function (t) { return t.name || t.description; });
     c.level = Math.max(1, Math.min(20, Number(c.level) || 1));
-    return { name: String(st.name || '').trim().slice(0, 200), fields: S.toFields(c) };
+    var fields = {}, own = S.toFields(c);
+    Object.keys(st.base || {}).forEach(function (k) { fields[k] = st.base[k]; });
+    Object.keys(own).forEach(function (k) { fields[k] = own[k]; });
+    return { name: String(st.name || '').trim().slice(0, 200), fields: fields };
   }
 
   // ── Drawing ───────────────────────────────────────────────────────────────
@@ -649,6 +655,7 @@ var DrawSteelCreatureEditor = (function () {
         acc = acc.concat(rows);
         var total = (b && typeof b.total === 'number') ? b.total : acc.length;
         if (rows.length && acc.length < total && n < 40) return page(n + 1);
+        acc.unloaded = Math.max(0, total - acc.length);
         return acc;
       });
     }
@@ -665,6 +672,7 @@ var DrawSteelCreatureEditor = (function () {
           acc = acc.concat(rows);
           var total = (b && typeof b.total === 'number') ? b.total : acc.length;
           if (rows.length && acc.length < total && n < 40) return page(n + 1);
+          acc.unloaded = Math.max(0, total - acc.length);
           return acc;
         });
       }
@@ -699,7 +707,10 @@ var DrawSteelCreatureEditor = (function () {
         if (t !== tab) return;
         if (rows === null) { list.innerHTML = '<li class="sbe-sf-note">Could not load these creatures. Try again.</li>'; return; }
         var term = q.value.trim().toLowerCase();
-        var hits = rows.filter(function (r) { return !term || String(r.name || '').toLowerCase().indexOf(term) >= 0; }).slice(0, 100);
+        var all = rows.filter(function (r) { return !term || String(r.name || '').toLowerCase().indexOf(term) >= 0; });
+        var hits = all.slice(0, 100);
+        // Never cut the list silently: say what isn't shown.
+        var more = (all.length - hits.length) + (rows.unloaded || 0);
         list.innerHTML = hits.map(function (r, i) {
           var f = t === 'bestiary' ? r : (r.fields_data || {});
           var org = SB().cap(f.organization || ''), noRole = /^(leader|solo)$/i.test(f.organization || '');
@@ -707,6 +718,7 @@ var DrawSteelCreatureEditor = (function () {
           return '<li><button type="button" data-sf-pick="' + i + '"><span><b>' + esc(r.name || 'Unnamed') + '</b><br><span class="sbe-dim sbe-small">' + esc(sub.trim()) + '</span></span>' +
             (t === 'bestiary' ? '<span class="sbe-dim sbe-small">' + esc(r.downloads || 0) + ' added</span>' : '') + '</button></li>';
         }).join('') || '<li class="sbe-sf-note">No creatures match.</li>';
+        if (more) list.innerHTML += '<li class="sbe-sf-note">' + more + ' more not shown.' + (all.length > hits.length ? ' Type a name to narrow the list.' : '') + '</li>';
         list._rows = hits;
       });
     }
@@ -840,17 +852,25 @@ if (typeof Chronicle !== 'undefined' && Chronicle && Chronicle.register) {
         return;
       }
       var load = eid && cid
-        ? S.getJSON('/api/v1/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid)).catch(function () { return null; })
+        ? S.getJSON('/api/v1/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid))
         : Promise.resolve(null);
       var ref = (typeof DrawSteelRefRenderer !== 'undefined' && cid) ? new DrawSteelRefRenderer('', cid) : null;
-      Promise.all([load, S.loadRefs(cid), ref ? ref.load() : null]).then(function (r) {
+      var glossary = ref ? ref.load().catch(function () { return null; }) : null;
+      el._dsGone = false;
+      Promise.all([load, S.loadRefs(cid), glossary]).then(function (r) {
+        if (el._dsGone) return;
         if (ref && ref.injectStyles) ref.injectStyles();
         el._dsEditor = DrawSteelCreatureEditor.mount(el, {
-          campaignId: cid, entityId: r[0] ? eid : '', entity: r[0], refs: r[1], ref: ref
+          campaignId: cid, entityId: eid, entity: r[0], refs: r[1], ref: ref
         });
+      }, function () {
+        // An existing creature that didn't load is never opened as a new one:
+        // saving that would create a second copy.
+        if (!el._dsGone) el.textContent = 'This creature could not be loaded. Reload the page to try again.';
       });
     },
     destroy: function (el) {
+      el._dsGone = true;
       if (el._dsEditor) el._dsEditor.destroy();
       el._dsEditor = null;
       el.innerHTML = '';

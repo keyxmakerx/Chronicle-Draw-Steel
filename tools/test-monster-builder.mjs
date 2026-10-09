@@ -89,3 +89,11 @@ test('Start from… recomputes a copy for the level kept, and marks formula-shap
   assert.match(st.c.abilities[0].tier3, /; push 2$/);
   assert.match(Ed.editorHtml(st, {}), /Started from Ogre\./);
 });
+
+test('saving keeps the page’s fields the editor does not own', () => {
+  const st = Ed.newState('Ogre', { level: 3, organization: 'elite', role: 'brute', weaknesses: 'fire 5', notes_gm: 'keep me' }, REFS);
+  const out = Ed.toSave(st);
+  assert.equal(out.fields.notes_gm, 'keep me');
+  assert.equal(out.fields.weaknesses, 'fire 5');
+  assert.equal(out.fields.level, 3);
+});

@@ -164,3 +164,9 @@ test('saved fields keep keywords as comma text and read back the same', () => {
   assert.deepEqual(S.normalize(f).keywords, ['Goblin', 'Humanoid']);
   assert.equal(S.normalize(f).abilities[0].name, 'Spear');
 });
+
+test('an empty figure gets no mark: the director never set it', () => {
+  const pr = S.provenance(S.normalize(goblin({ ev: '' })), REFS);
+  assert.equal(pr.ev.state, null);
+  assert.ok(!/EV —<span class="sbx-mark/.test(S.html('G', goblin({ ev: '' }), { refs: REFS })));
+});
