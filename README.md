@@ -49,7 +49,7 @@ The `reference-renderer.js` utility handles parsing and rendering. All 35 creatu
 1. Go to **Admin > Packages**
 2. Add this repository URL
 3. Install the latest release
-4. Go to **Campaign Settings > General > Game System** and select "Draw Steel"
+4. In your campaign, open **Manage → Game & features** and pick "Draw Steel" in the **Game system** card
 
 ### Updating
 Install the newer release from **Admin > Packages**. Chronicle adds the sheet fields the update introduces to the entity types of campaigns already using Draw Steel; it never restores a field a GM deleted, and it does not create entity types or change existing fields.
