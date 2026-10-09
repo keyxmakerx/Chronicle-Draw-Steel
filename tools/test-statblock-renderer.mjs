@@ -124,7 +124,10 @@ test('ability keywords carry their glossary definition', () => {
 test('compact mode stops after the figures, for a hover card', () => {
   const html = S.html('G', goblin(), { compact: true });
   assert.match(html, /sbx--compact/);
-  assert.ok(!/Spear/.test(html));
+  assert.match(html, /<p class="sbx-sig"><span class="sbx-sig-k">Signature<\/span> Spear<\/p>/, 'names the signature ability');
+  assert.match(html, /Free strike/);
+  assert.ok(!/Power roll|It shifts 1/.test(html), 'but not the ability itself');
+  assert.ok(!/style="/.test(html), 'no inline colours for the shared card to fight');
 });
 
 test('styles go into <head> once, never into the mount element', () => {

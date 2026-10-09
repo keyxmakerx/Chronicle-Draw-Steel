@@ -339,7 +339,7 @@ layout editor.
 
 The panel's global `DrawSteelStatblock` is the one stat block drawing used by
 the panel, the editor's preview, the Draw Steel browser's bestiary modal and,
-in compact mode, a hover card. It reads both a page's `fields_data` and a
+in compact mode (header, figures and the signature ability's name), a hover card. It reads both a page's `fields_data` and a
 bestiary `statblock_json` (`normalize`), and writes either shape back
 (`toFields`, `toStatblock`). Styles go into `<head>` once.
 

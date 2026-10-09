@@ -283,8 +283,8 @@ var DrawSteelStatblock = (function () {
   }
 
   // html draws the whole stat block. opts: { ref (glossary renderer), refs
-  // ({orgs, roles} templates, for the provenance marks), compact (header and
-  // figures only, for a hover card) }.
+  // ({orgs, roles} templates, for the provenance marks), compact (header, figures and the
+  // signature ability's name, for a hover card) }.
   function html(name, src, opts) {
     var o = opts || {};
     var c = (src && src._normalized) ? src : normalize(src);
@@ -304,7 +304,13 @@ var DrawSteelStatblock = (function () {
       cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina')) + cell('Stability', figure(c.stability)) +
       cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike')) + '</div>';
     h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k])); }).join('') + '</div>';
-    if (o.compact) return h + '</article>';
+    if (o.compact) {
+      // A hover card names the creature's signature ability; the shared card's
+      // looks restyle .sbx-sig from outside, so it carries no colour here.
+      var sig = c.abilities.filter(function (a) { return a.type === 'signature'; })[0] || c.abilities[0];
+      if (sig && sig.name) h += '<p class="sbx-sig"><span class="sbx-sig-k">Signature</span> ' + esc(sig.name) + '</p>';
+      return h + '</article>';
+    }
     var lines = [];
     if (c.immunities.length) lines.push('<b>Immunities</b> ' + text(c.immunities.join(', '), o.ref));
     if (c.weaknesses.length) lines.push('<b>Weaknesses</b> ' + text(c.weaknesses.join(', '), o.ref));
@@ -382,6 +388,8 @@ var DrawSteelStatblock = (function () {
     '.dark .sbx-msg.is-ok{color:#4ade80}.dark .sbx-msg.is-error{color:#f87171}',
     '.sbx-start{gap:8px}',
     '.sbx--compact .sbx-name{font-size:17px}',
+    '.sbx-sig{margin:0;font-size:13px;font-weight:600}',
+    '.sbx-sig-k{font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:11px;opacity:.75;margin-right:4px}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
 
