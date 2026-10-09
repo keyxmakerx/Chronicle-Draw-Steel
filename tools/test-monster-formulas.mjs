@@ -153,8 +153,14 @@ test('horde and minion damage is halved, per the published adjustment', () => {
 
 test('the worked case from the audit: a level 8 solo tier-3 baseline is 20, not 48', () => {
   assert.equal(F.damageTiers(8, org('solo'), role('brute')).value.tier3, 20);
-  const bl = load('damage-baselines.json')[0].properties.baselines.solo;
-  assert.equal(Math.round(bl.tier3 + bl.per_level * (8 - 1)), 48);
+});
+
+test('free strike is the published tier 1 result, with the same provenance', () => {
+  const d = F.damageTiers(5, org('platoon'), role('brute'));
+  const fs = F.freeStrike(5, org('platoon'), role('brute'));
+  assert.equal(fs.value, d.value.tier1);
+  assert.equal(fs.sourced, true);
+  assert.equal(F.freeStrike(5, org('platoon'), null).value, null, 'no role, no damage modifier, no number');
 });
 
 test('the damage result always names the adjustments it has NOT applied', () => {

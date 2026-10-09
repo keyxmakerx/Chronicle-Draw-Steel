@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Defense-in-depth hardening tests for widgets/monster-builder.js,
- * widgets/bestiary-browser.js and widgets/character-sheet.js
- * (keyxmakerx/Cordinator#196 / keyxmakerx/Chronicle-Draw-Steel#47).
+ * widgets/statblock-renderer.js, widgets/bestiary-browser.js and
+ * widgets/character-sheet.js.
  *
  * campaignId/entityId come from Chronicle's own widget config and server
  * data rather than free user input, but every id still goes straight into a
@@ -51,165 +51,99 @@ const require = createRequire(import.meta.url);
 // already `require`d against the first object silently reading stale/wrong
 // mocks the moment a later test mutates the second.
 const Chronicle = makeChronicle();
-Chronicle.markClean = function () {}; // used by monster-builder's _onSaveSuccess
+Chronicle.markClean = function () {};
+Chronicle.markDirty = function () {};
 globalThis.Chronicle = Chronicle;
 
-// ── monster-builder.js ──────────────────────────────────────────────────
+// ── monster-builder.js / statblock-renderer.js ─────────────────────────
 
-require('../widgets/monster-builder.js');
-const mb = Chronicle.registry['monster-builder'];
+// The builder reads the shared stat block and the published formulas as
+// globals, as it does in a browser.
+const SB = require('../widgets/statblock-renderer.js');
+globalThis.DrawSteelStatblock = SB;
+const Engine = require('../widgets/monster-engine.js');
+globalThis.DrawSteelFormulas = Engine.Formulas;
+globalThis.MonsterEngine = Engine;
+const Ed = require('../widgets/monster-builder.js');
+const REFS = { orgs: [], roles: [] };
 
-function mbInst(overrides) {
-  return Object.assign(Object.create(mb), Object.assign({
-    config: {}, creature: baseCreature(), _entityIsPrivate: false
-  }, overrides || {}));
-}
-
-function baseCreature(extra) {
-  return Object.assign({
-    name: 'Test', level: 1, size: '1M', faction: '', keywords: [],
-    organization: 'minion', role: 'ambusher', ev: 0, stamina: 0, winded: 0,
-    speed: 5, stability: 0, might: 0, agility: 0, reason: 0, intuition: 0,
-    presence: 0, immunities: [], free_strike: '', free_strike_damage: 0,
-    abilities: [{ name: 'Bite', type: 'signature' }],
-    villain_actions: [], traits: []
-  }, extra || {});
-}
-
-test('monster-builder: _loadExistingEntity percent-encodes campaignId/entityId in the URL', () => {
-  Chronicle.apiFetch = fetchMock(function () { return okJson(null); });
-  const inst = mbInst({ config: { campaignId: 'a/b', entityId: 'c?d' } });
-  return mb._loadExistingEntity.call(inst).then(function () {
+test('monster-builder: a save percent-encodes campaignId and entityId', () => {
+  Chronicle.apiFetch = fetchMock(function () { return okJson({ id: 'e', fields_data: {} }); });
+  const st = Ed.newState('Goblin', { level: 1, organization: 'horde' }, REFS);
+  return Ed.save(st, { campaignId: 'a/b', entityId: 'c?d' }).then(function () {
     const url = Chronicle.apiFetch.calls[0];
-    assert.equal(Chronicle.apiFetch.calls.length, 1);
-    assert.ok(url.indexOf('/campaigns/a%2Fb/') !== -1, 'campaignId must be percent-encoded: ' + url);
-    assert.ok(url.indexOf('/entities/c%3Fd') !== -1, 'entityId must be percent-encoded: ' + url);
+    assert.ok(url.indexOf('/campaigns/a%2Fb/') !== -1, url);
+    assert.ok(url.indexOf('/entities/c%3Fd') !== -1, url);
   });
 });
 
-test('monster-builder: _updateEntity percent-encodes ids', () => {
-  Chronicle.apiFetch = fetchMock(function () { return okJson({}); });
-  const inst = mbInst({ config: { campaignId: 'x y', entityId: '1&2' } });
-  return mb._updateEntity.call(inst, {}).then(function () {
-    const url = Chronicle.apiFetch.calls[0];
-    assert.ok(url.indexOf('x%20y') !== -1 || url.indexOf('x+y') !== -1, 'campaignId space must be encoded: ' + url);
-    assert.ok(url.indexOf('1%262') !== -1, 'entityId "&" must be encoded: ' + url);
-  });
-});
-
-test('monster-builder: _createEntity and _resolveEntityTypeId percent-encode campaignId', () => {
+test('monster-builder: creating a creature percent-encodes campaignId on both requests', () => {
   Chronicle.apiFetch = fetchMock(function (url) {
-    if (url.indexOf('/entity-types') !== -1) return okJson({ data: [{ slug: 'drawsteel-creature', id: 9 }] });
-    return okJson({ id: 42 });
+    if (/entity-types/.test(url)) return okJson({ data: [{ id: 7, preset_category: 'creature' }] });
+    return okJson({ id: 'new', fields_data: {} });
   });
-  const inst = mbInst({ config: { campaignId: 'a/../b' } });
-  return mb._createEntity.call(inst, {}).then(function () {
-    Chronicle.apiFetch.calls.forEach(function (url) {
-      assert.ok(url.indexOf('a%2F..%2Fb') !== -1, 'campaignId must be percent-encoded: ' + url);
-    });
+  const st = Ed.newState('Goblin', { level: 1, organization: 'horde' }, REFS);
+  return Ed.save(st, { campaignId: 'a/b', entityId: '' }).then(function () {
+    const calls = Chronicle.apiFetch.calls;
+    assert.equal(calls.length, 2);
+    calls.forEach(function (u) { assert.ok(u.indexOf('/campaigns/a%2Fb/') !== -1, u); });
   });
 });
 
-test('monster-builder: a malformed abilities_json shape does not become a non-array', () => {
-  Chronicle.apiFetch = fetchMock(function () {
-    return okJson({ id: 5, fields_data: { abilities_json: '{"not":"an array"}' } });
-  });
-  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
-  return mb._loadExistingEntity.call(inst).then(function () {
-    assert.ok(Array.isArray(inst.creature.abilities), 'abilities must normalize to an array');
-    assert.equal(inst.creature.abilities.length, 0);
-    // Must not throw when downstream code calls array methods on it.
-    assert.doesNotThrow(function () { inst.creature.abilities.filter(function (a) { return a; }); });
+test('monster-builder: a malformed abilities_json shape becomes an empty list', () => {
+  [JSON.stringify('oops'), '42', '{"a":1}', 'not json'].forEach(function (raw) {
+    const st = Ed.newState('X', { level: 1, abilities_json: raw }, REFS);
+    assert.ok(Array.isArray(st.c.abilities), raw);
+    assert.equal(st.c.abilities.length, 0, raw);
   });
 });
 
 test('monster-builder: abilities_json keeps well-formed entries and drops junk entries', () => {
-  Chronicle.apiFetch = fetchMock(function () {
-    return okJson({
-      id: 5,
-      fields_data: { abilities_json: JSON.stringify([{ name: 'Bite', type: 'signature' }, null, 'junk', 42, { name: 'Claw' }]) }
-    });
-  });
-  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
-  return mb._loadExistingEntity.call(inst).then(function () {
-    assert.equal(inst.creature.abilities.length, 2);
-    assert.equal(inst.creature.abilities[0].name, 'Bite');
-    assert.equal(inst.creature.abilities[1].name, 'Claw');
-  });
+  const raw = JSON.stringify([{ name: 'Bite' }, null, 7, 'x', { name: 'Claw' }]);
+  const st = Ed.newState('X', { level: 1, abilities_json: raw }, REFS);
+  assert.deepEqual(st.c.abilities.map(function (a) { return a.name; }), ['Bite', 'Claw']);
 });
 
 test('monster-builder: a malformed traits shape does not become a non-array', () => {
-  Chronicle.apiFetch = fetchMock(function () {
-    // Valid JSON, but a string rather than an array — must not survive as-is.
-    return okJson({ id: 5, fields_data: { traits: JSON.stringify('oops not an array') } });
-  });
-  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
-  return mb._loadExistingEntity.call(inst).then(function () {
-    assert.ok(Array.isArray(inst.creature.traits), 'traits must normalize to an array');
-    assert.equal(inst.creature.traits.length, 0);
-    assert.doesNotThrow(function () { inst.creature.traits.forEach(function () {}); });
-  });
+  const st = Ed.newState('X', { level: 1, traits: JSON.stringify({ name: 'x' }) }, REFS);
+  assert.ok(Array.isArray(st.c.traits));
 });
 
-test('monster-builder: legacy plain-text (non-JSON) traits still wrap as a single trait', () => {
-  Chronicle.apiFetch = fetchMock(function () {
-    return okJson({ id: 5, fields_data: { traits: 'Keen Senses. Sees in the dark.' } });
-  });
-  const inst = mbInst({ config: { campaignId: '1', entityId: '5' } });
-  return mb._loadExistingEntity.call(inst).then(function () {
-    assert.equal(inst.creature.traits.length, 1);
-    assert.equal(inst.creature.traits[0].description, 'Keen Senses. Sees in the dark.');
-  });
+test('monster-builder: legacy plain-text (non-JSON) traits still read as a single trait', () => {
+  const st = Ed.newState('X', { level: 1, traits: 'Undead: Immune to poison.' }, REFS);
+  assert.deepEqual(st.c.traits, [{ name: 'Undead', description: 'Immune to poison.' }]);
 });
 
-test('monster-builder: _boundCreatureFields clamps level, truncates name, caps list length', () => {
-  const abilities = [];
-  for (let i = 0; i < 80; i++) abilities.push({ name: 'A' + i, type: 'melee' });
-  const cr = baseCreature({ name: 'x'.repeat(500), level: 9999, abilities: abilities });
-  const bounded = mb._boundCreatureFields(cr);
-  assert.equal(bounded.name.length, 200);
-  assert.equal(bounded.level, 20);
-  assert.equal(bounded.abilities.length, 50);
-  // Original object must be untouched (pure function).
-  assert.equal(cr.name.length, 500);
-  assert.equal(cr.level, 9999);
-  assert.equal(cr.abilities.length, 80);
-
-  const low = mb._boundCreatureFields(baseCreature({ level: -5 }));
-  assert.equal(low.level, 1);
+test('monster-builder: an empty immunities or keywords string loads as an empty list', () => {
+  // The old wizard kept '' as a string and its Statistics step threw on
+  // immunities.forEach.
+  const st = Ed.newState('X', { level: 1, immunities: '', keywords: '' }, REFS);
+  assert.deepEqual(st.c.immunities, []);
+  assert.deepEqual(st.c.keywords, []);
+  assert.doesNotThrow(function () { Ed.editorHtml(st, {}); });
 });
 
-test('monster-builder: _save shows a fixed generic message, never the raw server message', () => {
-  const alerts = [];
-  globalThis.alert = function (msg) { alerts.push(msg); };
+test('monster-builder: what a save writes clamps level, truncates name, caps list length', () => {
+  const many = [];
+  for (let i = 0; i < 80; i++) many.push({ name: 'A' + i });
+  const st = Ed.newState('n'.repeat(500), { level: 99, abilities_json: JSON.stringify(many) }, REFS);
+  const out = Ed.toSave(st);
+  assert.equal(out.name.length, 200);
+  assert.equal(out.fields.level, 20);
+  assert.equal(JSON.parse(out.fields.abilities_json).length, 50);
+});
+
+test('monster-builder: a failed save carries a fixed message, never the raw server message', () => {
   Chronicle.apiFetch = fetchMock(function () {
     return errJson(500, 'SECRET: constraint fk_entities_campaign_id violated at row 42');
   });
-  const inst = mbInst({ config: { campaignId: '1', entityId: '5' }, _validate: function () { return []; } });
-  mb._save.call(inst);
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      assert.equal(alerts.length, 1);
-      assert.ok(alerts[0].indexOf('SECRET') === -1, 'raw server message must not reach the user: ' + alerts[0]);
-      assert.ok(alerts[0].indexOf('constraint') === -1, alerts[0]);
-      resolve();
-    }, 0);
-  });
-});
-
-test('monster-builder: _publishToBestiary shows a fixed generic message, never the raw server message', () => {
-  Chronicle.apiFetch = fetchMock(function () { return errJson(500, 'SECRET internal detail'); });
-  const inst = mbInst({
-    config: { campaignId: '1' }, _canPublish: true,
-    creature: baseCreature({ name: 'Goblin' }),
-    _setPublishMsg: function (msg) { this._lastPublishMsg = msg; }
-  });
-  mb._publishToBestiary.call(inst);
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      assert.ok(inst._lastPublishMsg.indexOf('SECRET') === -1, 'raw server message leaked: ' + inst._lastPublishMsg);
-      resolve();
-    }, 0);
+  const st = Ed.newState('Goblin', { level: 1, organization: 'horde' }, REFS);
+  return Ed.save(st, { campaignId: '1', entityId: '5' }).then(function () {
+    assert.fail('the save should have failed');
+  }, function (err) {
+    assert.ok(err.message.indexOf('SECRET') === -1, err.message);
+    assert.ok(err.message.indexOf('constraint') === -1, err.message);
+    assert.equal(err.status, 500, 'a server failure is marked so the editor shows its own text');
   });
 });
 
@@ -279,21 +213,42 @@ test('bestiary-browser: _normalizeEntity never yields a villain_actions that thr
 
 // ── statblock-renderer.js ───────────────────────────────────────────────
 
-require('../widgets/statblock-renderer.js');
-const sr = Chronicle.registry['statblock-renderer'];
-
-test('statblock-renderer: _parseJSON falls back on a valid-JSON-but-non-array value', () => {
-  assert.deepEqual(sr._parseJSON(JSON.stringify('oops not an array'), []), []);
+test('statblock-renderer: a valid-JSON-but-non-array list falls back to empty', () => {
+  const c = SB.normalize({ villain_actions_json: JSON.stringify('oops not an array'), abilities_json: '{"a":1}' });
+  assert.deepEqual(c.villain_actions, []);
+  assert.deepEqual(c.abilities, []);
+  assert.doesNotThrow(function () { c.villain_actions.filter(function (v) { return v.name; }); });
 });
 
-test('statblock-renderer: _loadEntity never yields a villain_actions that throws on .filter', () => {
-  Chronicle.apiFetch = fetchMock(function () {
-    return okJson({ id: '1', name: 'X', fields_data: { villain_actions_json: JSON.stringify('oops not an array') } });
+function panelEl() {
+  const el = makeEl();
+  el.ownerDocument = { querySelectorAll: function () { return []; }, querySelector: function () { return null; }, head: makeEl(), createElement: makeEl };
+  el.querySelector = function (sel) { return sel === '.sbx-msg' ? (el._msg = el._msg || makeEl()) : null; };
+  return el;
+}
+
+test('statblock-renderer: the panel percent-encodes campaignId and entityId', () => {
+  Chronicle.apiFetch = fetchMock(function () { return okJson({ data: [] }); });
+  const p = new SB.Panel(panelEl(), { campaignId: 'a/b', entityId: 'c?d', isGm: true });
+  return p.start().then(function () {
+    const url = Chronicle.apiFetch.calls.filter(function (u) { return /\/entities\//.test(u); })[0];
+    assert.ok(url.indexOf('/campaigns/a%2Fb/') !== -1, url);
+    assert.ok(url.indexOf('/entities/c%3Fd') !== -1, url);
   });
-  const inst = Object.assign(Object.create(sr), { config: { campaignId: '1', entityId: '1' } });
-  return sr._loadEntity.call(inst).then(function () {
-    assert.ok(Array.isArray(inst.creature.villain_actions));
-    assert.doesNotThrow(function () { inst.creature.villain_actions.filter(function (v) { return v.name; }); });
+});
+
+test('statblock-renderer: a failed publish shows a fixed message, never the raw server message', () => {
+  Chronicle.apiFetch = fetchMock(function () { return errJson(500, 'SECRET internal detail'); });
+  const el = panelEl();
+  const p = new SB.Panel(el, { campaignId: '1', entityId: '2', isGm: true });
+  p.entity = { id: '2', name: 'Goblin', fields_data: { level: 1, organization: 'horde' } };
+  p.publish('published');
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      assert.ok(el._msg.textContent.length > 0, 'a message is shown');
+      assert.ok(el._msg.textContent.indexOf('SECRET') === -1, 'raw server message leaked: ' + el._msg.textContent);
+      resolve();
+    }, 10);
   });
 });
 

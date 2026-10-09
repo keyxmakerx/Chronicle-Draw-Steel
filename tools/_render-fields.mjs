@@ -496,8 +496,6 @@ export const WIDGET_ONLY = new Set([
   // Published equivalents are browsable as the monster-building category.
   'organization-templates.json',
   'role-templates.json',
-  // One synthetic row of pre-computed numbers, consumed by monster-builder.js.
-  'damage-baselines.json',
   // Rulebook UI content: layout blocks and a scripted example, consumed by the
   // rulebook-frontpage widget and the example player.
   'rulebook-frontpage.json',
