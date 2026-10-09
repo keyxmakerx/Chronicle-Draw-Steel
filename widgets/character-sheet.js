@@ -225,11 +225,13 @@
 
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
+    var faction = f(data, 'faction', '');
     var fixed =
       '<div class="cs-id-fixed">' +
         '<span class="cs-id-ro"><span class="cs-id-k">Class</span><span class="cs-id-val">' + (className ? esc(className) : '&ndash;') + '</span></span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Subclass</span><span class="cs-id-val">' + (subclass ? esc(subclass) : '&ndash;') + '</span></span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Level</span><span class="cs-id-val">' + level + '</span></span>' +
+        (faction ? '<span class="cs-id-ro"><span class="cs-id-k">Faction</span><span class="cs-id-val">' + esc(faction) + '</span></span>' : '') +
         '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> set in Foundry</span>' +
       '</div>';
 
@@ -1545,7 +1547,13 @@
       Promise.resolve(p).then(function (res) {
         if (openPick === key) openPick = null;
         btn.setAttribute('aria-expanded', 'false');
-        if (!res || res.value == null) return;
+        if (!res || res.value == null) {
+          // The picker hands focus back to the fold, which is hidden once
+          // empty, so a cancel would leave keyboard users nowhere.
+          var a = document.activeElement;
+          if ((!a || a === document.body || fold.contains(a)) && btn.focus) btn.focus();
+          return;
+        }
         data.fields[key] = res.value;
         var out = btn.querySelector('[data-cs-val]');
         if (out) {
