@@ -37,7 +37,7 @@ has read the licence and confirmed (#53).
 - Widgets use `Chronicle.register('slug', { init, destroy, ... })`, `Chronicle.apiFetch()` for API calls, `Chronicle.escapeHtml()` for XSS safety.
 - Reference data comes only from `/campaigns/:id/systems/drawsteel/data/<file>.json` (Chronicle's `SystemDataAPI`; old "extension asset path" bases have no route and are forbidden by `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch.
 - Styles are an injected `<style>` tag, no separate CSS files. Use CSS custom properties with dark-mode fallbacks: `var(--bg-primary, #fff)`.
-- Comments say why, briefly, in a few lines: the rule the code obeys and why. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning.
+- Comments say why, briefly, in a few lines: the rule the code obeys and why. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning. CI checks new comments with `tools/check-comment-clutter.sh` (self-test `tools/test-comment-clutter.sh`).
 
 ## Data Format
 
