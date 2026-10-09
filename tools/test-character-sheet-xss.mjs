@@ -43,21 +43,21 @@ test('safeImgUrl allows http(s)/relative and rejects dangerous schemes', () => {
 
 // ── H-1: portrait header ──────────────────────────────────────────────────
 test('H-1: a quote-breakout portrait_url cannot inject an event handler', () => {
-  const html = cs.rHeader({}, { name: 'Hero', fields: { portrait_url: BREAKOUT } });
+  const html = cs.rIdentity({}, { name: 'Hero', fields: { portrait_url: BREAKOUT } });
   assertNoAttrBreakout(assert, html, 'H-1 portrait breakout');   // legit <img> present; check breakout only
   assert.ok(/&quot;/.test(html), 'the payload quote must be escaped to &quot;');
   // (alt="" uses the identical escAttr call; escAttr's quote-escaping is unit-tested above.)
 });
 
 test('H-1: a javascript: portrait_url falls back to the placeholder (no <img>)', () => {
-  const html = cs.rHeader({}, { name: 'Hero', fields: { portrait_url: 'javascript:alert(1)' } });
+  const html = cs.rIdentity({}, { name: 'Hero', fields: { portrait_url: 'javascript:alert(1)' } });
   assert.ok(!/<img/.test(html), 'no <img> for a rejected scheme');
   assert.ok(/cs-portrait-placeholder/.test(html), 'placeholder shown instead');
 });
 
 test('H-1: a benign portrait URL still renders an <img>', () => {
-  const html = cs.rHeader({}, { name: 'Hero', fields: { portrait_url: '/media/hero.png' } });
-  assert.ok(/<img class="cs-portrait" src="\/media\/hero.png"/.test(html), 'benign portrait renders');
+  const html = cs.rIdentity({}, { name: 'Hero', fields: { portrait_url: '/media/hero.png' } });
+  assert.ok(/<img class="cs-portrait" data-cs-portrait src="\/media\/hero.png"/.test(html), 'benign portrait renders');
 });
 
 // ── H-2: kit fmt() ─────────────────────────────────────────────────────────
