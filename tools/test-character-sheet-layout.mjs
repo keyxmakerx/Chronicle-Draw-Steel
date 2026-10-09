@@ -18,6 +18,7 @@ const cs = require('../widgets/character-sheet.js');
 const ids = (schema) => schema.rows.map((r) => r.columns.map((c) => c.boxes.map((b) => b.id)));
 
 test('rIdentity: origin values are buttons only when the host allows editing', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const data = { name: 'Bren', fields: { ancestry: 'Human', class: 'Fury', level: 3 } };
   const ro = cs.rIdentity({}, Object.assign({}, data, { canEditIdentity: false }));
   assert.ok(!/data-cs-pick=/.test(ro) && !/data-cs-change-image/.test(ro), 'read-only: no pickers, no Change chip');
@@ -26,6 +27,14 @@ test('rIdentity: origin values are buttons only when the host allows editing', (
   for (const k of ['ancestry', 'culture', 'career', 'kit']) assert.ok(rw.includes('data-cs-pick="' + k + '"'), k);
   assert.ok(/data-cs-change-image/.test(rw), 'Change chip when editable');
   assert.ok(!/>Bren</.test(rw), "the name is Chronicle's header job");
+});
+
+test('rIdentity: without Chronicle.pickChoice the values stay plain text', () => {
+  const saved = globalThis.window.Chronicle.pickChoice;
+  delete globalThis.window.Chronicle.pickChoice;
+  const html = cs.rIdentity({}, { name: 'Bren', canEditIdentity: true, fields: { ancestry: 'Human' } });
+  assert.ok(!/data-cs-pick=/.test(html) && /Human/.test(html));
+  globalThis.window.Chronicle.pickChoice = saved;
 });
 
 test('no stub buttons (Roll, Level Up, Share, Roll Might) remain', () => {

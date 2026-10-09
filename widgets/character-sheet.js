@@ -199,6 +199,9 @@
     var name = data.name || 'Unnamed Hero';
     var level = num(data, 'level', 1);
     var canEdit = !!data.canEditIdentity;
+    // Without Chronicle's picker an editable-looking value would do nothing,
+    // so the values stay plain text.
+    var canPick = canEdit && typeof Chronicle.pickChoice === 'function';
 
     // portrait_url is user-authored: validate the scheme and escape both
     // attribute values (escAttr, not esc, since escapeHtml leaves quotes).
@@ -213,9 +216,9 @@
     var slots = ORIGIN_SLOTS.map(function (s) {
       var v = f(data, s.key, '');
       var text = v ? esc(v) : '<span class="cs-id-unset">Not set</span>';
-      var inner = canEdit
+      var inner = canPick
         ? '<button type="button" class="cs-id-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false">' +
-            '<span data-cs-val>' + text + '</span><i class="fa-solid fa-chevron-down cs-id-chev" aria-hidden="true"></i></button>'
+            '<span data-cs-val>' + text + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
         : '<span class="cs-id-val" data-cs-val>' + text + '</span>';
       return '<div class="cs-id-slot"><span class="cs-id-k">' + s.label + '</span>' + inner + '</div>';
     }).join('');
@@ -1889,10 +1892,11 @@
       '.cs-id-k { display:block; font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); }',
       '.cs-id-val { font-size:14px; font-weight:600; color:var(--color-text-primary,#111827); padding:3px 0; overflow-wrap:anywhere; }',
       '.cs-id-unset { font-weight:500; color:var(--color-text-muted,#9ca3af); }',
-      '.cs-id-pick { display:inline-flex; align-items:center; gap:6px; max-width:100%; margin-left:-6px; padding:3px 6px; border:0; border-radius:7px; background:transparent; color:var(--color-text-primary,#111827); font:inherit; font-size:14px; font-weight:600; text-align:left; cursor:pointer; }',
-      '.cs-id-pick:hover, .cs-id-pick[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,168,85,247),0.1); color:var(--color-accent,#a855f7); }',
-      '.cs-id-pick:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:1px; }',
-      '.cs-id-chev { font-size:10px; opacity:0.6; }',
+      '.cs-id-pick { display:inline-flex; align-items:center; gap:6px; max-width:100%; margin-left:-6px; padding:3px 6px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--color-text-primary,#111827); font:inherit; font-size:14px; font-weight:600; text-align:left; cursor:pointer; }',
+      '.cs-id-pick:hover, .cs-id-pick[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,168,85,247),0.12); border-color:rgba(var(--color-accent-rgb,168,85,247),0.35); color:var(--color-accent,#a855f7); }',
+      '.cs-id-pick:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:2px; background:rgba(var(--color-accent-rgb,168,85,247),0.12); }',
+      '.cs-id-chev { flex:none; width:6px; height:6px; margin:-3px 2px 0 0; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); opacity:0.55; }',
+      '.cs-id-pick:hover .cs-id-chev, .cs-id-pick:focus-visible .cs-id-chev, .cs-id-pick[aria-expanded="true"] .cs-id-chev { opacity:1; }',
       '.cs-id-fixed { display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; margin-top:12px; padding-top:10px; border-top:1px solid var(--color-border-light,var(--color-border,#e5e7eb)); }',
       '.cs-id-ro { display:inline-flex; align-items:baseline; gap:7px; }',
       '.cs-id-ro .cs-id-val { padding:0; }',
