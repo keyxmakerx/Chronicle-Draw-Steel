@@ -10,7 +10,7 @@
  * `drawsteel-character → character-sheet` depends on it):
  *   Chronicle.register('character-sheet', { init, destroy })
  *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children,
- *   isGm,isOwner,visibility,canEditIdentity,armoryItems}
+ *   isGm,isOwner,visibility,canEditIdentity,canChangeImage,armoryItems}
  *
  * Mounts via Chronicle's dynamic-surface frame (`Chronicle.surface`): each
  * section is a box renderer (`registerBox('ds-*', fn)`) emitting INNER
@@ -209,7 +209,9 @@
     var portraitHtml = safePortrait
       ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
       : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
-    var chip = canEdit
+    // A claimed player may edit identity but not replace the picture, so the
+    // chip follows its own flag; Chronicle has no upload for them to reach.
+    var chip = data.canChangeImage
       ? '<button type="button" class="cs-port-chip" data-cs-change-image><i class="fa-solid fa-camera"></i> Change</button>'
       : '';
 
@@ -2267,12 +2269,14 @@
           // all false/empty when the host omits them. isGm gates GM Lore;
           // isOwner (with isGm) gates the private Background, so a viewer who
           // may not read them sees no box. canEditIdentity makes the origin
-          // values pickable; armoryItems drops the in-sheet Inventory because
+          // values pickable; canChangeImage shows the picture's Change chip;
+          // armoryItems drops the in-sheet Inventory because
           // the host shows one item list itself.
           isGm: flag(ds.isGm),
           isOwner: flag(ds.isOwner),
           visibility: (entity && entity.visibility) || ds.visibility || '',
           canEditIdentity: flag(ds.canEditIdentity),
+          canChangeImage: flag(ds.canChangeImage),
           armoryItems: flag(ds.armoryItems)
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();

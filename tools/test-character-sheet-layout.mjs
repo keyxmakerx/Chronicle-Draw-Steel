@@ -25,7 +25,9 @@ test('rIdentity: origin values are buttons only when the host allows editing', (
   assert.ok(/set in Foundry/.test(ro) && /Fury/.test(ro), 'class shown read-only with the hint');
   const rw = cs.rIdentity({}, Object.assign({}, data, { canEditIdentity: true }));
   for (const k of ['ancestry', 'culture', 'career', 'kit']) assert.ok(rw.includes('data-cs-pick="' + k + '"'), k);
-  assert.ok(/data-cs-change-image/.test(rw), 'Change chip when editable');
+  assert.ok(!/data-cs-change-image/.test(rw), 'identity editing alone gives no Change chip');
+  const gm = cs.rIdentity({}, Object.assign({}, data, { canEditIdentity: true, canChangeImage: true }));
+  assert.ok(/data-cs-change-image/.test(gm), 'Change chip when the picture may be replaced');
   assert.ok(!/>Bren</.test(rw), "the name is Chronicle's header job");
 });
 
