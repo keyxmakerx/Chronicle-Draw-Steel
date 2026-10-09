@@ -7,8 +7,8 @@
 > §4.1's `foundry_path` column is **unverified** and disagrees with both
 > `manifest.json`'s creature preset and the Foundry module's `API-CONTRACT.md`
 > (only `docs/FOUNDRY-SYNC-MAP.md`, the *hero* map, was verified against the Draw
-> Steel system source — and its Phase-A table records the same class of guess being
-> wrong four times); and §3's bespoke Chronicle statblock endpoint is only **one** of
+> Steel system source, where the same class of guess turned out wrong four
+> times); and §3's bespoke Chronicle statblock endpoint is only **one** of
 > three options `[BR-7](iii)` weighs, against extending the existing manifest-driven,
 > zero-hardcoded-mappings adapter path. §9's five Open Questions are still open, and
 > `[BR-7]` marks them stop-and-flag: **none may be guessed.**
