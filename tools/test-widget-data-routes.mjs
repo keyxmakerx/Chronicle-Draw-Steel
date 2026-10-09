@@ -135,7 +135,7 @@ test('every data fetch uses the systems route Chronicle actually serves', () => 
   // plausible sibling ('/api/v1/campaigns/:id/systems/...' does not exist
   // either) would keep a loose substring check green while every fetch 404s.
   const buildRe = /'\/campaigns\/'\s*\+\s*encodeURIComponent\([^)]+\)\s*\+\s*'\/systems\/drawsteel\/data\/'/;
-  for (const f of ['rulebook-frontpage.js', 'monster-builder.js']) {
+  for (const f of ['rulebook-frontpage.js', 'statblock-renderer.js']) {
     const code = stripComments(readFileSync(W(f), 'utf8'));
     assert.match(code, buildRe,
       `${f} no longer builds '/campaigns/' + encodeURIComponent(id) + '/systems/drawsteel/data/'`);
@@ -150,44 +150,34 @@ test('every data fetch uses the systems route Chronicle actually serves', () => 
     "character-sheet.js regrew the base + 'data/skills.json' fallback, which has no route behind it");
 });
 
-test('monster-builder fetches data over the systems route, and says so when it cannot', async () => {
-  // The widget is a bare Chronicle.register(...) call, so a stub captures the
-  // object without needing a DOM.
-  let widget = null;
+test('the stat block loads its templates over the systems route, and fetches nothing without a campaign', async () => {
+  // The builder and the bestiary read organization and role templates through
+  // DrawSteelStatblock.loadRefs, so this is the one place they are fetched.
   const seen = [];
   const sandbox = {
     console,
     Chronicle: {
-      register: (_slug, impl) => { widget = impl; },
+      register: () => {},
       apiFetch: (url) => {
         seen.push(url);
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       },
     },
   };
-  vm.runInNewContext(readFileSync(W('monster-builder.js'), 'utf8'), sandbox);
-  assert.ok(widget && typeof widget._fetchData === 'function', 'widget did not register');
+  vm.runInNewContext(readFileSync(W('statblock-renderer.js'), 'utf8') + '\n;globalThis.__S = DrawSteelStatblock;', sandbox);
+  const S = sandbox.__S;
+  await S.loadRefs('camp-1');
+  assert.deepEqual(seen.sort(), [
+    '/campaigns/camp-1/systems/drawsteel/data/organization-templates.json',
+    '/campaigns/camp-1/systems/drawsteel/data/role-templates.json',
+  ]);
 
-  // The receiver is hand-built, so pin the key agreement statically too: if
-  // init stores the id under a different name than _fetchData reads, this
-  // test's own receiver would hide the drift.
-  const src = readFileSync(W('monster-builder.js'), 'utf8');
-  assert.ok(src.includes('this._campaignId = config.campaignId'),
-    'init no longer stores this._campaignId; update _fetchData and this test together');
-
-  const ctx = { _campaignId: 'camp-1', _fetchData: widget._fetchData };
-  await ctx._fetchData('creature-keywords.json');
-
-  assert.deepEqual(seen, ['/campaigns/camp-1/systems/drawsteel/data/creature-keywords.json']);
-
-  // Without a campaign id there is no route, and the widget must say that
-  // rather than fetch something that cannot resolve.
-  let rejected = null;
-  await Object.assign({}, ctx, { _campaignId: '' })
-    ._fetchData('creature-keywords.json')
-    .catch((e) => { rejected = e; });
-  assert.ok(rejected, 'a mount with no campaign id should reject');
-  assert.match(String(rejected.message), /no campaign id/i);
+  // Without a campaign id there is no route: no fetch, and empty templates,
+  // which leave every provenance mark off rather than guessing.
+  seen.length = 0;
+  const empty = await S.loadRefs('');
+  assert.deepEqual(seen, []);
+  assert.deepEqual(JSON.parse(JSON.stringify(empty)), { orgs: [], roles: [] });
 });
 
 test('the reference renderer loads the glossary over the systems route', async () => {

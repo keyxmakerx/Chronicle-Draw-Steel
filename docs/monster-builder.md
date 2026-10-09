@@ -1,32 +1,40 @@
-# Draw Steel Monster Builder — Design Document
+# Draw Steel Monster Builder
 
-> **Status:** Draft
-> **Author:** Chronicle Team
-> **Last Updated:** 2026-03-24
 > **Related:** [Community Bestiary](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md) | [API & Security](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/api-security.md) | [Foundry Sync](./foundry-creature-sync.md)
 
 ---
 
 ## 1. Overview
 
-The Monster Builder is a fully automated creature authoring tool built into the Draw Steel system package. It provides guided creation of mechanically valid Draw Steel creatures with auto-calculated stats, ability validation, and full Foundry VTT sync as NPC actors compatible with the existing Draw Steel monster sheets.
+A Draw Steel creature lives on a Creature page in Chronicle. The package gives
+that page two things:
 
-**Inspiration:** D&D Beyond's Homebrew Monster Creator — stepped form, real-time validation, auto-calculated fields, preview-as-you-build.
+- **The stat block** (`widgets/statblock-renderer.js`), mounted under the
+  page title as a game-system panel. Everyone who can see the page sees the
+  stat block; the director also gets **Edit stat block** and **Publish**.
+- **The editor** (`widgets/monster-builder.js`), one page that opens in place
+  of the stat block: the creature's boxes on the left, and a side panel with
+  the party, the encounter budget and the completeness checks on the right.
+
+EV, Stamina, free strike and formula damage follow the published formulas as
+the director changes level, organization or role, and each figure says where
+it came from. A number the director types is never overwritten.
 
 ### Goals
 
-- Full mechanical intelligence: auto-calculate EV, suggest stamina/speed/stability from organization + level
-- Validate creature structure (signature ability required, 3 villain actions for leaders, etc.)
-- Support all 7 organization types: Minion, Horde, Platoon, Elite, Leader, Solo, Swarm
-- Support all 9 roles: Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
-- Full Foundry VTT sync as NPC actors (see [Foundry Sync spec](./foundry-creature-sync.md))
-- Publish to Community Bestiary (see [Bestiary design](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md))
+- Every figure a published formula covers is that formula's, and says so.
+- Where no formula covers a figure (Swarm, or Stamina without a role), the
+  director sets it, and the page says so instead of guessing.
+- Start a creature from the community bestiary or from this campaign's
+  creatures; the copy is recomputed for the level kept.
+- Publish to the Community Bestiary, and add a bestiary creature to the
+  campaign from the Draw Steel browser.
 
 ### Non-Goals (for now)
 
-- Encounter builder (add creatures to budget) — future feature
-- Automated loot/treasure tables
-- AI-generated creature descriptions
+- Balance checking beyond the published encounter bands.
+- Automated loot/treasure tables.
+- AI-generated creature descriptions.
 
 ---
 
@@ -43,7 +51,8 @@ Organizations define a creature's power tier and how many heroes it can face.
 > up to 1.67× the published value; they are kept here only because they still
 > appear in `organization-templates.json` as `ev_multiplier`. **Swarm** is not a
 > published organization at all — it is a creature keyword — so it has no
-> published modifier and the builder labels its figures unsourced on screen.
+> published modifier: the director sets a swarm's EV and Stamina, and the page
+> says so.
 
 | Organization | Hero Ratio | EV Multiplier (unsourced — see above) | Villain Actions | Key Mechanic |
 |---|---|---|---|---|
@@ -122,18 +131,21 @@ Each ability has:
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | **name** | string | yes | |
-| **type** | enum | yes | signature, action, maneuver, triggered, villain-action |
-| **keywords** | list | no | Attack, Magic, Psionic, Ranged, Area, etc. |
-| **distance** | string | no | "Melee", "Ranged 10", "Area 3 within 10", etc. |
-| **target** | string | no | "1 creature", "All enemies in area", etc. |
-| **power_roll** | string | no | "Might vs. Agility", "Reason vs. Intuition", etc. |
-| **tier1_result** | markdown | no | Result on 11 or lower |
-| **tier2_result** | markdown | no | Result on 12–16 |
-| **tier3_result** | markdown | no | Result on 17+ |
+| **type** | enum | yes | signature, action, maneuver, triggered |
+| **keywords** | list | no | Melee, Ranged, Strike, Area, Magic, Psionic, etc. |
+| **distance** | string | no | "Melee 1", "Ranged 10", "3 burst", etc. |
+| **target** | string | no | "One creature", "Each enemy in the area", etc. |
+| **power_roll** | string | no | "2d10 + 3"; a numeric bonus shows the tier odds |
+| **tier1** | markdown | no | Result on 11 or lower |
+| **tier2** | markdown | no | Result on 12–16 |
+| **tier3** | markdown | no | Result on 17+ |
 | **effect** | markdown | no | Non-roll effect text |
-| **trigger** | string | conditional | Required for triggered actions |
-| **vp_cost** | number | no | Villain Power cost to activate |
-| **villain_action_order** | enum | conditional | opener, crowd-control, ultimate (required for villain actions) |
+| **trigger** | string | conditional | For triggered actions |
+| **spend_vp** | number | no | Malice the director spends for the extra effect |
+| **auto_damage** | boolean | no | The tiers' leading damage follows the published formula |
+
+Villain actions are stored separately (`villain_actions_json`) as
+`{ order, name, effect }`, with `order` one of opener, crowd-control, ultimate.
 
 ### 2.6 Villain Power (VP) System
 
@@ -218,27 +230,46 @@ This category holds example/template abilities that users can browse and use as 
 
 ---
 
-## 4. Organization Templates (Auto-Fill Data)
+## 4. The Published Formulas
 
-File: `data/organization-templates.json`
-
-The builder evaluates the published Draw Steel formulas via the
-`DrawSteelFormulas` section of `widgets/monster-engine.js`:
+The builder and the stat block evaluate the published Draw Steel formulas only
+through `DrawSteelFormulas` in `widgets/monster-engine.js`, reading
+`data/organization-templates.json`, `data/role-templates.json`,
+`data/monster-building.json` and `data/encounter-building.json`:
 
 | Figure | Published formula |
 |---|---|
 | Encounter value | `ceil(((2 × level) + 4) × organization modifier)` |
 | Stamina | `ceil(((10 × level) + role modifier) × Stamina organization modifier)` |
 | Ability damage | `ceil((4 + level + damage modifier) × tier modifier)`, halved for horde and minion |
+| Free strike | the tier 1 ability damage |
+| Highest characteristic | `1 + echelon`, +1 for leaders and solos, at most +5 |
 | Party encounter strength | `4 + (2 × hero level)` per hero, summed |
 
-Where a published formula cannot be evaluated — **Swarm** is original to this
-package and has no published modifiers, and the Stamina formula needs a role —
-the builder falls back to this package's own estimate (`data/damage-baselines.json`
-and the `organization-templates.json` fields below) and **labels it unsourced
-on screen**. See CLAUDE.md → "The builder's math must carry its own provenance".
+A strike adds the creature's highest characteristic to its damage, and its
+power roll is `2d10 +` that characteristic. Winded is half Stamina, rounded down.
 
-### 4.3 Default Speed/Stability by Organization
+Where a formula cannot be evaluated — **Swarm** has no published modifiers, and
+the Stamina formula needs a role (leaders and solos take theirs from the table)
+— the figure is left empty for the director to set, and the editor says
+"No published … for this creature. Set it yourself." Nothing is estimated.
+See CLAUDE.md → "The builder's math must carry its own provenance".
+
+### 4.1 Where each figure came from
+
+The stat block marks EV, Stamina and free strike:
+
+| Mark | Meaning |
+|---|---|
+| Tick | The figure is the published formula's. |
+| Pen | The director changed it; the explanation names the formula's number. |
+| None | No formula covers it, or the formula data did not load (no mark may imply a check that never ran). |
+
+In the editor the same facts sit under each box: "Published formula",
+"Changed by you (the formula gives N) · Use the formula", or "No published …
+Set it yourself." Clearing a box hands the figure back to the formula.
+
+### 4.2 Default Speed/Stability by Organization
 
 | Organization | Default Speed | Default Stability |
 |---|---|---|
@@ -250,7 +281,7 @@ on screen**. See CLAUDE.md → "The builder's math must carry its own provenance
 | Solo | 6 | 3 |
 | Swarm | 5 | 0 |
 
-### 4.4 Characteristic Suggestions by Role
+### 4.3 Characteristic Suggestions by Role
 
 These are starting-point suggestions, not requirements. Users can freely adjust.
 
@@ -268,197 +299,91 @@ These are starting-point suggestions, not requirements. Users can freely adjust.
 
 _Generated from `data/role-templates.json` (`characteristics` + `primary_stat`); the data file is authoritative._
 
-**Level scaling for characteristics:** Add +1 to primary stat at levels 4, 8, 12, 16, 20. Add +1 to secondary stat at levels 6, 12, 18.
+---
 
-### 4.5 Free Strike Defaults
+## 5. Completeness Checks
 
-Formula: `level + primary_characteristic_modifier` damage, melee range 1.
+The side panel is titled **Completeness checks** and always carries the line
+"These check the stat block is filled in. They don't judge whether the fight
+is balanced." Its rows:
 
-Example: Level 5 Brute (Might +4) → Free Strike: 9 damage.
+| Severity | When |
+|---|---|
+| ok / miss | One row per thing the stat block needs, ticked or flagged: a name, an organization, a role (except leaders and solos), a signature ability, a leader's or solo's villain actions, EV, Stamina, a free strike. |
+| warn | EV or Stamina differs from the published formula (citing its number), or the highest characteristic differs from the published one. Never raised against a figure no formula covers. |
+| provenance | A figure no formula covers, named, or the formula module did not load. |
 
-Ability damage baselines (the unsourced fallback used when the published
-formula cannot be evaluated) live in `data/damage-baselines.json`, whose own
-`source` field is the literal string `"custom"` — those numbers are this
-package's, not MCDM's.
+The **encounter budget** reads the campaign's heroes, shows the published
+party encounter strength and its bands (Monsters Book ch. 8), and places this
+creature's EV on the meter. Creature counts and the rest of the fight are not
+checked. **Suggest a level, organization and role for this party** applies
+`MonsterEngine.suggest` and shows its reasons; the formulas fill the rest.
 
 ---
 
-## 5. Validation Rules
+## 6. The Widgets
 
-The builder enforces these rules in real-time as the user builds:
+### 6.1 Stat block panel
 
-### 5.1 Errors (Block Save)
+`widgets/statblock-renderer.js` registers `statblock-renderer` and is declared
+in `manifest.json` → `entity_panels` with `applies_to: "npc"`, so Chronicle
+mounts it under the title of NPC-family pages. It shows itself only on the
+campaign's Creature pages (the type whose preset category is `creature`), or
+on any page that already has a stat block. A player sees nothing on a creature
+with no stat block; the director sees **Build its stat block**.
 
-| Rule ID | Rule | Condition |
-|---|---|---|
-| E001 | Signature ability required | `abilities.filter(a => a.type === 'signature').length === 0` |
-| E002 | Leaders must have 3 villain actions | `org === 'leader' && villain_actions.length !== 3` |
-| E003 | Solos must have 3 villain actions | `org === 'solo' && villain_actions.length !== 3` |
-| E004 | VA order must be unique | Duplicate opener/crowd-control/ultimate |
-| E005 | VA order must be complete | Missing any of opener/crowd-control/ultimate |
-| E006 | Name is required | `name.trim() === ''` |
-| E007 | Level must be 1–20 | `level < 1 \|\| level > 20` |
-| E008 | Organization is required | `organization === ''` |
-| E009 | Role is required | `role === ''` |
-| E010 | Stamina must be positive | `stamina <= 0` |
+In page-layout mode Chronicle draws entity panels only where the layout places
+the **Game System Panels** block. Chronicle placed that block once in existing
+NPC-family types; a creature type created later must have it added in the
+layout editor.
 
-### 5.2 Warnings (Allow Save, Show Advisory)
+The panel's global `DrawSteelStatblock` is the one stat block drawing used by
+the panel, the editor's preview, the Draw Steel browser's bestiary modal and,
+in compact mode (header, figures and the signature ability's name), a hover card. It reads both a page's `fields_data` and a
+bestiary `statblock_json` (`normalize`), and writes either shape back
+(`toFields`, `toStatblock`). Styles go into `<head>` once.
 
-| Rule ID | Rule | Condition |
-|---|---|---|
-| W001 | Non-leaders/solos shouldn't have VAs | `org not in ['leader', 'solo'] && villain_actions.length > 0` |
-| W002 | EV deviates from formula | `abs(ev - calculated_ev) / calculated_ev > 0.1` |
-| W003 | Stamina deviates from baseline | `abs(stamina - baseline) / baseline > 0.3` |
-| W004 | Free strike missing | `free_strike.trim() === ''` |
-| W005 | Swarm should have area abilities | `org === 'swarm' && !abilities.some(a => a.keywords.includes('Area'))` |
-| W006 | No abilities defined | `abilities.length === 0` |
+### 6.2 Editor
 
-### 5.3 Info (Suggestions Only)
+`widgets/monster-builder.js` defines `DrawSteelCreatureEditor`. The panel's
+**Edit stat block** mounts it in place; Save writes the page's fields and
+redraws the stat block. Cancel asks before dropping changes.
 
-| Rule ID | Rule | Condition |
-|---|---|---|
-| I001 | Characteristic sum advisory | Total modifier sum outside expected range for organization |
-| I002 | Minion squad size suggestion | Show recommended squad size for level |
-| I003 | Damage baseline hint | Show expected damage ranges per tier for this level/org |
+Every ability opens in a small form. A signature strike is added first, with
+**Damage follows the published formula** on: its tiers' leading number tracks
+the formula, and any words after it ("; push 2") are kept.
 
----
+**Start from…** offers the community bestiary (every Draw Steel creature
+published there) and this campaign's creatures. The copy is named "X (copy)",
+keeps its level, and is recomputed: stale figures are replaced, and abilities
+whose tiers look like formula damage are switched to follow it.
 
-## 6. Builder Widget
+The widget also registers `monster-builder` for placement on a page; on a page
+that already has the stat block panel it steps aside.
 
-### 6.1 Widget Registration
+### 6.3 Publishing
 
-File: `widgets/monster-builder.js`
-
-The widget registers via `Chronicle.register()` and uses the existing Chronicle widget API to:
-- Read/write entity custom fields via the entity API
-- Fetch reference data (organization templates, keywords, ability templates)
-- Present a stepped form UI
-
-### 6.2 UI Flow
-
-The builder uses a stepped form with 7 sections:
-
-1. **Identity** — Name, level, size, faction, keywords
-2. **Organization & Role** — Radio select with description cards, auto-sets EV
-3. **Statistics** — Auto-filled stamina/speed/stability/characteristics with deviation warnings
-4. **Abilities** — Add/edit/remove abilities with structured sub-form (power roll tiers, effects)
-5. **Free Strike** — Auto-generated default, editable
-6. **Villain Actions** — (Conditional: only shown for Leader/Solo) — Three-slot editor with order labels
-7. **Traits** — Free-form list of passive features
-
-### 6.3 Auto-Calculation Engine
-
-The widget's JS implements these calculations client-side:
-
-```
-calculateEV(level, organization):
-  return level * EV_MULTIPLIERS[organization]
-
-calculateStamina(level, organization):
-  return STAMINA_BASE[organization] + (level * STAMINA_PER_LEVEL[organization])
-
-calculateWinded(stamina):
-  return Math.floor(stamina / 2)
-
-suggestCharacteristics(role, level):
-  base = ROLE_CHARACTERISTICS[role]
-  // Add +1 to primary at levels 4, 8, 12, 16, 20
-  // Add +1 to secondary at levels 6, 12, 18
-  return scaledCharacteristics
-
-calculateFreeStrike(level, characteristics, role):
-  primaryStat = ROLE_PRIMARY_STAT[role]
-  return level + characteristics[primaryStat]
-
-suggestAbilityDamage(level, organization, tier):
-  baseline = DAMAGE_BASELINES[organization]  // data/damage-baselines.json -> properties.baselines
-  scale = baseline.per_level * (level - 1)
-  return round(baseline['tier' + tier] + scale)
-```
-
-_Generated from `data/damage-baselines.json` (`properties.baselines`); see §4.6 —
-the additive model (`widgets/monster-engine.js` `tierValues`). The data file
-is authoritative._
-
-### 6.4 Statblock Preview
-
-The builder includes a "Preview Statblock" mode that renders the creature as a formatted Draw Steel statblock, matching the official formatting:
-
-```
-┌─────────────────────────────────────────────┐
-│ CREATURE NAME                               │
-│ Level X [Organization] [Role]               │
-│ EV X • [Keyword, Keyword]                   │
-├─────────────────────────────────────────────┤
-│ STM: XX  │  SPD: X  │  STAB: X  │  Size: M │
-│ MGT: +X  AGI: +X  RSN: +X  INT: +X  PRS: +X│
-│ Immunities: Magic X, Psionic X              │
-├─────────────────────────────────────────────┤
-│ ★ SIGNATURE ABILITY NAME                    │
-│   [Keywords] • Distance • Target            │
-│   Power Roll + X vs. [Characteristic]       │
-│   ≤11: [result] │ 12–16: [result]           │
-│   17+: [result]                             │
-│   Effect: [text]                            │
-│                                             │
-│ ABILITY NAME                                │
-│   [Keywords] • Distance • Target            │
-│   ...                                       │
-├─────────────────────────────────────────────┤
-│ VILLAIN ACTIONS                             │
-│ ① Opener: [Name]                            │
-│   [description]                             │
-│ ② Crowd Control: [Name]                     │
-│   [description]                             │
-│ ③ Ultimate: [Name]                          │
-│   [description]                             │
-├─────────────────────────────────────────────┤
-│ TRAITS                                      │
-│ • [Trait]: [description]                    │
-│ • [Trait]: [description]                    │
-├─────────────────────────────────────────────┤
-│ FREE STRIKE: X damage                       │
-└─────────────────────────────────────────────┘
-```
-
-### 6.5 Statblock Renderer Widget
-
-File: `widgets/statblock-renderer.js`
-
-A separate, read-only widget that renders any creature entity as a formatted statblock. Can be placed on entity pages via the template editor. Reads from entity custom fields and renders the statblock card.
+**Publish** posts the creature to the Community Bestiary
+(`POST /bestiary`, private or public) with the page as its source.
+In the Draw Steel browser's bestiary tab, **Add to this campaign** creates a
+Creature page with every stat block field filled.
 
 ---
 
 ## 7. Reference Data Files
 
-### 7.1 File Inventory
-
 | File | Purpose |
 |---|---|
-| `data/organization-templates.json` | EV formulas, stamina baselines, speed/stability defaults |
-| `data/role-templates.json` | Characteristic suggestions per role |
+| `data/organization-templates.json` | Published organization modifiers, speed/stability defaults |
+| `data/role-templates.json` | Published role modifiers, characteristic suggestions |
+| `data/monster-building.json` | Published monster formulas |
+| `data/encounter-building.json` | Published encounter strength and budget bands |
 | `data/creature-keywords.json` | Keyword definitions and special rules |
 | `data/creature-abilities.json` | Example/template abilities for reference |
-| `data/creatures.json` | Official Draw Steel creatures (populated over time) |
-| `data/ability-keywords.json` | Ability keyword definitions (Attack, Magic, Psionic, Ranged, Area, etc.) |
-| `data/damage-baselines.json` | Expected damage per tier by level and organization |
+| `data/creatures.json` | 35 example creatures, figures per the published formulas (`tools/test-creature-examples.mjs`) |
+| `data/ability-keywords.json` | Ability keyword definitions |
 
-### 7.2 Data Format
-
-All reference data files follow Chronicle's standard format:
-
-```json
-[
-  {
-    "id": "unique-slug",
-    "name": "Display Name",
-    "description": "Description text with **markdown** support.",
-    "properties": {
-      "key": "value"
-    }
-  }
-]
-```
+Data format: `docs/DATA-SCHEMA.md`.
 
 ---
 
@@ -472,10 +397,8 @@ Open work: #54.
 
 | Dependency | In | Notes |
 |---|---|---|
-| `enum` field type in manifest | Chronicle Core | Currently supported per ValidFieldTypes |
-| `list` field type in manifest | Chronicle Core | Currently supported |
-| `markdown` field type in manifest | Chronicle Core | Currently supported |
-| Widget JS API | Chronicle Core | Existing Chronicle.register() system |
-| Entity custom fields API | Chronicle Core | Existing sync API |
-| Structured creature sync | Chronicle Core | **NEW** — needed for Foundry abilities/VAs |
-| Community Bestiary addon | Chronicle Core | Shipped (`internal/plugins/bestiary`) — publishing works |
+| `entity_panels` in the manifest | Chronicle Core | Mounts the stat block under NPC-family page titles |
+| Widget JS API | Chronicle Core | `Chronicle.register()` |
+| Entity custom fields API | Chronicle Core | Reads and writes `fields_data` |
+| Community Bestiary addon | Chronicle Core | `internal/plugins/bestiary`: search, stat block, publish |
+| Structured creature sync | Chronicle Core | Needed for Foundry abilities and villain actions |

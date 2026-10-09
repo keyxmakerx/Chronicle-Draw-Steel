@@ -33,11 +33,11 @@ const Chronicle = makeChronicle();
 globalThis.Chronicle = Chronicle;
 
 const require = createRequire(import.meta.url);
+const SB = require('../widgets/statblock-renderer.js');
+globalThis.DrawSteelStatblock = SB;
 require('../widgets/bestiary-browser.js');
-require('../widgets/statblock-renderer.js');
 
 const browser = Chronicle.registry['bestiary-browser'];
-const statblock = Chronicle.registry['statblock-renderer'];
 
 // ── Fake Chronicle server ────────────────────────────────────────────────
 // Serves the REAL response shapes. Every request URL is recorded so the tests
@@ -240,60 +240,179 @@ test('bestiary-browser: import posts entity_type_id + fields_data, not preset/cu
   assert.equal(fd.abilities_json, '[]');
 });
 
-// ── statblock-renderer ───────────────────────────────────────────────────
+// ── bestiary-browser, community bestiary mode ────────────────────────────
 
-// GetEntity returns the entity BARE (c.JSON(http.StatusOK, entity)) — no
-// envelope — with its custom fields under fields_data.
-function serveEntity(entity) {
-  Chronicle.apiFetch = function () {
-    return Promise.resolve({ ok: true, json: () => Promise.resolve(entity) });
+// The bestiary plugin's real shapes (internal/plugins/bestiary): Search takes
+// system_id and caps per_page at 50, and returns summaries in
+// {results,total,page,per_page,total_pages} with no stat block; the full stat
+// block is GET /bestiary/:slug/statblock, served as stored.
+function installBestiary(opts) {
+  const total = opts.total;
+  const calls = [];
+  const posts = [];
+  Chronicle.apiFetch = function (url, init) {
+    calls.push(url);
+    if (init && init.method === 'POST') {
+      posts.push({ url, body: JSON.parse(init.body) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'new' }) });
+    }
+    const [path, qs] = String(url).split('?');
+    const q = new URLSearchParams(qs || '');
+    if (path.endsWith('/entity-types')) return Promise.resolve({ ok: true, json: () => Promise.resolve(ENTITY_TYPES) });
+    if (path === '/bestiary/search') {
+      let perPage = Number(q.get('per_page')) || 20;
+      if (perPage > 50) perPage = 50;
+      const page = Number(q.get('page')) || 1;
+      let all = [];
+      for (let i = 1; i <= total; i++) {
+        all.push({ id: 'pub-' + i, creator_id: 'u1', system_id: 'drawsteel', name: 'Ogre ' + i, slug: 'ogre-' + i,
+          organization: 'platoon', role: 'brute', level: 4, downloads: i, rating_average: 4.5, rating_count: 2 });
+      }
+      all.push({ id: 'pub-x', system_id: 'dnd5e', name: 'Owlbear', slug: 'owlbear', level: 3 });
+      const sys = q.get('system_id');
+      if (sys) all = all.filter((r) => r.system_id === sys);
+      const slice = all.slice((page - 1) * perPage, page * perPage);
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ results: slice, total: all.length, page, per_page: perPage, total_pages: Math.ceil(all.length / perPage) }) });
+    }
+    if (/^\/bestiary\/[^/]+\/statblock$/.test(path)) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({
+        name: 'Ogre 1', level: 4, organization: 'platoon', role: 'brute', ev: 12, stamina: 120, speed: 5, size: '1L',
+        might: 3, agility: 0, reason: -1, intuition: 0, presence: 0, keywords: ['Giant'], free_strike: '7 damage',
+        abilities: [{ name: 'Club', type: 'signature', tier1: '7 damage' }], villain_actions: [], traits: [{ name: 'Big', description: 'Very big.' }]
+      }) });
+    }
+    return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
   };
+  return { calls, posts };
 }
 
-test('statblock-renderer: loads a creature from fields_data and renders it', async () => {
-  serveEntity(makeEntity(1, { name: 'Goblin Cutter' }));
+test('bestiary-browser: community mode lists only Draw Steel creatures, every page of them', async () => {
+  const { calls } = installBestiary({ total: 73 });
+  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary' });
+  const searches = calls.filter((u) => u.startsWith('/bestiary/search'));
+  assert.ok(searches.length >= 2, 'it walks past the 50-per-page cap');
+  searches.forEach((u) => assert.match(u, /[?&]system_id=drawsteel(&|$)/));
+  assert.ok(!calls.some((u) => u.startsWith('/bestiary?')), 'Browse ignores the system, so it must not be used');
+  assert.equal(inst.state.creatures.length, 73);
+  assert.ok(!inst.state.creatures.some((c) => c.name === 'Owlbear'), 'another game’s creature must not show');
+});
 
-  const inst = Object.create(statblock);
-  inst.config = { campaignId: CAMPAIGN, entityId: 'ent-1' };
-  await inst._loadEntity();
+test('bestiary-browser: a community card shows its downloads, not a row of zeros', async () => {
+  installBestiary({ total: 1 });
+  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary' });
+  const card = inst._gridEl.children[0].innerHTML;
+  assert.match(card, /1 added/);
+  assert.ok(!/STM 0/.test(card), 'a summary has no Stamina to show');
+});
 
-  // OLD guard: `if (!entity.custom_fields) return;` -> creature stayed null and
-  // the widget rendered its "no creature" placeholder against every real
-  // Chronicle response.
-  assert.ok(inst.creature, 'the creature must be populated from fields_data');
-  assert.equal(inst.creature.name, 'Goblin Cutter');
-  assert.equal(inst.creature.level, 2);
-  assert.equal(inst.creature.role, 'harrier');
-  assert.equal(inst.creature.stamina, 20);
-  assert.equal(inst.creature.abilities[0].name, 'Shortbow');
+test('bestiary-browser: opening a community creature fetches its stat block, and offers Add, never Edit or Delete', async () => {
+  const { calls, posts } = installBestiary({ total: 1 });
+  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary', editable: true });
+  const buttons = [];
+  const realCreate = globalThis.document.createElement;
+  globalThis.document.createElement = function () {
+    const e = realCreate();
+    e.addEventListener = function (type, fn) { if (type === 'click') this._click = fn; };
+    buttons.push(e);
+    return e;
+  };
+  inst._openModal(inst.state.creatures[0]);
+  await new Promise((r) => setTimeout(r, 20));
+  globalThis.document.createElement = realCreate;
+  assert.ok(calls.includes('/bestiary/ogre-1/statblock'), 'the full stat block is fetched on open');
+  const labels = buttons.map((b) => b.textContent).filter(Boolean);
+  assert.ok(labels.includes('Add to this campaign'), labels.join(', '));
+  assert.ok(!labels.includes('Edit') && !labels.includes('Delete'), 'a publication id is not a campaign page: ' + labels.join(', '));
+  const body = buttons.find((b) => b.className === 'bb-modal-body');
+  assert.match(body.innerHTML, /Club/, 'the modal draws the full stat block');
 
+  // Add writes the full stat block as a typed Creature page, not the empty
+  // summary the card was drawn from.
+  buttons.find((b) => b.textContent === 'Add to this campaign')._click();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(posts.length, 1);
+  assert.match(posts[0].url, /\/api\/v1\/campaigns\/camp-1\/entities$/);
+  const sent = posts[0].body;
+  assert.equal(sent.entity_type_id, 7);
+  assert.equal(sent.fields_data.stamina, 120);
+  assert.equal(sent.fields_data.ev, 12);
+  assert.equal(JSON.parse(sent.fields_data.abilities_json)[0].name, 'Club');
+  assert.equal(JSON.parse(sent.fields_data.traits)[0].name, 'Big');
+});
+
+// ── statblock-renderer (the Creature page panel) ─────────────────────────
+
+// GetEntity returns the entity BARE, custom fields under fields_data.
+function serveEntity(entity) {
+  const calls = [];
+  Chronicle.apiFetch = function (url) {
+    calls.push(url);
+    if (/\/entity-types$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve(ENTITY_TYPES) });
+    if (/systems\/drawsteel\/data\//.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(entity) });
+  };
+  return calls;
+}
+
+function panelEl() {
   const el = makeEl();
-  inst.el = el;
-  inst._ref = new FakeRef();
-  statblock._render.call(inst);
-  const html = el.innerHTML + el.children.map((c) => c.innerHTML || '').join('\n');
-  assert.ok(/Goblin Cutter/.test(html), 'the name must render');
-  assert.ok(/Level 2/.test(html), 'the level must render');
+  el.ownerDocument = { querySelectorAll: () => [], querySelector: () => null, head: makeEl(), createElement: makeEl };
+  el.setAttribute = function (k, v) { this['attr:' + k] = v; };
+  return el;
+}
+
+async function mountPanel(config) {
+  const el = panelEl();
+  const p = new SB.Panel(el, config);
+  await p.start();
+  return { el, p };
+}
+
+test('statblock-renderer: a Creature page draws its stat block from fields_data', async () => {
+  serveEntity(makeEntity(1, { name: 'Goblin Cutter' }));
+  const { el } = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-1', isGm: false });
+  assert.equal(el.hidden, false);
+  assert.match(el.innerHTML, /Goblin Cutter/);
+  assert.match(el.innerHTML, /Level 2 Horde Harrier/);
+  assert.match(el.innerHTML, /Shortbow/);
+  assert.ok(!/Edit stat block/.test(el.innerHTML), 'a player gets no edit control');
 });
 
-test('statblock-renderer: a bestiary-shaped custom_fields payload still loads', async () => {
-  serveEntity({ id: 'pub-1', name: 'Bestiary Ogre', custom_fields: { level: 4, role: 'brute', size: '2' } });
-
-  const inst = Object.create(statblock);
-  inst.config = { campaignId: CAMPAIGN, entityId: 'pub-1' };
-  await inst._loadEntity();
-
-  assert.ok(inst.creature, 'custom_fields must remain a supported fallback');
-  assert.equal(inst.creature.level, 4);
-  assert.equal(inst.creature.role, 'brute');
+test('statblock-renderer: the director gets Edit stat block and Publish', async () => {
+  serveEntity(makeEntity(1));
+  const { el } = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-1', isGm: true });
+  assert.match(el.innerHTML, /Edit stat block/);
+  assert.match(el.innerHTML, /Publish/);
 });
 
-test('statblock-renderer: an entity with neither key leaves the creature unset', async () => {
-  serveEntity({ id: 'ent-x', name: 'Fieldless' });
+test('statblock-renderer: a bestiary-shaped custom_fields payload still draws', async () => {
+  serveEntity({ id: 'pub-1', entity_type_id: 7, name: 'Bestiary Ogre', custom_fields: { level: 4, organization: 'platoon', role: 'brute', size: '2' } });
+  const { el } = await mountPanel({ campaignId: CAMPAIGN, entityId: 'pub-1' });
+  assert.match(el.innerHTML, /Level 4 Platoon Brute/);
+});
 
-  const inst = Object.create(statblock);
-  inst.config = { campaignId: CAMPAIGN, entityId: 'ent-x' };
-  await inst._loadEntity();
+test('statblock-renderer: a page that is not a creature stays hidden and empty', async () => {
+  serveEntity({ id: 'ent-x', entity_type_id: 1, name: 'Aria the Hero', fields_data: { level: 3 } });
+  const { el } = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-x', isGm: true });
+  assert.equal(el.hidden, true);
+  assert.equal(el.innerHTML, '');
+});
 
-  assert.equal(inst.creature, undefined, 'no fields means no statblock, not a fabricated one');
+test('statblock-renderer: a Creature page with no stat block offers the director a start, and shows a player nothing', async () => {
+  serveEntity({ id: 'ent-n', entity_type_id: 7, name: 'Nameless Thing', fields_data: {} });
+  const gm = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-n', isGm: true });
+  assert.match(gm.el.innerHTML, /Build its stat block/);
+  serveEntity({ id: 'ent-n', entity_type_id: 7, name: 'Nameless Thing', fields_data: {} });
+  const player = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-n', isGm: false });
+  assert.equal(player.el.hidden, true);
+});
+
+test('statblock-renderer: a second copy on the same page steps aside', async () => {
+  serveEntity(makeEntity(1));
+  const el = panelEl();
+  el.ownerDocument.querySelectorAll = () => [{}];
+  const calls = serveEntity(makeEntity(1));
+  await new SB.Panel(el, { campaignId: CAMPAIGN, entityId: 'ent-1' }).start();
+  assert.equal(calls.length, 0, 'it loads nothing');
+  assert.equal(el.innerHTML, '');
 });

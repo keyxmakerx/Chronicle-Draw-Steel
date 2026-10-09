@@ -857,7 +857,7 @@
     {
       "slug": "monster-builder",
       "name": "Monster Builder",
-      "description": "Fully automated creature authoring tool with Draw Steel mechanical intelligence",
+      "description": "Edit a creature's stat block in place, with your party, the encounter budget and completeness checks beside it. Figures follow Draw Steel's published formulas until you change them. On a Creature page, use Edit stat block instead; placed elsewhere, it builds a new creature.",
       "icon": "fa-dragon",
       "script_file": "widgets/monster-builder.js",
       "config": [
@@ -881,8 +881,8 @@
     },
     {
       "slug": "statblock-renderer",
-      "name": "Statblock Renderer",
-      "description": "Formatted creature statblock display",
+      "name": "Creature Stat Block",
+      "description": "The creature's stat block, shown under the title of every Creature page, with Edit stat block and Publish for the director. Chronicle mounts it itself.",
       "icon": "fa-scroll",
       "script_file": "widgets/statblock-renderer.js",
       "config": [
@@ -984,6 +984,10 @@
     }
   ],
   "entity_panels": [
+    {
+      "widget": "statblock-renderer",
+      "applies_to": "npc"
+    },
     {
       "widget": "negotiation-tracker",
       "applies_to": "npc"

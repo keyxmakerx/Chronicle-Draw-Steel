@@ -272,13 +272,11 @@ are listed in each entry's `properties`-equivalent `custom_fields` array. They d
 not agree with the published formulas now in `monster-building.json` — the
 published EV is `((2 × Level) + 4) × Organization Modifier`, not
 `ev_multiplier × Level`, and published Stamina depends on the creature's *role*,
-which the templates' organization-only model cannot express. The derived numbers
-are left in place because `monster-engine.js`, `monster-builder.js`, and
-`creatures.json` all consume them; they are flagged rather than silently
-rewritten. `damage-baselines.json` is the same case and is likewise not published:
-its per-organization tier table does not follow from the published damage
-equation. Reconciling the widgets onto the published formulas is a code change,
-not a data change, and is left for a later stage.
+which the templates' organization-only model cannot express. These fields are
+kept as this package's own suggestions (`primary_stat` helps the party
+suggestion pick a role); no creature figure is computed from them. The widgets evaluate the published formulas only (`DrawSteelFormulas`
+in `widgets/monster-engine.js`), and `creatures.json`'s EV, Stamina, free strike
+and highest characteristic are what those formulas give.
 
 **The `swarm` organization is this package's own.** Swarm is a published creature
 *keyword*, not a published creature *organization*: the Monsters book's

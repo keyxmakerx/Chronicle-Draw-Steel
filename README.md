@@ -1,6 +1,6 @@
 # Chronicle - Draw Steel System Pack
 
-A game system content pack for [Chronicle](https://github.com/keyxmakerx) providing full **Draw Steel RPG** (by MCDM Productions) support — creatures, abilities, entity presets, interactive widgets, and rules cross-references.
+A game system content pack for [Chronicle](https://github.com/keyxmakerx/Chronicle) providing full **Draw Steel RPG** (by MCDM Productions) support — creatures, abilities, entity presets, interactive widgets, and rules cross-references.
 
 ## What's Included
 
@@ -25,11 +25,12 @@ The manifest's `dm_screen` block tells Chronicle's DM Screen what to show for ea
 - **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
 
 ### Interactive Widgets
-- **Monster Builder** — 7-step creature authoring with stats auto-filled from the published formulas, completeness checks, damage hints, an encounter-strength calculator, and full preview. It does not certify balance: figures the published rules do not cover are labelled unsourced on screen. See `docs/WIDGET-GUIDE.md`.
-- **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal statblocks, and campaign import
-- **Statblock Renderer** — read-only formatted creature statblock display for entity pages
+- **Monster Builder** — a one-page creature editor whose figures follow the published formulas and say where they came from; the director sets what no formula covers. It checks completeness, not balance. See `docs/WIDGET-GUIDE.md`.
+- **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal stat blocks, and Add to this campaign
+- **Creature stat block** — the stat block under each Creature page's title, with Edit stat block and Publish for the director
 - **Character Sheet** — read-only hero reference sheet synced from Foundry (abilities, skills, kit, features). See `docs/CHARACTER-SHEET-DESIGN.md`.
 - **Rulebook Front Page** — an interactive rules page (power roll, characteristics, conditions). See `docs/WIDGET-GUIDE.md`.
+- **Negotiation Tracker** — runs a negotiation on an NPC page; Chronicle mounts it below the title of NPC pages on its own. See `docs/WIDGET-GUIDE.md`.
 
 ### @Reference Cross-Links
 Ability text uses `{@category term}` syntax (like D&D Beyond) that renders as styled tooltips on hover:
@@ -48,7 +49,7 @@ The `reference-renderer.js` utility handles parsing and rendering. All 35 creatu
 1. Go to **Admin > Packages**
 2. Add this repository URL
 3. Install the latest release
-4. Go to **Campaign Settings > General > Game System** and select "Draw Steel"
+4. In your campaign, open **Manage → Game & features** and pick "Draw Steel" in the **Game system** card
 
 ### Updating
 Install the newer release from **Admin > Packages**. Chronicle adds the sheet fields the update introduces to the entity types of campaigns already using Draw Steel; it never restores a field a GM deleted, and it does not create entity types or change existing fields.
@@ -86,7 +87,7 @@ All files in `data/` follow Chronicle's **ReferenceItem** format:
 }
 ```
 
-Every `data/*.json` file is a JSON array of these objects. Required fields: `slug` (unique ID), `name` (display name). Optional: `description`, `properties` (arbitrary key-value metadata).
+Every `data/*.json` file is a JSON array of these objects. Required fields: `slug` (unique ID), `name` (display name), `source` (where the entry comes from, or `"custom"`). Optional: `description`, `summary`, `properties` (domain fields), `tags`. Full schemas: `docs/DATA-SCHEMA.md`.
 
 ## Contributing
 
@@ -94,7 +95,7 @@ Every `data/*.json` file is a JSON array of these objects. Required fields: `slu
 1. Add an entry to `data/creatures.json` following the schema in `docs/DATA-SCHEMA.md`
 2. Calculate stats with the `DrawSteelFormulas` section of `widgets/monster-engine.js` (published math; see `docs/DATA-SCHEMA.md` → "Stat Calculation") — not `data/organization-templates.json` / `data/role-templates.json`, which are this package's own legacy estimates
 3. Use `{@category term}` syntax for rule references in ability text
-4. Validate: `python3 -c "import json; json.load(open('data/creatures.json'))"`
+4. Regenerate the derived fields with `node tools/build-render-fields.mjs`, then run `node --test tools/test-*.mjs`
 
 ### Adding an Ability
 1. Add to `data/creature-abilities.json` with a unique `slug`
@@ -129,9 +130,8 @@ data/
   creatures.json           35 example creatures ("source": "custom", not published monsters)
   creature-abilities.json  23 template abilities
   rules-glossary.json      65 rules definitions for @references
-  organization-templates.json  7 org types (stamina/EV formulas)
+  organization-templates.json  7 org types (legacy estimates, not the published formulas)
   role-templates.json      9 roles (characteristic baselines)
-  damage-baselines.json    Damage scaling by tier and organization
   creature-keywords.json   23 creature type keywords
   ability-keywords.json    24 ability/keyword definitions
   abilities.json           519 hero abilities
@@ -139,20 +139,29 @@ data/
   kits.json                21 kits
   skills.json              57 skills
   negotiation.json         54 negotiation rules entries
+  monster-building.json    Published monster-making rules and formulas
+  encounter-building.json  Published encounter-building rules
+  ancestry-point-buy.json  Ancestry point-buy rules
+  animal-traits.json       35 animal traits
+  rulebook-*.json          Data for the Rulebook front page and worked examples
 book/
   book.yaml                Rulebook cover, theme and chapter list
   chapters/                One YAML file per chapter
 widgets/
-  monster-builder.js       7-step creature authoring wizard
+  monster-builder.js       One-page creature editor
   monster-engine.js        Published Draw Steel formulas (the only place they're evaluated)
   monster-party.js         Party-aware suggestion data (fetch + derive)
   bestiary-browser.js      Filterable creature catalog
-  statblock-renderer.js    Formatted statblock display
+  statblock-renderer.js    Creature stat block panel
   character-sheet.js       Read-only hero reference sheet
   rulebook-frontpage.js    Interactive rules page
   rulebook-fold-engine.js  Shared fold/glossary-hover interaction module
   rulebook-example-player.js  Shared worked-example playback module
+  negotiation-tracker.js   Negotiation on NPC pages
   reference-renderer.js    Shared @reference parsing utility
+tools/
+  build-render-fields.mjs  Regenerates derived display fields and manifest categories
+  test-*.mjs               CI tests (`node --test tools/test-*.mjs`)
 docs/
   DATA-SCHEMA.md           Data file schemas and validation
   WIDGET-GUIDE.md          Widget configuration guide
@@ -163,10 +172,11 @@ docs/
   implementation-checklist.md  Implementation roadmap
 ```
 
-## Open work: the bestiary + monster-builder rewrite
+## Open work: creatures
 
-The community bestiary browser, the monster builder, and the Foundry creature-sync
-leg are due a rewrite. Open work: #54.
+The stat block, the one-page editor and the bestiary browser are rebuilt
+(#49). Still open: the Foundry creature-sync leg (#54) and encounter assembly
+(#50).
 
 ## License
 

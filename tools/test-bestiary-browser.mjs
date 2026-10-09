@@ -20,6 +20,8 @@ const Chronicle = makeChronicle();
 globalThis.Chronicle = Chronicle;
 
 const require = createRequire(import.meta.url);
+// The modal draws with the shared stat block, a global in the browser.
+globalThis.DrawSteelStatblock = require('../widgets/statblock-renderer.js');
 require('../widgets/bestiary-browser.js');
 const def = Chronicle.registry['bestiary-browser'];
 

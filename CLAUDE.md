@@ -37,7 +37,7 @@ has read the licence and confirmed (#53).
 - Widgets use `Chronicle.register('slug', { init, destroy, ... })`, `Chronicle.apiFetch()` for API calls, `Chronicle.escapeHtml()` for XSS safety.
 - Reference data comes only from `/campaigns/:id/systems/drawsteel/data/<file>.json` (Chronicle's `SystemDataAPI`; old "extension asset path" bases have no route and are forbidden by `tools/test-widget-data-routes.mjs`). No campaign id → degrade honestly, don't fetch.
 - Styles are an injected `<style>` tag, no separate CSS files. Use CSS custom properties with dark-mode fallbacks: `var(--bg-primary, #fff)`.
-- Comments say why, briefly, in a few lines: the rule the code obeys and why. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning.
+- Comments say why, briefly, in a few lines: the rule the code obeys and why. No incident stories, task IDs, dates or `file:line` pointers (those go in the PR); deferred work is `TODO(#issue)`. Licence and formula-provenance comments keep their meaning. CI checks new comments with `tools/check-comment-clutter.sh` (self-test `tools/test-comment-clutter.sh`).
 
 ## Data Format
 
@@ -58,17 +58,17 @@ After editing `data/*.json` by hand, run `node tools/build-render-fields.mjs`: i
 
 ## The builder's math must carry its own provenance
 
-The monster builder derives four figures (encounter value, Stamina, encounter
-budget, ability damage). Some inputs (e.g. `data/damage-baselines.json`, whose
-own `source` is the literal string `"custom"`) are this package's own numbers,
-not MCDM's — a figure built from them is an estimate, not a published result,
-and must say so.
+The creature editor and stat block derive EV, Stamina, free strike, ability
+damage, the highest characteristic and the encounter budget. Each comes from a
+published formula, or, where none covers it, from the director, and the page
+says which. This package invents no creature numbers.
 
 - `DrawSteelFormulas` in `widgets/monster-engine.js` is the only place published formulas are evaluated. Every return is `{ value, sourced, source, notes }`; `sourced: false` means published data doesn't cover this input and `value` is `null` — never a plausible-looking guess.
-- A caller that renders an unsourced figure must say so in the UI: `_recalcAuto` records per-figure provenance on `this._provenance`, the checks panel emits it as `severity: 'provenance'` rows, and Step 3 labels the Stamina hint either "published formula:" or "unsourced estimate:".
+- A figure no formula covers is left for the director, and the UI says so: `derive` in `widgets/monster-builder.js` records per-figure provenance on `st.pr`, each box's chip reads "Published formula", "Changed by you (the formula gives N)" or "No published … Set it yourself.", the checks panel emits `severity: 'provenance'` rows, and the stat block's tick or pen comes from `DrawSteelStatblock.provenance` (no mark when the formulas didn't load). A number the director typed is never overwritten.
 - The panel is titled "Completeness checks", never "Validation", with a standing, unconditional line saying it is not a balance check. A deviation warning fires only against a figure the published formulas can actually produce.
-- Swarm is not a published organization (it's a creature keyword); its `organization_modifier` and `stamina_organization_modifier` are `null` — the reason the legacy tables still exist, as a labelled fallback, never a silent default.
-- Pinned by `tools/test-monster-formulas.mjs` (module vs. shipped `monster-building.json` / `encounter-building.json`) and `tools/test-monster-builder-honesty.mjs` (widget's claims). A full builder rebuild is separate work (#50).
+- Swarm is not a published organization (it's a creature keyword); its `organization_modifier` and `stamina_organization_modifier` are `null`, so a swarm's EV and Stamina are the director's.
+- `data/creatures.json`'s figures must be what the formulas give (swarms excepted).
+- Pinned by `tools/test-monster-formulas.mjs` (module vs. shipped `monster-building.json` / `encounter-building.json`), `tools/test-monster-builder-honesty.mjs` (the editor's claims), `tools/test-statblock-renderer.mjs` (the marks) and `tools/test-creature-examples.mjs` (the examples, and no second evaluation site). Design: `docs/monster-builder.md`.
 
 ## @Reference Syntax
 

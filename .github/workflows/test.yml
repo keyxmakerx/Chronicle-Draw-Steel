@@ -20,3 +20,18 @@ jobs:
       # tools/_xss-harness.mjs. The `test-*.mjs` glob runs only the test files.
       - name: Run unit tests
         run: node --test tools/test-*.mjs
+
+  comment-clutter:
+    # New comments say why and point at an issue, ADR or test; no tracking
+    # IDs, archive paths, file:line pointers or dates (CLAUDE.md, Code
+    # Conventions). Diff-scoped, so existing comments are grandfathered; needs
+    # full history for the diff.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Comment clutter guard self-tests
+        run: ./tools/test-comment-clutter.sh
+      - name: Comment clutter guard
+        run: ./tools/check-comment-clutter.sh

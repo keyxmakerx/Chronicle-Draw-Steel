@@ -118,8 +118,8 @@ Five files predate the rule and are still pending:
 A citation is only worth having if it is true, so these say nothing rather than
 guessing a chapter. Everything else in `data/` — all 632 entries added for the
 ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
-`ability-keywords.json`, `organization-templates.json`, `role-templates.json`,
-`damage-baselines.json` and `rulebook-examples.json` — carries a real root
+`ability-keywords.json`, `organization-templates.json`, `role-templates.json`
+and `rulebook-examples.json` — carries a real root
 `source`.
 
 **A citation also has to be true about the *licence*.** All 35 `creatures.json`
@@ -484,9 +484,7 @@ stat blocks are not meant to be modified.
 
 Formula entries state the **equation**, never a table of pre-computed numbers for
 one level: `properties.formula` is a string, `properties.rounding` is `"up"`, and
-`properties.inputs` names the variables. `damage-baselines.json` is the
-counter-example — it bakes one level's output into a table and its numbers do not
-follow from the published equations.
+`properties.inputs` names the variables.
 
 ## encounter-building.json
 
