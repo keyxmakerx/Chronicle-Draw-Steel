@@ -45,7 +45,7 @@ var MonsterEngine = (function () {
   // encounter-strength formula instead. Kept because it documents the shipped
   // org templates' internal consistency: for every org tier,
   // `ev_multiplier / heroesPerCreature` equals the Platoon multiplier of 4
-  // (Platoon is the 1:1 "standard" org, docs/monster-builder.md §2.1/§4.1)
+  // (Platoon is the 1:1 "standard" org, docs/monster-builder.md §2.1)
   // except the Minion, an intentional outlier. Takes the MEDIAN of that ratio
   // across all orgs so the Minion cannot skew it.
   function standardEvPerHeroLevel(orgTemplates) {
@@ -252,20 +252,6 @@ var MonsterEngine = (function () {
     return { types: types, rationale: rationale };
   }
 
-  // Applies data/damage-baselines.json as tierN + per_level*(level-1). That
-  // file's `source` is the string "custom": these numbers are this package's
-  // invention and run up to 2.4x the published damage formula. Survives only
-  // as the labelled fallback for an organization the published rules don't
-  // define, never as a silent default.
-  function legacyTierValues(bl, level) {
-    var scale = (Number(bl.per_level) || 0) * (level - 1);
-    return {
-      tier1: Math.round(Number(bl.tier1) + scale),
-      tier2: Math.round(Number(bl.tier2) + scale),
-      tier3: Math.round(Number(bl.tier3) + scale)
-    };
-  }
-
   // addFlat returns a copy of a tier triple with `n` added to every tier — the
   // published "if the ability is a strike, add the monster's highest
   // characteristic" adjustment, kept separate from the baseline so a caller can
@@ -275,15 +261,13 @@ var MonsterEngine = (function () {
     return { tier1: tiers.tier1 + n, tier2: tiers.tier2 + n, tier3: tiers.tier3 + n };
   }
 
-  // suggest is the pure entry point. `data` carries { orgTemplates, roleTemplates,
-  // baselines } (baselines = the _extractBaselines org->{tier1,tier2,tier3,
-  // per_level} map). Returns a MonsterSuggestion; degrades (never guesses) when
-  // the party's defenses or levels can't be read.
+  // suggest is the pure entry point. `data` carries { orgTemplates, roleTemplates }.
+  // Returns a MonsterSuggestion; degrades (never guesses) when the party's
+  // defenses or levels can't be read.
   function suggest(partyProfile, intent, data) {
     var d = data || {};
     var orgTemplates = d.orgTemplates || [];
     var roleTemplates = d.roleTemplates || [];
-    var baselines = d.baselines || {};
     var chosenIntent = normalizeIntent(intent);
     var notes = [];
 
@@ -391,17 +375,6 @@ var MonsterEngine = (function () {
         ' — the published formula (4 + level + damage modifier) × tier modifier at level ' + level +
         (strikeTiers ? ('; as a strike, add the highest characteristic (+' + hc.value + ') for ' +
           strikeTiers.tier1 + ' / ' + strikeTiers.tier2 + ' / ' + strikeTiers.tier3) : '') + '.';
-    } else if (organization && baselines[organization]) {
-      // Fallback: an organization the published rules do not define (Swarm).
-      // The numbers are this package's own and are labelled as such.
-      tiers = legacyTierValues(baselines[organization], level);
-      strikeTiers = tiers;
-      tiersSourced = false;
-      tierNotes = ['These tiers are the widget’s own baseline table, not published Draw Steel math — “' +
-        organization + '” is not a published organization. Pending the builder rework.'];
-      tiersRationale = 'Ability damage tiers ' + tiers.tier1 + ' / ' + tiers.tier2 + ' / ' + tiers.tier3 +
-        ' — the widget’s own baseline for ' + titleCase(organization) + ', which the published rules do not cover. Unsourced.';
-      notes.push('Damage tiers for ' + organization + ' are unsourced — it is not a published organization.');
     } else {
       tiersRationale = 'No damage tiers could be computed for the chosen organization — left blank.';
       if (organization) notes.push('No damage tiers could be computed for organization ' + organization + '.');
@@ -663,6 +636,15 @@ var DrawSteelFormulas = (function () {
     return { value: tiers, sourced: true, source: SOURCE, notes: notes };
   }
 
+  // freeStrike is the published "a monster's free strike damage equals the
+  // damage calculated for a tier 1 outcome": the tier 1 baseline, carrying the
+  // same provenance as damageTiers.
+  function freeStrike(level, org, role) {
+    var d = damageTiers(level, org, role);
+    if (!d.value) return result(null, false, null, d.notes);
+    return result(d.value.tier1, d.sourced, d.source, ['Free strike damage is the tier 1 result of the damage formula.']);
+  }
+
   // highestCharacteristic is the published "1 + echelon", capped at +5, with the
   // leader/solo +1. Echelon is 1 for levels 1-3, 2 for 4-6, 3 for 7-9, 4 for
   // 10+ in the published progression; a level below 1 has no echelon.
@@ -757,6 +739,7 @@ var DrawSteelFormulas = (function () {
     stamina: stamina,
     staminaOptionalBonus: staminaOptionalBonus,
     damageTiers: damageTiers,
+    freeStrike: freeStrike,
     echelon: echelon,
     highestCharacteristic: highestCharacteristic,
     heroEncounterStrength: heroEncounterStrength,

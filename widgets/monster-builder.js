@@ -1,2294 +1,864 @@
 /**
- * Draw Steel Monster Builder Widget
- * A stepped creature authoring tool with mechanical intelligence.
+ * Draw Steel monster builder.
+ *
+ * DrawSteelCreatureEditor edits a creature's stat block in place: the same card
+ * the page shows (DrawSteelStatblock in statblock-renderer.js), turned into
+ * fields, with the director's party, the encounter budget and the completeness
+ * checks beside it. The creature page's panel opens it from "Edit stat block";
+ * the 'monster-builder' widget below opens it wherever a layout places it,
+ * including on a page with no creature yet, where saving creates one.
+ *
+ * Every figure the published rules cover (encounter value, Stamina, free strike,
+ * ability damage) is evaluated only by DrawSteelFormulas in monster-engine.js.
+ * A figure follows its formula until the director types another number, and
+ * each one says which it is. Where no formula covers the creature (Swarm, or no
+ * role yet) the director sets it, and the editor says so instead of guessing.
  */
-Chronicle.register('monster-builder', {
-  init: function (el, config) {
-    var self = this;
-    this.el = el;
-    this.config = config;
-    this.currentStep = 0;
-    this.steps = ['Identity', 'Organization & Role', 'Statistics', 'Abilities', 'Free Strike', 'Villain Actions', 'Traits'];
-    // Reference data is loaded from data/*.json at init (see _loadReferenceData),
-    // never hard-coded inline. The data files are the single source of truth, so
-    // updating a file is enough — there is no second copy to keep in sync.
-    // These start empty and are populated before the first render.
-    this.orgTemplates = [];
-    this.roleTemplates = [];
-    this.creatureKeywords = [];
-    this.abilityKeywords = [];
-    this.damageBaselines = {};
-    this.templateAbilities = [];
-    this._dataError = false;
+var DrawSteelCreatureEditor = (function () {
+  'use strict';
 
-    // Creature state
-    this.creature = {
-      name: '',
-      level: 1,
-      size: '1M',
-      faction: '',
-      keywords: [],
-      organization: '',
-      role: '',
-      ev: 0,
-      stamina: 0,
-      winded: 0,
-      speed: 5,
-      stability: 0,
-      might: 0,
-      agility: 0,
-      reason: 0,
-      intuition: 0,
-      presence: 0,
-      immunities: [],
-      free_strike: '',
-      free_strike_damage: 0,
-      abilities: [],
-      villain_actions: [
-        { order: 'opener', name: '', description: '', power_roll: '', tier1: '', tier2: '', tier3: '' },
-        { order: 'crowd-control', name: '', description: '', power_roll: '', tier1: '', tier2: '', tier3: '' },
-        { order: 'ultimate', name: '', description: '', power_roll: '', tier1: '', tier2: '', tier3: '' }
-      ],
-      traits: []
-    };
+  var ORGS = ['minion', 'horde', 'platoon', 'elite', 'leader', 'solo', 'swarm'];
+  var ROLES = ['ambusher', 'artillery', 'brute', 'controller', 'defender', 'harrier', 'hexer', 'mount', 'support'];
+  var SIZES = [['1T', '1T Tiny'], ['1S', '1S Small'], ['1M', '1M Medium'], ['1L', '1L Large'], ['2', '2 Huge'], ['3', '3 Gargantuan']];
+  var ABILITY_TYPES = ['signature', 'action', 'maneuver', 'triggered'];
+  var FIGURES = ['ev', 'stamina', 'winded', 'free_strike'];
+  var STANDING_LINE = 'These check the stat block is filled in. They don’t judge whether the fight is balanced.';
 
-    this._campaignId = config.campaignId;
-    this._ref = new DrawSteelRefRenderer('', config.campaignId);
-    this._saveStatus = 'clean';
+  function SB() { return (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null; }
+  function F() { return (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) ? DrawSteelFormulas : null; }
+  function Engine() { return (typeof MonsterEngine !== 'undefined') ? MonsterEngine : null; }
 
-    // Encounter-calculator state lives on the instance so it survives step
-    // navigation instead of resetting every time Step 3 re-renders.
-    this._encounterState = { partySize: 4, partyLevel: this.creature.level };
-    // The derived party profile, populated by _loadParty before
-    // first render; null = no heroes read / manual mode.
-    this._partyProfile = null;
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
-    // Suggestion state. `_intent` is the director's recorded difficulty
-    // (display-only, no scaling). `_suggestion` is the
-    // last MonsterSuggestion applied (drives the rationale-chip panel);
-    // `_suggestionDamage` is the editable suggested damage type (immune-warned).
-    this._intent = 'standard';
-    this._suggestion = null;
-    this._suggestionDamage = '';
+  // ── The editor's state ────────────────────────────────────────────────────
 
-    // Bestiary publish state: the "Publish to Bestiary" button is enabled only
-    // after a successful entity save, and defaults to a private (draft) listing.
-    this._entityIsPrivate = false;
-    this._canPublish = false;
-    this._publishVisibility = 'draft';
-
-    // Provenance of the auto-filled figures, written by _recalcAuto. Each entry
-    // is { sourced, value, note }. `sourced:false` means the published Draw
-    // Steel formulas do not cover this input and the figure shown is the
-    // widget's own heuristic — the UI is required to say so rather than let the
-    // checks panel imply the number was validated. See the DrawSteelFormulas section of widgets/monster-engine.js.
-    this._provenance = {};
-
-    Promise.all([this._loadReferenceData(), this._ref.load(), this._loadParty()]).then(function () {
-      self._ref.injectStyles();
-      return self._loadExistingEntity();
-    }).then(function () {
-      self._render();
-    }).catch(function (err) {
-      console.error('Monster Builder: init failed', err);
-      self._render();
+  // newState builds an editor state from a creature in either stored shape. A
+  // stored figure that differs from its formula, or that no formula covers, is
+  // the director's own and stays put: opening the editor never rewrites it.
+  function newState(name, src, refs) {
+    var S = SB();
+    var c = S.normalize(src || {});
+    if (c.level === null) c.level = 1;
+    var st = { name: name || c.name || '', c: c, own: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] } };
+    var pr = S.provenance(c, st.refs);
+    ['ev', 'stamina', 'free_strike'].forEach(function (k) {
+      var stored = k === 'free_strike' ? S.freeStrikeNumber(c.free_strike) : c[k];
+      if (stored !== null && pr[k] && pr[k].state !== 'formula') st.own[k] = true;
     });
-  },
+    if (c.winded !== null && c.stamina !== null && c.winded !== Math.floor(c.stamina / 2)) st.own.winded = true;
+    derive(st);
+    return st;
+  }
 
-  destroy: function (el) {
-    el.innerHTML = '';
-  },
+  // autoTier rewrites the leading "N damage" of a tier's text and keeps the
+  // rest ("; push 2"), so the formula owns the number and the director the words.
+  function autoTier(textIn, n) {
+    var t = String(textIn || '');
+    if (/^\s*\d+\s+damage/i.test(t)) return t.replace(/^\s*\d+(\s+damage)/i, n + '$1');
+    return n + ' damage' + (t ? '; ' + t.replace(/^\s*;\s*/, '') : '');
+  }
 
-  _apiError: function (res, fallback) {
-    return res.json().then(
-      function (body) { return body && body.message ? body.message : fallback; },
-      function () { return fallback; }
-    );
-  },
+  function isStrike(a) {
+    var S = SB();
+    return S.parseList(a.keywords).some(function (k) { return String(k).toLowerCase() === 'strike'; });
+  }
 
-  // _parseAbilities normalizes stored ability JSON to an array of objects.
-  // The render/validate paths call .filter/.some/.forEach on creature.abilities
-  // directly, so a hand-edited or corrupted stored value (not an array, or an
-  // array holding a non-object entry) must never reach them unnormalized.
-  _parseAbilities: function (raw) {
-    var arr;
-    try { arr = JSON.parse(raw); } catch (e) { return []; }
-    if (!Array.isArray(arr)) return [];
-    return arr.filter(function (a) { return a !== null && typeof a === 'object'; });
-  },
-
-  // _parseTraits mirrors _parseAbilities for the traits field, but keeps the
-  // legacy fallback of wrapping a plain-text (non-JSON) stored value as a
-  // single trait. A value that parses as valid JSON but isn't an array (e.g.
-  // a JSON-encoded string) must never reach .forEach unnormalized.
-  _parseTraits: function (raw) {
-    var arr;
-    try { arr = JSON.parse(raw); } catch (e) {
-      return typeof raw === 'string' ? [{ name: '', description: raw }] : [];
-    }
-    if (!Array.isArray(arr)) return [];
-    return arr.filter(function (t) { return t !== null && typeof t === 'object'; });
-  },
-
-  // _boundCreatureFields returns a size-capped copy of a creature so a
-  // runaway name or ability/trait list can't be written to an entity or the
-  // public bestiary. Defense in depth: Chronicle's server is the real limit
-  // enforcer. Pure — never mutates the creature passed in.
-  _boundCreatureFields: function (cr) {
-    var MAX_NAME = 200, MAX_LIST = 50;
-    var capArray = function (arr) {
-      return Array.isArray(arr) && arr.length > MAX_LIST ? arr.slice(0, MAX_LIST) : arr;
+  // derive recomputes every figure the director has not set by hand, and the
+  // damage of every ability that follows the formula. It records the formula
+  // results on st.pr for the chips and the checks.
+  function derive(st) {
+    var S = SB(), Fm = F(), c = st.c;
+    var org = S.findBySlug(st.refs.orgs, c.organization);
+    var role = S.findBySlug(st.refs.roles, c.role);
+    var none = function (why) { return { value: null, sourced: false, source: null, notes: [why] }; };
+    var why = Fm ? 'Pick an organization to use the published formulas.' : 'The published formulas did not load.';
+    var pr = {
+      org: org, role: role,
+      ev: (Fm && org) ? Fm.encounterValue(c.level, org) : none(why),
+      stamina: (Fm && org) ? Fm.stamina(c.level, org, role) : none(why),
+      free_strike: (Fm && org) ? Fm.freeStrike(c.level, org, role) : none(why),
+      damage: (Fm && org) ? Fm.damageTiers(c.level, org, role) : none(why),
+      hc: Fm ? Fm.highestCharacteristic(c.level, org) : none(why),
+      formulasLoaded: !!Fm
     };
-    var bounded = {};
-    for (var k in cr) { if (cr.hasOwnProperty(k)) bounded[k] = cr[k]; }
-    bounded.name = String(cr.name || '').slice(0, MAX_NAME);
-    bounded.level = Math.max(1, Math.min(20, Number(cr.level) || 1));
-    bounded.abilities = capArray(cr.abilities);
-    bounded.traits = capArray(cr.traits);
-    bounded.villain_actions = capArray(cr.villain_actions);
-    return bounded;
-  },
-
-  // _loadParty reads the live campaign party via the pure MonsterParty module
-  // and stores the derived profile for the Party panel + budget seeding. It
-  // never blocks the builder: any failure or absence degrades to manual mode.
-  _loadParty: function () {
-    var self = this;
-    var cid = this.config && this.config.campaignId;
-    if (!cid || typeof MonsterParty === 'undefined') {
-      this._partyProfile = null;
-      return Promise.resolve();
-    }
-    return MonsterParty.fetchParty(cid).then(function (heroes) {
-      self._partyProfile = MonsterParty.deriveParty(heroes);
-    }).catch(function (err) {
-      if (typeof console !== 'undefined') console.warn('Monster Builder: party read failed', err);
-      self._partyProfile = null;
+    if (!st.own.ev && pr.ev.value !== null) c.ev = pr.ev.value;
+    if (!st.own.stamina && pr.stamina.value !== null) c.stamina = pr.stamina.value;
+    if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = pr.free_strike.value + ' damage';
+    if (!st.own.winded) c.winded = c.stamina === null ? null : Math.floor(c.stamina / 2);
+    var hc = pr.hc.value;
+    var d = pr.damage.value;
+    c.abilities.forEach(function (a) {
+      if (!a.auto_damage || !d) return;
+      var add = (isStrike(a) && hc !== null) ? hc : 0;
+      if (hc !== null) a.power_roll = '2d10 + ' + hc;
+      a.tier1 = autoTier(a.tier1, d.tier1 + add);
+      a.tier2 = autoTier(a.tier2, d.tier2 + add);
+      a.tier3 = autoTier(a.tier3, d.tier3 + add);
     });
-  },
+    var E = Engine();
+    pr.vaCount = (E && org) ? E.villainActionCount(org) : (org ? Number(org.villain_action_count) || 0 : 0);
+    st.pr = pr;
+    return st;
+  }
 
-  // Loads a single reference JSON file over the ONLY path Chronicle actually
-  // serves package data on: GET /campaigns/:id/systems/drawsteel/data/<file>.json
-  // (SystemDataAPI). No fallback path — none exists.
-  _fetchData: function (file) {
-    if (!this._campaignId) {
-      return Promise.reject(new Error(
-        'this mount has no campaign id, so data/' + file + ' cannot be loaded'));
-    }
-    var url = '/campaigns/' + encodeURIComponent(this._campaignId) +
-      '/systems/drawsteel/data/' + file;
-    var fetchFn = (typeof Chronicle !== 'undefined' && Chronicle &&
-      typeof Chronicle.apiFetch === 'function') ? Chronicle.apiFetch : fetch;
-    return fetchFn(url, { credentials: 'same-origin' })
-      .then(function (r) {
-        if (!r.ok) throw new Error(url + ' -> ' + r.status);
-        return r.json();
-      });
-  },
+  // setFigure records a figure the director typed. An empty box hands it back
+  // to the formula.
+  function setFigure(st, key, raw) {
+    var v = String(raw == null ? '' : raw).trim();
+    if (v === '') { delete st.own[key]; return derive(st); }
+    st.own[key] = true;
+    if (key === 'free_strike') st.c.free_strike = /^-?\d+$/.test(v) ? v + ' damage' : v;
+    else st.c[key] = isFinite(Number(v)) ? Number(v) : st.c[key];
+    return derive(st);
+  }
 
-  // _loadReferenceData populates every reference collection from data/*.json.
-  // Organization and role templates are required for the builder to function
-  // (without them there is nothing to pick and no stats to derive), so failing
-  // to load them flips this._dataError and the UI shows a clear diagnostic
-  // instead of silently rendering empty pickers.
-  _loadReferenceData: function () {
-    var self = this;
-    var load = function (file, assign) {
-      return self._fetchData(file)
-        .then(function (data) { assign(data); })
-        .catch(function (err) { console.warn('Monster Builder: failed to load ' + file, err); });
-    };
-    return Promise.all([
-      load('organization-templates.json', function (d) { self.orgTemplates = Array.isArray(d) ? d : []; }),
-      load('role-templates.json', function (d) { self.roleTemplates = Array.isArray(d) ? d : []; }),
-      load('creature-keywords.json', function (d) { self.creatureKeywords = Array.isArray(d) ? d : []; }),
-      load('ability-keywords.json', function (d) { self.abilityKeywords = Array.isArray(d) ? d : []; }),
-      load('damage-baselines.json', function (d) { self.damageBaselines = self._extractBaselines(d); }),
-      load('creature-abilities.json', function (d) { self.templateAbilities = Array.isArray(d) ? d : []; })
-    ]).then(function () {
-      self._dataError = (self.orgTemplates.length === 0 || self.roleTemplates.length === 0);
+  function useFormula(st, key) { delete st.own[key]; return derive(st); }
+
+  // startFrom copies another creature's stat block into this one. Figures and
+  // formula-shaped damage are worked out again for the level kept here, so a
+  // copy never carries the source's numbers at the wrong level.
+  function startFrom(st, srcName, src, origin) {
+    var S = SB();
+    var c = S.normalize(src || {});
+    if (c.level === null) c.level = st.c.level || 1;
+    c.abilities.forEach(function (a) {
+      if ([a.tier1, a.tier2, a.tier3].every(function (t) { return !t || /^\s*\d+\s+damage/i.test(String(t)); }) && (a.tier1 || a.tier2 || a.tier3)) a.auto_damage = true;
     });
-  },
+    st.c = c;
+    st.own = {};
+    st.origin = origin || null;
+    st.name = srcName ? srcName + ' (copy)' : st.name;
+    st.editAb = null;
+    return derive(st);
+  }
 
-  // _extractBaselines normalizes damage-baselines.json (a single ReferenceItem
-  // whose properties.baselines holds the per-organization damage table) into a
-  // slug -> { tier1, tier2, tier3, per_level } map. See docs/DATA-SCHEMA.md.
-  _extractBaselines: function (data) {
-    if (Array.isArray(data) && data[0] && data[0].properties && data[0].properties.baselines) {
-      return data[0].properties.baselines;
-    }
-    return {};
-  },
-
-  _loadExistingEntity: function () {
-    var self = this;
-    if (!this.config.entityId || !this.config.campaignId) return Promise.resolve();
-
-    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entities/' + encodeURIComponent(this.config.entityId);
-    return Chronicle.apiFetch(url)
-      .then(function (r) { return r.json(); })
-      .then(function (entity) {
-        if (!entity) return;
-        // An existing entity is already persisted, so publishing is allowed.
-        // Preserve its privacy flag so a later save (PUT) doesn't flip it.
-        self._entityIsPrivate = !!entity.is_private;
-        self._canPublish = true;
-        self.creature.name = entity.name || '';
-        // Chronicle returns custom fields under the `fields_data` key; earlier
-        // code must read the same key or every saved creature loads blank.
-        var f = entity.fields_data;
-        if (!f) return;
-        var numFields = ['level', 'ev', 'stamina', 'winded', 'speed', 'stability',
-          'might', 'agility', 'reason', 'intuition', 'presence', 'free_strike_damage'];
-        numFields.forEach(function (k) {
-          if (f[k] !== undefined) self.creature[k] = Number(f[k]) || 0;
-        });
-        var strFields = ['organization', 'role', 'size', 'faction', 'free_strike', 'immunities', 'keywords'];
-        strFields.forEach(function (k) {
-          if (f[k] !== undefined) self.creature[k] = f[k];
-        });
-        // Normalize legacy single-letter sizes (T/S/M/L/H/G) saved by earlier
-        // builds to the DATA-SCHEMA multi-hex notation (1T/1S/1M/1L/2/3).
-        self.creature.size = self._normalizeSize(self.creature.size);
-        // Parse JSON fields
-        if (f.keywords && typeof f.keywords === 'string') {
-          try { self.creature.keywords = JSON.parse(f.keywords); } catch (e) {
-            self.creature.keywords = f.keywords.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-          }
-        }
-        if (f.immunities && typeof f.immunities === 'string') {
-          try { self.creature.immunities = JSON.parse(f.immunities); } catch (e) {
-            self.creature.immunities = f.immunities.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-          }
-        }
-        if (f.abilities_json) {
-          self.creature.abilities = self._parseAbilities(f.abilities_json);
-        }
-        if (f.villain_actions_json) {
-          try {
-            var va = JSON.parse(f.villain_actions_json);
-            if (Array.isArray(va) && va.length === 3) self.creature.villain_actions = va;
-          } catch (e) { /* keep defaults */ }
-        }
-        if (f.traits) {
-          self.creature.traits = self._parseTraits(f.traits);
-        }
-      })
-      .catch(function (err) {
-        console.warn('Monster Builder: existing entity load failed; using defaults', err);
-      });
-  },
-
-  // Canonical Draw Steel size notation (docs/DATA-SCHEMA.md) paired with
-  // friendly display labels. The notation string is what gets stored on the
-  // entity; the label is only for the dropdown.
-  _sizeOptions: [
-    { value: '1T', label: '1T — Tiny' },
-    { value: '1S', label: '1S — Small' },
-    { value: '1M', label: '1M — Medium' },
-    { value: '1L', label: '1L — Large' },
-    { value: '2', label: '2 — Huge' },
-    { value: '3', label: '3 — Gargantuan' }
-  ],
-
-  // _normalizeSize maps legacy single-letter sizes (T/S/M/L/H/G) to the
-  // DATA-SCHEMA notation and leaves already-canonical values untouched.
-  _normalizeSize: function (size) {
-    var legacy = { T: '1T', S: '1S', M: '1M', L: '1L', H: '2', G: '3' };
-    if (legacy[size]) return legacy[size];
-    return size || '1M';
-  },
-
-  // _dataErrorBanner renders a visible diagnostic when the reference data files
-  // failed to load, so an empty org/role picker is never a silent mystery.
-  _dataErrorBanner: function () {
-    if (!this._dataError) return '';
-    return '<div class="mb-inline-warn" style="display:flex">' +
-      '<span>&#9888;</span><span>Reference data could not be loaded from the Draw Steel ' +
-      'package (<code>data/*.json</code>). Organization and role options are unavailable — ' +
-      'check that the package assets are being served.</span></div>';
-  },
-
-  // ── Rendering ──────────────────────────────────────────────
-
-  _injectStyles: function () {
-    if (this.el.querySelector('style.mb-styles')) return;
-    var style = document.createElement('style');
-    style.className = 'mb-styles';
-    style.textContent = [
-      // ── Root container ──
-      '.monster-builder { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); background:var(--color-card-bg,#fff); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid var(--color-border,#e5e7eb); padding:20px; }',
-      // ── Header ─��
-      '.mb-header h2 { font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 16px; font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
-      '.mb-header h2 i { margin-right:8px; color:var(--color-accent,#6366f1); }',
-      // ── Step navigation ──
-      '.mb-step-nav { display:flex; flex-wrap:wrap; gap:0; margin-bottom:16px; border-bottom:1px solid var(--color-border,#e5e7eb); }',
-      '.mb-step-tab { padding:8px 14px; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-weight:500; background:transparent; color:var(--color-text-body,#374151); transition:all 150ms ease; margin-bottom:-1px; }',
-      '.mb-step-tab.active { color:var(--color-accent,#6366f1); border-bottom-color:var(--color-accent,#6366f1); }',
-      '.mb-step-tab:hover:not(.active) { background:rgba(var(--color-accent-rgb,99,102,241),0.05); color:var(--color-accent,#6366f1); }',
-      '.mb-step-tab:active { transform:scale(0.98); }',
-      // ── Step content & sections ──
-      '.mb-step-content { min-height:200px; }',
-      '.mb-section { background:var(--color-bg-primary,#f9fafb); border-radius:8px; padding:16px; margin-bottom:16px; border:1px solid var(--color-border-light,#f3f4f6); }',
-      '.mb-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border-light,#f3f4f6); border-radius:6px; padding:12px 14px; margin:8px 0; }',
-      '.mb-card h4 { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--color-text-secondary,#6b7280); margin:0 0 10px; }',
-      '.mb-section h3 { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 12px; font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
-      // ── Form fields ──
-      '.mb-field-row { margin-bottom:12px; }',
-      '.mb-field-row label { display:block; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); margin-bottom:4px; }',
-      '.mb-input { width:100%; padding:8px 12px; border-radius:8px; font-size:14px; background:var(--color-input-bg,#fff); border:1px solid var(--color-input-border,#d1d5db); color:var(--color-text-primary,#111827); transition:all 200ms ease; box-sizing:border-box; }',
-      '.mb-input:focus { outline:none; box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.3); border-color:var(--color-accent,#6366f1); }',
-      'select.mb-input option { background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); }',
-      '.mb-hint { font-size:12px; color:var(--color-text-muted,#9ca3af); margin-top:4px; font-style:italic; }',
-      '.mb-suggestion { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:2px; }',
-      // ── Tags/Keywords ──
-      '.mb-keyword-list { display:flex; flex-wrap:wrap; gap:4px; }',
-      '.mb-tag { display:inline-block; padding:4px 10px; margin:0; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 150ms ease; }',
-      '.mb-tag:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.mb-tag.selected { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      // ── Radio cards (org/role selection) ──
-      '.mb-card-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }',
-      '.mb-card-col { display:flex; flex-direction:column; gap:8px; }',
-      '.mb-card-col h4 { font-size:14px; font-weight:600; color:var(--color-text-secondary,#6b7280); text-transform:uppercase; letter-spacing:0.05em; margin:0; }',
-      '.mb-radio-card { display:block; width:100%; text-align:left; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; background:var(--color-card-bg,#fff); transition:all 200ms ease; }',
-      '.mb-radio-card:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.mb-radio-card.selected { border:2px solid var(--color-accent,#6366f1); background:rgba(var(--color-accent-rgb,99,102,241),0.05); box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.15); }',
-      '.mb-radio-card strong { font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.mb-radio-card small { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      '.mb-ev-display { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); }',
-      // ── Abilities ──
-      '.mb-ability-actions { display:flex; gap:8px; margin-bottom:12px; }',
-      '.mb-ability-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:8px; padding:12px; margin-bottom:8px; transition:all 200ms ease; }',
-      '.mb-ability-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; }',
-      '.mb-ability-type { display:inline-block; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.mb-ability-summary { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:4px; }',
-      '.mb-ability-detail { overflow:hidden; transition:max-height 300ms ease-out; }',
-      '.mb-tiers { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }',
-      '.mb-damage-hints { font-size:12px; color:var(--color-text-muted,#9ca3af); font-style:italic; margin:-4px 0 6px; }',
-      // ── Template picker ──
-      '.mb-template-btn { display:block; width:100%; text-align:left; padding:10px 12px; margin:4px 0; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-card-bg,#fff); cursor:pointer; transition:all 150ms ease; color:inherit; }',
-      '.mb-template-btn:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.mb-template-btn strong { font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.mb-template-btn small { font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      // ── Villain actions ──
-      '.mb-va-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-left:3px solid var(--color-accent,#6366f1); border-radius:8px; padding:12px; margin-bottom:8px; }',
-      '.mb-va-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }',
-      '.mb-va-num { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:9999px; background:var(--color-accent,#6366f1); color:#fff; font-size:12px; font-weight:600; }',
-      // ── Traits ─��
-      '.mb-trait-row { display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.mb-trait-row:last-child { border-bottom:none; }',
-      '.mb-empty { text-align:center; padding:24px; color:var(--color-text-muted,#9ca3af); font-size:14px; }',
-      // ── Validation ──
-      '.mb-validation-panel { border-radius:8px; border:1px solid var(--color-border,#e5e7eb); overflow:hidden; margin-top:12px; }',
-      '.mb-validation-item { display:flex; align-items:flex-start; gap:8px; padding:8px 12px; font-size:12px; }',
-      '.mb-v-error { background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
-      '.mb-v-warning { background:rgba(245,158,11,0.05); border-left:3px solid #d97706; color:#92400e; }',
-      '.mb-v-info { background:rgba(59,130,246,0.05); border-left:3px solid #2563eb; color:#1e40af; }',
-      // Provenance rows are deliberately neutral-grey, never green: they say
-      // what the panel cannot vouch for, so they must not read as approval.
-      '.mb-v-provenance { background:var(--color-bg-secondary,#f3f4f6); border-left:3px solid var(--color-text-muted,#9ca3af); color:var(--color-text-muted,#4b5563); font-style:italic; }',
-      '.mb-v-icon { flex-shrink:0; }',
-      '.mb-inline-warn { display:flex; align-items:center; gap:8px; padding:8px 12px; margin:0 0 12px; border-radius:6px; font-size:13px; background:rgba(239,68,68,0.05); border-left:3px solid #dc2626; color:#991b1b; }',
-      // ── Encounter calculator ──
-      '.mb-encounter-calc { margin-top:12px; padding:12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; background:var(--color-bg-primary,#f9fafb); }',
-      // ── Preview ──
-      '.mb-preview { border:2px solid var(--color-accent,#6366f1); border-radius:12px; overflow:hidden; background:var(--color-card-bg,#fff); }',
-      // ── Buttons ──
-      '.mb-buttons { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--color-border,#e5e7eb); }',
-      // ── Statblock styles (for preview) ──
-      '.mb-preview .sb-header { background:var(--color-accent,#6366f1); padding:16px 20px; }',
-      '.mb-preview .sb-name { margin:0 0 4px; font-size:20px; font-weight:700; color:#fff; }',
-      '.mb-preview .sb-subtitle { color:rgba(255,255,255,0.85); font-size:14px; }',
-      '.mb-preview .sb-keywords { font-style:italic; color:rgba(255,255,255,0.7); font-size:12px; margin-top:4px; }',
-      '.mb-preview .sb-faction { color:rgba(255,255,255,0.7); font-size:12px; }',
-      '.mb-preview .sb-ev { display:inline-block; margin-top:6px; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; background:rgba(255,255,255,0.2); color:#fff; }',
-      '.mb-preview .sb-content { padding:16px 20px; }',
-      '.mb-preview .sb-divider { border:none; border-top:2px solid var(--color-accent,#6366f1); margin:12px 0; opacity:0.3; }',
-      '.mb-preview .sb-stat { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.mb-preview .sb-stat strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
-      '.mb-preview .sb-char { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; }',
-      '.mb-preview .sb-char strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
-      '.mb-preview .sb-char.positive { background:rgba(16,185,129,0.1); color:#047857; }',
-      '.mb-preview .sb-char.negative { background:rgba(239,68,68,0.1); color:#b91c1c; }',
-      '.mb-preview .sb-char.zero { background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.mb-preview .sb-ability { padding:10px 0; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.mb-preview .sb-ability-name { font-weight:600; font-size:14px; }',
-      '.mb-preview .sb-ability-type { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.mb-preview .sb-ability-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
-      '.mb-preview .sb-ability-vp { color:var(--color-accent,#6366f1); font-weight:600; }',
-      '.mb-preview .sb-section-title { font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; }',
-      '.mb-preview .sb-va { margin:8px 0; }',
-      '.mb-preview .sb-va-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
-      '.mb-preview .sb-trait { margin:6px 0; font-size:14px; color:var(--color-text-body,#374151); }',
-      // ── Sticky save bar ──
-      '.mb-save-bar { position:sticky; bottom:0; display:flex; align-items:center; gap:12px; padding:12px 16px; margin:16px -20px -20px; background:var(--color-card-bg,#fff); border-top:1px solid var(--color-border,#e5e7eb); z-index:10; }',
-      '.mb-save-status { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--color-text-secondary,#6b7280); }',
-      '.mb-save-status::before { content:""; display:inline-block; width:8px; height:8px; border-radius:9999px; background:var(--color-text-muted,#9ca3af); }',
-      '.mb-save-status.clean::before { background:var(--color-text-muted,#9ca3af); }',
-      '.mb-save-status.unsaved::before { background:#d97706; }',
-      '.mb-save-status.saving::before { background:var(--color-accent,#6366f1); animation:mb-pulse 1s ease-in-out infinite; }',
-      '.mb-save-status.saved::before { background:#10b981; }',
-      '.mb-save-status.error::before { background:#dc2626; }',
-      '@keyframes mb-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }',
-      '.mb-save-bar-actions { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }',
-      '.mb-save-bar-actions .mb-publish-vis { width:auto; padding:6px 8px; font-size:12px; }',
-      '.mb-publish-msg { padding:8px 12px; margin:8px 0 0; border-radius:6px; font-size:13px; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-body,#374151); }',
-      '.mb-publish-msg.mb-publish-ok { background:rgba(16,185,129,0.1); color:#047857; }',
-      '.mb-publish-msg.mb-publish-error { background:rgba(239,68,68,0.08); color:#991b1b; }'
-    ].join('\n');
-    this.el.insertBefore(style, this.el.firstChild);
-  },
-
-  _render: function () {
-    var el = this.el;
-    el.innerHTML = '';
-    el.className = 'monster-builder';
-    this._injectStyles();
-
-    // Header
-    var header = document.createElement('div');
-    header.className = 'mb-header';
-    header.innerHTML = '<h2><i class="fa-solid fa-dragon"></i> Draw Steel Monster Builder</h2>';
-    el.appendChild(header);
-
-    // Step indicator
-    var nav = document.createElement('div');
-    nav.className = 'mb-step-nav';
-    this._renderStepIndicator(nav);
-    el.appendChild(nav);
-    this._navEl = nav;
-
-    // Step content
-    var content = document.createElement('div');
-    content.className = 'mb-step-content';
-    el.appendChild(content);
-    this._contentEl = content;
-
-    // Validation panel
-    var validation = document.createElement('div');
-    validation.className = 'mb-validation';
-    el.appendChild(validation);
-    this._validationEl = validation;
-
-    // Sticky save bar (status + nav buttons)
-    var saveBar = document.createElement('div');
-    saveBar.className = 'mb-save-bar';
-    el.appendChild(saveBar);
-    this._saveBarEl = saveBar;
-    this._buttonsEl = saveBar; // back-compat: existing _renderButtons writes here
-
-    // Mark step content as the unsaved-detection scope
-    var self = this;
-    content.addEventListener('input', function () {
-      if (self._saveStatus === 'clean' || self._saveStatus === 'saved') {
-        self._setSaveStatus('unsaved');
+  // checks lists what the stat block still needs. Severity 'ok' and 'miss' are
+  // completeness; 'warn' is a figure that differs from a formula the published
+  // rules actually define; 'provenance' says what the editor cannot vouch for.
+  function checks(st) {
+    var c = st.c, pr = st.pr || {}, rows = [];
+    function row(ok, msg) { rows.push({ severity: ok ? 'ok' : 'miss', message: msg }); }
+    row(!!String(st.name || '').trim(), 'Has a name');
+    row(!!c.organization, 'Has an organization');
+    if (c.organization !== 'leader' && c.organization !== 'solo') row(!!c.role, 'Has a role');
+    row(c.abilities.some(function (a) { return a.type === 'signature'; }), 'Has a signature ability');
+    if (pr.vaCount) row(c.villain_actions.filter(function (v) { return v.name && String(v.name).trim(); }).length === pr.vaCount, 'Has ' + pr.vaCount + ' villain actions');
+    row(c.ev !== null, 'Has an encounter value');
+    row(c.stamina !== null, 'Has Stamina');
+    row(!!String(c.free_strike || '').trim(), 'Has a free strike');
+    ['ev', 'stamina'].forEach(function (k) {
+      var r = pr[k];
+      if (st.own[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
+        rows.push({ severity: 'warn', message: (k === 'ev' ? 'Encounter value' : 'Stamina') + ' is ' + c[k] + '; the published formula gives ' + r.value + '.' });
       }
     });
-    content.addEventListener('change', function () {
-      self._refreshInlineValidation();
-    });
-
-    this._renderCurrentStep();
-  },
-
-  _renderStepIndicator: function (nav) {
-    var self = this;
-    nav.innerHTML = '';
-    for (var i = 0; i < this.steps.length; i++) {
-      var step = document.createElement('button');
-      step.className = 'mb-step-tab' + (i === this.currentStep ? ' active' : '');
-      step.textContent = (i + 1) + '. ' + this.steps[i];
-      step.dataset.step = i;
-      // Hide the villain-actions tab unless this org unlocks them, driven by the
-      // org template's villain_action_count (data), not a 'leader'/'solo' string.
-      if (i === 5 && !this._hasVillainActions()) {
-        step.style.display = 'none';
-      }
-      step.addEventListener('click', function () {
-        self.currentStep = parseInt(this.dataset.step);
-        self._renderCurrentStep();
-      });
-      nav.appendChild(step);
+    var hc = pr.hc && pr.hc.value;
+    if (hc !== null && hc !== undefined) {
+      var top = Math.max.apply(null, SB().CHARS.map(function (k) { return c[k] === null ? -99 : c[k]; }));
+      if (top > -99 && top !== hc) rows.push({ severity: 'warn', message: 'Highest characteristic is ' + SB().signed(top) + '; the published value at this level is ' + SB().signed(hc) + '.' });
     }
-  },
-
-  _renderCurrentStep: function () {
-    this._renderStepIndicator(this._navEl);
-    this._contentEl.innerHTML = '';
-
-    switch (this.currentStep) {
-      case 0: this._renderStep1Identity(); break;
-      case 1: this._renderStep2OrgRole(); break;
-      case 2: this._renderStep3Stats(); break;
-      case 3: this._renderStep4Abilities(); break;
-      case 4: this._renderStep5FreeStrike(); break;
-      case 5: this._renderStep6VillainActions(); break;
-      case 6: this._renderStep7Traits(); break;
-    }
-
-    this._renderButtons();
-    this._renderValidation();
-    this._refreshInlineValidation();
-  },
-
-  _saveStatusLabels: {
-    clean: 'No unsaved changes',
-    unsaved: 'Unsaved changes',
-    saving: 'Saving…',
-    saved: 'Saved',
-    error: 'Save failed'
-  },
-
-  _setSaveStatus: function (status) {
-    this._saveStatus = status;
-    if (this._saveBarEl) this._renderButtons();
-  },
-
-  _renderButtons: function () {
-    var self = this;
-    var b = this._saveBarEl || this._buttonsEl;
-    if (!b) return;
-    b.innerHTML = '';
-
-    var status = this._saveStatus || 'clean';
-    var statusEl = document.createElement('span');
-    statusEl.className = 'mb-save-status ' + status;
-    statusEl.textContent = this._saveStatusLabels[status] || '';
-    b.appendChild(statusEl);
-
-    var actions = document.createElement('div');
-    actions.className = 'mb-save-bar-actions';
-    b.appendChild(actions);
-
-    if (this.currentStep > 0) {
-      var prev = document.createElement('button');
-      prev.className = 'btn btn-secondary';
-      prev.textContent = 'Previous';
-      prev.addEventListener('click', function () {
-        self.currentStep--;
-        if (self.currentStep === 5 && !self._hasVillainActions()) {
-          self.currentStep--;
-        }
-        self._renderCurrentStep();
-      });
-      actions.appendChild(prev);
-    }
-
-    if (this.currentStep < this.steps.length - 1) {
-      var next = document.createElement('button');
-      next.className = 'btn btn-primary';
-      next.textContent = 'Next';
-      next.addEventListener('click', function () {
-        self.currentStep++;
-        if (self.currentStep === 5 && !self._hasVillainActions()) {
-          self.currentStep++;
-        }
-        self._renderCurrentStep();
-      });
-      actions.appendChild(next);
-    }
-
-    var preview = document.createElement('button');
-    preview.className = 'btn btn-secondary';
-    preview.textContent = 'Preview Statblock';
-    preview.addEventListener('click', function () { self._showPreview(); });
-    actions.appendChild(preview);
-
-    var save = document.createElement('button');
-    save.className = 'btn btn-success';
-    save.textContent = 'Save Creature';
-    save.disabled = (status === 'saving');
-    save.addEventListener('click', function () { self._save(); });
-    actions.appendChild(save);
-
-    // Bestiary publish controls — visibility toggle + publish button. Both are
-    // disabled until a successful save exists, since publishing references the
-    // saved entity. Default visibility is private (draft).
-    var vis = document.createElement('select');
-    vis.className = 'mb-input mb-publish-vis';
-    vis.title = 'Bestiary visibility';
-    vis.innerHTML =
-      '<option value="draft">Private (only me)</option>' +
-      '<option value="published">Public (shared)</option>';
-    vis.value = this._publishVisibility || 'draft';
-    vis.disabled = !this._canPublish;
-    vis.addEventListener('change', function () { self._publishVisibility = this.value; });
-    actions.appendChild(vis);
-
-    var publish = document.createElement('button');
-    publish.className = 'btn btn-secondary';
-    publish.textContent = 'Publish to Bestiary';
-    publish.disabled = !this._canPublish || status === 'saving';
-    publish.title = this._canPublish ? 'Publish this creature to the community bestiary' : 'Save the creature first';
-    publish.addEventListener('click', function () { self._publishToBestiary(); });
-    actions.appendChild(publish);
-  },
-
-  // ── Step 1: Identity ──────────────────────────────────────
-
-  _renderStep1Identity: function () {
-    var self = this;
-    var c = this._contentEl;
-    var h = Chronicle.escapeHtml;
-    var ha = Chronicle.escapeAttr;   // H-5: attribute-context escaping (escapes quotes)
-
-    c.innerHTML =
-      '<div class="mb-section">' +
-      '<h3>Step 1: Identity</h3>' +
-      '<div id="mb-step1-warn" class="mb-inline-warn" style="display:none"></div>' +
-      '<div class="mb-field-row">' +
-        '<label>Name<input type="text" class="mb-input" id="mb-name" value="' + ha(this.creature.name) + '" placeholder="Creature name"></label>' +
-        '<label>Level (1-20)<input type="number" class="mb-input" id="mb-level" min="1" max="20" value="' + (Number(this.creature.level) || 1) + '"></label>' +
-        '<label>Size<select class="mb-input" id="mb-size">' +
-          this._sizeOptions.map(function (s) {
-            return '<option value="' + s.value + '"' + (self.creature.size === s.value ? ' selected' : '') + '>' + Chronicle.escapeHtml(s.label) + '</option>';
-          }).join('') +
-        '</select></label>' +
-        '<label>Faction<input type="text" class="mb-input" id="mb-faction" value="' + ha(this.creature.faction) + '" placeholder="e.g. Goblin, Dragon"></label>' +
-      '</div>' +
-      '<div class="mb-field-row">' +
-        '<label>Keywords</label>' +
-        '<div class="mb-keyword-list" id="mb-keywords"></div>' +
-      '</div>' +
-      '</div>';
-
-    // Keyword multi-select
-    var kwContainer = c.querySelector('#mb-keywords');
-    this.creatureKeywords.forEach(function (kw) {
-      var selected = self.creature.keywords.indexOf(kw.name) !== -1;
-      var tag = document.createElement('button');
-      tag.className = 'mb-tag' + (selected ? ' selected' : '');
-      tag.textContent = kw.name;
-      tag.title = kw.description;
-      tag.addEventListener('click', function () {
-        var idx = self.creature.keywords.indexOf(kw.name);
-        if (idx === -1) { self.creature.keywords.push(kw.name); tag.classList.add('selected'); }
-        else { self.creature.keywords.splice(idx, 1); tag.classList.remove('selected'); }
-      });
-      kwContainer.appendChild(tag);
-    });
-
-    // Bind inputs
-    c.querySelector('#mb-name').addEventListener('input', function () { self.creature.name = this.value; });
-    c.querySelector('#mb-level').addEventListener('change', function () {
-      self.creature.level = Math.max(1, Math.min(20, parseInt(this.value) || 1));
-      self._recalcAuto();
-    });
-    c.querySelector('#mb-size').addEventListener('change', function () { self.creature.size = this.value; });
-    c.querySelector('#mb-faction').addEventListener('input', function () { self.creature.faction = this.value; });
-  },
-
-  // ── Step 2: Organization & Role ───────────────────────────
-
-  _renderStep2OrgRole: function () {
-    var self = this;
-    var c = this._contentEl;
-
-    var orgHtml = '<div class="mb-section"><h3>Step 2: Organization & Role</h3>' +
-      '<div id="mb-step2-warn" class="mb-inline-warn" style="display:none"></div>' +
-      this._dataErrorBanner() +
-      // "Build to complement the party" lives ABOVE the org cards so it is
-      // reachable BEFORE an organization is selected — its job includes
-      // suggesting the org, so it must not be gated behind one.
-      this._complementSectionHtml() +
-      '<div class="mb-card-grid"><div class="mb-card-col"><h4>Organization</h4>';
-    this.orgTemplates.forEach(function (o) {
-      var sel = self.creature.organization === o.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-org="' + Chronicle.escapeAttr(o.slug) + '">' +   // M-2
-        '<strong>' + Chronicle.escapeHtml(o.name) + '</strong> (' + Chronicle.escapeHtml(String(o.ev_multiplier)) + ' EV/level)' +
-        '<br><small>' + Chronicle.escapeHtml(o.description || '') + '</small></button>';
-    });
-    orgHtml += '</div><div class="mb-card-col"><h4>Role</h4>';
-    this.roleTemplates.forEach(function (r) {
-      var sel = self.creature.role === r.slug ? ' selected' : '';
-      orgHtml += '<button class="mb-radio-card' + sel + '" data-role="' + Chronicle.escapeAttr(r.slug) + '">' +   // M-2
-        '<strong>' + Chronicle.escapeHtml(r.name) + '</strong>' +
-        '<br><small>' + Chronicle.escapeHtml(r.description || '') + '</small></button>';
-    });
-    orgHtml += '</div></div>';
-    orgHtml += '<div class="mb-ev-display">EV: <strong id="mb-ev-value">' + this.creature.ev + '</strong></div>';
-    orgHtml += '</div>';
-    c.innerHTML = orgHtml;
-
-    // Bind org cards
-    c.querySelectorAll('[data-org]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        c.querySelectorAll('[data-org]').forEach(function (b) { b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        self.creature.organization = btn.dataset.org;
-        self._recalcAuto();
-        c.querySelector('#mb-ev-value').textContent = self.creature.ev;
-        // Re-render step nav to show/hide villain actions tab
-        self._renderStepIndicator(self._navEl);
-      });
-    });
-
-    // Bind role cards
-    c.querySelectorAll('[data-role]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        c.querySelectorAll('[data-role]').forEach(function (b) { b.classList.remove('selected'); });
-        btn.classList.add('selected');
-        self.creature.role = btn.dataset.role;
-        self._recalcAuto();
-      });
-    });
-
-    // Bind the "Build to complement the party" controls (Phase 2).
-    this._bindComplement(c);
-  },
-
-  // ── Party-aware suggestion ──────
-
-  // _complementSectionHtml renders the "Build to complement the party" control
-  // block that sits above the org cards. With a party it shows the intent
-  // selector + the build button + (once run) the rationale-chip panel; with no
-  // party it degrades to a plain note (the button is never shown — manual mode).
-  _complementSectionHtml: function () {
-    if (!this._partyProfile || typeof MonsterEngine === 'undefined') {
-      return '<div class="mb-complement mb-complement-manual">' +
-        '<p class="mb-hint">Party-aware suggestions need campaign heroes (drawsteel-character). None were found — build manually below.</p>' +
-        '</div>';
-    }
-    var intents = ['trivial', 'standard', 'hard', 'boss'];
-    var opts = '';
-    for (var i = 0; i < intents.length; i++) {
-      opts += '<option value="' + intents[i] + '"' + (this._intent === intents[i] ? ' selected' : '') + '>' +
-        intents[i].charAt(0).toUpperCase() + intents[i].slice(1) + '</option>';
-    }
-    return '<div class="mb-complement">' +
-      '<div class="mb-complement-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">' +
-        '<button type="button" class="btn btn-primary" id="mb-complement-btn">Build to complement the party</button>' +
-        '<label style="font-size:0.85em">Intent ' +
-          '<select class="mb-input" id="mb-complement-intent" style="width:auto">' + opts + '</select>' +
-        '</label>' +
-      '</div>' +
-      '<p class="mb-hint">Fills level, organization, role, damage, and ability tiers to challenge this party. Nothing is locked — edit anything after.</p>' +
-      this._suggestionPanelHtml() +
-      '</div>';
-  },
-
-  // _suggestionPanelHtml renders the mandatory per-field rationale chips
-  // for the last-applied suggestion, plus the editable (immune-warned) damage
-  // type and any degradation caveats. Returns '' when nothing has been built.
-  _suggestionPanelHtml: function () {
-    var s = this._suggestion;
-    if (!s) return '';
-    var h = Chronicle.escapeHtml;
-    var ha = Chronicle.escapeAttr;
-    var r = s.rationale || {};
-    function chip(label, why) {
-      if (!why) return '';
-      return '<li class="mb-sugg-chip"><span class="mb-sugg-field">' + h(label) + '</span> ' +
-        '<span class="mb-sugg-why">' + h(why) + '</span></li>';
-    }
-    var chips =
-      chip('Level', r.level) +
-      chip('Organization', r.organization) +
-      chip('Role', r.role) +
-      chip('Power-roll target', r.target) +
-      chip('Ability tiers', r.tiers) +
-      chip('Intent', r.intent);
-
-    // The suggestion's own notes, plus the damage-formula caveats the published
-    // rules attach to the tiers (a strike's characteristic add, the target-count
-    // multipliers, the horde/minion halving). These ride WITH the numbers: the
-    // director is looking at a baseline, not a finished damage line.
-    var allNotes = (s.notes || []).concat(s.tierNotes || []);
-    var notesHtml = '';
-    if (allNotes.length) {
-      notesHtml = '<ul class="mb-sugg-notes">';
-      for (var i = 0; i < allNotes.length; i++) {
-        notesHtml += '<li class="mb-sugg-note">' + h(allNotes[i]) + '</li>';
-      }
-      notesHtml += '</ul>';
-    }
-
-    var immList = (this._partyProfile && this._partyProfile.immunities) || [];
-    var immNote = immList.length
-      ? '<p class="mb-hint">Party is immune to: ' + h(immList.join(', ')) + ' — avoid these damage types.</p>'
-      : '';
-
-    return '<div class="mb-sugg-panel" style="border:1px solid var(--border,#ccc);border-radius:6px;padding:10px;margin-top:8px">' +
-      '<h4 style="margin:0 0 6px;font-size:0.9em">Suggested — why (every field is editable)</h4>' +
-      '<ul class="mb-sugg-chips" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px">' + chips + '</ul>' +
-      '<div class="mb-field-row" style="margin-top:8px">' +
-        '<label style="font-size:0.85em">Damage type ' +
-          '<input type="text" class="mb-input" id="mb-complement-damage" value="' + ha(this._suggestionDamage || '') + '" placeholder="untyped">' +
-        '</label>' +
-      '</div>' +
-      '<div id="mb-complement-damage-warn" class="mb-inline-warn" style="display:none"></div>' +
-      '<p class="mb-hint" style="margin-top:2px">' + h(r.damage || '') + '</p>' +
-      immNote +
-      notesHtml +
-      '</div>';
-  },
-
-  // _bindComplement wires the build button, intent selector, and the
-  // immune-warned damage input. Safe to call when the party is absent (the
-  // controls simply aren't in the DOM).
-  _bindComplement: function (c) {
-    var self = this;
-    var btn = c.querySelector('#mb-complement-btn');
-    if (btn) {
-      btn.addEventListener('click', function () { self._applyPartySuggestion(); });
-    }
-    var intentSel = c.querySelector('#mb-complement-intent');
-    if (intentSel) {
-      intentSel.addEventListener('change', function () { self._intent = this.value; });
-    }
-    var dmg = c.querySelector('#mb-complement-damage');
-    if (dmg) {
-      // Live, non-blocking immune warning — never prevents save.
-      dmg.addEventListener('input', function () { self._checkImmuneDamage(this.value); });
-      // On commit, record the type and rewrite the suggested ability's tiers.
-      dmg.addEventListener('change', function () {
-        self._suggestionDamage = this.value;
-        self._applyDamageTypeToSuggestedAbility(this.value);
-      });
-      // Reflect any pre-filled immune type immediately on (re)render.
-      this._checkImmuneDamage(dmg.value);
-    }
-  },
-
-  // _checkImmuneDamage shows/hides the inline warning when the typed damage type
-  // is in the party's immunity union (case-insensitive). Non-blocking.
-  _checkImmuneDamage: function (value) {
-    var warn = this._contentEl && this._contentEl.querySelector('#mb-complement-damage-warn');
-    if (!warn) return;
-    var v = (value || '').trim().toLowerCase();
-    var imm = (this._partyProfile && this._partyProfile.immunities) || [];
-    var hit = false;
-    for (var i = 0; i < imm.length; i++) {
-      if (String(imm[i]).toLowerCase() === v && v !== '') { hit = true; break; }
-    }
-    if (hit) {
-      warn.textContent = 'The party is immune to “' + value + '” — this damage would do nothing. You can still save.';
-      warn.style.display = 'block';
+    if (!pr.formulasLoaded) {
+      rows.push({ severity: 'provenance', message: 'The published formulas did not load, so no figure here could be checked against Draw Steel’s rules.' });
     } else {
-      warn.textContent = '';
-      warn.style.display = 'none';
+      ['ev', 'stamina', 'free_strike'].forEach(function (k) {
+        var r = pr[k];
+        if (c.organization && r && !r.sourced) rows.push({ severity: 'provenance', message: (r.notes && r.notes[0]) || 'No published formula covers this figure.' });
+      });
     }
-  },
+    return rows;
+  }
 
-  // _applyPartySuggestion runs the pure engine against the derived profile and
-  // writes the result into the creature model (level/org/role + a signature
-  // ability carrying the baseline tiers), then re-renders so the org/role cards
-  // reflect the pick and the rationale chips appear. Nothing is locked.
-  _applyPartySuggestion: function () {
-    if (!this._partyProfile || typeof MonsterEngine === 'undefined') return;
-    var s = MonsterEngine.suggest(this._partyProfile, this._intent, {
-      orgTemplates: this.orgTemplates,
-      roleTemplates: this.roleTemplates,
-      baselines: this.damageBaselines
-    });
-    this._suggestion = s;
-    this._suggestionDamage = (s.damageTypes && s.damageTypes[0]) || '';
-
-    if (typeof s.level === 'number') this.creature.level = s.level;
-    if (s.organization) this.creature.organization = s.organization;
-    if (s.role) this.creature.role = s.role;
-    // Cascade EV / stamina / characteristics from the picked org+role+level
-    // (the same recalculation the manual org/role clicks perform).
-    this._recalcAuto();
-
-    // Replace any prior suggested ability with one carrying the baseline tiers.
-    this.creature.abilities = this.creature.abilities.filter(function (a) { return !a._suggested; });
-    if (s.tiers) {
-      this.creature.abilities.push(this._buildSuggestedAbility(s, this._suggestionDamage));
-    }
-
-    this._setSaveStatus('unsaved');
-    this._renderCurrentStep();
-  },
-
-  // _suggestedAbilityTiers picks which tier triple gets written into the
-  // suggested ability. The ability is authored as a melee strike against one
-  // creature, so the published "a strike adds the monster's highest
-  // characteristic" adjustment applies and `strikeTiers` is the right number.
-  // Falls back to the bare baseline if the characteristic could not be derived.
-  _suggestedAbilityTiers: function (s) {
-    return s.strikeTiers || s.tiers;
-  },
-
-  // _buildSuggestedAbility creates the signature attack that carries the
-  // suggested tiers (WRITTEN into tier1/2/3, not just hinted) and a power roll
-  // of "<attack-stat> vs. <target-defense>" targeting the party's weakest
-  // defense. Flagged `_suggested` so a re-run replaces it rather than stacking.
-  _buildSuggestedAbility: function (s, dmgType) {
-    function cap(x) { return x ? (x.charAt(0).toUpperCase() + x.slice(1)) : ''; }
-    var suffix = dmgType ? (' ' + String(dmgType).toLowerCase() + ' damage') : ' damage';
-    var attack = cap(s.powerRollAttack);
-    var target = cap(s.powerRollTarget);
-    var roll = (attack && target) ? (attack + ' vs. ' + target) : (target ? ('vs. ' + target) : '');
-    var t = this._suggestedAbilityTiers(s);
+  // budget is the published encounter budget for the party, and where this
+  // creature's EV sits in it. Null when the party can't be read.
+  function budget(profile, levels, ev) {
+    var Fm = F();
+    if (!Fm || !profile || !levels || !levels.length || profile.levelAvg === null) return null;
+    var pes = Fm.partyEncounterStrength(levels).value;
+    var one = Fm.heroEncounterStrength(Math.round(profile.levelAvg)).value;
+    if (pes === null || one === null) return null;
+    var bands = Fm.budgetBands(pes, one).value;
+    var max = bands.extreme.lower + one * 2;
+    var e = Number(ev);
     return {
-      type: 'signature',
-      name: 'Signature Attack',
-      distance: 'Melee 1',
-      target: '1 creature',
-      power_roll: roll,
-      tier1: String(t.tier1) + suffix,
-      tier2: String(t.tier2) + suffix,
-      tier3: String(t.tier3) + suffix,
-      effect: '',
-      trigger: '',
-      spend_vp: 0,
-      keywords: [],
-      _suggested: true
+      bands: bands, max: max, partyEs: pes, oneEs: one,
+      ev: isFinite(e) ? e : null,
+      difficulty: isFinite(e) && ev !== null ? Fm.difficultyOf(e, pes, one).value : null
     };
-  },
+  }
 
-  // _applyDamageTypeToSuggestedAbility rewrites the suggested ability's tier
-  // text when the director edits the damage type, keeping the panel and the
-  // ability coherent. No-op if there is no suggested ability.
-  _applyDamageTypeToSuggestedAbility: function (dmgType) {
-    var s = this._suggestion;
-    if (!s || !s.tiers) return;
-    var t = this._suggestedAbilityTiers(s);
-    for (var i = 0; i < this.creature.abilities.length; i++) {
-      if (this.creature.abilities[i]._suggested) {
-        var suffix = dmgType ? (' ' + String(dmgType).toLowerCase() + ' damage') : ' damage';
-        this.creature.abilities[i].tier1 = String(t.tier1) + suffix;
-        this.creature.abilities[i].tier2 = String(t.tier2) + suffix;
-        this.creature.abilities[i].tier3 = String(t.tier3) + suffix;
-        break;
+  // applySuggestion takes the engine's level, organization and role for the
+  // party and lets the formulas fill the rest. Returns the engine's reasons,
+  // which the party card shows; the engine never calls the result balanced.
+  function applySuggestion(st, profile) {
+    var E = Engine();
+    if (!E || !profile) return '';
+    var s = E.suggest(profile, 'standard', { orgTemplates: st.refs.orgs, roleTemplates: st.refs.roles });
+    if (s.level) st.c.level = s.level;
+    if (s.organization) st.c.organization = s.organization;
+    if (s.role) st.c.role = s.role;
+    derive(st);
+    return [s.rationale.level, s.rationale.organization, s.rationale.role].filter(Boolean).join(' ');
+  }
+
+  // toSave is what saving writes: the entity's fields and the name.
+  function toSave(st) {
+    var S = SB();
+    var c = clone(st.c);
+    c.abilities = c.abilities.slice(0, 50);
+    c.traits = (c.traits || []).filter(function (t) { return t.name || t.description; });
+    c.level = Math.max(1, Math.min(20, Number(c.level) || 1));
+    return { name: String(st.name || '').trim().slice(0, 200), fields: S.toFields(c) };
+  }
+
+  // ── Drawing ───────────────────────────────────────────────────────────────
+
+  function esc(s) { return SB().esc(s); }
+  function cap(s) { return SB().cap(s); }
+
+  function options(list, v, label) {
+    var cur = String(v == null ? '' : v).toLowerCase();
+    return list.map(function (x) {
+      var val = Array.isArray(x) ? x[0] : x, text = Array.isArray(x) ? x[1] : (label ? label(x) : cap(x));
+      return '<option value="' + esc(val) + '"' + (String(val).toLowerCase() === cur ? ' selected' : '') + '>' + esc(text) + '</option>';
+    }).join('');
+  }
+
+  // chip says where a figure came from, under its box.
+  function chip(st, key, r, what) {
+    if (st.own[key]) {
+      var also = (r && r.sourced && r.value !== null) ? ' (the formula gives ' + r.value + ')' : '';
+      return '<span class="sbe-chip is-own">Changed by you' + esc(also) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
+    }
+    if (r && r.sourced && r.value !== null) {
+      return '<span class="sbe-chip is-pub" title="' + esc(r.source || '') + '"><i class="fa-solid fa-check" aria-hidden="true"></i> Published formula</span>';
+    }
+    return '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published ' + esc(what) + ' for this creature. Set it yourself.</span>';
+  }
+
+  function figureBox(st, key, label, r, what) {
+    var v = key === 'free_strike' ? SB().freeStrikeNumber(st.c.free_strike) : st.c[key];
+    if (key === 'free_strike' && v === null) v = st.c.free_strike;
+    return '<label class="sbe-f"><span class="sbe-lbl">' + label + '</span>' +
+      '<input class="input sbe-num" id="sbe-fig-' + key + '" data-sbe-fig="' + key + '" inputmode="numeric" value="' + esc(v == null ? '' : v) + '" placeholder="—">' +
+      chip(st, key, r, what) + '</label>';
+  }
+
+  function field(id, label, value, attrs, wide) {
+    return '<label class="sbe-f' + (wide ? ' sbe-wide' : '') + '"><span class="sbe-lbl">' + label + '</span>' +
+      '<input class="input" id="' + id + '" value="' + esc(value == null ? '' : value) + '" ' + (attrs || '') + '></label>';
+  }
+
+  function area(id, label, value, attrs) {
+    return '<label class="sbe-f sbe-full"><span class="sbe-lbl">' + label + '</span>' +
+      '<textarea class="input" rows="2" id="' + id + '" ' + (attrs || '') + '>' + esc(value == null ? '' : value) + '</textarea></label>';
+  }
+
+  // abilityForm edits one ability, trait or villain action in place. `kind` is
+  // 'a', 'v' or 't'; the data-sbe-ab attribute names the property it writes.
+  function abilityForm(st, kind, i) {
+    var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
+    var a = list[i] || {};
+    var kw = SB().parseList(a.keywords).join(', ');
+    var f = function (k, label, wide) { return field('sbe-ab-' + k, label, a[k], 'data-sbe-ab="' + k + '"', wide); };
+    var h = '<div class="sbe-ab sbe-ab-edit"><div class="sbe-grid sbe-g4">' + f('name', 'Name', true);
+    if (kind === 't') {
+      h += '</div>' + area('sbe-ab-description', 'What it does', a.description, 'data-sbe-ab="description"');
+    } else {
+      if (kind === 'a') h += '<label class="sbe-f"><span class="sbe-lbl">Type</span><select class="input" id="sbe-ab-type" data-sbe-ab="type">' + options(ABILITY_TYPES, a.type || 'action') + '</select></label>';
+      h += field('sbe-ab-keywords', 'Keywords', kw, 'data-sbe-ab="keywords" placeholder="Melee, Strike, Weapon"', true) +
+        f('distance', 'Distance') + f('target', 'Target', true) + f('power_roll', 'Power roll') + '</div>';
+      if (kind === 'a') {
+        h += '<label class="sbe-check"><input type="checkbox" id="sbe-ab-auto" data-sbe-ab="auto_damage"' + (a.auto_damage ? ' checked' : '') + '> ' +
+          'Damage follows the published formula' + (isStrike(a) ? ' (a strike adds the highest characteristic)' : '') + '</label>';
+      }
+      h += '<div class="sbe-grid sbe-g3">' + f('tier1', '≤ 11') + f('tier2', '12–16') + f('tier3', '17 +') + '</div>' +
+        area('sbe-ab-trigger', 'Trigger', a.trigger, 'data-sbe-ab="trigger"') +
+        area('sbe-ab-effect', 'Effect', a.effect || a.description, 'data-sbe-ab="effect"');
+    }
+    return h + '<div class="sbe-ab-foot"><span></span><button type="button" class="btn-secondary btn-sm" data-sbe-done>Done</button></div></div>';
+  }
+
+  function abilityCard(st, kind, i, ui) {
+    var a = (kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits)[i];
+    var shown = kind === 't' ? { name: a.name, type: 'trait', label: 'Trait', description: a.description }
+      : kind === 'v' ? { name: a.name, type: 'villain', label: String(i + 1), keywords: a.keywords, distance: a.distance, target: a.target, power_roll: a.power_roll, tier1: a.tier1, tier2: a.tier2, tier3: a.tier3, trigger: a.trigger, effect: a.effect || a.description }
+      : a;
+    var note = '';
+    if (kind === 'a' && a.auto_damage) {
+      note = st.pr.damage.sourced
+        ? '<span class="sbe-chip is-pub"><i class="fa-solid fa-check" aria-hidden="true"></i> Damage from the published formula</span>'
+        : '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published damage for this creature yet</span>';
+    }
+    return '<div class="sbe-ab">' + SB().abilityHtml(shown, { ref: ui.ref }) + '<div class="sbe-ab-foot">' + note +
+      '<span class="sbe-ab-acts"><button type="button" class="sbe-link" data-sbe-edit="' + kind + i + '">Edit</button>' +
+      '<button type="button" class="sbe-link" data-sbe-del="' + kind + i + '">Remove</button></span></div></div>';
+  }
+
+  function listHtml(st, kind, ui) {
+    var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
+    return list.map(function (x, i) {
+      return st.editAb === kind + i ? abilityForm(st, kind, i) : abilityCard(st, kind, i, ui);
+    }).join('');
+  }
+
+  function editorHtml(st, ui) {
+    var c = st.c, pr = st.pr;
+    var noRole = c.organization === 'leader' || c.organization === 'solo';
+    var h = '<div class="sbe-bar"><span class="sbe-bar-t"><i class="fa-solid fa-pen" aria-hidden="true"></i> ' + (ui.isNew ? 'New stat block' : 'Editing stat block') + '</span>' +
+      '<button type="button" class="btn-secondary btn-sm" data-sbe-act="start"><i class="fa-solid fa-copy mr-1" aria-hidden="true"></i> Start from…</button>' +
+      '<span class="sbe-sp"></span>' +
+      (ui.onClose ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="cancel">Cancel</button>' : '') +
+      '<button type="button" class="btn-primary btn-sm" data-sbe-act="save"' + (ui.saving ? ' disabled' : '') + '>' + (ui.saving ? 'Saving…' : 'Save') + '</button></div>';
+    h += '<p class="sbe-msg' + (ui.msgKind ? ' is-' + ui.msgKind : '') + '" role="status" aria-live="polite">' + esc(ui.msg || '') + '</p>';
+    if (st.origin) h += '<p class="sbe-origin"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ' + esc(st.origin) + '</p>';
+    h += '<div class="sbe-grid sbe-g4">' +
+      field('sbe-name', 'Name', st.name, 'data-sbe-k="name" maxlength="200"', true) +
+      '<label class="sbe-f"><span class="sbe-lbl">Level</span><input class="input sbe-num" id="sbe-level" data-sbe-k="level" type="number" min="1" max="20" value="' + esc(c.level) + '"></label>' +
+      '<label class="sbe-f"><span class="sbe-lbl">Size</span><select class="input" id="sbe-size" data-sbe-k="size">' + options(SIZES, c.size) + '</select></label>' +
+      '<label class="sbe-f"><span class="sbe-lbl">Organization</span><select class="input" id="sbe-org" data-sbe-k="organization"><option value="">Choose…</option>' + options(ORGS, c.organization) + '</select></label>' +
+      '<label class="sbe-f"><span class="sbe-lbl">Role</span><select class="input" id="sbe-role" data-sbe-k="role"' + (noRole ? ' disabled' : '') + '><option value="">Choose…</option>' + options(ROLES, c.role) + '</select>' +
+      (noRole ? '<span class="sbe-hint">' + esc(cap(c.organization)) + 's have no role. Their own row in the published table stands in for one.</span>' : '') + '</label>' +
+      field('sbe-keywords', 'Keywords', c.keywords.join(', '), 'data-sbe-k="keywords" placeholder="Humanoid, Goblin"', true) +
+      field('sbe-faction', 'Faction', c.faction, 'data-sbe-k="faction"', true) +
+      field('sbe-immunities', 'Immunities', c.immunities.join(', '), 'data-sbe-k="immunities" placeholder="Fire 5, poison"', true) + '</div>';
+    h += '<h4 class="sbe-h">Figures</h4><div class="sbe-grid sbe-g4">' +
+      figureBox(st, 'ev', 'Encounter value', pr.ev, 'encounter value') +
+      figureBox(st, 'stamina', 'Stamina', pr.stamina, 'Stamina') +
+      figureBox(st, 'winded', 'Winded', { sourced: c.stamina !== null, value: c.stamina === null ? null : Math.floor(c.stamina / 2), source: 'Half Stamina, rounded down' }, 'winded value') +
+      figureBox(st, 'free_strike', 'Free strike', pr.free_strike, 'free strike') + '</div>';
+    h += '<h4 class="sbe-h">Characteristics</h4><div class="sbe-grid sbe-g7">' + SB().CHARS.map(function (k) {
+      return '<label class="sbe-f"><span class="sbe-lbl">' + cap(k) + '</span><input class="input sbe-num" id="sbe-c-' + k + '" data-sbe-k="' + k + '" type="number" min="-5" max="6" value="' + esc(c[k] == null ? '' : c[k]) + '"></label>';
+    }).join('') +
+      '<label class="sbe-f"><span class="sbe-lbl">Speed</span><input class="input sbe-num" id="sbe-speed" data-sbe-k="speed" type="number" min="0" value="' + esc(c.speed == null ? '' : c.speed) + '"></label>' +
+      '<label class="sbe-f"><span class="sbe-lbl">Stability</span><input class="input sbe-num" id="sbe-stability" data-sbe-k="stability" type="number" min="0" value="' + esc(c.stability == null ? '' : c.stability) + '"></label></div>';
+    h += '<p class="sbe-hint">' + (pr.hc.sourced && pr.hc.value !== null
+      ? 'At level ' + esc(c.level) + (c.organization ? ', a ' + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
+      : 'Set a level to see the published highest characteristic.') + '</p>';
+    h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add trait</button></h4>' +
+      '<div class="sbe-abs">' + listHtml(st, 't', ui) + '</div>';
+    h += '<h4 class="sbe-h">Abilities <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-ab"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add ability</button></h4>' +
+      '<div class="sbe-abs">' + (c.abilities.length ? listHtml(st, 'a', ui) : '<p class="sbe-hint">No abilities yet. Every creature needs a signature ability.</p>') + '</div>';
+    if (pr.vaCount || c.villain_actions.length) {
+      h += '<h4 class="sbe-h">Villain actions <span class="sbe-hint">' + (pr.vaCount ? esc(cap(c.organization)) + 's get ' + pr.vaCount + ', used once each, in order' : 'This organization has no villain actions') + '</span>' +
+        (c.villain_actions.length < 3 ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-va"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add villain action</button>' : '') + '</h4>' +
+        '<div class="sbe-abs">' + listHtml(st, 'v', ui) + '</div>';
+    }
+    return h;
+  }
+
+  function partyHtml(ui) {
+    var p = ui.party;
+    if (!p || !p.profile) {
+      return '<section class="sbe-side-card"><h4 class="sbe-side-h">Your party</h4><p class="sbe-small sbe-dim">' +
+        (ui.partyLoading ? 'Reading your heroes…' : 'No hero pages found in this campaign, so there is no party to build against.') + '</p></section>';
+    }
+    var prof = p.profile;
+    var h = '<section class="sbe-side-card"><h4 class="sbe-side-h">Your party</h4><ul class="sbe-heroes">' + p.heroes.slice(0, 8).map(function (x) {
+      var f = x.fields_data || {};
+      var sub = [f['class'] ? cap(f['class']) : '', f.level !== undefined && f.level !== '' ? 'level ' + f.level : ''].filter(Boolean).join(' · ');
+      return '<li><span class="sbe-av" aria-hidden="true">' + esc(String(x.name || '?').charAt(0)) + '</span><span>' + esc(x.name || 'Unnamed hero') + (sub ? '<br><span class="sbe-dim sbe-small">' + esc(sub) + '</span>' : '') + '</span></li>';
+    }).join('') + '</ul>';
+    if (p.heroes.length > 8) h += '<p class="sbe-small sbe-dim">And ' + (p.heroes.length - 8) + ' more.</p>';
+    h += '<p class="sbe-small sbe-dim">Levels read from ' + esc(prof.coverage.level) + ' hero pages.</p>';
+    if (prof.weakestDefense) {
+      h += '<p class="sbe-small"><b>Weakest defense:</b> ' + esc(cap(prof.weakestDefense)) + ' (average ' + Number(prof.weakestDefenseValue).toFixed(1) + '). Abilities that target it hit this party hardest.</p>';
+    }
+    if (Engine()) h += '<p class="sbe-small"><button type="button" class="sbe-link" data-sbe-act="suggest">Suggest a level, organization and role for this party</button></p>';
+    if (ui.suggestNote) h += '<p class="sbe-small sbe-dim">' + esc(ui.suggestNote) + '</p>';
+    return h + '</section>';
+  }
+
+  function budgetHtml(st, ui) {
+    var p = ui.party;
+    var b = p && p.profile ? budget(p.profile, p.levels, st.c.ev) : null;
+    var h = '<section class="sbe-side-card"><h4 class="sbe-side-h">Encounter budget</h4>';
+    if (!b) return h + '<p class="sbe-small sbe-dim">The budget appears once the party’s hero levels can be read.</p></section>';
+    var bd = b.bands, pct = function (x) { return Math.max(0, Math.min(100, x / b.max * 100)); };
+    h += '<p class="sbe-small">A standard fight for this party is <b>' + bd.standard.lower + '–' + bd.standard.upper + ' EV</b>.</p>' +
+      '<div class="sbe-meter" role="img" aria-label="' + esc(st.name || 'This creature') + ' uses ' + (b.ev === null ? 'no' : b.ev) + ' EV of a ' + bd.standard.lower + ' to ' + bd.standard.upper + ' EV standard budget">' +
+      '<span class="sbe-band is-easy" style="left:' + pct(bd.easy.lower) + '%;width:' + (pct(bd.standard.lower) - pct(bd.easy.lower)) + '%"></span>' +
+      '<span class="sbe-band is-std" style="left:' + pct(bd.standard.lower) + '%;width:' + (pct(bd.standard.upper) - pct(bd.standard.lower)) + '%"></span>' +
+      '<span class="sbe-band is-hard" style="left:' + pct(bd.hard.lower) + '%;width:' + (pct(bd.hard.upper) - pct(bd.hard.lower)) + '%"></span>' +
+      '<span class="sbe-fill" style="width:' + pct(b.ev || 0) + '%"></span></div>' +
+      '<div class="sbe-meter-k sbe-small sbe-dim" aria-hidden="true"><span>0</span><span>Easy</span><span>Standard</span><span>Hard</span><span>' + b.max + '</span></div>';
+    if (b.ev !== null) {
+      h += '<p class="sbe-small">' + esc(st.name || 'This creature') + ' is <b>' + b.ev + ' EV</b>' +
+        (b.ev < bd.standard.lower ? '. Add ' + (bd.standard.lower - b.ev) + '–' + (bd.standard.upper - b.ev) + ' EV of other creatures for a standard fight.'
+          : ', a ' + esc(b.difficulty) + ' fight on its own by the published bands.') + '</p>';
+    } else {
+      h += '<p class="sbe-small">This creature has no encounter value yet.</p>';
+    }
+    return h + '<p class="sbe-small sbe-dim">Published encounter rules, Monsters Book ch. 8. Creature counts and the rest of the fight are not checked here.</p></section>';
+  }
+
+  function checksHtml(st) {
+    var icon = { ok: 'fa-circle-check', miss: 'fa-circle-exclamation', warn: 'fa-triangle-exclamation', provenance: 'fa-circle-info' };
+    return '<section class="sbe-side-card"><h4 class="sbe-side-h">Completeness checks</h4>' +
+      '<p class="sbe-small sbe-dim">' + esc(STANDING_LINE) + '</p><ul class="sbe-checks">' +
+      checks(st).map(function (r) {
+        return '<li class="is-' + r.severity + '"><i class="fa-solid ' + icon[r.severity] + '" aria-hidden="true"></i><span>' + esc(r.message) + '</span></li>';
+      }).join('') + '</ul></section>';
+  }
+
+  function sideHtml(st, ui) { return partyHtml(ui) + budgetHtml(st, ui) + checksHtml(st); }
+
+  // ── Behaviour ─────────────────────────────────────────────────────────────
+
+  function listOf(st, kind) { return kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits; }
+
+  // applyField writes one identity or characteristic box into the state.
+  function applyField(st, k, v) {
+    var S = SB();
+    if (k === 'name') { st.name = v; return; }
+    if (k === 'keywords' || k === 'immunities') { st.c[k] = S.parseList(v); return; }
+    if (k === 'faction' || k === 'size') { st.c[k] = v; return; }
+    if (k === 'organization' || k === 'role') { st.c[k] = String(v || '').toLowerCase(); return; }
+    var n = String(v).trim() === '' ? null : Number(v);
+    st.c[k] = (n === null || !isFinite(n)) ? null : n;
+    if (k === 'level' && (st.c.level === null || st.c.level < 1)) st.c.level = 1;
+  }
+
+  // applyAbility writes one box of the ability being edited.
+  function applyAbility(st, k, v) {
+    var key = st.editAb;
+    if (!key) return;
+    var a = listOf(st, key.charAt(0))[Number(key.slice(1))];
+    if (!a) return;
+    if (k === 'keywords') a.keywords = SB().parseList(v);
+    else if (k === 'auto_damage') a.auto_damage = !!v;
+    else a[k] = v;
+  }
+
+  // newAbility is a signature strike when the creature has none yet, so the
+  // first Add gives a usable attack whose damage follows the formula.
+  function newAbility(st) {
+    var first = !st.c.abilities.some(function (a) { return a.type === 'signature'; });
+    return { name: first ? 'Signature strike' : 'New ability', type: first ? 'signature' : 'action', keywords: ['Melee', 'Strike', 'Weapon'],
+      distance: 'Melee 1', target: (st.c.organization === 'elite' || st.c.organization === 'leader' || st.c.organization === 'solo') ? 'Two creatures or objects' : 'One creature or object',
+      tier1: '', tier2: '', tier3: '', effect: '', auto_damage: true };
+  }
+
+  function apiCall(url, opts) { return SB().apiFetch(url, opts); }
+
+  // save writes the stat block to the entity, or creates the creature when this
+  // editor has none. Only a fixed message is ever shown for a server failure.
+  function save(st, ctx) {
+    var out = toSave(st);
+    if (!out.name) return Promise.reject(new Error('Give the creature a name first.'));
+    var base = '/api/v1/campaigns/' + encodeURIComponent(ctx.campaignId);
+    var body = { name: out.name, fields_data: out.fields };
+    var req;
+    if (ctx.entityId) {
+      req = apiCall(base + '/entities/' + encodeURIComponent(ctx.entityId), {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+    } else {
+      req = SB().creatureType(ctx.campaignId).then(function (type) {
+        if (!type) throw new Error('This campaign has no Creature type. Enable the Draw Steel package, then try again.');
+        body.entity_type_id = type.id;
+        return apiCall(base + '/entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      });
+    }
+    return req.then(function (res) {
+      if (!res.ok) { var e = new Error('Could not save this stat block. Try again.'); e.status = res.status; throw e; }
+      return res.json().catch(function () { return null; });
+    }).then(function (entity) {
+      var saved = entity && entity.id ? entity : { id: ctx.entityId, name: out.name, fields_data: out.fields };
+      if (!saved.fields_data) saved.fields_data = out.fields;
+      return saved;
+    });
+  }
+
+  // mount opens the editor in `host`. opts: { campaignId, entityId, entity,
+  // refs, ref, onClose(savedEntity|null) }. Returns { destroy }.
+  function mount(host, opts) {
+    var o = opts || {};
+    var doc = host.ownerDocument || document;
+    injectStyles(doc);
+    SB().injectStyles(doc);
+    var entity = o.entity || null;
+    var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
+    var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false };
+    var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
+    var dirtyKey = 'monster-builder:' + (ctx.entityId || 'new');
+    var root = doc.createElement('div');
+    root.className = 'sbe-wrap';
+    root.innerHTML = '<div class="sbe card"></div><aside class="sbe-side" aria-label="Party, budget and checks"></aside>';
+    host.innerHTML = '';
+    host.appendChild(root);
+    var edEl = root.firstChild, sideEl = root.lastChild;
+
+    function dirty() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markDirty) Chronicle.markDirty(dirtyKey); } catch (e) { /* optional */ } ui.dirty = true; }
+    function clean() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markClean) Chronicle.markClean(dirtyKey); } catch (e) { /* optional */ } ui.dirty = false; }
+
+    function drawSide() { sideEl.innerHTML = sideHtml(st, ui); }
+    function draw(focusId) {
+      pending = false;
+      var active = doc.activeElement, id = focusId || (active && edEl.contains(active) ? active.id : null), pos = null;
+      try { if (active && active.selectionStart !== undefined) pos = active.selectionStart; } catch (e) { pos = null; }
+      edEl.innerHTML = editorHtml(st, ui);
+      drawSide();
+      var back = id ? doc.getElementById(id) : null;
+      if (back) { back.focus(); try { if (pos !== null && back.setSelectionRange) back.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } }
+    }
+
+    // A box commits on change, which fires as the pointer goes down on a
+    // button elsewhere; redrawing then would replace that button before its
+    // click lands, so Save or Add right after typing would do nothing. While
+    // the pointer is down the redraw waits for it to come up.
+    var held = false, pending = false;
+    function redraw(id) { if (held) pending = true; else draw(id); }
+    function onPointerDown() { held = true; }
+    function onPointerUp() {
+      if (!held) return;
+      held = false;
+      setTimeout(function () { if (pending && !closed) { pending = false; draw(); } }, 0);
+    }
+
+    function onInput(e) {
+      var t = e.target;
+      if (t.hasAttribute('data-sbe-k')) {
+        applyField(st, t.getAttribute('data-sbe-k'), t.value);
+        dirty();
+        if (t.getAttribute('data-sbe-k') === 'name') drawSide();
+        return;
+      }
+      if (t.hasAttribute('data-sbe-ab') && t.type !== 'checkbox') { applyAbility(st, t.getAttribute('data-sbe-ab'), t.value); dirty(); }
+    }
+    function onChange(e) {
+      var t = e.target;
+      if (t.hasAttribute('data-sbe-k')) {
+        applyField(st, t.getAttribute('data-sbe-k'), t.value);
+        derive(st); dirty(); redraw(t.id);
+        return;
+      }
+      if (t.hasAttribute('data-sbe-fig')) { setFigure(st, t.getAttribute('data-sbe-fig'), t.value); dirty(); redraw(t.id); return; }
+      if (t.hasAttribute('data-sbe-ab')) {
+        applyAbility(st, t.getAttribute('data-sbe-ab'), t.type === 'checkbox' ? t.checked : t.value);
+        if (t.type === 'checkbox' || t.getAttribute('data-sbe-ab') === 'keywords') { derive(st); redraw(t.id); }
+        dirty();
       }
     }
-  },
+    function onClick(e) {
+      var el = e.target.closest ? e.target.closest('button') : null;
+      if (!el || !root.contains(el)) return;
+      var reset = el.getAttribute('data-sbe-reset');
+      if (reset) { useFormula(st, reset); dirty(); draw(); return; }
+      var ed = el.getAttribute('data-sbe-edit');
+      if (ed) { st.editAb = ed; draw('sbe-ab-name'); return; }
+      if (el.hasAttribute('data-sbe-done')) { st.editAb = null; derive(st); draw(); return; }
+      var del = el.getAttribute('data-sbe-del');
+      if (del) { listOf(st, del.charAt(0)).splice(Number(del.slice(1)), 1); st.editAb = null; derive(st); dirty(); draw(); return; }
+      var act = el.getAttribute('data-sbe-act');
+      if (act === 'add-ab') { st.c.abilities.push(newAbility(st)); st.editAb = 'a' + (st.c.abilities.length - 1); derive(st); dirty(); draw('sbe-ab-name'); }
+      else if (act === 'add-trait') { st.c.traits.push({ name: '', description: '' }); st.editAb = 't' + (st.c.traits.length - 1); dirty(); draw('sbe-ab-name'); }
+      else if (act === 'add-va') {
+        var order = ['opener', 'crowd-control', 'ultimate'][st.c.villain_actions.length] || '';
+        st.c.villain_actions.push({ order: order, name: 'Villain action ' + (st.c.villain_actions.length + 1), effect: '' });
+        st.editAb = 'v' + (st.c.villain_actions.length - 1); dirty(); draw('sbe-ab-name');
+      }
+      else if (act === 'save') doSave();
+      else if (act === 'cancel') {
+        if (ui.dirty && typeof confirm === 'function' && !confirm('Discard your changes to this stat block?')) return;
+        clean(); close(null);
+      }
+      else if (act === 'start') openStartFrom(doc, ctx, function (name, src, origin) { startFrom(st, name, src, origin); dirty(); draw('sbe-level'); });
+      else if (act === 'suggest') suggestForParty();
+    }
 
-  // ── Step 3: Statistics ────────────────────────────────────
+    function suggestForParty() {
+      var p = ui.party;
+      if (!p || !p.profile) return;
+      ui.suggestNote = applySuggestion(st, p.profile);
+      dirty(); draw();
+    }
 
-  _renderStep3Stats: function () {
-    var self = this;
-    var c = this._contentEl;
-    var cr = this.creature;
-    var suggested = this._getSuggestedStats();
+    function doSave() {
+      var problem = !String(st.name || '').trim() ? 'Give the creature a name first.' : (!ctx.campaignId ? 'This editor has no campaign, so it cannot save.' : '');
+      if (problem) { ui.msg = problem; ui.msgKind = 'error'; draw('sbe-name'); return; }
+      ui.saving = true; ui.msg = ''; draw();
+      save(st, ctx).then(function (saved) {
+        ui.saving = false; clean();
+        if (saved && saved.id) ctx.entityId = String(saved.id);
+        if (ui.onClose) { close(saved); return; }
+        ui.isNew = false; ui.msg = 'Saved.'; ui.msgKind = 'ok'; draw();
+      }).catch(function (err) {
+        if (typeof console !== 'undefined') console.warn('Monster builder: save failed', err);
+        ui.saving = false;
+        ui.msg = (err && !err.status && err.message) ? err.message : 'Could not save this stat block. Try again.';
+        ui.msgKind = 'error'; draw();
+      });
+    }
 
-    c.innerHTML =
-      '<div class="mb-section"><h3>Step 3: Statistics</h3>' +
-      '<p class="mb-hint">Values auto-filled from organization and role templates. Edit to customize.</p>' +
-      '<div class="mb-card"><h4>Vitals</h4>' +
-      '<div class="mb-field-row">' +
-        '<label>Stamina<input type="number" class="mb-input" id="mb-stamina" value="' + cr.stamina + '">' +
-        '<small class="mb-suggestion">' + (suggested.staminaSourced
-          ? ('published formula: ' + suggested.stamina)
-          : ('unsourced estimate: ' + suggested.stamina + ' — the widget’s own number, not published Draw Steel math')) +
-        '</small></label>' +
-        '<label>Winded<input type="number" class="mb-input" id="mb-winded" value="' + cr.winded + '" readonly>' +
-        '<small class="mb-suggestion">auto: floor(stamina/2)</small></label>' +
-        '<label>Speed<input type="number" class="mb-input" id="mb-speed" value="' + cr.speed + '">' +
-        '<small class="mb-suggestion">suggested: ' + suggested.speed + '</small></label>' +
-        '<label>Stability<input type="number" class="mb-input" id="mb-stability" value="' + cr.stability + '">' +
-        '<small class="mb-suggestion">suggested: ' + suggested.stability + '</small></label>' +
-      '</div></div>' +
-      '<div class="mb-card"><h4>Characteristics</h4>' +
-      '<div class="mb-field-row">' +
-        '<label>Might<input type="number" class="mb-input" id="mb-might" value="' + cr.might + '"></label>' +
-        '<label>Agility<input type="number" class="mb-input" id="mb-agility" value="' + cr.agility + '"></label>' +
-        '<label>Reason<input type="number" class="mb-input" id="mb-reason" value="' + cr.reason + '"></label>' +
-        '<label>Intuition<input type="number" class="mb-input" id="mb-intuition" value="' + cr.intuition + '"></label>' +
-        '<label>Presence<input type="number" class="mb-input" id="mb-presence" value="' + cr.presence + '"></label>' +
-      '</div></div>' +
-      '<div class="mb-card"><h4>Immunities</h4>' +
-      '<div id="mb-immunities-list" class="mb-list-editor"></div>' +
-      '<button class="btn btn-sm btn-secondary" id="mb-add-immunity">+ Add Immunity</button>' +
-      '</div>' +
-      '</div>';
+    var closed = false;
+    function unbind() {
+      closed = true;
+      root.removeEventListener('input', onInput);
+      root.removeEventListener('change', onChange);
+      root.removeEventListener('click', onClick);
+      root.removeEventListener('pointerdown', onPointerDown, true);
+      doc.removeEventListener('pointerup', onPointerUp, true);
+      doc.removeEventListener('pointercancel', onPointerUp, true);
+    }
+    function close(saved) {
+      if (closed) return;
+      unbind();
+      if (ui.onClose) ui.onClose(saved);
+    }
 
-    // Bind stat inputs
-    ['stamina', 'speed', 'stability', 'might', 'agility', 'reason', 'intuition', 'presence'].forEach(function (field) {
-      var input = c.querySelector('#mb-' + field);
-      if (input) {
-        input.addEventListener('change', function () {
-          self.creature[field] = parseInt(this.value) || 0;
-          if (field === 'stamina') {
-            self.creature.winded = Math.floor(self.creature.stamina / 2);
-            c.querySelector('#mb-winded').value = self.creature.winded;
-          }
+    root.addEventListener('input', onInput);
+    root.addEventListener('change', onChange);
+    root.addEventListener('click', onClick);
+    root.addEventListener('pointerdown', onPointerDown, true);
+    doc.addEventListener('pointerup', onPointerUp, true);
+    doc.addEventListener('pointercancel', onPointerUp, true);
+    draw();
+
+    // The party never blocks the editor: it fills in when it arrives, and any
+    // failure leaves "no party" in its place.
+    var P = (typeof MonsterParty !== 'undefined') ? MonsterParty : null;
+    if (P && ctx.campaignId) {
+      P.fetchParty(ctx.campaignId).then(function (heroes) {
+        var profile = heroes && heroes.length ? P.deriveParty(heroes) : null;
+        var levels = (heroes || []).map(function (x) { return Number((x.fields_data || {}).level); }).filter(function (n) { return isFinite(n) && n >= 1; });
+        ui.party = profile ? { heroes: heroes, profile: profile, levels: levels.length === heroes.length ? levels : [] } : null;
+      }).catch(function () { ui.party = null; }).then(function () {
+        ui.partyLoading = false;
+        if (!closed) drawSide();
+      });
+    } else {
+      ui.partyLoading = false;
+      drawSide();
+    }
+
+    return {
+      state: st,
+      destroy: function () { clean(); unbind(); host.innerHTML = ''; }
+    };
+  }
+
+  // ── Start from… ───────────────────────────────────────────────────────────
+
+  // bestiaryRows walks the community bestiary's Draw Steel creatures page by
+  // page. Search (not Browse) because only Search filters by system.
+  function bestiaryRows() {
+    var acc = [];
+    function page(n) {
+      return SB().getJSON('/bestiary/search?system_id=drawsteel&per_page=50&page=' + n).then(function (b) {
+        var rows = (b && b.results) || [];
+        acc = acc.concat(rows);
+        var total = (b && typeof b.total === 'number') ? b.total : acc.length;
+        if (rows.length && acc.length < total && n < 40) return page(n + 1);
+        return acc;
+      });
+    }
+    return page(1);
+  }
+
+  function campaignRows(cid) {
+    return SB().creatureType(cid).then(function (type) {
+      if (!type) return [];
+      var acc = [];
+      function page(n) {
+        return SB().getJSON('/api/v1/campaigns/' + encodeURIComponent(cid) + '/entities?type_id=' + encodeURIComponent(type.id) + '&per_page=100&page=' + n).then(function (b) {
+          var rows = SB().unwrap(b);
+          acc = acc.concat(rows);
+          var total = (b && typeof b.total === 'number') ? b.total : acc.length;
+          if (rows.length && acc.length < total && n < 40) return page(n + 1);
+          return acc;
         });
       }
+      return page(1);
     });
+  }
 
-    // Immunities editor
-    this._renderImmunities(c.querySelector('#mb-immunities-list'));
-    c.querySelector('#mb-add-immunity').addEventListener('click', function () {
-      self.creature.immunities.push('');
-      self._renderImmunities(c.querySelector('#mb-immunities-list'));
-    });
-  },
-
-  _renderImmunities: function (container) {
-    var self = this;
-    container.innerHTML = '';
-    this.creature.immunities.forEach(function (imm, i) {
-      var row = document.createElement('div');
-      row.className = 'mb-list-row';
-      row.innerHTML = '<input type="text" class="mb-input" value="' + Chronicle.escapeAttr(imm) + '" placeholder="e.g. Magic 2">' +
-        '<button class="btn btn-sm btn-danger">X</button>';
-      row.querySelector('input').addEventListener('change', function () {
-        self.creature.immunities[i] = this.value;
+  // openStartFrom lists creatures from the community bestiary and this campaign;
+  // picking one hands its full stat block to `pick(name, statblock, origin)`.
+  function openStartFrom(doc, ctx, pick) {
+    var tab = 'bestiary', cache = {}, prevFocus = doc.activeElement;
+    var bg = doc.createElement('div');
+    bg.className = 'sbe-modal-bg';
+    bg.innerHTML = '<div class="sbe-modal card" role="dialog" aria-modal="true" aria-labelledby="sbe-sf-t">' +
+      '<div class="sbe-modal-h"><h2 id="sbe-sf-t">Start from a creature</h2><button type="button" class="btn-ghost btn-sm" data-sf-close aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
+      '<p class="sbe-small sbe-dim">Copies its stat block into this one. Encounter value, Stamina and formula damage are worked out again for the level you set.</p>' +
+      '<div class="sbe-tabs" role="tablist"><button type="button" role="tab" data-sf-tab="bestiary" aria-selected="true">Community bestiary</button><button type="button" role="tab" data-sf-tab="campaign" aria-selected="false">This campaign</button></div>' +
+      '<input class="input" id="sbe-sf-q" placeholder="Search creatures" autocomplete="off" aria-label="Search creatures"><ul class="sbe-sf-list" id="sbe-sf-list"></ul></div>';
+    doc.body.appendChild(bg);
+    var list = bg.querySelector('#sbe-sf-list'), q = bg.querySelector('#sbe-sf-q');
+    function close() { bg.remove(); doc.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); }
+    function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    doc.addEventListener('keydown', onKey, true);
+    function rowsFor(t) {
+      if (!cache[t]) cache[t] = (t === 'bestiary' ? bestiaryRows() : campaignRows(ctx.campaignId)).catch(function () { return null; });
+      return cache[t];
+    }
+    function paint() {
+      var t = tab;
+      list.innerHTML = '<li class="sbe-sf-note">Loading…</li>';
+      rowsFor(t).then(function (rows) {
+        if (t !== tab) return;
+        if (rows === null) { list.innerHTML = '<li class="sbe-sf-note">Could not load these creatures. Try again.</li>'; return; }
+        var term = q.value.trim().toLowerCase();
+        var hits = rows.filter(function (r) { return !term || String(r.name || '').toLowerCase().indexOf(term) >= 0; }).slice(0, 100);
+        list.innerHTML = hits.map(function (r, i) {
+          var f = t === 'bestiary' ? r : (r.fields_data || {});
+          var org = SB().cap(f.organization || ''), noRole = /^(leader|solo)$/i.test(f.organization || '');
+          var sub = (f.level !== undefined && f.level !== null && f.level !== '' ? 'Level ' + f.level + ' ' : '') + org + (noRole || !f.role ? '' : ' ' + SB().cap(f.role));
+          return '<li><button type="button" data-sf-pick="' + i + '"><span><b>' + esc(r.name || 'Unnamed') + '</b><br><span class="sbe-dim sbe-small">' + esc(sub.trim()) + '</span></span>' +
+            (t === 'bestiary' ? '<span class="sbe-dim sbe-small">' + esc(r.downloads || 0) + ' added</span>' : '') + '</button></li>';
+        }).join('') || '<li class="sbe-sf-note">No creatures match.</li>';
+        list._rows = hits;
       });
-      row.querySelector('button').addEventListener('click', function () {
-        self.creature.immunities.splice(i, 1);
-        self._renderImmunities(container);
-      });
-      container.appendChild(row);
-    });
-  },
-
-  // ── Step 4: Abilities ─────────────────────────────────────
-
-  _renderStep4Abilities: function () {
-    var self = this;
-    var c = this._contentEl;
-
-    c.innerHTML =
-      '<div class="mb-section"><h3>Step 4: Abilities</h3>' +
-      '<div id="mb-signature-warn" class="mb-inline-warn" style="display:none"></div>' +
-      '<div id="mb-abilities-list"></div>' +
-      '<div class="mb-ability-actions">' +
-        '<button class="btn btn-primary" id="mb-add-ability">+ Add Ability</button>' +
-        '<button class="btn btn-secondary" id="mb-use-template">Use Template</button>' +
-      '</div>' +
-      '<div id="mb-template-picker" style="display:none"></div>' +
-      '</div>';
-
-    this._renderAbilitiesList(c.querySelector('#mb-abilities-list'));
-
-    c.querySelector('#mb-add-ability').addEventListener('click', function () {
-      self.creature.abilities.push({
-        name: 'New Ability',
-        type: 'signature',
-        keywords: [],
-        distance: 'Melee 1',
-        target: '1 creature',
-        power_roll: '',
-        tier1: '',
-        tier2: '',
-        tier3: '',
-        effect: '',
-        trigger: '',
-        spend_vp: 0
-      });
-      self._renderAbilitiesList(c.querySelector('#mb-abilities-list'));
-    });
-
-    c.querySelector('#mb-use-template').addEventListener('click', function () {
-      var picker = c.querySelector('#mb-template-picker');
-      if (picker.style.display === 'none') {
-        self._renderTemplatePicker(picker);
-        picker.style.display = 'block';
-      } else {
-        picker.style.display = 'none';
+    }
+    bg.addEventListener('input', paint);
+    bg.addEventListener('click', function (e) {
+      if (e.target === bg || (e.target.closest && e.target.closest('[data-sf-close]'))) { close(); return; }
+      var tb = e.target.closest && e.target.closest('[data-sf-tab]');
+      if (tb) {
+        tab = tb.getAttribute('data-sf-tab');
+        bg.querySelectorAll('[data-sf-tab]').forEach(function (b) { b.setAttribute('aria-selected', b === tb ? 'true' : 'false'); });
+        paint(); return;
       }
+      var pk = e.target.closest && e.target.closest('[data-sf-pick]');
+      if (!pk || !list._rows) return;
+      var r = list._rows[Number(pk.getAttribute('data-sf-pick'))];
+      if (!r) return;
+      if (tab === 'campaign') { close(); pick(r.name, r.fields_data || {}, 'Started from ' + r.name + ' in this campaign.'); return; }
+      pk.disabled = true;
+      SB().getJSON('/bestiary/' + encodeURIComponent(r.slug) + '/statblock').then(function (sb) {
+        close();
+        pick(r.name, sb, 'Started from ' + r.name + ' in the community bestiary.');
+      }).catch(function () {
+        pk.disabled = false;
+        list.insertAdjacentHTML('afterbegin', '<li class="sbe-sf-note">Could not load that stat block. Try again.</li>');
+      });
     });
-  },
+    paint();
+    q.focus();
+  }
 
-  _setInlineWarn: function (id, message) {
-    if (!this._contentEl) return;
-    var el = this._contentEl.querySelector('#' + id);
-    if (!el) return;
-    if (message) {
-      el.style.display = 'flex';
-      el.innerHTML = '<span>&#9888;</span><span>' + message + '</span>';
-    } else {
-      el.style.display = 'none';
+  // ── Styles ────────────────────────────────────────────────────────────────
+
+  // Chronicle's colour tokens carry light and dark; the three status colours
+  // switch under Chronicle's .dark root class. Injected into <head>, never the
+  // mount element, so a redraw cannot wipe them.
+  var CSS = [
+    '.sbe-wrap{--sbe-accent:#DC2626;--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
+    '.dark .sbe-wrap{--sbe-accent:#f87171;--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14)}',
+    '.sbe{padding:16px 18px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--sbe-accent);color:var(--color-text-body,#374151);font-size:14px}',
+    '.sbe-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
+    '.sbe-bar-t{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:inline-flex;gap:6px;align-items:center;margin-right:4px}',
+    '.sbe-bar-t i{color:var(--sbe-accent)}',
+    '.sbe-sp{flex:1}',
+    '.sbe-msg{margin:0;font-size:13px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:#b91c1c}.dark .sbe-msg.is-error{color:#f87171}',
+    '.sbe-origin{margin:0;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);display:flex;gap:8px;align-items:baseline}',
+    '.sbe-h{margin:6px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}',
+    '.sbe-h .sbe-hint{text-transform:none;letter-spacing:0;font-weight:400;margin-right:auto}',
+    '.sbe-grid{display:grid;gap:10px 12px}',
+    '.sbe-g3{grid-template-columns:repeat(3,minmax(0,1fr))}.sbe-g4{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(7,minmax(0,1fr))}',
+    '.sbe-f{display:flex;flex-direction:column;gap:4px;min-width:0}.sbe-wide{grid-column:span 2}.sbe-full{grid-column:1/-1}',
+    '.sbe-lbl{font-size:12px;font-weight:500}',
+    '.sbe-num{font-variant-numeric:tabular-nums}',
+    '.sbe .input{width:100%;font-size:14px}',
+    '.sbe-hint{font-size:12px;color:var(--color-text-secondary,#6b7280);margin:0}',
+    '.sbe-check{display:flex;gap:8px;align-items:center;font-size:13px}',
+    '.sbe-chip{font-size:11.5px;line-height:1.3;border-radius:6px;padding:3px 6px;display:inline-flex;gap:4px;align-items:baseline;flex-wrap:wrap;align-self:flex-start}',
+    '.sbe-chip.is-pub{background:var(--sbe-ok-soft);color:var(--sbe-ok)}',
+    '.sbe-chip.is-own,.sbe-chip.is-none{background:var(--sbe-own-soft);color:var(--sbe-own)}',
+    '.sbe-link{font:inherit;background:none;border:0;padding:0;color:var(--color-accent,#6366f1);text-decoration:underline;cursor:pointer}',
+    '.sbe-abs{display:flex;flex-direction:column;gap:8px}',
+    '.sbe-ab{border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:0 12px 10px}',
+    '.sbe-ab .sbx-ab{border-top:0}',
+    '.sbe-ab-edit{padding-top:12px;display:flex;flex-direction:column;gap:10px;background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-ab-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:13px}',
+    '.sbe-ab-acts{display:inline-flex;gap:12px;margin-left:auto}',
+    '.sbe-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px}',
+    '.sbe-side-card{background:var(--color-card-bg,#fff);border:1px solid var(--color-border,#e5e7eb);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}',
+    '.sbe-side-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-small{font-size:13px;line-height:1.5;margin:0}.sbe-dim{color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-heroes{list-style:none;margin:0;padding:0;display:grid;gap:8px}',
+    '.sbe-heroes li{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--color-text-primary,#111827)}',
+    '.sbe-av{width:30px;height:30px;border-radius:50%;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280);display:grid;place-items:center;font-weight:600;font-size:13px;flex-shrink:0}',
+    '.sbe-meter{position:relative;height:14px;border-radius:7px;background:var(--color-bg-tertiary,#f3f4f6);overflow:hidden}',
+    '.sbe-band{position:absolute;top:0;bottom:0}.sbe-band.is-easy{background:rgba(99,102,241,.10)}.sbe-band.is-std{background:rgba(22,163,74,.28)}.sbe-band.is-hard{background:rgba(217,119,6,.22)}',
+    '.sbe-fill{position:absolute;left:0;top:4px;bottom:4px;background:var(--sbe-accent);border-radius:3px}',
+    '.sbe-meter-k{display:flex;justify-content:space-between}',
+    '.sbe-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}',
+    '.sbe-checks li{display:flex;gap:8px;align-items:baseline}',
+    '.sbe-checks .is-ok i{color:var(--sbe-ok)}.sbe-checks .is-miss i,.sbe-checks .is-warn i{color:var(--sbe-own)}.sbe-checks .is-provenance i{color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}',
+    '.sbe-modal{width:min(560px,100%);max-height:80vh;display:flex;flex-direction:column;gap:10px;padding:18px}',
+    '.sbe-modal-h{display:flex;justify-content:space-between;align-items:center}',
+    '.sbe-modal-h h2{margin:0;font-size:18px;font-weight:700;color:var(--color-text-primary,#111827)}',
+    '.sbe-tabs{display:flex;gap:4px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
+    '.sbe-tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:6px 10px;color:var(--color-text-secondary,#6b7280);cursor:pointer}',
+    '.sbe-tabs button[aria-selected="true"]{color:var(--color-accent,#6366f1);border-bottom-color:var(--color-accent,#6366f1)}',
+    '.sbe-sf-list{list-style:none;margin:0;padding:0;overflow-y:auto;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;min-height:0}',
+    '.sbe-sf-list li+li{border-top:1px solid var(--color-border-light,#f3f4f6)}',
+    '.sbe-sf-list button{font:inherit;width:100%;text-align:left;background:none;border:0;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;color:var(--color-text-body,#374151)}',
+    '.sbe-sf-list button:hover,.sbe-sf-list button:focus-visible{background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-sf-list b{color:var(--color-text-primary,#111827)}',
+    '.sbe-sf-note{padding:12px;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '@media (max-width:900px){.sbe-wrap{grid-template-columns:minmax(0,1fr)}.sbe-side{position:static}}',
+    '@media (max-width:640px){.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}}'
+  ].join('\n');
+
+  function injectStyles(doc) {
+    var d = doc || (typeof document !== 'undefined' ? document : null);
+    if (!d || !d.head || d.querySelector('style[data-ds-builder]')) return;
+    var s = d.createElement('style');
+    s.setAttribute('data-ds-builder', 'true');
+    s.textContent = CSS;
+    d.head.appendChild(s);
+  }
+
+  var api = {
+    ORGS: ORGS, ROLES: ROLES, SIZES: SIZES, ABILITY_TYPES: ABILITY_TYPES, FIGURES: FIGURES,
+    STANDING_LINE: STANDING_LINE,
+    newState: newState, derive: derive, setFigure: setFigure, useFormula: useFormula,
+    startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, autoTier: autoTier, isStrike: isStrike,
+    editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
+    applySuggestion: applySuggestion, mount: mount, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS
+  };
+  return api;
+})();
+
+// The placeable widget: the same editor wherever a layout puts it. On a
+// Creature page whose panel already shows the stat block it steps aside, so the
+// page never carries two editors for one creature; with no page it builds a
+// new creature, which saving creates.
+if (typeof Chronicle !== 'undefined' && Chronicle && Chronicle.register) {
+  Chronicle.register('monster-builder', {
+    init: function (el, config) {
+      var cfg = config || {};
+      var cid = cfg.campaignId ? String(cfg.campaignId) : '';
+      var eid = cfg.entityId ? String(cfg.entityId) : '';
+      var S = (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null;
+      if (!S) { el.textContent = 'The Draw Steel stat block did not load. Reload the page to try again.'; return; }
+      if (eid && el.ownerDocument.querySelector('[data-ds-statblock-entity="' + eid.replace(/"/g, '') + '"]')) {
+        el.innerHTML = '<p class="sbe-hint">This creature’s stat block is at the top of the page. Use Edit stat block there.</p>';
+        return;
+      }
+      var load = eid && cid
+        ? S.getJSON('/api/v1/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid)).catch(function () { return null; })
+        : Promise.resolve(null);
+      var ref = (typeof DrawSteelRefRenderer !== 'undefined' && cid) ? new DrawSteelRefRenderer('', cid) : null;
+      Promise.all([load, S.loadRefs(cid), ref ? ref.load() : null]).then(function (r) {
+        if (ref && ref.injectStyles) ref.injectStyles();
+        el._dsEditor = DrawSteelCreatureEditor.mount(el, {
+          campaignId: cid, entityId: r[0] ? eid : '', entity: r[0], refs: r[1], ref: ref
+        });
+      });
+    },
+    destroy: function (el) {
+      if (el._dsEditor) el._dsEditor.destroy();
+      el._dsEditor = null;
       el.innerHTML = '';
     }
-  },
-
-  _refreshInlineValidation: function () {
-    if (!this._contentEl) return;
-    var rules = this._validate();
-    var pickError = function (substring) {
-      for (var i = 0; i < rules.length; i++) {
-        if (rules[i].severity === 'error' && rules[i].message.indexOf(substring) !== -1) {
-          return Chronicle.escapeHtml(rules[i].message);
-        }
-      }
-      return '';
-    };
-
-    this._setInlineWarn('mb-step1-warn', pickError('name'));
-
-    var orgErr = pickError('Organization is required');
-    var roleErr = pickError('Role is required');
-    var step2Msg = '';
-    if (orgErr && roleErr) step2Msg = 'Both organization and role are required.';
-    else if (orgErr) step2Msg = orgErr;
-    else if (roleErr) step2Msg = roleErr;
-    this._setInlineWarn('mb-step2-warn', step2Msg);
-
-    var hasSignature = this.creature.abilities.some(function (a) { return a.type === 'signature'; });
-    var sigWarn = this._contentEl.querySelector('#mb-signature-warn');
-    if (sigWarn) {
-      if (hasSignature) {
-        sigWarn.style.display = 'none';
-        sigWarn.innerHTML = '';
-      } else {
-        sigWarn.style.display = 'flex';
-        sigWarn.innerHTML = '<span>&#9888;</span><span>Every creature must have at least 1 <strong>signature</strong> ability. Add one, or change an existing ability\'s type to <em>signature</em>.</span>';
-      }
-    }
-
-    this._setInlineWarn('mb-step6-warn', pickError('villain actions'));
-
-    this._renderValidation();
-  },
-
-  _refreshAbilityValidation: function () {
-    this._refreshInlineValidation();
-  },
-
-  _renderAbilitiesList: function (container) {
-    var self = this;
-    container.innerHTML = '';
-
-    if (this.creature.abilities.length === 0) {
-      container.innerHTML = '<p class="mb-empty">No abilities yet. Add one or use a template.</p>';
-      self._refreshAbilityValidation();
-      return;
-    }
-
-    this.creature.abilities.forEach(function (ability, index) {
-      var card = document.createElement('div');
-      card.className = 'mb-ability-card';
-      var typeIcon = ability.type === 'signature' ? '&#9733; ' : '';
-      var typeLabel = ability.type.charAt(0).toUpperCase() + ability.type.slice(1);
-
-      card.innerHTML =
-        '<div class="mb-ability-header">' +
-          '<span class="mb-ability-type">[' + typeLabel + ']</span> ' +
-          '<input type="text" class="mb-input mb-ability-name" value="' + Chronicle.escapeAttr(ability.name) + '">' +
-          '<button class="btn btn-sm btn-danger mb-delete-ability">Delete</button>' +
-          '<button class="btn btn-sm btn-secondary mb-toggle-ability">Edit</button>' +
-        '</div>' +
-        '<div class="mb-ability-summary">' +
-          Chronicle.escapeHtml(ability.distance) + ' &bull; ' + Chronicle.escapeHtml(ability.target) +
-          (ability.power_roll ? ' &bull; ' + Chronicle.escapeHtml(ability.power_roll) : '') +
-        '</div>' +
-        '<div class="mb-ability-detail" style="display:none">' +
-          '<div class="mb-field-row">' +
-            '<label>Type<select class="mb-input mb-ab-type">' +
-              ['signature', 'action', 'maneuver', 'triggered', 'villain-action', 'trait'].map(function (t) {
-                return '<option value="' + t + '"' + (ability.type === t ? ' selected' : '') + '>' + t + '</option>';
-              }).join('') +
-            '</select></label>' +
-            '<label>Distance<input type="text" class="mb-input mb-ab-distance" value="' + Chronicle.escapeAttr(ability.distance) + '"></label>' +
-            '<label>Target<input type="text" class="mb-input mb-ab-target" value="' + Chronicle.escapeAttr(ability.target) + '"></label>' +
-          '</div>' +
-          '<div class="mb-field-row">' +
-            '<label>Power Roll<input type="text" class="mb-input mb-ab-roll" value="' + Chronicle.escapeAttr(ability.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
-          '</div>' +
-          '<div class="mb-field-row mb-tiers">' +
-            '<label>T1 (11-)<input type="text" class="mb-input mb-ab-t1" value="' + Chronicle.escapeAttr(ability.tier1 || '') + '"></label>' +
-            '<label>T2 (12-16)<input type="text" class="mb-input mb-ab-t2" value="' + Chronicle.escapeAttr(ability.tier2 || '') + '"></label>' +
-            '<label>T3 (17+)<input type="text" class="mb-input mb-ab-t3" value="' + Chronicle.escapeAttr(ability.tier3 || '') + '"></label>' +
-          '</div>' +
-          '<div class="mb-damage-hints">' + self._getDamageHints() + '</div>' +
-          '<label>Effect<textarea class="mb-input mb-ab-effect" rows="2">' + Chronicle.escapeHtml(ability.effect || '') + '</textarea></label>' +
-          '<div class="mb-field-row">' +
-            '<label>Trigger (triggered only)<input type="text" class="mb-input mb-ab-trigger" value="' + Chronicle.escapeAttr(ability.trigger || '') + '"></label>' +
-            '<label>VP Cost<input type="number" class="mb-input mb-ab-vp" value="' + (Number(ability.spend_vp) || 0) + '" min="0"></label>' +   // H-5: coerce, never a raw string
-          '</div>' +
-          '<div class="mb-keyword-list mb-ab-keywords"></div>' +
-        '</div>';
-
-      // Toggle detail
-      card.querySelector('.mb-toggle-ability').addEventListener('click', function () {
-        var detail = card.querySelector('.mb-ability-detail');
-        detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
-      });
-
-      // Delete
-      card.querySelector('.mb-delete-ability').addEventListener('click', function () {
-        self.creature.abilities.splice(index, 1);
-        self._renderAbilitiesList(container);
-      });
-
-      // Bind fields
-      card.querySelector('.mb-ability-name').addEventListener('change', function () { ability.name = this.value; });
-      card.querySelector('.mb-ab-type').addEventListener('change', function () {
-        ability.type = this.value;
-        card.querySelector('.mb-ability-type').textContent = '[' + this.value.charAt(0).toUpperCase() + this.value.slice(1) + ']';
-        self._refreshAbilityValidation();
-      });
-      card.querySelector('.mb-ab-distance').addEventListener('change', function () { ability.distance = this.value; });
-      card.querySelector('.mb-ab-target').addEventListener('change', function () { ability.target = this.value; });
-      card.querySelector('.mb-ab-roll').addEventListener('change', function () { ability.power_roll = this.value; });
-      card.querySelector('.mb-ab-t1').addEventListener('change', function () { ability.tier1 = this.value; });
-      card.querySelector('.mb-ab-t2').addEventListener('change', function () { ability.tier2 = this.value; });
-      card.querySelector('.mb-ab-t3').addEventListener('change', function () { ability.tier3 = this.value; });
-      card.querySelector('.mb-ab-effect').addEventListener('change', function () { ability.effect = this.value; });
-      card.querySelector('.mb-ab-trigger').addEventListener('change', function () { ability.trigger = this.value; });
-      card.querySelector('.mb-ab-vp').addEventListener('change', function () { ability.spend_vp = parseInt(this.value) || 0; });
-
-      // Ability keywords
-      var kwList = card.querySelector('.mb-ab-keywords');
-      self.abilityKeywords.forEach(function (kw) {
-        var selected = (ability.keywords || []).indexOf(kw.name) !== -1;
-        var tag = document.createElement('button');
-        tag.className = 'mb-tag mb-tag-sm' + (selected ? ' selected' : '');
-        tag.textContent = kw.name;
-        tag.title = kw.description;
-        tag.addEventListener('click', function () {
-          if (!ability.keywords) ability.keywords = [];
-          var idx = ability.keywords.indexOf(kw.name);
-          if (idx === -1) { ability.keywords.push(kw.name); tag.classList.add('selected'); }
-          else { ability.keywords.splice(idx, 1); tag.classList.remove('selected'); }
-        });
-        kwList.appendChild(tag);
-      });
-
-      container.appendChild(card);
-    });
-
-    self._refreshAbilityValidation();
-  },
-
-  _renderTemplatePicker: function (container) {
-    var self = this;
-    container.innerHTML = '<h4>Ability Templates</h4>';
-    this.templateAbilities.forEach(function (tmpl) {
-      var p = tmpl.properties || {};
-      var btn = document.createElement('button');
-      btn.className = 'mb-template-btn';
-      btn.innerHTML = '<strong>' + Chronicle.escapeHtml(tmpl.name) + '</strong> [' + Chronicle.escapeHtml(p.type || '') + ']' +   // M-3
-        '<br><small>' + Chronicle.escapeHtml(tmpl.description || '') + '</small>';
-      btn.addEventListener('click', function () {
-        var ability = JSON.parse(JSON.stringify(p));
-        ability.name = tmpl.name;
-        self.creature.abilities.push(ability);
-        self._renderAbilitiesList(self._contentEl.querySelector('#mb-abilities-list'));
-        container.style.display = 'none';
-      });
-      container.appendChild(btn);
-    });
-  },
-
-  // ── Auto-calculation ──────────────────────────────────────
-
-  // _formulas resolves the published-math module. Null only if the manifest
-  // failed to load it, in which case every figure degrades to unsourced.
-  _formulas: function () {
-    return (typeof DrawSteelFormulas !== 'undefined' && DrawSteelFormulas) ? DrawSteelFormulas : null;
-  },
-
-  // Fills EV and Stamina from the PUBLISHED formulas (the DrawSteelFormulas
-  // section of widgets/monster-engine.js) and records, per figure, whether the
-  // number shown is published or the widget's own.
-  //
-  // Where the published formula cannot be evaluated (Swarm, original to this
-  // package; or before a role is chosen, since published role modifiers span
-  // 10-30 and no midpoint is defensible) the legacy figure is kept as a usable
-  // starting point and FLAGGED unsourced. Nothing here is shown without its
-  // provenance.
-  _recalcAuto: function () {
-    var org = this._getOrgTemplate();
-    var role = this._getRoleTemplate();
-    var F = this._formulas();
-    if (!this._provenance) this._provenance = {};
-    if (org) {
-      var lvl = this.creature.level;
-
-      var ev = F ? F.encounterValue(lvl, org) : null;
-      if (ev && ev.value !== null) {
-        this.creature.ev = ev.value;
-        this._provenance.ev = { sourced: true, value: ev.value, note: '' };
-      } else {
-        this.creature.ev = org.ev_multiplier * lvl;
-        this._provenance.ev = {
-          sourced: false, value: this.creature.ev,
-          note: 'EV ' + this.creature.ev + ' is the widget’s own figure (level × ' + org.ev_multiplier +
-            '), not the published formula — “' + org.name + '” has no published organization modifier. Pending the builder rework.'
-        };
-      }
-
-      var stam = (F && role) ? F.stamina(lvl, org, role) : (F ? F.stamina(lvl, org, null) : null);
-      if (stam && stam.value !== null) {
-        this.creature.stamina = stam.value;
-        this._provenance.stamina = { sourced: true, value: stam.value, note: '' };
-      } else {
-        this.creature.stamina = org.stamina_base + (org.stamina_per_level * lvl);
-        this._provenance.stamina = {
-          sourced: false, value: this.creature.stamina,
-          note: 'Stamina ' + this.creature.stamina + ' is the widget’s own figure, not the published formula — ' +
-            (role ? ('“' + org.name + '” has no published Stamina organization modifier')
-                  : 'the published formula needs a role, and published role modifiers range from 10 to 30') +
-            '. Pending the builder rework.'
-        };
-      }
-
-      this.creature.winded = Math.floor(this.creature.stamina / 2);
-      this.creature.speed = org.default_speed;
-      this.creature.stability = org.default_stability;
-    }
-    if (role) {
-      var lvl = this.creature.level;
-      var primaryBonuses = [4, 8, 12, 16, 20].filter(function (l) { return lvl >= l; }).length;
-      var secondaryBonuses = [6, 12, 18].filter(function (l) { return lvl >= l; }).length;
-      var secondaryStat = this._getSecondaryStat(role);
-      var stats = ['might', 'agility', 'reason', 'intuition', 'presence'];
-      for (var i = 0; i < stats.length; i++) {
-        var s = stats[i];
-        var base = role.characteristics[s];
-        if (s === role.primary_stat) base += primaryBonuses;
-        else if (s === secondaryStat) base += secondaryBonuses;
-        this.creature[s] = base;
-      }
-    }
-    // Auto free strike
-    var primaryStat = role ? this.creature[role.primary_stat] : 0;
-    this.creature.free_strike_damage = this.creature.level + primaryStat;
-    this.creature.free_strike = this.creature.free_strike_damage + ' damage';
-  },
-
-  _getOrgTemplate: function () {
-    var slug = this.creature.organization;
-    for (var i = 0; i < this.orgTemplates.length; i++) {
-      if (this.orgTemplates[i].slug === slug) return this.orgTemplates[i];
-    }
-    return null;
-  },
-
-  // _hasVillainActions is the data-driven replacement for the old hardcoded
-  // 'leader'/'solo' string checks: an org unlocks the villain-actions step iff
-  // its template declares villain_action_count > 0 (leaders/solos = 3).
-  _hasVillainActions: function () {
-    return MonsterEngine.villainActionCount(this._getOrgTemplate()) > 0;
-  },
-
-  _getRoleTemplate: function () {
-    var slug = this.creature.role;
-    for (var i = 0; i < this.roleTemplates.length; i++) {
-      if (this.roleTemplates[i].slug === slug) return this.roleTemplates[i];
-    }
-    return null;
-  },
-
-  _getSecondaryStat: function (role) {
-    var chars = role.characteristics;
-    var primary = role.primary_stat;
-    var best = null;
-    var bestVal = -Infinity;
-    var stats = ['might', 'agility', 'reason', 'intuition', 'presence'];
-    for (var i = 0; i < stats.length; i++) {
-      if (stats[i] !== primary && chars[stats[i]] > bestVal) {
-        bestVal = chars[stats[i]];
-        best = stats[i];
-      }
-    }
-    return best;
-  },
-
-  // Shows the PUBLISHED baseline damage for the current organization and role
-  // — (4 + level + damage modifier) × tier modifier, halved for horde and
-  // minion — and names the two published adjustments it has not applied,
-  // since they depend on the ability the director is writing.
-  // data/damage-baselines.json (`source: "custom"`, up to 2.4x the published
-  // figures) appears only for an organization the published rules don't define.
-  _getDamageHints: function () {
-    var org = this._getOrgTemplate();
-    if (!org) return '';
-    var role = this._getRoleTemplate();
-    var F = this._formulas();
-    var lvl = this.creature.level;
-
-    var pub = F ? F.damageTiers(lvl, org, role) : null;
-    if (pub && pub.value) {
-      var t = pub.value;
-      var notes = (pub.notes || []).map(function (n) { return Chronicle.escapeHtml(n); }).join(' ');
-      return 'Published baseline damage: T1 ' + t.tier1 + ' &middot; T2 ' + t.tier2 + ' &middot; T3 ' + t.tier3 +
-        ' <em>(4 + level + damage modifier, × tier modifier)</em>' +
-        (notes ? ('<br><small>' + notes + '</small>') : '');
-    }
-
-    var bl = this.damageBaselines[org.slug];
-    if (!bl) {
-      return '<small>No damage baseline available for this organization' +
-        (role ? '' : ' until a role is chosen — the published formula needs the role’s damage modifier') + '.</small>';
-    }
-    var l1 = Math.round(bl.tier1 + (bl.per_level * (lvl - 1)));
-    var l2 = Math.round(bl.tier2 + (bl.per_level * (lvl - 1)));
-    var l3 = Math.round(bl.tier3 + (bl.per_level * (lvl - 1)));
-    return 'Unsourced damage estimate: T1 ~' + l1 + ' &middot; T2 ~' + l2 + ' &middot; T3 ~' + l3 +
-      '<br><small>These are the widget’s own numbers, not published Draw Steel math — ' +
-      (role ? ('“' + Chronicle.escapeHtml(org.name) + '” is not a published organization')
-            : 'the published damage formula needs a role’s damage modifier') +
-      '. Pending the builder rework; check them against a published stat block before use.</small>';
-  },
-
-  // _getSuggestedStats returns the Step 3 "suggested:" hints. `staminaSourced`
-  // tells the caller whether the Stamina figure came from the published formula
-  // so the hint can be labelled rather than presented as authoritative.
-  _getSuggestedStats: function () {
-    var org = this._getOrgTemplate();
-    if (!org) return { stamina: '?', speed: '?', stability: '?', staminaSourced: false };
-    var F = this._formulas();
-    var stam = F ? F.stamina(this.creature.level, org, this._getRoleTemplate()) : null;
-    if (stam && stam.value !== null) {
-      return { stamina: stam.value, speed: org.default_speed, stability: org.default_stability, staminaSourced: true };
-    }
-    return {
-      stamina: org.stamina_base + (org.stamina_per_level * this.creature.level),
-      speed: org.default_speed,
-      stability: org.default_stability,
-      staminaSourced: false
-    };
-  },
-
-  // ── Step 5: Free Strike ──────────────────────────────────
-
-  _renderStep5FreeStrike: function () {
-    var self = this;
-    var c = this._contentEl;
-    var cr = this.creature;
-    var role = this._getRoleTemplate();
-    var primaryStat = role ? role.primary_stat : 'might';
-    var autoVal = cr.level + (cr[primaryStat] || 0);
-
-    c.innerHTML =
-      '<div class="mb-section"><h3>Step 5: Free Strike</h3>' +
-      '<p class="mb-hint">Every creature should have a free strike. Auto-calculated as level + ' + primaryStat + ' modifier.</p>' +
-      '<div class="mb-field-row">' +
-        '<label>Damage<input type="number" class="mb-input" id="mb-fs-damage" value="' + cr.free_strike_damage + '">' +
-        '<small class="mb-suggestion">auto: ' + autoVal + ' (level ' + cr.level + ' + ' + primaryStat + ' ' + (cr[primaryStat] || 0) + ')</small></label>' +
-        '<label>Type<select class="mb-input" id="mb-fs-type">' +
-          '<option value="melee"' + (cr.free_strike.indexOf('ranged') === -1 ? ' selected' : '') + '>Melee</option>' +
-          '<option value="ranged"' + (cr.free_strike.indexOf('ranged') !== -1 ? ' selected' : '') + '>Ranged</option>' +
-        '</select></label>' +
-        '<label>Description (optional)<input type="text" class="mb-input" id="mb-fs-desc" value="' + Chronicle.escapeAttr(cr.free_strike) + '" placeholder="e.g. 5 damage"></label>' +
-      '</div>' +
-      '</div>';
-
-    c.querySelector('#mb-fs-damage').addEventListener('change', function () {
-      self.creature.free_strike_damage = parseInt(this.value) || 0;
-      self.creature.free_strike = self.creature.free_strike_damage + ' damage';
-      c.querySelector('#mb-fs-desc').value = self.creature.free_strike;
-    });
-    c.querySelector('#mb-fs-desc').addEventListener('change', function () {
-      self.creature.free_strike = this.value;
-    });
-  },
-
-  // ── Step 6: Villain Actions ─────────────────────────────
-
-  _renderStep6VillainActions: function () {
-    var self = this;
-    var c = this._contentEl;
-    var cr = this.creature;
-    var labels = [
-      { order: 'opener', label: 'Opener', icon: '1', desc: 'Used first. Often buffs allies or repositions.' },
-      { order: 'crowd-control', label: 'Crowd Control', icon: '2', desc: 'Used mid-fight. Area effects, conditions, or disruption.' },
-      { order: 'ultimate', label: 'Ultimate', icon: '3', desc: 'The big finisher. Massive damage or dramatic effect.' }
-    ];
-
-    var html = '<div class="mb-section"><h3>Step 6: Villain Actions</h3>' +
-      '<div id="mb-step6-warn" class="mb-inline-warn" style="display:none"></div>' +
-      '<p class="mb-hint">Leaders and Solos get exactly 3 villain actions, used once each per encounter in order.</p>';
-
-    labels.forEach(function (slot, i) {
-      var va = cr.villain_actions[i];
-      html += '<div class="mb-va-card">' +
-        '<div class="mb-va-header"><span class="mb-va-num">' + slot.icon + '</span> ' +
-        '<strong>' + slot.label + '</strong> <small>' + slot.desc + '</small></div>' +
-        '<div class="mb-field-row">' +
-          '<label>Name<input type="text" class="mb-input mb-va-name" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.name) + '" placeholder="Villain action name"></label>' +
-        '</div>' +
-        '<label>Description<textarea class="mb-input mb-va-desc" data-idx="' + i + '" rows="3" placeholder="What this villain action does...">' + Chronicle.escapeHtml(va.description) + '</textarea></label>' +
-        '<div class="mb-field-row">' +
-          '<label>Power Roll (optional)<input type="text" class="mb-input mb-va-roll" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.power_roll || '') + '" placeholder="e.g. Might vs. Agility"></label>' +
-        '</div>' +
-        '<div class="mb-field-row mb-tiers">' +
-          '<label>T1 (11-)<input type="text" class="mb-input mb-va-t1" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier1 || '') + '"></label>' +
-          '<label>T2 (12-16)<input type="text" class="mb-input mb-va-t2" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier2 || '') + '"></label>' +
-          '<label>T3 (17+)<input type="text" class="mb-input mb-va-t3" data-idx="' + i + '" value="' + Chronicle.escapeAttr(va.tier3 || '') + '"></label>' +
-        '</div>' +
-        '</div>';
-    });
-
-    html += '</div>';
-    c.innerHTML = html;
-
-    // Bind VA fields
-    c.querySelectorAll('.mb-va-name').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].name = this.value; });
-    });
-    c.querySelectorAll('.mb-va-desc').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].description = this.value; });
-    });
-    c.querySelectorAll('.mb-va-roll').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].power_roll = this.value; });
-    });
-    c.querySelectorAll('.mb-va-t1').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].tier1 = this.value; });
-    });
-    c.querySelectorAll('.mb-va-t2').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].tier2 = this.value; });
-    });
-    c.querySelectorAll('.mb-va-t3').forEach(function (el) {
-      el.addEventListener('change', function () { cr.villain_actions[parseInt(this.dataset.idx)].tier3 = this.value; });
-    });
-  },
-
-  // ── Step 7: Traits ──────────────────────────────────────
-
-  _renderStep7Traits: function () {
-    var self = this;
-    var c = this._contentEl;
-
-    c.innerHTML =
-      '<div class="mb-section"><h3>Step 7: Traits</h3>' +
-      '<p class="mb-hint">Passive features like resistances, auras, or special movement.</p>' +
-      '<div id="mb-traits-list"></div>' +
-      '<button class="btn btn-sm btn-primary" id="mb-add-trait">+ Add Trait</button>' +
-      '</div>';
-
-    this._renderTraitsList(c.querySelector('#mb-traits-list'));
-
-    c.querySelector('#mb-add-trait').addEventListener('click', function () {
-      self.creature.traits.push({ name: '', description: '' });
-      self._renderTraitsList(c.querySelector('#mb-traits-list'));
-    });
-  },
-
-  _renderTraitsList: function (container) {
-    var self = this;
-    container.innerHTML = '';
-
-    if (this.creature.traits.length === 0) {
-      container.innerHTML = '<p class="mb-empty">No traits yet.</p>';
-      return;
-    }
-
-    this.creature.traits.forEach(function (trait, i) {
-      var row = document.createElement('div');
-      row.className = 'mb-trait-row';
-      row.innerHTML =
-        '<div class="mb-field-row">' +
-          '<label>Name<input type="text" class="mb-input mb-trait-name" value="' + Chronicle.escapeAttr(trait.name) + '" placeholder="Trait name"></label>' +
-          '<button class="btn btn-sm btn-danger mb-del-trait">X</button>' +
-        '</div>' +
-        '<label>Description<textarea class="mb-input mb-trait-desc" rows="2" placeholder="What this trait does...">' + Chronicle.escapeHtml(trait.description) + '</textarea></label>';
-
-      row.querySelector('.mb-trait-name').addEventListener('change', function () { trait.name = this.value; });
-      row.querySelector('.mb-trait-desc').addEventListener('change', function () { trait.description = this.value; });
-      row.querySelector('.mb-del-trait').addEventListener('click', function () {
-        self.creature.traits.splice(i, 1);
-        self._renderTraitsList(container);
-      });
-      container.appendChild(row);
-    });
-  },
-
-  // ── Validation ──────────────────────────────────────────
-
-  _renderValidation: function () {
-    var v = this._validationEl;
-    if (!v) return;
-    v.innerHTML = '';
-
-    var rules = this._validate();
-    if (rules.length === 0) return;
-
-    var panel = document.createElement('div');
-    panel.className = 'mb-validation-panel';
-    // Titled "Checks", not "Validation": the panel confirms a stat block is
-    // COMPLETE, it does not certify that its numbers are balanced. Calling it
-    // validation is what let unsourced arithmetic ship wearing a green tick.
-    panel.innerHTML = '<h4>Completeness checks</h4>';
-
-    rules.forEach(function (rule) {
-      var item = document.createElement('div');
-      var icon = rule.severity === 'error' ? '&#10060;'
-        : rule.severity === 'warning' ? '&#9888;'
-        : rule.severity === 'provenance' ? '&#9432;'
-        : '&#8505;';
-      item.className = 'mb-validation-item mb-v-' + rule.severity;
-      item.innerHTML = '<span class="mb-v-icon">' + icon + '</span> ' + Chronicle.escapeHtml(rule.message);
-      panel.appendChild(item);
-    });
-
-    v.appendChild(panel);
-
-    // Encounter budget calculator
-    this._renderEncounterCalc(v);
-  },
-
-  _renderEncounterCalc: function (container) {
-    var self = this;
-    var cr = this.creature;
-    if (!cr.ev || cr.ev <= 0) return;
-
-    var profile = this._partyProfile;
-    // Party size/level persist on the instance so they survive step navigation
-    // and validation re-renders instead of resetting to defaults.
-    var st = this._encounterState;
-    // Seed the encounter inputs from the LIVE party once; the
-    // director can still override, and with no party we keep today's hand-typed
-    // values as the manual fallback.
-    if (profile && !st._seededFromParty) {
-      if (profile.size) st.partySize = profile.size;
-      if (profile.levelAvg !== null && profile.levelAvg !== undefined) {
-        st.partyLevel = Math.round(profile.levelAvg);
-      }
-      st._seededFromParty = true;
-    }
-    st.partySize = Math.max(1, Math.min(10, st.partySize || 4));
-    st.partyLevel = Math.max(1, Math.min(20, st.partyLevel || cr.level));
-
-    var calc = document.createElement('div');
-    calc.className = 'mb-encounter-calc';
-    // The structure is built once; only .mb-ec-output is rewritten on input, so
-    // the number fields keep focus while typing instead of losing it every
-    // keystroke to a full innerHTML rebuild. The party panel above it is
-    // read-only, so it never re-renders on keystroke either.
-    calc.innerHTML =
-      this._partyPanelHtml(profile) +
-      '<h4 style="margin:0 0 8px;font-size:0.95em">Encounter Strength</h4>' +
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
-        '<label style="font-size:0.85em">Party size: <input type="number" class="mb-input mb-ec-party" value="' + st.partySize + '" min="1" max="10" style="width:50px"></label>' +
-        '<label style="font-size:0.85em">Party level: <input type="number" class="mb-input mb-ec-level" value="' + st.partyLevel + '" min="1" max="20" style="width:50px"></label>' +
-      '</div>' +
-      '<div style="font-size:0.9em" class="mb-ec-output"></div>';
-
-    var output = calc.querySelector('.mb-ec-output');
-    var refresh = function () {
-      output.innerHTML = self._encounterMeterHtml(st);
-    };
-
-    calc.querySelector('.mb-ec-party').addEventListener('input', function () {
-      st.partySize = Math.max(1, Math.min(10, parseInt(this.value) || 4));
-      refresh();
-    });
-    calc.querySelector('.mb-ec-level').addEventListener('input', function () {
-      st.partyLevel = Math.max(1, Math.min(20, parseInt(this.value) || cr.level));
-      refresh();
-    });
-
-    refresh();
-    container.appendChild(calc);
-  },
-
-  // Builds the encounter-budget readout. Pure string builder so it can be
-  // tested off-DOM. Reports the party's PUBLISHED encounter strength
-  // (4 + 2 × level per hero) and names the published difficulty band the
-  // current spend falls into. Checks none of the published spending
-  // constraints (creature count per hero, six-stat-block limit, minions in
-  // fours, star-of-the-show) — does not claim the result is balanced.
-  _encounterMeterHtml: function (st) {
-    var cr = this.creature;
-    var partyEs = MonsterEngine.encounterBudget(st.partySize, st.partyLevel, this.orgTemplates);
-    var meter = MonsterEngine.evMeter(cr.ev, partyEs);
-    var bandInfo = MonsterEngine.encounterBands(st.partySize, st.partyLevel);
-    var F = this._formulas();
-    var orgName = Chronicle.escapeHtml(cr.organization || 'creature');
-    var pct = meter.budget ? Math.max(0, Math.min(100, Math.round(meter.ratio * 100))) : 0;
-
-    if (!partyEs || !bandInfo) {
-      return '<em>The party’s encounter strength could not be computed for this size and level.</em>';
-    }
-
-    var total = meter.copies * meter.spent;
-    var band = F ? F.difficultyOf(total, bandInfo.partyEs, bandInfo.perHeroEs) : null;
-    var bandName = (band && band.value) ? band.value : null;
-    var std = bandInfo.bands.standard;
-
-    var evNote = '';
-    var prov = (this._provenance || {}).ev;
-    if (prov && !prov.sourced) {
-      evNote = '<div style="margin-top:4px;font-size:0.85em;opacity:0.8"><em>' +
-        Chronicle.escapeHtml(prov.note) + '</em></div>';
-    }
-
-    return '<strong>Party encounter strength:</strong> ' + bandInfo.partyEs + ' EV (' +
-        st.partySize + ' heroes × [4 + 2 × level ' + st.partyLevel + '])<br>' +
-      '<strong>A standard encounter</strong> spends ' + std.lower + '–' + std.upper + ' EV; ' +
-        'hard runs to ' + bandInfo.bands.hard.upper + '.<br>' +
-      '<strong>This ' + orgName + ':</strong> ' + meter.spent + ' EV each' +
-      '<div style="height:6px;border-radius:3px;background:var(--color-border,#e5e7eb);margin:4px 0;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--color-primary,#7c3aed)"></div></div>' +
-      '<strong>' + meter.copies + '</strong> of them cost ' + total + ' EV' +
-      (bandName ? (' — a <strong>' + Chronicle.escapeHtml(bandName) + '</strong> encounter by the published difficulty bands.') : '.') +
-      evNote +
-      '<div style="margin-top:6px;font-size:0.85em;opacity:0.8">This does not check the published spending limits — creatures per hero, the six-stat-block cap, buying minions in fours, or giving a leader or solo a third of the budget. Read them before you run it.</div>';
-  },
-
-  // Renders the read-only "party at a glance" panel above the budget meter:
-  // the derived profile with an honest per-stat coverage caveat, or a
-  // manual-mode note when no drawsteel-character entities were found — never
-  // average nulls as zeros. Every dynamic string is escaped.
-  _partyPanelHtml: function (profile) {
-    var esc = Chronicle.escapeHtml;
-    if (!profile) {
-      return '<div class="mb-party-panel mb-party-manual" style="margin-bottom:10px;padding:8px;border:1px dashed var(--color-border,#e5e7eb);border-radius:6px;font-size:0.85em;opacity:0.85">' +
-        'No hero entities found in this campaign \u2014 using manual party inputs below.' +
-        '</div>';
-    }
-    var LABELS = {
-      might: 'Might', agility: 'Agility', reason: 'Reason', intuition: 'Intuition',
-      presence: 'Presence', level: 'level', stamina_max: 'stamina'
-    };
-    var rows = [];
-    var lvl = (profile.levelAvg === null || profile.levelAvg === undefined)
-      ? '?' : (Math.round(profile.levelAvg * 10) / 10);
-    var spread = profile.levelSpread ? (' (' + profile.levelSpread[0] + '\u2013' + profile.levelSpread[1] + ')') : '';
-    rows.push('<strong>Party:</strong> ' + profile.size + ' hero' + (profile.size === 1 ? '' : 'es') + ' \u00b7 avg level ' + lvl + spread);
-    if (profile.weakestDefense) {
-      var wv = profile.weakestDefenseValue;
-      rows.push('<strong>Weakest defense:</strong> ' + esc(LABELS[profile.weakestDefense] || profile.weakestDefense) +
-        (wv === null ? '' : ' (avg ' + (Math.round(wv * 10) / 10) + ')') + ' \u2014 build to challenge it');
-    }
-    if (profile.staminaAvg !== null && profile.staminaAvg !== undefined) {
-      rows.push('<strong>Avg stamina:</strong> ' + Math.round(profile.staminaAvg));
-    }
-    if (profile.weaknesses && profile.weaknesses.length) {
-      rows.push('<strong>Weak to (lean in):</strong> ' + esc(profile.weaknesses.join(', ')));
-    }
-    if (profile.immunities && profile.immunities.length) {
-      rows.push('<strong>Immune to (avoid):</strong> ' + esc(profile.immunities.join(', ')));
-    }
-    // Honest coverage caveat: name any stat not present on every hero.
-    var caveats = [];
-    var covKeys = ['level', 'stamina_max'].concat(MonsterParty.STAT_KEYS);
-    var full = profile.size + ' of ' + profile.size;
-    for (var i = 0; i < covKeys.length; i++) {
-      var c = profile.coverage[covKeys[i]];
-      if (c && c !== full) caveats.push((LABELS[covKeys[i]] || covKeys[i]) + ' ' + c);
-    }
-    var caveatHtml = caveats.length
-      ? '<div style="font-size:0.8em;opacity:0.75;margin-top:4px">Partial data \u2014 not every hero has: ' + esc(caveats.join('; ')) + '.</div>'
-      : '';
-    return '<div class="mb-party-panel" style="margin-bottom:10px;padding:8px;border:1px solid var(--color-border,#e5e7eb);border-radius:6px;font-size:0.85em;background:var(--color-bg-primary,#f9fafb)">' +
-      rows.join('<br>') + caveatHtml +
-      '</div>';
-  },
-
-  _validate: function () {
-    var cr = this.creature;
-    var rules = [];
-
-    // E-rules (errors)
-    if (!cr.name || cr.name.trim() === '') {
-      rules.push({ severity: 'error', message: 'Creature must have a name.' });
-    }
-    if (!cr.organization) {
-      rules.push({ severity: 'error', message: 'Organization is required.' });
-    }
-    if (!cr.role) {
-      rules.push({ severity: 'error', message: 'Role is required.' });
-    }
-
-    var hasSignature = cr.abilities.some(function (a) { return a.type === 'signature'; });
-    if (!hasSignature) {
-      rules.push({ severity: 'error', message: 'Every creature must have at least 1 signature ability.' });
-    }
-
-    // Villain-action requirement is data-driven: the org template's
-    // villain_action_count (>0 unlocks; the count must match exactly).
-    var vaRequired = MonsterEngine.villainActionCount(this._getOrgTemplate());
-    if (vaRequired > 0) {
-      var vaCount = cr.villain_actions.filter(function (va) { return va.name && va.name.trim() !== ''; }).length;
-      if (vaCount !== vaRequired) {
-        rules.push({ severity: 'error', message: 'This organization requires exactly ' + vaRequired + ' villain actions. Currently: ' + vaCount + '.' });
-      }
-    }
-
-    // W-rules (warnings). A deviation warning is only raised against a figure
-    // the PUBLISHED formulas can actually produce. The old code compared against
-    // the widget's own per-organization tables and reported the difference as if
-    // the baseline were Draw Steel's — certifying arithmetic it could not source.
-    var org = this._getOrgTemplate();
-    var role = this._getRoleTemplate();
-    var F = this._formulas();
-    if (org && F) {
-      var pubStamina = F.stamina(cr.level, org, role);
-      if (pubStamina.value !== null) {
-        var deviation = Math.abs(cr.stamina - pubStamina.value) / pubStamina.value;
-        if (deviation > 0.3) {
-          rules.push({
-            severity: 'warning',
-            message: 'Stamina (' + cr.stamina + ') is more than 30% from the published formula’s ' + pubStamina.value + '.'
-          });
-        }
-      }
-      var pubEV = F.encounterValue(cr.level, org);
-      if (pubEV.value !== null && cr.ev !== pubEV.value) {
-        rules.push({
-          severity: 'warning',
-          message: 'EV (' + cr.ev + ') does not match the published formula’s ' + pubEV.value + '.'
-        });
-      }
-    }
-
-    if (vaRequired === 0) {
-      var hasVA = cr.villain_actions.some(function (va) { return va.name && va.name.trim() !== ''; });
-      if (hasVA) {
-        rules.push({ severity: 'warning', message: 'This organization should not have villain actions.' });
-      }
-    }
-
-    if (!cr.free_strike || cr.free_strike.trim() === '') {
-      rules.push({ severity: 'warning', message: 'Every creature should have a free strike defined.' });
-    }
-
-    // I-rules (info)
-    if (cr.organization === 'swarm') {
-      var hasArea = cr.abilities.some(function (a) { return (a.keywords || []).indexOf('Area') !== -1; });
-      if (!hasArea) {
-        rules.push({ severity: 'info', message: 'Swarm creatures typically have area-based abilities.' });
-      }
-    }
-
-    if (hasSignature) {
-      rules.push({ severity: 'info', message: 'Signature ability present.' });
-    }
-
-    // P-rules (provenance). These are not checks — they are the panel telling
-    // the director what it can and cannot vouch for. The standing disclaimer is
-    // unconditional on purpose: an empty panel used to read as a clean bill of
-    // health for numbers the widget had invented.
-    rules.push({
-      severity: 'provenance',
-      message: 'These are completeness checks, not a balance check. Nothing here certifies that this creature is a fair match for your party.'
-    });
-    var prov = this._provenance || {};
-    ['ev', 'stamina'].forEach(function (key) {
-      var p = prov[key];
-      if (p && !p.sourced && p.note) rules.push({ severity: 'provenance', message: p.note });
-    });
-    if (org && !F) {
-      rules.push({
-        severity: 'provenance',
-        message: 'The published-formula module did not load, so none of the figures on this creature could be checked against Draw Steel’s math.'
-      });
-    }
-
-    return rules;
-  },
-
-  // ── Preview ──────────────────────────────────────────────
-
-  _showPreview: function () {
-    var self = this;
-    var c = this._contentEl;
-    c.innerHTML = '';
-
-    // Hide step nav, show preview
-    this._navEl.style.display = 'none';
-
-    var previewWrap = document.createElement('div');
-    previewWrap.className = 'mb-preview';
-    // Styled via .mb-preview class
-
-    previewWrap.innerHTML = this._buildPreviewHtml(this.creature);
-    c.appendChild(previewWrap);
-
-    // Action buttons
-    var actions = document.createElement('div');
-    actions.style.cssText = 'margin-top:12px;display:flex;gap:8px;';
-
-    var backBtn = document.createElement('button');
-    backBtn.className = 'btn btn-secondary';
-    backBtn.textContent = 'Back to Editor';
-    backBtn.addEventListener('click', function () {
-      self._navEl.style.display = '';
-      self._renderCurrentStep();
-    });
-    actions.appendChild(backBtn);
-
-    var copyBtn = document.createElement('button');
-    copyBtn.className = 'btn btn-secondary';
-    copyBtn.textContent = 'Copy to Clipboard';
-    copyBtn.addEventListener('click', function () {
-      var text = previewWrap.innerText;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function () {
-          copyBtn.textContent = 'Copied!';
-          setTimeout(function () { copyBtn.textContent = 'Copy to Clipboard'; }, 2000);
-        });
-      }
-    });
-    actions.appendChild(copyBtn);
-
-    c.appendChild(actions);
-
-    // Update buttons to only show back + save
-    this._buttonsEl.innerHTML = '';
-  },
-
-  _buildPreviewHtml: function (cr) {
-    var h = Chronicle.escapeHtml;
-    var ref = this._ref;
-    var html = '';
-
-    html += '<div class="sb-header">';
-    html += '<h2 class="sb-name">' + h(cr.name || 'Unnamed') + '</h2>';
-    html += '<div class="sb-subtitle">Level ' + cr.level + ' ';
-    if (cr.size) html += h(cr.size) + ' ';   // H-5: escape size in the preview
-    if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
-    if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
-    html += '</div>';
-    if (cr.keywords && cr.keywords.length > 0) {
-      html += '<div class="sb-keywords">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
-    }
-    if (cr.faction) html += '<div class="sb-faction">' + h(cr.faction) + '</div>';
-    html += '<span class="sb-ev">EV ' + cr.ev + '</span>';
-    html += '</div>';
-
-    html += '<div class="sb-content">';
-
-    html += '<div class="sb-stats"><div class="sb-stat-row">';
-    html += '<span class="sb-stat"><strong>STM</strong> ' + cr.stamina + '</span>';
-    html += '<span class="sb-stat"><strong>Winded</strong> ' + cr.winded + '</span>';
-    html += '<span class="sb-stat"><strong>SPD</strong> ' + cr.speed + '</span>';
-    html += '<span class="sb-stat"><strong>Stability</strong> ' + cr.stability + '</span>';
-    html += '</div></div>';
-
-    html += '<div class="sb-characteristics">';
-    var chars = ['might', 'agility', 'reason', 'intuition', 'presence'];
-    chars.forEach(function (stat) {
-      var val = cr[stat];
-      var sign = val >= 0 ? '+' : '';
-      var cls = val > 0 ? 'positive' : (val < 0 ? 'negative' : 'zero');
-      html += '<span class="sb-char ' + cls + '"><strong>' + stat.charAt(0).toUpperCase() + stat.slice(1, 3).toUpperCase() + '</strong> ' + sign + val + '</span>';
-    });
-    html += '</div>';
-
-    if (cr.immunities && cr.immunities.length > 0) {
-      html += '<div class="sb-immunities"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(typeof i === 'string' ? i : i.type + ' ' + i.value); }).join(', ') + '</div>';
-    }
-
-    html += '<div class="sb-divider"></div>';
-
-    if (cr.free_strike) {
-      html += '<div class="sb-free-strike"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
-    }
-
-    if (cr.abilities && cr.abilities.length > 0) {
-      cr.abilities.forEach(function (ab) {
-        var typeLabel = ab.type === 'signature' ? '\u2605 ' : '';
-        html += '<div class="sb-ability">';
-        html += '<div class="sb-ability-name">' + typeLabel + h(ab.name || '') + ' <span class="sb-ability-type">' + h(ab.type || '') + '</span></div>';
-        if (ab.keywords && ab.keywords.length > 0) {
-          html += '<div class="sb-ability-kw">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
-        }
-        var meta = [];
-        if (ab.distance) meta.push(h(ab.distance));
-        if (ab.target) meta.push(h(ab.target));
-        if (ab.power_roll) meta.push(h(ab.power_roll));
-        if (meta.length > 0) html += '<div class="sb-ability-meta">' + meta.join(' \u2022 ') + '</div>';
-        if (ab.trigger) html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
-        if (ab.tier1 || ab.tier2 || ab.tier3) {
-          html += '<div class="sb-ability-tiers">';
-          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
-          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
-          if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
-          html += '</div>';
-        }
-        if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        var svp = Number(ab.spend_vp);   // L-4: coerce so no string reaches output
-        if (svp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + svp + ' VP:</strong> Enhanced effect</div>';
-        html += '</div>';
-      });
-    }
-
-    var va = cr.villain_actions ? cr.villain_actions.filter(function (v) { return v.name && v.name.trim(); }) : [];
-    if (va.length > 0) {
-      html += '<div class="sb-divider"></div>';
-      html += '<h3 class="sb-section-title">Villain Actions</h3>';
-      var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
-      va.forEach(function (v) {
-        html += '<div class="sb-va">';
-        html += '<div class="sb-va-name"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name) + '</div>';
-        if (v.description) html += '<div class="sb-va-desc">' + ref.renderText(h(v.description)) + '</div>';
-        if (v.tier1 || v.tier2 || v.tier3) {
-          html += '<div class="sb-va-tiers">';
-          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(v.tier1)) + '</div>';
-          if (v.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(v.tier2)) + '</div>';
-          if (v.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(v.tier3)) + '</div>';
-          html += '</div>';
-        }
-        html += '</div>';
-      });
-    }
-
-    if (cr.traits && cr.traits.length > 0) {
-      html += '<div class="sb-divider"></div>';
-      html += '<h3 class="sb-section-title">Traits</h3>';
-      cr.traits.forEach(function (t) {
-        html += '<div class="sb-trait"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
-      });
-    }
-
-    html += '</div>'; // close sb-content
-
-    return html;
-  },
-
-  // ── Save ────────────────────────────────────────────────
-
-  // _buildFieldsData assembles the fields_data map persisted on the entity.
-  // Chronicle reads custom fields under the `fields_data` key; the old
-  // key was silently dropped on write. free_strike_damage is included so a manual
-  // free-strike override round-trips instead of being recomputed on reload.
-  _buildFieldsData: function () {
-    var cr = this._boundCreatureFields(this.creature);
-    return {
-      level: cr.level,
-      organization: cr.organization,
-      role: cr.role,
-      ev: cr.ev,
-      size: cr.size,
-      keywords: JSON.stringify(cr.keywords),
-      faction: cr.faction,
-      stamina: cr.stamina,
-      winded: cr.winded,
-      speed: cr.speed,
-      stability: cr.stability,
-      might: cr.might,
-      agility: cr.agility,
-      reason: cr.reason,
-      intuition: cr.intuition,
-      presence: cr.presence,
-      immunities: JSON.stringify(cr.immunities),
-      free_strike: cr.free_strike,
-      free_strike_damage: cr.free_strike_damage,
-      traits: JSON.stringify(cr.traits),
-      abilities_json: JSON.stringify(cr.abilities),
-      villain_actions_json: JSON.stringify(cr.villain_actions)
-    };
-  },
-
-  _save: function () {
-    var self = this;
-
-    var errors = this._validate().filter(function (r) { return r.severity === 'error'; });
-    if (errors.length > 0) {
-      alert('Cannot save: ' + errors[0].message);
-      return;
-    }
-    if (!this.config.campaignId) {
-      alert('No campaign context. Saving a creature requires a campaign.');
-      return;
-    }
-
-    var fieldsData = this._buildFieldsData();
-    this._setSaveStatus('saving');
-
-    // PUT updates an existing entity; POST creates one when none is configured
-    // Chronicle has no partial-update route for entities — the old
-    // request method never matched a handler, so saves silently no-op'd.
-    var promise = this.config.entityId
-      ? this._updateEntity(fieldsData)
-      : this._createEntity(fieldsData);
-
-    promise.then(function () {
-      self._onSaveSuccess();
-    }).catch(function (err) {
-      self._setSaveStatus('error');
-      // A server-sourced message is never shown verbatim — only a fixed,
-      // safe string reaches the user; the real error stays in the console
-      // for diagnostics. A message this widget generated itself (e.g. the
-      // entity type isn't installed) is safe and still useful to show.
-      if (typeof console !== 'undefined') console.warn('Monster Builder: save failed', err);
-      alert((err && !err.fromServer && err.message) ? err.message : 'Could not save creature. Please try again.');
-    });
-  },
-
-  _updateEntity: function (fieldsData) {
-    var self = this;
-    var name = this._boundCreatureFields(this.creature).name;
-    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entities/' + encodeURIComponent(this.config.entityId);
-    return Chronicle.apiFetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name,
-        type_label: 'drawsteel-creature',
-        is_private: this._entityIsPrivate,
-        fields_data: fieldsData
-      })
-    }).then(function (res) {
-      if (!res.ok) {
-        return self._apiError(res, 'Could not save creature. Please try again.').then(function (msg) {
-          var e = new Error(msg); e.fromServer = true; throw e;
-        });
-      }
-    });
-  },
-
-  // _createEntity resolves the Draw Steel creature entity type, POSTs a new
-  // entity, and stores the returned id so later saves switch to PUT.
-  _createEntity: function (fieldsData) {
-    var self = this;
-    var name = this._boundCreatureFields(this.creature).name;
-    return this._resolveEntityTypeId().then(function (typeId) {
-      var url = '/api/v1/campaigns/' + encodeURIComponent(self.config.campaignId) + '/entities';
-      return Chronicle.apiFetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name,
-          entity_type_id: typeId,
-          type_label: 'drawsteel-creature',
-          is_private: self._entityIsPrivate,
-          fields_data: fieldsData
-        })
-      });
-    }).then(function (res) {
-      if (!res.ok) {
-        return self._apiError(res, 'Could not create creature. Please try again.').then(function (msg) {
-          var e = new Error(msg); e.fromServer = true; throw e;
-        });
-      }
-      return res.json();
-    }).then(function (entity) {
-      if (entity && entity.id) self.config.entityId = entity.id;
-    });
-  },
-
-  // _resolveEntityTypeId looks up the numeric entity_type_id for Draw Steel
-  // creatures. type_label is display-only on Chronicle and does NOT select the
-  // type — without an explicit id the create handler defaults to the campaign's
-  // first type. We match the `drawsteel-creature` slug (falling back to the
-  // "Creature" name) and error clearly if the type isn't installed.
-  _resolveEntityTypeId: function () {
-    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entity-types';
-    return Chronicle.apiFetch(url)
-      .then(function (r) {
-        if (!r.ok) throw new Error('Could not load entity types for this campaign.');
-        return r.json();
-      })
-      .then(function (data) {
-        var types = (data && data.data) || (Array.isArray(data) ? data : []);
-        var match = null, i;
-        for (i = 0; i < types.length; i++) {
-          if (types[i].slug === 'drawsteel-creature') { match = types[i]; break; }
-        }
-        if (!match) {
-          for (i = 0; i < types.length; i++) {
-            if ((types[i].name || '').toLowerCase() === 'creature') { match = types[i]; break; }
-          }
-        }
-        if (!match) {
-          throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign. Install the Draw Steel package, then try again.');
-        }
-        return match.id;
-      });
-  },
-
-  // _onSaveSuccess marks the form clean and unlocks bestiary publishing.
-  _onSaveSuccess: function () {
-    var self = this;
-    Chronicle.markClean('monster-builder');
-    this._canPublish = true;
-    this._setSaveStatus('saved');
-    this._renderButtons();
-    setTimeout(function () {
-      if (self._saveStatus === 'saved') self._setSaveStatus('clean');
-    }, 2000);
-  },
-
-  // ── Bestiary publish ───────────────────────────────
-
-  // _buildStatblock produces the freeform statblock object stored on the
-  // bestiary publication. It MUST include a top-level `name` (the server rejects
-  // a statblock without one) and carries level/organization/role so the bestiary
-  // can index and filter the publication.
-  _buildStatblock: function () {
-    var cr = this._boundCreatureFields(this.creature);
-    return {
-      name: cr.name,
-      level: cr.level,
-      size: cr.size,
-      organization: cr.organization,
-      role: cr.role,
-      ev: cr.ev,
-      keywords: cr.keywords,
-      faction: cr.faction,
-      stamina: cr.stamina,
-      winded: cr.winded,
-      speed: cr.speed,
-      stability: cr.stability,
-      might: cr.might,
-      agility: cr.agility,
-      reason: cr.reason,
-      intuition: cr.intuition,
-      presence: cr.presence,
-      immunities: cr.immunities,
-      free_strike: cr.free_strike,
-      free_strike_damage: cr.free_strike_damage,
-      abilities: cr.abilities,
-      villain_actions: cr.villain_actions,
-      traits: cr.traits
-    };
-  },
-
-  // _publishToBestiary publishes the saved creature to the instance-level
-  // community bestiary (POST /bestiary — not under /campaigns). We omit
-  // system_id and send source_campaign_id/source_entity_id so the server stamps
-  // the campaign's real system slug authoritatively. visibility defaults to
-  // draft (private to the creator); the toggle switches it to published.
-  _publishToBestiary: function () {
-    var self = this;
-    if (!this._canPublish) {
-      alert('Save the creature before publishing it to the bestiary.');
-      return;
-    }
-    if (!this.creature.name || !this.creature.name.trim()) {
-      alert('The creature needs a name before it can be published.');
-      return;
-    }
-
-    var boundName = this._boundCreatureFields(this.creature).name;
-    var body = {
-      name: boundName,
-      statblock_json: this._buildStatblock(),
-      visibility: this._publishVisibility || 'draft'
-    };
-    if (this.config.campaignId) body.source_campaign_id = this.config.campaignId;
-    if (this.config.entityId) body.source_entity_id = this.config.entityId;
-
-    this._setPublishMsg('Publishing…', '');
-    Chronicle.apiFetch('/bestiary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function (res) {
-      if (res.status === 429) {
-        self._setPublishMsg('Bestiary publish limit reached (10 per hour). Please try again later.', 'error');
-        return null;
-      }
-      if (!res.ok) {
-        // Log the real reason for diagnostics; show only a fixed, safe string.
-        return self._apiError(res, 'Could not publish to the bestiary.').then(function (msg) {
-          if (typeof console !== 'undefined') console.warn('Monster Builder: publish failed', msg);
-          self._setPublishMsg('Could not publish to the bestiary. Please try again.', 'error');
-          return null;
-        });
-      }
-      return res.json().then(function (pub) {
-        var where = self._publishVisibility === 'published' ? 'the public bestiary' : 'My Creations (private)';
-        var name = (pub && pub.name) ? pub.name : boundName;
-        self._setPublishMsg('Published "' + name + '" to ' + where + '.', 'ok');
-      });
-    }).catch(function (err) {
-      if (typeof console !== 'undefined') console.warn('Monster Builder: publish failed', err);
-      self._setPublishMsg('Could not publish to the bestiary. Please try again.', 'error');
-    });
-  },
-
-  // _setPublishMsg shows publish feedback just above the save bar. textContent
-  // keeps it XSS-safe regardless of the creature/publication name.
-  _setPublishMsg: function (msg, kind) {
-    if (!this._saveBarEl || !this._saveBarEl.parentNode) return;
-    var el = this.el.querySelector('.mb-publish-msg');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'mb-publish-msg';
-      this._saveBarEl.parentNode.insertBefore(el, this._saveBarEl);
-    }
-    el.className = 'mb-publish-msg' + (kind ? ' mb-publish-' + kind : '');
-    el.textContent = msg;
-  }
-});
+  });
+}
+
+// Test seam: inert in a browser (no CommonJS module).
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = DrawSteelCreatureEditor;
+}
