@@ -25,9 +25,9 @@ The manifest's `dm_screen` block tells Chronicle's DM Screen what to show for ea
 - **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
 
 ### Interactive Widgets
-- **Monster Builder** — 7-step creature authoring with stats auto-filled from the published formulas, completeness checks, damage hints, an encounter-strength calculator, and full preview. It does not certify balance: figures the published rules do not cover are labelled unsourced on screen. See `docs/WIDGET-GUIDE.md`.
-- **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal statblocks, and campaign import
-- **Statblock Renderer** — read-only formatted creature statblock display for entity pages
+- **Monster Builder** — a one-page creature editor whose figures follow the published formulas and say where they came from; the director sets what no formula covers. It checks completeness, not balance. See `docs/WIDGET-GUIDE.md`.
+- **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal stat blocks, and Add to this campaign
+- **Creature stat block** — the stat block under each Creature page's title, with Edit stat block and Publish for the director
 - **Character Sheet** — read-only hero reference sheet synced from Foundry (abilities, skills, kit, features). See `docs/CHARACTER-SHEET-DESIGN.md`.
 - **Rulebook Front Page** — an interactive rules page (power roll, characteristics, conditions). See `docs/WIDGET-GUIDE.md`.
 
@@ -131,7 +131,6 @@ data/
   rules-glossary.json      65 rules definitions for @references
   organization-templates.json  7 org types (stamina/EV formulas)
   role-templates.json      9 roles (characteristic baselines)
-  damage-baselines.json    Damage scaling by tier and organization
   creature-keywords.json   23 creature type keywords
   ability-keywords.json    24 ability/keyword definitions
   abilities.json           519 hero abilities
@@ -143,11 +142,11 @@ book/
   book.yaml                Rulebook cover, theme and chapter list
   chapters/                One YAML file per chapter
 widgets/
-  monster-builder.js       7-step creature authoring wizard
+  monster-builder.js       One-page creature editor
   monster-engine.js        Published Draw Steel formulas (the only place they're evaluated)
   monster-party.js         Party-aware suggestion data (fetch + derive)
   bestiary-browser.js      Filterable creature catalog
-  statblock-renderer.js    Formatted statblock display
+  statblock-renderer.js    Creature stat block panel
   character-sheet.js       Read-only hero reference sheet
   rulebook-frontpage.js    Interactive rules page
   rulebook-fold-engine.js  Shared fold/glossary-hover interaction module
@@ -163,10 +162,11 @@ docs/
   implementation-checklist.md  Implementation roadmap
 ```
 
-## Open work: the bestiary + monster-builder rewrite
+## Open work: creatures
 
-The community bestiary browser, the monster builder, and the Foundry creature-sync
-leg are due a rewrite. Open work: #54.
+The stat block, the one-page editor and the bestiary browser are rebuilt
+(#49). Still open: the Foundry creature-sync leg (#54) and encounter assembly
+(#50).
 
 ## License
 

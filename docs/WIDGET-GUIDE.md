@@ -18,38 +18,36 @@ Sheet widget (`widgets/character-sheet.js`) is documented separately, in
 
 **Slug:** `monster-builder`
 
-A 7-step guided creature authoring wizard with auto-calculated stats, completeness checks, an encounter-strength calculator, and full statblock preview.
+The one-page creature editor: identity, figures, characteristics, traits,
+abilities and villain actions on the left; the party, the encounter budget and
+the completeness checks on the right. **Start from…** copies a creature from
+the community bestiary or this campaign, recomputed for its level. Most
+directors reach it through **Edit stat block** on a Creature page (see
+Statblock Renderer below) rather than placing it.
 
-**What the numbers are.** Encounter value, Stamina and baseline ability damage
-come from the published formulas in `data/monster-building.json`; the encounter
-readout uses the published encounter strength and difficulty bands from
-`data/encounter-building.json`. Where the published rules do not cover an input
-— the Swarm organization is this package's own invention, and the Stamina
-formula needs a role before it can be evaluated — the widget falls back to its
-own estimate and labels it unsourced on screen. **The panel checks that a stat
-block is complete. It does not certify that a creature or an encounter is
-balanced**, and it does not check the published spending limits (creatures per
-hero, the six-stat-block cap, buying minions in fours, star-of-the-show).
+**What the numbers are.** Encounter value, Stamina, free strike, formula
+ability damage and the highest characteristic come from the published formulas
+in `data/monster-building.json`; the encounter readout uses the published
+encounter strength and difficulty bands from `data/encounter-building.json`.
+Where the published rules do not cover an input — the Swarm organization is
+this package's own, and the Stamina formula needs a role — the box is left for
+the director and says so. A number the director types is never overwritten.
+**The panel checks that a stat block is complete. It does not certify that a
+creature or an encounter is balanced**, and it does not check the published
+spending limits (creatures per hero, the six-stat-block cap, buying minions in
+fours, star-of-the-show). Details: `docs/monster-builder.md`.
 
 ### Config Keys
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `entity_id` | string | — | Entity to edit (if editing existing creature) |
+| `entity_id` | string | — | Creature page to edit (auto-set on an entity page) |
 | `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
-| `editable` | boolean | `true` | Whether the form is interactive. Set to `false` for read-only display. |
-
-### Steps
-1. **Identity** — Name, level, size, faction, keywords
-2. **Organization & Role** — Select org type and combat role (auto-calculates stats)
-3. **Statistics** — Review/override auto-calculated stats
-4. **Abilities** — Add abilities from templates or create custom ones
-5. **Free Strike** — Configure free strike damage
-6. **Villain Actions** — Add 3 villain actions (Leaders/Solos only)
-7. **Traits** — Add passive traits and immunities
 
 ### Usage
-Best placed on a creature entity page. When `entity_id` is set, it loads existing creature data for editing. When empty, it creates a new creature.
+On a Creature page whose stat block panel is showing, the placed widget steps
+aside and points at **Edit stat block**. Placed elsewhere (or with no
+`entity_id`), it builds a new creature, and Save creates its page.
 
 ---
 
@@ -86,24 +84,28 @@ Best placed on a campaign dashboard or dedicated "Bestiary" page. In `"campaign"
 
 **Slug:** `statblock-renderer`
 
-A read-only formatted statblock display for a single creature entity.
+The creature stat block, mounted by Chronicle under the title of Creature pages
+(`entity_panels` in `manifest.json`). It shows header and EV, the Size / Speed
+/ Stamina / Stability / Free strike strip, characteristics, immunities and
+weaknesses, traits, abilities with tier odds, and villain actions. EV, Stamina
+and free strike carry a tick when they match the published formula and a pen
+when the director changed them. The director also gets **Edit stat block** and
+**Publish** (to the Community Bestiary); a player sees nothing on a creature
+with no stat block yet.
 
-### Config Keys
+In page-layout mode the panel appears only where the layout has the **Game
+System Panels** block.
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `entity_id` | string | — | The creature entity to display |
-| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
+### Config Keys (set by Chronicle)
 
-### Features
-- Full formatted statblock (header, stats, characteristics, abilities, villain actions, traits)
-- @reference tooltips on rule terms
-- Responsive layout
+| Key | Type | Description |
+|-----|------|-------------|
+| `entity_id` | string | The page |
+| `campaign_id` | string | Campaign context |
+| `is_gm` | boolean | Shows the director's buttons |
 
-### Usage
-Place on a creature entity page alongside or instead of the raw field editor. Provides a clean read-only view of the creature's complete stat block.
-
----
+Its global `DrawSteelStatblock` is the one stat block drawing the editor,
+the bestiary modal and hover cards (compact mode) share.
 
 ## Negotiation Tracker
 
