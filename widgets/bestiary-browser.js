@@ -210,19 +210,36 @@ Chronicle.register('bestiary-browser', {
           self.state.creatures = entities.map(function (e) { return self._normalizeEntity(e); });
         });
     }
-    // Bestiary mode
-    return Chronicle.apiFetch('/bestiary?limit=500')
-      .then(function (r) {
-        if (!r.ok) {
-          return self._apiError(r, 'Community Bestiary is not available on this instance.').then(function (msg) {
-            throw new Error(msg);
-          });
-        }
-        return r.json();
-      })
-      .then(function (data) {
-        var items = Array.isArray(data) ? data : (data.results || []);
-        self.state.creatures = items.map(function (e) { return self._normalizeEntity(e); });
+    // Bestiary mode: Search, not Browse, because only Search filters by system
+    // (Browse lists every game's creatures); with no query it lists them all.
+    // Both cap a page at 50, so walk the pages. Rows are summaries without a
+    // stat block; _openModal fetches the full one when a card opens.
+    var acc = [];
+    function page(n) {
+      return Chronicle.apiFetch('/bestiary/search?system_id=drawsteel&per_page=50&page=' + n)
+        .then(function (r) {
+          if (!r.ok) throw new Error('bestiary search -> ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          var items = self._unwrapList(data);
+          acc = acc.concat(items);
+          var total = (data && typeof data.total === 'number') ? data.total : acc.length;
+          if (items.length === 0 || acc.length >= total || n >= 40) return acc;
+          return page(n + 1);
+        });
+    }
+    return page(1)
+      .then(function (items) {
+        self.state.creatures = items.map(function (e) {
+          var c = self._normalizeEntity(e);
+          // A publication's id is not a campaign entity: it must never reach the
+          // Edit/Delete paths, which act on this campaign's pages.
+          c.id = '';
+          c._slug = e.slug || '';
+          c._summary = e;
+          return c;
+        });
       })
       .catch(function (err) {
         // A server-sourced message is never shown verbatim, same as the
@@ -262,8 +279,11 @@ Chronicle.register('bestiary-browser', {
       immunities: this._parseList(f.immunities),
       free_strike: f.free_strike || '',
       traits: this._parseJSON(f.traits, []),
-      abilities: this._parseJSON(f.abilities_json, []),
-      villain_actions: this._parseJSON(f.villain_actions_json, [])
+      abilities: this._parseJSON(f.abilities_json !== undefined ? f.abilities_json : f.abilities, []),
+      villain_actions: this._parseJSON(f.villain_actions_json !== undefined ? f.villain_actions_json : f.villain_actions, []),
+      // The stored fields as they came, for the shared stat block, which tells
+      // an unset figure from a 0.
+      _raw: f
     };
   },
 
@@ -301,7 +321,9 @@ Chronicle.register('bestiary-browser', {
   _parseJSON: function (val, fallback) {
     if (!val) return fallback;
     var parsed;
-    try { parsed = JSON.parse(val); } catch (e) { return fallback; }
+    // A bestiary stat block carries real arrays; stored fields carry JSON text.
+    if (typeof val !== 'string') parsed = val;
+    else { try { parsed = JSON.parse(val); } catch (e) { return fallback; } }
     if (Array.isArray(fallback)) {
       if (!Array.isArray(parsed)) return fallback;
       return parsed.filter(function (item) { return item !== null && typeof item === 'object'; });
@@ -590,7 +612,8 @@ Chronicle.register('bestiary-browser', {
       '.bb-modal-header h2 { margin:0; font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
       '.bb-modal-close { background:none; border:none; font-size:20px; cursor:pointer; padding:4px 8px; line-height:1; color:var(--color-text-secondary,#6b7280); border-radius:6px; transition:all 100ms ease; }',
       '.bb-modal-close:hover { background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); }',
-      '.bb-modal-body { padding:0; }',
+      '.bb-modal-body { padding:16px; }',
+      '.bb-modal-body .sbx { border-left:0; border-right:0; border-bottom:0; border-radius:0; padding:0; }',
       '.bb-modal-actions { padding:12px 20px; border-top:1px solid var(--color-border,#e5e7eb); display:flex; gap:8px; }',
       // ── Empty & loading states ──
       '.bb-empty { text-align:center; padding:48px 16px; }',
@@ -602,45 +625,6 @@ Chronicle.register('bestiary-browser', {
       '.bb-skeleton { border-radius:12px; background:linear-gradient(90deg,var(--color-bg-tertiary,#f3f4f6) 25%,var(--color-border-light,#f3f4f6) 50%,var(--color-bg-tertiary,#f3f4f6) 75%); background-size:200% 100%; animation:bb-shimmer 1.5s ease-in-out infinite; }',
       '.bb-skeleton-card { height:140px; border-radius:12px; }',
       // ── Statblock styles (for modal) ──
-      '.bb-modal-body .sb-header { background:var(--color-accent,#6366f1); padding:16px 20px; }',
-      '.bb-modal-body .sb-name { margin:0 0 4px; font-size:20px; font-weight:700; color:#fff; }',
-      '.bb-modal-body .sb-subtitle { color:rgba(255,255,255,0.85); font-size:14px; }',
-      '.bb-modal-body .sb-keywords { font-style:italic; color:rgba(255,255,255,0.7); font-size:12px; margin-top:4px; }',
-      '.bb-modal-body .sb-faction { color:rgba(255,255,255,0.7); font-size:12px; }',
-      '.bb-modal-body .sb-ev { display:inline-block; margin-top:6px; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; background:rgba(255,255,255,0.2); color:#fff; }',
-      '.bb-modal-body .sb-content { padding:16px 20px; }',
-      '.bb-modal-body .sb-divider { border:none; border-top:2px solid var(--color-accent,#6366f1); margin:12px 0; opacity:0.3; }',
-      '.bb-modal-body .sb-stats { margin:8px 0; }',
-      '.bb-modal-body .sb-stat-row { display:flex; gap:8px; flex-wrap:wrap; }',
-      '.bb-modal-body .sb-stat { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); }',
-      '.bb-modal-body .sb-stat strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
-      '.bb-modal-body .sb-characteristics { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }',
-      '.bb-modal-body .sb-char { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.bb-modal-body .sb-char strong { font-weight:600; color:var(--color-text-secondary,#6b7280); }',
-      '.bb-modal-body .sb-char.positive { background:rgba(16,185,129,0.1); color:#047857; }',
-      '.bb-modal-body .sb-char.negative { background:rgba(239,68,68,0.1); color:#b91c1c; }',
-      '.bb-modal-body .sb-char.zero { background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.bb-modal-body .sb-immunities { margin:8px 0; font-size:14px; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-free-strike { margin:8px 0; font-size:14px; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-ability { padding:10px 0; border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
-      '.bb-modal-body .sb-ability:last-child { border-bottom:none; }',
-      '.bb-modal-body .sb-ability-name { font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.bb-modal-body .sb-ability-type { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:9999px; font-size:11px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); vertical-align:middle; }',
-      '.bb-modal-body .sb-ability-kw { font-style:italic; color:var(--color-text-secondary,#6b7280); font-size:12px; margin-top:2px; }',
-      '.bb-modal-body .sb-ability-meta { color:var(--color-text-body,#374151); font-size:12px; margin-top:4px; }',
-      '.bb-modal-body .sb-ability-trigger { font-size:14px; margin-top:4px; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-ability-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
-      '.bb-modal-body .sb-ability-tiers > div { margin:2px 0; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-ability-effect { font-size:14px; margin-top:4px; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-ability-vp { font-size:14px; margin-top:4px; color:var(--color-accent,#6366f1); font-weight:600; }',
-      '.bb-modal-body .sb-section-title { font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-secondary,#6b7280); margin:0 0 8px; }',
-      '.bb-modal-body .sb-va { margin:8px 0; }',
-      '.bb-modal-body .sb-va-name { font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.bb-modal-body .sb-va-desc { font-size:14px; margin-top:2px; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-va-roll { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:2px; }',
-      '.bb-modal-body .sb-va-tiers { border-left:2px solid var(--color-border,#e5e7eb); padding-left:12px; margin:6px 0; font-size:14px; }',
-      '.bb-modal-body .sb-va-tiers > div { margin:2px 0; color:var(--color-text-body,#374151); }',
-      '.bb-modal-body .sb-trait { margin:6px 0; font-size:14px; color:var(--color-text-body,#374151); }'
     ].join('\n');
     this.el.insertBefore(style, this.el.firstChild);
   },
@@ -708,6 +692,15 @@ Chronicle.register('bestiary-browser', {
       ' RSN ' + charSign(creature.reason) +
       ' INT ' + charSign(creature.intuition) +
       ' PRS ' + charSign(creature.presence) + '</div>';
+
+    // A bestiary summary has no figures yet, so the card shows how often it was
+    // added and its rating rather than a row of zeros.
+    var sum = creature._summary;
+    if (sum) {
+      stats = '<div class="bb-card-stats">' + (Number(sum.downloads) || 0) + ' added &middot; rated ' +
+        (Number(sum.rating_average) || 0).toFixed(1) + ' (' + (Number(sum.rating_count) || 0) + ')</div>';
+      chars = '';
+    }
 
     card.innerHTML = accent + '<div class="bb-card-body">' + header + subtitle + tags + stats + chars + '</div>';
     card.addEventListener('click', function () { self._openModal(creature); });
@@ -935,8 +928,30 @@ Chronicle.register('bestiary-browser', {
     this._countEl.textContent = start + '-' + end + ' of ' + total + ' creatures';
   },
 
+  // _openModal shows a creature. A bestiary summary first fetches its full
+  // stat block, so the modal and Add work from the real figures and abilities.
   _openModal: function (creature) {
     var self = this;
+    if (creature._slug && !creature._full) {
+      Chronicle.apiFetch('/bestiary/' + encodeURIComponent(creature._slug) + '/statblock')
+        .then(function (r) {
+          if (!r.ok) throw new Error('statblock -> ' + r.status);
+          return r.json();
+        })
+        .then(function (sb) {
+          var full = self._normalizeEntity({ name: creature.name, custom_fields: sb || {} });
+          full.id = '';
+          full._slug = creature._slug;
+          full._summary = creature._summary;
+          full._full = true;
+          self._openModal(full);
+        })
+        .catch(function (err) {
+          if (typeof console !== 'undefined') console.warn('Bestiary Browser: stat block fetch failed', err);
+          alert('Could not load this creature’s stat block. Please try again.');
+        });
+      return;
+    }
     var h = Chronicle.escapeHtml;
     this.state.modalCreature = creature;
     var overlay = this._modalOverlay;
@@ -962,7 +977,7 @@ Chronicle.register('bestiary-browser', {
 
     var actions = document.createElement('div');
     actions.className = 'bb-modal-actions';
-    var isOwnedEntity = creature.id && self.config.campaignId;
+    var isOwnedEntity = !!(creature.id && self.config.campaignId && self.state.source === 'campaign');
     var editable = self.config.editable !== false;
 
     if (isOwnedEntity && editable) {
@@ -978,7 +993,7 @@ Chronicle.register('bestiary-browser', {
       // Import button — for bestiary creatures not yet in campaign
       var importBtn = document.createElement('button');
       importBtn.className = 'btn btn-primary';
-      importBtn.textContent = 'Import to Campaign';
+      importBtn.textContent = 'Add to this campaign';
       importBtn.addEventListener('click', function () {
         if (!self.config.campaignId) { alert('No campaign selected.'); return; }
         // CreateEntity binds {name, entity_type_id, fields_data} and rejects a
@@ -993,7 +1008,11 @@ Chronicle.register('bestiary-browser', {
           : self._resolveCreatureTypeId().then(function (id) { self._creatureTypeId = id; return id; });
         start.then(function (id) {
           if (!id) throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign.');
-          var payload = { name: bounded.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: self._toFieldsData(bounded) };
+          // The shared stat block's field writer keeps an unset figure unset
+          // instead of writing a 0, and caps every list.
+          var S = (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null;
+          var fields = S ? S.toFields(S.normalize(creature._raw || creature)) : self._toFieldsData(bounded);
+          var payload = { name: bounded.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields };
           return Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         })
           .then(function (res) {
@@ -1002,7 +1021,7 @@ Chronicle.register('bestiary-browser', {
                 var e = new Error(msg); e.fromServer = true; throw e;
               });
             }
-            importBtn.textContent = 'Imported!'; importBtn.disabled = true;
+            importBtn.textContent = 'Added'; importBtn.disabled = true;
           })
           .catch(function (err) {
             // A server-sourced message is never shown verbatim — only a
@@ -1021,7 +1040,9 @@ Chronicle.register('bestiary-browser', {
     exportBtn.className = 'btn btn-secondary';
     exportBtn.textContent = 'Export JSON';
     exportBtn.addEventListener('click', function () {
-      var blob = new Blob([JSON.stringify(creature, null, 2)], { type: 'application/json' });
+      var out = {};
+      for (var k in creature) { if (creature.hasOwnProperty(k) && k.charAt(0) !== '_') out[k] = creature[k]; }
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = (creature.name || 'creature').replace(/[^a-z0-9]/gi, '_') + '.json';
@@ -1076,126 +1097,14 @@ Chronicle.register('bestiary-browser', {
     }
   },
 
+  // The modal draws the same stat block as a creature's own page, from
+  // DrawSteelStatblock (statblock-renderer.js), looked up now because widget
+  // scripts load in manifest order.
   _buildStatblockHtml: function (creature) {
-    var cr = creature;
-    var h = Chronicle.escapeHtml;
-    var ref = this._ref;
-    var html = '';
-
-    // Header
-    html += '<div class="sb-header">';
-    html += '<h2 class="sb-name">' + h(cr.name) + '</h2>';
-    html += '<div class="sb-subtitle">Level ' + cr.level + ' ';
-    if (cr.size) html += h(cr.size) + ' ';   // H-4: size is user-authored, escape it
-    if (cr.organization) html += h(cr.organization.charAt(0).toUpperCase() + cr.organization.slice(1)) + ' ';
-    if (cr.role) html += h(cr.role.charAt(0).toUpperCase() + cr.role.slice(1));
-    html += '</div>';
-    if (cr.keywords.length > 0) {
-      html += '<div class="sb-keywords">' + cr.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
-    }
-    if (cr.faction) html += '<div class="sb-faction">' + h(cr.faction) + '</div>';
-    html += '<span class="sb-ev">EV ' + cr.ev + '</span>';
-    html += '</div>';
-
-    // Content body
-    html += '<div class="sb-content">';
-
-    // Core stats
-    html += '<div class="sb-stats"><div class="sb-stat-row">';
-    html += '<span class="sb-stat"><strong>STM</strong> ' + cr.stamina + '</span>';
-    html += '<span class="sb-stat"><strong>Winded</strong> ' + cr.winded + '</span>';
-    html += '<span class="sb-stat"><strong>SPD</strong> ' + cr.speed + '</span>';
-    html += '<span class="sb-stat"><strong>Stability</strong> ' + cr.stability + '</span>';
-    html += '</div></div>';
-
-    // Characteristics with +/- coloring
-    html += '<div class="sb-characteristics">';
-    var chars = ['might', 'agility', 'reason', 'intuition', 'presence'];
-    chars.forEach(function (stat) {
-      var val = cr[stat];
-      var sign = val >= 0 ? '+' : '';
-      var cls = val > 0 ? 'positive' : (val < 0 ? 'negative' : 'zero');
-      html += '<span class="sb-char ' + cls + '"><strong>' + stat.charAt(0).toUpperCase() + stat.slice(1, 3).toUpperCase() + '</strong> ' + sign + val + '</span>';
-    });
-    html += '</div>';
-
-    // Immunities
-    if (cr.immunities && cr.immunities.length > 0) {
-      html += '<div class="sb-immunities"><strong>Immunities:</strong> ' + cr.immunities.map(function (i) { return h(i); }).join(', ') + '</div>';
-    }
-
-    html += '<div class="sb-divider"></div>';
-
-    // Free Strike
-    if (cr.free_strike) {
-      html += '<div class="sb-free-strike"><strong>Free Strike:</strong> ' + h(cr.free_strike) + '</div>';
-    }
-
-    // Abilities
-    if (cr.abilities && cr.abilities.length > 0) {
-      html += '<div class="sb-abilities">';
-      cr.abilities.forEach(function (ab) {
-        var typeLabel = ab.type === 'signature' ? '\u2605 ' : '';
-        html += '<div class="sb-ability">';
-        html += '<div class="sb-ability-name">' + typeLabel + h(ab.name || '') + ' <span class="sb-ability-type">' + h(ab.type || '') + '</span></div>';
-        if (ab.keywords && ab.keywords.length > 0) {
-          html += '<div class="sb-ability-kw">' + ab.keywords.map(function (k) { return h(k); }).join(', ') + '</div>';
-        }
-        var meta = [];
-        if (ab.distance) meta.push(h(ab.distance));
-        if (ab.target) meta.push(h(ab.target));
-        if (ab.power_roll) meta.push(h(ab.power_roll));
-        if (meta.length > 0) html += '<div class="sb-ability-meta">' + meta.join(' &bull; ') + '</div>';
-        if (ab.trigger) html += '<div class="sb-ability-trigger"><strong>Trigger:</strong> ' + ref.renderText(h(ab.trigger)) + '</div>';
-        if (ab.tier1 || ab.tier2 || ab.tier3) {
-          html += '<div class="sb-ability-tiers">';
-          if (ab.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(ab.tier1)) + '</div>';
-          if (ab.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(ab.tier2)) + '</div>';
-          if (ab.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(ab.tier3)) + '</div>';
-          html += '</div>';
-        }
-        if (ab.effect) html += '<div class="sb-ability-effect"><strong>Effect:</strong> ' + ref.renderText(h(ab.effect)) + '</div>';
-        var svp = Number(ab.spend_vp);   // L-4: coerce so no string reaches output
-        if (svp > 0) html += '<div class="sb-ability-vp"><strong>Spend ' + svp + ' VP:</strong> Enhanced effect</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-
-    // Villain Actions
-    var va = cr.villain_actions ? cr.villain_actions.filter(function (v) { return v.name && v.name.trim(); }) : [];
-    if (va.length > 0) {
-      html += '<div class="sb-divider"></div>';
-      html += '<div class="sb-villain-actions"><h3 class="sb-section-title">Villain Actions</h3>';
-      var orderLabels = { 'opener': 'Opener', 'crowd-control': 'Crowd Control', 'ultimate': 'Ultimate' };
-      va.forEach(function (v) {
-        html += '<div class="sb-va">';
-        html += '<div class="sb-va-name"><strong>' + h(orderLabels[v.order] || v.order || '') + ':</strong> ' + h(v.name) + '</div>';
-        if (v.description) html += '<div class="sb-va-desc">' + ref.renderText(h(v.description)) + '</div>';
-        if (v.power_roll) html += '<div class="sb-va-roll">' + h(v.power_roll) + '</div>';
-        if (v.tier1 || v.tier2 || v.tier3) {
-          html += '<div class="sb-va-tiers">';
-          if (v.tier1) html += '<div><strong>11 or lower:</strong> ' + ref.renderText(h(v.tier1)) + '</div>';
-          if (v.tier2) html += '<div><strong>12-16:</strong> ' + ref.renderText(h(v.tier2)) + '</div>';
-          if (v.tier3) html += '<div><strong>17+:</strong> ' + ref.renderText(h(v.tier3)) + '</div>';
-          html += '</div>';
-        }
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-
-    // Traits
-    if (cr.traits && cr.traits.length > 0) {
-      html += '<div class="sb-divider"></div>';
-      html += '<div class="sb-traits"><h3 class="sb-section-title">Traits</h3>';
-      cr.traits.forEach(function (t) {
-        html += '<div class="sb-trait"><strong>' + h(t.name || '') + '.</strong> ' + ref.renderText(h(t.description || '')) + '</div>';
-      });
-      html += '</div>';
-    }
-
-    html += '</div>'; // close sb-content
-    return html;
+    var S = (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null;
+    if (!S) return '<p class="bb-modal-fallback">The stat block could not be drawn. Reload the page to try again.</p>';
+    S.injectStyles(document);
+    var src = creature._raw || creature;
+    return S.html(creature.name, src, { ref: this._ref });
   }
 });
