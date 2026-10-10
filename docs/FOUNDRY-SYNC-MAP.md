@@ -2,147 +2,149 @@
 
 > Reference for the Draw Steel system package. Maps the Draw Steel Foundry VTT actor
 > data model (`MetaMorphic-Digital/draw-steel`, actor type `hero`) onto Chronicle
-> character entity fields.
+> character entity fields. The source of truth for every path below is the
+> `drawsteel-character` entity preset in `manifest.json`.
 
 ## 1. Overview
 
 Chronicle's character sync is **manifest-driven**: the generic adapter reads
-`foundry_path`, `foundry_collection`, and `foundry_item_fields` annotations on each
-Chronicle field and walks the Foundry document accordingly. There are **zero hardcoded
-mappings** in the adapter — everything is declared in the manifest. The Foundry actor
-type is **`hero`**. A key consequence of Draw Steel's design is that many "identity"
-concepts a worldbuilder thinks of as character attributes (class, level, ancestry,
-career, kit, heroic-resource name) are **embedded Items on the actor**, not actor-level
-scalars. Those require `foundry_collection` + `foundry_item_fields` projections rather
-than a simple `foundry_path`.
+`foundry_path`, `foundry_collection`, `foundry_item_type` and `foundry_item_fields`
+annotations on each Chronicle field and walks the Foundry document accordingly. There
+are **zero hardcoded mappings** in the adapter — everything is declared in the manifest.
+The preset's `foundry_actor_type` is **`hero`** and the package's `foundry_system_id` is
+`draw-steel`. A key consequence of Draw Steel's design is that many "identity" concepts
+a worldbuilder thinks of as character attributes (class, level, ancestry, career, kit,
+heroic-resource name) are **embedded Items on the actor**, not actor-level scalars.
+Those use `foundry_collection` + `foundry_item_fields` projections rather than a
+simple `foundry_path`.
+
+**Direction.** A field is two-way unless the manifest sets `foundry_writable: false`,
+which makes it pull-only (Chronicle never writes it back). Fields marked
+`owner_only` or `gm_only` in the manifest are withheld from other viewers by Chronicle.
 
 ---
 
-## 2. Confirmed scalar paths
+## 2. Scalar paths
 
-Direct `foundry_path` reads off the `system` object of the `hero` actor.
+Direct `foundry_path` reads off the `hero` actor. The key is the Chronicle field key.
 
-| Chronicle field | `foundry_path` | Notes |
+| Chronicle field (key) | `foundry_path` | Direction |
 |---|---|---|
-| Might | `system.characteristics.might.value` | ✅ |
-| Agility | `system.characteristics.agility.value` | ✅ |
-| Reason | `system.characteristics.reason.value` | ✅ |
-| Intuition | `system.characteristics.intuition.value` | ✅ |
-| Presence | `system.characteristics.presence.value` | ✅ |
-| Stamina (current) | `system.stamina.value` | ✅ |
-| Stamina (temporary) | `system.stamina.temporary` | ✅ |
-| Stamina (max) | `system.stamina.max` | ⚠️ **DERIVED / read-only** — pull only, never push |
-| Winded | *(derived from stamina)* | ⚠️ **DERIVED / read-only** — pull only |
-| Recoveries (current) | `system.recoveries.value` | ✅ |
-| Recoveries (max) | `system.recoveries.max` | ✅ |
-| Heroic resource (current) | `system.hero.primary.value` | ✅ Current value of the primary heroic resource |
-| Surges | `system.hero.surges` | ✅ |
-| Speed | `system.movement.value` | ✅ |
-| Disengage | `system.movement.disengage` | ✅ |
-| Stability | `system.combat.stability` | ✅ |
-| Size | `system.combat.size.value` | ✅ |
-| Potency (weak) | `system.potency.weak` | ⚠️ **DERIVED / read-only** — pull only |
-| Potency (average) | `system.potency.average` | ⚠️ **DERIVED / read-only** — pull only |
-| Potency (strong) | `system.potency.strong` | ⚠️ **DERIVED / read-only** — pull only |
-| Victories | `system.hero.victories` | ✅ |
-| Wealth | `system.hero.wealth` | ✅ |
-| Renown | `system.hero.renown` | ✅ |
-| XP | `system.hero.xp` | ✅ |
-| Biography / backstory | `system.biography.value` | ✅ |
-| GM / Director notes | `system.biography.director` | ✅ **GM-only** — gate visibility |
-| Languages | `system.biography.languages` | ⚠️ **inferred** path |
-| Damage immunities (all) | `system.damage.immunities.all` | ✅ |
-| Damage weaknesses (all) | `system.damage.weaknesses.all` | ✅ |
+| Might / Agility / Reason / Intuition / Presence (`might`, `agility`, `reason`, `intuition`, `presence`) | `system.characteristics.<name>.value` | two-way |
+| Stamina, current (`stamina_current`) | `system.stamina.value` | two-way |
+| Stamina, temporary (`stamina_temporary`) | `system.stamina.temporary` | two-way |
+| Stamina, max (`stamina_max`) | `system.stamina.max` | two-way in the manifest; Foundry derives it |
+| Winded (`winded`) | `system.stamina.winded` | two-way in the manifest; Foundry derives it |
+| Recoveries (`recoveries`, `recoveries_max`) | `system.recoveries.value` / `.max` | two-way |
+| Heroic resource, current (`heroic_resource_current`) | `system.hero.primary.value` | two-way |
+| Surges (`surges`) | `system.hero.surges` | two-way |
+| Victories, Renown, XP, Wealth (`victories`, `renown`, `xp`, `wealth`) | `system.hero.<name>` | two-way |
+| Speed (`speed`) | `system.movement.value` | pull-only |
+| Disengage (`disengage`) | `system.movement.disengage` | pull-only |
+| Movement modes (`movement_types`) | `system.movement.types` | pull-only |
+| Hover (`movement_hover`) | `system.movement.hover` | pull-only |
+| Stability (`stability`) | `system.combat.stability` | pull-only |
+| Size (`size`) | `system.combat.size.value` | pull-only |
+| Save threshold / bonus (`save_threshold`, `save_bonus`) | `system.combat.save.threshold` / `.bonus` | pull-only |
+| Potency (`potency_weak`, `potency_average`, `potency_strong`) | `system.potency.weak` / `.average` / `.strong` | pull-only |
+| Damage immunities (`immunities`) | `system.damage.immunities` | pull-only |
+| Damage weaknesses (`weaknesses`) | `system.damage.weaknesses` | pull-only |
+| Status immunities (`status_immunities`) | `system.statuses.immunities` | pull-only |
+| Skills (`skills_json`) | `system.skills.value` (a Set of skill ids, serialized to an array) | pull-only |
+| Languages (`languages_json`) | `system.biography.languages` | pull-only |
+| Conditions (`conditions_json`) | `statuses` (the actor's core status Set, serialized to an array) | pull-only |
+| Portrait (`portrait_url`) | `prototypeToken.texture.src` | two-way |
+| Biography / backstory (`backstory`) | `system.biography.value` | two-way, `owner_only` |
+| GM / Director notes (`gm_notes`) | `system.biography.director` | two-way, `gm_only` |
+
+Chronicle-only fields with no Foundry path: `faction`, `initiative`, `in_combat`,
+`combat_round`. The sheet widget does not show the three combat-state fields; Draw
+Steel uses alternating activation, so there is no initiative to display.
 
 ---
 
 ## 3. Embedded-Item paths
 
-These are **NOT actor scalars**. Read them from the actor's embedded items collection
-(`foundry_collection: items`) filtered by item `type`, projecting sub-fields with
-`foundry_item_fields`. For the display name, read the item's top-level `name`.
+These are **not** actor scalars. They are read from the actor's embedded items
+(`foundry_collection: items`) filtered by `foundry_item_type`, projecting sub-fields
+with `foundry_item_fields`. A name is the item's top-level `name`.
 
-| Chronicle field | Item `type` | Field within item | Notes |
-|---|---|---|---|
-| Class (name) | `class` | `name` | ✅ |
-| **Level** | `class` | `system.class.system.level` | ✅ **CRITICAL** — level lives on the class item, not the actor |
-| **Heroic resource name** | `class` | `system.class.system.primary` | ✅ **CRITICAL** — HR name lives on the class item |
-| Subclass (name) | `subclass` | `name` | ✅ |
-| Ancestry (name) | `ancestry` | `name` | ✅ |
-| Career (name) | `career` | `name` | ✅ |
-| Culture (name) | `culture` | `name` | ✅ |
-| Kit (name) | `kit` | `name` | ✅ |
-| Kit — melee damage tier 1 | `kit` | `system.bonuses.melee.damage.tier1` | ✅ |
-| Kit — melee damage tier 2 | `kit` | `system.bonuses.melee.damage.tier2` | ✅ |
-| Kit — melee damage tier 3 | `kit` | `system.bonuses.melee.damage.tier3` | ✅ |
-| Kit — ranged damage tier 1 | `kit` | `system.bonuses.ranged.damage.tier1` | ✅ |
-| Kit — ranged damage tier 2 | `kit` | `system.bonuses.ranged.damage.tier2` | ✅ |
-| Kit — ranged damage tier 3 | `kit` | `system.bonuses.ranged.damage.tier3` | ✅ |
-| Kit — melee distance | `kit` | `system.bonuses.melee.distance` | ✅ |
-| Kit — ranged distance | `kit` | `system.bonuses.ranged.distance` | ✅ |
-| Kit — stability bonus | `kit` | `system.bonuses.stability` | ✅ |
-| Kit — speed bonus | `kit` | `system.bonuses.speed` | ✅ |
-| Kit — stamina bonus | `kit` | `system.bonuses.stamina` | ✅ |
-| Kit — disengage bonus | `kit` | `system.bonuses.disengage` | ✅ |
+| Chronicle field (key) | Item type | Field within the item |
+|---|---|---|
+| Class (`class`) | `class` | `name` |
+| **Level** (`level`) | `class` | `system.level` |
+| **Heroic resource name** (`heroic_resource_name`) | `class` | `system.primary` |
+| Subclass (`subclass`) | `subclass` | `name` |
+| Ancestry (`ancestry`) | `ancestry` | `name` |
+| Career (`career`) | `career` | `name` |
+| Culture (`culture`) | `culture` | `name` |
+| Kit (`kit`) | `kit` | `name` |
 
-> Note on `foundry_item_single` collapse: when a class/ancestry/etc. is expected to be a
-> single item, the adapter collapses the matching items to one record. The collapse uses
-> the **first projection field by insertion order** — declare your projection fields
-> intentionally (see Gotchas).
+Kit details arrive as one projection, `kit_details_json`, from the `kit` item:
+
+| Projected key | Path within the kit item |
+|---|---|
+| `name` | `name` |
+| `meleeDamageT1` / `T2` / `T3` | `system.bonuses.melee.damage.tier1` / `tier2` / `tier3` |
+| `rangedDamageT1` / `T2` / `T3` | `system.bonuses.ranged.damage.tier1` / `tier2` / `tier3` |
+| `meleeDistance` / `rangedDistance` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
+| `stability`, `speed`, `stamina`, `disengage` | `system.bonuses.<name>` |
+
+> Note on `foundry_item_single` collapse: the single-item fields above (class,
+> subclass, ancestry, career, culture, kit name, level, heroic resource name) are
+> declared `foundry_item_single: true`, so the adapter collapses the matching items to
+> one record. The collapse uses the **first projection field by insertion order** —
+> declare projection fields intentionally (see Gotchas).
 
 ---
 
 ## 4. Ability items
 
-Abilities are embedded items of `type: ability` (`foundry_collection: items`, filter
-`type == ability`). Without an explicit `foundry_item_fields` projection, abilities sync
-as **names only**. To capture mechanics, project these sub-fields:
+Abilities are embedded items of type `ability` projected into `abilities_json`.
+Without a `foundry_item_fields` projection, abilities would sync as **names only**;
+the manifest projects these keys:
 
-| Sub-field | Path within ability item | Notes |
+| Projected key | Path within the ability item |
+|---|---|
+| `name` | `name` |
+| `type` | `system.type` (action / maneuver / triggered …) |
+| `category` | `system.category` |
+| `cost` | `system.resource` (heroic-resource cost to use) |
+| `keywords` | `system.keywords` (a Set, serialized to an array) |
+| `distanceType` | `system.distance.type` |
+| `distance` | `system.distance.primary` |
+| `distanceSecondary` | `system.distance.secondary` |
+| `targetType` | `system.target.type` |
+| `target` | `system.target.value` |
+| `targetCustom` | `system.target.custom` |
+| `powerRollFormula` | `system.power.roll.formula` |
+| `powerRollChars` | `system.power.roll.characteristics` (a Set, serialized to an array) |
+| `tiers` | `system.power.effects` (a **collection**, not `tier1/2/3` scalars; serialized to an array) |
+| `trigger` | `system.trigger` |
+| `effectBefore` / `effectAfter` | `system.effect.before` / `system.effect.after` |
+| `story` | `system.story` |
+| `damageDisplay` | `system.damageDisplay` |
+
+Other item collections are projected the same way:
+
+| Chronicle field (key) | Item type | Projected keys (path within the item) |
 |---|---|---|
-| Name | `name` | ✅ |
-| Keywords | `system.keywords` | ⚠️ **Set** — serialize to array |
-| Action type | `system.type` | ✅ (e.g. action / maneuver / triggered) |
-| Category | `system.category` | ✅ |
-| Resource cost | `system.resource` | ✅ Heroic-resource cost to use |
-| Distance — type | `system.distance.type` | ✅ |
-| Distance — primary | `system.distance.primary` | ✅ |
-| Distance — secondary | `system.distance.secondary` | ✅ |
-| Distance — tertiary | `system.distance.tertiary` | ✅ |
-| Target — type | `system.target.type` | ✅ |
-| Target — value | `system.target.value` | ✅ |
-| Target — custom | `system.target.custom` | ✅ |
-| Power roll formula | `system.power.roll.formula` | ✅ |
-| Power roll characteristics | `system.power.roll.characteristics` | ✅ Which characteristic(s) the roll uses |
-| Tier effects | `system.power.effects` | ⚠️ **collection**, not `tier1/2/3` scalars — more involved than the kit-bonus tiers; iterate the collection |
+| Features (`features_json`) | `feature` | `name`, `description` (`system.description.value`), `level` (`system.prerequisites.level`), `dsid` (`system._dsid`), `sourceBook` (`system.source.book`) |
+| Perks (`perks_json`) | `perk` | `name`, `perkType` (`system.perkType`), `description`, `dsid` |
+| Titles (`titles_json`) | `title` | `name`, `echelon` (`system.echelon`), `description`, `story` (`system.story`), `dsid` |
+| Treasures (`treasures_json`) | `treasure` | `name`, `category` (`system.category`), `kind` (`system.kind`), `echelon`, `keywords`, `quantity` (`system.quantity`), `description` |
 
 ---
 
 ## 5. Conditions / statuses
 
-There is **no single scalar** for conditions. Read from two core sources:
-
-- **`actor.statuses`** — a core `Set` of active status ids.
-- **`effects`** — the Active Effects collection on the actor.
-
-The nine Draw Steel sheet conditions: bleeding, dazed, frightened, grabbed, prone,
-restrained, slowed, taunted, weakened.
-
-> Sync approach: read `actor.statuses` as the source of truth for which of these are
-> active; cross-reference `effects` for duration/source metadata if needed. This is
-> **pull-oriented** — derived combat state, not a worldbuilding field to push.
+There is **no single scalar** for conditions. Active conditions come from the actor's
+core `statuses` Set, mapped to `conditions_json` and pull-only: derived combat state,
+not a worldbuilding field to push. The sheet shows each status id Title-cased.
 
 ---
 
-## 6. Skills
-
-| Chronicle field | `foundry_path` | Notes |
-|---|---|---|
-| Skills | `system.skills.value` | ⚠️ **Set** of skill ids — serialize to array |
-
----
-
-## 7. NOT syncable from the actor
+## 6. NOT syncable from the actor
 
 These are **not** on the character document:
 
@@ -150,83 +152,27 @@ These are **not** on the character document:
 |---|---|---|
 | Hero Tokens | World setting: `game.settings.get("draw-steel", "heroTokens")` | Party/world-scoped, **not** per-character. Cannot be read from the actor. |
 | Malice | World setting: `game.settings.get("draw-steel", "malice")` | Encounter/world-scoped, **not** per-character. |
-| Potency (weak/average/strong) | `system.potency.*` | **Derived / read-only** — pull only, never push |
-| Winded | derived from stamina | **Derived / read-only** — pull only |
-| Stamina max | `system.stamina.max` | **Derived / read-only** — pull only |
+| Heroic resource maximum | — | No actor field: heroic resources have no fixed maximum (they accumulate), so the manifest has no max field and the sheet shows a bare count of `heroic_resource_current`. |
 
 ---
 
-## 8. Gotchas
+## 7. Gotchas
 
 - **(a)** `level`, the **class name**, and the **heroic-resource name** live on the
-  **class item** (`system.class.system.level` / `.primary`), not on the actor. A naive
-  `system.details.level` read will miss them.
+  **class item** (`system.level` / `system.primary`), not on the actor. A read of
+  `system.details.level` or `system.hero.resource.name` finds nothing.
 - **(b)** **Hero Tokens** and **Malice** are **world settings** (`game.settings` under
   `"draw-steel"`), not character data — do not expect them on the actor document.
-- **(c)** **Potency**, **winded**, and **stamina max** are **derived** — sync them
-  **pull-only** and never push (a push would be overwritten on next recompute).
+- **(c)** **Potency** and the rest of the pull-only fields in §2 carry
+  `foundry_writable: false`, so Chronicle never writes them back. **Stamina max** and
+  **winded** are derived by Foundry but the manifest does not mark them read-only, so a
+  pushed value would be overwritten on Foundry's next recompute.
 - **(d)** The `foundry_item_single` collapse uses the **FIRST projection field by
-  insertion order** to pick the representative record — order your `foundry_item_fields`
+  insertion order** to pick the representative record — order `foundry_item_fields`
   deliberately so the right field drives the collapse.
 - **(e)** **Abilities need an explicit `foundry_item_fields` projection.** Without one,
   they sync as **names only** and all the mechanical sub-fields (keywords, distance,
   power roll, tier effects) are lost.
-
----
-
-## 9. Current coverage snapshot
-
-State of the manifest **today**.
-
-### ✅ Correct today
-
-| Chronicle field | Foundry source |
-|---|---|
-| Characteristics (might/agility/reason/intuition/presence) | `system.characteristics.*.value` |
-| Stamina (current/temporary) | `system.stamina.value` / `.temporary` |
-| Recoveries | `system.recoveries.value` / `.max` |
-| Speed | `system.movement.value` |
-| Stability | `system.combat.stability` |
-| Wealth | `system.hero.wealth` |
-| Backstory | `system.biography.value` |
-| Abilities (as names) | `items` filtered by `type == ability` |
-
-### ✅ Fixed in Phase A — do NOT revert to the "old" paths
-
-These were wrong and are now corrected in the manifest. Listed so a future editor
-doesn't "fix" them backward.
-
-| Chronicle field | OLD (wrong) path — do not use | CORRECT path (current) |
-|---|---|---|
-| Level | `system.details.level` | `class` item → `system.class.system.level` |
-| Heroic resource name | `system.hero.resource.name` | `class` item → `system.class.system.primary` |
-| Heroic resource max | *(nonexistent)* | **No actor field — REMOVED.** DS heroic resources have no fixed max (you accumulate); the sheet shows a bare count of `system.hero.primary.value`. |
-
-### ✅ Declared in Phase C (manifest)
-
-These require the Foundry adapter's `normalizeFoundryValue` (Set/Collection → JSON)
-to land too — Sets serialize to `{}` without it.
-
-| Concept | Manifest declaration |
-|---|---|
-| Skills | `skills_json` ← `system.skills.value` (Set → JSON array) |
-| Kit details (damage tiers, distance, bonuses) | `kit_details_json` ← `kit` item projection of `system.bonuses.*` |
-| Culture | `culture` ← `culture` item name (single) |
-| Career | `career` ← `career` item name (single) |
-| Conditions | `conditions_json` ← `actor.statuses` (Set → JSON array, pull-only) |
-| Potency | `potency_{weak,average,strong}` ← `system.potency.*` (pull-only, derived) |
-| Ability keywords | `abilities_json.keywords` ← `system.keywords` (Set → array) |
-| Ability power-roll characteristics | `abilities_json.powerRollChars` ← `system.power.roll.characteristics` (Set → array) |
-| Ability tier ladder | `abilities_json.tiers` ← `system.power.effects` (pseudo-doc collection → array) |
-| Ability effect/trigger/story text | `abilities_json.{effectBefore,effectAfter,trigger,story}` |
-
-### ✅ Declared in Phase A (already shipped)
-
-Surges (`system.hero.surges`), Size (`system.combat.size.value`), Disengage
-(`system.movement.disengage`), Victories/Renown/XP (`system.hero.*`),
-Temporary stamina (`system.stamina.temporary`).
-
----
-
-*Confidence markers: ✅ confirmed against draw-steel system source · ⚠️ inferred or
-requires special handling (Set/collection/derived/GM-gated).*
+- **(f)** Sets (skills, keywords, statuses, power-roll characteristics) and the tier
+  collection serialize to `{}` unless the Foundry adapter converts them to JSON arrays
+  (`normalizeFoundryValue`); the `*_json` fields and projected Set keys rely on that.
