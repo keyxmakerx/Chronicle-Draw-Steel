@@ -9,7 +9,8 @@
  * MOUNT CONTRACT (do not change — the manifest binding
  * `drawsteel-character → character-sheet` depends on it):
  *   Chronicle.register('character-sheet', { init, destroy })
- *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children}
+ *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children,
+ *   isGm,isOwner,visibility,canEditIdentity,canChangeImage,armoryItems}
  *
  * Mounts via Chronicle's dynamic-surface frame (`Chronicle.surface`): each
  * section is a box renderer (`registerBox('ds-*', fn)`) emitting INNER
@@ -19,7 +20,8 @@
  * The Abilities box is a master-detail (rail + detail pane) wired via one
  * delegated listener, since the frame re-renders box bodies.
  *
- * READ-ONLY: Foundry is the source of truth; this widget never writes/saves.
+ * Foundry is the source of truth. The one write path is the origin picker
+ * (ancestry / culture / career / kit), delegated to Chronicle.pickChoice.
  *
  * LAYOUT: cross-system slot points (character_skills / character_inventory /
  * character_purchase_history) are appended after the surface, inert + hidden
@@ -176,68 +178,70 @@
     return Array.isArray(arr) ? arr : [];
   }
 
+  // flag reads a boolean mount attribute defensively: absent means false.
+  function flag(v) { return v === 'true' || v === '1'; }
+
   // ── box renderers (INNER content only; the frame owns the box chrome) ──
   // Each is a pure function of (boxDef, seed). Registered once via registerBoxes.
 
-  function rHeader(def, data) {
+  // rIdentity is the identity band under Chronicle's page header (which shows
+  // the name): portrait, the four origin choices, and the fixed Foundry-owned
+  // facts. Editable origin values are buttons only when the host says the
+  // viewer may edit them; otherwise they are plain text.
+  var ORIGIN_SLOTS = [
+    { key: 'ancestry', label: 'Ancestry' },
+    { key: 'culture', label: 'Culture' },
+    { key: 'career', label: 'Career' },
+    { key: 'kit', label: 'Kit' }
+  ];
+
+  function rIdentity(def, data) {
     var name = data.name || 'Unnamed Hero';
-    var portrait = f(data, 'portrait_url', '');
     var level = num(data, 'level', 1);
-    var ancestry = f(data, 'ancestry', '');
+    var canEdit = !!data.canEditIdentity;
+    // Without Chronicle's picker an editable-looking value would do nothing,
+    // so the values stay plain text.
+    var canPick = canEdit && typeof Chronicle.pickChoice === 'function';
+
+    // portrait_url is user-authored: validate the scheme and escape both
+    // attribute values (escAttr, not esc, since escapeHtml leaves quotes).
+    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
+    var portraitHtml = safePortrait
+      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
+      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
+    // A claimed player may edit identity but not replace the picture, so the
+    // chip follows its own flag; Chronicle has no upload for them to reach.
+    var chip = data.canChangeImage
+      ? '<button type="button" class="cs-port-chip" data-cs-change-image><i class="fa-solid fa-camera"></i> Change</button>'
+      : '';
+
+    var slots = ORIGIN_SLOTS.map(function (s) {
+      var v = f(data, s.key, '');
+      var text = v ? esc(v) : '<span class="cs-id-unset">Not set</span>';
+      var inner = canPick
+        ? '<button type="button" class="cs-id-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false">' +
+            '<span data-cs-val>' + text + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
+        : '<span class="cs-id-val" data-cs-val>' + text + '</span>';
+      return '<div class="cs-id-slot"><span class="cs-id-k">' + s.label + '</span>' + inner + '</div>';
+    }).join('');
+
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
-    var kit = f(data, 'kit', '');
-    var culture = f(data, 'culture', '');
-    var career = f(data, 'career', '');
     var faction = f(data, 'faction', '');
+    var fixed =
+      '<div class="cs-id-fixed">' +
+        '<span class="cs-id-ro"><span class="cs-id-k">Class</span><span class="cs-id-val">' + (className ? esc(className) : '&ndash;') + '</span></span>' +
+        '<span class="cs-id-ro"><span class="cs-id-k">Subclass</span><span class="cs-id-val">' + (subclass ? esc(subclass) : '&ndash;') + '</span></span>' +
+        '<span class="cs-id-ro"><span class="cs-id-k">Level</span><span class="cs-id-val">' + level + '</span></span>' +
+        (faction ? '<span class="cs-id-ro"><span class="cs-id-k">Faction</span><span class="cs-id-val">' + esc(faction) + '</span></span>' : '') +
+        '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> set in Foundry</span>' +
+      '</div>';
 
-    // Origin line: ancestry · culture · career · class (subclass) · kit.
-    var parts = [];
-    if (ancestry) parts.push(esc(ancestry));
-    if (culture) parts.push(esc(culture));
-    if (career) parts.push(esc(career));
-    if (className) parts.push(esc(className) + (subclass ? ' (' + esc(subclass) + ')' : ''));
-    if (kit) parts.push(esc(kit) + ' kit');
-    var subtitle = parts.join(' &bull; ');
-
-    // H-1: portrait_url is user-authored; validate the scheme and escape both
-    // attribute values (escAttr, not esc — escapeHtml leaves quotes intact).
-    var safePortrait = safeImgUrl(portrait);
-    var portraitHtml = safePortrait
-      ? '<img class="cs-portrait" src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
-      : '<div class="cs-portrait cs-portrait-placeholder"><i class="fa-solid fa-shield-halved"></i></div>';
-
-    // Status pills (claimed / visibility) — only when the host supplied context.
-    var pills = '';
-    if (data.claimed) {
-      pills += '<span class="cs-pill cs-pill--claim"><i class="fa-solid fa-circle-check"></i> Claimed by you</span>';
-    }
-    if (data.visibility) {
-      pills += '<span class="cs-pill">Visibility: ' + esc(String(data.visibility)) + '</span>';
-    }
-
-    // Action affordances + live dot are deliberately inert (docs/CHARACTER-SHEET-DESIGN.md).
-    var soon = ' title="Coming later — not implemented yet"';
-    var actions = '<div class="cs-header-actions">' +
-      '<button type="button" class="cs-act cs-act--primary cs-act--soon" data-cs-act="roll"' + soon + '><i class="fa-solid fa-dice-d20"></i> Roll</button>' +
-      '<button type="button" class="cs-act cs-act--soon" data-cs-act="levelup"' + soon + '><i class="fa-solid fa-arrow-up-right-dots"></i> Level Up</button>' +
-      '<button type="button" class="cs-act cs-act--soon" data-cs-act="share"' + soon + '><i class="fa-solid fa-share-nodes"></i> Share</button>' +
-      '<span class="cs-live" title="Live"><span class="cs-live-dot"></span> live</span>' +
-    '</div>';
-
-    return '<div class="cs-header">' +
-      portraitHtml +
-      '<div class="cs-header-text">' +
-        '<div class="cs-header-name">' + esc(name) + '</div>' +
-        '<div class="cs-header-meta">' +
-          '<span class="cs-level-badge">Level ' + level + '</span>' +
-          (subtitle ? '<span class="cs-header-subtitle">' + subtitle + '</span>' : '') +
-          (faction ? '<span class="cs-header-faction">' + esc(faction) + '</span>' : '') +
-        '</div>' +
-        (pills ? '<div class="cs-header-pills">' + pills + '</div>' : '') +
-      '</div>' +
-      actions +
-    '</div>';
+    return '<div class="cs-id">' +
+      '<div class="cs-port">' + portraitHtml + chip + '</div>' +
+      '<div class="cs-id-main"><div class="cs-id-orig">' + slots + '</div>' + fixed + '</div>' +
+    '</div>' +
+    '<div class="cs-id-fold" data-cs-pick-fold tabindex="-1"></div>';
   }
 
   // renderPips draws filled/empty glyphs for a small pool (recoveries, heroic
@@ -253,10 +257,8 @@
       '<span class="cs-pips-count">' + cur + (max ? '/' + max : '') + '</span>';
   }
 
-  // rVitals is the v3 composite "top stats" box: stamina bar + recoveries (dots)
-  // + heroic resource (pips) + a Roll Might button on the left, and the
-  // characteristics grid on the right. Folds in the former Characteristics and
-  // Heroic-Resource boxes so the layout matches the reference.
+  // rVitals is the full-width vitals strip: stamina bar, recoveries, heroic
+  // resource and surges. Characteristics are their own box below it.
   function rVitals(def, data) {
     var current = num(data, 'stamina_current', 0);
     var max = num(data, 'stamina_max', 0);
@@ -271,35 +273,33 @@
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var hrCur = num(data, 'heroic_resource_current', 0);
 
-    var left =
+    var stamina =
       '<div class="cs-bar-wrap">' +
         '<div class="cs-bar-label">Stamina <span class="cs-bar-value">' + current + ' / ' + max + '</span></div>' +
         '<div class="cs-bar"><div class="cs-bar-fill' + dangerClass + '" style="width:' + pct + '%"></div>' +
           (winded > 0 ? '<div class="cs-bar-threshold" style="left:' + windedPct + '%" title="Winded"></div>' : '') +
         '</div>' +
         (winded > 0 ? '<div class="cs-bar-sub">Winded at ' + winded + '</div>' : '') +
-      '</div>' +
-      '<div class="cs-statline"><span class="cs-statline-label">Recoveries</span>' +
-        renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots') + '</div>' +
-      // Heroic resources have NO fixed max in Draw Steel (you accumulate them),
-      // so show a bare count + a single accent pip rather than a pool of pips
-      // that would imply a cap.
-      '<div class="cs-statline"><span class="cs-statline-label">' + esc(hrName) + '</span>' +
-        '<span class="cs-hr-pips">&#9670;</span><span class="cs-pips-count">' + hrCur + '</span></div>' +
-      (isNum(data, 'surges')
-        ? '<div class="cs-statline"><span class="cs-statline-label">Surges</span>' +
-            '<span class="cs-pips-count">' + num(data, 'surges', 0) + '</span></div>'
-        : '') +
-      '<button type="button" class="cs-act cs-act--primary cs-act--soon cs-roll-might" data-cs-act="roll-might" title="Coming later — not implemented yet">' +
-        '<i class="fa-solid fa-dice-d20"></i> Roll Might</button>';
-
-    var right =
-      '<div class="cs-vitals-stats">' +
-        '<div class="cs-subhead">Characteristics</div>' +
-        rCharacteristics(def, data) +
       '</div>';
+    var rec =
+      '<span class="cs-statline-label">Recoveries</span>' +
+      '<span class="cs-vit-v">' + recoveries + (recoveriesMax ? '<small>/ ' + recoveriesMax + '</small>' : '') + '</span>' +
+      (recoveriesMax ? renderPips(recoveries, recoveriesMax, '●', '○', 'cs-dots').replace(/<span class="cs-pips-count">.*?<\/span>/, '') : '');
+    // Heroic resources have no fixed max (you accumulate them), so a bare
+    // count with a single accent pip rather than a pool that implies a cap.
+    var hr =
+      '<span class="cs-statline-label">' + esc(hrName) + '</span>' +
+      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + hrCur + '</span>' +
+      '<span class="cs-bar-sub">Heroic resource</span>';
+    var surges = isNum(data, 'surges')
+      ? '<div class="cs-vit"><span class="cs-statline-label">Surges</span><span class="cs-vit-v">' + num(data, 'surges', 0) + '</span></div>'
+      : '';
 
-    return '<div class="cs-vitals"><div class="cs-vitals-main">' + left + '</div>' + right + '</div>';
+    return '<div class="cs-vitals">' +
+      '<div class="cs-vit">' + stamina + '</div>' +
+      '<div class="cs-vit">' + rec + '</div>' +
+      '<div class="cs-vit">' + hr + '</div>' + surges +
+    '</div>';
   }
 
   function rCharacteristics(def, data) {
@@ -561,7 +561,7 @@
   // box renderer stays a pure function of (def, data).
 
   var GROUP_ORDER = ['signature', 'heroic', 'maneuver'];
-  var GROUP_LABELS = { signature: 'Signature', heroic: 'Heroic', maneuver: 'Maneuvers' };
+  var GROUP_LABELS = { signature: 'Signature', heroic: 'Heroic', maneuver: 'Maneuver' };
   var CHAR_LABELS = { might: 'Might', agility: 'Agility', reason: 'Reason', intuition: 'Intuition', presence: 'Presence' };
 
   // groupOf buckets a Draw Steel ability into the three list groups. Categories
@@ -592,26 +592,29 @@
     var groups = { signature: [], heroic: [], maneuver: [] };
     abilities.forEach(function (a, idx) { groups[groupOf(a)].push({ a: a, idx: idx }); });
 
-    // "Tons in the list" handling: on a long list (≥10, e.g. a full kit + all the
-    // universal maneuvers) show a sticky filter and collapse the dimmed Maneuvers
-    // group by default, so the rail stays short. The rail itself is a capped
-    // scroll area (CSS) so it never shoves the pane down regardless of count.
+    // Open on Signature, or the first group that has anything.
+    var active = GROUP_ORDER.filter(function (g) { return groups[g].length; })[0] || 'signature';
+    if (groups.signature.length) active = 'signature';
+
+    var tabs = GROUP_ORDER.map(function (g) {
+      var on = g === active;
+      return '<button type="button" role="tab" class="ds-tab' + (on ? ' ds-tab--on' : '') + '" id="ds-tab-' + g + '"' +
+        ' aria-selected="' + (on ? 'true' : 'false') + '" tabindex="' + (on ? '0' : '-1') + '" data-ds-tab="' + g + '">' +
+        esc(GROUP_LABELS[g]) + ' <em>' + groups[g].length + '</em></button>';
+    }).join('');
+
+    // A long list gets a filter; it narrows the open tab only.
     var many = abilities.length >= 10;
 
     var rail = GROUP_ORDER.map(function (g) {
       var list = groups[g];
-      if (!list.length) return '';
       // within a group, order by heroic-resource cost ascending (the flat index
       // stays attached to each entry, so selection lookups are unaffected).
       list.sort(function (x, y) { return (Number(x.a.cost) || 0) - (Number(y.a.cost) || 0); });
-      var rows = list.map(function (it) { return railRow(it.a, it.idx, g); }).join('');
-      var collapsed = (g === 'maneuver' && many); // long list → fold maneuvers
-      return '<div class="ds-ab-grp ds-ab-grp--' + g + (collapsed ? ' ds-ab-grp--collapsed' : '') + '">' +
-        '<button type="button" class="ds-ab-grp__label" data-ds-grp aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
-          '<span class="ds-ab-grp__caret" aria-hidden="true">&#9662;</span>' +
-          esc(GROUP_LABELS[g]) +
-          '<span class="ds-ab-grp__count">' + list.length + '</span>' +
-        '</button>' +
+      var rows = list.length
+        ? list.map(function (it) { return railRow(it.a, it.idx, g); }).join('')
+        : '<div class="ds-rail__empty">None yet.</div>';
+      return '<div class="ds-ab-grp ds-ab-grp--' + g + (g === active ? '' : ' ds-ab-grp--off') + '" data-ds-grp="' + g + '">' +
         '<div class="ds-ab-grp__rows">' + rows + '</div>' +
       '</div>';
     }).join('');
@@ -621,7 +624,8 @@
           ' placeholder="Filter abilities…" aria-label="Filter abilities" autocomplete="off"></div>'
       : '';
 
-    return '<div class="ds-md">' +
+    return '<div class="ds-tabs" role="tablist" aria-label="Ability groups">' + tabs + '</div>' +
+      '<div class="ds-md">' +
       '<div class="ds-rail" role="listbox" aria-label="Abilities">' +
         tools + rail +
         '<div class="ds-rail__empty" data-ds-no-match hidden>No matching abilities.</div>' +
@@ -1300,35 +1304,6 @@
   // with no data shows this muted placeholder instead of vanishing.
   function ph(text) { return '<div class="cs-placeholder">' + esc(text) + '</div>'; }
 
-  // showComingSoon — a transient toast for the not-yet-built action buttons
-  // (Roll / Level Up / Share / Roll Might). The sheet is a read-only reference
-  // today; interactive rolls are a future feature, so the buttons stay visible
-  // ("construction tape") and explain themselves on click instead of doing nothing.
-  var _toastTimer = null;
-  function showComingSoon(label) {
-    var existing = document.getElementById('ds-toast');
-    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-    if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
-    var toast = document.createElement('div');
-    toast.id = 'ds-toast';
-    toast.className = 'ds-toast';
-    toast.setAttribute('role', 'status');
-    toast.textContent = (label ? label + ': ' : '') + 'coming later — not implemented yet';
-    document.body.appendChild(toast);
-    if (!reduced()) {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translate(-50%, 8px)';
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () { toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, 0)'; });
-      });
-    }
-    _toastTimer = setTimeout(function () {
-      if (!toast.parentNode) return;
-      toast.style.opacity = '0';
-      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
-    }, 2400);
-  }
-
   // ── schema builder ─────────────────────────────────────────────────
 
   // boxDef builds one box definition for the surface schema. `expand` is
@@ -1341,57 +1316,46 @@
     return def;
   }
 
-  // buildSchema assembles the rows/columns/boxes for `data`, omitting any box
-  // whose content predicate is false so empty sections are absent entirely.
+  // buildSchema lays the sheet out top to bottom: identity, vitals,
+  // characteristics (each full width), then a main column (abilities,
+  // features, skills) beside a side column (combat, kit, progression). The
+  // frame wraps the two columns into one on a phone, so DOM order is the
+  // phone order. Chronicle places its own Items and money panel; the in-sheet
+  // Inventory stays only when the host does not show that panel.
   function buildSchema(data) {
     var rows = [];
 
-    // Row 1 — identity banner (headless pinned box; head hidden via CSS).
     rows.push({ columns: [ { width: 12, boxes: [
-      boxDef('ds-header', '', 'ds-header', 'expanded', { pinned: true })
+      boxDef('ds-identity', '', 'ds-identity', 'expanded', { pinned: true })
+    ] } ] });
+    rows.push({ columns: [ { width: 12, boxes: [
+      boxDef('ds-vitals', 'Vitals', 'ds-vitals', 'expanded', { pinned: true })
+    ] } ] });
+    rows.push({ columns: [ { width: 12, boxes: [
+      boxDef('ds-characteristics', 'Characteristics', 'ds-characteristics', 'expanded', { pinned: true })
     ] } ] });
 
-    // Row 2 — main column (8) + side column (4). ALL sections always render;
-    // each box's renderer shows a placeholder when its data is absent, so the
-    // sheet's full structure is visible even on a fresh/unsynced hero. Vitals
-    // is a composite box (stamina + recoveries + heroic resource + Roll Might
-    // + characteristics) — there are no standalone Characteristics or
-    // Heroic-Resource boxes.
     var main = [
-      boxDef('ds-vitals', 'Vitals', 'ds-vitals', 'expanded', { pinned: true }),
-      boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded')
+      boxDef('ds-abilities', 'Abilities', 'ds-abilities', 'expanded'),
+      boxDef('ds-features', 'Features', 'ds-features', 'collapsed'),
+      boxDef('ds-skills', 'Skills', 'ds-skills', 'collapsed')
     ];
     var side = [
       boxDef('ds-combat', 'Combat', 'ds-combat', 'expanded', { pinned: true }),
       boxDef('ds-kit', 'Kit', 'ds-kit', 'collapsed'),
-      boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed'),
-      boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed')
+      boxDef('ds-damage', 'Damage', 'ds-damage', 'collapsed')
     ];
+    if (!data.armoryItems) side.push(boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed'));
+    side.push(boxDef('ds-progression', 'Progression', 'ds-progression', 'collapsed'));
     rows.push({ columns: [ { width: 8, boxes: main }, { width: 4, boxes: side } ] });
 
-    // Row 3 — Skills + Features + Inventory (three list sections, always present).
-    rows.push({ columns: [
-      { width: 4, boxes: [ boxDef('ds-skills', 'Skills', 'ds-skills', 'collapsed') ] },
-      { width: 4, boxes: [ boxDef('ds-features', 'Features', 'ds-features', 'collapsed') ] },
-      { width: 4, boxes: [ boxDef('ds-inventory', 'Inventory', 'ds-inventory', 'collapsed') ] }
-    ] });
-
-    // Row 4 — Background (12), GM + OWNER ONLY. Backstory is player-private
-    // (owner_only in the manifest — the server already strips its VALUE for
-    // every other viewer), so the box itself is scheduled only for the GM or
-    // the claiming owner, same rationale as GM Lore below: a teammate should
-    // not see an empty "No backstory yet." placeholder for a hero that
-    // actually has one, they should see no box at all (a permission gate,
-    // not a data gate). Pinned/expanded: the box shows a teaser + a "Read
-    // full story" that opens the reading-view overlay (not an accordion).
+    // Background and GM lore are permission gates, not data gates: a viewer
+    // who may not read them gets no box at all rather than an empty one.
     if (data.isGm || data.isOwner) {
       rows.push({ columns: [ { width: 12, boxes: [
         boxDef('ds-notes', 'Background', 'ds-notes', 'expanded', { pinned: true })
       ] } ] });
     }
-
-    // Row 5 — GM Lore (12), GM ONLY. Scheduled solely when the viewer is a GM so
-    // DM-only content never reaches a player (a permission gate, not a data gate).
     if (data.isGm) {
       rows.push({ columns: [ { width: 12, boxes: [
         boxDef('ds-gmlore', 'GM Lore', 'ds-gmlore', 'collapsed')
@@ -1406,8 +1370,9 @@
   function registerBoxes() {
     var s = Chronicle.surface;
     if (!s || !s.registerBox) return;
-    s.registerBox('ds-header', rHeader);
+    s.registerBox('ds-identity', rIdentity);
     s.registerBox('ds-vitals', rVitals);
+    s.registerBox('ds-characteristics', rCharacteristics);
     s.registerBox('ds-combat', rCombat);
     s.registerBox('ds-kit', rKit);
     s.registerBox('ds-damage', rDamage);
@@ -1513,35 +1478,112 @@
         else grp.classList.remove('ds-ab-grp--empty');
         if (q) grp.classList.add('ds-ab-grp--filtering');
         else grp.classList.remove('ds-ab-grp--filtering');
-        if (shown) anyShown = true;
+        if (shown && !grp.classList.contains('ds-ab-grp--off')) anyShown = true;
       });
       var none = rail.querySelector('[data-ds-no-match]');
       if (none) none.hidden = anyShown;
     }
 
+    // Show one ability group: flip the tab state, hide the other groups' rows,
+    // and select a card in it (the one already open if it belongs here).
+    function selectTab(g, focusTab) {
+      var tabs = el.querySelectorAll('[data-ds-tab]');
+      Array.prototype.forEach.call(tabs, function (b) {
+        var on = b.getAttribute('data-ds-tab') === g;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.setAttribute('tabindex', on ? '0' : '-1');
+        if (on) { b.classList.add('ds-tab--on'); if (focusTab) b.focus(); } else b.classList.remove('ds-tab--on');
+      });
+      Array.prototype.forEach.call(el.querySelectorAll('.ds-ab-grp'), function (grp) {
+        if (grp.getAttribute('data-ds-grp') === g) grp.classList.remove('ds-ab-grp--off');
+        else grp.classList.add('ds-ab-grp--off');
+      });
+      var filter = el.querySelector('[data-ds-filter]');
+      if (filter && filter.value) applyFilter(filter.value);
+      var cur = el.querySelector('.ds-li--sel');
+      var curGrp = cur ? cur.closest('.ds-ab-grp') : null;
+      if (curGrp && curGrp.getAttribute('data-ds-grp') === g) return;
+      var first = el.querySelector('.ds-ab-grp[data-ds-grp="' + g + '"] [data-ds-ability]');
+      if (first) selectAbility(parseInt(first.getAttribute('data-ds-ability'), 10));
+      else { var p = pane(); if (p) p.innerHTML = paneEmptyHtml(); }
+    }
+
+    // The picture upload lives in Chronicle; the widget only asks for it.
+    function requestImageChange(btn) {
+      var ev;
+      try {
+        ev = new CustomEvent('chronicle:change-image', { bubbles: true, detail: { entityId: data.entityId } });
+      } catch (e) { return; }
+      btn.dispatchEvent(ev);
+    }
+
+    // Origin values open Chronicle's shared choice picker under the band.
+    // Without the picker the values simply stay text, as for a viewer who
+    // may not edit.
+    var openPick = null;
+    function pickOrigin(btn) {
+      if (typeof Chronicle.pickChoice !== 'function') return;
+      var key = btn.getAttribute('data-cs-pick');
+      var fold = el.querySelector('[data-cs-pick-fold]');
+      if (!fold || !data.campaignId) return;
+      // pickChoice toggles on the anchor, so a second field means closing the
+      // first fold before opening the next.
+      var reopen = openPick && openPick !== key;
+      if (openPick) {
+        var prev = el.querySelector('[data-cs-pick="' + openPick + '"]');
+        Chronicle.pickChoice({ campaignId: data.campaignId, fieldKey: openPick, anchorEl: fold });
+        if (prev) prev.setAttribute('aria-expanded', 'false');
+        openPick = null;
+        if (!reopen) return;
+      }
+      openPick = key;
+      btn.setAttribute('aria-expanded', 'true');
+      var p;
+      try {
+        p = Chronicle.pickChoice({
+          campaignId: data.campaignId, entityId: data.entityId, fieldKey: key,
+          current: f(data, key, ''), label: btn.getAttribute('data-cs-label') || key,
+          anchorEl: fold, save: true
+        });
+      } catch (err) { openPick = null; btn.setAttribute('aria-expanded', 'false'); return; }
+      Promise.resolve(p).then(function (res) {
+        if (openPick === key) openPick = null;
+        btn.setAttribute('aria-expanded', 'false');
+        if (!res || res.value == null) {
+          // The picker hands focus back to the fold, which is hidden once
+          // empty, so a cancel would leave keyboard users nowhere.
+          var a = document.activeElement;
+          if ((!a || a === document.body || fold.contains(a)) && btn.focus) btn.focus();
+          return;
+        }
+        data.fields[key] = res.value;
+        var out = btn.querySelector('[data-cs-val]');
+        if (out) {
+          out.textContent = res.value;
+          if (!reduced()) {
+            out.classList.remove('ag-landed');
+            void out.offsetWidth;
+            out.classList.add('ag-landed');
+          }
+        }
+        if (btn.focus) btn.focus();
+      }, function () {
+        if (openPick === key) openPick = null;
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
-      // Not-yet-built action buttons → explain themselves (read-only sheet today).
-      var act = t.closest('[data-cs-act]');
-      if (act) {
-        e.preventDefault();
-        var labels = { roll: 'Roll', 'roll-might': 'Power roll', levelup: 'Level Up', share: 'Share' };
-        showComingSoon(labels[act.getAttribute('data-cs-act')] || 'That');
-        return;
-      }
+      var tab = t.closest('[data-ds-tab]');
+      if (tab) { e.preventDefault(); selectTab(tab.getAttribute('data-ds-tab'), false); return; }
+      var chip = t.closest('[data-cs-change-image]');
+      if (chip) { e.preventDefault(); requestImageChange(chip); return; }
+      var pick = t.closest('[data-cs-pick]');
+      if (pick) { e.preventDefault(); pickOrigin(pick); return; }
       var rs = t.closest('[data-cs-read-story]');
       if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
-      // group label → collapse/expand its rows.
-      var grpBtn = t.closest('[data-ds-grp]');
-      if (grpBtn) {
-        var box = grpBtn.closest('.ds-ab-grp');
-        if (box) {
-          var nowCollapsed = box.classList.toggle('ds-ab-grp--collapsed');
-          grpBtn.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
-        }
-        return;
-      }
       // Clicking anywhere on the big card returns to the small card (symmetric
       // with the small card being wholly clickable to expand). Guarded: don't
       // hijack a glossary ref / link, and don't collapse on the click that ends
@@ -1574,6 +1616,15 @@
         if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
         return;
       }
+      var tabEl = (t && t.closest) ? t.closest('[data-ds-tab]') : null;
+      if (tabEl) {
+        var order = GROUP_ORDER, i = order.indexOf(tabEl.getAttribute('data-ds-tab')), to = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (i + 1) % order.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (i + order.length - 1) % order.length;
+        else if (e.key === 'Home') to = 0;
+        else if (e.key === 'End') to = order.length - 1;
+        if (to >= 0) { e.preventDefault(); selectTab(order[to], true); return; }
+      }
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
       var card = (t && t.closest) ? t.closest('[data-ds-expand]') : null;
       if (card) { e.preventDefault(); expandAbility(parseInt(card.getAttribute('data-ds-expand'), 10)); }
@@ -1590,11 +1641,8 @@
     // Auto-select the first ability (prefer a signature) so the pane shows a card
     // immediately instead of the resting prompt.
     if (abilities.length) {
-      var firstIdx = 0;
-      for (var i = 0; i < abilities.length; i++) {
-        if (groupOf(abilities[i]) === 'signature') { firstIdx = i; break; }
-      }
-      selectAbility(firstIdx);
+      var firstRow = el.querySelector('.ds-ab-grp:not(.ds-ab-grp--off) [data-ds-ability]');
+      selectAbility(firstRow ? parseInt(firstRow.getAttribute('data-ds-ability'), 10) : 0);
     }
   }
 
@@ -1820,19 +1868,12 @@
       '.ds-sheet { --color-accent: var(--ds-accent, #a855f7); --color-accent-rgb: var(--ds-accent-rgb, 168,85,247); }',
       // Vitals composite: stamina/recoveries/HR/roll on the left, the
       // characteristics grid on the right (stacks on narrow widths).
-      '.cs-vitals { display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-start; }',
-      '.cs-vitals-main { flex:1 1 180px; min-width:170px; display:flex; flex-direction:column; gap:10px; }',
-      '.cs-vitals-stats { flex:1.5 1 300px; min-width:260px; }',
       '.cs-subhead { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); margin-bottom:8px; }',
       '.cs-statline { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; }',
       '.cs-statline-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-secondary,#6b7280); }',
       '.cs-dots, .cs-hr-pips { letter-spacing:2px; font-size:13px; color:var(--color-accent,#a855f7); }',
       '.cs-pips-count { margin-left:8px; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); letter-spacing:normal; font-variant-numeric:tabular-nums; }',
       '.cs-pips-empty { color:var(--color-text-muted,#9ca3af); }',
-      '.cs-roll-might { align-self:flex-start; margin-top:2px; }',
-      // ── Headless identity banner + clean pinned boxes (frame box hooks) ──
-      '.cs-box[data-box-key="ds-header"] > .cs-box__head { display:none; }',
-      '.cs-box[data-box-key="ds-header"] > .cs-box__body { padding:16px; }',
       '.cs-box[data-box-pinned] .cs-box__caret { display:none; }',
       '.cs-box[data-box-pinned] .cs-box__toggle { cursor:default; }',
       // v3.2 dynamic affordance: collapsible boxes read as clickable (DDB-style).
@@ -1845,15 +1886,68 @@
       '.cs-box:not([data-box-pinned]) > .cs-box__head:hover .cs-box__caret { color:var(--color-accent,#a855f7); }',
       '.cs-box__caret { transition:transform 200ms cubic-bezier(.4,0,.2,1), color 140ms ease; }',
       '.cs-ability-row:active { transform:translateY(0.5px); }',
-      // ── Header ──
-      '.cs-header { display:flex; gap:16px; align-items:center; }',
-      '.cs-portrait { width:88px; height:88px; border-radius:12px; object-fit:cover; flex-shrink:0; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.cs-portrait-placeholder { display:flex; align-items:center; justify-content:center; color:var(--color-text-muted,#9ca3af); font-size:32px; }',
-      '.cs-header-text { display:flex; flex-direction:column; gap:6px; min-width:0; flex:1; }',
-      '.cs-header-name { font-size:24px; font-weight:700; line-height:1.1; color:var(--color-text-primary,#111827); font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
-      '.cs-header-meta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; font-size:13px; color:var(--color-text-secondary,#6b7280); }',
       '.cs-level-badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; background:var(--color-accent,#6366f1); color:#fff; }',
-      '.cs-header-faction { font-style:italic; }',
+      // ── Identity band (headless pinned box) ──
+      '.cs-box[data-box-key="ds-identity"] > .cs-box__head { display:none; }',
+      '.cs-box[data-box-key="ds-identity"] > .cs-box__body { padding:16px 16px 22px; }',
+      '.cs-id { display:flex; gap:18px; align-items:flex-start; }',
+      '.cs-port { position:relative; flex:none; width:96px; }',
+      '.cs-portrait { display:block; width:96px; height:96px; border-radius:12px; object-fit:cover; box-sizing:border-box; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
+      '.cs-portrait-placeholder { display:flex; align-items:center; justify-content:center; color:var(--color-text-muted,#9ca3af); font-size:32px; }',
+      '.cs-port-chip { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:9999px; border:1px solid var(--color-border,#e5e7eb); background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); font:inherit; font-size:11.5px; font-weight:600; white-space:nowrap; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.12); }',
+      '.cs-port-chip:hover, .cs-port-chip:focus-visible { border-color:var(--color-accent,#a855f7); color:var(--color-accent,#a855f7); outline:none; }',
+      '.cs-id-main { flex:1; min-width:0; }',
+      '.cs-id-orig { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px 12px; }',
+      '.cs-id-slot { min-width:0; display:flex; flex-direction:column; align-items:flex-start; }',
+      '.cs-id-k { display:block; font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-id-val { font-size:14px; font-weight:600; color:var(--color-text-primary,#111827); padding:3px 0; overflow-wrap:anywhere; }',
+      '.cs-id-unset { font-weight:500; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-id-pick { display:inline-flex; align-items:center; gap:6px; max-width:100%; margin-left:-6px; padding:3px 6px; border:1px solid transparent; border-radius:7px; background:transparent; color:var(--color-text-primary,#111827); font:inherit; font-size:14px; font-weight:600; text-align:left; cursor:pointer; }',
+      '.cs-id-pick:hover, .cs-id-pick[aria-expanded="true"] { background:rgba(var(--color-accent-rgb,168,85,247),0.12); border-color:rgba(var(--color-accent-rgb,168,85,247),0.35); color:var(--color-accent,#a855f7); }',
+      '.cs-id-pick:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:2px; background:rgba(var(--color-accent-rgb,168,85,247),0.12); }',
+      '.cs-id-chev { flex:none; width:6px; height:6px; margin:-3px 2px 0 0; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); opacity:0.55; }',
+      '.cs-id-pick:hover .cs-id-chev, .cs-id-pick:focus-visible .cs-id-chev, .cs-id-pick[aria-expanded="true"] .cs-id-chev { opacity:1; }',
+      '.cs-id-fixed { display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; margin-top:12px; padding-top:10px; border-top:1px solid var(--color-border-light,var(--color-border,#e5e7eb)); }',
+      '.cs-id-ro { display:inline-flex; align-items:baseline; gap:7px; }',
+      '.cs-id-ro .cs-id-val { padding:0; }',
+      '.cs-id-hint { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-id-fold:empty { display:none; }',
+      '.cs-id-fold { margin:4px 16px 14px; }',
+      '@keyframes ag-land-fallback { 0% { background:rgba(var(--color-accent-rgb,168,85,247),0.28); } 100% { background:transparent; } }',
+      '.cs-id .ag-landed { animation:ag-land-fallback 1.1s ease-out; border-radius:6px; }',
+      // ── Vitals strip + characteristics ──
+      '.cs-vitals { display:grid; grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr)); gap:14px 22px; align-items:start; }',
+      '.cs-vit { display:flex; flex-direction:column; gap:6px; min-width:0; }',
+      '.cs-vit-v { font-size:18px; font-weight:700; color:var(--color-text-primary,#111827); font-variant-numeric:tabular-nums; line-height:1.1; }',
+      '.cs-vit-v small { font-size:12px; font-weight:600; color:var(--color-text-muted,#9ca3af); margin-left:3px; }',
+      '.cs-vit .cs-dots { letter-spacing:1px; font-size:11px; }',
+      '.cs-box[data-box-key="ds-characteristics"] .cs-stat-row { gap:8px; }',
+      '.cs-box[data-box-key="ds-characteristics"] .cs-stat { padding:11px 3px; }',
+      '.cs-box[data-box-key="ds-characteristics"] .cs-stat-label { font-size:10px; }',
+      '.cs-box[data-box-key="ds-characteristics"] .cs-stat-value { font-size:22px; }',
+      // ── Ability tabs ──
+      '.ds-tabs { display:flex; flex-wrap:wrap; gap:2px; padding:3px; border-radius:9px; background:var(--color-bg-tertiary,#f3f4f6); width:max-content; max-width:100%; margin-bottom:12px; }',
+      '.ds-tab { display:inline-flex; align-items:center; gap:6px; border:0; border-radius:7px; padding:5px 12px; background:transparent; color:var(--color-text-secondary,#6b7280); font:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
+      '.ds-tab:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:1px; }',
+      '.ds-tab--on { background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); box-shadow:0 1px 2px rgba(0,0,0,0.14); }',
+      '.ds-tab em { font-style:normal; font-size:11px; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
+      '.ds-ab-grp--off { display:none; }',
+      // The frame's columns wrap by min-width; below this width force a single
+      // column in DOM order so the phone order never depends on wrapping.
+      '@media (max-width:1000px) {',
+      '  .ds-sheet .cs-row { flex-direction:column; }',
+      '  .ds-sheet .cs-row > .cs-col { flex:none !important; width:100%; }',
+      '}',
+      '@media (max-width:760px) { .cs-id-orig { grid-template-columns:repeat(2,minmax(0,1fr)); } }',
+      '@media (max-width:640px) {',
+      '  .cs-vitals { grid-template-columns:repeat(3,minmax(0,1fr)); }',
+      '  .cs-vitals .cs-vit:first-child { grid-column:1 / -1; }',
+      '}',
+      '@media (max-width:480px) {',
+      '  .cs-id { flex-direction:column; align-items:stretch; gap:20px; }',
+      '  .cs-port, .cs-portrait { width:72px; }',
+      '  .cs-portrait { height:72px; }',
+      '}',
       // ── Bars (stamina, heroic resource) ──
       '.cs-bar-wrap { display:flex; flex-direction:column; gap:4px; }',
       '.cs-bar-label { display:flex; justify-content:space-between; align-items:baseline; font-size:13px; font-weight:600; color:var(--color-text-body,#374151); }',
@@ -1890,7 +1984,7 @@
       // master rail — a plain grouped list
       // capped scroll area so a long list (a full kit + every universal maneuver)
       // never shoves the detail pane down; x hidden, y auto.
-      '.ds-rail { flex:0 0 218px; min-width:0; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; overflow:hidden auto; max-height:460px; background:var(--color-bg-primary,#f9fafb); }',
+      '.ds-rail { flex:0 0 218px; min-width:0; border:1px solid var(--color-border,#e5e7eb); border-radius:11px; overflow:hidden auto; max-height:none; background:var(--color-bg-primary,#f9fafb); }',
       // sticky filter (long lists only) — type to narrow the rows.
       '.ds-rail__tools { position:sticky; top:0; z-index:2; padding:8px; background:var(--color-bg-primary,#f9fafb); border-bottom:1px solid var(--color-border-light,#f3f4f6); }',
       '.ds-rail__filter { width:100%; box-sizing:border-box; padding:6px 9px; border:1px solid var(--color-border,#e5e7eb); border-radius:7px; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); font:inherit; font-size:12.5px; }',
@@ -1900,22 +1994,14 @@
       // Group label is a collapse toggle button (caret + label + count). Given
       // a background/radius/heavier weight so it reads as a distinct SECTION
       // header rather than another row in the list.
-      '.ds-ab-grp__label { display:flex; align-items:center; gap:7px; width:calc(100% - 12px); text-align:left; border:0; cursor:pointer; font-size:10px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-text-secondary,#6b7280); background:var(--color-bg-tertiary,#f3f4f6); border-radius:6px; margin:6px 6px 4px; padding:7px 9px; }',
-      '.ds-ab-grp__label:hover { color:var(--color-text-primary,#111827); background:rgba(var(--color-accent-rgb,168,85,247),0.12); }',
-      '.ds-ab-grp__label:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
       // the chevron itself is the "collapsible" affordance — sized and colored to
       // read as a control, not decorative text.
-      '.ds-ab-grp__caret { font-size:12px; color:var(--color-accent,#a855f7); transition:transform 160ms ease; }',
-      '.ds-ab-grp--collapsed .ds-ab-grp__caret { transform:rotate(-90deg); }',
-      '.ds-ab-grp__count { margin-left:auto; font-weight:700; color:var(--color-text-muted,#9ca3af); font-variant-numeric:tabular-nums; }',
-      '.ds-ab-grp--collapsed .ds-ab-grp__rows { display:none; }',
       // while filtering, force groups open so a match in a collapsed group shows;
       // rows that do not match and groups with zero matches are hidden.
       '.ds-ab-grp--filtering .ds-ab-grp__rows { display:block; }',
       '.ds-li--hidden { display:none; }',
       '.ds-ab-grp--empty { display:none; }',
       '.ds-li { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 13px; background:none; border:0; border-top:1px solid var(--color-border-light,#f3f4f6); font:inherit; font-size:13px; color:var(--color-text-secondary,#6b7280); cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
-      '.ds-ab-grp__label + .ds-li { border-top:0; }',
       '.ds-li:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); color:var(--color-text-primary,#111827); }',
       '.ds-li:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
       '.ds-li__nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }',
@@ -2100,27 +2186,11 @@
       '.cs-kit-tiers span { font-weight:700; color:var(--color-text-primary,#111827); }',
       // ── v3 GM Lore ──
       '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
-      // ── v3 Header: status pills + actions + live dot ──
-      '.cs-header-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }',
-      '.cs-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:9999px; font-size:11px; font-weight:600; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.cs-pill--claim { background:rgba(16,185,129,0.14); color:#059669; }',
-      '.cs-header-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-left:auto; align-self:flex-start; }',
-      '.cs-act { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--color-border,#e5e7eb); background:var(--color-bg-primary,#f9fafb); color:var(--color-text-secondary,#6b7280); transition:background 150ms ease, border-color 150ms ease, transform 150ms ease; }',
-      '.cs-act:hover { transform:translateY(-1px); border-color:rgba(var(--color-accent-rgb,99,102,241),0.4); }',
-      '.cs-act--primary { background:var(--color-accent,#6366f1); color:#fff; border-color:transparent; }',
-      '.cs-live { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#059669; }',
-      '.cs-live-dot { width:8px; height:8px; border-radius:9999px; background:#10b981; }',
-      // not-yet-built buttons read as "construction tape" (subtle dashed accent).
-      '.cs-act--soon { border-style:dashed; opacity:0.85; }',
-      // transient "coming later" toast for the action buttons.
-      '.ds-toast { position:fixed; left:50%; bottom:28px; transform:translate(-50%,0); z-index:99999; max-width:90vw; padding:9px 16px; border-radius:9px; font-size:13px; font-weight:600; color:#fff; background:#1e293b; border:1px solid rgba(var(--color-accent-rgb,168,85,247),0.5); box-shadow:0 10px 30px -8px rgba(0,0,0,0.5); transition:opacity 250ms ease, transform 250ms ease; pointer-events:none; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
       '  .cs-stat { padding:8px 4px; }',
       '  .cs-stat-value { font-size:18px; }',
-      '  .cs-header { flex-direction:column; align-items:flex-start; }',
-      '  .cs-portrait { width:64px; height:64px; }',
       '  .cs-damage-row { flex-direction:column; gap:4px; }',
       '  .cs-damage-label { width:auto; padding-top:0; }',
       '}',
@@ -2144,8 +2214,6 @@
       // 5. Stat-card hover lift + 6. portrait hover zoom.
       '.cs-stat { transition:transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease; }',
       '.cs-stat:hover { transform:translateY(-2px); box-shadow:0 5px 14px -6px rgba(0,0,0,0.22); border-color:rgba(var(--color-accent-rgb,99,102,241),0.35); }',
-      '.cs-portrait { transition:transform 220ms cubic-bezier(.2,.7,.2,1); }',
-      '.cs-header:hover .cs-portrait { transform:scale(1.04); }',
       // Respect the OS reduce-motion setting: kill ambient + entrance motion.
       '@media (prefers-reduced-motion: reduce) {',
       '  .ds-sheet .cs-box.ds-anim-in { animation:none; }',
@@ -2153,7 +2221,6 @@
       '  .cs-bar-fill.cs-bar-accent { background-image:none; }',
       '  .cs-level-badge::after { display:none; }',
       '  .cs-stat:hover { transform:none; box-shadow:none; }',
-      '  .cs-header:hover .cs-portrait { transform:none; }',
       '}'
     ].join('\n');
     var style = document.createElement('style');
@@ -2198,17 +2265,19 @@
           campaignId: campaignId,
           entityId: entityId,
           children: Array.isArray(children) ? children : [],
-          // Viewer/permission context passed by the Chronicle mount (data-* attrs).
-          // isGm gates the GM-only lore box; isOwner additionally gates the
-          // owner-only Background box (a teammate's private backstory should
-          // never render as an empty "No backstory yet." placeholder — it
-          // should not render at all, same as GM Lore). visibility/claimed
-          // drive the header pills. All default to safe/empty when the host
-          // doesn't supply them.
-          isGm: ds.isGm === 'true' || ds.isGm === '1',
-          isOwner: ds.isOwner === 'true' || ds.isOwner === '1',
+          // Viewer/permission context from the Chronicle mount (data-* attrs),
+          // all false/empty when the host omits them. isGm gates GM Lore;
+          // isOwner (with isGm) gates the private Background, so a viewer who
+          // may not read them sees no box. canEditIdentity makes the origin
+          // values pickable; canChangeImage shows the picture's Change chip;
+          // armoryItems drops the in-sheet Inventory because
+          // the host shows one item list itself.
+          isGm: flag(ds.isGm),
+          isOwner: flag(ds.isOwner),
           visibility: (entity && entity.visibility) || ds.visibility || '',
-          claimed: ds.claimed === 'true' || ds.claimed === '1'
+          canEditIdentity: flag(ds.canEditIdentity),
+          canChangeImage: flag(ds.canChangeImage),
+          armoryItems: flag(ds.armoryItems)
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
         Promise.all([loadRef, loadSkillDefs(campaignId)]).then(function () {
@@ -2264,7 +2333,7 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rHeader: rHeader, rKit: rKit,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity
     };
   }
