@@ -62,6 +62,22 @@ the box is not scheduled at all.
 
 ---
 
+## Paper layout
+
+When `Chronicle.sheetMotion` exists the widget renders the sheet on
+Chronicle's sheet contract instead of boxes: a `data-sheet` root, a
+`.paper-stack > .paper` holding the parts, and each part that has more to
+show is a `.paper-pull` with a `data-sheet-open` button. Its body is a
+`<template data-sheet-panel>` (turn, abilities, kit, damage, progression,
+items, features, skills, notes). Items, Notes and GM lore keep the box
+sheet's gates. Numbers that change carry `data-v` / `data-pv` and the widget
+calls `Chronicle.sheetMotion.land` after the origin picker changes one.
+Panel content is wired from `sheet:panel-ready`, because the engine clones
+the template on every open. The only write path is still the origin picker.
+The layout rules live in the widget's injected `<style>`, scoped to
+`[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
+`sheetMotion` the box render above is used unchanged.
+
 ## Abilities section
 
 **Shape: bare master–detail, monochrome.** A grouped list (master) plus a detail pane.

@@ -12,6 +12,11 @@
  *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children,
  *   isGm,isOwner,visibility,canEditIdentity,canChangeImage,armoryItems}
  *
+ * When Chronicle.sheetMotion exists the sheet is laid out as paper (see the
+ * "Paper sheet" section): a data-sheet root, one .paper of parts, each part
+ * a pull with its panel in a <template>. Without it the box render below
+ * runs unchanged.
+ *
  * Mounts via Chronicle's dynamic-surface frame (`Chronicle.surface`): each
  * section is a box renderer (`registerBox('ds-*', fn)`) emitting INNER
  * content only — the frame owns box chrome. Only boxes with content are
@@ -1436,12 +1441,16 @@
   // (preferring a signature) is auto-selected so the pane is never blank.
   function attachInteractions(inst, el, data) {
     var abilities = parseAbilities(data);
-    function pane() { return el.querySelector('[data-ds-pane]'); }
+    // The abilities live in the box on the old render and in the open panel
+    // on the paper render, so ability lookups start from whichever is current.
+    function scope() { return (inst._panelBody && inst._panelBody.isConnected) ? inst._panelBody : el; }
+    function pane() { return scope().querySelector('[data-ds-pane]'); }
+    function cardIn(node, isBig) { if (inst._paper) growIn(node); else animateCardIn(node, isBig); }
 
     function selectAbility(idx) {
       var a = abilities[idx];
       if (!a) return;
-      var rows = el.querySelectorAll('[data-ds-ability]');
+      var rows = scope().querySelectorAll('[data-ds-ability]');
       Array.prototype.forEach.call(rows, function (r) {
         var on = r.getAttribute('data-ds-ability') === String(idx);
         r.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -1450,21 +1459,21 @@
       var p = pane();
       if (!p) return;
       p.innerHTML = smallCardHtml(a, idx, data);
-      animateCardIn(p.firstChild, false);
+      cardIn(p.firstChild, false);
     }
     function expandAbility(idx) {
       var a = abilities[idx];
       var p = pane();
       if (!a || !p) return;
       p.innerHTML = bigCardHtml(a, idx, data);
-      animateCardIn(p.firstChild, true);
+      cardIn(p.firstChild, true);
     }
 
     // Filter the rail rows by name; hide empty groups and force groups open while
     // a query is active so matches inside a collapsed group still surface.
     function applyFilter(q) {
       q = String(q || '').trim().toLowerCase();
-      var rail = el.querySelector('.ds-rail');
+      var rail = scope().querySelector('.ds-rail');
       if (!rail) return;
       var anyShown = false;
       Array.prototype.forEach.call(rail.querySelectorAll('.ds-ab-grp'), function (grp) {
@@ -1487,23 +1496,23 @@
     // Show one ability group: flip the tab state, hide the other groups' rows,
     // and select a card in it (the one already open if it belongs here).
     function selectTab(g, focusTab) {
-      var tabs = el.querySelectorAll('[data-ds-tab]');
+      var tabs = scope().querySelectorAll('[data-ds-tab]');
       Array.prototype.forEach.call(tabs, function (b) {
         var on = b.getAttribute('data-ds-tab') === g;
         b.setAttribute('aria-selected', on ? 'true' : 'false');
         b.setAttribute('tabindex', on ? '0' : '-1');
         if (on) { b.classList.add('ds-tab--on'); if (focusTab) b.focus(); } else b.classList.remove('ds-tab--on');
       });
-      Array.prototype.forEach.call(el.querySelectorAll('.ds-ab-grp'), function (grp) {
+      Array.prototype.forEach.call(scope().querySelectorAll('.ds-ab-grp'), function (grp) {
         if (grp.getAttribute('data-ds-grp') === g) grp.classList.remove('ds-ab-grp--off');
         else grp.classList.add('ds-ab-grp--off');
       });
-      var filter = el.querySelector('[data-ds-filter]');
+      var filter = scope().querySelector('[data-ds-filter]');
       if (filter && filter.value) applyFilter(filter.value);
-      var cur = el.querySelector('.ds-li--sel');
+      var cur = scope().querySelector('.ds-li--sel');
       var curGrp = cur ? cur.closest('.ds-ab-grp') : null;
       if (curGrp && curGrp.getAttribute('data-ds-grp') === g) return;
-      var first = el.querySelector('.ds-ab-grp[data-ds-grp="' + g + '"] [data-ds-ability]');
+      var first = scope().querySelector('.ds-ab-grp[data-ds-grp="' + g + '"] [data-ds-ability]');
       if (first) selectAbility(parseInt(first.getAttribute('data-ds-ability'), 10));
       else { var p = pane(); if (p) p.innerHTML = paneEmptyHtml(); }
     }
@@ -1559,8 +1568,13 @@
         data.fields[key] = res.value;
         var out = btn.querySelector('[data-cs-val]');
         if (out) {
+          var before = out.textContent;
           out.textContent = res.value;
-          if (!reduced()) {
+          if (inst._paper) {
+            // Chronicle shows the change the way the sheet's style does.
+            Chronicle.sheetMotion.land(out, before);
+            btn.setAttribute('aria-label', (btn.getAttribute('data-cs-label') || key) + ': ' + res.value + '. Change');
+          } else if (!reduced()) {
             out.classList.remove('ag-landed');
             void out.offsetWidth;
             out.classList.add('ag-landed');
@@ -1582,8 +1596,16 @@
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
       var pick = t.closest('[data-cs-pick]');
       if (pick) { e.preventDefault(); pickOrigin(pick); return; }
+      var unp = t.closest('[data-unpin]');
+      if (unp) { e.preventDefault(); unpin(inst, true); return; }
       var rs = t.closest('[data-cs-read-story]');
-      if (rs) { e.preventDefault(); openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', '')); return; }
+      if (rs) {
+        e.preventDefault();
+        // On paper the story is pinned onto the open Notes panel.
+        if (inst._paper) openStoryPin(inst, rs, data);
+        else openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', ''));
+        return;
+      }
       // Clicking anywhere on the big card returns to the small card (symmetric
       // with the small card being wholly clickable to expand). Guarded: don't
       // hijack a glossary ref / link, and don't collapse on the click that ends
@@ -1639,11 +1661,16 @@
     el.addEventListener('input', inst._onAbilityInput);
 
     // Auto-select the first ability (prefer a signature) so the pane shows a card
-    // immediately instead of the resting prompt.
-    if (abilities.length) {
-      var firstRow = el.querySelector('.ds-ab-grp:not(.ds-ab-grp--off) [data-ds-ability]');
+    // immediately instead of the resting prompt. On paper the abilities exist
+    // only while their panel is open, so the panel-ready handler calls this.
+    function selectFirst() {
+      if (!abilities.length) return;
+      var firstRow = scope().querySelector('.ds-ab-grp:not(.ds-ab-grp--off) [data-ds-ability]');
       selectAbility(firstRow ? parseInt(firstRow.getAttribute('data-ds-ability'), 10) : 0);
     }
+    inst._selectFirst = selectFirst;
+    inst._collapse = selectAbility;
+    if (!inst._paper) selectFirst();
   }
 
   // ── tooltips (viewport-clamped) ──────────────────────────────────────────
@@ -1814,7 +1841,624 @@
     });
   }
 
+  // ── Paper sheet ──────────────────────────────────────────────────────────
+  // When Chronicle.sheetMotion exists the sheet is laid out as paper: a root
+  // carrying data-sheet, one .paper holding the parts, and each part that has
+  // more to show is a .paper-pull with a data-sheet-open button whose body is
+  // a <template data-sheet-panel>. Chronicle owns the style, the motion and
+  // the panel chrome; this file writes layout only, from --paper-* tokens.
+  // Without sheetMotion (an older Chronicle) mountSheet keeps the box render.
+  //
+  // Every builder here is a pure function of the seed so the markup can be
+  // checked without a DOM. Anything user-authored goes through esc (text) or
+  // escAttr (attribute), exactly as in the box renderers.
+
+  function paperAvailable() {
+    return !!(Chronicle && Chronicle.sheetMotion && typeof Chronicle.sheetMotion.mount === 'function');
+  }
+
+  function fa(name) { return '<i class="fa-solid fa-' + name + '" aria-hidden="true"></i>'; }
+  function pEmpty(text) { return '<p class="sh-sub sh-empty">' + esc(text) + '</p>'; }
+  function signedStat(n) { return (n > 0 ? '+' : (n < 0 ? '−' : '')) + Math.abs(n); }
+
+  // A part's button. The label defaults to the style-dependent "Pull out" /
+  // "Open" pair that the sheet CSS shows one of.
+  function pullBtn(id, inner, label) {
+    return '<button type="button" class="sh-pullbtn" data-sheet-open="' + escAttr(id) + '" aria-expanded="false">' + inner +
+      '<span class="sh-pull">' + (label ? esc(label) : '<span class="only-paper">Pull out</span><span class="only-modern">Open</span>') +
+      fa('chevron-right') + '</span></button>';
+  }
+
+  // A fold is <details data-sheet-fold>; Chronicle measures .fold-body and
+  // animates it to its real height. head and body are already-escaped HTML.
+  function foldHtml(cls, head, body, open) {
+    return '<details class="ft' + (cls ? ' ' + cls : '') + (open ? ' is-in' : '') + '" data-sheet-fold' + (open ? ' open' : '') + '>' +
+      '<summary>' + head + '</summary><div class="fold-body"><div class="fold-in" data-move="fold">' + body + '</div></div></details>';
+  }
+
+  // Dying at 0 and dead at minus the winded value are the Draw Steel rules the
+  // Winded/Dying glossary entries state; nothing here is hero-specific.
+  function staminaState(current, winded, max) {
+    if (!(max > 0)) return null;
+    if (winded > 0 && current <= -winded) return ['dead', 'Dead'];
+    if (current <= 0) return ['dying', 'Dying'];
+    if (winded > 0 && current <= winded) return ['winded', 'Winded'];
+    return null;
+  }
+
+  function pHead(data) {
+    return '<header class="sh-head paper-title"><div><div class="paper-kind">Hero · Draw Steel</div>' +
+      '<div class="sh-name"><h2>' + esc(data.name || 'Unnamed Hero') + '</h2></div></div></header>';
+  }
+
+  // The origin values are pickers only when the host allows editing and
+  // Chronicle can open its picker; the picker itself stays Chronicle's.
+  function pIdentity(data) {
+    var name = data.name || 'Unnamed Hero';
+    var canPick = !!data.canEditIdentity && typeof Chronicle.pickChoice === 'function';
+    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
+    var portrait = safePortrait
+      ? '<img src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '" data-cs-portrait>'
+      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
+    var chip = data.canChangeImage ? '<button type="button" data-cs-change-image>' + fa('camera') + ' Change</button>' : '';
+
+    var slots = ORIGIN_SLOTS.map(function (s) {
+      var v = f(data, s.key, '');
+      var text = v ? esc(v) : '<span class="sh-unset">Not set</span>';
+      var inner = canPick
+        ? '<button type="button" class="sh-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+            ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
+            '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span>' + fa('chevron-right') + '</button>'
+        : '<div class="sh-v-plain" data-cs-val data-v="origin-' + s.key + '">' + text + '</div>';
+      return '<div class="sh-slot" data-slot="' + s.key + '"><span class="sh-k">' + s.label + '</span>' + inner + '</div>';
+    }).join('');
+
+    var className = f(data, 'class', '');
+    var subclass = f(data, 'subclass', '');
+    var faction = f(data, 'faction', '');
+    var fixed = '<div class="sh-fixed">' +
+      '<span><span class="sh-k">Class</span>' + (className ? esc(className) : '&ndash;') + '</span>' +
+      '<span><span class="sh-k">Subclass</span>' + (subclass ? esc(subclass) : '&ndash;') + '</span>' +
+      '<span><span class="sh-k">Level</span>' + num(data, 'level', 1) + '</span>' +
+      (faction ? '<span><span class="sh-k">Faction</span>' + esc(faction) + '</span>' : '') +
+      '<small>' + fa('arrows-rotate') + ' set in Foundry</small></div>';
+
+    return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
+      '<div class="sh-port">' + portrait + chip + '</div>' +
+      '<div><div class="sh-slots">' + slots + '</div>' + fixed + '</div>' +
+      '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
+  }
+
+  function pStamina(cur, max, winded) {
+    var st = staminaState(cur, winded, max);
+    var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
+    var bar = max > 0
+      ? '<div class="sh-bar" aria-hidden="true"><span style="width:' + pct + '%"></span>' +
+          (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</div>'
+      : '';
+    var sub = winded > 0
+      ? '<span class="sh-sub num">Winded ' + winded + ' · Dying at 0 · Dead at −' + winded + '</span>' : '';
+    return '<div class="sh-v"><span class="sh-k">Stamina' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>' +
+      '<div class="sh-big"><span class="sh-num"><span data-v="stamina">' + cur + '</span> <small>/ ' + max + '</small></span></div>' +
+      bar + sub + '</div>';
+  }
+
+  function pConditions(data) {
+    var conds = parseJson(f(data, 'conditions_json', ''), []);
+    var chips = (Array.isArray(conds) ? conds : []).map(function (c) {
+      var raw = (c && (c.name || c)) || '';
+      var sev = (c && c.severity) || '';
+      var cls = 'sh-cnd';
+      if (/bleed|burn|dam|poison/i.test(raw + ' ' + sev)) cls += ' sh-cnd--danger';
+      else if (/slow|weak|daz|frighten|restrain|prone|grab|taunt/i.test(raw + ' ' + sev)) cls += ' sh-cnd--warn';
+      return '<span class="' + cls + '">' + esc(humanizeId(raw)) + '</span>';
+    }).join('');
+    return '<div class="sh-cond"><span class="sh-k lbl">Conditions</span>' + (chips || '<span class="sh-sub">None</span>') + '</div>';
+  }
+
+  // The static combat scalars. Disengage, Size and Save show only when synced.
+  function pStats(data) {
+    function stat(label, key) {
+      var v = f(data, key, null);
+      return '<span>' + label + '<b>' + ((v == null || v === '') ? '–' : esc(String(scalar(v)))) + '</b></span>';
+    }
+    var out = stat('Speed', 'speed') + stat('Stability', 'stability');
+    if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') out += stat('Disengage', 'disengage');
+    if (f(data, 'size', '') !== '') out += stat('Size', 'size');
+    if (isNum(data, 'potency_weak') || isNum(data, 'potency_average') || isNum(data, 'potency_strong')) {
+      var pv = function (k) { return '<b>' + (isNum(data, k) ? num(data, k, 0) : '–') + '</b>'; };
+      out += '<span>Potency ' + pv('potency_weak') + ' · ' + pv('potency_average') + ' · ' + pv('potency_strong') + '</span>';
+    }
+    if (isNum(data, 'save_threshold')) {
+      var sb = f(data, 'save_bonus', '');
+      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+      out += '<span>Save<b>' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</b></span>';
+    }
+    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
+      .filter(function (m) { return m && m !== 'walk'; });
+    var labels = modes.map(function (m) { return esc(humanizeId(m)); });
+    if (num(data, 'movement_hover', 0)) labels.push('Hover');
+    if (labels.length) out += '<span>Movement<b>' + labels.join(', ') + '</b></span>';
+    return '<div class="sh-stats">' + out + '</div>';
+  }
+
+  function pTurn(data) {
+    var cur = num(data, 'stamina_current', 0), max = num(data, 'stamina_max', 0);
+    var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
+    var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
+    var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
+    var pips = '';
+    for (var i = 0; i < Math.min(recMax, 12); i++) pips += i < rec ? '●' : '○';
+    var top = pStamina(cur, max, winded) +
+      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
+      (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
+      '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
+        (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
+        (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
+        (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
+    return '<section class="sh-turn paper-pull" data-sheet-section="turn" aria-label="This turn">' +
+      '<div class="sh-turnhead">' + pullBtn('turn', '<span class="paper-kind">This turn</span>', 'Rules') + '</div>' +
+      '<div class="sh-turn-top">' + top + '</div>' + pConditions(data) + pStats(data) + '</section>';
+  }
+
+  function pCharacteristics(data) {
+    var cells = ['might', 'agility', 'reason', 'intuition', 'presence'].map(function (k) {
+      var v = num(data, k, 0);
+      return '<div><span>' + CHAR_LABELS[k] + '</span><b class="' + (v < 0 ? 'sh-neg' : '') + '">' + signedStat(v) + '</b></div>';
+    }).join('');
+    return '<section class="sh-o1" aria-label="Characteristics"><div class="paper-kind">Characteristics</div><div class="sh-chars">' + cells + '</div></section>';
+  }
+
+  function pAbilityBand(data) {
+    var abilities = parseAbilities(data);
+    var n = { signature: 0, heroic: 0, maneuver: 0 };
+    var sig = null;
+    abilities.forEach(function (a) {
+      var g = groupOf(a);
+      n[g]++;
+      if (g === 'signature' && !sig) sig = a;
+    });
+    var row = abilities.length
+      ? '<span class="sh-row">' +
+          (sig ? '<span>' + fa('star') + ' <b>' + esc(sig.name || 'Untitled') + '</b></span>' : '') +
+          '<span>Signature <b>' + n.signature + '</b></span><span>Heroic <b>' + n.heroic + '</b></span><span>Maneuvers <b>' + n.maneuver + '</b></span></span>'
+      : '<span class="sh-row"><span>No abilities yet.</span></span>';
+    return '<section class="sh-band paper-pull sh-o2" data-sheet-section="abilities">' +
+      pullBtn('abilities', '<span class="paper-kind">Abilities</span>' + row) + '</section>';
+  }
+
+  // Counts shown on the ledger lines. Each is a number or an escaped label.
+  function treasureList(data) {
+    var t = parseJson(f(data, 'treasures_json', ''), []);
+    return Array.isArray(t) ? t : [];
+  }
+  function featureCount(data) {
+    var n = 0;
+    ['features_json', 'perks_json', 'titles_json'].forEach(function (k) {
+      var a = parseJson(f(data, k, ''), []);
+      if (Array.isArray(a)) n += a.length;
+    });
+    return n;
+  }
+  function skillLists(data) {
+    var s = parseJson(f(data, 'skills_json', ''), []);
+    return { skills: Array.isArray(s) ? s : [], langs: parseStrList(f(data, 'languages_json', '')) };
+  }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+
+  // The ledger lines for the panels that exist. Items is absent when the
+  // host shows its own item list; Notes is a permission gate, as before.
+  function paperLedger(data) {
+    var lines = [];
+    if (!data.armoryItems) {
+      var count = treasureList(data).length + invItems(data).length;
+      var wealth = f(data, 'wealth', null);
+      lines.push(['items', 'Items', plural(count, 'item', 'items') + (wealth != null ? ' · Wealth ' + esc(String(wealth)) : '')]);
+    }
+    var fc = featureCount(data);
+    lines.push(['features', 'Features', fc ? plural(fc, 'feature', 'features') : 'None synced yet']);
+    var sl = skillLists(data);
+    lines.push(['skills', 'Skills', plural(sl.skills.length, 'skill', 'skills') + (sl.langs.length ? ' · ' + plural(sl.langs.length, 'language', 'languages') : '')]);
+    if (data.isGm || data.isOwner) lines.push(['notes', 'Notes', 'Background' + (data.isGm ? ', GM lore' : '')]);
+    return '<section class="sh-ledger sh-o6">' + lines.map(function (l) {
+      return '<div class="paper-pull" data-sheet-section="' + l[0] + '">' +
+        pullBtn(l[0], '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds" data-ds="' + l[0] + '">' + l[2] + '</span>') + '</div>';
+    }).join('') + '</section>';
+  }
+
+  // A damage-type entry as one phrase ("Fire 5"). Shared by the part and panel.
+  function dmgEntryText(entry) {
+    if (entry == null) return '';
+    if (typeof entry === 'string') return entry;
+    var type = entry.type ? String(entry.type) : '';
+    var value = (entry.value != null && entry.value !== '') ? ' ' + String(entry.value) : '';
+    return (type + value).trim();
+  }
+  function damageLists(data) {
+    return {
+      imm: toDamageEntries(f(data, 'immunities', '')).map(dmgEntryText).filter(Boolean),
+      weak: toDamageEntries(f(data, 'weaknesses', '')).map(dmgEntryText).filter(Boolean),
+      status: parseStrList(f(data, 'status_immunities', '')).map(humanizeId)
+    };
+  }
+
+  // The kit as the part and its panel both show it: a name, the melee and
+  // ranged damage bonuses per tier, and the flat bonuses. Values are user
+  // authored, so a non-numeric one is escaped rather than signed.
+  function kitFacts(data) {
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
+    var name = f(data, 'kit', '') || (k && k.name) || '';
+    if (!k) return { name: name, grid: '', chips: [] };
+    var has = function (v) { return v != null && v !== '' && v !== 0; };
+    var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : esc(String(v))); };
+    var rows = '';
+    [['Melee', 'melee'], ['Ranged', 'ranged']].forEach(function (pair) {
+      var p = pair[1], t1 = k[p + 'DamageT1'], t2 = k[p + 'DamageT2'], t3 = k[p + 'DamageT3'];
+      if (!(has(t1) || has(t2) || has(t3))) return;
+      rows += '<span>' + pair[0] + '</span><span>' + fmt(t1) + '</span><span>' + fmt(t2) + '</span><span>' + fmt(t3) + '</span>';
+    });
+    var grid = rows
+      ? '<div class="sh-kit num"><span class="sh-h">Damage bonus</span><span class="sh-h">T1</span><span class="sh-h">T2</span><span class="sh-h">T3</span>' + rows + '</div>'
+      : '';
+    var chips = [['Stamina', 'stamina'], ['Stability', 'stability'], ['Speed', 'speed'], ['Disengage', 'disengage']]
+      .filter(function (b) { return has(k[b[1]]); })
+      .map(function (b) { return '<span class="sh-chip">' + b[0] + ' ' + fmt(k[b[1]]) + '</span>'; });
+    return { name: name, grid: grid, chips: chips };
+  }
+
+  function pKitPart(data) {
+    var k = kitFacts(data);
+    var body = (k.name ? '<div class="sh-kit-name">' + esc(k.name) + '</div>' : '') + k.grid +
+      (k.chips.length ? '<div class="sh-line">' + k.chips.join('') + '</div>' : '') +
+      ((!k.name && !k.grid && !k.chips.length) ? '<div class="sh-line">No kit equipped.</div>' : '');
+    return '<section class="sh-sec paper-pull sh-o3" data-sheet-section="kit" aria-label="Kit">' +
+      pullBtn('kit', '<span class="paper-kind">Kit</span>', 'Details') + body + '</section>';
+  }
+
+  function pDamagePart(data) {
+    var d = damageLists(data);
+    var line = function (label, list) {
+      return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
+    };
+    return '<section class="sh-sec paper-pull sh-o4" data-sheet-section="damage" aria-label="Damage">' +
+      pullBtn('damage', '<span class="paper-kind">Damage</span>', 'Sources') +
+      line('Immunities', d.imm) + line('Weaknesses', d.weak) + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
+  }
+
+  // Progression values are shown as the sheet has them; "–" when unset.
+  var PROGRESS_KEYS = [['Victories', 'victories'], ['XP', 'xp'], ['Renown', 'renown'], ['Wealth', 'wealth']];
+  function progValue(data, key) {
+    var v = f(data, key, null);
+    return (v == null || v === '') ? '–' : esc(String(v));
+  }
+  function pProgPart(data) {
+    var cells = '<div><span class="sh-k">Level</span><b>' + num(data, 'level', 1) + '</b></div>' + PROGRESS_KEYS.map(function (p) {
+      var attr = (p[1] === 'victories' || p[1] === 'xp') ? ' data-pv="' + p[1] + '"' : '';
+      return '<div><span class="sh-k">' + p[0] + '</span><b' + attr + '>' + progValue(data, p[1]) + '</b></div>';
+    }).join('');
+    return '<section class="sh-sec paper-pull sh-o5" data-sheet-section="progression" aria-label="Progression">' +
+      pullBtn('progression', '<span class="paper-kind">Progression</span>', 'Details') + '<div class="sh-dl">' + cells + '</div></section>';
+  }
+
+  function pFoot() {
+    return '<footer class="sh-foot"><span><span class="only-paper">Tap any section to pull out the paper behind it.</span>' +
+      '<span class="only-modern">Select any section to open its panel.</span></span><span>Synced with Foundry</span></footer>';
+  }
+
+  // ── Panels (the papers pulled out from behind a part) ──────────────────────
+
+  function glossaryEntry(slug) {
+    return (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(slug) : null;
+  }
+  // One rules entry from the package glossary; empty when the glossary has no
+  // such term, so a missing entry never leaves a blank heading.
+  function pRule(entry, on) {
+    if (!entry) return '';
+    return '<div class="rule' + (on ? ' on' : '') + '"><b>' + esc(entry.name || entry.slug || '') +
+      (on ? ' <span class="sh-on">on now</span>' : '') + '</b><p>' + refText(entry.description || '') + '</p></div>';
+  }
+  function pRuleGroup(label, slugs, on) {
+    var rules = slugs.map(function (s) { return pRule(glossaryEntry(s), on); }).join('');
+    return rules ? '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + rules + '</div>' : '';
+  }
+
+  function pTurnPanel(data) {
+    var conds = parseJson(f(data, 'conditions_json', ''), []);
+    var onNow = (Array.isArray(conds) ? conds : []).map(function (c) {
+      return slugify(humanizeId((c && (c.name || c)) || ''));
+    }).filter(Boolean);
+    var html = pRuleGroup('On ' + firstName(data.name) + ' now', onNow, true) +
+      pRuleGroup('Stamina', ['winded', 'dying', 'temporary-stamina']) +
+      pRuleGroup('On your turn', ['catch-breath', 'recovery', 'save-ends', 'potency']);
+    return html || pEmpty('The rules glossary has not loaded.');
+  }
+
+  function pTreasure(t) {
+    var name = esc((t && t.name) || 'Treasure');
+    var ech = (t && t.echelon) ? ' <span class="sh-lvl">E' + esc(String(t.echelon)) + '</span>' : '';
+    var qN = Number(t && t.quantity);
+    var qty = (qN > 1) ? ' <span class="sh-q">×' + qN + '</span>' : '';
+    var kws = (Array.isArray(t && t.keywords) && t.keywords.length)
+      ? '<p class="sh-sub">' + t.keywords.map(function (k) { return esc(String(k)); }).join(' · ') + '</p>' : '';
+    var desc = cleanFoundryText(t && t.description);
+    if (!desc && !kws) return '<div class="ft ft-flat">' + name + ech + qty + '</div>';
+    return foldHtml('', name + ech + qty, kws + (desc ? '<p>' + refSynced(desc) + '</p>' : ''), false);
+  }
+  function pTreasureGroups(list) {
+    var buckets = {};
+    list.forEach(function (t) { var c = String((t && t.category) || 'other').toLowerCase(); (buckets[c] = buckets[c] || []).push(t); });
+    var grp = function (label, b) { return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + b.map(pTreasure).join('') + '</div>'; };
+    var html = TREASURE_CATS.map(function (c) { return buckets[c.key] && buckets[c.key].length ? grp(c.label, buckets[c.key]) : ''; }).join('');
+    Object.keys(buckets).forEach(function (k) {
+      if (!TREASURE_CATS.some(function (c) { return c.key === k; })) html += grp(humanizeId(k), buckets[k]);
+    });
+    return html;
+  }
+
+  function pItemRow(it, cid) {
+    var entity = it.entity || it;
+    var name = esc(entity.name || 'Item');
+    var href = (entity.id && cid) ? '/campaigns/' + cid + '/entities/' + entity.id : '';
+    var label = href ? '<a class="sh-link" href="' + escAttr(href) + '">' + name + '</a>' : name;
+    var qty = (it.metadata && it.metadata.quantity) ? ' <span class="sh-q num">× ' + esc(String(it.metadata.quantity)) + '</span>' : '';
+    var equipped = (it.metadata && it.metadata.equipped) ? '<span class="sh-chip">equipped</span>' : '';
+    return '<li class="it-li"><div class="it-row"><span>' + label + qty + '</span>' + equipped + '</div></li>';
+  }
+
+  function pItemsPanel(data) {
+    var treasures = treasureList(data);
+    var items = invItems(data);
+    var html = '';
+    if (treasures.length) html += pTreasureGroups(treasures);
+    if (items.length) html += '<ul class="lf-list">' + items.map(function (it) { return pItemRow(it, data.campaignId); }).join('') + '</ul>';
+    if (!html) html = pEmpty('Nothing carried yet.');
+    var wealth = f(data, 'wealth', null);
+    return html + (wealth != null
+      ? '<div class="lf-money"><span>Wealth <b class="num">' + esc(String(wealth)) + '</b></span><small>Draw Steel uses Wealth instead of coins.</small></div>' : '');
+  }
+
+  function pFeatureFold(ft) {
+    var name = esc((ft && ft.name) || 'Feature');
+    var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
+    var desc = cleanFoundryText(ft && ft.description);
+    if (!desc) return '<div class="ft ft-flat">' + name + lvl + '</div>';
+    return foldHtml('', name + lvl, '<p>' + refSynced(desc) + '</p>', false);
+  }
+  function pFeatureGroup(label, list) {
+    if (!list || !list.length) return '';
+    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(pFeatureFold).join('') + '</div>';
+  }
+
+  function pFeaturesPanel(data) {
+    var feats = parseJson(f(data, 'features_json', ''), []);
+    var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), [])) +
+      pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []));
+    if (Array.isArray(feats) && feats.length) {
+      var origins = FEATURE_ORIGINS.map(function (o) {
+        var nm = f(data, o.field, '');
+        return { key: o.key, lname: String(nm).toLowerCase(), slug: slugify(nm) };
+      }).filter(function (o) { return o.lname; });
+      var buckets = {};
+      feats.forEach(function (ft) { var g = classifyFeature(ft, origins); (buckets[g] = buckets[g] || []).push(ft); });
+      var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
+      // With nothing placed, one flat list is more honest than a lone "Features" group.
+      if (!placed.length) return pFeatureGroup('Features', feats) + extra;
+      return FEATURE_GROUP_ORDER.map(function (k) { return pFeatureGroup(FEATURE_GROUP_LABELS[k], buckets[k]); }).join('') + extra;
+    }
+    return extra || pEmpty('No features yet.');
+  }
+
+  function skillTipAttr(id) {
+    var d = skillDefs && skillDefs[String(id).toLowerCase()];
+    return (d && d.description) ? ' data-tip="' + escAttr(d.description) + '" tabindex="0"' : '';
+  }
+  function pSkillsPanel(data) {
+    var sl = skillLists(data);
+    var html = '';
+    if (sl.skills.length) {
+      var buckets = {};
+      sl.skills.forEach(function (s) {
+        var id = String(s == null ? '' : s);
+        (buckets[SKILL_TO_GROUP[id.toLowerCase()] || 'other'] = buckets[SKILL_TO_GROUP[id.toLowerCase()] || 'other'] || []).push(id);
+      });
+      var grp = function (label, list) {
+        if (!list || !list.length) return '';
+        return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span><div class="skills">' +
+          list.map(function (id) { return '<span class="sh-chip"' + skillTipAttr(id) + '>' + esc(humanizeId(id)) + '</span>'; }).join('') + '</div></div>';
+      };
+      html += SKILL_GROUPS.map(function (g) { return grp(g.label, buckets[g.key]); }).join('') + grp('Other', buckets.other);
+    }
+    if (sl.langs.length) {
+      html += '<div class="lf-grp"><span class="sh-k">Languages</span><div class="skills">' +
+        sl.langs.map(function (l) { return '<span class="sh-chip">' + esc(humanizeId(l)) + '</span>'; }).join('') + '</div></div>';
+    }
+    return html || pEmpty('No trained skills.');
+  }
+
+  function pNotesPanel(data) {
+    var notes = f(data, 'backstory', '') || f(data, 'notes', '');
+    var out = '<div class="lf-grp"><span class="sh-k">Background</span>' + (notes
+      ? '<p class="lf-text">' + esc(teaser(cleanFoundryText(notes), 180)) + '</p>' +
+        '<button type="button" class="sh-link" data-cs-read-story aria-expanded="false">Read full story</button>'
+      : pEmpty('No backstory yet.')) + '</div>';
+    if (data.isGm) {
+      var gm = f(data, 'gm_notes', '');
+      out += foldHtml('lf-grp', 'GM lore <span class="sh-seal">GM only</span>', gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.'), false);
+    }
+    return out;
+  }
+
+  function pKitPanel(data) {
+    var k = kitFacts(data);
+    if (!k.name && !k.grid && !k.chips.length) return pEmpty('No kit equipped.');
+    return '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name" style="font-size:19px">' + esc(k.name || 'Kit') + '</div></div>' +
+      (k.grid || k.chips.length
+        ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') + '</div>'
+        : pEmpty('No kit details synced.'));
+  }
+
+  function pDamagePanel(data) {
+    var d = damageLists(data);
+    var grp = function (label, list) {
+      return '<div class="lf-grp"><span class="sh-k">' + label + '</span>' +
+        (list.length ? list.map(function (x) { return '<div class="rule dmg"><b>' + esc(x) + '</b></div>'; }).join('') : pEmpty('None.')) + '</div>';
+    };
+    return grp('Immunities', d.imm) + grp('Weaknesses', d.weak) + (d.status.length ? grp('Condition immunities', d.status) : '') +
+      pRuleGroup('How it works', ['damage-immunity', 'damage-weakness']) + pEmpty('Read only. Set in Foundry.');
+  }
+
+  function pProgPanel(data) {
+    var row = function (label, html) { return '<div class="lf-money"><span>' + label + ' <b class="num">' + html + '</b></span></div>'; };
+    return '<div class="lf-grp"><span class="sh-k">Now</span>' + row('Level', String(num(data, 'level', 1))) +
+      PROGRESS_KEYS.map(function (p) { return row(p[0], progValue(data, p[1])); }).join('') +
+      '</div>' + pEmpty('Read only. Set in Foundry.');
+  }
+
+  // Every panel the sheet can open, in ledger order. Items and Notes exist
+  // only when their part does.
+  function paperPanels(data) {
+    var name = data.name || 'Unnamed Hero';
+    var list = [
+      { id: 'turn', title: 'Rules at hand', kind: 'This turn', html: pTurnPanel(data) },
+      { id: 'abilities', title: 'Abilities', kind: name, html: parseAbilities(data).length ? rAbilities({}, data) : pEmpty('No abilities yet.') },
+      { id: 'kit', title: 'Kit', kind: name, html: pKitPanel(data) },
+      { id: 'damage', title: 'Damage', kind: name, html: pDamagePanel(data) },
+      { id: 'progression', title: 'Progression', kind: name, html: pProgPanel(data) }
+    ];
+    if (!data.armoryItems) list.push({ id: 'items', title: 'Items', kind: name, html: pItemsPanel(data) });
+    list.push({ id: 'features', title: 'Features', kind: name, html: pFeaturesPanel(data) });
+    list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
+    if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Notes', kind: name, html: pNotesPanel(data) });
+    return list;
+  }
+
+  function paperSheetHtml(data) {
+    var name = data.name || 'Unnamed Hero';
+    var templates = paperPanels(data).map(function (p) {
+      return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '">' + p.html + '</template>';
+    }).join('');
+    var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
+      pHead(data) + pIdentity(data) + pTurn(data) +
+      '<div class="sh-body"><div class="sh-col">' + pCharacteristics(data) + pAbilityBand(data) + paperLedger(data) + '</div>' +
+      '<div class="sh-col">' + pKitPart(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
+    return '<div class="sh-root" data-sheet>' +
+      '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
+      templates + '</div>';
+  }
+
+  // ── Paper interactions ─────────────────────────────────────────────────────
+
+  // The longest transition on an element, so a pin is removed only after its
+  // own move has played (Calm and Off already shorten or remove it in CSS).
+  function transitionMs(node) {
+    var cs = getComputedStyle(node), d = cs.transitionDuration.split(','), l = cs.transitionDelay.split(','), m = 0;
+    function ms(x) { x = String(x).trim(); return (parseFloat(x) || 0) * (/ms$/.test(x) ? 1 : 1000); }
+    d.forEach(function (x, i) { m = Math.max(m, ms(x) + ms(l[i % l.length])); });
+    return m;
+  }
+
+  // A pin is a slip tacked onto the open panel. Chronicle styles it
+  // (.paper-pin) and moves it by toggling .is-pinned; the engine has no
+  // call for it, so the widget places and removes it.
+  function unpin(inst, focus) {
+    var p = inst._pin;
+    if (!p) return;
+    inst._pin = null;
+    p.el.classList.remove('is-pinned');
+    p.trigger.setAttribute('aria-expanded', 'false');
+    if (focus && p.trigger.isConnected && p.trigger.focus) p.trigger.focus({ preventScroll: true });
+    setTimeout(function () { if (p.el.parentNode) p.el.parentNode.removeChild(p.el); }, transitionMs(p.el) + 20);
+  }
+
+  function storyPinHtml(data) {
+    var title = (data.name || 'Background') + '’s story';
+    var prose = cleanFoundryProse(f(data, 'backstory', '') || f(data, 'notes', ''));
+    var paras = prose.split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p>' + refSynced(p) + '</p>'; }).join('');
+    return '<span class="pin" aria-hidden="true"></span><div class="slip-in"><div class="slip-head"><h3 tabindex="-1">' + esc(title) + '</h3>' +
+      '<button type="button" class="unpin" data-unpin aria-label="' + escAttr('Unpin ' + title) + '">' + fa('xmark') + ' Unpin</button></div>' + paras + '</div>';
+  }
+
+  function openStoryPin(inst, trigger, data) {
+    var body = trigger.closest ? trigger.closest('.paper-dbody') : null;
+    if (!body) return;
+    if (inst._pin && inst._pin.trigger === trigger) { unpin(inst, true); return; }
+    unpin(inst, false);
+    var el = document.createElement('div');
+    el.className = 'paper-pin' + ((inst._pinFlip = (inst._pinFlip || 0) + 1) % 2 ? '' : ' alt');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', (data.name || 'Background') + '’s story');
+    el.innerHTML = storyPinHtml(data);
+    var br = body.getBoundingClientRect(), tr = trigger.getBoundingClientRect();
+    el.style.top = (tr.bottom - br.top + body.scrollTop + 8) + 'px';
+    body.appendChild(el);
+    el.style.setProperty('--ox', Math.round(tr.left + tr.width / 2 - el.getBoundingClientRect().left) + 'px');
+    el.style.setProperty('--oy', '0px');
+    void el.offsetWidth;
+    el.classList.add('is-pinned');
+    trigger.setAttribute('aria-expanded', 'true');
+    inst._pin = { el: el, trigger: trigger };
+    setTimeout(function () {
+      var h = el.querySelector('h3');
+      if (h) h.focus({ preventScroll: true });
+      if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    }, 40);
+  }
+
+  // The panel body is a fresh clone each time a panel opens, so anything
+  // interactive inside it is wired from sheet:panel-ready, never at mount.
+  function attachPaperPanels(inst, el, root) {
+    inst._onPanelReady = function (e) {
+      var d = e.detail || {};
+      inst._pin = null;
+      inst._panelBody = d.body || null;
+      if (d.id === 'abilities' && inst._selectFirst) inst._selectFirst();
+    };
+    inst._onPanelClose = function () { inst._pin = null; inst._panelBody = null; };
+    root.addEventListener('sheet:panel-ready', inst._onPanelReady);
+    root.addEventListener('sheet:close', inst._onPanelClose);
+
+    // Escape steps back one layer at a time (pin, then an expanded ability
+    // card, then the panel). The engine closes the panel on Escape, so this
+    // listens first, in the capture phase, and stops the event when it has
+    // a smaller layer to put away.
+    inst._onPaperKey = function (e) {
+      if (e.key !== 'Escape' && e.key !== 'Esc') return;
+      if (inst._pin) { e.preventDefault(); e.stopPropagation(); unpin(inst, true); return; }
+      var big = inst._panelBody && inst._panelBody.querySelector ? inst._panelBody.querySelector('[data-ds-collapse]') : null;
+      if (big && inst._collapse) { e.preventDefault(); e.stopPropagation(); inst._collapse(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
+    };
+    el.addEventListener('keydown', inst._onPaperKey, true);
+  }
+
+  // Grow is the contract's move for something drawn out of the thing pressed:
+  // the style supplies the look, Calm and Off are enforced by Chronicle.
+  function growIn(node) {
+    if (!node) return;
+    node.setAttribute('data-move', 'grow');
+    void node.offsetWidth;
+    node.classList.add('is-open');
+  }
+
+  function mountPaper(inst, el, data) {
+    var sm = Chronicle.sheetMotion;
+    if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
+    inst._paper = true;
+    el.innerHTML = paperSheetHtml(data);
+    appendBlockSlots(el, data);
+    var root = el.querySelector('[data-sheet]');
+    if (typeof sm.rescan === 'function') sm.rescan();
+    if (root) sm.mount(root);
+    attachInteractions(inst, el, data);
+    if (root) attachPaperPanels(inst, el, root);
+    attachTooltips(inst, el);
+  }
+
+
   function mountSheet(inst, el, data) {
+    inst._paper = false;
+    if (paperAvailable()) { mountPaper(inst, el, data); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
     // so this is belt-and-suspenders — degrade gracefully rather than throw if
     // it is somehow absent.
@@ -2229,6 +2873,477 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
+  // ── Paper styles ─────────────────────────────────────────────────────
+
+  function injectPaperStyles() {
+    if (document.getElementById('ds-character-sheet-paper-styles')) return;
+    var css = [
+      // Layout for the paper sheet: the .sh-* rules, read from the --paper-* tokens Chronicle derives from the sheet's style.
+      // Everything is scoped under [data-sheet], so nothing outside the sheet changes. Chronicle owns the paper, the pulls, the panels and the motion.
+      // Paper styles say "Pull out"; Modern and the screen styles say "Open".
+      '[data-sheet]:is(:not([data-sheet-style]),[data-sheet-style="modern"],[data-sheet-style="starship"],[data-sheet-style="neon"],[data-sheet-style="runes"],[data-sheet-style="brass"]) .only-paper,' +
+        '[data-sheet][data-sheet-style]:not([data-sheet-style="modern"]):not([data-sheet-style="starship"]):not([data-sheet-style="neon"]):not([data-sheet-style="runes"]):not([data-sheet-style="brass"]) .only-modern { display:none; }',
+      '[data-sheet] .sh-k { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
+      '[data-sheet] .sh-link { border:0;background:none;padding:0;color:var(--paper-accent);font:600 calc(12.5px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .sh-link:hover { text-decoration:underline; }',
+      '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
+      '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
+      '[data-sheet] .sh-folio { position:relative;isolation:isolate;width:920px;max-width:100%;margin-inline:auto; }',
+      '[data-sheet] .sh-stack { position:relative;z-index:2;width:100%; }',
+      '[data-sheet] .sh-sheet { padding:24px 36px 26px;display:flex;flex-direction:column;gap:16px;font-size:calc(13.5px * var(--ts));line-height:1.55; }',
+      '[data-sheet] .sh-body { display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:16px 36px;align-items:start; }',
+      '[data-sheet] .sh-col { display:flex;flex-direction:column;gap:16px;min-width:0; }',
+      '[data-sheet] .sh-o1 { order:1; }',
+      '[data-sheet] .sh-o2 { order:2; }',
+      '[data-sheet] .sh-o3 { order:3; }',
+      '[data-sheet] .sh-o4 { order:4; }',
+      '[data-sheet] .sh-o5 { order:5; }',
+      '[data-sheet] .sh-o6 { order:6; }',
+      '[data-sheet] .sh-k { display:block; }',
+      '[data-sheet] .sh-sec.paper-pull { padding:8px 10px 8px 0; }',
+      '[data-sheet] .sh-pullbtn { display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer; }',
+      '[data-sheet] .sh-pullbtn .sh-pull { margin-left:auto;margin-right:18px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);white-space:nowrap; }',
+      '[data-sheet] .sh-pullbtn .sh-pull i,[data-sheet] .sh-pullbtn .sh-pull svg { font-size:calc(9px * var(--ts));margin-left:3px; }',
+      '[data-sheet] .sh-head { display:flex;align-items:flex-end;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding-bottom:10px; }',
+      '[data-sheet] .sh-name { display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0; }',
+      '[data-sheet] .sh-name h2 { margin:2px 0 0;font:700 calc(32px * var(--ts))/1.05 var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-seal { display:inline-flex;align-items:center;gap:5px;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:3px;padding:0 6px;font:600 calc(10px * var(--ts))/17px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;background:color-mix(in srgb,var(--paper-accent) 7%,transparent);white-space:nowrap; }',
+      '[data-sheet] .sh-id { display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:4px 0; }',
+      '[data-sheet] .sh-port { position:relative;width:86px;height:86px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--paper-edge); }',
+      '[data-sheet] .sh-port img { display:block;width:100%;height:100%; }',
+      '[data-sheet] .sh-port button { position:absolute;left:50%;bottom:5px;transform:translateX(-50%);border:1px solid var(--paper-edge);background:var(--paper-cut);color:var(--paper-ink);border-radius:999px;padding:1px 8px;font:600 calc(10.5px * var(--ts)) var(--paper-ui-font);white-space:nowrap;display:inline-flex;gap:4px;align-items:center; }',
+      '[data-sheet] .sh-slots { display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1.35fr);gap:2px 12px; }',
+      '[data-sheet] .sh-slot { min-width:0;display:flex;flex-direction:column;gap:1px; }',
+      '[data-sheet] .sh-pick { position:relative;display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:0;border-bottom:1px dashed var(--paper-edge);background:none;padding:2px 0 3px;font:600 calc(15.5px * var(--ts))/1.3 var(--paper-font);color:var(--paper-ink);min-width:0; }',
+      '[data-sheet] .sh-pick span { min-width:0;position:relative;z-index:1; }',
+      '[data-sheet] .sh-pick i,[data-sheet] .sh-pick svg { margin-left:auto;font-size:calc(9px * var(--ts));color:var(--paper-accent);flex:none; }',
+      '[data-sheet] .sh-pick:hover,[data-sheet] .sh-pick[aria-expanded="true"] { border-bottom:1px solid var(--paper-accent); }',
+      '[data-sheet] .sh-v-plain { font:600 calc(15.5px * var(--ts))/1.3 var(--paper-font);color:var(--paper-ink);padding:2px 0 3px;border-bottom:1px dashed transparent; }',
+      '[data-sheet] .sh-fixed { display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin-top:10px;font:600 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-fixed .sh-k { display:inline;margin-right:5px; }',
+      '[data-sheet] .sh-fixed small { font:500 calc(11.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-turn { border-top:1.5px solid var(--paper-accent);border-bottom:1px solid var(--paper-edge);padding:8px 0 10px;display:flex;flex-direction:column;gap:10px; }',
+      '[data-sheet] .sh-turn-top { display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:12px; }',
+      '[data-sheet] .sh-v { display:flex;flex-direction:column;gap:2px;min-width:0; }',
+      '[data-sheet] .sh-big { display:flex;align-items:baseline;gap:6px;flex-wrap:wrap; }',
+      '[data-sheet] .sh-num { font:700 calc(23px * var(--ts))/1.1 var(--paper-font);color:var(--paper-ink);font-variant-numeric:tabular-nums;border:0;background:none;padding:0;position:relative; }',
+      '[data-sheet] button.sh-num { border-bottom:1px dashed var(--paper-accent);cursor:pointer; }',
+      '[data-sheet] button.sh-num:hover { color:var(--paper-accent); }',
+      '[data-sheet] .sh-num small,[data-sheet] .sh-big small { font:500 calc(13px * var(--ts)) var(--paper-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-state { font:700 calc(10px * var(--ts))/16px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;border-radius:3px;padding:0 6px;color:var(--paper-on-accent);background:var(--paper-neg); }',
+      '[data-sheet] .sh-state.winded { background:var(--paper-warn); }',
+      '[data-sheet] .sh-bar { position:relative;height:6px;border-radius:3px;background:rgb(var(--paper-burn) / .16);margin:4px 0 1px;overflow:hidden; }',
+      '[data-sheet] .sh-bar span { position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--paper-bar);transition:width var(--dur-slide) var(--ease-slide); }',
+      '[data-sheet] .sh-bar .w { position:absolute;top:0;bottom:0;width:1.5px;background:var(--paper-ink);border-radius:0; }',
+      '[data-sheet] .sh-sub { font:500 calc(11.5px * var(--ts))/1.35 var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-pips { font-size:calc(10px * var(--ts));letter-spacing:1.5px;color:var(--paper-accent); }',
+      '[data-sheet] .sh-cond { display:flex;flex-wrap:wrap;align-items:center;gap:6px; }',
+      '[data-sheet] .sh-cond .lbl { margin-right:2px; }',
+      '[data-sheet] .sh-cnd { display:inline-flex;align-items:center;gap:6px;border:1px solid var(--paper-neg);color:var(--paper-neg);border-radius:3px;padding:0 4px 0 7px;font:600 calc(12px * var(--ts))/20px var(--paper-ui-font);background:color-mix(in srgb,var(--paper-neg) 6%,transparent); }',
+      '[data-sheet] .sh-cnd small { font-weight:500;color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-cnd button { border:0;background:none;color:var(--paper-neg);padding:0 3px;font-size:calc(13px * var(--ts));line-height:1; }',
+      '[data-sheet] .sh-stats { display:flex;flex-wrap:wrap;gap:4px 18px;font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);align-items:baseline; }',
+      '[data-sheet] .sh-stats b { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink);margin-left:4px;font-variant-numeric:tabular-nums; }',
+      '[data-sheet] .sh-turnhead { display:flex;align-items:center;gap:10px; }',
+      '[data-sheet] .sh-turnhead .sh-pullbtn { position:relative; }',
+      '[data-sheet] .sh-turnhead .paper-kind { white-space:nowrap; }',
+      '[data-sheet] .sh-chars { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:1px solid var(--paper-edge); }',
+      '[data-sheet] .sh-chars div { display:flex;flex-direction:column;align-items:center;padding:6px 2px 6px;min-width:0; }',
+      '[data-sheet] .sh-chars div+div { border-left:1px dashed var(--paper-edge); }',
+      '[data-sheet] .sh-chars b { font:700 calc(25px * var(--ts))/1.1 var(--paper-font);color:var(--paper-ink);font-variant-numeric:tabular-nums; }',
+      '[data-sheet] .sh-chars b.sh-neg { color:var(--paper-neg); }',
+      '[data-sheet] .sh-chars span { font:600 calc(9.5px * var(--ts)) var(--paper-ui-font);letter-spacing:.09em;text-transform:uppercase;color:var(--paper-mute); }',
+      '[data-sheet] .sh-band { padding:8px 10px 8px 0; }',
+      '[data-sheet] .sh-band .sh-pullbtn { align-items:flex-start;flex-direction:column;gap:4px; }',
+      '[data-sheet] .sh-band .sh-pullbtn .sh-pull { position:absolute;top:9px;right:0; }',
+      '[data-sheet] .sh-band .sh-row { display:flex;flex-wrap:wrap;gap:4px 14px;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-band .sh-row b { font:700 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-sec { display:flex;flex-direction:column;gap:6px;min-width:0; }',
+      '[data-sheet] .sh-kit-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-kit { display:grid;grid-template-columns:1fr repeat(3,28px);gap:2px 6px;font:500 calc(12.5px * var(--ts)) var(--paper-font);border-top:1px dashed var(--paper-edge);border-bottom:1px dashed var(--paper-edge);padding:4px 0;text-align:center; }',
+      '[data-sheet] .sh-kit span:first-child,[data-sheet] .sh-kit span:nth-child(5) { text-align:left; }',
+      '[data-sheet] .sh-kit .sh-h { font:600 calc(9.5px * var(--ts)) var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;color:var(--paper-mute); }',
+      '[data-sheet] .sh-line { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center; }',
+      '[data-sheet] .sh-line b { font:700 calc(13.5px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-dl { display:grid;grid-template-columns:repeat(5,auto);justify-content:start;gap:2px 16px; }',
+      '[data-sheet] .sh-dl div { display:flex;flex-direction:column; }',
+      '[data-sheet] .sh-dl b { white-space:nowrap;font:700 calc(17px * var(--ts)) var(--paper-font);color:var(--paper-ink);font-variant-numeric:tabular-nums; }',
+      '[data-sheet] .sh-ledger { position:relative;border-top:1px solid var(--paper-edge); }',
+      '[data-sheet] .sh-ledger .paper-pull { border-bottom:1px dashed var(--paper-edge); }',
+      '[data-sheet] .sh-ledger .sh-pullbtn { padding:9px 0;align-items:baseline; }',
+      '[data-sheet] .sh-ledger .sh-nm { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink);min-width:calc(78px * var(--ts) * 1.12); }',
+      '[data-sheet] .sh-ledger .sh-ds { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);min-width:0; }',
+      '[data-sheet] .sh-foot { border-top:1px dashed var(--paper-edge);padding-top:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .slip-in { padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px; }',
+      '[data-sheet] .slip-head { display:flex;align-items:center;gap:8px; }',
+      '[data-sheet] .slip-head h4,[data-sheet] .slip-head h3 { margin:0;font:700 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink);outline:none; }',
+      '[data-sheet] .paper-pin .slip-in { padding:14px 14px 12px; }',
+      '[data-sheet] .paper-pin .unpin { border:0;background:none;color:var(--paper-ink-soft);font:600 calc(11.5px * var(--ts)) var(--paper-ui-font);padding:2px 4px;margin-left:auto;display:inline-flex;gap:4px;align-items:center; }',
+      '[data-sheet] .paper-pin .unpin:hover { color:var(--paper-neg); }',
+      '[data-sheet] .ab { position:relative;padding:8px 0 9px;border-bottom:1px dashed var(--paper-edge); }',
+      '[data-sheet] .ab-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .ab .sh-link { font-size:calc(12px * var(--ts));margin-top:3px; }',
+      '[data-sheet] .it-row { display:flex;align-items:center;gap:10px;padding:8px 2px;font:600 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink);border-bottom:1px dashed var(--paper-edge);position:relative; }',
+      '[data-sheet] .it-row .sh-q { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .it-li { position:relative;list-style:none; }',
+      '[data-sheet] .lf-list { list-style:none;margin:0;padding:0; }',
+      '[data-sheet] .lf-money { display:flex;white-space:nowrap;justify-content:space-between;gap:12px;padding:9px 2px;font:600 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink);border-bottom:1px dashed var(--paper-edge); }',
+      '[data-sheet] .lf-money small { white-space:normal;font:500 calc(11.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-align:right;max-width:220px; }',
+      '[data-sheet] .lf-grp { margin:4px 0 12px; }',
+      '[data-sheet] .lf-grp>.sh-k { margin-bottom:4px; }',
+      '[data-sheet] .ft { border-bottom:1px dashed var(--paper-edge); }',
+      '[data-sheet] .ft summary { display:flex;align-items:center;gap:8px;padding:7px 2px;cursor:pointer;list-style:none;font:700 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .ft summary::-webkit-details-marker { display:none; }',
+      '[data-sheet] .ft summary::after { content:"\\25BE";margin-left:auto;font-size:calc(10px * var(--ts));color:var(--paper-mute);transition:transform var(--dur-micro) var(--ease-out); }',
+      '[data-sheet] .ft.is-in>summary::after { transform:rotate(180deg); }',
+      '[data-sheet] .ft p { margin:0 2px 9px;font-size:calc(13px * var(--ts)); }',
+      '[data-sheet] .ft .lore { margin-bottom:9px; }',
+      '[data-sheet] .sh-lvl { font:600 calc(10px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);border:1px solid var(--paper-edge);border-radius:3px;padding:0 4px; }',
+      '[data-sheet] .skills { display:flex;flex-wrap:wrap;gap:5px; }',
+      '[data-sheet] .lf-text { margin:0 0 6px;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--paper-ink-soft); }',
+      '[data-sheet] .lore { border-left:2px solid var(--paper-accent);padding:2px 0 2px 10px;font-style:italic; }',
+      '[data-sheet] .rule { margin:0 0 10px; }',
+      '[data-sheet] .rule b { display:block;font:700 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
+      '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts)); }',
+      '@container sheet (max-width:819px) {',
+      '  [data-sheet] .sh-sheet { padding:22px 26px 24px;gap:14px; }',
+      '  [data-sheet] .sh-body { display:flex;flex-direction:column;gap:14px; }',
+      '  [data-sheet] .sh-col { display:contents; }',
+      '}',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet] .sh-sheet { padding:18px 15px 20px; }',
+      '  [data-sheet] .sh-name h2 { font-size:calc(28px * var(--ts)); }',
+      '  [data-sheet] .sh-id { grid-template-columns:72px minmax(0,1fr);gap:12px; }',
+      '  [data-sheet] .sh-port { width:72px;height:72px; }',
+      '  [data-sheet] .sh-slots { grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px; }',
+      '  [data-sheet] .sh-turn-top { grid-template-columns:repeat(3,minmax(0,1fr)); }',
+      '  [data-sheet] .sh-turn-top>.sh-v:first-child { grid-column:1/-1; }',
+      '  [data-sheet] .sh-chars b { font-size:calc(21px * var(--ts)); }',
+      '  [data-sheet] .sh-chars span { font-size:calc(8.5px * var(--ts));letter-spacing:.04em; }',
+      '  [data-sheet] .sh-dl { grid-template-columns:repeat(3,auto); }',
+      '}',
+      '[data-sheet] .sh-name h2,[data-sheet] .slip-head h4,[data-sheet] .slip-head h3,[data-sheet] .sh-kit-name,[data-sheet] .ab-name,[data-sheet] .sh-ledger .sh-nm,[data-sheet] .rule b,[data-sheet] .ft summary,[data-sheet] .it-row,[data-sheet] .lf-money,[data-sheet] .lf-grp>.sh-k+.sh-kit-name { font-family:var(--paper-head-font); }',
+      '[data-sheet] .sh-num,[data-sheet] .sh-chars b,[data-sheet] .sh-dl b,[data-sheet] .sh-stats b,[data-sheet] .sh-band .sh-row b,[data-sheet] .sh-line b,[data-sheet] .sh-pick,[data-sheet] .sh-v-plain,[data-sheet] .sh-fixed,[data-sheet] .sh-kit,[data-sheet] .sh-num small,[data-sheet] .sh-big small { font-family:var(--paper-num-font); }',
+      // Per-style looks for the sheet's own classes. The paper, panels and moves of each style are Chronicle's sheet_styles.css and sheet_motion.css.
+      '[data-sheet][data-sheet-style="ledger"] .sh-turn { border-top:3px double var(--paper-accent); }',
+      '[data-sheet][data-sheet-style="ledger"] .sh-k,[data-sheet][data-sheet-style="ledger"] .sh-chars span,[data-sheet][data-sheet-style="ledger"] .sh-kit .sh-h { font-family:var(--paper-num-font);letter-spacing:.06em; }',
+      '[data-sheet][data-sheet-style="ledger"] .sh-chars div+div { border-left-style:solid; }',
+      '[data-sheet][data-sheet-style="ledger"] .sh-name h2 { letter-spacing:-.01em; }',
+      '[data-sheet][data-sheet-style="journal"] .sh-turn { border-top:2px dashed var(--paper-accent); }',
+      '[data-sheet][data-sheet-style="vellum"] .sh-turn { border-top:3px double var(--gilt); }',
+      '[data-sheet][data-sheet-style="vellum"] .sh-k { color:var(--paper-accent);letter-spacing:.12em; }',
+      '[data-sheet][data-sheet-style="vellum"] .sh-name h2 { letter-spacing:.02em;font-weight:700; }',
+      '[data-sheet][data-sheet-style="vellum"] .sh-name h2::first-letter { font-size:1.5em;color:var(--paper-accent);text-shadow:1px 1px 0 var(--gilt),2px 2px 0 color-mix(in srgb,var(--gilt) 40%,transparent); }',
+      '[data-sheet][data-sheet-style="night"] .sh-name h2 { text-transform:uppercase;letter-spacing:.05em; }',
+      '[data-sheet][data-sheet-style="night"] .sh-k { letter-spacing:.14em; }',
+      '[data-sheet][data-sheet-style="night"] .sh-bar { background:rgb(160 200 255 / .2); }',
+      '[data-sheet][data-sheet-style="deck"] .sh-turn { border-top:3px solid var(--paper-ink); }',
+      '[data-sheet][data-sheet-style="deck"] .sh-name h2 { font-weight:800;letter-spacing:-.01em; }',
+      '[data-sheet][data-sheet-style="deck"] .sh-chars div { border-radius:10px; }',
+      '[data-sheet][data-sheet-style="deck"] .sh-chars { gap:6px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="deck"] .sh-chars div,[data-sheet][data-sheet-style="deck"] .sh-chars div+div { border:1.5px solid var(--paper-ink);background:rgb(var(--paper-hl) / .55); }',
+      '[data-sheet][data-sheet-style="deck"] .sh-pullbtn .sh-pull { font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-turn { border-top:0; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-k,[data-sheet][data-sheet-style="pencil"] .sh-chars span,[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h { font-family:var(--paper-ui-font);font-weight:700;letter-spacing:.12em;color:var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-k { font-size:calc(11.5px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(11px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="pencil"] .ab-name,[data-sheet][data-sheet-style="pencil"] .ft summary,[data-sheet][data-sheet-style="pencil"] .rule b,[data-sheet][data-sheet-style="pencil"] .sh-ledger .sh-nm,[data-sheet][data-sheet-style="pencil"] .slip-head h3,[data-sheet][data-sheet-style="pencil"] .slip-head h4 { font-size:calc(17px * var(--ts));font-weight:700;letter-spacing:.02em; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-id,[data-sheet][data-sheet-style="pencil"] .sh-turn,[data-sheet][data-sheet-style="pencil"] .sh-band,[data-sheet][data-sheet-style="pencil"] .sh-sec.paper-pull,[data-sheet][data-sheet-style="pencil"] .sh-ledger { border:1.5px solid var(--pc-rule);border-radius:3px;background:transparent; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-id { padding:10px 12px; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-turn { padding:10px 12px 12px;gap:12px; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-band,[data-sheet][data-sheet-style="pencil"] .sh-sec.paper-pull { padding:10px 12px; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-ledger { border-top:1.5px solid var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-ledger .paper-pull { padding:0 12px;border-bottom:1px solid var(--paper-edge); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-ledger .paper-pull:last-child { border-bottom:0; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars { gap:6px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars div,[data-sheet][data-sheet-style="pencil"] .sh-chars div+div { border:1.5px solid var(--pc-rule);border-radius:3px;padding:2px 2px 6px;flex-direction:column-reverse; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars span { border-top:1px solid var(--paper-edge);width:100%;text-align:center;padding-top:2px;margin-top:2px; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-pick,[data-sheet][data-sheet-style="pencil"] .sh-v-plain { border-bottom:1px solid var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-pick:hover,[data-sheet][data-sheet-style="pencil"] .sh-pick[aria-expanded="true"] { border-bottom:2px solid var(--paper-accent); }',
+      '[data-sheet][data-sheet-style="pencil"] button.sh-num { border-bottom:1px solid var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-foot { border-top:1.5px solid var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-bar { height:8px;border:1px solid var(--pc-rule);border-radius:1px;background:transparent; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-bar span { border-radius:0;background:repeating-linear-gradient(135deg,#4f545b 0 2px,#868b92 2px 4px); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-port { border-radius:1px;box-shadow:0 0 0 1.5px var(--pc-rule); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-port img { filter:grayscale(.92) contrast(1.05); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chip { border-radius:2px; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-name h2 { font-size:calc(44px * var(--ts));font-weight:700;line-height:1;rotate:-.8deg;transform-origin:left bottom;letter-spacing:0; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-num { font-size:calc(31px * var(--ts));font-weight:700;rotate:-.9deg; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-num small,[data-sheet][data-sheet-style="pencil"] .sh-big small { font-size:calc(21px * var(--ts));font-weight:500;color:var(--pc-lead); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars b { font-size:calc(34px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars div:nth-child(odd) b { rotate:-1.2deg; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars div:nth-child(even) b { rotate:1deg; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-chars b.sh-neg { color:var(--pc-lead); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-dl b { font-size:calc(23px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-stats b { font-size:calc(21px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-band .sh-row b { font-size:calc(19px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-line b { font-size:calc(18px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-pick,[data-sheet][data-sheet-style="pencil"] .sh-v-plain { font-size:calc(22px * var(--ts));font-weight:500;line-height:1.1; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-slot:nth-child(odd) .sh-pick,[data-sheet][data-sheet-style="pencil"] .sh-slot:nth-child(odd) .sh-v-plain { rotate:-.5deg; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-slot:nth-child(even) .sh-pick,[data-sheet][data-sheet-style="pencil"] .sh-slot:nth-child(even) .sh-v-plain { rotate:.4deg; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-fixed { font-size:calc(20px * var(--ts));font-weight:500; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-fixed small { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit { font-size:calc(19px * var(--ts));font-weight:500; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit-name { font-size:calc(25px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-cnd { font-size:calc(18px * var(--ts));font-weight:500;line-height:22px;border-color:var(--pc-lead);border-radius:20px 14px 18px 12px / 14px 18px 12px 20px;background:transparent;color:var(--pc-lead); }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-cnd small { font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-cnd button { color:var(--pc-lead); }',
+      '[data-sheet][data-sheet-style="pencil"] .it-row { font-size:calc(21px * var(--ts));font-weight:500; }',
+      '[data-sheet][data-sheet-style="pencil"] .it-row .sh-q { font:500 calc(14px * var(--ts)) var(--paper-ui-font);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .it-row .sh-link { text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .lf-money b { font-size:calc(21px * var(--ts));font-weight:700; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-num small,[data-sheet][data-sheet-style="pencil"] .sh-big small { text-shadow:none; }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="pencil"] .sh-chars b { font-size:calc(28px * var(--ts)); }',
+      '  [data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(10px * var(--ts));letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="pencil"] .sh-name h2 { font-size:calc(38px * var(--ts)); }',
+      '}',
+      '[data-sheet][data-sheet-style="starship"] .sh-id,[data-sheet][data-sheet-style="starship"] .sh-turn,[data-sheet][data-sheet-style="starship"] .sh-band,[data-sheet][data-sheet-style="starship"] .sh-sec.paper-pull,[data-sheet][data-sheet-style="starship"] .sh-ledger { border:1px solid var(--hud-dim);border-radius:2px;background:linear-gradient(rgb(95 215 245 / .06),rgb(95 215 245 / .015)); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-id { padding:12px 14px; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-turn { padding:12px 14px 14px;gap:12px;border-top:2px solid var(--hud-a); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-band,[data-sheet][data-sheet-style="starship"] .sh-sec.paper-pull { padding:10px 14px; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-ledger { overflow:hidden; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-ledger .paper-pull { padding:0 14px;border-bottom:1px solid var(--hud-dim); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-ledger .paper-pull:last-child { border-bottom:0; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-chars { gap:6px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-chars div,[data-sheet][data-sheet-style="starship"] .sh-chars div+div { border:1px solid var(--hud-dim);border-bottom:2px solid var(--hud);border-radius:0;background:rgb(95 215 245 / .05); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-pick,[data-sheet][data-sheet-style="starship"] .sh-v-plain { border-bottom:1px solid var(--hud-dim); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-pick:hover,[data-sheet][data-sheet-style="starship"] .sh-pick[aria-expanded="true"] { border-bottom:1px solid var(--hud); }',
+      '[data-sheet][data-sheet-style="starship"] button.sh-num { border-bottom:1px solid var(--hud-dim); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-foot { border-top:1px solid var(--hud-dim); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-bar { background:rgb(95 215 245 / .16);border-radius:0;height:6px; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-bar span { border-radius:0; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-port { border-radius:0;box-shadow:0 0 0 1px var(--hud-dim); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-chip,[data-sheet][data-sheet-style="starship"] .sh-cnd,[data-sheet][data-sheet-style="starship"] .sh-seal { border-radius:0; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-name h2 { font-family:"Orbitron","Rajdhani",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.07em; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-name h2 { font-size:calc(27px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-k,[data-sheet][data-sheet-style="starship"] .sh-chars span,[data-sheet][data-sheet-style="starship"] .sh-kit .sh-h { font-family:var(--paper-head-font);font-weight:700;letter-spacing:.16em; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-k { font-size:calc(11.5px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="starship"] .ab-name,[data-sheet][data-sheet-style="starship"] .ft summary,[data-sheet][data-sheet-style="starship"] .rule b,[data-sheet][data-sheet-style="starship"] .sh-ledger .sh-nm,[data-sheet][data-sheet-style="starship"] .slip-head h3,[data-sheet][data-sheet-style="starship"] .slip-head h4,[data-sheet][data-sheet-style="starship"] .sh-kit-name { font-size:calc(17px * var(--ts));font-weight:700;letter-spacing:.03em; }',
+      '[data-sheet][data-sheet-style="starship"] :is(.sh-num,.sh-chars b,.sh-dl b) { text-shadow:0 0 8px rgb(95 215 245 / .38);font-weight:400; }',
+      '[data-sheet][data-sheet-style="starship"] .sh-num { font-size:calc(26px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-chars b { font-size:calc(26px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="starship"] .sh-chars b.sh-neg { color:var(--paper-neg); }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="starship"] .sh-chars b { font-size:calc(21px * var(--ts)); }',
+      '  [data-sheet][data-sheet-style="starship"] .sh-chars span { letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="starship"] .sh-name h2 { font-size:calc(22px * var(--ts)); }',
+      '}',
+      '[data-sheet][data-sheet-style="neon"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:1px solid var(--nx-dim);border-radius:0;background:linear-gradient(rgb(255 63 180 / .06),rgb(56 243 255 / .015)); }',
+      '[data-sheet][data-sheet-style="neon"] .sh-id { padding:12px 14px; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-turn { padding:12px 14px 14px;gap:12px;border-top:2px solid var(--nx-mag); }',
+      '[data-sheet][data-sheet-style="neon"] :is(.sh-band,.sh-sec.paper-pull) { padding:10px 14px; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-ledger { overflow:hidden; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-ledger .paper-pull { padding:0 14px;border-bottom:1px solid var(--nx-dim); }',
+      '[data-sheet][data-sheet-style="neon"] .sh-ledger .paper-pull:last-child { border-bottom:0; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-chars { gap:6px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-chars div,[data-sheet][data-sheet-style="neon"] .sh-chars div+div { border:1px solid var(--nx-dimc,rgb(56 243 255 / .36));border-bottom:2px solid var(--nx-cy);border-radius:0;background:rgb(56 243 255 / .05); }',
+      '[data-sheet][data-sheet-style="neon"] :is(.sh-pick,.sh-v-plain,button.sh-num) { border-bottom:1px solid var(--nx-dimc,rgb(56 243 255 / .36)); }',
+      '[data-sheet][data-sheet-style="neon"] :is(.sh-pick:hover,.sh-pick[aria-expanded="true"]) { border-bottom:1px solid var(--nx-cy); }',
+      '[data-sheet][data-sheet-style="neon"] .sh-foot { border-top:1px solid var(--nx-dim); }',
+      '[data-sheet][data-sheet-style="neon"] .sh-port { border-radius:0;box-shadow:0 0 0 1px var(--nx-dim); }',
+      '[data-sheet][data-sheet-style="neon"] .sh-name h2 { font-size:calc(42px * var(--ts));text-shadow:0 0 10px rgb(255 63 180 / .55),0 0 2px rgb(255 63 180 / .7); }',
+      '[data-sheet][data-sheet-style="neon"] :is(.paper-kind,.sh-k,.sh-chars span,.sh-kit .sh-h) { font-family:var(--paper-ui-font);font-weight:700;letter-spacing:.1em; }',
+      '[data-sheet][data-sheet-style="neon"] :is(.sh-num,.sh-chars b,.sh-dl b) { text-shadow:0 0 8px rgb(56 243 255 / .45);font-weight:700; }',
+      '[data-sheet][data-sheet-style="neon"] .sh-chars b.sh-neg { color:var(--paper-neg);text-shadow:0 0 8px rgb(255 143 176 / .4); }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="neon"] .sh-chars b { font-size:calc(20px * var(--ts)); }',
+      '  [data-sheet][data-sheet-style="neon"] .sh-chars span { letter-spacing:.02em; }',
+      '  [data-sheet][data-sheet-style="neon"] .sh-name h2 { font-size:calc(34px * var(--ts)); }',
+      '}',
+      '[data-sheet][data-sheet-style="runes"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:0;border-radius:0;background:var(--rn-tablet,linear-gradient(rgb(5 6 10 / .58),rgb(5 6 10 / .46)),var(--rn-stone) 40px 90px/320px 320px,#1b1c22);box-shadow:var(--rn-carve,inset 4px 5px 10px -1px rgb(0 0 0 / .85),inset 0 0 0 1px rgb(0 0 0 / .5),inset -2px -2px 0 rgb(255 255 255 / .09));clip-path:var(--rn-ch-t,polygon(-22px -10px,9px -10px,9px 1px,37% 0,71% 2px,calc(100% - 11px) 0,100% 7px,calc(100% - 1px) 50%,100% calc(100% - 9px),calc(100% - 8px) 100%,56% calc(100% - 2px),23% 100%,7px calc(100% - 1px),0 calc(100% - 8px),2px 62%,0 12px,-22px 12px)); }',
+      '@media (hover:hover) {',
+      '  [data-sheet][data-sheet-style="runes"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull):hover { box-shadow:var(--rn-carve,inset 4px 5px 10px -1px rgb(0 0 0 / .85),inset 0 0 0 1px rgb(0 0 0 / .5),inset -2px -2px 0 rgb(255 255 255 / .09)),inset 0 0 22px rgb(111 233 214 / .1); }',
+      '}',
+      '[data-sheet][data-sheet-style="runes"] .sh-id { padding:12px 14px; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-turn { padding:12px 14px 14px;gap:12px; }',
+      '[data-sheet][data-sheet-style="runes"] :is(.sh-band,.sh-sec.paper-pull) { padding:10px 14px; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-ledger { overflow:visible; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-ledger .paper-pull { padding:0 14px;border-bottom:1px solid rgb(0 0 0 / .5);box-shadow:0 1px 0 rgb(255 255 255 / .06); }',
+      '[data-sheet][data-sheet-style="runes"] .sh-ledger .paper-pull:last-child { border-bottom:0;box-shadow:none; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-chars { gap:7px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-chars div,[data-sheet][data-sheet-style="runes"] .sh-chars div+div { border:0;border-radius:0;background:var(--rn-tablet,linear-gradient(rgb(5 6 10 / .58),rgb(5 6 10 / .46)),var(--rn-stone) 40px 90px/320px 320px,#1b1c22);box-shadow:var(--rn-carve,inset 4px 5px 10px -1px rgb(0 0 0 / .85),inset 0 0 0 1px rgb(0 0 0 / .5),inset -2px -2px 0 rgb(255 255 255 / .09));clip-path:var(--rn-ch-s); }',
+      '[data-sheet][data-sheet-style="runes"] :is(.sh-pick,.sh-v-plain,button.sh-num) { border-bottom:1px solid rgb(0 0 0 / .55);box-shadow:0 1px 0 rgb(255 255 255 / .07); }',
+      '[data-sheet][data-sheet-style="runes"] :is(.sh-pick:hover,.sh-pick[aria-expanded="true"]) { border-bottom:1px solid var(--rn-t);box-shadow:0 1px 0 var(--rn-glow); }',
+      '[data-sheet][data-sheet-style="runes"] .sh-foot { border-top:1px solid rgb(0 0 0 / .5);box-shadow:0 -1px 0 rgb(255 255 255 / .06); }',
+      '[data-sheet][data-sheet-style="runes"] .sh-port { box-shadow:inset 0 0 0 2px rgb(0 0 0 / .65),0 0 0 1px rgb(255 255 255 / .09),0 0 14px -4px var(--rn-glow); }',
+      '[data-sheet][data-sheet-style="runes"] .sh-name h2 { font-size:calc(30px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="runes"] :is(.paper-kind,.sh-k,.sh-chars span,.sh-kit .sh-h) { letter-spacing:.14em; }',
+      '[data-sheet][data-sheet-style="runes"] :is(.paper-kind,.sh-ledger .sh-nm)::before { content:"\\16DF";margin-right:.55em;font:400 .9em var(--rn-rune);color:var(--rn-v);text-shadow:0 0 8px var(--rn-glowv),-1px -1px 0 rgb(0 0 0 / .7); }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="turn"] .paper-kind::before { content:"\\16B1"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="abilities"] .paper-kind::before { content:"\\16A0"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="kit"] .paper-kind::before { content:"\\16CF"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="damage"] .paper-kind::before { content:"\\16C9"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="progression"] .paper-kind::before { content:"\\16C3"; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-o1 .paper-kind::before { content:"\\16B7"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="items"] .sh-nm::before { content:"\\16A2"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="features"] .sh-nm::before { content:"\\16A8"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="skills"] .sh-nm::before { content:"\\16CA"; }',
+      '[data-sheet][data-sheet-style="runes"] [data-sheet-section="notes"] .sh-nm::before { content:"\\16BE"; }',
+      '[data-sheet][data-sheet-style="runes"] :is(.sh-num,.sh-chars b,.sh-dl b) { text-shadow:0 0 10px var(--rn-glow),-1px -1px 0 rgb(0 0 0 / .7);font-weight:700; }',
+      '[data-sheet][data-sheet-style="runes"] .sh-chars b.sh-neg { color:var(--paper-neg); }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="runes"] .sh-chars b { font-size:calc(19px * var(--ts)); }',
+      '  [data-sheet][data-sheet-style="runes"] .sh-chars span { letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="runes"] .sh-name h2 { font-size:calc(24px * var(--ts)); }',
+      '}',
+      '[data-sheet][data-sheet-style="brass"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:1px solid var(--bs-line,rgb(184 138 53 / .55));border-radius:3px;background:linear-gradient(rgb(0 0 0 / .3),rgb(0 0 0 / .14));box-shadow:inset 0 1px 4px rgb(0 0 0 / .6),0 1px 0 rgb(255 220 150 / .12); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-id { padding:12px 14px; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-turn { padding:12px 14px 14px;gap:12px;border-top:3px solid var(--bs-b2); }',
+      '[data-sheet][data-sheet-style="brass"] :is(.sh-band,.sh-sec.paper-pull) { padding:10px 14px; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-ledger { overflow:hidden; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-ledger .paper-pull { padding:0 14px;border-bottom:1px solid var(--bs-line,rgb(184 138 53 / .55)); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-ledger .paper-pull:last-child { border-bottom:0; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-chars { gap:8px;border-bottom:0; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-chars div,[data-sheet][data-sheet-style="brass"] .sh-chars div+div { border:3px solid transparent;border-image:var(--bs-brass) 1;border-radius:0;padding:5px 2px 6px;background:radial-gradient(circle at 50% 38%,#fbf4de,#e6d6ad 88%);box-shadow:inset 0 2px 6px rgb(80 50 10 / .45),0 2px 3px rgb(0 0 0 / .6); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-chars b { color:var(--bs-plate-ink); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-chars b.sh-neg { color:var(--bs-plate-neg,#8b1c10); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-chars span { color:var(--bs-plate-mute,#5c4322);font-weight:700; }',
+      '[data-sheet][data-sheet-style="brass"] :is(.sh-pick,.sh-v-plain,button.sh-num) { border-bottom:1px solid var(--bs-line,rgb(184 138 53 / .55)); }',
+      '[data-sheet][data-sheet-style="brass"] :is(.sh-pick:hover,.sh-pick[aria-expanded="true"]) { border-bottom:1px solid var(--bs-b1,#f3d27f); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-foot { border-top:1px solid var(--bs-line,rgb(184 138 53 / .55)); }',
+      '[data-sheet][data-sheet-style="brass"] .sh-port { border-radius:0;box-shadow:0 0 0 2px var(--bs-b2),0 0 0 3px #120a05; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-name h2 { font-size:calc(38px * var(--ts)); }',
+      '[data-sheet][data-sheet-style="brass"] :is(.sh-k,.sh-chars span) { letter-spacing:.1em; }',
+      '[data-sheet][data-sheet-style="brass"] .sh-pick { font-size:calc(14px * var(--ts)); }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="brass"] .sh-chars b { font-size:calc(19px * var(--ts)); }',
+      '  [data-sheet][data-sheet-style="brass"] .sh-chars span { letter-spacing:.03em; }',
+      '  [data-sheet][data-sheet-style="brass"] .sh-name h2 { font-size:calc(30px * var(--ts)); }',
+      '}',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sheet { padding:28px 32px 26px;gap:18px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-name h2 { font-weight:700;letter-spacing:-.02em; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-seal { border-radius:999px;padding:0 9px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-id,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-turn,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sec.paper-pull,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger { border:1px solid var(--paper-edge);border-radius:12px;background:var(--paper-cut);box-shadow:0 1px 2px rgb(var(--s-sh) / calc(.06 * var(--shk))); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-id { padding:14px 16px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-turn { padding:14px 16px 16px;border-top:3px solid var(--paper-accent);gap:12px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sec.paper-pull { padding:12px 16px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band .sh-pullbtn .sh-pull { right:0; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger { overflow:hidden;border-top:1px solid var(--paper-edge); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull { padding:0 16px;border-bottom:1px solid var(--paper-edge); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull:last-child { border-bottom:0; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars { border-bottom:0;gap:8px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars div { border:1px solid var(--paper-edge);border-radius:10px;background:var(--paper-under);padding:8px 2px; }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars div+div { border-left:1px solid var(--paper-edge); }',
+      '@media (hover:hover) {',
+      '  [data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull:hover { transform:none;box-shadow:none;background:var(--paper-under); }',
+      '}',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-pullbtn .sh-pull { transition:transform var(--dur-micro) var(--ease-out); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .paper-pull:hover .sh-pull,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .paper-pull:focus-within .sh-pull { transform:translateX(3px); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-foot { border-top:1px solid var(--paper-edge); }',
+      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chip { background:var(--paper-under); }',
+      '@container sheet (min-width:820px) {',
+      '  [data-sheet][data-sheet-style="journal"] .sh-sheet { padding-left:44px; }',
+      '  [data-sheet][data-sheet-style="vellum"] .sh-sheet { padding-inline:42px; }',
+      '  [data-sheet][data-sheet-style="night"] .sh-sheet { padding-inline:40px; }',
+      '  [data-sheet][data-sheet-style="deck"] .sh-sheet { padding-inline:42px; }',
+      '}',
+      '@container sheet (max-width:819px) {',
+      '  [data-sheet][data-sheet-style="journal"] .sh-sheet { padding-left:36px; }',
+      '  [data-sheet][data-sheet-style="vellum"] .sh-sheet,[data-sheet][data-sheet-style="night"] .sh-sheet,[data-sheet][data-sheet-style="deck"] .sh-sheet { padding-inline:30px; }',
+      '}',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet][data-sheet-style="journal"] .sh-sheet { padding-left:30px;padding-right:18px; }',
+      '  [data-sheet][data-sheet-style="vellum"] .sh-sheet,[data-sheet][data-sheet-style="night"] .sh-sheet,[data-sheet][data-sheet-style="deck"] .sh-sheet { padding-inline:22px; }',
+      '}',
+      // Pieces the design draws that need a rule of their own.
+      '[data-sheet] .fold-body { overflow: hidden; }',
+      '[data-sheet] .sh-port img { object-fit: cover; }',
+      '[data-sheet] .sh-port-ph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--paper-mute); font-size: calc(30px * var(--ts)); }',
+      '[data-sheet] .sh-fold { grid-column: 1 / -1; }',
+      '[data-sheet] .sh-fold:empty { display: none; }',
+      '[data-sheet] .sh-empty { margin: 0; font-style: italic; }',
+      '[data-sheet] .sh-unset { font-weight: 500; color: var(--paper-mute); }',
+      '[data-sheet] .sh-on { font: 600 calc(10.5px * var(--ts)) var(--paper-ui-font); color: var(--paper-neg); }',
+      '[data-sheet] .sh-cnd--warn { border-color: var(--paper-warn); color: var(--paper-warn); background: color-mix(in srgb, var(--paper-warn) 6%, transparent); }',
+      '[data-sheet] .ft-flat { display: flex; align-items: center; gap: 8px; padding: 7px 2px; font: 700 calc(14.5px * var(--ts)) var(--paper-font); color: var(--paper-ink); }',
+      '[data-sheet] .paper-pin .slip-in { max-height: min(60vh, 420px); overflow: auto; }',
+      '[data-sheet] .paper-pin p { margin: 0 0 8px; white-space: pre-line; }',
+      '[data-sheet] [data-tip] { cursor: help; }',
+      '[data-sheet] .ds-ref:hover::after, [data-sheet] .ds-ref:focus-visible::after { content: none; }',
+      // The abilities panel is a master-detail; a panel is 390px wide, so the rail sits above the card instead of beside it.
+      '[data-sheet] .ds-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 10px; border-bottom: 1px solid var(--paper-edge); }',
+      '[data-sheet] .ds-tab { display: inline-flex; align-items: center; gap: 6px; border: 0; border-bottom: 2px solid transparent; background: none; padding: 5px 10px; color: var(--paper-mute); font: 600 calc(12.5px * var(--ts)) var(--paper-ui-font); cursor: pointer; }',
+      '[data-sheet] .ds-tab--on { color: var(--paper-ink); border-bottom-color: var(--paper-accent); }',
+      '[data-sheet] .ds-tab em { font-style: normal; font-size: calc(11px * var(--ts)); color: var(--paper-mute); font-variant-numeric: tabular-nums; }',
+      '[data-sheet] .ds-ab-grp--off, [data-sheet] .ds-ab-grp--empty, [data-sheet] .ds-li--hidden { display: none; }',
+      '[data-sheet] .ds-ab-grp--filtering .ds-ab-grp__rows { display: block; }',
+      '[data-sheet] .ds-md { display: flex; flex-direction: column; gap: 10px; }',
+      '[data-sheet] .ds-rail { border: 1px solid var(--paper-edge); border-radius: 4px; max-height: 210px; overflow: hidden auto; overscroll-behavior: contain; }',
+      '[data-sheet] .ds-rail__tools { position: sticky; top: 0; z-index: 2; padding: 6px; background: var(--paper-cut); border-bottom: 1px solid var(--paper-edge); }',
+      '[data-sheet] .ds-rail__filter { width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid var(--paper-edge); border-radius: 4px; background: rgb(var(--paper-hl) / calc(.55 * var(--hlk))); color: var(--paper-ink); font: 500 calc(13px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .ds-rail__empty { padding: 12px; text-align: center; font: 500 calc(12px * var(--ts)) var(--paper-ui-font); color: var(--paper-mute); }',
+      '[data-sheet] .ds-li { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border: 0; border-top: 1px dashed var(--paper-edge); background: none; text-align: left; color: var(--paper-ink-soft); font: 600 calc(13.5px * var(--ts)) var(--paper-font); cursor: pointer; }',
+      '[data-sheet] .ds-li:first-child { border-top: 0; }',
+      '[data-sheet] .ds-li:hover { background: rgb(var(--paper-hl) / calc(.4 * var(--hlk))); }',
+      '[data-sheet] .ds-li--sel { color: var(--paper-ink); background: rgb(var(--paper-hl) / calc(.6 * var(--hlk))); box-shadow: inset 3px 0 0 var(--paper-accent); }',
+      '[data-sheet] .ds-li--dim { color: var(--paper-mute); }',
+      '[data-sheet] .ds-li__nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
+      '[data-sheet] .ds-li__c { margin-left: auto; flex: none; color: var(--paper-accent); font: 600 calc(12px * var(--ts)) var(--paper-ui-font); font-variant-numeric: tabular-nums; }',
+      '[data-sheet] .ds-pane { min-width: 0; }',
+      '[data-sheet] .ds-pane__empty { border: 1px dashed var(--paper-edge); border-radius: 4px; padding: 24px 16px; text-align: center; color: var(--paper-mute); }',
+      '[data-sheet] .ds-pane__empty-t { font-weight: 700; color: var(--paper-ink-soft); }',
+      '[data-sheet] .ds-pane__empty-d { font: 500 calc(12px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .ds-muted { color: var(--paper-mute); }',
+      '[data-sheet] .ds-card { border: 1px solid var(--paper-edge); border-radius: 4px; padding: 10px 12px; background: rgb(var(--paper-hl) / calc(.3 * var(--hlk))); cursor: pointer; }',
+      '[data-sheet] .ds-card:hover, [data-sheet] .ds-card:focus-visible { border-color: var(--paper-accent); }',
+      '[data-sheet] .ds-card__h, [data-sheet] .ds-big__h { display: flex; align-items: center; gap: 8px; }',
+      '[data-sheet] .ds-card__h { margin-bottom: 6px; }',
+      '[data-sheet] .ds-card__nm, [data-sheet] .ds-big__nm { font: 700 calc(15px * var(--ts)) var(--paper-head-font); color: var(--paper-ink); }',
+      '[data-sheet] .ds-card__sig { flex: none; border: 1px solid var(--paper-accent); border-radius: 3px; padding: 0 5px; color: var(--paper-accent); font: 700 calc(9.5px * var(--ts)) / 15px var(--paper-ui-font); letter-spacing: .08em; text-transform: uppercase; }',
+      '[data-sheet] .ds-card__cost, [data-sheet] .ds-big__meta { margin-left: auto; flex: none; color: var(--paper-accent); font: 600 calc(11px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .ds-tr, [data-sheet] .ds-big__tier { display: flex; gap: 10px; padding: 3px 0; font-size: calc(13px * var(--ts)); line-height: 1.45; }',
+      '[data-sheet] .ds-tr__b, [data-sheet] .ds-big__tb { flex: none; min-width: 46px; color: var(--paper-accent); font: 700 calc(11.5px * var(--ts)) / 1.7 var(--paper-ui-font); font-variant-numeric: tabular-nums; }',
+      '[data-sheet] .ds-tr__t, [data-sheet] .ds-big__tt { color: var(--paper-ink); }',
+      '[data-sheet] .ds-card__line { display: flex; gap: 10px; padding: 3px 0; font-size: calc(13px * var(--ts)); }',
+      '[data-sheet] .ds-card__k, [data-sheet] .ds-big__sk, [data-sheet] .ds-big__block-k, [data-sheet] .ds-big__sec, [data-sheet] .ds-for__sub { color: var(--paper-mute); font: 600 calc(9.5px * var(--ts)) var(--paper-ui-font); letter-spacing: .09em; text-transform: uppercase; }',
+      '[data-sheet] .ds-card__eff { padding: 3px 0; font-size: calc(13px * var(--ts)); line-height: 1.5; }',
+      '[data-sheet] .ds-card__hint { margin-top: 6px; color: var(--paper-accent); font: 600 calc(11px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .ds-big { border: 1px solid var(--paper-accent); border-radius: 4px; background: rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
+      '[data-sheet] .ds-big__h { padding: 9px 12px; border-bottom: 1px solid var(--paper-edge); cursor: pointer; }',
+      '[data-sheet] .ds-big__x { flex: none; border: 0; background: none; padding: 2px 4px; color: var(--paper-ink-soft); font: inherit; cursor: pointer; }',
+      '[data-sheet] .ds-big__sec { padding: 6px 12px; border-bottom: 1px solid var(--paper-edge); }',
+      '[data-sheet] .ds-big__n { margin-right: 5px; color: var(--paper-accent); }',
+      '[data-sheet] .ds-big__kw { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 12px; }',
+      '[data-sheet] .ds-big__kw span { border: 1px solid var(--paper-edge); border-radius: 999px; padding: 0 8px; color: var(--paper-ink-soft); font: 600 calc(10.5px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .ds-big__stats { display: flex; flex-wrap: wrap; border-bottom: 1px dashed var(--paper-edge); }',
+      '[data-sheet] .ds-big__stat { flex: 1 1 33%; padding: 6px 12px; }',
+      '[data-sheet] .ds-big__sk, [data-sheet] .ds-big__sv { display: block; }',
+      '[data-sheet] .ds-big__sv { color: var(--paper-ink); font: 700 calc(13px * var(--ts)) var(--paper-font); }',
+      '[data-sheet] .ds-big__flavor { padding: 8px 12px; font-style: italic; border-bottom: 1px dashed var(--paper-edge); }',
+      '[data-sheet] .ds-big__ladder { display: flex; flex-direction: column; padding: 4px 12px; }',
+      '[data-sheet] .ds-big__block { padding: 8px 12px; border-top: 1px dashed var(--paper-edge); font-size: calc(13px * var(--ts)); line-height: 1.5; }',
+      '[data-sheet] .ds-big__block-k { margin-right: 6px; color: var(--paper-accent); }',
+      '[data-sheet] .ds-for { padding: 10px 12px 12px; }',
+      '[data-sheet] .ds-for__roll { margin-bottom: 8px; font-size: calc(13px * var(--ts)); }',
+      '[data-sheet] .ds-for__tier { font-weight: 700; color: var(--paper-accent); }',
+      '[data-sheet] .ds-for__bar { display: flex; height: 8px; margin-bottom: 6px; border-radius: 3px; overflow: hidden; background: rgb(var(--paper-burn) / .16); }',
+      '[data-sheet] .ds-for__bar i { display: block; height: 100%; }',
+      '[data-sheet] .ds-for__o1, [data-sheet] .ds-sw--1 { background: color-mix(in srgb, var(--paper-accent) 32%, transparent); }',
+      '[data-sheet] .ds-for__o2, [data-sheet] .ds-sw--2 { background: color-mix(in srgb, var(--paper-accent) 62%, transparent); }',
+      '[data-sheet] .ds-for__o3, [data-sheet] .ds-sw--3 { background: var(--paper-accent); }',
+      '[data-sheet] .ds-for__key { display: flex; flex-wrap: wrap; gap: 12px; font: 500 calc(11px * var(--ts)) var(--paper-ui-font); color: var(--paper-mute); }',
+      '[data-sheet] .ds-for__key b { color: var(--paper-ink); }',
+      '[data-sheet] .ds-sw { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 2px; vertical-align: middle; }',
+      '[data-sheet] .ds-for__sub { margin: 8px 0 3px; }',
+      // The floating definition tooltip is appended to <body>, outside the sheet, as on the box render.
+      '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
+      '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
+      '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
+    ].join('\n');
+    var style = document.createElement('style');
+    style.id = 'ds-character-sheet-paper-styles';
+    style.textContent = css;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
   // ── widget ─────────────────────────────────────────────────────────
 
   if (Chronicle) Chronicle.register('character-sheet', {
@@ -2250,7 +3365,7 @@
         ? new DrawSteelRefRenderer('', campaignId)
         : null;
 
-      injectStyles();
+      if (paperAvailable()) injectPaperStyles(); else injectStyles();
       el.classList.add('ds-sheet');
 
       var self = this;
@@ -2306,6 +3421,12 @@
       if (this._onAbilityClick) el.removeEventListener('click', this._onAbilityClick);
       if (this._onAbilityKey) el.removeEventListener('keydown', this._onAbilityKey);
       if (this._onAbilityInput) el.removeEventListener('input', this._onAbilityInput);
+      if (this._onPaperKey) el.removeEventListener('keydown', this._onPaperKey, true);
+      this._onPaperKey = null;
+      this._onPanelReady = null;
+      this._onPanelClose = null;
+      this._panelBody = null;
+      this._pin = null;
       if (this._onTipShow) { el.removeEventListener('mouseover', this._onTipShow); el.removeEventListener('focusin', this._onTipShow); }
       if (this._onTipHide) { el.removeEventListener('mouseout', this._onTipHide); el.removeEventListener('focusout', this._onTipHide); }
       this._onAbilityClick = null;
@@ -2334,7 +3455,12 @@
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
       esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
-      clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity
+      clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
+      paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
+      pIdentity: pIdentity, pTurn: pTurn, pKitPart: pKitPart, pKitPanel: pKitPanel,
+      pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
+      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
+      staminaState: staminaState, mountSheet: mountSheet
     };
   }
 })();
