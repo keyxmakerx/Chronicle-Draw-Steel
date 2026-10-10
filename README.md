@@ -122,6 +122,10 @@ To publish: **Actions → Release → Run workflow**, enter the version (e.g.
 `0.13.7`, no leading `v`). The workflow creates the tag and GitHub Release from
 `main` HEAD with auto-generated "What's Changed" notes.
 
+Chronicle installs the tag's source zip, and `.gitattributes` keeps `tools/` and
+`.github/` out of it: Chronicle's package scan refuses shell scripts, and it never
+loads those folders. `tools/test-release-archive.mjs` pins this.
+
 ## Project Structure
 
 ```
