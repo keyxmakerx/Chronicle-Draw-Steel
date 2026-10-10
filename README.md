@@ -34,6 +34,8 @@ Chronicle's Rules page opens the package as a book you turn the pages of. There 
 2. Install the latest release.
 3. In your campaign, open **Manage > Game & features** and pick **Draw Steel** in the **Game system** card.
 
+Without the package manager, download the release ZIP from GitHub Releases and upload it from **Campaign Settings > Content Packs > Upload System**, then check the validation report.
+
 To update, install the newer release from **Admin > Packages**. Chronicle adds any new sheet fields to campaigns already using Draw Steel. It never brings back a field a GM deleted.
 
 Stat blocks and the negotiation tracker show on pages of the types added under NPCs on the **Characters** page. The type's layout needs the **Game System Panels** block, under the title.
