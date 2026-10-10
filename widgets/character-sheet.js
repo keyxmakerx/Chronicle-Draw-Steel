@@ -2880,6 +2880,9 @@
     var css = [
       // Layout for the paper sheet: the .sh-* rules, read from the --paper-* tokens Chronicle derives from the sheet's style.
       // Everything is scoped under [data-sheet], so nothing outside the sheet changes. Chronicle owns the paper, the pulls, the panels and the motion.
+      // Paper styles say "Pull out"; Modern and the screen styles say "Open".
+      '[data-sheet]:is(:not([data-sheet-style]),[data-sheet-style="modern"],[data-sheet-style="starship"],[data-sheet-style="neon"],[data-sheet-style="runes"],[data-sheet-style="brass"]) .only-paper,' +
+        '[data-sheet][data-sheet-style]:not([data-sheet-style="modern"]):not([data-sheet-style="starship"]):not([data-sheet-style="neon"]):not([data-sheet-style="runes"]):not([data-sheet-style="brass"]) .only-modern { display:none; }',
       '[data-sheet] .sh-k { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-link { border:0;background:none;padding:0;color:var(--paper-accent);font:600 calc(12.5px * var(--ts)) var(--paper-ui-font); }',
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
