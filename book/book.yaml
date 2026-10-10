@@ -1,21 +1,35 @@
-title: Rulebook
+title: Handbook
 mark: DS
 turn: flip
 glossary: rules-glossary.json
+look: paper
 theme:
-  paper: "#0d1017"
-  paper-alt: "#131722"
-  ink: "#f2f4fa"
-  ink-soft: "#c9d0e0"
-  muted: "#8a93a8"
-  edge: "#262c3d"
-  accent: "#a78bfa"
-  heading-font: "Inter, system-ui, sans-serif"
-  body-font: "Inter, system-ui, sans-serif"
+  paper: "#efe6d2"
+  paper-alt: "#f8f2e4"
+  ink: "#2b2433"
+  ink-soft: "#4a4152"
+  muted: "#75697a"
+  edge: "#d4c6a8"
+  accent: "#5b3d8a"
+  cover: "#2e2240"
+  heading-font: "Spectral, Georgia, serif"
+  body-font: "Spectral, Georgia, serif"
+tabs:
+  - players-screen
+  - how-to-play
+  - making-a-hero
+  - tests
+  - combat
+  - negotiation
+  - downtime
+start: players-screen
+first: how-to-play
 parts:
   - title: Player's book
     chapters:
       - front
+      - how-to-play
+      - players-screen
       - basics
       - making-a-hero
       - ancestries
