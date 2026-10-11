@@ -681,42 +681,51 @@
       "color": "#DC2626",
       "category": "creature",
       "foundry_actor_type": "npc",
+      "foundry_pull_fields": [
+        "stamina_current",
+        "conditions_json"
+      ],
       "fields": [
         {
           "key": "level",
           "label": "Level",
           "type": "number",
-          "foundry_path": "system.details.level"
+          "foundry_path": "system.monster.level"
         },
         {
           "key": "organization",
           "label": "Organization",
           "type": "string",
-          "foundry_path": "system.details.organization"
+          "foundry_path": "system.monster.organization",
+          "foundry_choices": "DRAW_STEEL.monsters.organizations"
         },
         {
           "key": "role",
           "label": "Role",
           "type": "string",
-          "foundry_path": "system.details.role"
+          "foundry_path": "system.monster.role",
+          "foundry_choices": "DRAW_STEEL.monsters.roles"
         },
         {
           "key": "ev",
           "label": "EV",
           "type": "number",
-          "foundry_path": "system.details.ev"
+          "foundry_path": "system.ev"
         },
         {
           "key": "size",
           "label": "Size",
           "type": "string",
-          "foundry_path": "system.details.size"
+          "foundry_path": "system.combat.size",
+          "foundry_format": "size"
         },
         {
           "key": "keywords",
           "label": "Keywords",
           "type": "string",
-          "foundry_path": "system.details.keywords"
+          "foundry_path": "system.monster.keywords",
+          "foundry_format": "set",
+          "foundry_choices": "DRAW_STEEL.monsters.keywords"
         },
         {
           "key": "faction",
@@ -730,52 +739,57 @@
           "foundry_path": "system.stamina.max"
         },
         {
+          "key": "stamina_current",
+          "label": "Current Stamina",
+          "type": "number",
+          "foundry_path": "system.stamina.value"
+        },
+        {
           "key": "winded",
           "label": "Winded",
-          "type": "number",
-          "foundry_path": "system.stamina.winded"
+          "type": "number"
         },
         {
           "key": "speed",
           "label": "Speed",
           "type": "number",
-          "foundry_path": "system.movement.speed"
+          "foundry_path": "system.movement.value"
         },
         {
           "key": "stability",
           "label": "Stability",
           "type": "number",
-          "foundry_path": "system.stability.value"
+          "foundry_path": "system.combat.stability"
         },
         {
           "key": "might",
           "label": "Might",
           "type": "number",
-          "foundry_path": "system.characteristics.might"
+          "foundry_path": "system.characteristics.might.value"
         },
         {
           "key": "agility",
           "label": "Agility",
           "type": "number",
-          "foundry_path": "system.characteristics.agility"
+          "foundry_path": "system.characteristics.agility.value"
         },
         {
           "key": "reason",
           "label": "Reason",
           "type": "number",
-          "foundry_path": "system.characteristics.reason"
+          "foundry_path": "system.characteristics.reason.value"
         },
         {
           "key": "intuition",
           "label": "Intuition",
           "type": "number",
-          "foundry_path": "system.characteristics.intuition"
+          "foundry_path": "system.characteristics.intuition.value"
         },
         {
           "key": "presence",
           "label": "Presence",
           "type": "number",
-          "foundry_path": "system.characteristics.presence"
+          "foundry_path": "system.characteristics.presence.value"
         },
         {
           "key": "immunities",
@@ -786,7 +800,8 @@
           "key": "free_strike",
           "label": "Free Strike",
           "type": "string",
-          "foundry_path": "system.combat.freeStrike"
+          "foundry_path": "system.monster.freeStrike",
+          "foundry_format": "integer"
         },
         {
           "key": "traits",
@@ -802,6 +817,12 @@
           "key": "villain_actions_json",
           "label": "Villain Actions Data",
           "type": "string"
+        },
+        {
+          "key": "conditions_json",
+          "label": "Conditions Data",
+          "type": "string",
+          "foundry_path": "statuses"
         }
       ]
     }

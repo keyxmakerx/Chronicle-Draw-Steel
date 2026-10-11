@@ -1,4 +1,4 @@
-# Foundry ↔ Chronicle Sync Map (Draw Steel hero)
+# Foundry ↔ Chronicle Sync Map (Draw Steel hero and creature)
 
 > Reference for the Draw Steel system package. Maps the Draw Steel Foundry VTT actor
 > data model (`MetaMorphic-Digital/draw-steel`, actor type `hero`) onto Chronicle
@@ -176,3 +176,32 @@ These are **not** on the character document:
 - **(f)** Sets (skills, keywords, statuses, power-roll characteristics) and the tier
   collection serialize to `{}` unless the Foundry adapter converts them to JSON arrays
   (`normalizeFoundryValue`); the `*_json` fields and projected Set keys rely on that.
+
+---
+
+## 8. Creatures (`npc` actors)
+
+The `drawsteel-creature` preset maps a Creature page onto a Draw Steel `npc` actor.
+Chronicle owns the stat block: it writes every mapped field, and Foundry sends back
+only the fields in the preset's `foundry_pull_fields` (current Stamina and
+conditions), and only when the director turns that on. `tools/test-creature-foundry-map.mjs`
+pins every path below to the system's NPC data model.
+
+| Chronicle field (key) | `foundry_path` | Conversion |
+|---|---|---|
+| Level (`level`) | `system.monster.level` | |
+| Organization (`organization`) | `system.monster.organization` | `foundry_choices`: a key of `CONFIG.DRAW_STEEL.monsters.organizations` |
+| Role (`role`) | `system.monster.role` | `foundry_choices`: a key of `...monsters.roles` |
+| Keywords (`keywords`) | `system.monster.keywords` | `foundry_format: set` of `...monsters.keywords` keys |
+| EV (`ev`) | `system.ev` | |
+| Free strike (`free_strike`) | `system.monster.freeStrike` | `foundry_format: integer` (the number in "5 damage") |
+| Size (`size`) | `system.combat.size` | `foundry_format: size` ("1S" is value 1, letter S) |
+| Stamina (`stamina`) / current (`stamina_current`) | `system.stamina.max` / `.value` | current is sent back |
+| Speed (`speed`), Stability (`stability`) | `system.movement.value`, `system.combat.stability` | |
+| Characteristics | `system.characteristics.<name>.value` | |
+| Conditions (`conditions_json`) | `statuses` | sent back |
+
+A value with no matching Foundry key (an organization of Swarm, a keyword the system
+doesn't list) is left unset rather than guessed. Not mapped yet: winded (Foundry
+derives it), immunities and weaknesses (Foundry stores a number per damage type),
+traits, abilities and villain actions (Foundry stores these as items).
