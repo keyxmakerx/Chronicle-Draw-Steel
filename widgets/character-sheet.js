@@ -1274,21 +1274,27 @@
     '</div>';
   }
 
+  // The rules part of an ability: keywords, distance/target/roll, flavour, the
+  // tier ladder, trigger and effect. Shared by the big card and the paper list.
+  function abilityRulesHtml(a) {
+    var kw = (Array.isArray(a.keywords) && a.keywords.length)
+      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
+          var en = (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(k) : null;
+          var tip = (en && en.description) ? ' data-tip="' + escAttr(en.description) + '" tabindex="0"' : '';
+          return '<span' + tip + '>' + esc(String(k)) + '</span>';
+        }).join('') + '</div>' : '';
+    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
+    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refSynced(cleanFoundryText(a.trigger)) + '</span></div>' : '';
+    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
+    return kw + bigStatRow(a) + effBefore + bigLadderHtml(a, null) + trig + effAfter;
+  }
+
   // bigCardHtml — the grown two-section card: ① the rules (keywords / distance /
   // target / power roll / tier ladder / effect text) and ② "For <hero>" odds.
   function bigCardHtml(a, idx, data) {
     var g = groupOf(a);
     var star = g === 'signature' ? '★ ' : '';
     var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
-    var kw = (Array.isArray(a.keywords) && a.keywords.length)
-      ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
-          var en = (refRenderer && refRenderer.getEntry) ? refRenderer.getEntry(k) : null;
-          var tip = (en && en.description) ? ' data-tip="' + escAttr(en.description) + '" tabindex="0"' : '';   // M-5
-          return '<span' + tip + '>' + esc(String(k)) + '</span>';
-        }).join('') + '</div>' : '';
-    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
-    var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refSynced(cleanFoundryText(a.trigger)) + '</span></div>' : '';
-    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
     var forHero = forHeroHtml(a, data);
 
     return '<div class="ds-big" data-ds-collapse="' + idx + '">' +
@@ -1296,7 +1302,7 @@
         (meta ? '<span class="ds-big__meta">' + esc(meta) + '</span>' : '') +
         '<button type="button" class="ds-big__x" data-ds-collapse-btn aria-label="Collapse to card">✕</button></div>' +
       '<div class="ds-big__sec"><span class="ds-big__n">①</span> The rules</div>' +
-      kw + bigStatRow(a) + effBefore + bigLadderHtml(a, null) + trig + effAfter +
+      abilityRulesHtml(a) +
       (forHero
         ? '<div class="ds-big__sec ds-big__sec--for"><span class="ds-big__n">②</span> For ' + esc(firstName(data.name)) + '</div>' + forHero
         : '') +
@@ -1473,13 +1479,13 @@
     // a query is active so matches inside a collapsed group still surface.
     function applyFilter(q) {
       q = String(q || '').trim().toLowerCase();
-      var rail = scope().querySelector('.ds-rail');
-      if (!rail) return;
+      // The box render filters its rail; the paper list filters its folds by name.
+      var rail = scope().querySelector('.ds-rail') || scope();
       var anyShown = false;
       Array.prototype.forEach.call(rail.querySelectorAll('.ds-ab-grp'), function (grp) {
         var shown = 0;
-        Array.prototype.forEach.call(grp.querySelectorAll('[data-ds-ability]'), function (r) {
-          var match = !q || (r.textContent || '').toLowerCase().indexOf(q) !== -1;
+        Array.prototype.forEach.call(grp.querySelectorAll('[data-ds-ability],[data-ds-row]'), function (r) {
+          var match = !q || (r.getAttribute('data-ds-name') || r.textContent || '').toLowerCase().indexOf(q) !== -1;
           if (match) { r.classList.remove('ds-li--hidden'); shown++; }
           else r.classList.add('ds-li--hidden');
         });
@@ -1509,6 +1515,8 @@
       });
       var filter = scope().querySelector('[data-ds-filter]');
       if (filter && filter.value) applyFilter(filter.value);
+      // The paper list has no detail pane: every ability is already on show.
+      if (!pane()) return;
       var cur = scope().querySelector('.ds-li--sel');
       var curGrp = cur ? cur.closest('.ds-ab-grp') : null;
       if (curGrp && curGrp.getAttribute('data-ds-grp') === g) return;
@@ -1664,7 +1672,7 @@
     // immediately instead of the resting prompt. On paper the abilities exist
     // only while their panel is open, so the panel-ready handler calls this.
     function selectFirst() {
-      if (!abilities.length) return;
+      if (!abilities.length || !pane()) return;
       var firstRow = scope().querySelector('.ds-ab-grp:not(.ds-ab-grp--off) [data-ds-ability]');
       selectAbility(firstRow ? parseInt(firstRow.getAttribute('data-ds-ability'), 10) : 0);
     }
@@ -2013,15 +2021,15 @@
   function pAbilityBand(data) {
     var abilities = parseAbilities(data);
     var n = { signature: 0, heroic: 0, maneuver: 0 };
-    var sig = null;
+    var sigs = [];
     abilities.forEach(function (a) {
       var g = groupOf(a);
       n[g]++;
-      if (g === 'signature' && !sig) sig = a;
+      if (g === 'signature') sigs.push(esc(a.name || 'Untitled'));
     });
     var row = abilities.length
       ? '<span class="sh-row">' +
-          (sig ? '<span>' + fa('star') + ' <b>' + esc(sig.name || 'Untitled') + '</b></span>' : '') +
+          (sigs.length ? '<span>' + fa('star') + ' <b>' + sigs.join(', ') + '</b></span>' : '') +
           '<span>Signature <b>' + n.signature + '</b></span><span>Heroic <b>' + n.heroic + '</b></span><span>Maneuvers <b>' + n.maneuver + '</b></span></span>'
       : '<span class="sh-row"><span>No abilities yet.</span></span>';
     return '<section class="sh-band paper-pull sh-o2" data-sheet-section="abilities">' +
@@ -2290,6 +2298,56 @@
     return out;
   }
 
+  // Every ability in the open group is a fold, so a hero with several of a
+  // kind sees all of them at once and opens the ones they want. The header
+  // carries what a player scans for; the body is the full rules card.
+  function abilityMeta(a) {
+    var t = String((a && a.type) || '');
+    var bits = [t ? humanizeId(t.replace(/([A-Z])/g, ' $1')) : '', distanceLabel(a), powerRollLabel(a)].filter(Boolean);
+    return bits.join(' · ');
+  }
+  function pAbilityFold(a, data, open) {
+    var g = groupOf(a);
+    var name = (a && a.name) || 'Untitled';
+    var cost = costLabel(a, data);
+    var meta = abilityMeta(a);
+    var head = '<span class="ab-head"><span class="ab-name">' + esc(name) + '</span>' +
+      (g === 'signature' ? '<span class="ds-card__sig">Sig</span>' : '') +
+      (cost ? '<span class="ds-card__cost">' + esc(cost) + '</span>' : '') + '</span>' +
+      (meta ? '<span class="ab-meta">' + esc(meta) + '</span>' : '');
+    var forHero = forHeroHtml(a, data);
+    var body = '<div class="ab-rules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
+      (forHero ? '<div class="ds-big__sec ds-big__sec--for">For ' + esc(firstName(data.name)) + '</div>' + forHero : '');
+    return '<details class="ft ab-fold' + (open ? ' is-in' : '') + '" data-sheet-fold data-ds-row data-ds-name="' + escAttr(name) + '"' + (open ? ' open' : '') + '>' +
+      '<summary>' + head + '</summary><div class="fold-body"><div class="fold-in" data-move="fold">' + body + '</div></div></details>';
+  }
+
+  function pAbilitiesPanel(data) {
+    var abilities = parseAbilities(data);
+    if (!abilities.length) return pEmpty('No abilities yet.');
+    var groups = { signature: [], heroic: [], maneuver: [] };
+    abilities.forEach(function (a) { groups[groupOf(a)].push(a); });
+    var active = GROUP_ORDER.filter(function (g) { return groups[g].length; })[0] || 'signature';
+    var tabs = GROUP_ORDER.map(function (g) {
+      var on = g === active;
+      return '<button type="button" role="tab" class="ds-tab' + (on ? ' ds-tab--on' : '') + '" id="ds-tab-' + g + '"' +
+        ' aria-selected="' + (on ? 'true' : 'false') + '" tabindex="' + (on ? '0' : '-1') + '" data-ds-tab="' + g + '">' +
+        esc(GROUP_LABELS[g]) + ' <em>' + groups[g].length + '</em></button>';
+    }).join('');
+    var tools = abilities.length >= 10
+      ? '<div class="ds-rail__tools ab-tools"><input type="text" class="ds-rail__filter" data-ds-filter placeholder="Filter abilities…" aria-label="Filter abilities" autocomplete="off"></div>'
+      : '';
+    var lists = GROUP_ORDER.map(function (g) {
+      var list = groups[g].slice().sort(function (x, y) { return (Number(x.cost) || 0) - (Number(y.cost) || 0); });
+      var rows = list.length
+        ? list.map(function (a, i) { return pAbilityFold(a, data, g === active && i === 0); }).join('')
+        : pEmpty('None yet.');
+      return '<div class="ds-ab-grp ab-list' + (g === active ? '' : ' ds-ab-grp--off') + '" data-ds-grp="' + g + '" role="tabpanel" aria-labelledby="ds-tab-' + g + '">' + rows + '</div>';
+    }).join('');
+    return '<div class="ds-tabs" role="tablist" aria-label="Ability groups">' + tabs + '</div>' + tools + lists +
+      '<p class="sh-sub sh-empty" data-ds-no-match hidden>No matching abilities.</p>';
+  }
+
   function pKitPanel(data) {
     var k = kitFacts(data);
     if (!k.name && !k.grid && !k.chips.length) return pEmpty('No kit equipped.');
@@ -2322,7 +2380,7 @@
     var name = data.name || 'Unnamed Hero';
     var list = [
       { id: 'turn', title: 'Rules at hand', kind: 'This turn', html: pTurnPanel(data) },
-      { id: 'abilities', title: 'Abilities', kind: name, html: parseAbilities(data).length ? rAbilities({}, data) : pEmpty('No abilities yet.') },
+      { id: 'abilities', title: 'Abilities', kind: name, html: pAbilitiesPanel(data) },
       { id: 'kit', title: 'Kit', kind: name, html: pKitPanel(data) },
       { id: 'damage', title: 'Damage', kind: name, html: pDamagePanel(data) },
       { id: 'progression', title: 'Progression', kind: name, html: pProgPanel(data) }
@@ -2441,6 +2499,23 @@
     node.classList.add('is-open');
   }
 
+  // A portrait URL that no longer loads (a moved Foundry file) shows the
+  // placeholder instead of the browser's broken image and alt text.
+  function portraitFallback(el) {
+    var img = el.querySelector('.sh-port img[data-cs-portrait]');
+    if (!img) return;
+    function swap() {
+      if (!img.parentNode) return;
+      var ph = document.createElement('span');
+      ph.className = 'sh-port-ph';
+      ph.setAttribute('data-cs-portrait', '');
+      ph.innerHTML = fa('shield-halved');
+      img.parentNode.replaceChild(ph, img);
+    }
+    if (img.complete && !img.naturalWidth && img.getAttribute('src')) swap();
+    else img.addEventListener('error', swap);
+  }
+
   function mountPaper(inst, el, data) {
     var sm = Chronicle.sheetMotion;
     if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
@@ -2450,6 +2525,7 @@
     var root = el.querySelector('[data-sheet]');
     if (typeof sm.rescan === 'function') sm.rescan();
     if (root) sm.mount(root);
+    portraitFallback(el);
     attachInteractions(inst, el, data);
     if (root) attachPaperPanels(inst, el, root);
     attachTooltips(inst, el);
@@ -3258,6 +3334,8 @@
       '[data-sheet] .sh-port img { object-fit: cover; }',
       '[data-sheet] .sh-port-ph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--paper-mute); font-size: calc(30px * var(--ts)); }',
       '[data-sheet] .sh-fold { grid-column: 1 / -1; }',
+      // Chronicle's picker inserts its fold after the anchor, so it is a grid item of the band and must span it, not widen the portrait column.
+      '[data-sheet] .sh-id > .ag-fold { grid-column: 1 / -1; min-width: 0; }',
       '[data-sheet] .sh-fold:empty { display: none; }',
       '[data-sheet] .sh-empty { margin: 0; font-style: italic; }',
       '[data-sheet] .sh-unset { font-weight: 500; color: var(--paper-mute); }',
@@ -3333,6 +3411,18 @@
       '[data-sheet] .ds-for__key b { color: var(--paper-ink); }',
       '[data-sheet] .ds-sw { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 2px; vertical-align: middle; }',
       '[data-sheet] .ds-for__sub { margin: 8px 0 3px; }',
+      // The paper abilities list: one fold per ability, the header scannable without opening it.
+      '[data-sheet] .ab-tools { position: static; margin: 0 0 6px; padding: 0; border: 0; background: none; }',
+      '[data-sheet] .ab-fold > summary { flex-wrap: wrap; row-gap: 1px; }',
+      '[data-sheet] .ab-head { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; min-width: 0; padding-right: 16px; }',
+      '[data-sheet] .ab-fold > summary::after { position: absolute; right: 2px; }',
+      '[data-sheet] .ab-fold > summary { position: relative; }',
+      '[data-sheet] .ab-name { min-width: 0; overflow-wrap: anywhere; }',
+      '[data-sheet] .ab-meta { flex: 1 1 100%; font: 500 calc(11.5px * var(--ts)) var(--paper-ui-font); color: var(--paper-mute); }',
+      '[data-sheet] .ab-rules { margin: 0 0 8px; border: 1px solid var(--paper-edge); border-radius: 4px; background: rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
+      '[data-sheet] .ab-rules > .ds-big__kw { border-bottom: 1px dashed var(--paper-edge); }',
+      '[data-sheet] .ab-fold .ds-big__sec--for { padding: 2px 2px 0; border: 0; }',
+      '[data-sheet] .ab-fold .ds-for { padding: 4px 2px 10px; }',
       // The floating definition tooltip is appended to <body>, outside the sheet, as on the box render.
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',

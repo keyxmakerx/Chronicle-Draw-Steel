@@ -154,3 +154,26 @@ test('mountSheet: without sheetMotion the box render runs (no paper markup)', ()
   assert.ok(!/data-sheet/.test(html), 'box identity carries no paper contract');
   assert.equal(el.innerHTML, '');
 });
+
+test('paper abilities panel lists every ability of a group as its own fold', () => {
+  const abilities = [
+    { name: 'Blessed Light', category: 'signature' }, { name: 'Drain', category: 'signature' },
+    { name: 'Judgment', category: 'heroic', cost: 7 }, { name: 'Command', category: 'heroic', cost: 3 },
+    { name: 'Shove', type: 'maneuver' }
+  ];
+  const data = { name: 'Tyne', fields: { abilities_json: JSON.stringify(abilities) } };
+  const html = cs.paperPanels(data).find((p) => p.id === 'abilities').html;
+  for (const a of abilities) assert.ok(html.includes('data-ds-name="' + a.name + '"'), a.name);
+  assert.equal((html.match(/<details class="ft ab-fold/g) || []).length, abilities.length, 'one fold each');
+  assert.equal((html.match(/ab-fold is-in/g) || []).length, 1, 'only the first of the open group starts open');
+  assert.ok(html.indexOf('Command') < html.indexOf('Judgment'), 'cheapest first within a group');
+  assert.ok(!/data-ds-pane/.test(html), 'no single-ability detail pane on paper');
+  const band = cs.paperSheetHtml(data);
+  assert.ok(/Blessed Light, Drain/.test(band), 'the band names every signature ability');
+});
+
+test('paper abilities panel escapes ability names', () => {
+  const data = { name: 'X', fields: { abilities_json: JSON.stringify([{ name: '<img src=x onerror=1>"', category: 'signature' }]) } };
+  const html = cs.paperPanels(data).find((p) => p.id === 'abilities').html;
+  assert.ok(!/<img src=x/.test(html) && !/data-ds-name="<img/.test(html));
+});
