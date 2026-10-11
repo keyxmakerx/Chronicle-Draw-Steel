@@ -205,3 +205,9 @@ A value with no matching Foundry key (an organization of Swarm, a keyword the sy
 doesn't list) is left unset rather than guessed. Not mapped yet: winded (Foundry
 derives it), immunities and weaknesses (Foundry stores a number per damage type),
 traits, abilities and villain actions (Foundry stores these as items).
+
+Sending back is off for every creature until the director turns it on in the
+"In Foundry" box under the creature's stat block. The toggle is stored in the
+page's `foundry` system state (`gm.sendBack`), which the Chronicle Sync module
+reads before it sends current Stamina or conditions. Saving the stat block in
+the editor keeps whatever Foundry already sent back.
