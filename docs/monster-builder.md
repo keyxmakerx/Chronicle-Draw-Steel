@@ -156,51 +156,16 @@ Villain actions are stored separately (`villain_actions_json`) as
 
 ---
 
-## 3. Entity Preset Expansion
+## 3. Entity Preset
 
-The current `drawsteel-creature` preset is minimal. Here's the expanded version:
+The `drawsteel-creature` preset in `manifest.json` is the source of truth for a
+creature's fields. Its Foundry paths, and how each value converts, are in
+[FOUNDRY-SYNC-MAP.md §8](./FOUNDRY-SYNC-MAP.md#8-creatures-npc-actors).
 
-### 3.1 Updated Creature Entity Preset
-
-```json
-{
-  "slug": "drawsteel-creature",
-  "name": "Creature",
-  "name_plural": "Creatures",
-  "icon": "fa-paw",
-  "color": "#DC2626",
-  "category": "creature",
-  "foundry_actor_type": "npc",
-  "fields": [
-    { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
-    { "key": "organization", "label": "Organization", "type": "enum", "foundry_path": "system.details.organization" },
-    { "key": "role", "label": "Role", "type": "enum", "foundry_path": "system.details.role" },
-    { "key": "ev", "label": "EV", "type": "number", "foundry_path": "system.details.ev" },
-    { "key": "keywords", "label": "Keywords", "type": "list", "foundry_path": "system.details.keywords" },
-    { "key": "faction", "label": "Faction", "type": "string" },
-    { "key": "size", "label": "Size", "type": "enum", "foundry_path": "system.details.size" },
-    { "key": "stamina", "label": "Stamina", "type": "number", "foundry_path": "system.stamina.max" },
-    { "key": "winded", "label": "Winded Value", "type": "number", "foundry_path": "system.stamina.winded" },
-    { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed" },
-    { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value" },
-    { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
-    { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
-    { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
-    { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition" },
-    { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
-    { "key": "immunities", "label": "Immunities", "type": "list" },
-    { "key": "free_strike", "label": "Free Strike", "type": "markdown" },
-    { "key": "traits", "label": "Traits", "type": "markdown" },
-    { "key": "abilities_json", "label": "Abilities", "type": "string" },
-    { "key": "villain_actions_json", "label": "Villain Actions", "type": "string" }
-  ]
-}
-```
-
-**Notes:**
-- `abilities_json` and `villain_actions_json` store structured JSON as strings. The builder widget parses/renders these. This avoids needing new Chronicle field types.
-- `foundry_path` annotations enable the generic Foundry adapter for flat fields. Structured fields (abilities, villain actions) require the dedicated creature sync endpoint (see [Foundry Sync spec](./foundry-creature-sync.md)).
-- `organization` and `role` use the `enum` field type. Enum values are defined in the reference data, not the preset itself.
+- `abilities_json`, `villain_actions_json` and `traits` store structured JSON as
+  strings, which the builder and stat block parse. They don't reach Foundry yet.
+- `stamina_current` and `conditions_json` are the only fields Foundry may send back
+  (`foundry_pull_fields`).
 
 ### 3.2 New Reference Category: Creature Abilities
 

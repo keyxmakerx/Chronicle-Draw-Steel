@@ -446,6 +446,15 @@ var DrawSteelCreatureEditor = (function () {
 
   function apiCall(url, opts) { return SB().apiFetch(url, opts); }
 
+  // keepOtherFields lays the editor's fields over the page's current ones, so a
+  // key the editor never writes survives the save.
+  function keepOtherFields(current, fields) {
+    var out = {}, k;
+    for (k in current) if (Object.prototype.hasOwnProperty.call(current, k)) out[k] = current[k];
+    for (k in fields) if (Object.prototype.hasOwnProperty.call(fields, k)) out[k] = fields[k];
+    return out;
+  }
+
   // save writes the stat block to the entity, or creates the creature when this
   // editor has none. Only a fixed message is ever shown for a server failure.
   function save(st, ctx) {
@@ -455,8 +464,15 @@ var DrawSteelCreatureEditor = (function () {
     var body = { name: out.name, fields_data: out.fields };
     var req;
     if (ctx.entityId) {
-      req = apiCall(base + '/entities/' + encodeURIComponent(ctx.entityId), {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      // A save replaces the page's fields, so fields the editor doesn't own
+      // (Stamina and conditions sent back from Foundry) are read fresh and kept.
+      var url = base + '/entities/' + encodeURIComponent(ctx.entityId);
+      req = apiCall(url).then(function (res) {
+        if (!res.ok) { var e = new Error('Could not save this stat block. Try again.'); e.status = res.status; throw e; }
+        return res.json();
+      }).then(function (current) {
+        body.fields_data = keepOtherFields((current && current.fields_data) || {}, out.fields);
+        return apiCall(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       });
     } else {
       req = SB().creatureType(ctx.campaignId).then(function (type) {
@@ -469,8 +485,8 @@ var DrawSteelCreatureEditor = (function () {
       if (!res.ok) { var e = new Error('Could not save this stat block. Try again.'); e.status = res.status; throw e; }
       return res.json().catch(function () { return null; });
     }).then(function (entity) {
-      var saved = entity && entity.id ? entity : { id: ctx.entityId, name: out.name, fields_data: out.fields };
-      if (!saved.fields_data) saved.fields_data = out.fields;
+      var saved = entity && entity.id ? entity : { id: ctx.entityId, name: out.name, fields_data: body.fields_data };
+      if (!saved.fields_data) saved.fields_data = body.fields_data;
       return saved;
     });
   }
