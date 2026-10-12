@@ -1002,6 +1002,20 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "negotiation-audience",
+      "name": "Negotiation Audience",
+      "description": "A pop-up book for the Handbook's Negotiation chapter: a cut-paper throne room where the reader picks who speaks and what they say, rolls, and watches the king's interest and patience move by the published rules (read from data/negotiation.json).",
+      "icon": "fa-crown",
+      "script_file": "widgets/negotiation-audience.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
     }
   ],
   "entity_panels": [
