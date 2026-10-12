@@ -1079,6 +1079,14 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "encounter-budget",
+      "name": "Encounter Budget",
+      "description": "The Draw Steel budget panel inside Chronicle's encounter builder: the party's encounter strength, the EV spent against the published difficulty bands, the guideline checks and each initiative group's EV. Chronicle loads it itself; there is nothing to place.",
+      "icon": "fa-scale-balanced",
+      "script_file": "widgets/encounter-budget.js",
+      "config": []
     }
   ],
   "entity_panels": [
