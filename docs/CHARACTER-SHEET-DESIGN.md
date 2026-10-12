@@ -78,6 +78,13 @@ The layout rules live in the widget's injected `<style>`, scoped to
 `[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
 `sheetMotion` the box render above is used unchanged.
 
+In the paper layout the Abilities panel has Signature / Heroic / Maneuver
+tabs and lists every ability in the open tab as its own fold, cheapest first;
+the first one in the open tab starts open, and a filter box appears at 10 or
+more abilities. The master-detail pane described below is the box layout only.
+The origin picker (Ancestry, Culture, Career, Kit) opens across the full width
+under the identity row.
+
 ## Abilities section
 
 **Shape: bare master–detail, monochrome.** A grouped list (master) plus a detail pane.

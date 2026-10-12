@@ -354,7 +354,8 @@ Data format: `docs/DATA-SCHEMA.md`.
 
 ## 8. Open Questions
 
-Open work: #54.
+Not yet synced to Foundry: abilities, villain actions, traits, immunities and
+weaknesses (see FOUNDRY-SYNC-MAP.md §8).
 
 ---
 
@@ -366,4 +367,4 @@ Open work: #54.
 | Widget JS API | Chronicle Core | `Chronicle.register()` |
 | Entity custom fields API | Chronicle Core | Reads and writes `fields_data` |
 | Community Bestiary addon | Chronicle Core | `internal/plugins/bestiary`: search, stat block, publish |
-| Structured creature sync | Chronicle Core | Needed for Foundry abilities and villain actions |
+| Creature fields route (`GET /systems/:systemId/creature-fields`) | Chronicle Core | The Chronicle Sync module reads the preset's Foundry paths from it |

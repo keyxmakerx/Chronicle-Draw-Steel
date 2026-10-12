@@ -187,6 +187,12 @@ only the fields in the preset's `foundry_pull_fields` (current Stamina and
 conditions), and only when the director turns that on. `tools/test-creature-foundry-map.mjs`
 pins every path below to the system's NPC data model.
 
+The Chronicle Sync module reads these paths from Chronicle's
+`GET /api/v1/campaigns/:id/systems/:systemId/creature-fields` (the creature
+preset's fields with their Foundry annotations, plus `foundry_pull_fields`; an
+empty `fields` list when the system has no creature preset). A Chronicle without
+that route gets no creature sync.
+
 | Chronicle field (key) | `foundry_path` | Conversion |
 |---|---|---|
 | Level (`level`) | `system.monster.level` | |
