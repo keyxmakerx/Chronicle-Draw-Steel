@@ -92,7 +92,8 @@ Chronicle sets the campaign, and `editable` for Scribes and above.
   terms; click a term to pin its card, and **Pin card** keeps up to eight in
   the tray
 - **Add to campaign** (Scribes and above, full layout) makes a Creature page
-  from a book stat block with every field filled; **+ New creature** opens
+  from a book stat block with every field filled, and remembers the book entry
+  for Compare with the book; **+ New creature** opens
   the editor
 
 ### Usage
@@ -114,6 +115,14 @@ and free strike carry a tick when they match the published formula and a pen
 when the director changed them. The director also gets **Edit stat block** and
 **Publish** (to the Community Bestiary); a player sees nothing on a creature
 with no stat block yet.
+
+On a page copied from the Monsters book, the director sees "Copied from the
+Draw Steel book" with **Compare with the book**. It folds open a table of each
+field that differs from the book entry (figures, keywords, movement, and each
+trait, ability and villain action by position). **Use the book's** saves that
+one field at once, **Use the book's for all** resets every difference, and
+**Undo** puts back the last change. The entry is the page's `book_source`
+field: director-only, and never sent to Foundry.
 
 In page-layout mode the panel appears only where the layout has the **Game
 System Panels** block.

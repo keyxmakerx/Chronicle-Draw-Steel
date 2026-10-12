@@ -845,6 +845,12 @@
           "label": "Conditions Data",
           "type": "string",
           "foundry_path": "statuses"
+        },
+        {
+          "key": "book_source",
+          "label": "Copied from",
+          "type": "string",
+          "gm_only": true
         }
       ]
     }

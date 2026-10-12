@@ -532,6 +532,8 @@ var DrawSteelBestiary = (function () {
       inst._creatureType().then(function (id) {
         if (!id) { var e = new Error('The Draw Steel “Creature” type is not installed in this campaign.'); e.ours = true; throw e; }
         var fields = S.toFields(row.c);
+        // The copy remembers its book entry, for Compare with the book.
+        if (row.src === 'book' && row.slug) fields[S.SOURCE_KEY] = row.slug;
         return Chronicle.apiFetch(inst._entityUrl(cid), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: row.name.slice(0, 200), entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields })
