@@ -67,6 +67,16 @@ test('the Generate panel escapes what was typed and the reasons it shows', () =>
   assertNoInjection(assert, Ed.editorHtml(st, { gen: Object.assign({}, gen, { what: XSS }) }), 'reasons');
 });
 
+test('the Add abilities drawer escapes library text and the creature’s own names', () => {
+  const t = { slug: 'x', name: XSS, properties: { type: 'action', keywords: [XSS], distance: XSS, target: XSS, tier1: '2 damage', tier2: XSS, tier3: XSS, effect: XSS, organizations: ['platoon'], roles: [] } };
+  const st = Ed.newState('X', hostile(XSS), REFS);
+  assertNoInjection(assert, Ed.drawerCard(st, { t, i: 0, ok: true, why: [] }, {}, [t]), 'drawer card');
+  assertNoInjection(assert, Ed.drawerMine(st, null), 'drawer list');
+  const b = Ed.newState('X', hostile(BREAKOUT), REFS);
+  assertNoAttrBreakout(assert, Ed.drawerMine(b, null), 'drawer list');
+  assertNoAttrBreakout(assert, Ed.drawerCard(b, { t: Object.assign({}, t, { name: BREAKOUT }), i: 0, ok: true, why: [] }, {}, [t]), 'drawer card');
+});
+
 test('the side panel escapes the creature and hero names', () => {
   const heroes = [{ name: XSS, fields_data: { level: 2, class: XSS, might: 1, agility: 1, reason: 1, intuition: 1, presence: 1 } }];
   const st = Ed.newState(XSS, { level: 2, organization: 'horde' }, REFS);

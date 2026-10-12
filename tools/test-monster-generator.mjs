@@ -140,3 +140,79 @@ test('no library ability carries the unpublished Attack keyword', () => {
     assert.ok(!(t.properties.keywords || []).includes('Attack'), t.slug);
   }
 });
+
+// ── Add abilities drawer ────────────────────────────────────────────────────
+
+function creature(org, role = '', level = 4) {
+  const st = Ed.newState('Test', { level, organization: org, role }, REFS);
+  return st;
+}
+const lib = (slug) => LIB.find((t) => t.slug === slug);
+
+test('the drawer shows only what this creature can use until Show all', () => {
+  const minion = creature('minion', 'brute');
+  const rows = Ed.libraryRows(minion, LIB, {});
+  assert.ok(rows.length > 0 && rows.length < LIB.length);
+  assert.ok(rows.every((r) => Ed.fits(r.t, 'minion', 'brute')));
+  assert.ok(!rows.some((r) => r.t.properties.type === 'villain-action'), 'a minion sees no villain actions');
+  assert.equal(Ed.libraryRows(minion, LIB, { all: true }).length, LIB.length);
+  const solo = creature('solo');
+  assert.ok(Ed.libraryRows(solo, LIB, {}).some((r) => r.t.properties.type === 'villain-action'));
+});
+
+test('the drawer’s filters and search narrow the list', () => {
+  const st = creature('platoon', 'defender');
+  assert.ok(Ed.libraryRows(st, LIB, { type: 'maneuver' }).every((r) => r.t.properties.type === 'maneuver'));
+  assert.ok(Ed.libraryRows(st, LIB, { all: true, kw: 'Ranged' }).every((r) => r.t.properties.keywords.includes('Ranged')));
+  assert.ok(Ed.libraryRows(st, LIB, { all: true, org: 'solo' }).every((r) => r.t.properties.organizations.includes('solo')));
+  assert.deepEqual(Ed.libraryRows(st, LIB, { all: true, q: 'shield bash' }).map((r) => r.t.slug), ['shield-bash']);
+});
+
+test('an added ability’s damage is the formula’s for this creature, with the chosen type and condition', () => {
+  const st = creature('elite', 'brute', 5);
+  const a = Ed.shapeAbility(st, lib('crushing-blow'), { dtype: 'fire', rider: 'dazed3' });
+  const d = st.pr.damage.value, hc = st.pr.hc.value;
+  assert.equal(a.tier1, `${d.tier1 + hc} fire damage`);
+  assert.match(a.tier3, /^\d+ fire damage; \{@movement push\} 2; \{@condition dazed\} \(\{@duration save-ends\}\)$/);
+  assert.ok(!/\{@condition/.test(a.tier2), 'a tier 3 condition stays on tier 3');
+  const glossary = new Set(data('rules-glossary.json').map((g) => g.slug));
+  for (const r of Ed.RIDERS.slice(1)) {
+    for (const [, term] of r[1].matchAll(/\{@\w+ ([^}|]+)\}/g)) assert.ok(glossary.has(term), term + ' is in the glossary');
+  }
+});
+
+test('adding never duplicates, and villain actions go only to leaders and solos, three at most', () => {
+  const st = creature('platoon', 'defender');
+  assert.ok(Ed.addFromLibrary(st, lib('shield-wall')).undo);
+  const again = Ed.addFromLibrary(st, lib('shield-wall'));
+  assert.equal(again.undo, null);
+  assert.match(again.message, /already has/);
+  assert.equal(Ed.addFromLibrary(st, lib('rallying-cry')).undo, null);
+  const solo = creature('solo');
+  ['rallying-cry', 'summon-minions', 'earthshaker'].forEach((s) => assert.ok(Ed.addFromLibrary(solo, lib(s)).undo, s));
+  assert.deepEqual(solo.c.villain_actions.map((v) => v.order), ['opener', 'crowd-control', 'ultimate']);
+  assert.match(Ed.addFromLibrary(solo, lib('rising-fury')).message, /All three/);
+});
+
+test('a second signature joins as a main action, a trait joins the traits, and undo puts it back', () => {
+  const st = creature('platoon', 'brute');
+  Ed.addFromLibrary(st, lib('crushing-blow'));
+  assert.equal(st.c.abilities[0].type, 'signature');
+  const r = Ed.addFromLibrary(st, lib('gang-up') || lib('quick-strike'));
+  assert.equal(st.c.abilities[1].type, 'action');
+  assert.match(r.message, /main action/);
+  Ed.restore(st, r.undo);
+  assert.equal(st.c.abilities.length, 1);
+  const pl = creature('platoon', 'defender');
+  Ed.addFromLibrary(pl, lib('hold-the-line'));
+  assert.equal(pl.c.traits[0].name, 'Hold the Line');
+});
+
+test('reordering moves one item and ignores moves past either end', () => {
+  const st = creature('platoon', 'defender');
+  ['shield-bash', 'shield-wall', 'intercept'].forEach((s) => Ed.addFromLibrary(st, lib(s)));
+  assert.ok(Ed.moveItem(st, 'a', 2, 0));
+  assert.deepEqual(st.c.abilities.map((a) => a.name), ['Intercept', 'Shield Bash', 'Shield Wall']);
+  assert.equal(Ed.moveItem(st, 'a', 0, -1), false);
+  assert.equal(Ed.moveItem(st, 'a', 2, 3), false);
+});
