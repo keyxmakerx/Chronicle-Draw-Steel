@@ -21,11 +21,11 @@
       ],
       "roles_display": "brute, defender",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
@@ -59,11 +59,11 @@
       ],
       "roles_display": "controller",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Psionic"
       ],
-      "keywords_display": "Attack, Ranged, Psionic",
+      "keywords_display": "Strike, Ranged, Psionic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
@@ -129,11 +129,11 @@
       ],
       "roles_display": "harrier, support",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -167,11 +167,11 @@
       ],
       "roles_display": "hexer",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Magic"
       ],
-      "keywords_display": "Attack, Ranged, Magic",
+      "keywords_display": "Strike, Ranged, Magic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Reason vs. Intuition",
@@ -205,11 +205,11 @@
       ],
       "roles_display": "defender",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "Triggering creature",
       "trigger": "A creature adjacent to this creature attacks one of its allies.",
@@ -269,11 +269,11 @@
       ],
       "roles_display": "artillery",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Weapon"
       ],
-      "keywords_display": "Attack, Ranged, Weapon",
+      "keywords_display": "Strike, Ranged, Weapon",
       "distance": "Ranged 15",
       "target": "1 creature",
       "power_roll": "Reason vs. Agility",
@@ -307,11 +307,11 @@
       ],
       "roles_display": "ambusher",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -345,12 +345,12 @@
       ],
       "roles_display": "mount",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon",
         "Charge"
       ],
-      "keywords_display": "Attack, Melee, Weapon, Charge",
+      "keywords_display": "Strike, Melee, Weapon, Charge",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Might",
@@ -424,11 +424,11 @@
       ],
       "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "power_roll": "Might vs. Agility",
@@ -470,11 +470,10 @@
       ],
       "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
-        "Attack",
         "Area",
         "Magic"
       ],
-      "keywords_display": "Attack, Area, Magic",
+      "keywords_display": "Area, Magic",
       "distance": "3 cube within 1",
       "target": "All creatures in area",
       "power_roll": "Might vs. Agility",
@@ -516,10 +515,10 @@
       ],
       "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged"
       ],
-      "keywords_display": "Attack, Ranged",
+      "keywords_display": "Strike, Ranged",
       "distance": "Ranged 10",
       "target": "1 creature",
       "power_roll": "Agility vs. Agility",
@@ -553,11 +552,10 @@
       ],
       "roles_display": "controller",
       "keywords": [
-        "Attack",
         "Area",
         "Psionic"
       ],
-      "keywords_display": "Attack, Area, Psionic",
+      "keywords_display": "Area, Psionic",
       "distance": "2 burst",
       "target": "All enemies in area",
       "power_roll": "Reason vs. Intuition",
@@ -810,11 +808,11 @@
       "organizations_display": "leader, solo",
       "roles": [],
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "Up to 3 creatures",
       "villain_action_order": "escalation",
@@ -845,11 +843,11 @@
       ],
       "roles_display": "harrier, brute",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "tier1": "2 damage",
@@ -877,11 +875,11 @@
       ],
       "roles_display": "artillery",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Weapon"
       ],
-      "keywords_display": "Attack, Ranged, Weapon",
+      "keywords_display": "Strike, Ranged, Weapon",
       "distance": "Ranged 10",
       "target": "1 creature",
       "tier1": "2 damage",
@@ -987,11 +985,11 @@
       ],
       "roles_display": "brute",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "tier1": "3 damage",
@@ -1022,11 +1020,11 @@
       ],
       "roles_display": "ambusher, harrier",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "tier1": "3 damage",
@@ -1109,11 +1107,11 @@
       ],
       "roles_display": "defender",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "tier1": "5 damage",
@@ -1142,11 +1140,11 @@
       ],
       "roles_display": "artillery",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Weapon"
       ],
-      "keywords_display": "Attack, Ranged, Weapon",
+      "keywords_display": "Strike, Ranged, Weapon",
       "distance": "Ranged 10",
       "target": "1 creature",
       "tier1": "5 damage",
@@ -1220,11 +1218,11 @@
       ],
       "roles_display": "hexer, controller",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Magic"
       ],
-      "keywords_display": "Attack, Ranged, Magic",
+      "keywords_display": "Strike, Ranged, Magic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "tier1": "4 psychic damage",
@@ -1253,11 +1251,11 @@
       ],
       "roles_display": "brute, harrier",
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "2 creatures",
       "tier1": "6 damage",
@@ -1308,11 +1306,11 @@
       ],
       "roles_display": "hexer",
       "keywords": [
-        "Attack",
+        "Strike",
         "Ranged",
         "Magic"
       ],
-      "keywords_display": "Attack, Ranged, Magic",
+      "keywords_display": "Strike, Ranged, Magic",
       "distance": "Ranged 10",
       "target": "1 creature",
       "tier1": "5 corruption damage",
@@ -1381,11 +1379,11 @@
       "organizations_display": "leader",
       "roles": [],
       "keywords": [
-        "Attack",
+        "Strike",
         "Melee",
         "Weapon"
       ],
-      "keywords_display": "Attack, Melee, Weapon",
+      "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "1 creature",
       "tier1": "7 damage",
@@ -1494,11 +1492,10 @@
       ],
       "roles_display": "brute",
       "keywords": [
-        "Attack",
         "Area",
         "Weapon"
       ],
-      "keywords_display": "Attack, Area, Weapon",
+      "keywords_display": "Area, Weapon",
       "distance": "1 burst",
       "target": "All enemies",
       "tier1": "6 damage",

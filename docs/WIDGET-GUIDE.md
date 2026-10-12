@@ -20,8 +20,10 @@ Sheet widget (`widgets/character-sheet.js`) is documented separately, in
 
 The one-page creature editor: identity, figures, characteristics, traits,
 abilities and villain actions on the left; the party, the encounter budget and
-the completeness checks on the right. **Start from…** copies a creature from
-the community bestiary or this campaign, recomputed for its level. Most
+the completeness checks on the right. **Generate one** builds a creature from
+the package's ability library and the published formulas; **or from a
+creature…** copies one from the community bestiary or this campaign,
+recomputed for its level. Most
 directors reach it through **Edit stat block** on a Creature page (see
 Statblock Renderer below) rather than placing it.
 

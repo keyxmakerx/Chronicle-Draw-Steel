@@ -60,6 +60,13 @@ test('a hostile ability cannot inject through its open edit form', () => {
   assertNoInjection(assert, Ed.editorHtml(st, {}), 'ability form');
 });
 
+test('the Generate panel escapes what was typed and the reasons it shows', () => {
+  const st = Ed.newState('X', null, REFS);
+  const gen = { open: true, what: BREAKOUT, kind: 'platoon', role: '', level: 1, why: [XSS] };
+  assertNoAttrBreakout(assert, Ed.editorHtml(st, { gen }), 'what is it');
+  assertNoInjection(assert, Ed.editorHtml(st, { gen: Object.assign({}, gen, { what: XSS }) }), 'reasons');
+});
+
 test('the side panel escapes the creature and hero names', () => {
   const heroes = [{ name: XSS, fields_data: { level: 2, class: XSS, might: 1, agility: 1, reason: 1, intuition: 1, presence: 1 } }];
   const st = Ed.newState(XSS, { level: 2, organization: 'horde' }, REFS);
