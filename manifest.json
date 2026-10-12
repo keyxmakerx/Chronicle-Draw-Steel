@@ -88,6 +88,26 @@
       ]
     },
     {
+      "slug": "monsters",
+      "name": "Monsters",
+      "icon": "fa-dragon",
+      "fields": [
+        { "key": "level", "label": "Level", "type": "number" },
+        { "key": "organization", "label": "Organization", "type": "string" },
+        { "key": "role", "label": "Role", "type": "string" },
+        { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "size", "label": "Size", "type": "string" },
+        { "key": "stamina", "label": "Stamina", "type": "number" },
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "movement", "label": "Movement", "type": "string" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "weaknesses", "label": "Weaknesses", "type": "string" }
+      ]
+    },
+    {
       "slug": "creature-abilities",
       "name": "Creature Abilities",
       "icon": "fa-burst",
@@ -923,33 +943,34 @@
     },
     {
       "slug": "bestiary-browser",
-      "name": "Bestiary Browser",
-      "description": "D&D Beyond-style creature catalog with filtering, search, and popup statblocks",
+      "name": "Bestiary",
+      "description": "Creatures from this campaign and the Draw Steel book: rows that open the stat block in place, roll buttons, hover cards and a reference tray",
       "icon": "fa-book-skull",
       "script_file": "widgets/bestiary-browser.js",
       "config": [
         {
-          "key": "campaign_id",
-          "label": "Campaign ID",
-          "type": "string"
+          "key": "layout",
+          "label": "Layout (full, or compact for a block on a page)",
+          "type": "string",
+          "default": "full"
         },
         {
           "key": "source",
-          "label": "Source (campaign or bestiary)",
+          "label": "Show creatures from (all, campaign or book)",
           "type": "string",
-          "default": "bestiary"
+          "default": "all"
         },
         {
-          "key": "per_page",
-          "label": "Items Per Page",
-          "type": "number",
-          "default": 20
+          "key": "creatures",
+          "label": "Only these creatures (names or book ids, comma separated)",
+          "type": "string",
+          "default": ""
         },
         {
-          "key": "editable",
-          "label": "Allow Create/Edit/Delete",
-          "type": "boolean",
-          "default": true
+          "key": "title",
+          "label": "Title of a compact block",
+          "type": "string",
+          "default": "Creatures here"
         }
       ]
     },

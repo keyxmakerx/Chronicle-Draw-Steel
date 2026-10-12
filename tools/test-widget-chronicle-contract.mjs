@@ -35,7 +35,7 @@ globalThis.Chronicle = Chronicle;
 const require = createRequire(import.meta.url);
 const SB = require('../widgets/statblock-renderer.js');
 globalThis.DrawSteelStatblock = SB;
-require('../widgets/bestiary-browser.js');
+const Bestiary = require('../widgets/bestiary-browser.js');
 
 const browser = Chronicle.registry['bestiary-browser'];
 
@@ -142,19 +142,18 @@ function gridText(inst) {
 
 // ── bestiary-browser ─────────────────────────────────────────────────────
 
-test('bestiary-browser: campaign mode renders creatures from the {data,total} envelope', async () => {
+// The viewer's loader, on an instance as Chronicle registers it.
+function loader(config) {
+  return Object.assign(Object.create(browser), { config: config });
+}
+
+test('bestiary-browser: loads every Creature page from the {data,total} envelope', async () => {
   installFakeServer({ total: 3 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'campaign' });
-
-  // OLD assumption (`data.entities || data.results`) yields [] here, so this
-  // is 0 and the grid shows the "No creatures loaded" empty state.
-  assert.equal(inst.state.creatures.length, 3, 'all three creatures must load');
-  assert.equal(inst.state.filtered.length, 3);
-
-  const text = gridText(inst);
-  assert.ok(!/No creatures loaded/.test(text), 'the empty state must not render');
-  assert.ok(/Goblin 1/.test(text) && /Goblin 3/.test(text), 'creature names must render in the grid');
-  assert.equal(inst._gridEl.children.length, 3, 'three cards must be appended');
+  const entities = await loader({ campaignId: CAMPAIGN })._fetchCampaignCreatures();
+  // OLD assumption (`data.entities || data.results`) yields [] here.
+  assert.equal(entities.length, 3, 'all three creatures must load');
+  const rows = entities.map(Bestiary.fromEntity);
+  assert.deepEqual(rows.map((r) => r.name), ['Goblin 1', 'Goblin 2', 'Goblin 3']);
 });
 
 test('bestiary-browser: the envelope this test serves genuinely lacks the old keys', async () => {
@@ -179,165 +178,47 @@ test('bestiary-browser: _unwrapList accepts a bare array as well as the envelope
 
 test('bestiary-browser: sends type_id resolved from preset_category, never ?preset=', async () => {
   const calls = installFakeServer({ total: 2 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'campaign' });
-
+  const inst = loader({ campaignId: CAMPAIGN });
+  const entities = await inst._fetchCampaignCreatures();
   const entityCalls = calls.filter((u) => u.includes('/entities?'));
   assert.ok(entityCalls.length >= 1, 'the entity list must be requested');
   for (const u of entityCalls) {
     assert.ok(!/[?&]preset=/.test(u), 'must not send ?preset= — Chronicle does not read it: ' + u);
     assert.ok(/[?&]type_id=7(&|$)/.test(u), 'must filter by the resolved Creature type id (7): ' + u);
   }
-  assert.equal(inst._creatureTypeId, 7);
-  // The hero entity the server also holds must not be in the browser.
-  assert.ok(!inst.state.creatures.some((c) => c.name === 'Aria the Hero'), 'a non-creature type must not leak in');
+  assert.equal(await inst._creatureType(), 7);
+  assert.ok(!entities.some((e) => e.name === 'Aria the Hero'), 'a non-creature type must not leak in');
+});
+
+test('bestiary-browser: with no Creature type it lists nothing rather than every page', async () => {
+  installFakeServer({ total: 2 });
+  const save = ENTITY_TYPES.data;
+  ENTITY_TYPES.data = save.filter((t) => t.preset_category !== 'creature');
+  try {
+    assert.deepEqual(await loader({ campaignId: CAMPAIGN })._fetchCampaignCreatures(), []);
+  } finally { ENTITY_TYPES.data = save; }
 });
 
 test('bestiary-browser: pages past the server per_page cap of 100', async () => {
   installFakeServer({ total: 137 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'campaign' });
-
-  // OLD code sent no page/per_page at all, so at best (with a correct unwrap)
-  // it would have seen the server's default 20.
-  assert.equal(inst.state.creatures.length, 137, 'every creature must load, not just the first page');
+  const entities = await loader({ campaignId: CAMPAIGN })._fetchCampaignCreatures();
+  assert.equal(entities.length, 137, 'every creature must load, not just the first page');
 });
 
-test('bestiary-browser: stats come from fields_data, not the absent custom_fields', async () => {
-  installFakeServer({ total: 1 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'campaign' });
-
-  const cr = inst.state.creatures[0];
-  // Under the OLD `entity.custom_fields || entity` read, `f` fell through to
-  // the entity itself and every one of these took its default (level 1,
-  // size 'M', ev 0, empty role) — a full grid of identical blank creatures.
-  assert.equal(cr.level, 2, 'level must come from fields_data');
-  assert.equal(cr.organization, 'horde');
-  assert.equal(cr.role, 'harrier');
-  assert.equal(cr.ev, 6);
-  assert.equal(cr.size, '1S');
-  assert.equal(cr.stamina, 20);
-  assert.deepEqual(cr.keywords, ['Goblin', 'Humanoid']);
-  assert.equal(cr.traits.length, 1);
-  assert.equal(cr.abilities[0].name, 'Shortbow');
-
-  const text = gridText(inst);
-  assert.ok(/Harrier/.test(text), 'the role must reach the card, not an empty string');
-});
-
-test('bestiary-browser: import posts entity_type_id + fields_data, not preset/custom_fields', () => {
-  const inst = Object.create(browser);
-  inst.config = { campaignId: CAMPAIGN };
-  inst._creatureTypeId = 7;
-  const fd = inst._toFieldsData({
-    name: 'Goblin', level: 2, organization: 'horde', role: 'harrier', ev: 6, size: '1S',
-    keywords: ['Goblin'], immunities: [], traits: [{ name: 'Sneaky' }], abilities: [], villain_actions: []
-  });
-  // CreateEntity binds {name, entity_type_id, fields_data} and rejects a zero
-  // entity_type_id with 400; `preset` and `custom_fields` are not bound at all.
-  assert.equal(fd.level, 2);
-  assert.equal(fd.keywords, 'Goblin');
-  assert.equal(typeof fd.traits, 'string', 'traits round-trip as a JSON string');
-  assert.deepEqual(JSON.parse(fd.traits), [{ name: 'Sneaky' }]);
-  assert.equal(fd.abilities_json, '[]');
-});
-
-// ── bestiary-browser, community bestiary mode ────────────────────────────
-
-// The bestiary plugin's real shapes (internal/plugins/bestiary): Search takes
-// system_id and caps per_page at 50, and returns summaries in
-// {results,total,page,per_page,total_pages} with no stat block; the full stat
-// block is GET /bestiary/:slug/statblock, served as stored.
-function installBestiary(opts) {
-  const total = opts.total;
-  const calls = [];
-  const posts = [];
-  Chronicle.apiFetch = function (url, init) {
-    calls.push(url);
-    if (init && init.method === 'POST') {
-      posts.push({ url, body: JSON.parse(init.body) });
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'new' }) });
-    }
-    const [path, qs] = String(url).split('?');
-    const q = new URLSearchParams(qs || '');
-    if (path.endsWith('/entity-types')) return Promise.resolve({ ok: true, json: () => Promise.resolve(ENTITY_TYPES) });
-    if (path === '/bestiary/search') {
-      let perPage = Number(q.get('per_page')) || 20;
-      if (perPage > 50) perPage = 50;
-      const page = Number(q.get('page')) || 1;
-      let all = [];
-      for (let i = 1; i <= total; i++) {
-        all.push({ id: 'pub-' + i, creator_id: 'u1', system_id: 'drawsteel', name: 'Ogre ' + i, slug: 'ogre-' + i,
-          organization: 'platoon', role: 'brute', level: 4, downloads: i, rating_average: 4.5, rating_count: 2 });
-      }
-      all.push({ id: 'pub-x', system_id: 'dnd5e', name: 'Owlbear', slug: 'owlbear', level: 3 });
-      const sys = q.get('system_id');
-      if (sys) all = all.filter((r) => r.system_id === sys);
-      const slice = all.slice((page - 1) * perPage, page * perPage);
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({ results: slice, total: all.length, page, per_page: perPage, total_pages: Math.ceil(all.length / perPage) }) });
-    }
-    if (/^\/bestiary\/[^/]+\/statblock$/.test(path)) {
-      return Promise.resolve({ ok: true, json: () => Promise.resolve({
-        name: 'Ogre 1', level: 4, organization: 'platoon', role: 'brute', ev: 12, stamina: 120, speed: 5, size: '1L',
-        might: 3, agility: 0, reason: -1, intuition: 0, presence: 0, keywords: ['Giant'], free_strike: '7 damage',
-        abilities: [{ name: 'Club', type: 'signature', tier1: '7 damage' }], villain_actions: [], traits: [{ name: 'Big', description: 'Very big.' }]
-      }) });
-    }
-    return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
-  };
-  return { calls, posts };
-}
-
-test('bestiary-browser: community mode lists only Draw Steel creatures, every page of them', async () => {
-  const { calls } = installBestiary({ total: 73 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary' });
-  const searches = calls.filter((u) => u.startsWith('/bestiary/search'));
-  assert.ok(searches.length >= 2, 'it walks past the 50-per-page cap');
-  searches.forEach((u) => assert.match(u, /[?&]system_id=drawsteel(&|$)/));
-  assert.ok(!calls.some((u) => u.startsWith('/bestiary?')), 'Browse ignores the system, so it must not be used');
-  assert.equal(inst.state.creatures.length, 73);
-  assert.ok(!inst.state.creatures.some((c) => c.name === 'Owlbear'), 'another game’s creature must not show');
-});
-
-test('bestiary-browser: a community card shows its downloads, not a row of zeros', async () => {
-  installBestiary({ total: 1 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary' });
-  const card = inst._gridEl.children[0].innerHTML;
-  assert.match(card, /1 added/);
-  assert.ok(!/STM 0/.test(card), 'a summary has no Stamina to show');
-});
-
-test('bestiary-browser: opening a community creature fetches its stat block, and offers Add, never Edit or Delete', async () => {
-  const { calls, posts } = installBestiary({ total: 1 });
-  const { inst } = await mountBrowser({ campaignId: CAMPAIGN, source: 'bestiary', editable: true });
-  const buttons = [];
-  const realCreate = globalThis.document.createElement;
-  globalThis.document.createElement = function () {
-    const e = realCreate();
-    e.addEventListener = function (type, fn) { if (type === 'click') this._click = fn; };
-    buttons.push(e);
-    return e;
-  };
-  inst._openModal(inst.state.creatures[0]);
-  await new Promise((r) => setTimeout(r, 20));
-  globalThis.document.createElement = realCreate;
-  assert.ok(calls.includes('/bestiary/ogre-1/statblock'), 'the full stat block is fetched on open');
-  const labels = buttons.map((b) => b.textContent).filter(Boolean);
-  assert.ok(labels.includes('Add to this campaign'), labels.join(', '));
-  assert.ok(!labels.includes('Edit') && !labels.includes('Delete'), 'a publication id is not a campaign page: ' + labels.join(', '));
-  const body = buttons.find((b) => b.className === 'bb-modal-body');
-  assert.match(body.innerHTML, /Club/, 'the modal draws the full stat block');
-
-  // Add writes the full stat block as a typed Creature page, not the empty
-  // summary the card was drawn from.
-  buttons.find((b) => b.textContent === 'Add to this campaign')._click();
-  await new Promise((r) => setTimeout(r, 20));
-  assert.equal(posts.length, 1);
-  assert.match(posts[0].url, /\/api\/v1\/campaigns\/camp-1\/entities$/);
-  const sent = posts[0].body;
-  assert.equal(sent.entity_type_id, 7);
-  assert.equal(sent.fields_data.stamina, 120);
-  assert.equal(sent.fields_data.ev, 12);
-  assert.equal(JSON.parse(sent.fields_data.abilities_json)[0].name, 'Club');
-  assert.equal(JSON.parse(sent.fields_data.traits)[0].name, 'Big');
+test('bestiary-browser: stats come from fields_data, not the absent custom_fields', () => {
+  const row = Bestiary.fromEntity(makeEntity(1));
+  // Under the OLD `entity.custom_fields || entity` read, every figure took its
+  // default: a grid of identical blank creatures.
+  assert.equal(row.c.level, 2, 'level must come from fields_data');
+  assert.equal(row.c.organization, 'horde');
+  assert.equal(row.c.role, 'harrier');
+  assert.equal(row.c.ev, 6);
+  assert.equal(row.c.size, '1S');
+  assert.equal(row.c.stamina, 20);
+  assert.deepEqual(row.c.keywords, ['Goblin', 'Humanoid']);
+  assert.equal(row.c.traits.length, 1);
+  assert.equal(row.c.abilities[0].name, 'Shortbow');
+  assert.match(Bestiary.rowHtml(row, false, {}), /Harrier/, 'the role must reach the row');
 });
 
 // ── statblock-renderer (the Creature page panel) ─────────────────────────

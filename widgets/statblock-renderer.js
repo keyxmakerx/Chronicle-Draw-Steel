@@ -104,6 +104,8 @@ var DrawSteelStatblock = (function () {
       faction: f.faction ? String(f.faction) : '',
       immunities: parseList(f.immunities),
       weaknesses: parseList(f.weaknesses),
+      movement: parseList(f.movement),
+      with_captain: f.with_captain == null ? '' : String(f.with_captain),
       free_strike: f.free_strike == null ? '' : String(f.free_strike),
       traits: parseTraits(f.traits),
       abilities: parseObjects(f.abilities_json !== undefined ? f.abilities_json : f.abilities),
@@ -249,16 +251,28 @@ var DrawSteelStatblock = (function () {
       'T1 ' + o[0] + '% · T2 ' + o[1] + '% · T3 ' + o[2] + '%</span>';
   }
 
+  // rollButtonHtml is the button a live stat block puts on a power roll; the
+  // viewer finds the ability again by its key and rolls it.
+  function rollButtonHtml(key, bonus, name) {
+    var label = '2d10 ' + (bonus < 0 ? '− ' : '+ ') + Math.abs(bonus);
+    return '<button type="button" class="sbx-rollb" data-sbx-roll="' + esc(key) + '" aria-label="' + esc('Roll ' + (name || 'this ability') + ', ' + label) + '">' + esc(label) + '</button>';
+  }
+
   // abilityHtml draws one ability, trait or villain action. `a.label` overrides
-  // the kind shown on the right (villain actions use their order).
-  function abilityHtml(a, opts) {
+  // the kind shown on the right (villain actions use their order). With
+  // opts.live and a `key`, the name opens the ability's hover card and the power
+  // roll gets a roll button.
+  function abilityHtml(a, opts, key) {
     var o = opts || {};
     var ref = o.ref || null;
+    var live = !!(o.live && key);
     var type = slug(a.type);
     var icon = type === 'signature' ? 'fa-star' : type === 'villain' ? 'fa-crown' : type === 'trait' ? 'fa-circle-info' : 'fa-bolt';
     var kind = a.label || KIND[type] || cap(type);
-    var h = '<section class="sbx-ab"><div class="sbx-ab-top"><h4 class="sbx-ab-name"><i class="fa-solid ' + icon + '" aria-hidden="true"></i>' +
-      esc(a.name || 'Untitled') + '</h4>' + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
+    var name = esc(a.name || 'Untitled');
+    if (live) name = '<span class="sbx-term" tabindex="0" data-sbx-ab="' + esc(key) + '">' + name + '</span>';
+    var h = '<section class="sbx-ab"' + (live ? ' data-sbx-key="' + esc(key) + '"' : '') + '><div class="sbx-ab-top"><h4 class="sbx-ab-name"><i class="fa-solid ' + icon + '" aria-hidden="true"></i>' +
+      name + '</h4>' + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
     var kws = parseList(a.keywords).filter(function (k) { return k !== 'Attack'; });
     if (kws.length || a.distance || a.target) {
       h += '<dl class="sbx-meta">' +
@@ -270,7 +284,7 @@ var DrawSteelStatblock = (function () {
     if (a.tier1 || a.tier2 || a.tier3) {
       var bonus = rollBonus(a.power_roll);
       var roll = bonus !== null ? 'Power roll ' + signed(bonus) : (a.power_roll ? 'Power roll ' + String(a.power_roll) : 'Power roll');
-      h += '<p class="sbx-roll"><span>' + esc(roll) + '</span>' + oddsHtml(bonus) + '</p><ul class="sbx-tiers">' +
+      h += '<p class="sbx-roll"><span>' + esc(roll) + '</span>' + (live && bonus !== null ? rollButtonHtml(key, bonus, a.name) : '') + oddsHtml(bonus) + '</p><ul class="sbx-tiers">' +
         TIERS.map(function (t) {
           return a[t[0]] ? '<li><span class="sbx-t">' + t[1] + '</span><span>' + text(a[t[0]], ref) + '</span></li>' : '';
         }).join('') + '</ul>';
@@ -282,24 +296,58 @@ var DrawSteelStatblock = (function () {
     return h + '</section>';
   }
 
+  // villainAbility is a villain action in the shape abilityHtml draws.
+  function villainAbility(v, i) {
+    return {
+      name: v.name, type: 'villain', label: (i + 1) + (VA_ORDER[v.order] ? ' · ' + VA_ORDER[v.order] : ''),
+      keywords: v.keywords, distance: v.distance, target: v.target,
+      power_roll: v.power_roll, tier1: v.tier1, tier2: v.tier2, tier3: v.tier3, effect: v.effect || v.description
+    };
+  }
+
+  // abilityByKey finds what a live block's key names: 'a3' an ability, 'v0' a
+  // villain action, 't1' a trait, each in the shape abilityHtml draws.
+  function abilityByKey(c, key) {
+    var m = /^([atv])(\d+)$/.exec(String(key || ''));
+    if (!m) return null;
+    var i = Number(m[2]);
+    if (m[1] === 'a') return c.abilities[i] || null;
+    if (m[1] === 'v') return c.villain_actions[i] ? villainAbility(c.villain_actions[i], i) : null;
+    var t = c.traits[i];
+    return t ? { name: t.name, type: 'trait', label: 'Trait', description: t.description } : null;
+  }
+
+  // rollTier is the tier a power roll lands: a natural 19 or 20 is always tier
+  // 3, otherwise 11 or less is tier 1, 12 to 16 tier 2, 17 or more tier 3.
+  function rollTier(d1, d2, bonus) {
+    var nat = d1 + d2, total = nat + (Number(bonus) || 0);
+    return nat >= 19 ? 3 : total <= 11 ? 1 : total <= 16 ? 2 : 3;
+  }
+
   // html draws the whole stat block. opts: { ref (glossary renderer), refs
   // ({orgs, roles} templates, for the provenance marks), compact (header, figures and the
-  // signature ability's name, for a hover card) }.
+  // signature ability's name, for a hover card), live (hover-card hooks and roll
+  // buttons, for the bestiary viewer) }.
   function html(name, src, opts) {
     var o = opts || {};
     var c = (src && src._normalized) ? src : normalize(src);
     var title = name || c.name || 'Unnamed creature';
     var pr = provenance(c, o.refs);
     var noRole = c.organization === 'leader' || c.organization === 'solo';
-    var rank = (c.level !== null ? 'Level ' + c.level : '') +
-      (c.organization ? ' ' + cap(c.organization) : '') + (c.role && !noRole ? ' ' + cap(c.role) : '');
+    var live = !!o.live;
+    // A live block's organization and role open their hover cards.
+    function hook(attr, v) { return live ? '<span class="sbx-term" tabindex="0" ' + attr + '="' + esc(v) + '">' + esc(cap(v)) + '</span>' : esc(cap(v)); }
+    var rank = (c.level !== null ? 'Level ' + esc(c.level) : '') +
+      (c.organization ? ' ' + hook('data-sbx-org', c.organization) : '') + (c.role && !noRole ? ' ' + hook('data-sbx-role', c.role) : '');
     var h = '<article class="sbx' + (o.compact ? ' sbx--compact' : '') + '" aria-label="' + esc(title) + ' stat block">';
     h += '<header class="sbx-head"><div class="sbx-title"><h3 class="sbx-name">' + esc(title) + '</h3>';
     if (c.keywords.length || c.faction) {
       h += '<p class="sbx-kw">' + esc(c.keywords.join(', ')) + (c.keywords.length && c.faction ? ' <span class="sbx-dot">·</span> ' : '') + esc(c.faction) + '</p>';
     }
-    h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + esc(rank.trim()) + '</span>' +
-      '<span class="sbx-ev">EV ' + figure(c.ev) + mark(pr.ev, 'Encounter value') + '</span></div></header>';
+    // A minion's encounter value buys four of them, as the book prints it.
+    h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
+      '<span class="sbx-ev">EV ' + figure(c.ev) + (c.organization === 'minion' && c.ev !== null ? ' <span class="sbx-ev-n">for four</span>' : '') +
+      mark(pr.ev, 'Encounter value') + '</span></div></header>';
     h += '<div class="sbx-strip">' + cell('Size', esc(c.size)) + cell('Speed', figure(c.speed)) +
       cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina')) + cell('Stability', figure(c.stability)) +
       cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike')) + '</div>';
@@ -315,19 +363,17 @@ var DrawSteelStatblock = (function () {
     if (c.immunities.length) lines.push('<b>Immunities</b> ' + text(c.immunities.join(', '), o.ref));
     if (c.weaknesses.length) lines.push('<b>Weaknesses</b> ' + text(c.weaknesses.join(', '), o.ref));
     if (c.winded !== null) lines.push('<b>Winded</b> at ' + esc(c.winded) + ' Stamina');
+    if (c.movement.length) lines.push('<b>Movement</b> ' + esc(c.movement.join(', ')));
+    if (c.with_captain) lines.push('<b>With a captain</b> ' + text(c.with_captain, o.ref));
     if (lines.length) h += '<p class="sbx-line">' + lines.join(' <span class="sbx-dot">·</span> ') + '</p>';
-    c.traits.forEach(function (t) {
-      h += abilityHtml({ name: t.name, type: 'trait', label: 'Trait', description: t.description }, o);
+    c.traits.forEach(function (t, i) {
+      h += abilityHtml({ name: t.name, type: 'trait', label: 'Trait', description: t.description }, o, 't' + i);
     });
-    c.abilities.forEach(function (a) { h += abilityHtml(a, o); });
+    c.abilities.forEach(function (a, i) { h += abilityHtml(a, o, 'a' + i); });
     if (c.villain_actions.length) {
       h += '<h4 class="sbx-sec">Villain actions</h4>';
       c.villain_actions.forEach(function (v, i) {
-        h += abilityHtml({
-          name: v.name, type: 'villain', label: (i + 1) + (VA_ORDER[v.order] ? ' · ' + VA_ORDER[v.order] : ''),
-          keywords: v.keywords, distance: v.distance, target: v.target,
-          power_roll: v.power_roll, tier1: v.tier1, tier2: v.tier2, tier3: v.tier3, effect: v.effect || v.description
-        }, o);
+        h += abilityHtml(villainAbility(v, i), o, 'v' + i);
       });
     }
     if (!c.traits.length && !c.abilities.length) {
@@ -406,6 +452,13 @@ var DrawSteelStatblock = (function () {
     '.sbx-tiers li{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:baseline}',
     '.sbx-t{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--color-text-secondary,#6b7280);background:var(--color-bg-tertiary,#f3f4f6);border-radius:4px;text-align:center;padding:1px 0}',
     '.sbx--compact{padding:12px 14px;gap:10px}',
+    '.sbx-ev-n{font-weight:500;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-term{text-decoration:underline dotted;text-underline-offset:3px;cursor:help;border-radius:3px}',
+    '.sbx-term:hover,.sbx-term:focus-visible{background:rgba(var(--color-accent-rgb,99,102,241),.12)}',
+    '.sbx-rollb{display:inline-flex;gap:4px;align-items:center;border:1px solid rgba(var(--color-accent-rgb,99,102,241),.4);background:rgba(var(--color-accent-rgb,99,102,241),.1);color:var(--color-accent,#6366f1);border-radius:6px;padding:1px 8px;font:600 12px/1.6 ui-monospace,Consolas,monospace;cursor:pointer}',
+    '.sbx-rollb::before{content:"⚂";font-family:system-ui,sans-serif;font-size:13px}',
+    '.sbx-rollb:hover{background:rgba(var(--color-accent-rgb,99,102,241),.2)}',
+    '.sbx-rollb:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
     '.ds-statblock-panel{margin-top:12px}',
     '.sbx-wrap{display:flex;flex-direction:column;gap:8px}',
     '.sbx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between}',
@@ -533,6 +586,9 @@ var DrawSteelStatblock = (function () {
     html: html,
     foundryHtml: foundryHtml,
     abilityHtml: abilityHtml,
+    abilityByKey: abilityByKey,
+    rollTier: rollTier,
+    rollButtonHtml: rollButtonHtml,
     mark: mark,
     CSS: CSS,
     injectStyles: injectStyles,

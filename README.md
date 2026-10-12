@@ -21,12 +21,12 @@ Chronicle's Rules page opens the package as a handbook you turn the pages of. Th
 
 ### And the rest
 
-- **Bestiary**: browse and filter the example creatures, then add one to your campaign.
+- **Bestiary**: your campaign's creatures and the Monsters book's 394 stat blocks in one list. Open a stat block in place, roll its power rolls, and add a book creature to your campaign.
 - **Negotiation tracker**: run a negotiation on an NPC page with the published rules for interest, patience, motivations and pitfalls.
 - **Hero sheet**: a read-only hero sheet, synced from Foundry VTT.
 - **DM Screen**: Stamina, Recoveries, the heroic resource and current conditions for each hero.
 - **Page types**: Hero and Creature types that sync with Foundry VTT actors through the [Chronicle Sync module](https://github.com/keyxmakerx/Chronicle-Foundry-Module).
-- **Reference data**: 519 hero abilities, 12 ancestries, 21 kits, 57 skills, 65 glossary entries, the negotiation rules, 51 creature ability templates and 35 example creatures (written for this package, not MCDM's monsters).
+- **Reference data**: 519 hero abilities, 12 ancestries, 21 kits, 57 skills, 65 glossary entries, the negotiation rules, 1,606 creature abilities (1,555 of them from the Monsters book), the Monsters book's 394 stat blocks (named villains left out, see `data/NOTICE.md`) and 35 example creatures written for this package.
 
 ## Install
 

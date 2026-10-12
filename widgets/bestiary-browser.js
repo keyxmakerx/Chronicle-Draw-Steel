@@ -1,1112 +1,930 @@
 /**
- * Draw Steel Bestiary Browser Widget
- * Browsable creature catalog with filtering, search, and popup statblocks.
+ * Draw Steel bestiary viewer.
+ *
+ * DrawSteelBestiary lists creatures from this campaign's Creature pages and
+ * from the Monsters book (data/monsters.json). A row opens its stat block in
+ * place; the stat block is the shared one (DrawSteelStatblock), drawn "live":
+ * power rolls get roll buttons, and conditions, keywords, abilities,
+ * organizations and roles open Chronicle's hover card. A card can be pinned to
+ * the reference tray beside the list, which also keeps the last five rolls.
+ *
+ * Two layouts: "full" (filters, sorting, explanations, tray) for a Bestiary
+ * page, and "compact" for a block on any page, which only opens, hovers and
+ * rolls. Every animation follows html[data-motion] and prefers-reduced-motion.
+ *
+ * The pure parts (rows, filtering, the HTML) are exported for the Node tests;
+ * mount wires them to the page.
  */
-Chronicle.register('bestiary-browser', {
-  init: function (el, config) {
-    var self = this;
-    this.el = el;
-    this.config = config;
-    this.orgTemplates = [
-      { slug: 'minion', name: 'Minion' },
-      { slug: 'horde', name: 'Horde' },
-      { slug: 'platoon', name: 'Platoon' },
-      { slug: 'elite', name: 'Elite' },
-      { slug: 'leader', name: 'Leader' },
-      { slug: 'solo', name: 'Solo' },
-      { slug: 'swarm', name: 'Swarm' }
-    ];
-    this.roleTemplates = [
-      { slug: 'ambusher', name: 'Ambusher' },
-      { slug: 'artillery', name: 'Artillery' },
-      { slug: 'brute', name: 'Brute' },
-      { slug: 'controller', name: 'Controller' },
-      { slug: 'defender', name: 'Defender' },
-      { slug: 'harrier', name: 'Harrier' },
-      { slug: 'hexer', name: 'Hexer' },
-      { slug: 'mount', name: 'Mount' },
-      { slug: 'support', name: 'Support' }
-    ];
-    this.creatureKeywords = [];
-    this.state = {
-      source: config.source || 'campaign',
-      creatures: [],
-      filtered: [],
-      page: 0,
-      perPage: Number(config.perPage) || 20,
-      sort: 'level-asc',
-      search: '',
-      filters: { organization: '', role: '', levelMin: 1, levelMax: 20, keywords: [] },
-      filtersOpen: true,
-      modalCreature: null,
-      loading: true
-    };
+var DrawSteelBestiary = (function () {
+  'use strict';
 
-    this._escHandler = function (e) {
-      if (e.key === 'Escape' && self.state.modalCreature) self._closeModal();
-    };
-    document.addEventListener('keydown', this._escHandler);
+  var ORGS = ['minion', 'horde', 'platoon', 'elite', 'leader', 'solo', 'swarm'];
+  var ROLES = ['ambusher', 'artillery', 'brute', 'controller', 'defender', 'harrier', 'hexer', 'mount', 'support'];
+  var SOURCES = [['all', 'Everything'], ['campaign', 'This campaign'], ['book', 'Draw Steel book']];
+  var PAGE = 60, MAX_PINS = 8, MAX_ROLLS = 5;
 
-    // The old second argument built '/api/v1/campaigns/:id/extensions/drawsteel/
-    // assets/', a route Chronicle does not have. It only ever fed the renderer's
-    // no-campaign fallback, so this worked by accident whenever a campaign id
-    // was present and failed silently when it was not. The renderer owns the
-    // real path now (see reference-renderer.js).
-    this._ref = new DrawSteelRefRenderer('', config.campaignId);
+  function SB() { return (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null; }
 
-    Promise.all([this._ref.load(), this._fetchCreatures()]).then(function () {
-      self._ref.injectStyles();
-      self._deriveKeywords();
-      self.state.loading = false;
-      self._applyFilters();
-      self._render();
-    }).catch(function (err) {
-      console.error('Bestiary Browser: load failed', err);
-      self.state.loading = false;
-      self._render();
+  // Escapes for element content and attribute values alike.
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // ── Rows ──────────────────────────────────────────────────────────────────
+
+  // A row is one creature, from either source, with its stat block normalized
+  // once. `key` is unique across sources and safe in an attribute.
+  function fromEntity(e) {
+    var S = SB();
+    var f = (e && (e.fields_data || e.custom_fields)) || {};
+    var c = S.normalize(f);
+    return { key: 'c' + String(e.id).replace(/[^A-Za-z0-9_-]/g, ''), src: 'campaign', id: String(e.id), name: String(e.name || f.name || 'Unnamed'), c: c, fields: f, group: '' };
+  }
+
+  function fromBook(item) {
+    var S = SB();
+    var p = (item && item.properties) || {};
+    return { key: 'b' + String(item.slug || '').replace(/[^A-Za-z0-9_-]/g, ''), src: 'book', slug: String(item.slug || ''), name: String(item.name || ''), c: S.normalize(p), fields: p, group: String(p.group || '') };
+  }
+
+  // haystack is what the search box matches: name, keywords, the book chapter
+  // and every ability's name.
+  function haystack(row) {
+    var c = row.c;
+    return [row.name, row.group, c.keywords.join(' '), c.abilities.concat(c.villain_actions).map(function (a) { return a.name || ''; }).join(' ')]
+      .join(' ').toLowerCase();
+  }
+
+  function matches(row, v) {
+    var c = row.c;
+    if (v.src !== 'all' && row.src !== v.src) return false;
+    if (v.org && c.organization !== v.org) return false;
+    if (v.role && c.role !== v.role) return false;
+    var lvl = c.level === null ? 0 : c.level;
+    if (v.lmin && lvl < v.lmin) return false;
+    if (v.lmax && lvl > v.lmax) return false;
+    var q = String(v.q || '').trim().toLowerCase();
+    if (q && haystack(row).indexOf(q) === -1) return false;
+    if (v.only && v.only.length && v.only.indexOf(row.name.toLowerCase()) === -1 && v.only.indexOf(row.slug || '') === -1) return false;
+    return true;
+  }
+
+  function sortKey(row, by) {
+    if (by === 'level') return row.c.level === null ? -1 : row.c.level;
+    if (by === 'ev') return row.c.ev === null ? -1 : row.c.ev;
+    return row.name.toLowerCase();
+  }
+
+  function visible(rows, v) {
+    return rows.filter(function (r) { return matches(r, v); }).sort(function (a, b) {
+      var x = sortKey(a, v.sort), y = sortKey(b, v.sort);
+      var d = x < y ? -1 : x > y ? 1 : 0;
+      return d * (v.dir || 1) || (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
     });
-  },
+  }
 
-  destroy: function (el) {
-    document.removeEventListener('keydown', this._escHandler);
-    el.innerHTML = '';
-  },
-
-  _apiError: function (res, fallback) {
-    return res.json().then(
-      function (body) { return body && body.message ? body.message : fallback; },
-      function () { return fallback; }
-    );
-  },
-
-  // _entityUrl builds a campaign entity API path. campaignId/entityId are
-  // normally numeric ids from Chronicle's own config or entity data, but
-  // percent-encoding keeps a stray "/" or "?" from reshaping the request path.
-  _entityUrl: function (campaignId, entityId) {
-    var url = '/api/v1/campaigns/' + encodeURIComponent(campaignId) + '/entities';
-    if (entityId !== undefined && entityId !== null && entityId !== '') {
-      url += '/' + encodeURIComponent(entityId);
-    }
-    return url;
-  },
-
-  // _boundCreatureFields returns a size-capped copy of a creature so an
-  // oversized name or ability/trait list from an import can't be written to
-  // an entity's fields_data. Defense in depth: Chronicle's server is the
-  // real limit enforcer. Pure — never mutates the creature passed in.
-  _boundCreatureFields: function (cr) {
-    var MAX_NAME = 200, MAX_LIST = 50;
-    var capArray = function (arr) {
-      return Array.isArray(arr) && arr.length > MAX_LIST ? arr.slice(0, MAX_LIST) : arr;
-    };
-    var bounded = {};
-    for (var k in cr) { if (cr.hasOwnProperty(k)) bounded[k] = cr[k]; }
-    bounded.name = String(cr.name || '').slice(0, MAX_NAME);
-    bounded.level = Math.max(1, Math.min(20, Number(cr.level) || 1));
-    bounded.abilities = capArray(cr.abilities);
-    bounded.traits = capArray(cr.traits);
-    bounded.villain_actions = capArray(cr.villain_actions);
-    return bounded;
-  },
-
-  // ── Data Loading ──
-
-  _deriveKeywords: function () {
+  function levels(rows) {
     var seen = {};
-    var list = [];
-    this.state.creatures.forEach(function (cr) {
-      cr.keywords.forEach(function (kw) {
-        if (!seen[kw]) {
-          seen[kw] = true;
-          list.push({ slug: kw.toLowerCase().replace(/\s+/g, '-'), name: kw });
-        }
-      });
+    rows.forEach(function (r) { if (r.c.level !== null) seen[r.c.level] = true; });
+    return Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+  }
+
+  // ── Filter bar ────────────────────────────────────────────────────────────
+
+  function chipsHtml(name, list, on, have) {
+    return list.filter(function (s) { return !have || have[s]; }).map(function (s) {
+      return '<button type="button" class="bb-chip" data-bb-' + name + '="' + esc(s) + '" aria-pressed="' + (on === s) + '">' + esc(cap(s)) + '</button>';
+    }).join('');
+  }
+
+  function levelOptions(ls, sel) {
+    return ls.map(function (l) { return '<option value="' + l + '"' + (l === sel ? ' selected' : '') + '>' + l + '</option>'; }).join('');
+  }
+
+  // filterBarHtml is drawn once per load; the chips' pressed state is updated
+  // in place so the search box keeps its focus while typing.
+  function filterBarHtml(v, rows, opts) {
+    var o = opts || {};
+    var ls = levels(rows), have = {};
+    rows.forEach(function (r) { have[r.c.organization] = true; have[r.c.role] = true; });
+    var srcs = SOURCES.filter(function (s) { return s[0] !== 'book' || o.book; }).map(function (s) {
+      return '<label><input type="radio" name="bb-src-' + esc(o.uid) + '" value="' + s[0] + '"' + (v.src === s[0] ? ' checked' : '') + '> ' + esc(s[1]) + '</label>';
+    }).join('');
+    return '<div class="bb-fbar" role="search">' +
+      '<div class="bb-grp bb-grow"><label class="bb-lbl" for="bb-q-' + esc(o.uid) + '">Search</label>' +
+        '<input type="search" class="bb-q" id="bb-q-' + esc(o.uid) + '" placeholder="Name, keyword or ability" autocomplete="off" value="' + esc(v.q) + '"></div>' +
+      (ls.length ? '<div class="bb-grp"><span class="bb-lbl">Level</span><div class="bb-lvl">' +
+        '<select data-bb-lmin aria-label="Lowest level">' + levelOptions(ls, v.lmin || ls[0]) + '</select>to' +
+        '<select data-bb-lmax aria-label="Highest level">' + levelOptions(ls, v.lmax || ls[ls.length - 1]) + '</select></div></div>' : '') +
+      '<div class="bb-grp"><span class="bb-lbl">Organization</span><div class="bb-chips">' + chipsHtml('org', ORGS, v.org, have) + '</div></div>' +
+      '<div class="bb-grp"><span class="bb-lbl">Role</span><div class="bb-chips">' + chipsHtml('role', ROLES, v.role, have) + '</div></div>' +
+      '<div class="bb-grp"><span class="bb-lbl">From</span><div class="bb-srcs">' + srcs +
+        '<button type="button" class="bb-taped" data-bb-market aria-disabled="true">Market<span class="bb-tape" aria-hidden="true"><span>Construction</span></span></button></div></div>' +
+      '<div class="bb-grp"><span class="bb-lbl" aria-hidden="true">&nbsp;</span><button type="button" class="bb-btn" data-bb-guide aria-pressed="false">What do these mean?</button></div>' +
+    '</div>';
+  }
+
+  // ── Explanations ──────────────────────────────────────────────────────────
+
+  function find(list, slug) {
+    for (var i = 0; i < (list || []).length; i++) if (list[i] && list[i].slug === slug) return list[i];
+    return null;
+  }
+
+  // orgLine and roleLine say what a filter means, from the package's templates.
+  function orgLine(slug, refs) {
+    var o = find(refs.orgs, slug);
+    if (!o) return '';
+    var m = o.organization_modifier;
+    var ev = (m === null || m === undefined)
+      ? 'Not a published organization, so its EV and Stamina are the director’s.'
+      : 'EV is (2 × level + 4) × ' + m + (slug === 'minion' ? ', for four minions.' : '.');
+    var va = Number(o.villain_action_count) || 0;
+    return String(o.description || '') + ' ' + ev + (va ? ' Takes ' + va + ' villain actions.' : '');
+  }
+
+  function roleLine(slug, refs) {
+    var r = find(refs.roles, slug);
+    if (!r) return '';
+    return String(r.description || '') + (r.primary_stat ? ' Its best characteristic is usually ' + cap(r.primary_stat) + '.' : '');
+  }
+
+  function explainHtml(v, refs, n) {
+    var parts = [];
+    if (v.org) parts.push('<div class="bb-ex"><b>' + esc(cap(v.org)) + '</b><span>' + esc(orgLine(v.org, refs)) + '</span></div>');
+    if (v.role) parts.push('<div class="bb-ex"><b>' + esc(cap(v.role)) + '</b><span>' + esc(roleLine(v.role, refs)) + '</span></div>');
+    if (!parts.length) return '';
+    return parts.join('') + '<span class="bb-ex-n">' + n + ' match' + (n === 1 ? '' : 'es') + '</span>';
+  }
+
+  // guideHtml is the whole "What do these mean?" table for one of the two
+  // filters, pinned to the tray as a card.
+  function guideHtml(kind, refs) {
+    var list = kind === 'orgs' ? ORGS : ROLES;
+    return '<table class="bb-guide">' + list.map(function (s) {
+      var line = kind === 'orgs' ? orgLine(s, refs) : roleLine(s, refs);
+      return line ? '<tr><td>' + esc(cap(s)) + '</td><td>' + esc(line) + '</td></tr>' : '';
+    }).join('') + '</table>';
+  }
+
+  // ── The list ──────────────────────────────────────────────────────────────
+
+  function sortHead(by, label, v) {
+    var on = v.sort === by;
+    return '<button type="button" data-bb-sort="' + by + '" aria-sort="' + (on ? (v.dir > 0 ? 'ascending' : 'descending') : 'none') + '">' + label + '</button>';
+  }
+
+  function listHeadHtml(v) {
+    return '<div class="bb-lhead">' + sortHead('name', 'Name', v) + sortHead('level', 'Level', v) + '<span>Organization</span>' + sortHead('ev', 'EV', v) + '</div>';
+  }
+
+  // rowHtml draws one row: a head that opens it, and a body that holds the stat
+  // block while it is open.
+  function rowHtml(row, open, ctx) {
+    var c = row.c, x = ctx || {};
+    var noRole = c.organization === 'leader' || c.organization === 'solo';
+    var kw = c.keywords.join(', ');
+    var head = '<div class="bb-rhead" role="button" tabindex="0" aria-expanded="' + !!open + '" data-bb-toggle>' +
+      '<span class="bb-nm"><span class="bb-car" aria-hidden="true">▶</span><span class="bb-nmt"><span class="bb-t" data-bb-cr="' + esc(row.key) + '">' + esc(row.name) + '</span>' +
+      (kw ? '<span class="bb-kw">' + esc(kw) + '</span>' : '') + '</span></span>';
+    if (x.compact) {
+      head += '<span class="bb-c">' + (c.level !== null ? 'L' + esc(c.level) + ' · ' : '') + esc(cap(c.organization)) + '</span>';
+    } else {
+      head += '<span class="bb-c">' + (c.level === null ? '—' : esc(c.level)) + '</span>' +
+        '<span class="bb-c bb-org">' + esc(cap(c.organization)) + (c.role && !noRole ? ' <small>' + esc(cap(c.role)) + '</small>' : '') + '</span>' +
+        '<span class="bb-c">' + (c.ev === null ? '—' : esc(c.ev)) + '</span>';
+    }
+    head += '</div>';
+    return '<div class="bb-row' + (open ? ' is-open' : '') + '" data-bb-row="' + esc(row.key) + '">' + head +
+      '<div class="bb-rbody"><div>' + (open ? bodyHtml(row, x) : '') + '</div></div></div>';
+  }
+
+  // bodyHtml is an open row: the live stat block and what can be done with it.
+  function bodyHtml(row, ctx) {
+    var S = SB(), x = ctx || {};
+    var h = '<div class="bb-sb">' + S.html(row.name, row.c, { ref: x.ref, refs: x.refs, live: true });
+    var foot = [];
+    if (row.src === 'campaign') {
+      foot.push('<span class="bb-pill is-ok">On a page</span>');
+      if (x.campaignId) foot.push('<a class="bb-btn" href="/campaigns/' + encodeURIComponent(x.campaignId) + '/entities/' + encodeURIComponent(row.id) + '">Open the page</a>');
+    } else {
+      foot.push('<span class="bb-pill">Draw Steel book' + (row.group ? ' · ' + esc(row.group) : '') + '</span>');
+      if (x.added && x.added[row.key]) {
+        foot.push('<a class="bb-btn" href="/campaigns/' + encodeURIComponent(x.campaignId) + '/entities/' + encodeURIComponent(x.added[row.key]) + '">Added. Open the page</a>');
+      } else if (x.canAdd) {
+        foot.push('<button type="button" class="bb-btn" data-bb-add>Add to campaign</button>');
+      }
+    }
+    if (x.tray) foot.push('<button type="button" class="bb-btn" data-bb-pin="cr|' + esc(row.key) + '">Pin card</button>');
+    return h + '<div class="bb-foot">' + foot.join('') + '<span class="bb-msg" role="status"></span></div></div>';
+  }
+
+  function countText(n, total, v) {
+    var where = v.src === 'campaign' ? ' in this campaign' : v.src === 'book' ? ' from the Draw Steel book' : '';
+    return n + ' of ' + total + ' creatures' + where;
+  }
+
+  // ── Cards: hover cards and the tray share one description ─────────────
+
+  // cardFor turns a key into { kind, title, body } with body already safe HTML.
+  // Keys: 'g|<glossary id>', 'o|<org>', 'r|<role>', 'cr|<row>', 'ab|<row>|<ability
+  // key>', 'guide|orgs', 'guide|roles', 'mk'. ctx: { rows (by key), ref, refs, inst }.
+  function cardFor(key, ctx) {
+    var S = SB(), x = ctx || {}, refs = x.refs || {};
+    var p = String(key || '').split('|');
+    var ref = x.ref || null;
+    if (p[0] === 'g') {
+      var en = ref && ref.getEntry ? ref.getEntry(p[1]) : null;
+      if (!en) return null;
+      var cat = (en.properties && en.properties.category) || en.category || 'Rule';
+      return { kind: cap(cat), title: en.name || p[1], body: '<p>' + S.text(en.description || '', ref) + '</p>' };
+    }
+    if (p[0] === 'o' && orgLine(p[1], refs)) return { kind: 'Organization', title: cap(p[1]), body: '<p>' + esc(orgLine(p[1], refs)) + '</p>' };
+    if (p[0] === 'r' && roleLine(p[1], refs)) return { kind: 'Role', title: cap(p[1]), body: '<p>' + esc(roleLine(p[1], refs)) + '</p>' };
+    if (p[0] === 'guide') {
+      return { kind: 'Guide', title: p[1] === 'orgs' ? 'Organizations: how many and how tough' : 'Roles: how it fights', body: guideHtml(p[1] === 'orgs' ? 'orgs' : 'roles', refs) };
+    }
+    if (p[0] === 'mk') return { kind: 'Source', title: 'Market', body: '<p>Creatures other directors share, ready to add. It is still being built.</p>' };
+    var row = x.rows && x.rows[p[1]];
+    if (!row) return null;
+    if (p[0] === 'cr') {
+      var c = row.c, sig = c.abilities.filter(function (a) { return a.type === 'signature'; })[0] || c.abilities[0];
+      var noRole = c.organization === 'leader' || c.organization === 'solo';
+      var facts = [['Level', c.level], ['EV', c.ev], ['Stamina', c.stamina], ['Speed', c.speed]].map(function (f) {
+        return '<div><b>' + (f[1] === null ? '—' : esc(f[1])) + '</b>' + f[0] + '</div>';
+      }).join('');
+      return {
+        kind: 'Creature', title: row.name,
+        body: '<p class="bb-cmeta">' + esc([cap(c.organization) + (c.role && !noRole ? ' ' + cap(c.role) : ''), c.keywords.join(', ')].filter(Boolean).join(' · ')) + '</p>' +
+          '<div class="bb-mini">' + facts + '</div>' +
+          (sig ? '<p class="bb-csig"><span>Signature</span> ' + esc(sig.name || 'Ability') + '</p>' + abilityCardBody(row, sig, 'a' + c.abilities.indexOf(sig), x) : '')
+      };
+    }
+    if (p[0] === 'ab') {
+      var a = S.abilityByKey(row.c, p[2]);
+      if (!a) return null;
+      return { kind: a.label || S.KIND[a.type] || 'Ability', title: a.name || 'Ability', body: '<p class="bb-cmeta">' + esc(row.name) + '</p>' + abilityCardBody(row, a, p[2], x) };
+    }
+    return null;
+  }
+
+  // abilityCardBody is an ability in a card: what it reaches, its tiers and a
+  // roll button that names its creature, since a card lives outside the row.
+  function abilityCardBody(row, a, akey, x) {
+    var S = SB(), ref = x.ref || null;
+    var meta = [S.parseList(a.keywords).join(', '), a.distance, a.target].filter(Boolean).join(' · ');
+    var h = meta ? '<p class="bb-cmeta">' + esc(meta) + '</p>' : '';
+    if (a.trigger) h += '<p><b>Trigger</b> ' + S.text(a.trigger, ref) + '</p>';
+    if (a.tier1 || a.tier2 || a.tier3) {
+      h += '<dl class="bb-tiers">' + S.TIERS.map(function (t) {
+        return a[t[0]] ? '<dt>' + esc(t[1]) + '</dt><dd>' + S.text(a[t[0]], ref) + '</dd>' : '';
+      }).join('') + '</dl>';
+      var bonus = S.rollBonus(a.power_roll);
+      if (bonus !== null && x.inst) {
+        h += '<p>' + S.rollButtonHtml(akey, bonus, a.name).replace('<button ', '<button data-bb-rk="' + esc(row.key) + '" data-bb-inst="' + esc(x.inst) + '" ') + '</p>';
+      }
+    }
+    var eff = a.effect || a.description;
+    if (eff) h += '<p>' + S.text(eff, ref) + '</p>';
+    return h;
+  }
+
+  // termKey reads the card key from a hovered element in a live stat block.
+  function termKey(el, rowKey) {
+    var g = function (n) { return el.getAttribute(n); };
+    if (g('data-sbx-ab')) return rowKey ? 'ab|' + rowKey + '|' + g('data-sbx-ab') : null;
+    if (g('data-sbx-org')) return 'o|' + g('data-sbx-org');
+    if (g('data-sbx-role')) return 'r|' + g('data-sbx-role');
+    if (g('data-bb-cr')) return 'cr|' + g('data-bb-cr');
+    if (el.hasAttribute('data-bb-market')) return 'mk';
+    if (/\bds-ref\b/.test(el.className || '')) return 'g|' + String(g('data-ref-id') || el.textContent || '').trim().toLowerCase();
+    return null;
+  }
+
+  // ── Rolls ─────────────────────────────────────────────────────────────────
+
+  // rollAbility rolls 2d10 + the ability's bonus. rnd() returns [0, 1).
+  function rollAbility(row, akey, rnd) {
+    var S = SB(), a = S.abilityByKey(row.c, akey);
+    if (!a) return null;
+    var bonus = S.rollBonus(a.power_roll);
+    if (bonus === null) return null;
+    var r = rnd || Math.random;
+    var d1 = 1 + Math.floor(r() * 10), d2 = 1 + Math.floor(r() * 10);
+    var tier = S.rollTier(d1, d2, bonus);
+    return { who: row.name, name: a.name || 'Ability', d1: d1, d2: d2, bonus: bonus, total: d1 + d2 + bonus, tier: tier, result: a['tier' + tier] || '' };
+  }
+
+  function diceText(r) {
+    return r.d1 + ' + ' + r.d2 + (r.bonus < 0 ? ' − ' : ' + ') + Math.abs(r.bonus) + (r.d1 + r.d2 >= 19 ? ', a natural ' + (r.d1 + r.d2) + ' is always tier 3' : '');
+  }
+
+  function rollToastHtml(r, ref) {
+    var S = SB();
+    return '<span class="bb-die">' + esc(r.total) + '</span><span class="bb-rt"><b>' + esc(r.who) + ' · ' + esc(r.name) + '</b> ' +
+      '<span class="bb-tier t' + r.tier + '">Tier ' + r.tier + '</span><br><span class="bb-dice">' + esc(diceText(r)) + '</span>' +
+      (r.result ? '<br>' + S.text(r.result, ref) : '') + '</span>';
+  }
+
+  // ── The tray ──────────────────────────────────────────────────────────────
+
+  function pinsHtml(pins, ctx) {
+    if (!pins.length) return '<p class="bb-empty">Pinned cards stay here while you read: conditions, abilities, whole creatures. Click a card’s title to fold it.</p>';
+    return pins.map(function (pin) {
+      var card = cardFor(pin.key, ctx);
+      if (!card) return '';
+      return '<div class="bb-ref' + (pin.closed ? ' is-closed' : '') + (pin.fresh ? ' is-new' : '') + '" data-bb-ref="' + esc(pin.key) + '">' +
+        '<div class="bb-ref-h"><span class="bb-ref-k">' + esc(card.kind) + '</span>' +
+        '<button type="button" class="bb-ref-t" data-bb-fold aria-expanded="' + !pin.closed + '">' + esc(card.title) + '</button>' +
+        '<button type="button" class="bb-ref-x" data-bb-unpin aria-label="' + esc('Unpin ' + card.title) + '">×</button></div>' +
+        '<div class="bb-ref-b">' + card.body + '</div></div>';
+    }).join('');
+  }
+
+  function rollsHtml(rolls, ref) {
+    if (!rolls.length) return '<li class="bb-empty">Your last five rolls, with the tier they hit.</li>';
+    var S = SB();
+    return rolls.map(function (r) {
+      return '<li class="t' + r.tier + '"><b>' + esc(r.total) + '</b> · ' + esc(r.who + ' · ' + r.name) + ' <span class="bb-dice">(' + esc(diceText(r)) + ')</span><br>Tier ' + r.tier + (r.result ? ': ' + S.text(r.result, ref) : '') + '</li>';
+    }).join('');
+  }
+
+  // ── Motion ────────────────────────────────────────────────────────────────
+
+  // Off and reduced motion skip every animation; Calm keeps fades (CSS).
+  function still(doc) {
+    var d = doc || document;
+    if (d.documentElement.getAttribute('data-motion') === 'off') return true;
+    var w = d.defaultView;
+    return !!(w && w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  var uidSeq = 0;
+
+  // ── Mount ─────────────────────────────────────────────────────────────────
+
+  // mount draws the viewer into el. cfg: { campaignId, editable, layout
+  // ('full' | 'compact'), source ('all' | 'campaign' | 'book'), creatures
+  // (comma names or book ids, for a compact block), title }. inst is the
+  // registered widget, whose loaders read this campaign's Creature pages.
+  function mount(el, cfg, inst) {
+    var S = SB(), doc = el.ownerDocument;
+    var uid = 'bb' + (++uidSeq);
+    var cid = cfg.campaignId ? String(cfg.campaignId) : '';
+    var compact = cfg.layout === 'compact';
+    var editable = cfg.editable === true || cfg.editable === 'true';
+    var only = String(cfg.creatures || '').split(',').map(function (x) { return x.trim().toLowerCase(); }).filter(Boolean);
+    var src = /^(all|campaign|book)$/.test(cfg.source || '') ? cfg.source : 'all';
+    var v = { q: '', org: '', role: '', src: src, lmin: 0, lmax: 0, sort: compact ? 'level' : 'name', dir: 1, only: only };
+    var st = { rows: [], byKey: {}, open: {}, limit: PAGE, pins: [], rolls: [], added: {}, refs: { orgs: [], roles: [] }, ref: null, book: false, gone: false };
+    var timers = [], unbinds = [], docHandlers = [];
+    var ctx = function () { return { rows: st.byKey, ref: st.ref, refs: st.refs, inst: uid, campaignId: cid, canAdd: editable && !!cid && !compact, added: st.added, tray: !compact, compact: compact }; };
+
+    el.classList.add('bb-root');
+    if (compact) el.classList.add('bb-compact');
+    S.injectStyles(doc);
+    injectStyles(doc);
+    el.innerHTML = '<p class="bb-loading" role="status">Loading creatures…</p>';
+
+    var ref = (typeof DrawSteelRefRenderer !== 'undefined' && cid) ? new DrawSteelRefRenderer('', cid) : null;
+    var loads = [
+      cid ? inst._fetchCampaignCreatures().catch(function () { return null; }) : Promise.resolve([]),
+      cid ? S.getJSON('/campaigns/' + encodeURIComponent(cid) + '/systems/drawsteel/data/monsters.json').catch(function () { return null; }) : Promise.resolve(null),
+      S.loadRefs(cid),
+      ref ? ref.load().then(function () { return ref; }, function () { return null; }) : Promise.resolve(null)
+    ];
+    Promise.all(loads).then(function (r) {
+      if (st.gone) return;
+      st.ref = r[3];
+      if (st.ref && st.ref.injectStyles) st.ref.injectStyles();
+      st.refs = r[2] || st.refs;
+      var camp = (r[0] || []).map(fromEntity);
+      var book = Array.isArray(r[1]) ? r[1].map(fromBook) : [];
+      st.book = book.length > 0;
+      st.campaignFailed = r[0] === null;
+      if (!st.book && v.src === 'book') v.src = 'all';
+      st.rows = camp.concat(book);
+      st.rows.forEach(function (row) { st.byKey[row.key] = row; });
+      draw();
     });
-    list.sort(function (a, b) { return a.name.localeCompare(b.name); });
-    this.creatureKeywords = list;
-  },
 
-  // Chronicle returns some list endpoints as a bare JSON array and others
-  // wrapped as {"data":[…],"total":N}. A consumer that assumes one shape
-  // silently renders empty — /api/v1/campaigns/:id/entities is an envelope
-  // endpoint, and reading it as `data.entities || data.results` is exactly
-  // why campaign mode showed zero creatures. Accept both.
-  _unwrapList: function (body) {
-    if (Array.isArray(body)) return body;
-    if (!body) return [];
-    if (Array.isArray(body.data)) return body.data;
-    if (Array.isArray(body.results)) return body.results;
-    if (Array.isArray(body.entities)) return body.entities;
-    return [];
-  },
+    // ── Drawing ──
+    function q(sel) { return el.querySelector(sel); }
 
-  // Resolve the campaign's Creature entity type id. `?preset=drawsteel-creature`
-  // is not a parameter Chronicle reads — ListEntities takes type_id/page/
-  // per_page/q only, so an unknown param is ignored and the response is every
-  // entity in the campaign. The manifest preset slug is not stored on the type
-  // either: Chronicle records the preset's `category` as `preset_category` and
-  // derives the slug from the name. Match preset_category first, then the
-  // slug/name fallbacks the monster builder already uses.
-  _resolveCreatureTypeId: function () {
-    var self = this;
-    var url = '/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entity-types';
-    return Chronicle.apiFetch(url)
-      .then(function (r) { return r.json(); })
-      .then(function (body) {
-        var types = self._unwrapList(body);
-        var i, match = null;
-        for (i = 0; i < types.length; i++) {
-          if (types[i].preset_category === 'creature') { match = types[i]; break; }
-        }
-        for (i = 0; !match && i < types.length; i++) {
-          if (types[i].slug === 'drawsteel-creature') { match = types[i]; break; }
-        }
-        for (i = 0; !match && i < types.length; i++) {
-          if (String(types[i].name || '').toLowerCase() === 'creature') { match = types[i]; break; }
-        }
-        return match ? match.id : 0;
-      })
-      .catch(function () { return 0; });
-  },
+    function draw() {
+      var h;
+      if (compact) {
+        h = '<div class="bb-card"><div class="bb-card-h"><b>' + esc(cfg.title || 'Creatures here') + '</b></div>' +
+          (only.length ? '' : '<div class="bb-card-q"><input type="search" class="bb-q" placeholder="Find a creature" aria-label="Find a creature" autocomplete="off"></div>') +
+          '<div class="bb-rows"></div><p class="bb-count" role="status"></p></div>';
+      } else {
+        h = '<div class="bb-app"><div class="bb-list">' +
+          (editable && cid ? '<div class="bb-top"><button type="button" class="bb-btn" data-bb-new>+ New creature</button></div>' : '') +
+          filterBarHtml(v, st.rows, { uid: uid, book: st.book }) +
+          '<div class="bb-explain" aria-live="polite"></div>' + listHeadHtml(v) +
+          '<div class="bb-rows"></div><p class="bb-count" role="status"></p></div>' +
+          '<aside class="bb-tray" aria-label="Reference tray"><div><h4>Reference<button type="button" class="bb-link" data-bb-clear hidden>Clear</button></h4><div class="bb-refs"></div></div>' +
+          '<div><h4>Rolls</h4><ul class="bb-rolls"></ul></div></aside></div>';
+      }
+      el.innerHTML = h + '<div class="bb-toast" role="status" aria-live="polite" hidden></div>';
+      drawRows();
+      drawTray();
+    }
 
-  // Walk every page of the entity list. per_page defaults to 20 server-side and
-  // is capped at 100, so a single unpaged GET shows at most 20 creatures however
-  // many the campaign holds. Bounded so a bad `total` cannot spin forever.
-  _fetchEntityPages: function (typeId) {
-    var self = this;
-    var acc = [];
-    var base = this._entityUrl(this.config.campaignId) + '?per_page=100';
-    if (typeId) base += '&type_id=' + encodeURIComponent(typeId);
-    var MAX_PAGES = 50;
+    function drawRows() {
+      var list = visible(st.rows, v);
+      var shown = list.slice(0, st.limit);
+      var x = ctx();
+      var rowsEl = q('.bb-rows');
+      if (!rowsEl) return;
+      var empty = !st.rows.length
+        ? (cid ? 'No creatures yet.' + (st.campaignFailed ? ' This campaign’s Creature pages could not be loaded.' : '') : 'Open this on a campaign page to see its creatures.')
+        : 'No creatures match. Clear a filter or the search.';
+      rowsEl.innerHTML = shown.length ? shown.map(function (row) { return rowHtml(row, st.open[row.key], x); }).join('') : '<p class="bb-empty">' + esc(empty) + '</p>';
+      if (list.length > shown.length) {
+        var left = list.length - shown.length;
+        rowsEl.insertAdjacentHTML('beforeend', '<p class="bb-more"><button type="button" class="bb-btn" data-bb-more>Show ' + Math.min(PAGE, left) + ' more (' + left + ' left)</button></p>');
+      }
+      var c = q('.bb-count');
+      if (c) c.textContent = compact ? '' : countText(list.length, st.rows.length, v);
+      var ex = q('.bb-explain');
+      if (ex) {
+        ex.innerHTML = explainHtml(v, st.refs, list.length);
+        ex.classList.remove('is-in');
+        if (ex.innerHTML && !still(doc)) { void ex.offsetWidth; ex.classList.add('is-in'); }
+      }
+    }
 
-    function page(n) {
-      return Chronicle.apiFetch(base + '&page=' + n)
+    function drawTray() {
+      var refs = q('.bb-refs');
+      if (!refs) return;
+      refs.innerHTML = pinsHtml(st.pins, ctx());
+      st.pins.forEach(function (p) { p.fresh = false; });
+      var clr = q('[data-bb-clear]');
+      if (clr) clr.hidden = !st.pins.length;
+      var rl = q('.bb-rolls');
+      if (rl) rl.innerHTML = rollsHtml(st.rolls, st.ref);
+      var g = q('[data-bb-guide]');
+      if (g) { var on = guideShown(); g.setAttribute('aria-pressed', String(on)); g.textContent = on ? 'Hide the guide' : 'What do these mean?'; }
+    }
+
+    function pin(key) {
+      if (!cardFor(key, ctx())) return;
+      st.pins = st.pins.filter(function (p) { return p.key !== key; });
+      st.pins.unshift({ key: key, closed: false, fresh: !still(doc) });
+      st.pins = st.pins.slice(0, MAX_PINS);
+      drawTray();
+    }
+
+    function guideShown() { return st.pins.some(function (p) { return /^guide\|/.test(p.key); }); }
+    function setGuide(on) {
+      st.pins = st.pins.filter(function (p) { return !/^guide\|/.test(p.key); });
+      if (on) { pin('guide|roles'); pin('guide|orgs'); } else drawTray();
+      var t = q('.bb-tray');
+      if (on && t && doc.defaultView && doc.defaultView.innerWidth <= 1100 && t.scrollIntoView) t.scrollIntoView({ block: 'start', behavior: still(doc) ? 'auto' : 'smooth' });
+    }
+
+    // Rows open in place, so their height can animate; a closed row drops its
+    // stat block once the fold has finished.
+    function toggleRow(rowEl) {
+      var key = rowEl.getAttribute('data-bb-row'), row = st.byKey[key];
+      if (!row) return;
+      var open = !st.open[key];
+      st.open[key] = open;
+      var body = rowEl.querySelector('.bb-rbody > div');
+      if (open) body.innerHTML = bodyHtml(row, ctx());
+      rowEl.classList.toggle('is-open', open);
+      rowEl.querySelector('[data-bb-toggle]').setAttribute('aria-expanded', String(open));
+      if (!open) timers.push(setTimeout(function () { if (!st.open[key]) body.innerHTML = ''; }, still(doc) ? 0 : 220));
+    }
+
+    function redrawRow(key) {
+      var rowEl = el.querySelector('[data-bb-row="' + key + '"]');
+      if (rowEl && st.open[key]) rowEl.querySelector('.bb-rbody > div').innerHTML = bodyHtml(st.byKey[key], ctx());
+    }
+
+    var toastTimer = 0;
+    function roll(rowKey, akey) {
+      var row = st.byKey[rowKey];
+      var r = row && rollAbility(row, akey);
+      if (!r) return;
+      var t = q('.bb-toast');
+      t.innerHTML = rollToastHtml(r, st.ref);
+      t.hidden = false;
+      t.classList.remove('is-in');
+      if (!still(doc)) { void t.offsetWidth; t.classList.add('is-in'); }
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.hidden = true; }, 4200);
+      st.rolls.unshift(r);
+      st.rolls = st.rolls.slice(0, MAX_ROLLS);
+      drawTray();
+    }
+
+    // Add to campaign copies a book creature onto a new Creature page. A
+    // server message is never shown; the widget's own words are.
+    function addToCampaign(row, btn) {
+      var msg = btn.parentNode.querySelector('.bb-msg');
+      btn.disabled = true;
+      if (msg) msg.textContent = 'Adding…';
+      inst._creatureType().then(function (id) {
+        if (!id) { var e = new Error('The Draw Steel “Creature” type is not installed in this campaign.'); e.ours = true; throw e; }
+        var fields = S.toFields(row.c);
+        return Chronicle.apiFetch(inst._entityUrl(cid), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: row.name.slice(0, 200), entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields })
+        }).then(function (res) {
+          if (!res.ok) throw new Error('create -> ' + res.status);
+          return res.json().catch(function () { return {}; });
+        }).then(function (made) {
+          var newId = made && (made.id || (made.data && made.data.id));
+          if (!newId) throw new Error('create returned no id');
+          st.added[row.key] = String(newId);
+          var copy = fromEntity({ id: newId, name: row.name, fields_data: fields });
+          st.rows.push(copy);
+          st.byKey[copy.key] = copy;
+          redrawRow(row.key);
+          var c = q('.bb-count');
+          if (c && !compact) c.textContent = countText(visible(st.rows, v).length, st.rows.length, v);
+        });
+      }).catch(function (err) {
+        if (typeof console !== 'undefined') console.warn('Bestiary: add failed', err);
+        btn.disabled = false;
+        if (msg) msg.textContent = err && err.ours ? err.message : 'Could not add this creature. Please try again.';
+      });
+    }
+
+    // ── Events ──
+    function onClick(e) {
+      var t = e.target, b;
+      if ((b = t.closest('[data-bb-org]'))) { v.org = v.org === b.getAttribute('data-bb-org') ? '' : b.getAttribute('data-bb-org'); press('[data-bb-org]', 'data-bb-org', v.org); refilter(); return; }
+      if ((b = t.closest('[data-bb-role]'))) { v.role = v.role === b.getAttribute('data-bb-role') ? '' : b.getAttribute('data-bb-role'); press('[data-bb-role]', 'data-bb-role', v.role); refilter(); return; }
+      if ((b = t.closest('[data-bb-sort]'))) {
+        var by = b.getAttribute('data-bb-sort');
+        v.dir = v.sort === by ? -v.dir : 1; v.sort = by;
+        Array.prototype.forEach.call(el.querySelectorAll('[data-bb-sort]'), function (x) {
+          x.setAttribute('aria-sort', x === b ? (v.dir > 0 ? 'ascending' : 'descending') : 'none');
+        });
+        drawRows(); return;
+      }
+      if (t.closest('[data-bb-more]')) {
+        var before = el.querySelectorAll('[data-bb-row]').length;
+        st.limit += PAGE; drawRows();
+        var next = el.querySelectorAll('[data-bb-toggle]')[before];
+        if (next) next.focus();
+        return;
+      }
+      if ((b = t.closest('[data-bb-add]'))) { var rk = b.closest('[data-bb-row]').getAttribute('data-bb-row'); if (st.byKey[rk]) addToCampaign(st.byKey[rk], b); return; }
+      if (t.closest('[data-bb-new]')) {
+        inst._creatureType().then(function (id) {
+          doc.defaultView.location.href = '/campaigns/' + encodeURIComponent(cid) + '/entities/new' + (id ? '?type=' + encodeURIComponent(id) : '');
+        });
+        return;
+      }
+      if (t.closest('[data-bb-guide]')) { setGuide(!guideShown()); return; }
+      if (t.closest('[data-bb-clear]')) { st.pins = []; drawTray(); return; }
+      var refEl = t.closest('[data-bb-ref]');
+      if (refEl && t.closest('[data-bb-unpin]')) { var k = refEl.getAttribute('data-bb-ref'); st.pins = st.pins.filter(function (p) { return p.key !== k; }); drawTray(); return; }
+      if (refEl && t.closest('[data-bb-fold]')) { var fk = refEl.getAttribute('data-bb-ref'); st.pins.forEach(function (p) { if (p.key === fk) p.closed = !p.closed; }); drawTray(); return; }
+      if (t.closest('[data-bb-pin]') && !t.closest('.chc')) { pin(t.closest('[data-bb-pin]').getAttribute('data-bb-pin')); return; }
+      if (t.closest('a, button, input, select, [data-sbx-ab], [data-sbx-org], [data-sbx-role], .ds-ref')) return;
+      var h = t.closest('[data-bb-toggle]');
+      if (h) toggleRow(h.parentNode);
+    }
+
+    function press(sel, attr, val) {
+      Array.prototype.forEach.call(el.querySelectorAll(sel), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute(attr) === val)); });
+    }
+    function refilter() { st.limit = PAGE; drawRows(); }
+
+    var typing = 0;
+    function onInput(e) {
+      if (!e.target.classList.contains('bb-q')) return;
+      var val = e.target.value;
+      clearTimeout(typing);
+      typing = setTimeout(function () { v.q = val; refilter(); }, 150);
+    }
+    function onChange(e) {
+      var t = e.target;
+      if (t.hasAttribute('data-bb-lmin')) { v.lmin = Number(t.value) || 0; refilter(); }
+      else if (t.hasAttribute('data-bb-lmax')) { v.lmax = Number(t.value) || 0; refilter(); }
+      else if (t.type === 'radio' && t.name === 'bb-src-' + uid) { v.src = t.value; refilter(); }
+    }
+    function onKey(e) {
+      var h = e.target.closest && e.target.closest('[data-bb-toggle]');
+      if (h && e.target === h && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleRow(h.parentNode); }
+    }
+    el.addEventListener('click', onClick);
+    el.addEventListener('input', onInput);
+    el.addEventListener('change', onChange);
+    el.addEventListener('keydown', onKey);
+
+    // Roll and Pin buttons also live inside a hover card, outside el, and the
+    // card swallows its own clicks; listening on the document in the capture
+    // phase reaches them first. A card's buttons name this viewer.
+    function onDocClick(e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var b = t.closest('[data-sbx-roll]');
+      if (b) {
+        var inCard = !el.contains(b);
+        if (inCard && b.getAttribute('data-bb-inst') !== uid) return;
+        var rowEl = inCard ? null : b.closest('[data-bb-row]');
+        var rk = rowEl ? rowEl.getAttribute('data-bb-row') : b.getAttribute('data-bb-rk');
+        e.preventDefault(); e.stopPropagation();
+        roll(rk, b.getAttribute('data-sbx-roll'));
+        return;
+      }
+      var p = t.closest('.chc [data-bb-pin]');
+      if (p && p.getAttribute('data-bb-inst') === uid) {
+        e.preventDefault(); e.stopPropagation();
+        pin(p.getAttribute('data-bb-pin'));
+        if (typeof Chronicle !== 'undefined' && Chronicle.hovercard) Chronicle.hovercard.close();
+      }
+    }
+    // The guide is a toggle: a click anywhere but the button, the guide's own
+    // cards or a hover card puts it away. Cards pinned by hand stay.
+    function onDocBubble(e) {
+      if (!guideShown() || !e.target || !e.target.closest) return;
+      if (e.target.closest('[data-bb-guide], [data-bb-ref^="guide|"], .chc')) return;
+      setGuide(false);
+    }
+    doc.addEventListener('click', onDocClick, true);
+    doc.addEventListener('click', onDocBubble);
+    docHandlers.push(['click', onDocClick, true], ['click', onDocBubble, false]);
+
+    // ── Hover cards ──
+    var HC = (typeof Chronicle !== 'undefined' && Chronicle.hovercard) ? Chronicle.hovercard : null;
+    if (HC) {
+      el.classList.add('bb-hc');
+      var content = function (t) {
+        var rowEl = t.closest('[data-bb-row]');
+        var rowKey = rowEl ? rowEl.getAttribute('data-bb-row') : '';
+        if (!rowKey) { var r = t.closest('[data-bb-ref]'); if (r) rowKey = String(r.getAttribute('data-bb-ref')).split('|')[1] || ''; }
+        var key = termKey(t, rowKey);
+        var card = key && cardFor(key, ctx());
+        if (!card) return null;
+        var pinBtn = !compact && !/^guide\|/.test(key) && key !== 'mk'
+          ? '<p class="bb-cpin"><button type="button" class="bb-btn" data-bb-pin="' + esc(key) + '" data-bb-inst="' + esc(uid) + '">Pin to the tray</button></p>' : '';
+        return { kind: card.kind, title: card.title, extraHTML: '<div class="bb-cbody">' + card.body + '</div>' + pinBtn };
+      };
+      unbinds.push(HC.bind(el, '.ds-ref, [data-sbx-ab], [data-sbx-org], [data-sbx-role], [data-bb-market]', content, { pinOnClick: true }));
+      unbinds.push(HC.bind(el, '[data-bb-cr]', content, {}));
+    }
+
+    return {
+      destroy: function () {
+        st.gone = true;
+        timers.forEach(clearTimeout);
+        clearTimeout(toastTimer); clearTimeout(typing);
+        unbinds.forEach(function (u) { u(); });
+        docHandlers.forEach(function (h) { doc.removeEventListener(h[0], h[1], h[2]); });
+        el.removeEventListener('click', onClick);
+        el.removeEventListener('input', onInput);
+        el.removeEventListener('change', onChange);
+        el.removeEventListener('keydown', onKey);
+        el.innerHTML = '';
+      },
+      state: st, view: v
+    };
+  }
+
+  // ── Styles ────────────────────────────────────────────────────────────────
+
+  // Chronicle's colour tokens, so light and dark follow the site. Every
+  // transition and animation has a Calm (fade only) and an Off (none) rule,
+  // and reduced motion counts as Off.
+  var T = { card: 'var(--color-card-bg,#fff)', edge: 'var(--color-border,#e5e7eb)', text: 'var(--color-text-primary,#111827)', body: 'var(--color-text-body,#374151)', muted: 'var(--color-text-secondary,#6b7280)', alt: 'var(--color-bg-tertiary,#f3f4f6)', acc: 'var(--color-accent,#6366f1)', soft: 'rgba(var(--color-accent-rgb,99,102,241),.12)' };
+  var CSS = [
+    '.bb-root{font-size:14px;color:' + T.body + ';--bb-t1:#94a3b8;--bb-t2:#6366f1;--bb-t3:#16a34a;--bb-tape:#facc15;--bb-tape-ink:#1f2937}',
+    '.dark .bb-root{--bb-t1:#64748b;--bb-t2:#818cf8;--bb-t3:#4ade80;--bb-tape:#eab308;--bb-tape-ink:#111827}',
+    '.bb-loading,.bb-empty{color:' + T.muted + ';font-size:13px;margin:0;padding:12px 0}',
+    '.bb-app{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start}',
+    '.bb-list{min-width:0;display:flex;flex-direction:column}',
+    '.bb-top{display:flex;justify-content:flex-end;margin-bottom:8px}',
+    '.bb-fbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;padding:12px;border:1px solid ' + T.edge + ';border-radius:12px;background:' + T.card + ';margin-bottom:8px}',
+    '.bb-grp{display:flex;flex-direction:column;gap:4px;min-width:0}',
+    '.bb-grow{flex:1 1 200px}',
+    '.bb-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + T.muted + ';font-weight:600}',
+    '.bb-q{width:100%;box-sizing:border-box;border:1px solid ' + T.edge + ';border-radius:8px;padding:6px 10px;background:var(--color-input-bg,' + T.card + ');color:' + T.text + ';font:inherit;font-size:13.5px}',
+    '.bb-lvl{display:flex;gap:6px;align-items:center;font-size:12.5px}',
+    '.bb-lvl select{border:1px solid ' + T.edge + ';border-radius:8px;padding:4px 6px;background:var(--color-input-bg,' + T.card + ');color:' + T.text + ';font:inherit;font-size:12.5px}',
+    '.bb-chips{display:flex;gap:5px;flex-wrap:wrap}',
+    '.bb-chip{border:1px solid ' + T.edge + ';background:' + T.card + ';color:' + T.body + ';border-radius:999px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}',
+    '.bb-chip[aria-pressed="true"]{background:' + T.soft + ';color:' + T.acc + ';border-color:transparent;font-weight:600}',
+    '.bb-srcs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}',
+    '.bb-srcs label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}',
+    '.bb-srcs input{accent-color:' + T.acc + '}',
+    '.bb-taped{position:relative;overflow:hidden;display:inline-flex;align-items:center;border:1px dashed ' + T.edge + ';border-radius:6px;padding:3px 8px 13px;min-width:92px;justify-content:center;font:inherit;font-size:13px;background:none;color:' + T.muted + ';cursor:not-allowed}',
+    '.bb-tape{position:absolute;left:-10%;right:-10%;bottom:1px;height:12px;transform:rotate(-3deg);background:repeating-linear-gradient(-45deg,var(--bb-tape) 0 9px,var(--bb-tape-ink) 9px 18px);display:grid;place-items:center;pointer-events:none}',
+    '.bb-tape span{background:var(--bb-tape);color:var(--bb-tape-ink);font-size:8px;font-weight:800;letter-spacing:.08em;padding:0 4px;line-height:12px;text-transform:uppercase}',
+    '.bb-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid ' + T.edge + ';background:' + T.card + ';color:' + T.text + ';border-radius:8px;padding:5px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}',
+    '.bb-btn:hover{background:' + T.alt + '}',
+    '.bb-btn[aria-pressed="true"]{background:' + T.soft + ';color:' + T.acc + '}',
+    '.bb-btn:disabled{opacity:.6;cursor:default}',
+    '.bb-link{border:0;background:none;color:' + T.acc + ';cursor:pointer;font:inherit;font-size:12px;margin-left:auto;text-transform:none;letter-spacing:0}',
+    '.bb-explain:empty{display:none}',
+    '.bb-explain{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:' + T.soft + ';color:' + T.text + ';font-size:13px}',
+    '.bb-ex{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:2px}',
+    '.bb-ex b{color:' + T.acc + '}',
+    '.bb-ex-n{align-self:center;color:' + T.muted + ';font-size:12.5px}',
+    '.bb-lhead,.bb-rhead{display:grid;grid-template-columns:minmax(0,1fr) 54px 150px 46px;gap:8px;align-items:center}',
+    '.bb-lhead{padding:0 10px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + T.muted + ';font-weight:600;border-bottom:1px solid ' + T.edge + '}',
+    '.bb-lhead button{all:unset;cursor:pointer}',
+    '.bb-lhead button:focus-visible{outline:2px solid ' + T.acc + '}',
+    '.bb-lhead button[aria-sort="ascending"]::after{content:" ↑"}',
+    '.bb-lhead button[aria-sort="descending"]::after{content:" ↓"}',
+    '.bb-row{border-bottom:1px solid ' + T.edge + '}',
+    '.bb-rhead{padding:8px 10px;cursor:pointer}',
+    '.bb-rhead:hover{background:' + T.alt + '}',
+    '.bb-rhead:focus-visible{outline:2px solid ' + T.acc + ';outline-offset:-2px}',
+    '.bb-row.is-open>.bb-rhead{background:' + T.soft + '}',
+    '.bb-nm{font-weight:600;color:' + T.text + ';display:flex;align-items:center;gap:8px;min-width:0}',
+    '.bb-nmt{min-width:0}',
+    '.bb-car{color:' + T.muted + ';font-size:11px;flex-shrink:0;transition:transform 160ms cubic-bezier(.2,.8,.2,1)}',
+    '.bb-row.is-open .bb-car{transform:rotate(90deg)}',
+    '.bb-t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.bb-kw{display:block;font-size:12px;color:' + T.muted + ';font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.bb-c{font-size:13px;font-variant-numeric:tabular-nums}',
+    '.bb-c small{color:' + T.muted + '}',
+    '.bb-rbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows 200ms cubic-bezier(.2,.8,.2,1)}',
+    '.bb-row.is-open>.bb-rbody{grid-template-rows:1fr}',
+    '.bb-rbody>div{overflow:hidden;min-height:0}',
+    '.bb-sb{padding:10px 10px 14px 30px;display:flex;flex-direction:column;gap:8px}',
+    '.bb-sb .sbx{padding:14px 16px}',
+    '.bb-foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}',
+    '.bb-pill{display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:' + T.alt + ';color:' + T.body + '}',
+    '.bb-pill.is-ok{background:rgba(22,163,74,.12);color:#15803d}',
+    '.dark .bb-pill.is-ok{color:#4ade80}',
+    '.bb-msg{font-size:12.5px;color:' + T.muted + '}',
+    '.bb-more{text-align:center;margin:10px 0 0}',
+    '.bb-count{font-size:12.5px;color:' + T.muted + ';padding:8px 10px 0;margin:0}',
+    '.bb-hc .ds-ref:hover::after{content:none;display:none}',
+    '.bb-tray{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}',
+    '.bb-tray h4{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:' + T.muted + ';font-weight:600}',
+    '.bb-refs{display:flex;flex-direction:column;gap:8px}',
+    '.bb-ref{border:1px solid ' + T.edge + ';border-radius:10px;background:' + T.card + ';font-size:12.5px}',
+    '.bb-ref-h{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 10px}',
+    '.bb-ref-k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:' + T.muted + ';font-weight:600}',
+    '.bb-ref-t{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;font:inherit;font-weight:700;color:' + T.text + ';cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.bb-ref-x{border:0;background:none;color:' + T.muted + ';cursor:pointer;font-size:15px;line-height:1;padding:0 4px}',
+    '.bb-ref-b{padding:0 10px 10px}',
+    '.bb-ref.is-closed .bb-ref-b{display:none}',
+    '.bb-ref-b p,.bb-cbody p{margin:0 0 6px}',
+    '.bb-cmeta{color:' + T.muted + ';font-size:12px}',
+    '.bb-csig{font-weight:700}',
+    '.bb-csig span{font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.7}',
+    '.bb-tiers{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;margin:0 0 6px}',
+    '.bb-tiers dt{font:600 11px/1.6 ui-monospace,Consolas,monospace;color:' + T.muted + '}',
+    '.bb-tiers dd{margin:0}',
+    '.bb-mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0 0 6px;text-align:center}',
+    '.bb-mini div{background:' + T.alt + ';border-radius:6px;padding:3px 2px;font-size:11px;color:' + T.muted + '}',
+    '.bb-mini b{display:block;font-size:14px;color:' + T.text + ';font-variant-numeric:tabular-nums}',
+    '.bb-guide{width:100%;border-collapse:collapse;font-size:12px}',
+    '.bb-guide td{padding:4px;border-bottom:1px solid ' + T.edge + ';vertical-align:top}',
+    '.bb-guide td:first-child{font-weight:600;color:' + T.text + ';white-space:nowrap}',
+    '.bb-rolls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12.5px}',
+    '.bb-rolls li{border-left:3px solid var(--bb-t2);padding:2px 0 2px 8px}',
+    '.bb-rolls li.t1{border-color:var(--bb-t1)}.bb-rolls li.t3{border-color:var(--bb-t3)}',
+    '.bb-rolls li.bb-empty{border:1px dashed ' + T.edge + ';border-radius:8px;padding:8px}',
+    '.bb-dice{font:500 11.5px/1.5 ui-monospace,Consolas,monospace;color:' + T.muted + '}',
+    '.bb-toast{position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:60;background:' + T.card + ';border:1px solid ' + T.edge + ';box-shadow:0 14px 32px rgba(17,24,39,.16);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px);font-size:13px;color:' + T.body + '}',
+    '.bb-toast[hidden]{display:none}',
+    '.bb-die{font-size:24px;font-weight:800;color:' + T.text + ';font-variant-numeric:tabular-nums;min-width:34px;text-align:center}',
+    '.bb-tier{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;color:#fff;background:var(--bb-t2)}',
+    '.bb-tier.t1{background:var(--bb-t1)}.bb-tier.t3{background:var(--bb-t3)}',
+    '.bb-card{border:1px solid ' + T.edge + ';border-radius:12px;background:' + T.card + ';overflow:hidden}',
+    '.bb-card-h{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid ' + T.edge + ';font-size:13px;color:' + T.text + '}',
+    '.bb-card-q{padding:8px 12px;border-bottom:1px solid ' + T.edge + '}',
+    '.bb-compact .bb-rhead{grid-template-columns:minmax(0,1fr) auto}',
+    '.bb-compact .bb-sb{padding:8px 10px 12px}',
+    '.bb-compact .bb-row:last-child{border-bottom:0}',
+    '.bb-compact .bb-count:empty{display:none}',
+    '@keyframes bb-fade{from{opacity:0}to{opacity:1}}',
+    '@keyframes bb-drop{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}',
+    '@keyframes bb-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}',
+    '.bb-explain.is-in{animation:bb-fade 160ms linear}',
+    '.bb-toast.is-in{animation:bb-drop 220ms cubic-bezier(.2,.8,.2,1)}',
+    '.bb-ref.is-new{animation:bb-in 220ms cubic-bezier(.2,.8,.2,1)}',
+    'html[data-motion="calm"] .bb-rbody{transition:none}',
+    'html[data-motion="calm"] .bb-row.is-open>.bb-rbody>div{animation:bb-fade 180ms linear}',
+    'html[data-motion="calm"] .bb-car{transition:none}',
+    'html[data-motion="calm"] .bb-toast.is-in,html[data-motion="calm"] .bb-ref.is-new{animation:bb-fade 160ms linear}',
+    'html[data-motion="off"] .bb-rbody,html[data-motion="off"] .bb-car{transition:none}',
+    'html[data-motion="off"] .bb-root *{animation:none!important}',
+    '@media (prefers-reduced-motion:reduce){.bb-rbody,.bb-car{transition:none}.bb-root *{animation:none!important}}',
+    '@media (max-width:1100px){.bb-app{grid-template-columns:1fr}.bb-tray{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}',
+    '@media (max-width:640px){.bb-lhead{display:none}.bb-rhead{grid-template-columns:minmax(0,1fr) auto auto}.bb-org{display:none}.bb-sb{padding-left:10px}.bb-toast{top:auto;bottom:16px}}'
+  ].join('\n');
+
+  // injectStyles puts the CSS in <head> once, never inside the mount, which a
+  // redraw would wipe.
+  function injectStyles(doc) {
+    var d = doc || document;
+    if (!d.head || d.querySelector('style[data-ds-bestiary]')) return;
+    var s = d.createElement('style');
+    s.setAttribute('data-ds-bestiary', 'true');
+    s.textContent = CSS;
+    d.head.appendChild(s);
+  }
+
+  return {
+    ORGS: ORGS, ROLES: ROLES, PAGE: PAGE, MAX_PINS: MAX_PINS, MAX_ROLLS: MAX_ROLLS,
+    esc: esc, fromEntity: fromEntity, fromBook: fromBook, matches: matches, visible: visible, levels: levels,
+    filterBarHtml: filterBarHtml, orgLine: orgLine, roleLine: roleLine, explainHtml: explainHtml, guideHtml: guideHtml,
+    listHeadHtml: listHeadHtml, rowHtml: rowHtml, bodyHtml: bodyHtml, countText: countText,
+    cardFor: cardFor, termKey: termKey, rollAbility: rollAbility, rollToastHtml: rollToastHtml, diceText: diceText,
+    pinsHtml: pinsHtml, rollsHtml: rollsHtml, mount: mount, CSS: CSS
+  };
+})();
+
+// The placeable widget. Its loaders read this campaign's Creature pages: the
+// entity list is an envelope, paged at most 100 at a time, filtered by the
+// Creature type's id.
+if (typeof Chronicle !== 'undefined' && Chronicle && Chronicle.register) {
+  Chronicle.register('bestiary-browser', {
+    init: function (el, config) {
+      this.el = el;
+      this.config = config || {};
+      if (typeof DrawSteelStatblock === 'undefined') { el.textContent = 'The Draw Steel stat block did not load. Reload the page to try again.'; return; }
+      this._view = DrawSteelBestiary.mount(el, this.config, this);
+    },
+
+    destroy: function (el) {
+      if (this._view) this._view.destroy();
+      this._view = null;
+      el.innerHTML = '';
+    },
+
+    // _entityUrl builds a campaign entity API path; percent-encoding keeps a
+    // stray "/" or "?" in an id from reshaping the request path.
+    _entityUrl: function (campaignId, entityId) {
+      var url = '/api/v1/campaigns/' + encodeURIComponent(campaignId) + '/entities';
+      if (entityId !== undefined && entityId !== null && entityId !== '') url += '/' + encodeURIComponent(entityId);
+      return url;
+    },
+
+    // Lists are a bare array or {data:[…],total:N}; accept both.
+    _unwrapList: function (body) {
+      if (Array.isArray(body)) return body;
+      if (!body) return [];
+      if (Array.isArray(body.data)) return body.data;
+      if (Array.isArray(body.results)) return body.results;
+      return [];
+    },
+
+    // The Creature type's id: Chronicle records a system preset's category as
+    // preset_category, and ListEntities filters by type_id only.
+    _resolveCreatureTypeId: function () {
+      var self = this;
+      return Chronicle.apiFetch('/api/v1/campaigns/' + encodeURIComponent(this.config.campaignId) + '/entity-types')
         .then(function (r) { return r.json(); })
         .then(function (body) {
-          var items = self._unwrapList(body);
-          acc = acc.concat(items);
-          var total = (body && typeof body.total === 'number') ? body.total : acc.length;
-          if (items.length === 0 || acc.length >= total || n >= MAX_PAGES) return acc;
-          return page(n + 1);
-        });
-    }
-    return page(1);
-  },
-
-  _fetchCreatures: function () {
-    var self = this;
-    if (this.state.source === 'campaign' && this.config.campaignId) {
-      return this._resolveCreatureTypeId()
-        .then(function (typeId) {
-          self._creatureTypeId = typeId;
-          if (!typeId) {
-            // Degraded, but visible: without the type we cannot filter
-            // server-side, so show what the campaign has rather than nothing.
-            console.warn('Bestiary Browser: no Creature entity type found; listing all entities.');
-          }
-          return self._fetchEntityPages(typeId);
+          var types = self._unwrapList(body), i;
+          for (i = 0; i < types.length; i++) if (types[i] && types[i].preset_category === 'creature') return types[i].id;
+          for (i = 0; i < types.length; i++) if (types[i] && types[i].slug === 'drawsteel-creature') return types[i].id;
+          for (i = 0; i < types.length; i++) if (types[i] && String(types[i].name || '').toLowerCase() === 'creature') return types[i].id;
+          return 0;
         })
-        .then(function (entities) {
-          self.state.creatures = entities.map(function (e) { return self._normalizeEntity(e); });
-        });
-    }
-    // Bestiary mode: Search, not Browse, because only Search filters by system
-    // (Browse lists every game's creatures); with no query it lists them all.
-    // Both cap a page at 50, so walk the pages. Rows are summaries without a
-    // stat block; _openModal fetches the full one when a card opens.
-    var acc = [];
-    function page(n) {
-      return Chronicle.apiFetch('/bestiary/search?system_id=drawsteel&per_page=50&page=' + n)
-        .then(function (r) {
-          if (!r.ok) throw new Error('bestiary search -> ' + r.status);
-          return r.json();
-        })
-        .then(function (data) {
-          var items = self._unwrapList(data);
-          acc = acc.concat(items);
-          var total = (data && typeof data.total === 'number') ? data.total : acc.length;
-          self.state.unloaded = Math.max(0, total - acc.length);
-          if (items.length === 0 || acc.length >= total || n >= 40) return acc;
-          return page(n + 1);
-        });
-    }
-    return page(1)
-      .then(function (items) {
-        self.state.creatures = items.map(function (e) {
-          var c = self._normalizeEntity(e);
-          // A publication's id is not a campaign entity: it must never reach the
-          // Edit/Delete paths, which act on this campaign's pages.
-          c.id = '';
-          c._slug = e.slug || '';
-          c._summary = e;
-          return c;
-        });
-      })
-      .catch(function (err) {
-        // A server-sourced message is never shown verbatim, same as the
-        // import/delete/save/publish paths below — only a fixed, safe
-        // string reaches the user; the real error stays in the console.
-        console.warn('Bestiary Browser: bestiary fetch failed; falling back to unavailable panel', err);
-        self.state.creatures = [];
-        self._bestiaryUnavailable = true;
-        self._bestiaryUnavailableMessage = 'Community Bestiary is not available on this instance. Try using campaign source instead.';
-      });
-  },
-
-  _normalizeEntity: function (entity) {
-    // Chronicle's Entity carries its custom fields as `fields_data`; it has no
-    // `custom_fields` key. Bestiary publications use `custom_fields`, so both
-    // are accepted, but fields_data wins.
-    var f = entity.fields_data || entity.custom_fields || entity;
-    return {
-      id: entity.id || '',
-      name: entity.name || f.name || 'Unnamed',
-      level: Number(f.level) || 1,
-      organization: f.organization || '',
-      role: f.role || '',
-      ev: Number(f.ev) || 0,
-      size: f.size || 'M',
-      keywords: this._parseList(f.keywords),
-      faction: f.faction || '',
-      stamina: Number(f.stamina) || 0,
-      winded: Number(f.winded) || 0,
-      speed: Number(f.speed) || 5,
-      stability: Number(f.stability) || 0,
-      might: Number(f.might) || 0,
-      agility: Number(f.agility) || 0,
-      reason: Number(f.reason) || 0,
-      intuition: Number(f.intuition) || 0,
-      presence: Number(f.presence) || 0,
-      immunities: this._parseList(f.immunities),
-      free_strike: f.free_strike || '',
-      traits: this._parseJSON(f.traits, []),
-      abilities: this._parseJSON(f.abilities_json !== undefined ? f.abilities_json : f.abilities, []),
-      villain_actions: this._parseJSON(f.villain_actions_json !== undefined ? f.villain_actions_json : f.villain_actions, []),
-      // The stored fields as they came, for the shared stat block, which tells
-      // an unset figure from a 0.
-      _raw: f
-    };
-  },
-
-  // Inverse of _normalizeEntity: the fields_data map Chronicle stores. traits /
-  // abilities_json / villain_actions_json are JSON strings on the wire (the
-  // shape the monster builder writes and _parseJSON reads back).
-  _toFieldsData: function (cr) {
-    return {
-      level: cr.level, organization: cr.organization, role: cr.role, ev: cr.ev,
-      size: cr.size, keywords: (cr.keywords || []).join(', '), faction: cr.faction,
-      stamina: cr.stamina, winded: cr.winded, speed: cr.speed, stability: cr.stability,
-      might: cr.might, agility: cr.agility, reason: cr.reason,
-      intuition: cr.intuition, presence: cr.presence,
-      immunities: (cr.immunities || []).join(', '), free_strike: cr.free_strike,
-      traits: JSON.stringify(cr.traits || []),
-      abilities_json: JSON.stringify(cr.abilities || []),
-      villain_actions_json: JSON.stringify(cr.villain_actions || [])
-    };
-  },
-
-  // ── Utilities ──
-
-  _parseList: function (val) {
-    if (!val) return [];
-    if (Array.isArray(val)) return val;
-    try { var arr = JSON.parse(val); if (Array.isArray(arr)) return arr; } catch (e) {}
-    return String(val).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-  },
-
-  // Every caller passes an array fallback (traits/abilities/villain_actions,
-  // all rendered with .filter/.forEach) — a stored value that parses as
-  // valid JSON but isn't an array (e.g. a JSON-encoded string) must fall
-  // back too, and a null/non-object array entry must never reach the
-  // renderer's dotted property access unfiltered.
-  _parseJSON: function (val, fallback) {
-    if (!val) return fallback;
-    var parsed;
-    // A bestiary stat block carries real arrays; stored fields carry JSON text.
-    if (typeof val !== 'string') parsed = val;
-    else { try { parsed = JSON.parse(val); } catch (e) { return fallback; } }
-    if (Array.isArray(fallback)) {
-      if (!Array.isArray(parsed)) return fallback;
-      return parsed.filter(function (item) { return item !== null && typeof item === 'object'; });
-    }
-    return parsed;
-  },
-
-  _capitalize: function (s) {
-    if (!s) return '';
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  },
-
-  _debounce: function (fn, ms) {
-    var timer;
-    return function () {
-      var args = arguments, ctx = this;
-      clearTimeout(timer);
-      timer = setTimeout(function () { fn.apply(ctx, args); }, ms);
-    };
-  },
-
-  _getOrgColor: function (slug) {
-    var colors = { minion: '#999', horde: '#d97706', platoon: '#2563eb', elite: '#7c3aed', leader: '#dc2626', solo: '#d97706', swarm: '#059669' };
-    return colors[slug] || '#999';
-  },
-
-  // ── Filtering & Sorting ──
-
-  _applyFilters: function () {
-    var self = this;
-    var s = this.state;
-    var f = s.filters;
-    var searchLower = s.search.toLowerCase();
-
-    s.filtered = s.creatures.filter(function (cr) {
-      if (searchLower) {
-        var haystack = (cr.name + ' ' + cr.faction + ' ' + cr.keywords.join(' ')).toLowerCase();
-        if (haystack.indexOf(searchLower) === -1) return false;
-      }
-      if (f.organization && cr.organization !== f.organization) return false;
-      if (f.role && cr.role !== f.role) return false;
-      if (cr.level < f.levelMin || cr.level > f.levelMax) return false;
-      if (f.keywords.length > 0) {
-        var has = false;
-        for (var i = 0; i < f.keywords.length; i++) {
-          if (cr.keywords.indexOf(f.keywords[i]) !== -1) { has = true; break; }
-        }
-        if (!has) return false;
-      }
-      return true;
-    });
-
-    this._sortCreatures();
-    s.page = 0;
-  },
-
-  _sortCreatures: function () {
-    var sort = this.state.sort;
-    this.state.filtered.sort(function (a, b) {
-      if (sort === 'level-asc') return a.level - b.level || a.name.localeCompare(b.name);
-      if (sort === 'level-desc') return b.level - a.level || a.name.localeCompare(b.name);
-      if (sort === 'name-az') return a.name.localeCompare(b.name);
-      if (sort === 'name-za') return b.name.localeCompare(a.name);
-      if (sort === 'ev-desc') return b.ev - a.ev || a.name.localeCompare(b.name);
-      return 0;
-    });
-  },
-
-  _getPageSlice: function () {
-    var s = this.state;
-    var start = s.page * s.perPage;
-    return s.filtered.slice(start, start + s.perPage);
-  },
-
-  _totalPages: function () {
-    return Math.max(1, Math.ceil(this.state.filtered.length / this.state.perPage));
-  },
-
-  // ── RENDER (main shell) ──
-
-  _render: function () {
-    var self = this;
-    var el = this.el;
-    el.innerHTML = '';
-    el.className = 'bb-root';
-    this._injectStyles();
-
-    if (this.state.loading) {
-      var skeletonHtml = '<div class="bb-grid" style="margin-top:16px">';
-      for (var s = 0; s < 6; s++) { skeletonHtml += '<div class="bb-skeleton bb-skeleton-card"></div>'; }
-      skeletonHtml += '</div>';
-      el.innerHTML += skeletonHtml;
-      return;
-    }
-
-    if (this._bestiaryUnavailable && this.state.source !== 'campaign') {
-      var unavailableMsg = this._bestiaryUnavailableMessage || 'Community Bestiary is not available on this instance. Try using campaign source instead.';
-      el.innerHTML += '<div class="bb-empty">' +
-        '<div class="bb-empty-icon">&#9888;</div>' +
-        '<div class="bb-empty-title">Bestiary unavailable</div>' +
-        '<div class="bb-empty-desc">' + Chronicle.escapeHtml(unavailableMsg) + '</div>' +
-      '</div>';
-      return;
-    }
-
-    // Toolbar
-    var toolbar = document.createElement('div');
-    toolbar.className = 'bb-toolbar';
-
-    var search = document.createElement('input');
-    search.className = 'bb-search';
-    search.type = 'text';
-    search.placeholder = 'Search creatures...';
-    search.value = this.state.search;
-    var debouncedSearch = this._debounce(function () {
-      self.state.search = search.value;
-      self._applyFilters();
-      self._renderGrid();
-      self._renderPills();
-      self._renderCount();
-      self._renderPagination();
-    }, 300);
-    search.addEventListener('input', debouncedSearch);
-    toolbar.appendChild(search);
-
-    var sort = document.createElement('select');
-    sort.className = 'bb-sort';
-    var sortOpts = [
-      ['level-asc', 'Level (Low-High)'], ['level-desc', 'Level (High-Low)'],
-      ['name-az', 'Name (A-Z)'], ['name-za', 'Name (Z-A)'], ['ev-desc', 'EV (Highest)']
-    ];
-    sortOpts.forEach(function (opt) {
-      var o = document.createElement('option');
-      o.value = opt[0]; o.textContent = opt[1];
-      if (self.state.sort === opt[0]) o.selected = true;
-      sort.appendChild(o);
-    });
-    sort.addEventListener('change', function () {
-      self.state.sort = sort.value;
-      self._applyFilters();
-      self._renderGrid();
-      self._renderPagination();
-    });
-    toolbar.appendChild(sort);
-
-    this._countEl = document.createElement('span');
-    this._countEl.className = 'bb-results-count';
-    toolbar.appendChild(this._countEl);
-
-    var filterToggle = document.createElement('button');
-    filterToggle.className = 'bb-filter-toggle';
-    filterToggle.textContent = 'Filters';
-    filterToggle.addEventListener('click', function () {
-      self.state.filtersOpen = !self.state.filtersOpen;
-      self._sidebarEl.classList.toggle('collapsed', !self.state.filtersOpen);
-    });
-    toolbar.appendChild(filterToggle);
-
-    if (this.config.editable !== false && this.config.campaignId) {
-      var createBtn = document.createElement('button');
-      createBtn.className = 'btn btn-primary';
-      createBtn.textContent = '+ Create Creature';
-      createBtn.style.marginLeft = 'auto';
-      createBtn.addEventListener('click', function () {
-        // NewForm preselects the category from `?type=<entity_type_id>`;
-        // `?preset=<slug>` is not read and lands the user on an unpicked form.
-        var q = self._creatureTypeId ? '?type=' + encodeURIComponent(self._creatureTypeId) : '';
-        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/new' + q;
-      });
-      toolbar.appendChild(createBtn);
-    }
-
-    el.appendChild(toolbar);
-
-    // Pills
-    this._pillsEl = document.createElement('div');
-    this._pillsEl.className = 'bb-pills';
-    el.appendChild(this._pillsEl);
-
-    // Body (sidebar + grid area)
-    var body = document.createElement('div');
-    body.className = 'bb-body';
-
-    this._sidebarEl = document.createElement('aside');
-    this._sidebarEl.className = 'bb-sidebar' + (this.state.filtersOpen ? '' : ' collapsed');
-    this._renderFilters();
-    body.appendChild(this._sidebarEl);
-
-    var gridArea = document.createElement('div');
-    gridArea.className = 'bb-grid-area';
-
-    this._gridEl = document.createElement('div');
-    this._gridEl.className = 'bb-grid';
-    gridArea.appendChild(this._gridEl);
-
-    this._paginationEl = document.createElement('div');
-    this._paginationEl.className = 'bb-pagination';
-    gridArea.appendChild(this._paginationEl);
-
-    body.appendChild(gridArea);
-    el.appendChild(body);
-
-    // Modal container (hidden)
-    this._modalOverlay = document.createElement('div');
-    this._modalOverlay.className = 'bb-modal-overlay';
-    this._modalOverlay.style.display = 'none';
-    this._modalOverlay.addEventListener('click', function (e) {
-      if (e.target === self._modalOverlay) self._closeModal();
-    });
-    el.appendChild(this._modalOverlay);
-
-    // Initial render of dynamic parts
-    this._renderGrid();
-    this._renderPills();
-    this._renderCount();
-    this._renderPagination();
-  },
-
-  _injectStyles: function () {
-    if (this.el.querySelector('style.bb-styles')) return;
-    var style = document.createElement('style');
-    style.className = 'bb-styles';
-    style.textContent = [
-      // ── Root container ──
-      '.bb-root { font-family:Inter,system-ui,-apple-system,sans-serif; font-size:14px; color:var(--color-text-primary,#111827); background:var(--color-card-bg,#fff); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05); border:1px solid var(--color-border,#e5e7eb); padding:16px; }',
-      // ── Toolbar ──
-      '.bb-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; position:sticky; top:0; z-index:5; background:var(--color-card-bg,#fff); padding:8px 0; }',
-      '.bb-search { flex:1; min-width:200px; padding:8px 12px; border-radius:8px; font-size:14px; background:var(--color-input-bg,#fff); border:1px solid var(--color-input-border,#d1d5db); color:var(--color-text-primary,#111827); transition:all 200ms ease; }',
-      '.bb-search:focus { outline:none; box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.3); border-color:var(--color-accent,#6366f1); }',
-      '.bb-sort { padding:8px 12px; border-radius:8px; font-size:14px; background:var(--color-input-bg,#fff); border:1px solid var(--color-input-border,#d1d5db); color:var(--color-text-primary,#111827); transition:all 200ms ease; }',
-      '.bb-sort:focus { outline:none; box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.3); border-color:var(--color-accent,#6366f1); }',
-      '.bb-sort option { background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); }',
-      '.bb-results-count { font-size:12px; color:var(--color-text-secondary,#6b7280); white-space:nowrap; }',
-      '.bb-filter-toggle { padding:8px 16px; border-radius:8px; font-weight:500; font-size:14px; background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); color:var(--color-text-body,#374151); cursor:pointer; transition:all 200ms ease; }',
-      '.bb-filter-toggle:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.bb-filter-toggle:active { transform:scale(0.98); }',
-      // ── Filter pills ──
-      '.bb-pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }',
-      '.bb-pill { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:rgba(var(--color-accent-rgb,99,102,241),0.1); color:var(--color-accent,#6366f1); gap:4px; }',
-      '.bb-pill-x { cursor:pointer; font-weight:600; opacity:0.6; border:none; background:none; padding:0; font-size:1em; color:inherit; transition:opacity 100ms ease; }',
-      '.bb-pill-x:hover { opacity:1; }',
-      // ── Layout ──
-      '.bb-body { display:flex; gap:16px; }',
-      '.bb-sidebar { width:220px; flex-shrink:0; }',
-      '.bb-sidebar.collapsed { display:none; }',
-      '.bb-grid-area { flex:1; min-width:0; }',
-      '.bb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }',
-      // ── Cards ──
-      '.bb-card { background:var(--color-card-bg,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 150ms ease,box-shadow 150ms ease; box-shadow:0 1px 2px rgba(0,0,0,0.05); }',
-      '.bb-card:hover { transform:translateY(-2px); box-shadow:0 4px 6px rgba(0,0,0,0.1); }',
-      '.bb-card:active { transform:translateY(0); }',
-      '.bb-card-accent { height:4px; }',
-      '.bb-card-body { padding:12px 16px; }',
-      '.bb-card-header { display:flex; justify-content:space-between; align-items:center; }',
-      '.bb-card-name { font-weight:600; font-size:14px; color:var(--color-text-primary,#111827); }',
-      '.bb-card-level { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.bb-card-subtitle { color:var(--color-text-secondary,#6b7280); font-size:12px; margin-top:4px; }',
-      '.bb-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }',
-      '.bb-tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:12px; font-weight:500; background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-secondary,#6b7280); }',
-      '.bb-card-stats { font-size:12px; color:var(--color-text-body,#374151); margin-top:8px; }',
-      '.bb-card-chars { font-size:12px; color:var(--color-text-secondary,#6b7280); margin-top:4px; }',
-      // ── Filter sidebar ──
-      '.bb-filter-section { margin-bottom:16px; }',
-      '.bb-filter-section h4 { cursor:pointer; margin:0 0 8px; font-size:12px; font-weight:600; color:var(--color-text-secondary,#6b7280); text-transform:uppercase; letter-spacing:0.05em; user-select:none; }',
-      '.bb-filter-btn { display:inline-block; padding:4px 10px; margin:2px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 150ms ease; }',
-      '.bb-filter-btn:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      '.bb-filter-btn.active { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      '.bb-filter-btn.active:hover { background:var(--color-accent-hover,#4f46e5); border-color:var(--color-accent-hover,#4f46e5); }',
-      '.bb-level-inputs { display:flex; gap:6px; align-items:center; font-size:12px; color:var(--color-text-secondary,#6b7280); }',
-      '.bb-level-input { width:60px; padding:6px 8px; border:1px solid var(--color-input-border,#d1d5db); border-radius:8px; font-size:12px; background:var(--color-input-bg,#fff); color:var(--color-text-primary,#111827); transition:all 200ms ease; }',
-      '.bb-level-input:focus { outline:none; box-shadow:0 0 0 2px rgba(var(--color-accent-rgb,99,102,241),0.3); border-color:var(--color-accent,#6366f1); }',
-      '.bb-clear-btn { margin-top:8px; padding:6px 12px; font-size:12px; font-weight:500; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; background:var(--color-card-bg,#fff); color:var(--color-text-body,#374151); transition:all 200ms ease; }',
-      '.bb-clear-btn:hover { background:var(--color-bg-tertiary,#f3f4f6); }',
-      // ── Pagination ──
-      '.bb-pagination { display:flex; gap:4px; justify-content:center; margin-top:16px; }',
-      '.bb-page-btn { padding:6px 12px; border:1px solid var(--color-border,#e5e7eb); border-radius:8px; cursor:pointer; background:var(--color-card-bg,#fff); font-size:12px; font-weight:500; color:var(--color-text-body,#374151); transition:all 150ms ease; }',
-      '.bb-page-btn.active { background:var(--color-accent,#6366f1); color:#fff; border-color:var(--color-accent,#6366f1); }',
-      '.bb-page-btn.active:hover { background:var(--color-accent-hover,#4f46e5); border-color:var(--color-accent-hover,#4f46e5); }',
-      '.bb-page-btn:hover:not(.active) { background:var(--color-bg-tertiary,#f3f4f6); }',
-      // ── Modal ──
-      '@keyframes bb-backdrop-in { from { opacity:0; } to { opacity:1; } }',
-      '@keyframes bb-modal-in { from { opacity:0; transform:scale(0.98) translateY(4px); } to { opacity:1; transform:scale(1) translateY(0); } }',
-      '.bb-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:10000; animation:bb-backdrop-in 200ms ease-out; }',
-      '.bb-modal { background:var(--color-card-bg,#fff); border-radius:12px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto; box-shadow:0 25px 50px rgba(0,0,0,0.25); animation:bb-modal-in 200ms ease-out; }',
-      '.bb-modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--color-border,#e5e7eb); }',
-      '.bb-modal-header h2 { margin:0; font-size:20px; font-weight:600; color:var(--color-text-primary,#111827); font-family:var(--font-campaign,Inter,system-ui,-apple-system,sans-serif); }',
-      '.bb-modal-close { background:none; border:none; font-size:20px; cursor:pointer; padding:4px 8px; line-height:1; color:var(--color-text-secondary,#6b7280); border-radius:6px; transition:all 100ms ease; }',
-      '.bb-modal-close:hover { background:var(--color-bg-tertiary,#f3f4f6); color:var(--color-text-primary,#111827); }',
-      '.bb-modal-body { padding:16px; }',
-      '.bb-modal-body .sbx { border-left:0; border-right:0; border-bottom:0; border-radius:0; padding:0; }',
-      '.bb-modal-actions { padding:12px 20px; border-top:1px solid var(--color-border,#e5e7eb); display:flex; gap:8px; }',
-      // ── Empty & loading states ──
-      '.bb-empty { text-align:center; padding:48px 16px; }',
-      '.bb-empty-icon { width:48px; height:48px; border-radius:9999px; background:var(--color-bg-tertiary,#f3f4f6); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; font-size:20px; color:var(--color-text-muted,#9ca3af); }',
-      '.bb-empty-title { font-size:18px; font-weight:600; color:var(--color-text-primary,#111827); margin:0 0 4px; }',
-      '.bb-empty-desc { font-size:14px; color:var(--color-text-secondary,#6b7280); max-width:24rem; margin:0 auto; }',
-      '.bb-loading { text-align:center; padding:48px 16px; color:var(--color-text-secondary,#6b7280); }',
-      '@keyframes bb-shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }',
-      '.bb-skeleton { border-radius:12px; background:linear-gradient(90deg,var(--color-bg-tertiary,#f3f4f6) 25%,var(--color-border-light,#f3f4f6) 50%,var(--color-bg-tertiary,#f3f4f6) 75%); background-size:200% 100%; animation:bb-shimmer 1.5s ease-in-out infinite; }',
-      '.bb-skeleton-card { height:140px; border-radius:12px; }',
-      // ── Statblock styles (for modal) ──
-    ].join('\n');
-    this.el.insertBefore(style, this.el.firstChild);
-  },
-
-  _renderGrid: function () {
-    var self = this;
-    var grid = this._gridEl;
-    if (!grid) return;
-    grid.innerHTML = '';
-    var slice = this._getPageSlice();
-    if (slice.length === 0) {
-      if (this.state.creatures.length === 0) {
-        grid.innerHTML = '<div class="bb-empty">' +
-          '<div class="bb-empty-icon">&#128026;</div>' +
-          '<div class="bb-empty-title">No creatures loaded</div>' +
-          '<div class="bb-empty-desc">Add creatures to your campaign or switch to the community bestiary.</div>' +
-          '</div>';
-      } else {
-        grid.innerHTML = '<div class="bb-empty">' +
-          '<div class="bb-empty-icon">&#128269;</div>' +
-          '<div class="bb-empty-title">No matches</div>' +
-          '<div class="bb-empty-desc">No creatures match your current filters. Try adjusting or clearing them.</div>' +
-          '</div>';
-      }
-      return;
-    }
-    slice.forEach(function (cr, i) {
-      grid.appendChild(self._renderCard(cr, i));
-    });
-  },
-
-  _renderCard: function (creature, idx) {
-    var self = this;
-    var h = Chronicle.escapeHtml;
-    var card = document.createElement('div');
-    card.className = 'bb-card';
-
-    var accent = '<div class="bb-card-accent" style="background:' + this._getOrgColor(creature.organization) + '"></div>';
-
-    var header = '<div class="bb-card-header">' +
-      '<span class="bb-card-name">' + h(creature.name) + '</span>' +
-      '<span class="bb-card-level">L' + (Number(creature.level) || 0) + '</span></div>';
-
-    // C-1 (client half): organization/role come from unsanitized publication /
-    // custom-field data — escape them (element content) before rendering. The
-    // numeric fields are Number()-coerced here too, defence in depth against a
-    // publication JSON that carries strings where numbers are expected.
-    var subtitle = '<div class="bb-card-subtitle">';
-    if (creature.organization) subtitle += h(this._capitalize(creature.organization)) + ' ';
-    if (creature.role) subtitle += h(this._capitalize(creature.role));
-    if (creature.ev) subtitle += ' &middot; EV ' + (Number(creature.ev) || 0);
-    subtitle += '</div>';
-
-    var tags = '';
-    if (creature.keywords.length > 0) {
-      tags = '<div class="bb-card-tags">' + creature.keywords.map(function (k) {
-        return '<span class="bb-tag">' + h(k) + '</span>';
-      }).join('') + '</div>';
-    }
-
-    var charSign = function (v) { v = Number(v) || 0; return v >= 0 ? '+' + v : '' + v; };
-    var stats = '<div class="bb-card-stats">STM ' + (Number(creature.stamina) || 0) + ' &middot; SPD ' + (Number(creature.speed) || 0) + '</div>';
-    var chars = '<div class="bb-card-chars">MGT ' + charSign(creature.might) +
-      ' AGI ' + charSign(creature.agility) +
-      ' RSN ' + charSign(creature.reason) +
-      ' INT ' + charSign(creature.intuition) +
-      ' PRS ' + charSign(creature.presence) + '</div>';
-
-    // A bestiary summary has no figures yet, so the card shows how often it was
-    // added and its rating rather than a row of zeros.
-    var sum = creature._summary;
-    if (sum) {
-      stats = '<div class="bb-card-stats">' + (Number(sum.downloads) || 0) + ' added &middot; rated ' +
-        (Number(sum.rating_average) || 0).toFixed(1) + ' (' + (Number(sum.rating_count) || 0) + ')</div>';
-      chars = '';
-    }
-
-    card.innerHTML = accent + '<div class="bb-card-body">' + header + subtitle + tags + stats + chars + '</div>';
-    card.addEventListener('click', function () { self._openModal(creature); });
-    return card;
-  },
-
-  _renderFilters: function () {
-    var self = this;
-    var sidebar = this._sidebarEl;
-    if (!sidebar) return;
-    sidebar.innerHTML = '';
-
-    // Organization section
-    var orgSection = document.createElement('div');
-    orgSection.className = 'bb-filter-section';
-    orgSection.innerHTML = '<h4>Organization</h4>';
-    var orgBtns = document.createElement('div');
-    this.orgTemplates.forEach(function (org) {
-      var btn = document.createElement('button');
-      btn.className = 'bb-filter-btn' + (self.state.filters.organization === org.slug ? ' active' : '');
-      btn.textContent = org.name;
-      btn.addEventListener('click', function () {
-        self.state.filters.organization = self.state.filters.organization === org.slug ? '' : org.slug;
-        self._applyFilters();
-        self._renderFilters();
-        self._renderGrid();
-        self._renderPills();
-        self._renderCount();
-        self._renderPagination();
-      });
-      orgBtns.appendChild(btn);
-    });
-    orgSection.appendChild(orgBtns);
-    sidebar.appendChild(orgSection);
-
-    // Role section
-    var roleSection = document.createElement('div');
-    roleSection.className = 'bb-filter-section';
-    roleSection.innerHTML = '<h4>Role</h4>';
-    var roleBtns = document.createElement('div');
-    this.roleTemplates.forEach(function (role) {
-      var btn = document.createElement('button');
-      btn.className = 'bb-filter-btn' + (self.state.filters.role === role.slug ? ' active' : '');
-      btn.textContent = role.name;
-      btn.addEventListener('click', function () {
-        self.state.filters.role = self.state.filters.role === role.slug ? '' : role.slug;
-        self._applyFilters();
-        self._renderFilters();
-        self._renderGrid();
-        self._renderPills();
-        self._renderCount();
-        self._renderPagination();
-      });
-      roleBtns.appendChild(btn);
-    });
-    roleSection.appendChild(roleBtns);
-    sidebar.appendChild(roleSection);
-
-    // Level range section
-    var levelSection = document.createElement('div');
-    levelSection.className = 'bb-filter-section';
-    levelSection.innerHTML = '<h4>Level Range</h4>';
-    var levelDiv = document.createElement('div');
-    levelDiv.className = 'bb-level-inputs';
-    var minInput = document.createElement('input');
-    minInput.type = 'number'; minInput.className = 'bb-level-input';
-    minInput.min = 1; minInput.max = 20; minInput.value = self.state.filters.levelMin;
-    var span = document.createElement('span');
-    span.textContent = ' to ';
-    var maxInput = document.createElement('input');
-    maxInput.type = 'number'; maxInput.className = 'bb-level-input';
-    maxInput.min = 1; maxInput.max = 20; maxInput.value = self.state.filters.levelMax;
-    var onLevelChange = function () {
-      self.state.filters.levelMin = Math.max(1, Math.min(20, Number(minInput.value) || 1));
-      self.state.filters.levelMax = Math.max(1, Math.min(20, Number(maxInput.value) || 20));
-      self._applyFilters();
-      self._renderGrid();
-      self._renderPills();
-      self._renderCount();
-      self._renderPagination();
-    };
-    minInput.addEventListener('change', onLevelChange);
-    maxInput.addEventListener('change', onLevelChange);
-    levelDiv.appendChild(minInput);
-    levelDiv.appendChild(span);
-    levelDiv.appendChild(maxInput);
-    levelSection.appendChild(levelDiv);
-    sidebar.appendChild(levelSection);
-
-    // Keywords section
-    var kwSection = document.createElement('div');
-    kwSection.className = 'bb-filter-section';
-    kwSection.innerHTML = '<h4>Keywords</h4>';
-    var kwBtns = document.createElement('div');
-    this.creatureKeywords.forEach(function (kw) {
-      var btn = document.createElement('button');
-      var isActive = self.state.filters.keywords.indexOf(kw.name) !== -1;
-      btn.className = 'bb-filter-btn' + (isActive ? ' active' : '');
-      btn.textContent = kw.name;
-      btn.addEventListener('click', function () {
-        var idx = self.state.filters.keywords.indexOf(kw.name);
-        if (idx === -1) { self.state.filters.keywords.push(kw.name); }
-        else { self.state.filters.keywords.splice(idx, 1); }
-        self._applyFilters();
-        self._renderFilters();
-        self._renderGrid();
-        self._renderPills();
-        self._renderCount();
-        self._renderPagination();
-      });
-      kwBtns.appendChild(btn);
-    });
-    kwSection.appendChild(kwBtns);
-    sidebar.appendChild(kwSection);
-
-    // Clear all button
-    var clearBtn = document.createElement('button');
-    clearBtn.className = 'bb-clear-btn';
-    clearBtn.textContent = 'Clear All Filters';
-    clearBtn.addEventListener('click', function () {
-      self.state.filters = { organization: '', role: '', levelMin: 1, levelMax: 20, keywords: [] };
-      self._applyFilters();
-      self._renderFilters();
-      self._renderGrid();
-      self._renderPills();
-      self._renderCount();
-      self._renderPagination();
-    });
-    sidebar.appendChild(clearBtn);
-  },
-
-  _renderPills: function () {
-    var self = this;
-    var el = this._pillsEl;
-    if (!el) return;
-    el.innerHTML = '';
-    var f = this.state.filters;
-    var pills = [];
-
-    if (f.organization) pills.push({ label: this._capitalize(f.organization), clear: function () { self.state.filters.organization = ''; } });
-    if (f.role) pills.push({ label: this._capitalize(f.role), clear: function () { self.state.filters.role = ''; } });
-    if (f.levelMin > 1 || f.levelMax < 20) pills.push({ label: 'Level ' + f.levelMin + '-' + f.levelMax, clear: function () { self.state.filters.levelMin = 1; self.state.filters.levelMax = 20; } });
-    f.keywords.forEach(function (kw, i) {
-      pills.push({ label: kw, clear: function () { self.state.filters.keywords.splice(self.state.filters.keywords.indexOf(kw), 1); } });
-    });
-    if (this.state.search) pills.push({ label: 'Search: "' + this.state.search + '"', clear: function () { self.state.search = ''; var inp = self.el.querySelector('.bb-search'); if (inp) inp.value = ''; } });
-
-    pills.forEach(function (p) {
-      var pill = document.createElement('span');
-      pill.className = 'bb-pill';
-      pill.textContent = p.label + ' ';
-      var x = document.createElement('button');
-      x.className = 'bb-pill-x';
-      x.textContent = '\u00d7';
-      x.addEventListener('click', function () {
-        p.clear();
-        self._applyFilters();
-        self._renderFilters();
-        self._renderGrid();
-        self._renderPills();
-        self._renderCount();
-        self._renderPagination();
-      });
-      pill.appendChild(x);
-      el.appendChild(pill);
-    });
-  },
-
-  _renderPagination: function () {
-    var self = this;
-    var el = this._paginationEl;
-    if (!el) return;
-    el.innerHTML = '';
-    var total = this._totalPages();
-    if (total <= 1) return;
-    var current = this.state.page;
-
-    var addBtn = function (label, page, active) {
-      var btn = document.createElement('button');
-      btn.className = 'bb-page-btn' + (active ? ' active' : '');
-      btn.textContent = label;
-      if (!active) {
-        btn.addEventListener('click', function () {
-          self.state.page = page;
-          self._renderGrid();
-          self._renderPagination();
-          self._renderCount();
-          if (self._gridEl) self._gridEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      }
-      el.appendChild(btn);
-    };
-
-    // Show: first, ... current-1, current, current+1, ... last
-    var pages = [];
-    pages.push(0);
-    for (var i = current - 2; i <= current + 2; i++) {
-      if (i > 0 && i < total - 1) pages.push(i);
-    }
-    if (total > 1) pages.push(total - 1);
-    // Deduplicate and sort
-    var seen = {};
-    pages = pages.filter(function (p) { if (seen[p]) return false; seen[p] = true; return true; });
-
-    var last = -1;
-    pages.forEach(function (p) {
-      if (last >= 0 && p - last > 1) {
-        var ellipsis = document.createElement('span');
-        ellipsis.textContent = '...';
-        ellipsis.style.padding = '4px';
-        el.appendChild(ellipsis);
-      }
-      addBtn(String(p + 1), p, p === current);
-      last = p;
-    });
-  },
-
-  _renderCount: function () {
-    if (!this._countEl) return;
-    var s = this.state;
-    var total = s.filtered.length;
-    if (total === 0) { this._countEl.textContent = '0 creatures'; return; }
-    var start = s.page * s.perPage + 1;
-    var end = Math.min(start + s.perPage - 1, total);
-    this._countEl.textContent = start + '-' + end + ' of ' + total + ' creatures' +
-      (s.unloaded ? ' (' + s.unloaded + ' more in the bestiary not loaded)' : '');
-  },
-
-  // _openModal shows a creature. A bestiary summary first fetches its full
-  // stat block, so the modal and Add work from the real figures and abilities.
-  _openModal: function (creature) {
-    var self = this;
-    if (creature._slug && !creature._full) {
-      Chronicle.apiFetch('/bestiary/' + encodeURIComponent(creature._slug) + '/statblock')
-        .then(function (r) {
-          if (!r.ok) throw new Error('statblock -> ' + r.status);
-          return r.json();
-        })
-        .then(function (sb) {
-          var full = self._normalizeEntity({ name: creature.name, custom_fields: sb || {} });
-          full.id = '';
-          full._slug = creature._slug;
-          full._summary = creature._summary;
-          full._full = true;
-          self._openModal(full);
-        })
-        .catch(function (err) {
-          if (typeof console !== 'undefined') console.warn('Bestiary Browser: stat block fetch failed', err);
-          alert('Could not load this creature’s stat block. Please try again.');
-        });
-      return;
-    }
-    var h = Chronicle.escapeHtml;
-    this.state.modalCreature = creature;
-    var overlay = this._modalOverlay;
-    overlay.style.display = 'flex';
-
-    var modal = document.createElement('div');
-    modal.className = 'bb-modal';
-
-    var header = document.createElement('div');
-    header.className = 'bb-modal-header';
-    header.innerHTML = '<h2>' + h(creature.name) + '</h2>';
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'bb-modal-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.addEventListener('click', function () { self._closeModal(); });
-    header.appendChild(closeBtn);
-    modal.appendChild(header);
-
-    var body = document.createElement('div');
-    body.className = 'bb-modal-body';
-    body.innerHTML = this._buildStatblockHtml(creature);
-    modal.appendChild(body);
-
-    var actions = document.createElement('div');
-    actions.className = 'bb-modal-actions';
-    var isOwnedEntity = !!(creature.id && self.config.campaignId && self.state.source === 'campaign');
-    var editable = self.config.editable !== false;
-
-    if (isOwnedEntity && editable) {
-      // Edit button — links to entity page
-      var editBtn = document.createElement('button');
-      editBtn.className = 'btn btn-primary';
-      editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', function () {
-        window.location.href = '/campaigns/' + self.config.campaignId + '/entities/' + creature.id;
-      });
-      actions.appendChild(editBtn);
-    } else if (!isOwnedEntity) {
-      // Import button — for bestiary creatures not yet in campaign
-      var importBtn = document.createElement('button');
-      importBtn.className = 'btn btn-primary';
-      importBtn.textContent = 'Add to this campaign';
-      importBtn.addEventListener('click', function () {
-        if (!self.config.campaignId) { alert('No campaign selected.'); return; }
-        // CreateEntity binds {name, entity_type_id, fields_data} and rejects a
-        // zero entity_type_id outright; `preset`/`custom_fields` are not read.
-        // The source creature is another user's published bestiary entry, so
-        // bound its fields before writing them into this campaign.
-        var bounded = self._boundCreatureFields(creature);
-        var typeId = self._creatureTypeId;
-        var url = self._entityUrl(self.config.campaignId);
-        var start = typeId
-          ? Promise.resolve(typeId)
-          : self._resolveCreatureTypeId().then(function (id) { self._creatureTypeId = id; return id; });
-        start.then(function (id) {
-          if (!id) throw new Error('The Draw Steel "Creature" entity type is not installed in this campaign.');
-          // The shared stat block's field writer keeps an unset figure unset
-          // instead of writing a 0, and caps every list.
-          var S = (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null;
-          var fields = S ? S.toFields(S.normalize(creature._raw || creature)) : self._toFieldsData(bounded);
-          var payload = { name: bounded.name, entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields };
-          return Chronicle.apiFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        })
-          .then(function (res) {
-            if (!res.ok) {
-              return self._apiError(res, 'Could not import this creature. Please try again.').then(function (msg) {
-                var e = new Error(msg); e.fromServer = true; throw e;
-              });
-            }
-            importBtn.textContent = 'Added'; importBtn.disabled = true;
-          })
-          .catch(function (err) {
-            // A server-sourced message is never shown verbatim — only a
-            // fixed, safe string reaches the user; the real error stays in
-            // the console for diagnostics. A message this widget generated
-            // itself (e.g. the entity type isn't installed) is safe and
-            // still useful to show.
-            if (typeof console !== 'undefined') console.warn('Bestiary Browser: import failed', err);
-            alert((err && !err.fromServer && err.message) ? err.message : 'Could not import this creature. Please try again.');
+        .catch(function () { return 0; });
+    },
+
+    _creatureType: function () {
+      if (!this._typeP) this._typeP = this._resolveCreatureTypeId();
+      return this._typeP;
+    },
+
+    // Walk every page: per_page defaults to 20 and is capped at 100. Bounded so
+    // a bad `total` cannot spin forever.
+    _fetchEntityPages: function (typeId) {
+      var self = this, acc = [];
+      var base = this._entityUrl(this.config.campaignId) + '?per_page=100' + (typeId ? '&type_id=' + encodeURIComponent(typeId) : '');
+      function page(n) {
+        return Chronicle.apiFetch(base + '&page=' + n)
+          .then(function (r) { if (!r.ok) throw new Error('entities -> ' + r.status); return r.json(); })
+          .then(function (body) {
+            var items = self._unwrapList(body);
+            acc = acc.concat(items);
+            var total = (body && typeof body.total === 'number') ? body.total : acc.length;
+            if (items.length === 0 || acc.length >= total || n >= 50) return acc;
+            return page(n + 1);
           });
-      });
-      actions.appendChild(importBtn);
+      }
+      return page(1);
+    },
+
+    // Only pages of the Creature type: without it the campaign's other pages
+    // would show as creatures, so none are listed.
+    _fetchCampaignCreatures: function () {
+      var self = this;
+      return this._creatureType().then(function (id) { return id ? self._fetchEntityPages(id) : []; });
     }
+  });
+}
 
-    var exportBtn = document.createElement('button');
-    exportBtn.className = 'btn btn-secondary';
-    exportBtn.textContent = 'Export JSON';
-    exportBtn.addEventListener('click', function () {
-      var out = {};
-      for (var k in creature) { if (creature.hasOwnProperty(k) && k.charAt(0) !== '_') out[k] = creature[k]; }
-      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (creature.name || 'creature').replace(/[^a-z0-9]/gi, '_') + '.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-    actions.appendChild(exportBtn);
-
-    if (isOwnedEntity && editable) {
-      // Delete button
-      var deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn btn-danger';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.style.cssText = 'margin-left:auto;';
-      deleteBtn.addEventListener('click', function () {
-        if (!confirm('Delete "' + creature.name + '"? This cannot be undone.')) return;
-        var url = self._entityUrl(self.config.campaignId, creature.id);
-        Chronicle.apiFetch(url, { method: 'DELETE' })
-          .then(function (res) {
-            if (res && res.ok === false) {
-              return self._apiError(res, 'Could not delete this creature. Please try again.').then(function (msg) {
-                var e = new Error(msg); e.fromServer = true; throw e;
-              });
-            }
-            self.state.creatures = self.state.creatures.filter(function (c) { return c.id !== creature.id; });
-            self._closeModal();
-            self._applyFilters();
-            self._renderGrid();
-            self._renderCount();
-            self._renderPagination();
-          })
-          .catch(function (err) {
-            // Server-sourced text is never shown verbatim; see the import
-            // handler above for why a client-generated message still is.
-            if (typeof console !== 'undefined') console.warn('Bestiary Browser: delete failed', err);
-            alert((err && !err.fromServer && err.message) ? err.message : 'Could not delete this creature. Please try again.');
-          });
-      });
-      actions.appendChild(deleteBtn);
-    }
-
-    modal.appendChild(actions);
-    overlay.innerHTML = '';
-    overlay.appendChild(modal);
-  },
-
-  _closeModal: function () {
-    this.state.modalCreature = null;
-    if (this._modalOverlay) {
-      this._modalOverlay.style.display = 'none';
-      this._modalOverlay.innerHTML = '';
-    }
-  },
-
-  // The modal draws the same stat block as a creature's own page, from
-  // DrawSteelStatblock (statblock-renderer.js), looked up now because widget
-  // scripts load in manifest order.
-  _buildStatblockHtml: function (creature) {
-    var S = (typeof DrawSteelStatblock !== 'undefined') ? DrawSteelStatblock : null;
-    if (!S) return '<p class="bb-modal-fallback">The stat block could not be drawn. Reload the page to try again.</p>';
-    S.injectStyles(document);
-    var src = creature._raw || creature;
-    return S.html(creature.name, src, { ref: this._ref });
-  }
-});
+// Test seam: inert in a browser (no CommonJS module).
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = DrawSteelBestiary;
+}

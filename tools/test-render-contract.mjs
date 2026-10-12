@@ -400,10 +400,32 @@ test('every creature ability template says who it is made for', () => {
 
 // The book's named villains, its gods and its named characters are setting
 // material, not rules, so no ability taken from the bestiary may carry them.
-test('the book’s creature abilities name no villain, character or god', () => {
+test('the book’s creature abilities and stat blocks name no villain, character or god', () => {
   const NAMES = /\b(Ajax|Rhodar|Syuul|Xorannox|Grole|Doru|Alkestis|Hoplon|Vesper|Dorzinuuth|Locratix|Myxovidan|Lydixavus|Aeolyxria|Phrrygalax)\b/;
-  const bad = load('creature-abilities.json')
+  const bad = load('creature-abilities.json').concat(load('monsters.json'))
     .filter((it) => it.source !== 'custom' && NAMES.test(JSON.stringify(it)))
     .map((it) => it.slug);
   assert.deepEqual(bad, []);
+});
+
+// The viewer and Creature pages read a book stat block as a page's fields, so
+// each must have the figures and lists the stat block draws.
+test('every book stat block has its figures and readable ability lists', () => {
+  const ORG = ['Minion', 'Horde', 'Platoon', 'Elite', 'Leader', 'Solo'];
+  const ROLE = ['', 'Ambusher', 'Artillery', 'Brute', 'Controller', 'Defender', 'Harrier', 'Hexer', 'Mount', 'Support'];
+  const items = load('monsters.json');
+  assert.ok(items.length > 300, 'the book’s creatures are all there');
+  for (const it of items) {
+    const p = it.properties;
+    assert.ok(ORG.includes(p.organization), it.slug + ': organization');
+    assert.ok(ROLE.includes(p.role), it.slug + ': role');
+    if (p.organization === 'Leader' || p.organization === 'Solo') assert.equal(p.role, '', it.slug + ': leaders and solos take no role');
+    for (const k of ['level', 'ev', 'stamina', 'winded', 'speed', 'stability', 'might', 'agility', 'reason', 'intuition', 'presence']) {
+      assert.ok(Number.isInteger(p[k]), it.slug + ': ' + k);
+    }
+    const abilities = JSON.parse(p.abilities_json);
+    assert.ok(abilities.length >= 1 && abilities.every((a) => a.name && a.type), it.slug + ': abilities');
+    assert.ok(Array.isArray(JSON.parse(p.traits)), it.slug + ': traits');
+    if (p.villain_actions_json) assert.ok(JSON.parse(p.villain_actions_json).every((v) => v.order), it.slug + ': villain action order');
+  }
 });
