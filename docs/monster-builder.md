@@ -352,6 +352,20 @@ traits and abilities it wrote carry a **From the AI** chip until the director
 saves; the chip is never saved to the page. **Try an example answer** shows the
 reading on a typical reply.
 
+The guide also offers a shortlist of the Monsters book's abilities, since all
+1,555 would not fit in a chat. Filters narrow it: kind, who it was made for
+(**This creature**, the default, uses the same `usable` rule as Add abilities),
+chapter of the book, ability keyword, the condition it inflicts, and a search.
+Each choice shows how many abilities picking it would leave. The guide carries
+at most 10, 25 or 50 (50 by default) of what is left, ranked by the words of
+the description and search they match, then by how closely they were made for
+this creature's organization and role; the director can untick any of them.
+The AI answers with the ids it picked in `book_abilities`, and the editor adds
+those as the drawer does, with formula damage, nothing twice and villain
+actions only for leaders and solos. A pick made for another organization, or an
+id the library doesn't hold, is left off with a note. Picked abilities carry a
+**From the book** chip, naming the chapter, until the director saves.
+
 **Add abilities** slides a drawer down over the dimmed page with the same
 library. By default it lists only what this creature can use (`fits` for its
 organization and role; with no organization yet, anything but a villain

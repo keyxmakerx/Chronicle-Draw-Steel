@@ -162,3 +162,81 @@ test('the editor keeps fields it does not own when the AI fills it', () => {
   Ed.fromAI(st, { name: 'New', level: 3 }, V);
   assert.equal(Ed.toSave(st).fields.conditions, 'dazed');
 });
+
+// ── The book shortlist ──
+
+const LIB = data('creature-abilities.json');
+const F = (o) => Object.assign(Ed.newBookFilter(), o);
+function creature(org, role) {
+  const st = Ed.newState('', null, REFS);
+  st.c.organization = org; st.c.role = role || '';
+  Ed.derive(st);
+  return st;
+}
+
+test('the shortlist offers only book abilities this creature can take, best matches first', () => {
+  const st = creature('leader');
+  const rows = Ed.shortlist(st, LIB, F(), 'A goblin spider rider who webs heroes');
+  assert.ok(rows.length > 50);
+  for (const r of rows) {
+    assert.ok(Ed.bookGroup(r.t), `${r.t.slug} is the package's own, not the book's`);
+    assert.ok(Ed.usable(r.t, st.c), `${r.t.slug} is not for a leader`);
+  }
+  assert.ok(rows[0].hits.length > 0, 'the description’s words rank first');
+  for (let i = 1; i < rows.length; i++) assert.ok(rows[i - 1].score >= rows[i].score);
+  const platoon = Ed.shortlist(creature('platoon', 'defender'), LIB, F(), '');
+  assert.ok(!platoon.some((r) => r.t.properties.type === 'villain-action'), 'only leaders and solos are offered villain actions');
+});
+
+test('each filter narrows the shortlist to what it names', () => {
+  const st = creature('leader');
+  const only = (f, ok) => { const rows = Ed.shortlist(st, LIB, F(f), ''); assert.ok(rows.length > 0, JSON.stringify(f)); rows.forEach((r) => assert.ok(ok(r.t), r.t.slug)); };
+  only({ kind: 'villain-action' }, (t) => t.properties.type === 'villain-action');
+  only({ group: 'Goblins' }, (t) => Ed.bookGroup(t) === 'Goblins');
+  only({ kw: 'Magic' }, (t) => t.properties.keywords.includes('Magic'));
+  only({ cond: 'restrained' }, (t) => Ed.inflicts(t).includes('restrained'));
+  only({ fit: 'minion' }, (t) => t.properties.organizations.includes('minion'));
+  only({ fit: 'any', q: 'web' }, (t) => JSON.stringify(t).toLowerCase().includes('web'));
+  const counts = Ed.shortCounts(st, LIB, F(), 'kind', (t) => [t.properties.type]);
+  assert.equal(counts['villain-action'], Ed.shortlist(st, LIB, F({ kind: 'villain-action' }), '').length, 'a chip’s count is what picking it leaves');
+});
+
+test('the guide lists the shortlist by id and asks for picks by id', () => {
+  const st = creature('leader');
+  const book = Ed.shortlist(st, LIB, F({ group: 'Goblins' }), '').map((r) => r.t);
+  const g = Ed.guideFor('A goblin boss', '', V, book);
+  assert.match(g, /"book_abilities": \["id", …\]/);
+  for (const t of book) assert.ok(g.includes(`- ${t.slug} | ${t.name} |`), t.slug);
+  assert.ok(!/\{@/.test(g.split('Book abilities you may use')[1]), 'the list shows plain words, not markup');
+  assert.ok(!Ed.guideFor('A goblin boss', '', V, []).includes('book_abilities'), 'no shortlist, no key');
+});
+
+test('book abilities the AI picks are added with formula damage and marked, and the marks are never saved', () => {
+  const sig = LIB.find((t) => Ed.bookGroup(t) && t.properties.type === 'signature' && t.properties.organizations.includes('leader') && /^\d+ damage/.test(t.properties.tier1 || ''));
+  const va = LIB.find((t) => Ed.bookGroup(t) && t.properties.type === 'villain-action' && t.properties.organizations.includes('leader'));
+  const minionOnly = LIB.find((t) => Ed.bookGroup(t) && t.properties.organizations.length === 1 && t.properties.organizations[0] === 'minion');
+  const st = Ed.newState('', null, REFS);
+  const notes = Ed.fromAI(st, { name: 'Boss', level: 3, organization: 'leader', book_abilities: [sig.slug, va.slug, minionOnly.slug, 'not-a-real-id', sig.slug] }, V, LIB);
+  const a = st.c.abilities.find((x) => x.name === sig.name);
+  assert.ok(a, 'the signature was added');
+  assert.equal(a.from_book, Ed.bookGroup(sig));
+  assert.ok(a.auto_damage && a.tier1.startsWith(String(st.pr.damage.value.tier1 + st.pr.hc.value)), 'damage is the formula’s: ' + a.tier1);
+  assert.equal(st.c.villain_actions[0].name, va.name);
+  assert.ok(!st.c.abilities.concat(st.c.traits).some((x) => x.name === minionOnly.name), 'an ability for another organization is left off');
+  assert.ok(notes.some((n) => n.includes(minionOnly.name) && /left off/.test(n)));
+  assert.ok(notes.some((n) => n.includes('not-a-real-id')));
+  assert.equal(st.c.abilities.filter((x) => x.name === sig.name).length, 1, 'nothing is added twice');
+  const saved = JSON.stringify(Ed.toSave(st));
+  assert.ok(!saved.includes('from_book'), 'the mark is never saved');
+  assert.ok(Ed.clearAIMarks(st));
+  assert.ok(!st.c.abilities.some((x) => x.from_book));
+  const none = Ed.newState('', null, REFS);
+  assert.ok(Ed.fromAI(none, { name: 'B', organization: 'leader', book_abilities: [sig.slug] }, V, []).some((n) => /could not be read/.test(n)), 'an unread library says so');
+});
+
+test('the shortlist’s list and filters escape the library’s text', () => {
+  const st = creature('leader');
+  const evil = { slug: 'x"><img src=x onerror=alert(1)>', name: '<b>x</b>', source: 'Draw Steel Monsters Book, ch. 2 (Monsters — <i>G</i>) (x)', properties: { type: 'action', organizations: ['leader'], roles: [], keywords: ['<k>'], effect: '<script>' } };
+  const html = Ed.bookListHtml([{ t: evil, hits: ['<h>'] }], F()) + Ed.bookFiltersHtml(st, [evil], F());
+  assert.ok(!/<img|<script|<b>x|<i>G|<k>|<h>/.test(html), html);
+});
