@@ -124,6 +124,11 @@ one field at once, **Use the book's for all** resets every difference, and
 **Undo** puts back the last change. The entry is the page's `book_source`
 field: director-only, and never sent to Foundry.
 
+The stat block leads with the creature's picture: its art (the page's own
+picture), else its token, else a generic monster token. The editor's
+**Pictures** box sets both; they save with the stat block. The token is the
+`token_image` field, a Chronicle media id like the page picture.
+
 In page-layout mode the panel appears only where the layout has the **Game
 System Panels** block.
 
