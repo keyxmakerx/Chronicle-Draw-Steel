@@ -1707,17 +1707,20 @@ var DrawSteelCreatureEditor = (function () {
       });
     }
 
-    // saveArt sets the page picture after the stat block saved; the page must
-    // exist first, so a new creature gets its art once it has an id.
-    function saveArt(saved) {
+    // saveArt sets the page picture. Chronicle announces the stat block's save
+    // to Foundry but not a picture change, so on an existing page the art goes
+    // first and the save carries it; a new creature gets its art once it has
+    // an id, and Foundry sees it with the page's next change.
+    function saveArt(id, after) {
       var p = ui.pics;
-      if (!saved || !saved.id || p.art === p.art0) return Promise.resolve(saved);
-      var url = '/campaigns/' + encodeURIComponent(ctx.campaignId) + '/entities/' + encodeURIComponent(saved.id) + '/image';
+      if (!id || p.art === p.art0) return Promise.resolve();
+      var url = '/campaigns/' + encodeURIComponent(ctx.campaignId) + '/entities/' + encodeURIComponent(id) + '/image';
       return apiCall(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_path: p.art }) }).then(function (res) {
-        if (!res.ok) { var e = new Error('The stat block saved, but the art could not be set. Try again.'); e.artOnly = true; throw e; }
+        if (!res.ok) {
+          var e = new Error(after ? 'The stat block saved, but the art could not be set. Try again.' : 'The art could not be set, so nothing was saved. Try again.');
+          e.artOnly = after; throw e;
+        }
         p.art0 = p.art;
-        saved.image_path = p.art;
-        return saved;
       });
     }
 
@@ -1726,9 +1729,14 @@ var DrawSteelCreatureEditor = (function () {
       if (problem) { ui.msg = problem; ui.msgKind = 'error'; draw('sbe-name'); return; }
       ui.saving = true; ui.msg = ''; draw();
       st.base[SB().TOKEN_KEY] = ui.pics.token || '';
-      save(st, ctx).then(function (saved) {
+      saveArt(ctx.entityId, false).then(function () {
+        return save(st, ctx);
+      }).then(function (saved) {
         if (saved && saved.id) ctx.entityId = String(saved.id);
-        return saveArt(saved);
+        return saveArt(saved && saved.id, true).then(function () {
+          if (saved) saved.image_path = ui.pics.art;
+          return saved;
+        });
       }).then(function (saved) {
         ui.saving = false; clean();
         clearAIMarks(st);
