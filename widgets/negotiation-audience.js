@@ -218,6 +218,7 @@
 
   var STYLE_ID = 'nga-style';
   var SHUT_MS = 650;
+  var FOLD_MS = 300;  // the pieces lie down and vanish before the page turns over them
 
   // The board is a dark cut-paper stage in either theme, like the Lair's, so
   // its colours are its own; the card on the page takes the book's fonts.
@@ -264,7 +265,7 @@
       '.nga-pr{left:300px;border-radius:0 6px 6px 0;box-shadow:inset 26px 0 30px -18px rgba(40,20,20,.5)}',
       '.nga-page::after{content:"";position:absolute;inset:10px;border:1.5px solid rgba(120,30,40,.35);border-radius:3px}',
       '.nga-closed .nga-pl{transform:rotateY(180deg) translateZ(-2px)}',
-      '.nga-shutting .nga-pl{transition-duration:' + SHUT_MS + 'ms;transition-timing-function:cubic-bezier(.5,0,.4,1)}',
+      '.nga-shutting .nga-pl{transition-duration:' + SHUT_MS + 'ms;transition-timing-function:cubic-bezier(.5,0,.4,1);transition-delay:' + FOLD_MS + 'ms}',
       '.nga-cover{position:absolute;inset:0;border-radius:6px;transform:rotateY(180deg) translateZ(1px);backface-visibility:hidden;background:linear-gradient(135deg,#8e1f2b,#4e0f1b);' +
         'box-shadow:inset 0 0 0 7px #3d0b15,inset 0 0 0 9px #e9b84a;display:grid;place-items:center;text-align:center;font:900 30px/.9 ' + D + ';color:#f6dfa4;text-transform:uppercase;padding:0 30px}',
       '.nga-runner{position:absolute;left:380px;top:96px;width:90px;height:154px;background:#8e1f2b;transform:translateZ(1px);border-left:3px solid #e9b84a;border-right:3px solid #e9b84a}',
@@ -286,6 +287,12 @@
       '.nga-spear{transform-box:fill-box;transform-origin:50% 100%;transition:transform .45s cubic-bezier(.4,1.5,.5,1)}',
       '.nga-cross .nga-spear{transform:rotate(var(--cr,18deg))}',
       '.nga-shy>.nga-pc{opacity:0}.nga-shy.nga-up>.nga-pc{opacity:1}',
+      // a folded piece is hidden as well as flat, so no browser's 3D sorting
+      // can show it through the cover; it appears only as it starts to rise
+      '.nga-pop:not(.nga-up)>.nga-pc,.nga-closed .nga-pop>.nga-pc{opacity:0;visibility:hidden;' +
+        'transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity 200ms ease-in 100ms,visibility 0s ' + FOLD_MS + 'ms}',
+      '.nga-opening .nga-pop.nga-up>.nga-pc{transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,' +
+        'opacity 160ms ease-out calc(800ms + var(--i,0) * 110ms),visibility 0s calc(800ms + var(--i,0) * 110ms)}',
       '.nga-flame{transform-box:fill-box;transform-origin:50% 100%;animation:nga-flick 1s ease-in-out infinite alternate}',
       '@keyframes nga-flick{50%{transform:scale(.9,1.1) skewX(-4deg)}100%{transform:scale(1.05,.94) skewX(3deg)}}',
       // speech bubbles float over the scene, outside the 3D
@@ -871,7 +878,7 @@
       self.board.classList.remove('nga-on');
       self.veil.classList.remove('nga-on');
       fly(mini, mini.getBoundingClientRect(), from, true, done);
-    }, SHUT_MS + 110);
+    }, FOLD_MS + SHUT_MS + 110);
   };
 
   View.prototype.destroy = function () {
