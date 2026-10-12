@@ -22,7 +22,7 @@ The manifest's `dm_screen` block tells Chronicle's DM Screen what to show for ea
 
 ### Entity Presets
 - **Hero** — full Foundry VTT sync with `foundry_path` annotations (class, ancestry, level, all 5 characteristics, stamina, recoveries, speed, stability). Wealth is a standing, not a purse: Chronicle's shop room refuses to spend it like coins
-- **Creature** — complete stat block with Foundry NPC actor sync (organization, role, EV, abilities, villain actions, traits)
+- **Creature** — complete stat block that syncs to a Foundry NPC actor (level, organization, role, keywords, EV, free strike, size, Stamina, speed, stability, characteristics); current Stamina and conditions come back only when the director turns on "In Foundry" under the stat block. Abilities, villain actions, traits, immunities and weaknesses don't sync yet (FOUNDRY-SYNC-MAP.md §8)
 
 ### Interactive Widgets
 - **Monster Builder** — a one-page creature editor whose figures follow the published formulas and say where they came from; the director sets what no formula covers. It checks completeness, not balance. See `docs/WIDGET-GUIDE.md`.
@@ -170,7 +170,7 @@ docs/
   DATA-SCHEMA.md           Data file schemas and validation
   WIDGET-GUIDE.md          Widget configuration guide
   CHARACTER-SHEET-DESIGN.md  Character sheet design decisions
-  FOUNDRY-SYNC-MAP.md      Foundry ↔ Chronicle field map (hero)
+  FOUNDRY-SYNC-MAP.md      Foundry ↔ Chronicle field map (hero and creature)
   monster-builder.md       Monster Builder design document
   foundry-creature-sync.md Foundry VTT creature-sync specification
   implementation-checklist.md  Implementation roadmap
@@ -179,8 +179,8 @@ docs/
 ## Open work: creatures
 
 The stat block, the one-page editor and the bestiary browser are rebuilt
-(#49). Still open: the Foundry creature-sync leg (#54) and encounter assembly
-(#50).
+(#49), and creatures sync to Foundry NPC actors. Still open: encounter assembly
+(#50), and sending a creature's abilities, villain actions and traits to Foundry.
 
 ## License
 
