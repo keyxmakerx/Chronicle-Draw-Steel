@@ -203,9 +203,8 @@ The glossary and skills are built from steelcompendium.io (GitHub org
 `SteelCompendium/data-md`): the Draw Steel 1.0 ruleset as machine-extractable
 Markdown and YAML, with no scraping. It is licensed under MCDM's **Draw Steel Creator
 License** — quoting rules text in our open-source `data/*.json` is permitted
-**provided** we include the verbatim DSCL attribution `NOTICE` and don't imply MCDM
-endorsement. (That is this project's position, not a checked reading of the licence:
-see the caveat in `data/NOTICE.md` and #53.)
+**provided** we include the licence's notice and don't imply MCDM endorsement. The
+maintainer has read the licence and confirmed this (`LICENSE`, closing section).
 
 `data/skills.json` (57 skills) and the ability-keyword entries in
 `data/rules-glossary.json` come from the Steel Compendium under the DSCL
