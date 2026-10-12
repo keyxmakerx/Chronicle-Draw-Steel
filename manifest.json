@@ -1016,6 +1016,20 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "handbook-credits",
+      "name": "Handbook Credits",
+      "description": "The Handbook's Credits chapter: a cut-paper stage where the nine classes in white masks take a bow, the MCDM team by role (read from data/credits.json), where to buy the books, the Creator License notice word for word, and a film-style credits roll over the whole window with pause and fast forward.",
+      "icon": "fa-film",
+      "script_file": "widgets/handbook-credits.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
     }
   ],
   "entity_panels": [

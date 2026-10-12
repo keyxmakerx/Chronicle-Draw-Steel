@@ -352,6 +352,20 @@ the one this pass corrects. Renaming them changes slugs that `bestiary-browser.j
 `monster-builder.js` and any campaign that imported a creature already reference, so
 it is a content decision for the maintainers rather than a licensing correction.
 
+## credits.json holds names, not rules text
+
+`credits.json` feeds the Handbook's Credits chapter (the `handbook-credits`
+widget). Its ten `mcdm-team` entries are the MCDM Productions team, each with
+their role, copied as printed on the credits page of MCDM's published preview of
+*Draw Steel: Encounters*; their `source` says so. The credits pages of the
+*Heroes* and *Monsters* books were not available to anyone working on this
+package, so the designers, writers and playtesters credited only there are not
+listed yet. Add them only from those printed pages, never from memory or a fan
+site.
+
+The `rules-tally` entry is `"source": "custom"`: counts of this package's own
+data files, which `tools/test-handbook-credits.mjs` checks against the files.
+
 ## The CC-BY-4.0 misstatement, and where it was corrected
 
 `manifest.json`, `README.md`, `LICENSE`, `data/creatures.json`, `docs/DATA-SCHEMA.md`,

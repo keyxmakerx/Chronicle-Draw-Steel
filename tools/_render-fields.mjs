@@ -500,6 +500,8 @@ export const WIDGET_ONLY = new Set([
   // rulebook-frontpage widget and the example player.
   'rulebook-frontpage.json',
   'rulebook-examples.json',
+  // The Handbook's Credits chapter: names and counts, read by handbook-credits.
+  'credits.json',
 ]);
 
 /**
