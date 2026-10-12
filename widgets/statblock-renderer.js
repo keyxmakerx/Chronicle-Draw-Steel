@@ -413,6 +413,129 @@ var DrawSteelStatblock = (function () {
     '</section>';
   }
 
+  // ── Compare with the book ─────────────────────────────────────────────────
+
+  // A page copied from the Monsters book keeps the entry's slug here. The field
+  // is director-only and has no Foundry path, so it never leaves Chronicle.
+  var SOURCE_KEY = 'book_source';
+  var CMP_FIELDS = [['level', 'Level'], ['organization', 'Organization'], ['role', 'Role'], ['ev', 'EV'], ['size', 'Size'],
+    ['keywords', 'Keywords'], ['stamina', 'Stamina'], ['winded', 'Winded'], ['speed', 'Speed'], ['movement', 'Movement'],
+    ['stability', 'Stability'], ['might', 'Might'], ['agility', 'Agility'], ['reason', 'Reason'], ['intuition', 'Intuition'],
+    ['presence', 'Presence'], ['free_strike', 'Free strike'], ['immunities', 'Immunities'], ['weaknesses', 'Weaknesses'],
+    ['with_captain', 'With a captain']];
+  // [normalized key, row label, saved field]
+  var CMP_LISTS = [['traits', 'Trait', 'traits'], ['abilities', 'Ability', 'abilities_json'], ['villain_actions', 'Villain action', 'villain_actions_json']];
+
+  function bookSource(fields) {
+    var s = fields && fields[SOURCE_KEY];
+    return typeof s === 'string' ? s.trim() : '';
+  }
+
+  function shown(v) {
+    if (Array.isArray(v)) return v.join(', ');
+    return v === null || v === undefined ? '' : String(v);
+  }
+
+  // canon makes two items comparable however they were saved: keys sorted,
+  // empty values dropped, so the editor's key order or an empty effect never
+  // reads as a change.
+  function canon(v) {
+    if (Array.isArray(v)) return v.map(canon);
+    if (v && typeof v === 'object') {
+      var out = {};
+      Object.keys(v).sort().forEach(function (k) {
+        var x = v[k];
+        if (x === '' || x === null || x === undefined || (Array.isArray(x) && !x.length)) return;
+        out[k] = canon(x);
+      });
+      return out;
+    }
+    return v;
+  }
+
+  function itemText(a) {
+    var bits = [];
+    if (a.type && KIND[a.type]) bits.push(KIND[a.type]);
+    if (a.distance) bits.push(String(a.distance));
+    if (a.tier1 || a.tier2 || a.tier3) bits.push([a.tier1, a.tier2, a.tier3].map(shown).join(' / '));
+    var words = a.effect || a.description || a.trigger || '';
+    if (words) bits.push(String(words));
+    return { name: String(a.name || ''), text: bits.join(' · ') };
+  }
+
+  // bookDiffs lists every field where the page and the book entry disagree.
+  // List items pair by position, so a renamed ability reads as changed, not as
+  // one removed and one added.
+  function bookDiffs(fields, book) {
+    var p = normalize(fields), b = normalize(book), out = [];
+    CMP_FIELDS.forEach(function (f) {
+      var x = shown(p[f[0]]), y = shown(b[f[0]]);
+      if (x !== y) out.push({ id: f[0], label: f[1], mine: x, book: y });
+    });
+    CMP_LISTS.forEach(function (l) {
+      var mine = p[l[0]] || [], theirs = b[l[0]] || [], n = Math.max(mine.length, theirs.length);
+      for (var i = 0; i < n; i++) {
+        var a = mine[i], c = theirs[i];
+        if (a && c && JSON.stringify(canon(a)) === JSON.stringify(canon(c))) continue;
+        out.push({ id: l[0] + ':' + i, label: l[1] + ' ' + (i + 1), mine: a ? itemText(a) : null, book: c ? itemText(c) : null, list: l[0], i: i });
+      }
+    });
+    return out;
+  }
+
+  // takeBook is the saved-field patch that makes the page match the book for
+  // the given differences. Taking a whole list's items replaces that list.
+  function takeBook(fields, book, diffs) {
+    var p = normalize(fields), b = normalize(book), bf = toFields(b), patch = {}, lists = {};
+    diffs.forEach(function (d) {
+      if (!d.list) { patch[d.id] = bf[d.id]; return; }
+      (lists[d.list] = lists[d.list] || []).push(d.i);
+    });
+    CMP_LISTS.forEach(function (l) {
+      var idx = lists[l[0]];
+      if (!idx) return;
+      var mine = (p[l[0]] || []).slice(), theirs = b[l[0]] || [];
+      // Highest first, so removing one doesn't shift the next.
+      idx.sort(function (x, y) { return y - x; }).forEach(function (i) {
+        if (theirs[i]) mine[i] = theirs[i]; else mine.splice(i, 1);
+      });
+      patch[l[2]] = JSON.stringify(mine.filter(Boolean).slice(0, MAX_LIST));
+    });
+    return patch;
+  }
+
+  function cmpCell(v) {
+    if (v === null || v === undefined || v === '') return '<span class="sbx-cmp-none">none</span>';
+    if (typeof v === 'object') return '<b>' + esc(v.name) + '</b>' + (v.text ? '<br>' + esc(v.text) : '');
+    return esc(v);
+  }
+
+  // compareHtml is the fold under the banner. state: {book, missing, error,
+  // loading, saving, msg, undo}; msg is the widget's own words, never a server's.
+  function compareHtml(fields, st) {
+    if (st.loading) return '<p class="sbx-cmp-f">Reading the book…</p>';
+    if (st.error) return '<p class="sbx-cmp-f is-error" role="alert">Could not read the Draw Steel book. Close this and try again.</p>';
+    if (st.missing || !st.book) return '<p class="sbx-cmp-f">This creature is not in the Draw Steel package installed here, so there is nothing to compare.</p>';
+    var ds = bookDiffs(fields, st.book.properties || {}), dis = st.saving ? ' disabled' : '';
+    var group = st.book.properties && st.book.properties.group;
+    var h = '<div class="sbx-cmp-h"><h4 tabindex="-1">' + (ds.length ? ds.length + ' difference' + (ds.length === 1 ? '' : 's') + ' from the book' : 'Same as the book') + '</h4>' +
+      '<span class="sbx-cmp-src">' + esc(st.book.name || '') + ', Monsters book' + (group ? ' · ' + esc(group) : '') + '</span><span class="sbx-cmp-sp"></span>' +
+      (ds.length > 1 ? '<button type="button" class="btn-secondary btn-sm" data-sbx-cmp="all"' + dis + '>Use the book’s for all</button>' : '') +
+      '<button type="button" class="btn-ghost btn-sm" data-sbx-act="compare">Close</button></div>';
+    if (ds.length) {
+      h += '<div class="sbx-cmp-w"><table class="sbx-cmp-t"><thead><tr><th scope="col">Field</th><th scope="col">This page</th><th scope="col">The book</th><th scope="col"><span class="sbx-sr">Take</span></th></tr></thead><tbody>' +
+        ds.map(function (d, n) {
+          return '<tr><td class="sbx-cmp-k">' + esc(d.label) + '</td><td class="sbx-cmp-mine">' + cmpCell(d.mine) + '</td><td>' + cmpCell(d.book) + '</td>' +
+            '<td class="sbx-cmp-act"><button type="button" class="btn-secondary btn-sm" data-sbx-cmp="' + n + '"' + dis + '>Use the book’s</button></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else {
+      h += '<p class="sbx-cmp-f">Every field matches the book entry.</p>';
+    }
+    return h + '<p class="sbx-cmp-f' + (st.msgKind === 'error' ? ' is-error' : '') + '" role="status" aria-live="polite">' +
+      esc(st.msg || '“Use the book’s” saves that one field to this page straight away. Undo puts it back.') +
+      (st.undo && !st.saving ? ' <button type="button" class="btn-ghost btn-sm" data-sbx-cmp="undo">Undo</button>' : '') + '</p>';
+  }
+
   // CSS uses Chronicle's colour tokens, so light and dark follow the site, and
   // stays under .sbx so a hover-card style can restyle it from outside.
   var CSS = [
@@ -484,6 +607,24 @@ var DrawSteelStatblock = (function () {
     '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--sbx-accent,#DC2626)}',
     '.sbx-fvtt-toggle b{color:var(--color-text-primary,#111827);font-weight:600;display:block}',
     '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-src{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(var(--color-accent-rgb,99,102,241),.08);font-size:13px}',
+    '.sbx-src-t{flex:1 1 240px;min-width:0}',
+    '.sbx-cmp{border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden;background:var(--color-card-bg,#fff);font-size:13px}',
+    '.sbx-cmp-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbx-cmp-h h4{margin:0;font-size:14px;font-weight:600;color:var(--color-text-primary,#111827)}',
+    '.sbx-cmp-src{font-size:12px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-sp{flex:1}',
+    '.sbx-cmp-w{overflow-x:auto}',
+    '.sbx-cmp-t{width:100%;border-collapse:collapse}',
+    '.sbx-cmp-t th,.sbx-cmp-t td{text-align:left;vertical-align:top;padding:6px 10px;border-top:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-cmp-t th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-k{font-weight:600;white-space:nowrap;color:var(--color-text-primary,#111827)}',
+    '.sbx-cmp-mine{background:rgba(245,158,11,.10)}',
+    '.sbx-cmp-act{text-align:right;white-space:nowrap}',
+    '.sbx-cmp-none{font-style:italic;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-f.is-error{color:#b91c1c}.dark .sbx-cmp-f.is-error{color:#f87171}',
+    '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
 
@@ -556,9 +697,9 @@ var DrawSteelStatblock = (function () {
     return sb;
   }
 
-  // toFields is the entity shape: the creature preset's 21 fields, so the
-  // Attributes view, Foundry sync and older builders read it. Keywords and
-  // immunities are comma text, as the bundled creatures have them; traits,
+  // toFields is the entity shape: the creature preset's fields, so the
+  // Attributes view, Foundry sync and older builders read it. Keywords,
+  // immunities and movement are comma text, as the bundled creatures have them; traits,
   // abilities and villain actions are JSON text.
   function toFields(c) {
     var f = {
@@ -567,6 +708,7 @@ var DrawSteelStatblock = (function () {
       stamina: c.stamina, winded: c.winded, speed: c.speed, stability: c.stability,
       immunities: (c.immunities || []).join(', '), free_strike: c.free_strike || '',
       weaknesses: (c.weaknesses || []).join(', '),
+      movement: (c.movement || []).join(', '), with_captain: c.with_captain || '',
       traits: JSON.stringify((c.traits || []).slice(0, MAX_LIST)),
       abilities_json: JSON.stringify((c.abilities || []).slice(0, MAX_LIST)),
       villain_actions_json: JSON.stringify((c.villain_actions || []).slice(0, MAX_LIST))
@@ -585,6 +727,11 @@ var DrawSteelStatblock = (function () {
     toFields: toFields,
     html: html,
     foundryHtml: foundryHtml,
+    SOURCE_KEY: SOURCE_KEY,
+    bookSource: bookSource,
+    bookDiffs: bookDiffs,
+    takeBook: takeBook,
+    compareHtml: compareHtml,
     abilityHtml: abilityHtml,
     abilityByKey: abilityByKey,
     rollTier: rollTier,
@@ -629,6 +776,7 @@ function StatblockPanel(el, config) {
   this.editor = null;
   this.publishOpen = false;
   this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
+  this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
 }
 
 StatblockPanel.prototype.start = function () {
@@ -689,10 +837,97 @@ StatblockPanel.prototype.render = function () {
   }
   bar += '</div>';
   var pub = (this.isGM && this.publishOpen) ? this.publishHtml() : '';
-  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
+  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.sourceHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
     S.html(name, f, { ref: this.ref, refs: this.refs }) +
     (this.isGM ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
   this.bind();
+};
+
+// sourceHtml is the director's banner on a page copied from the book, with
+// the comparison folded open under it. Players never see either.
+StatblockPanel.prototype.sourceHtml = function () {
+  var S = DrawSteelStatblock, f = this.fields();
+  if (!this.isGM || !S.bookSource(f)) return '';
+  var c = this.cmp, group = c.book && c.book.properties && c.book.properties.group;
+  return '<div class="sbx-src"><span class="sbx-src-t">Copied from the <b>Draw Steel book</b>' + (group ? ' (' + S.esc(group) + ')' : '') + '. Changes you make stay on this page.</span>' +
+    '<button type="button" class="btn-secondary btn-sm" data-sbx-act="compare" aria-expanded="' + c.open + '" aria-controls="sbx-cmp-' + S.esc(this.eid) + '">Compare with the book</button></div>' +
+    '<div class="sbx-cmp" id="sbx-cmp-' + S.esc(this.eid) + '"' + (c.open ? '' : ' hidden') + '>' + (c.open ? S.compareHtml(f, c) : '') + '</div>';
+};
+
+// The book is the package's monsters.json, read once per page when the
+// director first opens the comparison.
+StatblockPanel.prototype.toggleCompare = function () {
+  var self = this, S = DrawSteelStatblock, c = this.cmp;
+  c.open = !c.open;
+  if (!c.open) { c.msg = ''; c.undo = null; this.render(); this.focus('[data-sbx-act="compare"]'); return; }
+  if (c.book || c.missing) { this.render(); this.focus('.sbx-cmp-h h4'); return; }
+  c.loading = true; c.error = false;
+  this.render();
+  var slug = S.bookSource(this.fields());
+  S.getJSON('/campaigns/' + encodeURIComponent(this.cid) + '/systems/drawsteel/data/monsters.json').then(function (list) {
+    c.book = S.findBySlug(S.unwrap(list), slug);
+    c.missing = !c.book;
+  }).catch(function () {
+    c.error = true;
+  }).then(function () {
+    c.loading = false;
+    self.render();
+    self.focus('.sbx-cmp-h h4');
+  });
+};
+
+StatblockPanel.prototype.focus = function (sel) {
+  var x = this.el.querySelector && this.el.querySelector(sel);
+  if (x && x.focus) x.focus();
+};
+
+// saveFields lays a patch over the page's current fields (read fresh, so values
+// Foundry sent back survive) and saves; undefined removes a key.
+StatblockPanel.prototype.saveFields = function (patch) {
+  var self = this, S = DrawSteelStatblock;
+  var url = '/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(this.eid);
+  return S.getJSON(url).then(function (cur) {
+    var merged = {}, k, now = (cur && cur.fields_data) || {};
+    for (k in now) if (Object.prototype.hasOwnProperty.call(now, k)) merged[k] = now[k];
+    for (k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) { if (patch[k] === undefined) delete merged[k]; else merged[k] = patch[k]; }
+    var name = (cur && cur.name) || (self.entity && self.entity.name) || '';
+    return S.apiFetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, fields_data: merged }) })
+      .then(function (res) {
+        if (!res.ok) throw new Error('save ' + res.status);
+        self.entity.fields_data = merged;
+      });
+  });
+};
+
+// take applies the book's value for one difference (n), all of them ('all'),
+// or puts back what the last take replaced ('undo').
+StatblockPanel.prototype.take = function (what) {
+  var self = this, S = DrawSteelStatblock, c = this.cmp, f = this.fields(), patch, prev, said;
+  if (c.saving || !c.book) return;
+  if (what === 'undo') {
+    if (!c.undo) return;
+    patch = c.undo; prev = null; said = 'Undone.';
+  } else {
+    var ds = S.bookDiffs(f, c.book.properties || {});
+    var pick = what === 'all' ? ds : (ds[+what] ? [ds[+what]] : []);
+    if (!pick.length) return;
+    patch = S.takeBook(f, c.book.properties || {}, pick);
+    prev = {};
+    Object.keys(patch).forEach(function (k) { prev[k] = Object.prototype.hasOwnProperty.call(f, k) ? f[k] : undefined; });
+    said = what === 'all' ? 'Took the book’s values for everything.' : 'Took the book’s ' + pick[0].label.toLowerCase() + '.';
+  }
+  c.saving = true; c.msg = 'Saving…'; c.msgKind = '';
+  this.render();
+  this.saveFields(patch).then(function () {
+    c.undo = prev; c.msg = said;
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not take the book’s value', err);
+    c.msg = 'Could not save that. Try again.'; c.msgKind = 'error';
+  }).then(function () {
+    c.saving = false;
+    self.render();
+    self.focus('.sbx-cmp-h h4');
+  });
 };
 
 StatblockPanel.prototype.stateUrl = function () {
@@ -757,10 +992,14 @@ StatblockPanel.prototype.bind = function () {
   this.el.addEventListener('click', function (e) {
     var act = e.target.closest && e.target.closest('[data-sbx-act]');
     if (act && self.el.contains(act)) {
-      if (act.getAttribute('data-sbx-act') === 'edit') self.edit();
+      var which = act.getAttribute('data-sbx-act');
+      if (which === 'edit') self.edit();
+      else if (which === 'compare') self.toggleCompare();
       else { self.publishOpen = !self.publishOpen; self.render(); }
       return;
     }
+    var cmp = e.target.closest && e.target.closest('[data-sbx-cmp]');
+    if (cmp && self.el.contains(cmp)) { self.take(cmp.getAttribute('data-sbx-cmp')); return; }
     var pub = e.target.closest && e.target.closest('[data-sbx-pub]');
     if (pub && self.el.contains(pub)) self.publish(pub.getAttribute('data-sbx-pub'));
   });
