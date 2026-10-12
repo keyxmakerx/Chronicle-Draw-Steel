@@ -86,7 +86,7 @@ test('no two creature fields write the same Foundry path', () => {
 
 test('derived or Chronicle-only fields have no Foundry path', () => {
   // Winded is computed by Foundry and never stored on the actor.
-  for (const key of ['winded', 'faction', 'immunities', 'traits', 'abilities_json', 'villain_actions_json', 'book_source']) {
+  for (const key of ['winded', 'faction', 'immunities', 'traits', 'abilities_json', 'villain_actions_json', 'book_source', 'token_image']) {
     const f = creature.fields.find((x) => x.key === key);
     assert.ok(f, key + ' missing');
     assert.equal(f.foundry_path, undefined, key + ' must not map to Foundry yet');

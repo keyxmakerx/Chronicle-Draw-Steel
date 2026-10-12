@@ -1032,6 +1032,7 @@ var DrawSteelCreatureEditor = (function () {
       field('sbe-keywords', 'Keywords', c.keywords.join(', '), 'data-sbe-k="keywords" placeholder="Humanoid, Goblin"', true) +
       field('sbe-faction', 'Faction', c.faction, 'data-sbe-k="faction"', true) +
       field('sbe-immunities', 'Immunities', c.immunities.join(', '), 'data-sbe-k="immunities" placeholder="Fire 5, poison"', true) + '</div>';
+    if (ui.pics) h += picsHtml(ui.pics);
     h += '<h4 class="sbe-h">Figures</h4><div class="sbe-grid sbe-g4">' +
       figureBox(st, 'ev', 'Encounter value', pr.ev, 'encounter value') +
       figureBox(st, 'stamina', 'Stamina', pr.stamina, 'Stamina') +
@@ -1193,6 +1194,50 @@ var DrawSteelCreatureEditor = (function () {
 
   function apiCall(url, opts) { return SB().apiFetch(url, opts); }
 
+  // ── Pictures ──────────────────────────────────────────────────────────────
+
+  // The art is the page picture and the token a field; both are media ids
+  // (see DrawSteelStatblock.pictures). They change only when the director saves.
+  var PIC_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  var PIC_MAX = 10 * 1024 * 1024;
+
+  function picProblem(file) {
+    if (!file) return 'Choose a picture.';
+    if (PIC_TYPES.indexOf(String(file.type || '').toLowerCase()) === -1) return 'Use a PNG, JPEG, WebP or GIF picture.';
+    if (file.size > PIC_MAX) return 'That picture is over 10 MB. Use a smaller one.';
+    return '';
+  }
+
+  function newPics(entity) {
+    var p = SB().pictures(entity);
+    return { art: p.art, token: p.token, art0: p.art, busy: '', msg: '', msgKind: '' };
+  }
+
+  function picSlot(k, label, id, round, busy, hint) {
+    var S = SB();
+    var prev = busy ? '<span class="sbe-pic-none">Uploading…</span>'
+      : id ? '<img src="' + esc(S.mediaSrc(id)) + '" alt="' + esc(label) + '">'
+      : (round ? S.GENERIC_TOKEN : '<span class="sbe-pic-none">No art</span>');
+    return '<div class="sbe-pic-slot"><span class="sbe-lbl">' + esc(label) + '</span>' +
+      '<span class="sbe-pic-prev' + (round ? ' is-round' : '') + (round && !id && !busy ? ' is-generic' : '') + '">' + prev + '</span>' +
+      '<span class="sbe-pic-acts"><label class="btn-secondary btn-sm sbe-pic-up">' + (id ? 'Change…' : 'Upload…') +
+      '<input type="file" class="sbe-sr" accept="' + PIC_TYPES.join(',') + '" data-sbe-pic="' + k + '" aria-label="' + esc(id ? 'Change the ' + label.toLowerCase() : 'Upload ' + label.toLowerCase()) + '"' + (busy ? ' disabled' : '') + '></label>' +
+      (id ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="pic-clear" data-sbe-pic-k="' + k + '"' + (busy ? ' disabled' : '') + '>Remove</button>' : '') + '</span>' +
+      '<span class="sbe-hint">' + hint + '</span></div>';
+  }
+
+  // picsHtml is the Pictures box: art and token side by side, each saying
+  // what stands in when it is empty.
+  function picsHtml(p) {
+    var tokHint = p.token ? 'Used for the Foundry token and the map.'
+      : p.art ? 'Empty: Foundry’s token uses <b>the art</b>, cropped to a circle.'
+      : 'Empty: Foundry’s token uses <b>the generic monster token</b>.';
+    return '<h4 class="sbe-h">Pictures <span class="sbe-hint">Both optional</span></h4><div class="sbe-pics">' +
+      picSlot('art', 'Art', p.art, false, p.busy === 'art', 'The page’s own picture, at the top of the page and the stat block.') +
+      picSlot('token', 'Token', p.token, true, p.busy === 'token', tokHint) + '</div>' +
+      (p.msg ? '<p class="sbe-msg' + (p.msgKind ? ' is-' + p.msgKind : '') + '" role="status">' + esc(p.msg) + '</p>' : '');
+  }
+
   // keepOtherFields lays the editor's fields over the page's current ones, so a
   // key the editor never writes survives the save.
   function keepOtherFields(current, fields) {
@@ -1280,7 +1325,8 @@ var DrawSteelCreatureEditor = (function () {
     var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
       gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false },
-      ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() } };
+      ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() },
+      pics: newPics(entity) };
     var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
     var dirtyKey = 'monster-builder:' + (ctx.entityId || 'new');
     var root = doc.createElement('div');
@@ -1349,6 +1395,7 @@ var DrawSteelCreatureEditor = (function () {
     }
     function onChange(e) {
       var t = e.target;
+      if (t.hasAttribute('data-sbe-pic')) { uploadPic(t.getAttribute('data-sbe-pic'), t.files && t.files[0]); return; }
       if (t.hasAttribute('data-sbe-bko')) {
         var slug = t.getAttribute('data-sbe-bko');
         if (t.checked) delete ui.ai.book.off[slug]; else ui.ai.book.off[slug] = true;
@@ -1425,6 +1472,10 @@ var DrawSteelCreatureEditor = (function () {
         st.editAb = 'v' + (st.c.villain_actions.length - 1); dirty(); draw('sbe-ab-name');
       }
       else if (act === 'save') doSave();
+      else if (act === 'pic-clear') {
+        var pk = el.getAttribute('data-sbe-pic-k');
+        if (pk === 'art' || pk === 'token') { ui.pics[pk] = ''; ui.pics.msg = 'Save to remove the ' + (pk === 'art' ? 'art' : 'token') + '.'; ui.pics.msgKind = ''; dirty(); draw(); }
+      }
       else if (act === 'cancel') {
         if (ui.dirty && typeof confirm === 'function' && !confirm('Discard your changes to this stat block?')) return;
         clean(); close(null);
@@ -1634,11 +1685,59 @@ var DrawSteelCreatureEditor = (function () {
       dirty(); draw();
     }
 
+    function uploadPic(k, file) {
+      var p = ui.pics, bad = picProblem(file);
+      if (bad) { p.msg = bad; p.msgKind = 'error'; draw(); return; }
+      p.busy = k; p.msg = ''; draw();
+      var fd = new FormData();
+      fd.append('file', file);
+      fd.append('usage_type', 'entity_image');
+      fd.append('campaign_id', ctx.campaignId);
+      apiCall('/media/upload', { method: 'POST', body: fd }).then(function (res) {
+        if (!res.ok) throw new Error('upload ' + res.status);
+        return res.json();
+      }).then(function (d) {
+        var id = SB().mediaId(d && d.id);
+        if (!id) throw new Error('upload returned no id');
+        p[k] = id; p.busy = ''; p.msg = 'Save to keep the new ' + (k === 'art' ? 'art' : 'token') + '.'; p.msgKind = '';
+        dirty(); draw();
+      }).catch(function (err) {
+        if (typeof console !== 'undefined') console.warn('Monster builder: picture upload failed', err);
+        p.busy = ''; p.msg = 'Could not upload that picture. Try again.'; p.msgKind = 'error'; draw();
+      });
+    }
+
+    // saveArt sets the page picture. Chronicle announces the stat block's save
+    // to Foundry but not a picture change, so on an existing page the art goes
+    // first and the save carries it; a new creature gets its art once it has
+    // an id, and Foundry sees it with the page's next change.
+    function saveArt(id, after) {
+      var p = ui.pics;
+      if (!id || p.art === p.art0) return Promise.resolve();
+      var url = '/campaigns/' + encodeURIComponent(ctx.campaignId) + '/entities/' + encodeURIComponent(id) + '/image';
+      return apiCall(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_path: p.art }) }).then(function (res) {
+        if (!res.ok) {
+          var e = new Error(after ? 'The stat block saved, but the art could not be set. Try again.' : 'The art could not be set, so nothing was saved. Try again.');
+          e.artOnly = after; throw e;
+        }
+        p.art0 = p.art;
+      });
+    }
+
     function doSave() {
       var problem = !String(st.name || '').trim() ? 'Give the creature a name first.' : (!ctx.campaignId ? 'This editor has no campaign, so it cannot save.' : '');
       if (problem) { ui.msg = problem; ui.msgKind = 'error'; draw('sbe-name'); return; }
       ui.saving = true; ui.msg = ''; draw();
-      save(st, ctx).then(function (saved) {
+      st.base[SB().TOKEN_KEY] = ui.pics.token || '';
+      saveArt(ctx.entityId, false).then(function () {
+        return save(st, ctx);
+      }).then(function (saved) {
+        if (saved && saved.id) ctx.entityId = String(saved.id);
+        return saveArt(saved && saved.id, true).then(function () {
+          if (saved) saved.image_path = ui.pics.art;
+          return saved;
+        });
+      }).then(function (saved) {
         ui.saving = false; clean();
         clearAIMarks(st);
         if (saved && saved.id) ctx.entityId = String(saved.id);
@@ -1647,6 +1746,7 @@ var DrawSteelCreatureEditor = (function () {
       }).catch(function (err) {
         if (typeof console !== 'undefined') console.warn('Monster builder: save failed', err);
         ui.saving = false;
+        if (err && err.artOnly) { ui.isNew = false; clean(); }
         ui.msg = (err && !err.status && err.message) ? err.message : 'Could not save this stat block. Try again.';
         ui.msgKind = 'error'; draw();
       });
@@ -2082,6 +2182,18 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-sp{flex:1}',
     '.sbe-msg{margin:0;font-size:13px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:#b91c1c}.dark .sbe-msg.is-error{color:#f87171}',
     '.sbe-origin{margin:0;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);display:flex;gap:8px;align-items:baseline}',
+    '.sbe-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
+    '.sbe-pics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
+    '.sbe-pic-slot{display:grid;gap:6px;justify-items:start;align-content:start;min-width:0;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px}',
+    '.sbe-pic-prev{width:88px;height:88px;border-radius:8px;overflow:hidden;display:grid;place-items:center;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
+    '.sbe-pic-prev.is-round{border-radius:50%}',
+    '.sbe-pic-prev.is-generic{opacity:.6;box-shadow:none;background:none}',
+    '.sbe-pic-prev img,.sbe-pic-prev svg{width:100%;height:100%;object-fit:cover;display:block}',
+    '.sbe-pic-none{font-size:12px;color:var(--color-text-secondary,#6b7280);text-align:center;padding:4px}',
+    '.sbe-pic-acts{display:flex;gap:4px;flex-wrap:wrap}',
+    '.sbe-pic-up{position:relative;cursor:pointer}',
+    '.sbe-pic-up:focus-within{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '@media (max-width:640px){.sbe-pics{grid-template-columns:1fr}}',
     '.sbe-h{margin:6px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}',
     '.sbe-h .sbe-hint{text-transform:none;letter-spacing:0;font-weight:400;margin-right:auto}',
     '.sbe-grid{display:grid;gap:10px 12px}',
@@ -2267,7 +2379,8 @@ var DrawSteelCreatureEditor = (function () {
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,
     setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE,
     BOOK_LIMITS: BOOK_LIMITS, newBookFilter: newBookFilter, bookGroup: bookGroup, inflicts: inflicts, shortlist: shortlist, shortCounts: shortCounts, bookLine: bookLine,
-    bookPicks: bookPicks, bookFiltersHtml: bookFiltersHtml, bookListHtml: bookListHtml, bookCountText: bookCountText
+    bookPicks: bookPicks, bookFiltersHtml: bookFiltersHtml, bookListHtml: bookListHtml, bookCountText: bookCountText,
+    picProblem: picProblem, newPics: newPics, picsHtml: picsHtml
   };
   return api;
 })();

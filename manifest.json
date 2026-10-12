@@ -851,6 +851,11 @@
           "label": "Copied from",
           "type": "string",
           "gm_only": true
+        },
+        {
+          "key": "token_image",
+          "label": "Token picture",
+          "type": "string"
         }
       ]
     }

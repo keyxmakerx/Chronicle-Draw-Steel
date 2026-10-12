@@ -212,7 +212,9 @@ doesn't list) is left unset rather than guessed. Not mapped yet: winded (Foundry
 derives it), immunities and weaknesses (Foundry stores a number per damage type),
 traits, abilities and villain actions (Foundry stores these as items).
 `book_source`, the Monsters book entry a page was copied from, is Chronicle-only
-and has no Foundry path.
+and has no Foundry path. Neither has the token picture (`token_image`, a media
+id): a Chronicle media link needs signing, so the Chronicle Sync module fetches
+the token and the page picture itself and sets the actor's token and portrait.
 
 Sending back is off for every creature until the director turns it on in the
 "In Foundry" box under the creature's stat block. The toggle is stored in the

@@ -340,7 +340,10 @@ var DrawSteelStatblock = (function () {
     var rank = (c.level !== null ? 'Level ' + esc(c.level) : '') +
       (c.organization ? ' ' + hook('data-sbx-org', c.organization) : '') + (c.role && !noRole ? ' ' + hook('data-sbx-role', c.role) : '');
     var h = '<article class="sbx' + (o.compact ? ' sbx--compact' : '') + '" aria-label="' + esc(title) + ' stat block">';
-    h += '<header class="sbx-head"><div class="sbx-title"><h3 class="sbx-name">' + esc(title) + '</h3>';
+    // A page's stat block leads with the creature's picture; the bestiary
+    // passes none and keeps its rows compact.
+    var pic = o.picture ? picHtml(o.picture.page, title, !o.picture.art) : '';
+    h += '<header class="sbx-head' + (pic ? ' has-pic' : '') + '">' + pic + '<div class="sbx-title"><h3 class="sbx-name">' + esc(title) + '</h3>';
     if (c.keywords.length || c.faction) {
       h += '<p class="sbx-kw">' + esc(c.keywords.join(', ')) + (c.keywords.length && c.faction ? ' <span class="sbx-dot">·</span> ' : '') + esc(c.faction) + '</p>';
     }
@@ -411,6 +414,41 @@ var DrawSteelStatblock = (function () {
       '<p class="sbx-fvtt-hint">Foundry makes this creature an NPC actor in its &ldquo;Chronicle: Creatures&rdquo; folder when Sync Creatures is on in the Chronicle Sync module&rsquo;s settings.</p>' +
       (st.error ? '<p class="sbx-msg is-error" role="alert">' + esc(st.error) + '</p>' : '') +
     '</section>';
+  }
+
+  // ── Pictures ──────────────────────────────────────────────────────────────
+
+  // A creature's art is its page picture (image_path); its token is the
+  // token_image field. Both hold a bare media id: an uploader's link is signed
+  // for that one session and expires, while /media/<id> serves any member.
+  // Older pages hold a dated path ("2026/03/<id>.jpg"), read the same way.
+  var TOKEN_KEY = 'token_image';
+  var MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function mediaId(v) {
+    var s = String(v == null ? '' : v).split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+    return MEDIA_ID.test(s) ? s.toLowerCase() : '';
+  }
+  function mediaSrc(v) { var id = mediaId(v); return id ? '/media/' + id : ''; }
+
+  // The generic monster token stands in wherever a creature has neither picture.
+  var GENERIC_TOKEN = '<svg class="sbx-generic" viewBox="0 0 120 120" role="img" aria-label="Generic monster token">' +
+    '<circle cx="60" cy="60" r="58" fill="#3f3a36"/><circle cx="60" cy="60" r="51" fill="#c9b79c"/>' +
+    '<circle cx="60" cy="60" r="51" fill="none" stroke="#3f3a36" stroke-width="2" stroke-dasharray="3 5"/>' +
+    '<path fill="#3f3a36" d="M36 40 L46 52 L50 36 L56 50 L60 32 L64 50 L70 36 L74 52 L84 40 L80 70 C78 86 70 94 60 94 C50 94 42 86 40 70 Z"/>' +
+    '<path fill="#c9b79c" d="M49 64 l9 4 l-9 3z M71 64 l-9 4 l9 3z M52 80 l3 5 l3 -5 l2 5 l2 -5 l3 5 l3 -5z"/></svg>';
+
+  // pictures says what a creature shows where: the page and stat block prefer
+  // the art, a token prefers the token, and either falls back to the other,
+  // then to the generic token.
+  function pictures(entity) {
+    var e = entity || {}, f = e.fields_data || e.custom_fields || {};
+    var art = mediaId(e.image_path), token = mediaId(f[TOKEN_KEY]);
+    return { art: art, token: token, page: art || token, tokenShown: token || art };
+  }
+
+  function picHtml(id, label, round) {
+    return '<span class="sbx-pic' + (round ? ' is-round' : '') + '">' +
+      (id ? '<img src="' + esc(mediaSrc(id)) + '" alt="' + esc(label) + '" loading="lazy">' : GENERIC_TOKEN) + '</span>';
   }
 
   // ── Compare with the book ─────────────────────────────────────────────────
@@ -607,6 +645,11 @@ var DrawSteelStatblock = (function () {
     '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--sbx-accent,#DC2626)}',
     '.sbx-fvtt-toggle b{color:var(--color-text-primary,#111827);font-weight:600;display:block}',
     '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-head.has-pic{flex-wrap:nowrap;align-items:center}',
+    '.sbx-head.has-pic .sbx-title{flex:1}',
+    '.sbx-pic{flex:0 0 72px;width:72px;height:72px;border-radius:8px;overflow:hidden;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
+    '.sbx-pic.is-round{border-radius:50%;box-shadow:none;background:none}',
+    '.sbx-pic img,.sbx-pic svg{display:block;width:100%;height:100%;object-fit:cover}',
     '.sbx-src{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(var(--color-accent-rgb,99,102,241),.08);font-size:13px}',
     '.sbx-src-t{flex:1 1 240px;min-width:0}',
     '.sbx-cmp{border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden;background:var(--color-card-bg,#fff);font-size:13px}',
@@ -625,6 +668,7 @@ var DrawSteelStatblock = (function () {
     '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#6b7280)}',
     '.sbx-cmp-f.is-error{color:#b91c1c}.dark .sbx-cmp-f.is-error{color:#f87171}',
     '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}}',
+    '@media (max-width:640px){.sbx-head.has-pic{flex-wrap:wrap}.sbx-pic{flex-basis:56px;width:56px;height:56px}}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
 
@@ -728,6 +772,12 @@ var DrawSteelStatblock = (function () {
     html: html,
     foundryHtml: foundryHtml,
     SOURCE_KEY: SOURCE_KEY,
+    TOKEN_KEY: TOKEN_KEY,
+    GENERIC_TOKEN: GENERIC_TOKEN,
+    mediaId: mediaId,
+    mediaSrc: mediaSrc,
+    pictures: pictures,
+    picHtml: picHtml,
     bookSource: bookSource,
     bookDiffs: bookDiffs,
     takeBook: takeBook,
@@ -838,7 +888,7 @@ StatblockPanel.prototype.render = function () {
   bar += '</div>';
   var pub = (this.isGM && this.publishOpen) ? this.publishHtml() : '';
   this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.sourceHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
-    S.html(name, f, { ref: this.ref, refs: this.refs }) +
+    S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) }) +
     (this.isGM ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
   this.bind();
 };
