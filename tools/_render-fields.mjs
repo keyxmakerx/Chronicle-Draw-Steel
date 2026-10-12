@@ -502,6 +502,9 @@ export const WIDGET_ONLY = new Set([
   'rulebook-examples.json',
   // The Handbook's Credits chapter: names and counts, read by handbook-credits.
   'credits.json',
+  // The class pop-up books: each class's resource rules beside an example
+  // fight written for this package, read only by the class-fights widget.
+  'class-fights.json',
 ]);
 
 /**

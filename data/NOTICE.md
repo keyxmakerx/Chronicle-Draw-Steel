@@ -18,6 +18,7 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `encounter-building.json` | The six-step encounter-building procedure: the five difficulty tiers with their budget bands and Victory awards, encounter strength and its table, budget spending rules, creature level and count limits, initiative groups, and Quick Encounter Building | *Monsters Book* ch. 1 (Monster Basics) |
 | `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
 | `negotiation.json` | The negotiation rules: the six starting attitudes with their Interest and Patience, the twelve motivations and pitfalls, the argument outcomes, the offer at each Interest level, and the procedural rules (when to negotiate, stats, opening, uncovering motivations, making arguments, Renown and Impression, ending) | *Heroes Book* ch. 11 (Negotiation) |
+| `class-fights.json` | The class pop-up books' rules: for each of the nine classes, its Heroic Resource, the quote and gain text from its class chapter, the start-of-fight and start-of-turn gains, the triggers with how often each pays and how much, the 3 and 5 costs of its 1st-level heroic abilities, and its own rules (the conduit's prayer, the shadow's edge discount, the talent's strain, the troubadour's death and return); plus the power roll and the winded and dying thresholds the fights use | *Heroes Book* ch. 1 (The Basics), ch. 5 (Classes), ch. 10 (Combat) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -80,6 +81,16 @@ tables, the Interest 0-5 offers, the argument power-roll tables and the twelve
 motivation/pitfall descriptions were converted from that file; the tier numbers
 in `properties.tiers` and the interest/patience values are encodings of the
 published text, not new rules.
+
+The class entries in `class-fights.json` (`class-resource-*`) come from the nine
+class files `Rules/Classes/*.md` in `SteelCompendium/data-md` (`source:
+mcdm.heroes.v1`): each class's opening quote and its "<Resource> in Combat" and
+"<Resource> Outside of Combat" sections. The `power-roll` entry comes from
+`Rules/Chapters/The Basics.md` and `winded-and-dying` from
+`Rules/Chapters/Combat.md`. The numbers in `properties` (`turn_gain`, each
+trigger's `amount` and `per`, `prayer`, `strain`, `death`, `edge_discount`) are
+encodings of that text, not new rules; `heroic_ability_costs` is the 3 and 5 that
+every class's 1st-level heroic abilities in `abilities.json` cost.
 
 The keyword definitions in `ability-keywords.json` come from
 `Rules/Chapters/Classes.md` ("Ability Keywords") for the core keywords,
@@ -311,6 +322,14 @@ rules text and carries its real provenance in its root `source`. The non-publish
 parts are the *shape*: `properties.kind`, the numeric `interest`/`patience` and
 `tiers` encodings, the `list` of motivation names, and the `impression_table`
 rows.
+
+**`class-fights.json` is mixed, and says so per entry.** The `power-roll`,
+`winded-and-dying` and nine `class-resource-*` entries are published rules text and
+carry their real provenance. The nine `example-fight-*` entries are this package's
+own: the scenes, the foes and their Stamina, the hero's example numbers, every
+spoken line, the damage each move deals and the stage layout were written for the
+pop-up books, and each carries `"source": "custom"`. The widget's footer says so on
+every fight. The drawings are in `widgets/class-fights.js`, not in the data.
 
 **`kits.json` contains no custom content.** All twenty-one entries — description,
 equipment line, every bonus, and every signature ability — are published rules text
