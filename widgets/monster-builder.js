@@ -391,8 +391,9 @@ var DrawSteelCreatureEditor = (function () {
   function quoted(list) { return list.map(function (x) { return '"' + x + '"'; }).join(', '); }
 
   // guideFor is the text the director copies into an AI chat: the creature,
-  // the party, the exact answer shape and every option it can pick from.
-  function guideFor(desc, party, v) {
+  // the party, the exact answer shape, every option it can pick from and the
+  // book abilities the director shortlisted for it.
+  function guideFor(desc, party, v, book) {
     var lines = [
       'Write one Draw Steel creature for my campaign. Reply with only a JSON object, no other text.',
       '',
@@ -411,18 +412,98 @@ var DrawSteelCreatureEditor = (function () {
       '  "traits": [{ "name": "…", "effect": "…" }],',
       '  "signature": { "name": "…", "keywords": ability keywords from the list below, "distance": "Melee 1" or "Ranged 10" and so on, "target": "…", "damage_type": "" or a damage type, "tier_effects": ["what else happens on tier 1, or empty", "tier 2", "tier 3"] },',
       '  "abilities": [{ "name": "…", "type": "action" | "maneuver" | "triggered", "keywords": [], "distance": "…", "target": "…", "trigger": "for a triggered action", "deals_damage": true or false, "damage_type": "", "tier_effects": ["", "", ""], "effect": "…" }],',
-      '  "villain_actions": [{ "name": "…", "distance": "…", "target": "…", "effect": "…" }] (exactly three, for a leader or solo only)',
-      '}',
-      '',
-      'Do not give encounter value, Stamina, free strike, characteristics or damage numbers. Chronicle works those out from the published Monster Basics formulas.'
+      '  "villain_actions": [{ "name": "…", "distance": "…", "target": "…", "effect": "…" }] (exactly three, for a leader or solo only)' + (book && book.length ? ',' : '')
     ];
+    if (book && book.length) lines.push('  "book_abilities": ["id", …] (ids from the book abilities below that suit this creature; leave it out to write all your own)');
+    lines.push('}',
+      '',
+      'Do not give encounter value, Stamina, free strike, characteristics or damage numbers. Chronicle works those out from the published Monster Basics formulas.');
     if (v.creatureKeywords.length) lines.push('', 'Creature keywords: ' + v.creatureKeywords.join(', '));
     if (v.abilityKeywords.length) lines.push('Ability keywords: ' + v.abilityKeywords.join(', '));
     lines.push('Damage types: ' + v.damageTypes.join(', '));
     if (v.conditions.length) lines.push('', 'Mark conditions as {@condition name}, one of: ' + v.conditions.join(', '));
     if (v.durations.length) lines.push('Mark durations as {@duration name}, one of: ' + v.durations.join(', '));
     if (v.movement.length) lines.push('Mark forced movement as {@movement name}, one of: ' + v.movement.join(', '));
+    if (book && book.length) {
+      lines.push('', 'Book abilities you may use (' + book.length + '). Pick them by id in "book_abilities" and do not copy them into "abilities"; Chronicle adds them with damage from the published formulas:');
+      book.forEach(function (t) { lines.push(bookLine(t)); });
+    }
     return lines.join('\n');
+  }
+
+  // ── The book shortlist ────────────────────────────────────────────────────
+
+  // The guide can't carry all of the book's abilities, so the director narrows
+  // them with filters and the guide offers at most BOOK_LIMITS' largest.
+  var BOOK_LIMITS = [10, 25, 50];
+  function newBookFilter() { return { kind: '', fit: 'this', group: '', kw: '', cond: '', q: '', lim: 50, off: {} }; }
+  var SHORT_STOP = ['a', 'an', 'the', 'who', 'and', 'that', 'with', 'into', 'onto', 'from', 'their', 'them', 'they', 'this', 'his', 'her', 'its', 'for', 'of', 'to', 'on', 'in', 'at', 'by', 'or', 'as', 'is', 'are', 'be', 'leads'];
+
+  // bookGroup is the Monsters book chapter an ability came from, read from its
+  // source line; '' for the package's own.
+  function bookGroup(t) { var m = /Monsters — ([^)]+)\)/.exec(String((t && t.source) || '')); return m ? m[1] : ''; }
+
+  // inflicts lists the conditions an ability's text marks up.
+  function inflicts(t) {
+    var p = props(t), out = [], re = /\{@condition ([a-z-]+)/g, m, txt = [p.effect, p.tier1, p.tier2, p.tier3, p.trigger].join(' ');
+    while ((m = re.exec(txt))) if (out.indexOf(m[1]) < 0) out.push(m[1]);
+    return out;
+  }
+
+  function shortWords(text) {
+    return String(text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3 && SHORT_STOP.indexOf(w) < 0; })
+      .map(function (w) { return w.replace(/ies$/, 'y').replace(/s$/, ''); });
+  }
+  function haystack(t) {
+    var p = props(t);
+    return [t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' ').toLowerCase();
+  }
+
+  // shortPass applies every filter but `skip`, so a chip's count says what
+  // picking it would leave. `fit` is 'this' (what this creature can take),
+  // 'any', or an organization.
+  function shortPass(t, c, f, skip) {
+    var p = props(t);
+    if (skip !== 'kind' && f.kind && p.type !== f.kind) return false;
+    if (skip !== 'fit') {
+      if ((f.fit || 'this') === 'this' && !usable(t, c)) return false;
+      if (f.fit && f.fit !== 'this' && f.fit !== 'any' && listProp(p.organizations).indexOf(f.fit) < 0) return false;
+    }
+    if (skip !== 'group' && f.group && bookGroup(t) !== f.group) return false;
+    if (skip !== 'kw' && f.kw && listProp(p.keywords).indexOf(f.kw) < 0) return false;
+    if (skip !== 'cond' && f.cond && inflicts(t).indexOf(f.cond) < 0) return false;
+    if (f.q) {
+      var h = haystack(t);
+      if (!String(f.q).toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return h.indexOf(w) >= 0; })) return false;
+    }
+    return true;
+  }
+
+  // shortlist is every book ability the filters leave, best first: words of
+  // the description and search it matches, then how closely it was made for
+  // this creature's organization and role. Ties keep library order.
+  function shortlist(st, lib, f, desc) {
+    var c = st.c, ws = shortWords((f.q || '') + ' ' + (desc || ''));
+    return (lib || []).map(function (t, i) { return { t: t, i: i }; }).filter(function (r) { return bookGroup(r.t) && shortPass(r.t, c, f); }).map(function (r) {
+      var h = haystack(r.t), p = props(r.t), hits = [];
+      ws.forEach(function (w) { if (h.indexOf(w) >= 0 && hits.indexOf(w) < 0) hits.push(w); });
+      var score = hits.length * 3 + (c.role && listProp(p.roles).indexOf(c.role) >= 0 && listProp(p.roles).length < ROLES.length ? 2 : 0) +
+        (c.organization && specific(r.t) && listProp(p.organizations).indexOf(c.organization) >= 0 ? 1 : 0);
+      return { t: r.t, i: r.i, hits: hits, score: score };
+    }).sort(function (x, y) { return y.score - x.score || x.i - y.i; });
+  }
+
+  // shortCounts tallies what each choice of one filter would leave.
+  function shortCounts(st, lib, f, key, get) {
+    var m = {};
+    (lib || []).forEach(function (t) { if (bookGroup(t) && shortPass(t, st.c, f, key)) get(t).forEach(function (v) { m[v] = (m[v] || 0) + 1; }); });
+    return m;
+  }
+
+  // bookLine is one shortlisted ability as the guide lists it.
+  function bookLine(t) {
+    var p = props(t), text = plainRefs(p.trigger ? 'Trigger: ' + p.trigger + '. ' + (p.effect || p.tier3 || '') : (p.effect || p.tier3 || p.tier1 || ''));
+    return '- ' + [t.slug, t.name, p.type, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
   }
 
   // readAnswer finds the JSON in a pasted answer. An answer still being
@@ -464,8 +545,9 @@ var DrawSteelCreatureEditor = (function () {
   }
 
   // fromAI fills the editor from the AI's answer and returns the notes on
-  // what was dropped or changed. Words it wrote carry from_ai until saved.
-  function fromAI(st, o, v) {
+  // what was dropped or changed. Words it wrote carry from_ai until saved;
+  // book abilities it picked by id come from `lib` and carry from_book.
+  function fromAI(st, o, v, lib) {
     if (!o || typeof o !== 'object' || Array.isArray(o)) return ['That answer holds no creature.'];
     var notes = [], c;
     var keep = st.base, fresh = newState('', null, st.refs);
@@ -539,6 +621,8 @@ var DrawSteelCreatureEditor = (function () {
         });
       } else notes.push('Only leaders and solos take villain actions, so the AI’s ' + o.villain_actions.length + ' were left off.');
     }
+    derive(st);
+    bookPicks(st, o.book_abilities, lib, notes);
     if (droppedDamage) notes.push('The AI put damage numbers in its abilities. They were dropped; the damage comes from the published formula.');
     // Numbers the formulas own: say what the AI said and what is used instead.
     [['ev', 'Encounter value', ['ev', 'encounter_value']], ['stamina', 'Stamina', ['stamina']], ['free_strike', 'Free strike', ['free_strike']]].forEach(function (f) {
@@ -550,15 +634,34 @@ var DrawSteelCreatureEditor = (function () {
     });
     if (o.characteristics != null) notes.push('The AI’s characteristics were dropped; they come from the published tables above.');
     derive(st);
-    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas’.';
+    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save' + (Array.isArray(o.book_abilities) && o.book_abilities.length ? ', and the book abilities it picked say so' : '') + '. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas’.';
     return notes;
+  }
+
+  // bookPicks adds the book abilities the AI chose, as the Add abilities
+  // drawer would: damage from the formulas, nothing twice, villain actions
+  // only for a leader or solo. An id the library doesn't hold is named.
+  function bookPicks(st, ids, lib, notes) {
+    if (!Array.isArray(ids) || !ids.length) return;
+    if (!lib || !lib.length) { notes.push('The ability library could not be read, so the ' + ids.length + ' book abilities the AI picked were left off.'); return; }
+    var unknown = [], c = st.c;
+    ids.slice(0, 20).forEach(function (id) {
+      var t = typeof id === 'string' ? bySlug(lib || [], id.trim()) : null;
+      if (!t) { if (unknown.length < 5) unknown.push(String(id).slice(0, 60)); return; }
+      if (!usable(t, c)) { notes.push(t.name + ' is made for ' + listProp(props(t).organizations).map(plural).join(', ') + ', not a ' + c.organization + ', so it was left off.'); return; }
+      var lists = [c.abilities, c.traits, c.villain_actions], before = lists.map(function (l) { return l.length; });
+      var res = addFromLibrary(st, t, {});
+      if (!res.undo) { notes.push(res.message); return; }
+      lists.forEach(function (l, k) { if (l.length > before[k]) l[l.length - 1].from_book = bookGroup(t) || 'book'; });
+    });
+    if (unknown.length) notes.push('The AI named book abilities that aren’t in the library, so they were left off: ' + unknown.join(', ') + '.');
   }
 
   // clearAIMarks drops the "From the AI" marks once the director has saved.
   function clearAIMarks(st) {
     var had = !!st.aiName;
     st.aiName = false;
-    st.c.abilities.concat(st.c.traits, st.c.villain_actions).forEach(function (a) { if (a.from_ai) had = true; delete a.from_ai; });
+    st.c.abilities.concat(st.c.traits, st.c.villain_actions).forEach(function (a) { if (a.from_ai || a.from_book) had = true; delete a.from_ai; delete a.from_book; });
     if (had) st.origin = null;
     return had;
   }
@@ -593,6 +696,15 @@ var DrawSteelCreatureEditor = (function () {
       '<button type="button" class="btn-ghost btn-sm" data-sbe-act="ai">Close</button></div>' +
       '<ol class="sbe-steps"><li><label class="sbe-f"><span class="sbe-lbl">1 · Describe it</span>' +
       '<textarea class="input" rows="2" id="sbe-ai-desc" data-sbe-ai="desc" maxlength="1000" placeholder="A goblin spider rider who leads a raiding band and webs heroes to the walls"></textarea></label>' +
+      '<section class="sbe-bk" aria-labelledby="sbe-ai-bk-t"><p class="sbe-lbl" id="sbe-ai-bk-t">Book abilities the AI may pick</p>' +
+      '<p class="sbe-small sbe-dim">The AI picks these by id, and the editor adds them with damage from the formulas, as Add abilities does.</p>' +
+      '<input class="input" type="search" id="sbe-ai-bkq" data-sbe-bkq placeholder="Words to match, as well as your description" aria-label="Search the book’s abilities" autocomplete="off">' +
+      '<div class="sbe-chips" id="sbe-ai-bkf"></div>' +
+      '<div class="sbe-bk-row"><p class="sbe-small" id="sbe-ai-bkn" role="status" aria-live="polite">Reading the ability library…</p><span class="sbe-sp"></span>' +
+      '<span class="sbe-small sbe-dim">Up to</span><span class="sbe-bk-lim" role="group" aria-label="How many go in the guide">' +
+      BOOK_LIMITS.map(function (n) { return '<button type="button" data-sbe-bkl="' + n + '" aria-pressed="' + (n === 50) + '">' + n + '</button>'; }).join('') + '</span>' +
+      '<button type="button" class="sbe-link" data-sbe-bkx>Clear filters</button></div>' +
+      '<div class="sbe-bk-list" id="sbe-ai-bkl" aria-label="The shortlist"></div></section>' +
       '<div class="sbe-gen-go"><button type="button" class="btn-primary btn-sm" id="sbe-ai-copy" data-sbe-act="ai-copy" disabled>Reading the option lists…</button>' +
       '<span class="sbe-small sbe-dim" id="sbe-ai-copied" role="status">Paste it into ChatGPT, Claude or any AI chat.</span></div>' +
       '<details class="sbe-peek"><summary>See what the guide says</summary><textarea class="input" rows="9" id="sbe-ai-guide" readonly aria-label="The guide for the AI"></textarea></details></li>' +
@@ -601,6 +713,50 @@ var DrawSteelCreatureEditor = (function () {
       '<div class="sbe-gen-go"><button type="button" class="btn-secondary btn-sm" id="sbe-ai-ex" data-sbe-act="ai-example">Try an example answer</button>' +
       '<span class="sbe-small" id="sbe-ai-status" role="status" aria-live="polite"></span></div></li></ol>' +
       '<div id="sbe-ai-notes"></div></section></div>';
+  }
+
+  // bookFiltersHtml draws the shortlist's filters; each choice shows how
+  // many abilities picking it would leave.
+  function bookFiltersHtml(st, lib, f) {
+    function row(label, key, list) {
+      return '<div class="sbe-chip-row" role="group" aria-label="' + label + '"><span class="sbe-bk-k">' + label + '</span>' + list.map(function (x) {
+        return '<button type="button" class="sbe-fchip" data-sbe-bkf="' + key + '" data-sbe-bkv="' + esc(x[0]) + '" aria-pressed="' + ((f[key] || (key === 'fit' ? 'this' : '')) === x[0]) + '">' + esc(x[1]) +
+          (x[2] != null ? ' <span class="sbe-dim">' + x[2] + '</span>' : '') + '</button>';
+      }).join('') + '</div>';
+    }
+    var c = st.c, kc = shortCounts(st, lib, f, 'kind', function (t) { return [props(t).type]; });
+    var wc = shortCounts(st, lib, f, 'kw', function (t) { return listProp(props(t).keywords); });
+    var cc = shortCounts(st, lib, f, 'cond', inflicts);
+    var gc = shortCounts(st, lib, f, 'group', function (t) { return [bookGroup(t)]; });
+    var me = 'This creature' + (c.organization ? ' (' + c.organization + (c.role && !noRole(c.organization) ? ' ' + c.role : '') + ')' : '');
+    return row('Kind', 'kind', [['', 'Any']].concat(LIB_KINDS.map(function (k) { return [k[0], k[1], kc[k[0]] || 0]; }))) +
+      row('Made for', 'fit', [['this', me], ['any', 'Any creature']].concat(ORGS.filter(function (o) { return o !== 'swarm'; }).map(function (o) { return [o, 'For ' + plural(o)]; }))) +
+      '<div class="sbe-chip-row"><label class="sbe-bk-k" for="sbe-ai-bkg">Chapter</label><select class="input sbe-bk-sel" id="sbe-ai-bkg" data-sbe-bkg><option value="">Every chapter</option>' +
+        Object.keys(gc).sort().map(function (g) { return '<option value="' + esc(g) + '"' + (f.group === g ? ' selected' : '') + '>' + esc(g) + ' (' + gc[g] + ')</option>'; }).join('') + '</select></div>' +
+      row('Keyword', 'kw', [['', 'Any']].concat(Object.keys(wc).sort().map(function (k) { return [k, k, wc[k]]; }))) +
+      row('Inflicts', 'cond', [['', 'Anything']].concat(Object.keys(cc).sort().map(function (k) { return [k, cap(k), cc[k]]; })));
+  }
+
+  // bookListHtml draws the shortlist, each row with a box to keep it out.
+  function bookListHtml(rows, f) {
+    if (!rows.length) return '<p class="sbe-small sbe-dim">The shortlist is empty.</p>';
+    return rows.map(function (r) {
+      var t = r.t, p = props(t), off = !!(f.off && f.off[t.slug]);
+      var kind = (LIB_KINDS.filter(function (k) { return k[0] === p.type; })[0] || [0, cap(p.type || '')])[1];
+      var text = plainRefs(p.trigger ? 'Trigger: ' + p.trigger + ' ' + (p.effect || '') : (p.effect || p.tier3 || p.tier1 || ''));
+      return '<label class="sbe-bk-it' + (off ? ' is-off' : '') + '"><input type="checkbox" data-sbe-bko="' + esc(t.slug) + '"' + (off ? '' : ' checked') + ' aria-label="Offer ' + esc(t.name) + '">' +
+        '<span class="sbe-bk-b"><b>' + esc(t.name) + '</b> <span class="sbe-tag">' + esc(kind) + '</span>' +
+        (r.hits.length ? ' <span class="sbe-small sbe-ok">matches ' + esc(r.hits.slice(0, 3).join(', ')) + '</span>' : '') +
+        '<span class="sbe-small sbe-dim sbe-bk-x">' + esc(text) + '</span></span><span class="sbe-tag">' + esc(bookGroup(t)) + '</span></label>';
+    }).join('');
+  }
+
+  // bookCountText says how many fit and how many the guide carries.
+  function bookCountText(n, f, kept, shown) {
+    if (!n) return 'Nothing fits these filters, so the AI writes every ability itself. Clear a filter to offer some.';
+    var t = n + ' fit these filters. ' + (n > f.lim ? 'The guide carries the best ' + f.lim + ', ranked by your description and this creature.' : 'All of them go in the guide.');
+    if (kept < shown) t += ' ' + (shown - kept) + ' left out by you.';
+    return t;
   }
 
   // aiNotesHtml lists what the reading changed from the AI's answer.
@@ -742,7 +898,7 @@ var DrawSteelCreatureEditor = (function () {
     c.traits = (c.traits || []).filter(function (t) { return t.name || t.description; });
     c.level = Math.max(1, Math.min(20, Number(c.level) || 1));
     // "From the AI" marks the editor's own review state, never the page.
-    c.abilities.concat(c.traits, c.villain_actions || []).forEach(function (a) { delete a.from_ai; });
+    c.abilities.concat(c.traits, c.villain_actions || []).forEach(function (a) { delete a.from_ai; delete a.from_book; });
     var fields = {}, own = S.toFields(c);
     Object.keys(st.base || {}).forEach(function (k) { fields[k] = st.base[k]; });
     Object.keys(own).forEach(function (k) { fields[k] = own[k]; });
@@ -829,6 +985,7 @@ var DrawSteelCreatureEditor = (function () {
         : '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published damage for this creature yet</span>';
     }
     if (a.from_ai) note = '<span class="sbe-chip is-ai"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> From the AI</span>' + note;
+    if (a.from_book) note = '<span class="sbe-chip is-pub"><i class="fa-solid fa-book" aria-hidden="true"></i> From the book' + (a.from_book !== 'book' ? ' · ' + esc(a.from_book) : '') + '</span>' + note;
     var n = (kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits).length, nm = esc(a.name || 'this');
     // Drag the card to reorder; the arrows do the same for keyboards and phones.
     return '<div class="sbe-ab" draggable="true" data-sbe-item="' + kind + i + '">' + SB().abilityHtml(shown, { ref: ui.ref }) + '<div class="sbe-ab-foot">' + note +
@@ -1123,7 +1280,7 @@ var DrawSteelCreatureEditor = (function () {
     var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
       gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false },
-      ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null } };
+      ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() } };
     var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
     var dirtyKey = 'monster-builder:' + (ctx.entityId || 'new');
     var root = doc.createElement('div');
@@ -1172,8 +1329,13 @@ var DrawSteelCreatureEditor = (function () {
     function onInput(e) {
       var t = e.target;
       if (t.hasAttribute('data-sbe-g')) { if (t.getAttribute('data-sbe-g') === 'what') ui.gen.what = t.value; return; }
+      if (t.hasAttribute('data-sbe-bkq')) {
+        clearTimeout(ui.ai.bkTimer);
+        ui.ai.bkTimer = setTimeout(function () { ui.ai.book.q = t.value.trim(); ui.ai.book.off = {}; paintBook(); }, 150);
+        return;
+      }
       if (t.hasAttribute('data-sbe-ai')) {
-        if (t.getAttribute('data-sbe-ai') === 'desc') aiBox('guide').value = guide();
+        if (t.getAttribute('data-sbe-ai') === 'desc') { clearTimeout(ui.ai.bkTimer); ui.ai.bkTimer = setTimeout(function () { paintBook(false); }, 150); aiBox('guide').value = guide(); }
         else { stopStream(); clearTimeout(ui.ai.timer); ui.ai.timer = setTimeout(readAI, 150); }
         return;
       }
@@ -1187,6 +1349,13 @@ var DrawSteelCreatureEditor = (function () {
     }
     function onChange(e) {
       var t = e.target;
+      if (t.hasAttribute('data-sbe-bko')) {
+        var slug = t.getAttribute('data-sbe-bko');
+        if (t.checked) delete ui.ai.book.off[slug]; else ui.ai.book.off[slug] = true;
+        paintBook(false);
+        return;
+      }
+      if (t.hasAttribute('data-sbe-bkg')) { ui.ai.book.group = t.value; ui.ai.book.off = {}; paintBook(); return; }
       if (t.hasAttribute('data-sbe-ai')) return;
       if (t.hasAttribute('data-sbe-g')) {
         var gk = t.getAttribute('data-sbe-g');
@@ -1197,6 +1366,8 @@ var DrawSteelCreatureEditor = (function () {
       if (t.hasAttribute('data-sbe-k')) {
         applyField(st, t.getAttribute('data-sbe-k'), t.value);
         derive(st); dirty(); redraw(t.id);
+        // "This creature" in the shortlist follows the organization and role.
+        if (ui.ai.open) paintBook();
         return;
       }
       if (t.hasAttribute('data-sbe-fig')) { setFigure(st, t.getAttribute('data-sbe-fig'), t.value); dirty(); redraw(t.id); return; }
@@ -1209,6 +1380,23 @@ var DrawSteelCreatureEditor = (function () {
     function onClick(e) {
       var el = e.target.closest ? e.target.closest('button') : null;
       if (!el || !root.contains(el)) return;
+      var bk = el.getAttribute('data-sbe-bkf');
+      if (bk) {
+        var bv = el.getAttribute('data-sbe-bkv'), f = ui.ai.book;
+        f[bk] = bk === 'fit' ? bv : (f[bk] === bv ? '' : bv);
+        f.off = {};
+        paintBook();
+        var again = aiEl.querySelector('[data-sbe-bkf="' + bk + '"][data-sbe-bkv="' + bv.replace(/"/g, '\\"') + '"]');
+        if (again) again.focus();
+        return;
+      }
+      if (el.hasAttribute('data-sbe-bkl')) { ui.ai.book.lim = Number(el.getAttribute('data-sbe-bkl')) || 50; paintBook(false); return; }
+      if (el.hasAttribute('data-sbe-bkx')) {
+        var lim = ui.ai.book.lim;
+        ui.ai.book = newBookFilter(); ui.ai.book.lim = lim; aiBox('bkq').value = '';
+        paintBook();
+        return;
+      }
       var reset = el.getAttribute('data-sbe-reset');
       if (reset) { useFormula(st, reset); dirty(); draw(); return; }
       var ed = el.getAttribute('data-sbe-edit');
@@ -1268,7 +1456,7 @@ var DrawSteelCreatureEditor = (function () {
       var on = !ui[name].open, other = name === 'gen' ? 'ai' : 'gen';
       if (on && ui[other].open) setFold(other, false);
       setFold(name, on);
-      if (on && name === 'ai') { aiBox('guide').value = guide(); loadVocab(); }
+      if (on && name === 'ai') { aiBox('guide').value = guide(); loadVocab(); loadBook(); }
       var to = on ? (name === 'gen' ? doc.getElementById('sbe-g-what') : aiBox('desc')) : doc.getElementById(name === 'gen' ? 'sbe-name' : 'sbe-ai-open');
       if (to) { try { to.focus({ preventScroll: true }); } catch (e) { to.focus(); } }
     }
@@ -1284,7 +1472,33 @@ var DrawSteelCreatureEditor = (function () {
     }
 
     // ── Build with an AI ──
-    function guide() { return guideFor(aiBox('desc').value, partyLine(ui.party), ui.ai.vocab || vocabulary(st.refs, {})); }
+    function guide() { return guideFor(aiBox('desc').value, partyLine(ui.party), ui.ai.vocab || vocabulary(st.refs, {}), bookKept()); }
+
+    // The shortlist as the guide carries it: the best `lim` of what the
+    // filters leave, minus any the director unticked.
+    function bookRows() { return ui.ai.lib ? shortlist(st, ui.ai.lib, ui.ai.book, aiBox('desc').value).slice(0, ui.ai.book.lim) : []; }
+    function bookKept() { var off = ui.ai.book.off; return bookRows().filter(function (r) { return !off[r.t.slug]; }).map(function (r) { return r.t; }); }
+
+    // paintBook redraws the shortlist and the guide. The filters' own row is
+    // redrawn only when `filters` is set, so typing in the search keeps focus.
+    function paintBook(filters) {
+      if (closed || !ui.ai.lib) return;
+      var f = ui.ai.book, all = shortlist(st, ui.ai.lib, f, aiBox('desc').value), rows = all.slice(0, f.lim);
+      var kept = rows.filter(function (r) { return !f.off[r.t.slug]; }).length;
+      if (filters !== false) aiBox('bkf').innerHTML = bookFiltersHtml(st, ui.ai.lib, f);
+      aiBox('bkn').textContent = bookCountText(all.length, f, kept, rows.length);
+      aiBox('bkl').innerHTML = bookListHtml(rows, f);
+      aiEl.querySelectorAll('[data-sbe-bkl]').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-sbe-bkl')) === f.lim)); });
+      aiBox('guide').value = guide();
+    }
+    function loadBook() {
+      loadLib().then(function (lib) {
+        if (closed) return;
+        ui.ai.lib = lib;
+        if (!lib.length) { aiBox('bkn').textContent = 'The ability library could not be read, so the AI writes every ability itself.'; return; }
+        paintBook();
+      });
+    }
 
     // loadVocab reads the option lists the guide offers from the package's
     // own files, once. Lists that fail to load are left out of the guide.
@@ -1329,7 +1543,7 @@ var DrawSteelCreatureEditor = (function () {
       if (!text.trim()) { stEl.textContent = ''; stEl.className = 'sbe-small'; notesEl.innerHTML = ''; return; }
       var r = readAnswer(text);
       if (r.err) { stEl.textContent = r.err; stEl.className = 'sbe-small' + (r.wait ? '' : ' sbe-ai-err'); return; }
-      var notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}));
+      var notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}), ui.ai.lib || []);
       ui.gen.why = null; ui.msg = '';
       dirty(); draw();
       stEl.className = 'sbe-small' + (r.done ? ' sbe-ai-ok' : '');
@@ -1924,6 +2138,25 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-gen-h{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}',
     '.sbe-gen-h h4{margin:0;font-size:15px;font-weight:600;color:var(--color-text-primary,#111827)}',
     '.sbe-seg{display:flex;flex-wrap:wrap;gap:6px}',
+    // The book shortlist inside Build with an AI.
+    '.sbe-bk{border:1px dashed color-mix(in srgb,var(--sbe-ai) 55%,transparent);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--sbe-ai-soft)}',
+    '.sbe-bk>.sbe-lbl{color:var(--sbe-ai)}',
+    // Each chip row scrolls sideways on a phone, so nothing here may widen the panel.
+    '.sbe-fold-in,.sbe-gen,.sbe-steps,.sbe-steps>li,.sbe-bk,.sbe-bk>*,.sbe-bk .sbe-chips,.sbe-bk .sbe-chip-row{min-width:0;max-width:100%}',
+    '.sbe-bk-k{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);min-width:80px;align-self:center}',
+    '.sbe-bk-sel{width:auto;max-width:260px}',
+    '.sbe-bk-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
+    '.sbe-bk-lim{display:inline-flex;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden}',
+    '.sbe-bk-lim button{font:inherit;font-size:13px;border:0;border-right:1px solid var(--color-border,#e5e7eb);background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);padding:3px 10px;cursor:pointer}',
+    '.sbe-bk-lim button:last-child{border-right:0}',
+    '.sbe-bk-lim button[aria-pressed="true"]{background:var(--sbe-ai);color:var(--color-card-bg,#fff)}',
+    '.sbe-bk-list{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-card-bg,#fff);padding:4px}',
+    '.sbe-bk-it{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:5px 8px;border-radius:6px;cursor:pointer}',
+    '.sbe-bk-it:hover{background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-bk-it.is-off{opacity:.5}',
+    '.sbe-bk-it input{margin-top:3px}',
+    '.sbe-bk-x{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+    '@media (max-width:640px){.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}}',
     '.sbe-seg label{position:relative;display:inline-flex}',
     '.sbe-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}',
     '.sbe-seg span{padding:5px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;font-size:13px;background:var(--color-card-bg,#fff);transition:background-color 160ms linear,border-color 160ms linear,color 160ms linear}',
@@ -2032,7 +2265,9 @@ var DrawSteelCreatureEditor = (function () {
     usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,
     openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS,
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,
-    setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE
+    setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE,
+    BOOK_LIMITS: BOOK_LIMITS, newBookFilter: newBookFilter, bookGroup: bookGroup, inflicts: inflicts, shortlist: shortlist, shortCounts: shortCounts, bookLine: bookLine,
+    bookPicks: bookPicks, bookFiltersHtml: bookFiltersHtml, bookListHtml: bookListHtml, bookCountText: bookCountText
   };
   return api;
 })();
