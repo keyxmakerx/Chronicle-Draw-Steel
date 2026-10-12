@@ -1144,15 +1144,16 @@ var RulebookExamplePlayer = (function () {
     var PAPER = '#ebe5d3', LICH = '#3fd68a', SERIF = 'Spectral,Georgia,serif';
     var D = 'var(--dir,1)';
     return [
-      // the book: a 700x360 stage scaled to fit, a spread tilted back in 3D
+      // the book: a 700x520 stage scaled to fit, a spread tilted back in 3D;
+      // tall enough that the near edge and the swinging cover never clip
       '.rbs{position:relative}',
       // a script playing as a pop-up book fills the board edge to edge
       '.rbx-script.rbs-host.rbx-on{border:0;border-radius:0;padding:0;margin:0;background:none}',
       '.rbs-defs{position:absolute;width:0;height:0;overflow:hidden}',
-      '.rbs-scene{position:relative;height:calc(360px * var(--rbs-s,1));overflow:hidden;' +
+      '.rbs-scene{position:relative;height:calc(520px * var(--rbs-s,1));overflow:hidden;' +
         'background:radial-gradient(90% 60% at 50% 105%,rgba(63,214,138,.22),transparent 70%),radial-gradient(120% 90% at 50% 0%,#2a1d3a 0%,#110c18 72%)}',
-      '.rbs-fit{position:absolute;left:50%;top:0;width:700px;height:360px;margin-left:-350px;transform:scale(var(--rbs-s,1));transform-origin:50% 0}',
-      '.rbs-book{position:absolute;left:0;top:0;right:0;bottom:0;perspective:1200px;perspective-origin:50% 0%}',
+      '.rbs-fit{position:absolute;left:50%;top:0;width:700px;height:520px;margin-left:-350px;transform:scale(var(--rbs-s,1));transform-origin:50% 0}',
+      '.rbs-book{position:absolute;left:0;top:48px;right:0;height:360px;perspective:1200px;perspective-origin:50% 0%}',
       '.rbs-spread{position:absolute;left:50px;top:150px;width:600px;height:250px;transform-style:preserve-3d;transform:rotateX(58deg)}',
       '.rbs-page{position:absolute;top:0;width:300px;height:250px;background:' + PAPER + ';transform-style:preserve-3d;' +
         'background-image:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 60%),repeating-linear-gradient(0deg,rgba(80,60,30,.04) 0 2px,transparent 2px 5px)}',
