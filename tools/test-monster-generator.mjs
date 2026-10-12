@@ -36,7 +36,8 @@ function make(opts, seed = 0) {
   return { st, why };
 }
 function all(st) { return st.c.abilities.concat(st.c.villain_actions, st.c.traits); }
-function byName(n) { return LIB.find((t) => t.name === n); }
+// Several creatures in the book share an ability's name, so any one that fits counts.
+function byName(n) { return LIB.filter((t) => t.name === n); }
 
 test('every generated ability is made for the creature’s kind and role', () => {
   for (const kind of KINDS) {
@@ -44,9 +45,9 @@ test('every generated ability is made for the creature’s kind and role', () =>
       for (let seed = 0; seed < 4; seed++) {
         const { st } = make({ kind, role }, seed);
         for (const a of all(st)) {
-          const t = byName(a.name);
-          assert.ok(t, `${a.name} comes from the library`);
-          assert.ok(Ed.fits(t, kind, st.c.role), `${a.name} fits a ${kind} ${role}`);
+          const ts = byName(a.name);
+          assert.ok(ts.length, `${a.name} comes from the library`);
+          assert.ok(ts.some((t) => Ed.fits(t, kind, st.c.role)), `${a.name} fits a ${kind} ${role}`);
         }
       }
     }
@@ -165,7 +166,10 @@ test('the drawer’s filters and search narrow the list', () => {
   assert.ok(Ed.libraryRows(st, LIB, { type: 'maneuver' }).every((r) => r.t.properties.type === 'maneuver'));
   assert.ok(Ed.libraryRows(st, LIB, { all: true, kw: 'Ranged' }).every((r) => r.t.properties.keywords.includes('Ranged')));
   assert.ok(Ed.libraryRows(st, LIB, { all: true, org: 'solo' }).every((r) => r.t.properties.organizations.includes('solo')));
-  assert.deepEqual(Ed.libraryRows(st, LIB, { all: true, q: 'shield bash' }).map((r) => r.t.slug), ['shield-bash']);
+  const found = Ed.libraryRows(st, LIB, { all: true, q: 'shield bash' });
+  assert.ok(found.some((r) => r.t.slug === 'shield-bash'));
+  assert.ok(found.every((r) => /shield bash/i.test(r.t.name + ' ' + JSON.stringify(r.t.properties))));
+  assert.ok(found.length < 10, 'the search narrows the library');
 });
 
 test('an added ability’s damage is the formula’s for this creature, with the chosen type and condition', () => {

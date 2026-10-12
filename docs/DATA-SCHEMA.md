@@ -225,10 +225,14 @@ and `role-templates.json` hold this package's own legacy estimates
 ## creature-abilities.json
 
 Ability templates for creatures: the creature editor's generator and its Add
-abilities drawer offer them. Every entry is this package's own work
-(`"source": "custom"`; evidence in `data/NOTICE.md`). Damage numbers are
-placeholders: the editor replaces them with the published damage for the
-creature's level and organization (`DrawSteelFormulas.damageTiers`).
+abilities drawer offer them. Most are the Monsters book's creature abilities, as
+printed, with `organizations` and `roles` from the creature each belongs to and a
+`source` citing the book (`"Draw Steel Monsters Book, ch. 2 (Monsters — Goblins)
+(mcdm.monsters.v1), via Steel Compendium"`); the rest are this package's own
+(`"source": "custom"`). What was left out, and why, is in `data/NOTICE.md`.
+Damage numbers are those of the original creature: the editor replaces them
+with the published damage for the creature they are added to
+(`DrawSteelFormulas.damageTiers`).
 
 ```json
 {

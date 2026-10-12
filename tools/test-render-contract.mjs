@@ -391,7 +391,19 @@ test('every creature ability template says who it is made for', () => {
     if (!Array.isArray(orgs) || !orgs.length || orgs.some((o) => !ORGS.has(o))) bad.push(`${it.slug}: organizations ${JSON.stringify(orgs)}`);
     else if (p.type === 'villain-action' && orgs.some((o) => o !== 'leader' && o !== 'solo')) bad.push(`${it.slug}: a villain action made for ${orgs.join(', ')}`);
     if (!Array.isArray(p.roles) || p.roles.some((r) => !roles.has(r))) bad.push(`${it.slug}: roles ${JSON.stringify(p.roles)}`);
-    if (it.source !== 'custom') bad.push(`${it.slug}: source ${JSON.stringify(it.source)}, not "custom"`);
+    if (it.source !== 'custom' && !/^Draw Steel Monsters Book, ch\. 2 \(Monsters — [^)]+\) \(mcdm\.monsters\.v1\), via Steel Compendium$/.test(it.source)) {
+      bad.push(`${it.slug}: source ${JSON.stringify(it.source)}, neither "custom" nor a Monsters book citation`);
+    }
   }
   assert.deepEqual(bad, [], 'data/creature-abilities.json:\n  ' + bad.join('\n  '));
+});
+
+// The book's named villains, its gods and its named characters are setting
+// material, not rules, so no ability taken from the bestiary may carry them.
+test('the book’s creature abilities name no villain, character or god', () => {
+  const NAMES = /\b(Ajax|Rhodar|Syuul|Xorannox|Grole|Doru|Alkestis|Hoplon|Vesper|Dorzinuuth|Locratix|Myxovidan|Lydixavus|Aeolyxria|Phrrygalax)\b/;
+  const bad = load('creature-abilities.json')
+    .filter((it) => it.source !== 'custom' && NAMES.test(JSON.stringify(it)))
+    .map((it) => it.slug);
+  assert.deepEqual(bad, []);
 });
