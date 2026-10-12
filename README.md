@@ -6,7 +6,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx/Chronic
 
 ### Reference Data
 - **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10 — example stat blocks (`"source": "custom"`), not reproduced Draw Steel monsters
-- **23 template abilities** — signature, action, maneuver, triggered, and villain-action types
+- **51 ability templates** — signature, action, maneuver, triggered, villain-action and trait types, each marked with the organizations and roles it is made for
 - **519 hero abilities, 12 ancestries, 21 kits** — the nine classes' abilities, kit signature abilities, and common actions
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support
 - **7 organization templates** — the published organization and Stamina modifiers, plus default speed/stability (Swarm is this package's own, and carries no published modifiers)
@@ -38,7 +38,7 @@ Ability text uses `{@category term}` syntax (like D&D Beyond) that renders as st
 - `{@movement shift}` — shows what Shift means
 - `{@duration save-ends}` — shows how Save Ends works
 
-The `reference-renderer.js` utility handles parsing and rendering. All 35 creatures and 23 abilities use @references.
+The `reference-renderer.js` utility handles parsing and rendering. Creature and ability-template text uses @references.
 
 ### Relation Types
 - Ally, Enemy, Patron/Agent, Mentor/Student, Has Item (with quantity/equipped metadata)
@@ -99,7 +99,7 @@ Every `data/*.json` file is a JSON array of these objects. Required fields: `slu
 
 ### Adding an Ability
 1. Add to `data/creature-abilities.json` with a unique `slug`
-2. Include `type`, `keywords`, `distance`, `target`, and power roll tiers in `properties`
+2. Include `type`, `organizations`, `roles`, `keywords`, `distance`, `target`, and power roll tiers in `properties`, and `"source": "custom"` at the root
 3. Use @references for conditions and effects
 
 ### Adding a Rules Glossary Entry
@@ -132,7 +132,7 @@ loads those folders. `tools/test-release-archive.mjs` pins this.
 manifest.json              Package manifest (categories, presets, widgets, text_renderers, dm_screen)
 data/
   creatures.json           35 example creatures ("source": "custom", not published monsters)
-  creature-abilities.json  23 template abilities
+  creature-abilities.json  51 ability templates ("source": "custom")
   rules-glossary.json      65 rules definitions for @references
   organization-templates.json  7 org types (legacy estimates, not the published formulas)
   role-templates.json      9 roles (characteristic baselines)

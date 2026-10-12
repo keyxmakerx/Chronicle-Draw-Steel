@@ -354,6 +354,8 @@ export const CATEGORIES = [
     icon: 'fa-burst',
     columns: [
       ['type', 'Type', 'string'],
+      ['organizations', 'Made for', 'string'],
+      ['roles', 'Roles', 'string'],
       ['keywords', 'Keywords', 'string'],
       ['distance', 'Distance', 'string'],
       ['target', 'Target', 'string'],
@@ -511,7 +513,6 @@ export const WIDGET_ONLY = new Set([
 export const SOURCE_PENDING = new Set([
   'rules-glossary.json',
   'skills.json',
-  'creature-abilities.json',
   'creature-keywords.json',
   'rulebook-frontpage.json',
 ]);

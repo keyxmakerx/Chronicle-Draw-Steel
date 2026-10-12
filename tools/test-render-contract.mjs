@@ -377,3 +377,21 @@ test('flattenRefs resolves a marker to the words the widget would show', () => {
 // flattening it here would delete the interactive rendering.
 // TODO(keyxmakerx/Chronicle#629): resolve markers in propString/templ so the
 // twins are no longer needed.
+
+// The creature editor offers an ability template only to the organizations it
+// names, so a missing or misspelled one hides it, and a villain action on a
+// minion would be a rule the book doesn't have.
+test('every creature ability template says who it is made for', () => {
+  const ORGS = new Set(['minion', 'horde', 'platoon', 'elite', 'leader', 'solo']);
+  const roles = new Set(load('role-templates.json').map((r) => r.slug));
+  const bad = [];
+  for (const it of load('creature-abilities.json')) {
+    const p = it.properties || {};
+    const orgs = p.organizations;
+    if (!Array.isArray(orgs) || !orgs.length || orgs.some((o) => !ORGS.has(o))) bad.push(`${it.slug}: organizations ${JSON.stringify(orgs)}`);
+    else if (p.type === 'villain-action' && orgs.some((o) => o !== 'leader' && o !== 'solo')) bad.push(`${it.slug}: a villain action made for ${orgs.join(', ')}`);
+    if (!Array.isArray(p.roles) || p.roles.some((r) => !roles.has(r))) bad.push(`${it.slug}: roles ${JSON.stringify(p.roles)}`);
+    if (it.source !== 'custom') bad.push(`${it.slug}: source ${JSON.stringify(it.source)}, not "custom"`);
+  }
+  assert.deepEqual(bad, [], 'data/creature-abilities.json:\n  ' + bad.join('\n  '));
+});
