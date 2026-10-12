@@ -6,6 +6,20 @@
     "description": "A powerful melee strike. Good signature ability for Brute creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "brute",
+        "defender"
+      ],
+      "roles_display": "brute, defender",
       "keywords": [
         "Attack",
         "Melee",
@@ -21,7 +35,8 @@
       "tier2_display": "6 damage",
       "tier3": "9 damage; {@movement push} 2",
       "tier3_display": "9 damage; push 2"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "mind-lash",
@@ -30,6 +45,19 @@
     "description": "A ranged psionic attack. Good signature ability for Controller or Hexer creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "controller"
+      ],
+      "roles_display": "controller",
       "keywords": [
         "Attack",
         "Ranged",
@@ -45,7 +73,8 @@
       "tier2_display": "5 psychic damage; slowed (eot)",
       "tier3": "7 psychic damage; {@condition dazed} ({@duration eot})",
       "tier3_display": "7 psychic damage; dazed (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "shield-wall",
@@ -54,6 +83,19 @@
     "description": "A defensive maneuver. Good for Defender creatures.",
     "properties": {
       "type": "maneuver",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
       "keywords": [
         "Resistance"
       ],
@@ -62,7 +104,8 @@
       "target": "Self",
       "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1.",
       "effect_display": "The creature gains damage-resistance 3 until the start of its next turn. Each ally adjacent to the creature also gains damage-resistance 1."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "quick-strike",
@@ -71,6 +114,20 @@
     "description": "A fast melee strike with repositioning. Good signature ability for Harrier creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "harrier",
+        "support"
+      ],
+      "roles_display": "harrier, support",
       "keywords": [
         "Attack",
         "Melee",
@@ -86,7 +143,8 @@
       "tier2_display": "5 damage; the creature can shift 1",
       "tier3": "7 damage; the creature can {@movement shift} 3",
       "tier3_display": "7 damage; the creature can shift 3"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "hex-bolt",
@@ -95,6 +153,19 @@
     "description": "A debilitating magical bolt. Good signature ability for Hexer creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "hexer"
+      ],
+      "roles_display": "hexer",
       "keywords": [
         "Attack",
         "Ranged",
@@ -110,7 +181,8 @@
       "tier2_display": "5 corruption damage; weakened (eot)",
       "tier3": "7 corruption damage; {@condition weakened} ({@duration save-ends})",
       "tier3_display": "7 corruption damage; weakened (save-ends)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "retaliating-strike",
@@ -119,6 +191,19 @@
     "description": "A reactive strike when allies are threatened. Good triggered ability for Defender creatures.",
     "properties": {
       "type": "triggered",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
       "keywords": [
         "Attack",
         "Melee",
@@ -135,7 +220,8 @@
       "tier2_display": "4 damage",
       "tier3": "6 damage; {@condition taunted} ({@duration eot})",
       "tier3_display": "6 damage; taunted (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "rallying-cry",
@@ -144,6 +230,12 @@
     "description": "A villain action opener that buffs allies. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
       "keywords": [
         "Area"
       ],
@@ -153,7 +245,8 @@
       "villain_action_order": "opener",
       "effect": "Each target gains 10 {@resource temporary-stamina} and can {@movement shift} 2.",
       "effect_display": "Each target gains 10 temporary-stamina and can shift 2."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "longbow-volley",
@@ -162,6 +255,19 @@
     "description": "A long-range precision shot. Good signature ability for Artillery creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "artillery"
+      ],
+      "roles_display": "artillery",
       "keywords": [
         "Attack",
         "Ranged",
@@ -177,7 +283,8 @@
       "tier2_display": "5 damage",
       "tier3": "8 damage; {@condition bleeding} ({@duration eot})",
       "tier3_display": "8 damage; bleeding (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "ambush-strike",
@@ -186,6 +293,19 @@
     "description": "A devastating first strike from concealment. Good signature ability for Ambusher creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher"
+      ],
+      "roles_display": "ambusher",
       "keywords": [
         "Attack",
         "Melee",
@@ -201,7 +321,8 @@
       "tier2_display": "6 damage",
       "tier3": "9 damage; if the creature was {@condition hidden}, deal an extra 4 damage",
       "tier3_display": "9 damage; if the creature was hidden, deal an extra 4 damage"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "trampling-charge",
@@ -210,6 +331,19 @@
     "description": "A charging attack that knocks enemies aside. Good signature ability for Mount creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "mount"
+      ],
+      "roles_display": "mount",
       "keywords": [
         "Attack",
         "Melee",
@@ -226,7 +360,8 @@
       "tier2_display": "6 damage; push 2",
       "tier3": "9 damage; {@movement push} 3 and the target falls {@condition prone}",
       "tier3_display": "9 damage; push 3 and the target falls prone"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "healing-word",
@@ -235,6 +370,19 @@
     "description": "A restorative ability that heals allies. Good signature ability for Support creatures.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "support"
+      ],
+      "roles_display": "support",
       "keywords": [
         "Area",
         "Magic"
@@ -244,7 +392,8 @@
       "target": "1 ally",
       "effect": "The target regains stamina equal to their recovery value.",
       "effect_display": "The target regains stamina equal to their recovery value."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "venom-bite",
@@ -253,6 +402,27 @@
     "description": "A venomous bite that deals ongoing poison damage. Versatile melee signature.",
     "properties": {
       "type": "signature",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher",
+        "artillery",
+        "brute",
+        "controller",
+        "defender",
+        "harrier",
+        "hexer",
+        "mount",
+        "support"
+      ],
+      "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
         "Attack",
         "Melee",
@@ -268,7 +438,8 @@
       "tier2_display": "5 poison damage; 3 poison damage (eot)",
       "tier3": "8 poison damage; 5 poison damage ({@duration eot}, {@duration save-ends})",
       "tier3_display": "8 poison damage; 5 poison damage (eot, save-ends)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "breath-weapon",
@@ -277,6 +448,27 @@
     "description": "A devastating area breath attack. Damage type varies by creature (fire, cold, poison, etc.).",
     "properties": {
       "type": "action",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher",
+        "artillery",
+        "brute",
+        "controller",
+        "defender",
+        "harrier",
+        "hexer",
+        "mount",
+        "support"
+      ],
+      "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
         "Attack",
         "Area",
@@ -292,7 +484,8 @@
       "tier2_display": "6 fire damage",
       "tier3": "10 fire damage; {@condition burning} ({@duration eot})",
       "tier3_display": "10 fire damage; burning (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "web-shot",
@@ -301,6 +494,27 @@
     "description": "A sticky web projectile that immobilizes targets. Good for spider-type creatures.",
     "properties": {
       "type": "action",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher",
+        "artillery",
+        "brute",
+        "controller",
+        "defender",
+        "harrier",
+        "hexer",
+        "mount",
+        "support"
+      ],
+      "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
         "Attack",
         "Ranged"
@@ -315,7 +529,8 @@
       "tier2_display": "restrained (eot)",
       "tier3": "{@condition restrained} ({@duration save-ends})",
       "tier3_display": "restrained (save-ends)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "psychic-scream",
@@ -324,6 +539,19 @@
     "description": "A burst of psychic energy that disrupts nearby enemies. Good for Controller creatures.",
     "properties": {
       "type": "action",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "controller"
+      ],
+      "roles_display": "controller",
       "keywords": [
         "Attack",
         "Area",
@@ -339,7 +567,8 @@
       "tier2_display": "5 psychic damage; dazed (eot)",
       "tier3": "8 psychic damage; {@condition dazed} ({@duration save-ends})",
       "tier3_display": "8 psychic damage; dazed (save-ends)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "rally",
@@ -348,6 +577,19 @@
     "description": "A supportive maneuver that bolsters nearby allies. Good for Support creatures.",
     "properties": {
       "type": "maneuver",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "support"
+      ],
+      "roles_display": "support",
       "keywords": [
         "Area"
       ],
@@ -356,7 +598,8 @@
       "target": "All allies in aura",
       "effect": "Each target gains 5 {@resource temporary-stamina}.",
       "effect_display": "Each target gains 5 temporary-stamina."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "fade-to-shadow",
@@ -365,12 +608,26 @@
     "description": "A stealth maneuver that grants concealment and repositioning. Good for Ambusher creatures.",
     "properties": {
       "type": "maneuver",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher"
+      ],
+      "roles_display": "ambusher",
       "keywords": [],
       "distance": "Self",
       "target": "Self",
       "effect": "The creature becomes {@condition hidden} and can {@movement shift} up to their speed. They gain concealment until the end of their next turn.",
       "effect_display": "The creature becomes hidden and can shift up to their speed. They gain concealment until the end of their next turn."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "defensive-stance",
@@ -379,6 +636,19 @@
     "description": "A tanking maneuver that draws attacks and reduces damage. Good for Defender creatures.",
     "properties": {
       "type": "maneuver",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
       "keywords": [
         "Resistance"
       ],
@@ -387,7 +657,8 @@
       "target": "Self",
       "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
       "effect_display": "The creature gains damage-resistance 5 and taunts all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "intercept",
@@ -396,6 +667,19 @@
     "description": "A reactive strike that prevents enemies from escaping. Good triggered ability for Defender creatures.",
     "properties": {
       "type": "triggered",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
       "keywords": [
         "Melee",
         "Weapon"
@@ -411,7 +695,8 @@
       "tier2_display": "4 damage; the target's speed becomes 0 (eot)",
       "tier3": "6 damage; the target's speed becomes 0 ({@duration eot}) and is {@condition taunted} ({@duration eot})",
       "tier3_display": "6 damage; the target's speed becomes 0 (eot) and is taunted (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "death-burst",
@@ -420,6 +705,27 @@
     "description": "An explosion of energy on death. Good for volatile creatures like fire elementals or unstable undead.",
     "properties": {
       "type": "triggered",
+      "organizations": [
+        "minion",
+        "horde",
+        "platoon",
+        "elite",
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "minion, horde, platoon, elite, leader, solo",
+      "roles": [
+        "ambusher",
+        "artillery",
+        "brute",
+        "controller",
+        "defender",
+        "harrier",
+        "hexer",
+        "mount",
+        "support"
+      ],
+      "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
       "keywords": [
         "Area",
         "Magic"
@@ -430,7 +736,8 @@
       "trigger": "The creature is reduced to 0 stamina.",
       "effect": "Each target takes 5 damage of the creature's primary damage type.",
       "effect_display": "Each target takes 5 damage of the creature's primary damage type."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "terrifying-roar",
@@ -439,6 +746,12 @@
     "description": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures.",
     "properties": {
       "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
       "keywords": [
         "Area",
         "Fear"
@@ -454,7 +767,8 @@
       "tier2_display": "frightened (save-ends); the target must use their next move action to move away",
       "tier3": "{@condition frightened} ({@duration save-ends}); the target is also {@condition dazed} ({@duration eot})",
       "tier3_display": "frightened (save-ends); the target is also dazed (eot)"
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "summon-minions",
@@ -463,6 +777,12 @@
     "description": "A villain action escalation that brings reinforcements. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
       "keywords": [
         "Area",
         "Summoning"
@@ -473,7 +793,8 @@
       "villain_action_order": "escalation",
       "effect": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative.",
       "effect_display": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative."
-    }
+    },
+    "source": "custom"
   },
   {
     "slug": "focused-assault",
@@ -482,6 +803,12 @@
     "description": "A villain action escalation featuring a flurry of devastating melee attacks.",
     "properties": {
       "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
       "keywords": [
         "Attack",
         "Melee",
@@ -498,6 +825,758 @@
       "tier2_display": "8 damage per target",
       "tier3": "12 damage per target; {@movement push} 3",
       "tier3_display": "12 damage per target; push 3"
-    }
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "pack-bite",
+    "name": "Pack Bite",
+    "summary": "A signature ability written for minions, suited to harriers and brutes.",
+    "description": "A signature ability written for minions, suited to harriers and brutes.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "minion"
+      ],
+      "organizations_display": "minion",
+      "roles": [
+        "harrier",
+        "brute"
+      ],
+      "roles_display": "harrier, brute",
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "tier1": "2 damage",
+      "tier1_display": "2 damage",
+      "tier2": "4 damage",
+      "tier2_display": "4 damage",
+      "tier3": "5 damage; {@condition slowed} ({@duration eot})",
+      "tier3_display": "5 damage; slowed (eot)"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "swarming-shots",
+    "name": "Swarming Shots",
+    "summary": "A signature ability written for minions, suited to artillerys.",
+    "description": "A signature ability written for minions, suited to artillerys.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "minion"
+      ],
+      "organizations_display": "minion",
+      "roles": [
+        "artillery"
+      ],
+      "roles_display": "artillery",
+      "keywords": [
+        "Attack",
+        "Ranged",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Ranged, Weapon",
+      "distance": "Ranged 10",
+      "target": "1 creature",
+      "tier1": "2 damage",
+      "tier1_display": "2 damage",
+      "tier2": "3 damage",
+      "tier2_display": "3 damage",
+      "tier3": "4 damage",
+      "tier3_display": "4 damage"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "overwhelm",
+    "name": "Overwhelm",
+    "summary": "A trait written for minions.",
+    "description": "A trait written for minions.",
+    "properties": {
+      "type": "trait",
+      "organizations": [
+        "minion"
+      ],
+      "organizations_display": "minion",
+      "roles": [
+        "ambusher",
+        "artillery",
+        "brute",
+        "controller",
+        "defender",
+        "harrier",
+        "hexer",
+        "mount",
+        "support"
+      ],
+      "roles_display": "ambusher, artillery, brute, controller, defender, harrier, hexer, mount, support",
+      "effect": "An enemy adjacent to two or more of this squad takes a bane on strikes against anyone else.",
+      "effect_display": "An enemy adjacent to two or more of this squad takes a bane on strikes against anyone else."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "sacrificial-shield",
+    "name": "Sacrificial Shield",
+    "summary": "A triggered action written for minions, suited to defenders.",
+    "description": "A triggered action written for minions, suited to defenders.",
+    "properties": {
+      "type": "triggered",
+      "organizations": [
+        "minion"
+      ],
+      "organizations_display": "minion",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
+      "keywords": [
+        "Melee"
+      ],
+      "keywords_display": "Melee",
+      "distance": "Melee 1",
+      "target": "1 ally",
+      "effect": "When an adjacent ally is targeted by a strike, this minion becomes the target instead.",
+      "effect_display": "When an adjacent ally is targeted by a strike, this minion becomes the target instead."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "scurry",
+    "name": "Scurry",
+    "summary": "A maneuver written for minions and hordes, suited to harriers and ambushers.",
+    "description": "A maneuver written for minions and hordes, suited to harriers and ambushers.",
+    "properties": {
+      "type": "maneuver",
+      "organizations": [
+        "minion",
+        "horde"
+      ],
+      "organizations_display": "minion, horde",
+      "roles": [
+        "harrier",
+        "ambusher"
+      ],
+      "roles_display": "harrier, ambusher",
+      "distance": "Self",
+      "target": "Self",
+      "effect": "The creature can {@movement shift} 2.",
+      "effect_display": "The creature can shift 2."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "gang-up",
+    "name": "Gang Up",
+    "summary": "A signature ability written for hordes, suited to brutes.",
+    "description": "A signature ability written for hordes, suited to brutes.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "horde"
+      ],
+      "organizations_display": "horde",
+      "roles": [
+        "brute"
+      ],
+      "roles_display": "brute",
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "tier1": "3 damage",
+      "tier1_display": "3 damage",
+      "tier2": "5 damage",
+      "tier2_display": "5 damage",
+      "tier3": "7 damage",
+      "tier3_display": "7 damage",
+      "effect": "Gains an edge if an ally is adjacent to the target.",
+      "effect_display": "Gains an edge if an ally is adjacent to the target."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "hamstring",
+    "name": "Hamstring",
+    "summary": "A action written for hordes, suited to ambushers and harriers.",
+    "description": "A action written for hordes, suited to ambushers and harriers.",
+    "properties": {
+      "type": "action",
+      "organizations": [
+        "horde"
+      ],
+      "organizations_display": "horde",
+      "roles": [
+        "ambusher",
+        "harrier"
+      ],
+      "roles_display": "ambusher, harrier",
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "tier1": "3 damage",
+      "tier1_display": "3 damage",
+      "tier2": "5 damage; {@condition slowed} ({@duration eot})",
+      "tier2_display": "5 damage; slowed (eot)",
+      "tier3": "7 damage; {@condition slowed} ({@duration save-ends})",
+      "tier3_display": "7 damage; slowed (save-ends)"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "rabble-rouse",
+    "name": "Rabble Rouse",
+    "summary": "A maneuver written for hordes, suited to supports.",
+    "description": "A maneuver written for hordes, suited to supports.",
+    "properties": {
+      "type": "maneuver",
+      "organizations": [
+        "horde"
+      ],
+      "organizations_display": "horde",
+      "roles": [
+        "support"
+      ],
+      "roles_display": "support",
+      "keywords": [
+        "Area"
+      ],
+      "keywords_display": "Area",
+      "distance": "3 burst",
+      "target": "All allies",
+      "effect": "Each target can {@movement shift} 1.",
+      "effect_display": "Each target can shift 1."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "spiteful-jab",
+    "name": "Spiteful Jab",
+    "summary": "A triggered action written for hordes and platoons, suited to defenders and brutes.",
+    "description": "A triggered action written for hordes and platoons, suited to defenders and brutes.",
+    "properties": {
+      "type": "triggered",
+      "organizations": [
+        "horde",
+        "platoon"
+      ],
+      "organizations_display": "horde, platoon",
+      "roles": [
+        "defender",
+        "brute"
+      ],
+      "roles_display": "defender, brute",
+      "keywords": [
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "effect": "When an adjacent enemy moves away, the creature makes a {@action free-strike|free strike} against it.",
+      "effect_display": "When an adjacent enemy moves away, the creature makes a free strike against it."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "shield-bash",
+    "name": "Shield Bash",
+    "summary": "A signature ability written for platoons, suited to defenders.",
+    "description": "A signature ability written for platoons, suited to defenders.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "platoon"
+      ],
+      "organizations_display": "platoon",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "tier1": "5 damage",
+      "tier1_display": "5 damage",
+      "tier2": "8 damage; {@movement push} 1",
+      "tier2_display": "8 damage; push 1",
+      "tier3": "10 damage; {@movement push} 2",
+      "tier3_display": "10 damage; push 2"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "pinning-shot",
+    "name": "Pinning Shot",
+    "summary": "A action written for platoons and elites, suited to artillerys.",
+    "description": "A action written for platoons and elites, suited to artillerys.",
+    "properties": {
+      "type": "action",
+      "organizations": [
+        "platoon",
+        "elite"
+      ],
+      "organizations_display": "platoon, elite",
+      "roles": [
+        "artillery"
+      ],
+      "roles_display": "artillery",
+      "keywords": [
+        "Attack",
+        "Ranged",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Ranged, Weapon",
+      "distance": "Ranged 10",
+      "target": "1 creature",
+      "tier1": "5 damage",
+      "tier1_display": "5 damage",
+      "tier2": "8 damage",
+      "tier2_display": "8 damage",
+      "tier3": "10 damage; {@condition restrained} ({@duration eot})",
+      "tier3_display": "10 damage; restrained (eot)"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "hold-the-line",
+    "name": "Hold the Line",
+    "summary": "A trait written for platoons, suited to defenders.",
+    "description": "A trait written for platoons, suited to defenders.",
+    "properties": {
+      "type": "trait",
+      "organizations": [
+        "platoon"
+      ],
+      "organizations_display": "platoon",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
+      "effect": "Allies adjacent to the creature have {@combat stability} +1.",
+      "effect_display": "Allies adjacent to the creature have stability +1."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "flank",
+    "name": "Flank",
+    "summary": "A maneuver written for platoons and hordes, suited to harriers and ambushers.",
+    "description": "A maneuver written for platoons and hordes, suited to harriers and ambushers.",
+    "properties": {
+      "type": "maneuver",
+      "organizations": [
+        "platoon",
+        "horde"
+      ],
+      "organizations_display": "platoon, horde",
+      "roles": [
+        "harrier",
+        "ambusher"
+      ],
+      "roles_display": "harrier, ambusher",
+      "distance": "Self",
+      "target": "Self",
+      "effect": "The creature {@movement shift|shifts} 2 to a square adjacent to an enemy that an ally is also adjacent to.",
+      "effect_display": "The creature shifts 2 to a square adjacent to an enemy that an ally is also adjacent to."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "cutting-words",
+    "name": "Cutting Words",
+    "summary": "A action written for platoons and elites, suited to hexers and controllers.",
+    "description": "A action written for platoons and elites, suited to hexers and controllers.",
+    "properties": {
+      "type": "action",
+      "organizations": [
+        "platoon",
+        "elite"
+      ],
+      "organizations_display": "platoon, elite",
+      "roles": [
+        "hexer",
+        "controller"
+      ],
+      "roles_display": "hexer, controller",
+      "keywords": [
+        "Attack",
+        "Ranged",
+        "Magic"
+      ],
+      "keywords_display": "Attack, Ranged, Magic",
+      "distance": "Ranged 10",
+      "target": "1 creature",
+      "tier1": "4 psychic damage",
+      "tier1_display": "4 psychic damage",
+      "tier2": "6 psychic damage",
+      "tier2_display": "6 psychic damage",
+      "tier3": "8 psychic damage; {@condition weakened} ({@duration eot})",
+      "tier3_display": "8 psychic damage; weakened (eot)"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "double-strike",
+    "name": "Double Strike",
+    "summary": "A signature ability written for elites, suited to brutes and harriers.",
+    "description": "A signature ability written for elites, suited to brutes and harriers.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "elite"
+      ],
+      "organizations_display": "elite",
+      "roles": [
+        "brute",
+        "harrier"
+      ],
+      "roles_display": "brute, harrier",
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "2 creatures",
+      "tier1": "6 damage",
+      "tier1_display": "6 damage",
+      "tier2": "9 damage",
+      "tier2_display": "9 damage",
+      "tier3": "12 damage",
+      "tier3_display": "12 damage"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "bulwark",
+    "name": "Bulwark",
+    "summary": "A triggered action written for elites, suited to defenders.",
+    "description": "A triggered action written for elites, suited to defenders.",
+    "properties": {
+      "type": "triggered",
+      "organizations": [
+        "elite"
+      ],
+      "organizations_display": "elite",
+      "roles": [
+        "defender"
+      ],
+      "roles_display": "defender",
+      "distance": "Self",
+      "target": "Self",
+      "effect": "When the creature takes damage, it gains {@resource damage-resistance|damage resistance} 3 against that damage.",
+      "effect_display": "When the creature takes damage, it gains damage resistance 3 against that damage."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "hexing-gaze",
+    "name": "Hexing Gaze",
+    "summary": "A action written for elites and leaders, suited to hexers.",
+    "description": "A action written for elites and leaders, suited to hexers.",
+    "properties": {
+      "type": "action",
+      "organizations": [
+        "elite",
+        "leader"
+      ],
+      "organizations_display": "elite, leader",
+      "roles": [
+        "hexer"
+      ],
+      "roles_display": "hexer",
+      "keywords": [
+        "Attack",
+        "Ranged",
+        "Magic"
+      ],
+      "keywords_display": "Attack, Ranged, Magic",
+      "distance": "Ranged 10",
+      "target": "1 creature",
+      "tier1": "5 corruption damage",
+      "tier1_display": "5 corruption damage",
+      "tier2": "8 corruption damage; {@condition weakened} ({@duration eot})",
+      "tier2_display": "8 corruption damage; weakened (eot)",
+      "tier3": "10 corruption damage; {@condition dazed} ({@duration save-ends})",
+      "tier3_display": "10 corruption damage; dazed (save-ends)"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "commanding-presence",
+    "name": "Commanding Presence",
+    "summary": "A trait written for elites and leaders, suited to supports.",
+    "description": "A trait written for elites and leaders, suited to supports.",
+    "properties": {
+      "type": "trait",
+      "organizations": [
+        "elite",
+        "leader"
+      ],
+      "organizations_display": "elite, leader",
+      "roles": [
+        "support"
+      ],
+      "roles_display": "support",
+      "effect": "Allies within 5 of the creature can't be {@condition taunted}.",
+      "effect_display": "Allies within 5 of the creature can't be taunted."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "battle-orders",
+    "name": "Battle Orders",
+    "summary": "A maneuver written for leaders.",
+    "description": "A maneuver written for leaders.",
+    "properties": {
+      "type": "maneuver",
+      "organizations": [
+        "leader"
+      ],
+      "organizations_display": "leader",
+      "roles": [],
+      "keywords": [
+        "Area"
+      ],
+      "keywords_display": "Area",
+      "distance": "10 burst",
+      "target": "All allies",
+      "effect": "Each target can {@movement shift} 2.",
+      "effect_display": "Each target can shift 2."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "captains-strike",
+    "name": "Captain's Strike",
+    "summary": "A signature ability written for leaders.",
+    "description": "A signature ability written for leaders.",
+    "properties": {
+      "type": "signature",
+      "organizations": [
+        "leader"
+      ],
+      "organizations_display": "leader",
+      "roles": [],
+      "keywords": [
+        "Attack",
+        "Melee",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Melee, Weapon",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "tier1": "7 damage",
+      "tier1_display": "7 damage",
+      "tier2": "10 damage",
+      "tier2_display": "10 damage",
+      "tier3": "13 damage",
+      "tier3_display": "13 damage",
+      "effect": "One ally within 5 can make a {@action free-strike|free strike}.",
+      "effect_display": "One ally within 5 can make a free strike."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "fall-back",
+    "name": "Fall Back!",
+    "summary": "A villain action written for leaders and solos.",
+    "description": "A villain action written for leaders and solos.",
+    "properties": {
+      "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
+      "keywords": [
+        "Area"
+      ],
+      "keywords_display": "Area",
+      "distance": "10 burst",
+      "target": "All allies",
+      "effect": "Each target can {@movement shift} up to their speed.",
+      "effect_display": "Each target can shift up to their speed."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "last-stand",
+    "name": "Last Stand",
+    "summary": "A villain action written for leaders and solos.",
+    "description": "A villain action written for leaders and solos.",
+    "properties": {
+      "type": "villain-action",
+      "organizations": [
+        "leader",
+        "solo"
+      ],
+      "organizations_display": "leader, solo",
+      "roles": [],
+      "distance": "Self",
+      "target": "Self",
+      "effect": "Until the end of the encounter, the creature's strikes gain an edge and it ignores {@condition weakened}.",
+      "effect_display": "Until the end of the encounter, the creature's strikes gain an edge and it ignores weakened."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "twice-each-round",
+    "name": "Twice Each Round",
+    "summary": "A trait written for solos.",
+    "description": "A trait written for solos.",
+    "properties": {
+      "type": "trait",
+      "organizations": [
+        "solo"
+      ],
+      "organizations_display": "solo",
+      "roles": [],
+      "effect": "The creature takes two turns each round, never one straight after the other.",
+      "effect_display": "The creature takes two turns each round, never one straight after the other."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "shake-it-off",
+    "name": "Shake It Off",
+    "summary": "A trait written for solos.",
+    "description": "A trait written for solos.",
+    "properties": {
+      "type": "trait",
+      "organizations": [
+        "solo"
+      ],
+      "organizations_display": "solo",
+      "roles": [],
+      "effect": "At the end of each of its turns, the creature ends one effect on itself that a save can end.",
+      "effect_display": "At the end of each of its turns, the creature ends one effect on itself that a save can end."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "sweeping-tail",
+    "name": "Sweeping Tail",
+    "summary": "A action written for solos and elites, suited to brutes.",
+    "description": "A action written for solos and elites, suited to brutes.",
+    "properties": {
+      "type": "action",
+      "organizations": [
+        "solo",
+        "elite"
+      ],
+      "organizations_display": "solo, elite",
+      "roles": [
+        "brute"
+      ],
+      "roles_display": "brute",
+      "keywords": [
+        "Attack",
+        "Area",
+        "Weapon"
+      ],
+      "keywords_display": "Attack, Area, Weapon",
+      "distance": "1 burst",
+      "target": "All enemies",
+      "tier1": "6 damage",
+      "tier1_display": "6 damage",
+      "tier2": "9 damage; {@movement push} 2",
+      "tier2_display": "9 damage; push 2",
+      "tier3": "12 damage; {@movement push} 3",
+      "tier3_display": "12 damage; push 3"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "thrash",
+    "name": "Thrash",
+    "summary": "A triggered action written for solos, suited to brutes and defenders.",
+    "description": "A triggered action written for solos, suited to brutes and defenders.",
+    "properties": {
+      "type": "triggered",
+      "organizations": [
+        "solo"
+      ],
+      "organizations_display": "solo",
+      "roles": [
+        "brute",
+        "defender"
+      ],
+      "roles_display": "brute, defender",
+      "keywords": [
+        "Melee"
+      ],
+      "keywords_display": "Melee",
+      "distance": "Melee 1",
+      "target": "1 creature",
+      "effect": "When a creature ends its turn adjacent, the creature {@movement push|pushes} it 1.",
+      "effect_display": "When a creature ends its turn adjacent, the creature pushes it 1."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "earthshaker",
+    "name": "Earthshaker",
+    "summary": "A villain action written for solos.",
+    "description": "A villain action written for solos.",
+    "properties": {
+      "type": "villain-action",
+      "organizations": [
+        "solo"
+      ],
+      "organizations_display": "solo",
+      "roles": [],
+      "keywords": [
+        "Area"
+      ],
+      "keywords_display": "Area",
+      "distance": "3 burst",
+      "target": "All enemies",
+      "effect": "Each target is {@movement push|pushed} 2 and is {@condition slowed} ({@duration eot}).",
+      "effect_display": "Each target is pushed 2 and is slowed (eot)."
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "rising-fury",
+    "name": "Rising Fury",
+    "summary": "A villain action written for solos.",
+    "description": "A villain action written for solos.",
+    "properties": {
+      "type": "villain-action",
+      "organizations": [
+        "solo"
+      ],
+      "organizations_display": "solo",
+      "roles": [],
+      "distance": "Self",
+      "target": "Self",
+      "effect": "The creature ends every effect on itself and {@movement shift|shifts} up to its speed.",
+      "effect_display": "The creature ends every effect on itself and shifts up to its speed."
+    },
+    "source": "custom"
   }
 ]
