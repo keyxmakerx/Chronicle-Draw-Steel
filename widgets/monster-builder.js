@@ -550,7 +550,7 @@ var DrawSteelCreatureEditor = (function () {
     });
     if (o.characteristics != null) notes.push('The AI’s characteristics were dropped; they come from the published tables above.');
     derive(st);
-    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save. Check them first. Every number is the published formula’s.';
+    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas’.';
     return notes;
   }
 
