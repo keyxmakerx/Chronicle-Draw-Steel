@@ -15,7 +15,6 @@ theme:
   heading-font: "Spectral, Georgia, serif"
   body-font: "Spectral, Georgia, serif"
 tabs:
-  - players-screen
   - how-to-play
   - making-a-hero
   - tests
@@ -24,6 +23,7 @@ tabs:
   - downtime
 start: players-screen
 first: how-to-play
+screen: players-screen
 parts:
   - title: Player's book
     chapters:
