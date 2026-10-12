@@ -39,8 +39,8 @@ theme:
   edge: "#cbd1da"
   accent: "#c22f39"
   cover: "#232833"
-  heading-font: "Big Shoulders Display, Oswald, Arial Narrow, Impact, sans-serif"
-  body-font: "Source Serif 4, Georgia, serif"
+  heading-font: '"Big Shoulders Display", Oswald, "Arial Narrow", Impact, sans-serif'
+  body-font: '"Source Serif 4", Georgia, serif'
 tabs:
   - how-to-play
   - making-a-hero

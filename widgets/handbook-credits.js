@@ -400,7 +400,7 @@
       '<div><b>' + tally.animalTraits + '</b><span>Animal traits</span></div></div>' : '';
     return '<div class="hbc-grid"><div>' +
         '<div class="hbc-call">' + stageSVG() + '</div>' +
-        '<div class="hbc-opener"><span class="hbc-kicker">Thank you, MCDM</span><h3>Credits</h3>' +
+        '<div class="hbc-opener">' +
         '<p>Draw Steel was made by the team at MCDM Productions. Their names come first, as MCDM print them.</p>' +
         '<button class="hbc-rollbtn" type="button" data-a="roll" aria-haspopup="dialog">' + PLAY + 'Roll the credits</button></div>' +
       '</div><div>' +
