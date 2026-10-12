@@ -1031,6 +1031,21 @@
         }
       ]
     }
+,
+    {
+      "slug": "class-fights",
+      "name": "Class Fights",
+      "description": "Pop-up books for the Handbook's Classes chapter: a tile per class with its Heroic Resource, and for each class a cut-paper practice fight where the reader clicks the pieces and watches the resource rise and fall by that class's rules (read from data/class-fights.json).",
+      "icon": "fa-hand-fist",
+      "script_file": "widgets/class-fights.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
+    }
   ],
   "entity_panels": [
     {

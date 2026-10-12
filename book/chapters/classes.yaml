@@ -45,6 +45,16 @@ pages:
             text: |
               Spend Drama to power your heroic abilities. Performance
               abilities are magical presentations that allies can join.
+  - title: Heroic resources in play
+    blocks:
+      - text: |
+          Every class fuels its heroic abilities with its own Heroic Resource.
+          You start each fight with some, gain more every turn, and each class
+          has its own way of earning extra. Pick a class to read how its
+          resource works, then open its pop-up book: a small practice fight
+          where you click the scene and watch the resource rise and fall.
+      - type: widget
+        widget: class-fights
   - title: Reading an ability
     blocks:
       - text: |
