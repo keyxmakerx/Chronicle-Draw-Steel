@@ -105,19 +105,19 @@ root `source`, *unless* its file is in the `SOURCE_PENDING` list in
 that becomes fully sourced must be removed, and a file not on it can never be
 added — so it can only shrink, and no new dataset can join it.
 
-Five files predate the rule and are still pending:
+Four files predate the rule and are still pending:
 
 | File | Entries | Why still pending |
 |------|---------|-------------------|
 | `rules-glossary.json` | 65 | Sourcing each term means citing a book and chapter per condition, read off the published text |
 | `skills.json` | 57 | As above |
-| `creature-abilities.json` | 23 | Template abilities; whether each is reproduced or authored has to be checked, not guessed |
-| `creature-keywords.json` | 23 | As above |
+| `creature-keywords.json` | 23 | Whether each is a published keyword or authored has to be checked, not guessed |
 | `rulebook-frontpage.json` | 8 | Mostly authored UI prose, but some entries carry tier/modifier tables that may reproduce published numbers |
 
 A citation is only worth having if it is true, so these say nothing rather than
 guessing a chapter. Everything else in `data/` — all 632 entries added for the
 ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
+`creature-abilities.json`,
 `ability-keywords.json`, `organization-templates.json`, `role-templates.json`
 and `rulebook-examples.json` — carries a real root
 `source`.
@@ -224,7 +224,11 @@ and `role-templates.json` hold this package's own legacy estimates
 
 ## creature-abilities.json
 
-Template abilities that creatures reference.
+Ability templates for creatures: the creature editor's generator and its Add
+abilities drawer offer them. Every entry is this package's own work
+(`"source": "custom"`; evidence in `data/NOTICE.md`). Damage numbers are
+placeholders: the editor replaces them with the published damage for the
+creature's level and organization (`DrawSteelFormulas.damageTiers`).
 
 ```json
 {
@@ -233,6 +237,8 @@ Template abilities that creatures reference.
   "description": "A powerful melee strike. Good signature ability for Brute creatures.",
   "properties": {
     "type": "signature",
+    "organizations": ["minion", "horde", "platoon", "elite", "leader", "solo"],
+    "roles": ["brute", "defender"],
     "keywords": ["Attack", "Melee", "Weapon"],
     "distance": "Melee 1",
     "target": "1 creature",
@@ -240,7 +246,8 @@ Template abilities that creatures reference.
     "tier1": "3 damage",
     "tier2": "6 damage",
     "tier3": "9 damage; {@movement push} 2"
-  }
+  },
+  "source": "custom"
 }
 ```
 
@@ -248,7 +255,9 @@ Template abilities that creatures reference.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | `signature`, `action`, `maneuver`, `triggered`, `villain-action` |
+| `type` | string | `signature`, `action`, `maneuver`, `triggered`, `villain-action`, `trait` |
+| `organizations` | array | The organizations it is made for (`minion`, `horde`, `platoon`, `elite`, `leader`, `solo`). The editor offers it only to those; a villain action is only ever for `leader` and `solo` |
+| `roles` | array | The roles it suits; ordered first for a creature with one of them. Empty for one made only for leaders and solos, which have no role |
 | `keywords` | array | Ability keywords (Attack, Melee, Ranged, Area, Magic, Weapon, Psionic, etc.) |
 | `distance` | string | Range notation (Melee 1, Ranged 10, Aura 5, 3 cube within 1, etc.) |
 | `target` | string | Target description |

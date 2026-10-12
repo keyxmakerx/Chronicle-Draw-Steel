@@ -1,17 +1,10 @@
 # Foundry VTT Creature Sync — Design Document
 
-> **⚠️ SUPERSEDED AS A PLAN — kept as input, not as instructions.** The Foundry
-> creature leg is now booked in the coordinator dispatch **`C-BESTIARY-REWRITE`**
-> (`Cordinator/dispatches/chronicle/C-BESTIARY-REWRITE.md`), blocks `[BR-7]` and
-> `[BR-8]`, both **unsigned**. Two things below are known-unsafe to build from:
-> §4.1's `foundry_path` column is **unverified** and disagrees with both
-> `manifest.json`'s creature preset and the Foundry module's `API-CONTRACT.md`
-> (only `docs/FOUNDRY-SYNC-MAP.md`, the *hero* map, was verified against the Draw
-> Steel system source — and its Phase-A table records the same class of guess being
-> wrong four times); and §3's bespoke Chronicle statblock endpoint is only **one** of
-> three options `[BR-7](iii)` weighs, against extending the existing manifest-driven,
-> zero-hardcoded-mappings adapter path. §9's five Open Questions are still open, and
-> `[BR-7]` marks them stop-and-flag: **none may be guessed.**
+> **⚠️ SUPERSEDED — kept as background only.** The verified creature field map is
+> `docs/FOUNDRY-SYNC-MAP.md` §8, pinned by `tools/test-creature-foundry-map.mjs`.
+> Creatures sync through the manifest-driven adapter path, not the bespoke
+> statblock endpoint in §3, and Foundry sends back only Stamina and conditions
+> (signed on #54). The `foundry_path` column in §4.1 below is wrong; don't build from it.
 
 > **Status:** Draft
 > **Author:** Chronicle Team

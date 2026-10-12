@@ -297,6 +297,12 @@ pages:
           - title: 'Caught in a Lie'
             text: |
               If a hero lies to an NPC with an argument that fails to increase the NPC's interest, the Director can decide that the NPC catches the lie and is offended by it. The NPC's interest decreases by 1, in addition to any decrease imposed by the failure.
+  - title: An audience with the King
+    blocks:
+      - text: |
+            This pop-up book is an example negotiation to play through. Choose who speaks and what they say, roll, and see how King Aldric's interest and patience move under the rules on the pages before this one.
+      - type: widget
+        widget: negotiation-audience
   - title: Renown and negotiation
     blocks:
       - text: |

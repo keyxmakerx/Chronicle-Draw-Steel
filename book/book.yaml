@@ -2,20 +2,46 @@ title: Handbook
 mark: DS
 turn: flip
 glossary: rules-glossary.json
-look: paper
+look: bold
+cover: art/cover.svg
+fonts:
+  - family: "Big Shoulders Display"
+    file: fonts/big-shoulders-display-latin-700-normal.woff2
+    weight: 700
+  - family: "Big Shoulders Display"
+    file: fonts/big-shoulders-display-latin-900-normal.woff2
+    weight: 900
+  - family: "Barlow Semi Condensed"
+    file: fonts/barlow-semi-condensed-latin-500-normal.woff2
+    weight: 500
+  - family: "Barlow Semi Condensed"
+    file: fonts/barlow-semi-condensed-latin-600-normal.woff2
+    weight: 600
+  - family: "Barlow Semi Condensed"
+    file: fonts/barlow-semi-condensed-latin-700-normal.woff2
+    weight: 700
+  - family: "Source Serif 4"
+    file: fonts/source-serif-4-latin-400-normal.woff2
+    weight: 400
+  - family: "Source Serif 4"
+    file: fonts/source-serif-4-latin-400-italic.woff2
+    weight: 400
+    style: italic
+  - family: "Source Serif 4"
+    file: fonts/source-serif-4-latin-600-normal.woff2
+    weight: 600
 theme:
-  paper: "#efe6d2"
-  paper-alt: "#f8f2e4"
-  ink: "#2b2433"
-  ink-soft: "#4a4152"
-  muted: "#75697a"
-  edge: "#d4c6a8"
-  accent: "#5b3d8a"
-  cover: "#2e2240"
-  heading-font: "Spectral, Georgia, serif"
-  body-font: "Spectral, Georgia, serif"
+  paper: "#f1f2f4"
+  paper-alt: "#ffffff"
+  ink: "#15171d"
+  ink-soft: "#4b5261"
+  muted: "#6b7280"
+  edge: "#cbd1da"
+  accent: "#c22f39"
+  cover: "#232833"
+  heading-font: '"Big Shoulders Display", Oswald, "Arial Narrow", Impact, sans-serif'
+  body-font: '"Source Serif 4", Georgia, serif'
 tabs:
-  - players-screen
   - how-to-play
   - making-a-hero
   - tests
@@ -24,6 +50,7 @@ tabs:
   - downtime
 start: players-screen
 first: how-to-play
+screen: players-screen
 parts:
   - title: Player's book
     chapters:
@@ -49,3 +76,6 @@ parts:
       - running-the-game
       - building-encounters
       - monsters
+  - title: Credits
+    chapters:
+      - credits

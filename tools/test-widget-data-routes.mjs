@@ -34,6 +34,7 @@ const DATA_WIDGETS = [
   'character-sheet.js',
   'reference-renderer.js',
   'negotiation-tracker.js',
+  'class-fights.js',
 ];
 
 // Strip comments so the prose explaining the dead route cannot trip the guard

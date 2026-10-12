@@ -34,7 +34,8 @@ it came from. A number the director types is never overwritten.
 
 - Balance checking beyond the published encounter bands.
 - Automated loot/treasure tables.
-- AI-generated creature descriptions.
+- An AI running inside Chronicle (Build with an AI works through the
+  director's own AI chat).
 
 ---
 
@@ -156,51 +157,16 @@ Villain actions are stored separately (`villain_actions_json`) as
 
 ---
 
-## 3. Entity Preset Expansion
+## 3. Entity Preset
 
-The current `drawsteel-creature` preset is minimal. Here's the expanded version:
+The `drawsteel-creature` preset in `manifest.json` is the source of truth for a
+creature's fields. Its Foundry paths, and how each value converts, are in
+[FOUNDRY-SYNC-MAP.md §8](./FOUNDRY-SYNC-MAP.md#8-creatures-npc-actors).
 
-### 3.1 Updated Creature Entity Preset
-
-```json
-{
-  "slug": "drawsteel-creature",
-  "name": "Creature",
-  "name_plural": "Creatures",
-  "icon": "fa-paw",
-  "color": "#DC2626",
-  "category": "creature",
-  "foundry_actor_type": "npc",
-  "fields": [
-    { "key": "level", "label": "Level", "type": "number", "foundry_path": "system.details.level" },
-    { "key": "organization", "label": "Organization", "type": "enum", "foundry_path": "system.details.organization" },
-    { "key": "role", "label": "Role", "type": "enum", "foundry_path": "system.details.role" },
-    { "key": "ev", "label": "EV", "type": "number", "foundry_path": "system.details.ev" },
-    { "key": "keywords", "label": "Keywords", "type": "list", "foundry_path": "system.details.keywords" },
-    { "key": "faction", "label": "Faction", "type": "string" },
-    { "key": "size", "label": "Size", "type": "enum", "foundry_path": "system.details.size" },
-    { "key": "stamina", "label": "Stamina", "type": "number", "foundry_path": "system.stamina.max" },
-    { "key": "winded", "label": "Winded Value", "type": "number", "foundry_path": "system.stamina.winded" },
-    { "key": "speed", "label": "Speed", "type": "number", "foundry_path": "system.movement.speed" },
-    { "key": "stability", "label": "Stability", "type": "number", "foundry_path": "system.stability.value" },
-    { "key": "might", "label": "Might", "type": "number", "foundry_path": "system.characteristics.might" },
-    { "key": "agility", "label": "Agility", "type": "number", "foundry_path": "system.characteristics.agility" },
-    { "key": "reason", "label": "Reason", "type": "number", "foundry_path": "system.characteristics.reason" },
-    { "key": "intuition", "label": "Intuition", "type": "number", "foundry_path": "system.characteristics.intuition" },
-    { "key": "presence", "label": "Presence", "type": "number", "foundry_path": "system.characteristics.presence" },
-    { "key": "immunities", "label": "Immunities", "type": "list" },
-    { "key": "free_strike", "label": "Free Strike", "type": "markdown" },
-    { "key": "traits", "label": "Traits", "type": "markdown" },
-    { "key": "abilities_json", "label": "Abilities", "type": "string" },
-    { "key": "villain_actions_json", "label": "Villain Actions", "type": "string" }
-  ]
-}
-```
-
-**Notes:**
-- `abilities_json` and `villain_actions_json` store structured JSON as strings. The builder widget parses/renders these. This avoids needing new Chronicle field types.
-- `foundry_path` annotations enable the generic Foundry adapter for flat fields. Structured fields (abilities, villain actions) require the dedicated creature sync endpoint (see [Foundry Sync spec](./foundry-creature-sync.md)).
-- `organization` and `role` use the `enum` field type. Enum values are defined in the reference data, not the preset itself.
+- `abilities_json`, `villain_actions_json` and `traits` store structured JSON as
+  strings, which the builder and stat block parse. They don't reach Foundry yet.
+- `stamina_current` and `conditions_json` are the only fields Foundry may send back
+  (`foundry_pull_fields`).
 
 ### 3.2 New Reference Category: Creature Abilities
 
@@ -353,10 +319,64 @@ Every ability opens in a small form. A signature strike is added first, with
 **Damage follows the published formula** on: its tiers' leading number tracks
 the formula, and any words after it ("; push 2") are kept.
 
-**Start from…** offers the community bestiary (every Draw Steel creature
+The row under the bar offers three ways to begin. **Generate one** folds open
+a panel: what the creature is (free text, which becomes the name; words like
+spider, dragon or ghost pick keywords and fitting abilities), what kind of
+creature (fit my party, or an organization), its level, and its role (hidden
+for leaders and solos). It takes abilities only from `data/creature-abilities.json`
+entries whose `organizations` and `roles` fit the creature: a signature that
+deals damage, then one ability made only for that organization and, except for
+a minion, one for its role or theme; a leader or solo also gets three villain
+actions. Characteristics are the role's published spread with its main one at
+the published highest characteristic. Every figure, damage included, is the
+published formula's. The panel lists why it chose each thing, and **Try other
+abilities** picks again. **Blank** clears the stat block, asking first if
+anything changed.
+
+**Build with an AI** folds open in the Generate panel's place; only one is
+open at a time. No AI runs inside Chronicle. The director describes the
+creature and presses **Copy the guide**, which copies a prompt for any AI chat:
+the description, the party read from the hero pages, the exact JSON shape to
+answer in, and every option it may pick, read from the package's own files
+(organizations, roles, sizes, creature keywords, ability keywords other than
+helper tags, damage types, and the condition, duration and movement terms).
+When the browser refuses the copy, the guide is shown selected to copy by hand.
+The answer pasted back is read as it arrives, up to its last complete value, so
+the editor fills in while it is pasted. The AI supplies words and picks only:
+level, organization, role and size must be ones Draw Steel has, characteristics
+are the role's published spread, and every figure, damage included, is the
+published formula's in the AI's damage type. Its own numbers, a role on a
+leader or solo, villain actions on anything else and reference terms the
+glossary doesn't know are dropped, and the panel lists each change. The name,
+traits and abilities it wrote carry a **From the AI** chip until the director
+saves; the chip is never saved to the page. **Try an example answer** shows the
+reading on a typical reply.
+
+**Add abilities** slides a drawer down over the dimmed page with the same
+library. By default it lists only what this creature can use (`fits` for its
+organization and role; with no organization yet, anything but a villain
+action), best matches first; **Show all** lists every ability, marking the ones
+made for other organizations. Filters cover kind, keyword and organization,
+plus a search. Each card shows its damage worked out for this creature's level
+and kind, and can take a damage type and one Draw Steel condition on the tiers
+the published creatures usually put it. Drag a card onto the creature's list, or
+press **Add**. Nothing is added twice, a second signature joins as a main
+action, villain actions go only to leaders and solos (three at most), and every
+add or removal can be undone. **Write your own** adds a blank ability as before.
+In the editor, drag an ability or trait card onto another to reorder them, or
+use its ↑ and ↓ buttons.
+
+**or from a creature…** offers the community bestiary (every Draw Steel creature
 published there) and this campaign's creatures. The copy is named "X (copy)",
 keeps its level, and is recomputed: stale figures are replaced, and abilities
 whose tiers look like formula damage are switched to follow it.
+
+Motion follows Chronicle's setting: opening the editor slides its bar down
+and the panels rise in turn, the Generate and AI panels fold open and shut,
+the example answer arrives a little at a time, and a
+figure that changes flashes briefly; the Add abilities drawer slides down and
+an added ability eases into the creature's list. Calm keeps only fades; Off and reduced
+motion turn it all off. On wide screens the bar with Save stays pinned.
 
 The widget also registers `monster-builder` for placement on a page; on a page
 that already has the stat block panel it steps aside.
@@ -389,7 +409,8 @@ Data format: `docs/DATA-SCHEMA.md`.
 
 ## 8. Open Questions
 
-Open work: #54.
+Not yet synced to Foundry: abilities, villain actions, traits, immunities and
+weaknesses (see FOUNDRY-SYNC-MAP.md §8).
 
 ---
 
@@ -401,4 +422,4 @@ Open work: #54.
 | Widget JS API | Chronicle Core | `Chronicle.register()` |
 | Entity custom fields API | Chronicle Core | Reads and writes `fields_data` |
 | Community Bestiary addon | Chronicle Core | `internal/plugins/bestiary`: search, stat block, publish |
-| Structured creature sync | Chronicle Core | Needed for Foundry abilities and villain actions |
+| Creature fields route (`GET /systems/:systemId/creature-fields`) | Chronicle Core | The Chronicle Sync module reads the preset's Foundry paths from it |

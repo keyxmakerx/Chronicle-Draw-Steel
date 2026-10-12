@@ -1,0 +1,6 @@
+# Chronicle installs a release from GitHub's source zip, which honours
+# export-ignore. Dev-only folders stay out of it: Chronicle's package scan
+# rejects shell scripts (tools/*.sh), and Chronicle never loads these.
+# tools/test-release-archive.mjs pins this.
+/tools export-ignore
+/.github export-ignore

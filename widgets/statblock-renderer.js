@@ -336,6 +336,37 @@ var DrawSteelStatblock = (function () {
     return h + '</article>';
   }
 
+  // foundryHtml is the director's "In Foundry" box: what Foundry sent back and
+  // whether it may. Chronicle owns the stat block; Foundry owns only current
+  // Stamina and conditions, and sends them only while the toggle is on (the
+  // page's `foundry` system state, read by the Chronicle Sync module).
+  // state.sendBack is true, false, or null while unknown (toggle disabled).
+  function foundryHtml(f, state) {
+    var st = state || {};
+    var max = num(f.stamina);
+    var cur = num(f.stamina_current);
+    var conds = parseJSON(f.conditions_json, []);
+    if (!Array.isArray(conds)) conds = [];
+    conds = conds.filter(function (c) { return typeof c === 'string' && c; }).map(function (c) {
+      return cap(c.replace(/[-_]+/g, ' '));
+    });
+    var stamina = cur === null ? 'Not sent from Foundry yet' : (cur + (max !== null ? ' / ' + max : ''));
+    var on = st.sendBack === true;
+    return '<section class="sbx-fvtt" aria-label="In Foundry">' +
+      '<p class="sbx-sec">In Foundry</p>' +
+      '<dl class="sbx-fvtt-rows">' +
+        '<div><dt>Stamina at the table</dt><dd>' + esc(stamina) + '</dd></div>' +
+        '<div><dt>Conditions</dt><dd>' + esc(conds.length ? conds.join(', ') : 'None') + '</dd></div>' +
+      '</dl>' +
+      '<label class="sbx-fvtt-toggle"><input type="checkbox" data-sbx-fvtt="sendback"' + (on ? ' checked' : '') +
+        (st.sendBack === null || st.sendBack === undefined || st.saving ? ' disabled' : '') + '>' +
+        '<span><b>Let Foundry send back Stamina and conditions</b>' +
+        '<span class="sbx-fvtt-hint">Chronicle owns the stat block. Edits to abilities in Foundry are not sent back. Off until you turn it on.</span></span></label>' +
+      '<p class="sbx-fvtt-hint">Foundry makes this creature an NPC actor in its &ldquo;Chronicle: Creatures&rdquo; folder when Sync Creatures is on in the Chronicle Sync module&rsquo;s settings.</p>' +
+      (st.error ? '<p class="sbx-msg is-error" role="alert">' + esc(st.error) + '</p>' : '') +
+    '</section>';
+  }
+
   // CSS uses Chronicle's colour tokens, so light and dark follow the site, and
   // stays under .sbx so a hover-card style can restyle it from outside.
   var CSS = [
@@ -390,6 +421,16 @@ var DrawSteelStatblock = (function () {
     '.sbx--compact .sbx-name{font-size:17px}',
     '.sbx-sig{margin:0;font-size:13px;font-weight:600}',
     '.sbx-sig-k{font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:11px;opacity:.75;margin-right:4px}',
+    '.sbx-fvtt{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-card-bg,#fff);font-size:14px;color:var(--color-text-body,#374151)}',
+    '.sbx-fvtt .sbx-sec{margin:0}',
+    '.sbx-fvtt-rows{margin:0;display:flex;flex-direction:column;gap:2px}',
+    '.sbx-fvtt-rows div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--color-border-light,#f3f4f6)}',
+    '.sbx-fvtt-rows dt{color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fvtt-rows dd{margin:0;font-weight:600;color:var(--color-text-primary,#111827);font-variant-numeric:tabular-nums;text-align:right}',
+    '.sbx-fvtt-toggle{display:flex;gap:10px;align-items:flex-start;cursor:pointer}',
+    '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-fvtt-toggle b{color:var(--color-text-primary,#111827);font-weight:600;display:block}',
+    '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
 
@@ -490,6 +531,7 @@ var DrawSteelStatblock = (function () {
     toStatblock: toStatblock,
     toFields: toFields,
     html: html,
+    foundryHtml: foundryHtml,
     abilityHtml: abilityHtml,
     mark: mark,
     CSS: CSS,
@@ -530,6 +572,7 @@ function StatblockPanel(el, config) {
   this.ref = null;
   this.editor = null;
   this.publishOpen = false;
+  this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
 }
 
 StatblockPanel.prototype.start = function () {
@@ -555,6 +598,7 @@ StatblockPanel.prototype.start = function () {
       self.refs = x[0];
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
+      if (self.isGM) self.loadFoundry();
     });
   }).catch(function (err) {
     if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature', err);
@@ -590,8 +634,57 @@ StatblockPanel.prototype.render = function () {
   bar += '</div>';
   var pub = (this.isGM && this.publishOpen) ? this.publishHtml() : '';
   this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
-    S.html(name, f, { ref: this.ref, refs: this.refs }) + '</div>';
+    S.html(name, f, { ref: this.ref, refs: this.refs }) +
+    (this.isGM ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
   this.bind();
+};
+
+StatblockPanel.prototype.stateUrl = function () {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(this.eid) + '/system-state/drawsteel/foundry';
+};
+
+// drawFoundry redraws only the box, so a toggle never re-renders the stat block.
+StatblockPanel.prototype.drawFoundry = function () {
+  var box = this.el.querySelector && this.el.querySelector('[data-sbx-fvtt-box]');
+  if (box) box.innerHTML = DrawSteelStatblock.foundryHtml(this.fields(), this.fvtt);
+};
+
+StatblockPanel.prototype.loadFoundry = function () {
+  var self = this;
+  return DrawSteelStatblock.getJSON(this.stateUrl()).then(function (state) {
+    var gm = (state && state.gm && typeof state.gm === 'object') ? state.gm : {};
+    self.fvtt.gm = gm;
+    self.fvtt.sendBack = gm.sendBack === true;
+    self.drawFoundry();
+  }).catch(function () {
+    self.fvtt.error = 'Could not read whether Foundry may send values back. Reload to try again.';
+    self.drawFoundry();
+  });
+};
+
+// setSendBack writes only the gm half, keeping any other keys in it; a failed
+// save puts the box back as it was.
+StatblockPanel.prototype.setSendBack = function (on) {
+  var self = this, prev = this.fvtt.sendBack;
+  var gm = {}, k;
+  for (k in this.fvtt.gm) if (Object.prototype.hasOwnProperty.call(this.fvtt.gm, k)) gm[k] = this.fvtt.gm[k];
+  gm.sendBack = on === true;
+  this.fvtt.sendBack = gm.sendBack;
+  this.fvtt.saving = true;
+  this.fvtt.error = '';
+  this.drawFoundry();
+  return DrawSteelStatblock.apiFetch(this.stateUrl(), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: gm })
+  }).then(function (res) {
+    if (!res.ok) throw new Error('save ' + res.status);
+    self.fvtt.gm = gm;
+  }).catch(function () {
+    self.fvtt.sendBack = prev;
+    self.fvtt.error = 'Could not save that. Try again.';
+  }).then(function () {
+    self.fvtt.saving = false;
+    self.drawFoundry();
+  });
 };
 
 StatblockPanel.prototype.publishHtml = function () {
@@ -614,6 +707,10 @@ StatblockPanel.prototype.bind = function () {
     }
     var pub = e.target.closest && e.target.closest('[data-sbx-pub]');
     if (pub && self.el.contains(pub)) self.publish(pub.getAttribute('data-sbx-pub'));
+  });
+  this.el.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-sbx-fvtt') === 'sendback') self.setSendBack(!!t.checked);
   });
 };
 

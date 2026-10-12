@@ -78,3 +78,59 @@ test('H-2: a numeric kit bonus still renders with its sign', () => {
   assert.ok(/\+2/.test(html), '+2 stability renders');
   assert.ok(/-1/.test(html), '-1 speed renders');
 });
+
+// ── Paper layout: every user-authored value in the new markup is escaped ──
+const PX = (fields, extra) => Object.assign({ name: XSS, isGm: true, isOwner: true, canEditIdentity: true, canChangeImage: true, fields }, extra || {});
+
+test('paper: hostile name, origin values and class cannot inject', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const f = { ancestry: XSS, culture: XSS, career: XSS, kit: XSS, class: XSS, subclass: XSS, faction: XSS };
+  const html = cs.paperSheetHtml(PX(f));
+  assertNoInjection(assert, html, 'paper identity');
+  assert.ok(/&lt;img/.test(html));
+});
+
+test('paper: portrait_url breakout and javascript: scheme', () => {
+  const bad = cs.pIdentity(PX({ portrait_url: BREAKOUT }, { name: 'Hero' }));
+  assertNoAttrBreakout(assert, bad, 'paper portrait breakout');
+  assert.ok(/&quot;/.test(bad));
+  const js = cs.pIdentity(PX({ portrait_url: 'javascript:alert(1)' }));
+  assert.ok(!/<img/.test(js) && /sh-port-ph/.test(js));
+  assert.ok(/<img src="\/media\/h.png"/.test(cs.pIdentity(PX({ portrait_url: '/media/h.png' }))));
+});
+
+test('paper: panel title and kind attributes cannot break out', () => {
+  const html = cs.paperSheetHtml(PX({}, { name: BREAKOUT }));
+  const tags = html.match(/<template\b[^>]*>/g) || [];
+  assert.ok(tags.every((t) => /^<template data-sheet-panel="[^"]*" data-title="[^"]*" data-kind="[^"]*">$/.test(t)), 'no template tag gains an extra attribute');
+  const attrs = [...html.matchAll(/<template data-sheet-panel="[^"]*" data-title="([^"]*)" data-kind="([^"]*)">/g)];
+  assert.ok(attrs.length >= 5, 'panel templates carry both attributes');
+  assert.ok(attrs.some((m) => /&quot;/.test(m[1] + m[2])), 'the hero name reaches an attribute escaped');
+});
+
+test('paper: kit, features, skills, items, notes, damage and conditions are escaped', () => {
+  const f = {
+    kit_details_json: JSON.stringify([{ name: XSS, stability: XSS, meleeDamageT1: '<svg onload=alert(1)>' }]),
+    features_json: JSON.stringify([{ name: XSS, description: XSS }]),
+    perks_json: JSON.stringify([{ name: XSS, description: XSS }]),
+    skills_json: JSON.stringify([XSS]),
+    languages_json: JSON.stringify([XSS]),
+    treasures_json: JSON.stringify([{ name: XSS, category: XSS, keywords: [XSS], description: XSS, quantity: XSS }]),
+    conditions_json: JSON.stringify([{ name: XSS, severity: XSS }]),
+    immunities: JSON.stringify([{ type: XSS, value: XSS }]), weaknesses: XSS, status_immunities: JSON.stringify([XSS]),
+    heroic_resource_name: XSS, backstory: XSS, notes: XSS, gm_notes: XSS, victories: XSS, xp: XSS, renown: XSS, wealth: XSS, size: XSS, speed: XSS
+  };
+  const d = PX(f, { name: 'Hero' });
+  const html = cs.paperSheetHtml(d);
+  assertNoInjection(assert, html, 'paper sheet');
+  for (const p of cs.paperPanels(d)) assertNoInjection(assert, p.html, 'paper panel ' + p.id);
+});
+
+test('paper: the story pin and children items escape their text', () => {
+  const pin = cs.storyPinHtml(PX({ backstory: XSS }));
+  assertNoInjection(assert, pin, 'paper story pin');
+  const items = cs.pItemsPanel(PX({}, { campaignId: XSS, children: [
+    { relation: { slug: 'has-item' }, entity: { id: XSS, name: XSS }, metadata: { quantity: 1 } }
+  ] }));
+  assertNoInjection(assert, items, 'paper items');
+});

@@ -6,7 +6,7 @@ For any new file expected over ~200 lines (widget, module, config), don't write 
 
 ## Project Structure
 
-`widgets/` - Chronicle widget JS (ES5, `var` not `let/const`, no arrow functions), via `Chronicle.register()`. `data/` - reference JSON (creature keywords, org templates, role templates, etc.). `manifest.json` - package manifest: categories, entity presets, widget registrations. `book/` - the Rulebook book Chronicle renders on the Rules page (YAML; format in Chronicle's `docs/system-rulebook-book.md`). Chronicle checks it when the page opens; there is no YAML check in this repo's CI yet.
+`widgets/` - Chronicle widget JS (ES5, `var` not `let/const`, no arrow functions), via `Chronicle.register()`. `data/` - reference JSON (creature keywords, org templates, role templates, etc.). `manifest.json` - package manifest: categories, entity presets, widget registrations. `book/` - the Rulebook book Chronicle renders on the Rules page (YAML; format in Chronicle's `docs/system-rulebook-book.md`). Chronicle checks it when the page opens; there is no YAML check in this repo's CI yet. `tools/` and `.github/` are `export-ignore` in `.gitattributes`, so the release zip leaves them out (Chronicle's package scan rejects `tools/*.sh`; `tools/test-release-archive.mjs` pins it): anything the package needs at run time lives outside those folders.
 
 ## Licensing — two positions, never flattened into one
 
@@ -15,7 +15,10 @@ covered the whole thing; that misstatement shipped for months.
 
 - **Draw Steel rules text in `data/`** is reproduced under MCDM's **DRAW STEEL
   Creator License**. Draw Steel has never been released under Creative Commons
-  and there is no SRD. Attribution: `DRAW STEEL © 2024 MCDM Productions, LLC`.
+  and there is no SRD. The licence's required notice, with this package's name:
+  `Chronicle Draw Steel is an independent product published under the DRAW STEEL
+  Creator License and is not affiliated with MCDM Productions, LLC. DRAW STEEL ©
+  2026 MCDM Productions, LLC.`
   This package cannot sublicense it.
 - **This package's own work** — `widgets/*.js`, `tools/*.mjs`, `docs/*`,
   `manifest.json`, and every entry flagged `"source": "custom"` — is CC-BY-4.0.
@@ -25,12 +28,11 @@ authoritative position. `tools/test-licence-claims.mjs` fails CI on an unscoped
 Creative Commons mention anywhere in the tree, so a new doc or widget header
 cannot quietly reintroduce the incorrect claim.
 
-**Nobody working on this package has read the Creator License** —
-`mcdmproductions.com` is unreachable from the authoring environment. The
-position is reasoned from this repo's history and the Steel Compendium's
-reliance, not verified. **Never invent or paraphrase licence terms**, and leave
-the limitation sections in `LICENSE` / `data/NOTICE.md` in place until a human
-has read the licence and confirmed (#53).
+**The maintainer has read the Creator License** and confirmed it allows copying
+Draw Steel rules text, the *Monsters* book's included, with that notice. Quote the
+licence, never paraphrase it: `LICENSE` holds the lines quoted from it. The page
+is still unreachable from the authoring environment, so a new question about its
+terms goes to the maintainer.
 
 ## Widget Patterns
 

@@ -1,0 +1,8 @@
+title: Credits
+intro: The people who made Draw Steel, where to get the books, and the licence notice.
+pages:
+  - title: The people behind the game
+    wide: true
+    blocks:
+      - type: widget
+        widget: handbook-credits
