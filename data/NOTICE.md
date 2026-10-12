@@ -89,42 +89,21 @@ The keyword definitions in `ability-keywords.json` come from
 
 ## Licence
 
-This package is an independent product published under the **DRAW STEEL Creator
-License** and is not affiliated with MCDM Productions, LLC.
-**DRAW STEEL © 2024 MCDM Productions, LLC.**
+Chronicle Draw Steel is an independent product published under the **DRAW STEEL
+Creator License** and is not affiliated with MCDM Productions, LLC.
+**DRAW STEEL © 2026 MCDM Productions, LLC.**
 
-The Draw Steel Creator License (<https://www.mcdmproductions.com/draw-steel-creator-license>)
-permits reproducing Draw Steel rules text in third-party products, including
-free/open-source ones, provided the above attribution is included and MCDM
-endorsement is not implied. No MCDM trademarks, logos, art, or proprietary setting
-material are used here — only rules text (condition/keyword/skill/ancestry trait
-definitions and their mechanical numbers).
+That is the notice the Creator License (<https://www.mcdmproductions.com/draw-steel-creator-license>) requires, with
+this package's name in place of "[Product Name]". The maintainer has read the licence
+and confirmed that it allows this package to copy Draw Steel rules text, including the
+*Monsters* book's, with that notice. In its own words: "You can reuse and freely
+reference the DRAW STEEL text, mechanics, and game rules", and "You can share raw text
+from the listed products but not screenshots of the pages or artwork." No MCDM
+trademarks, logos, art, page images or proprietary setting material are used here.
 
-### The limit of that statement — nobody here has read the licence
-
-**The paragraph above is this project's established position, not a reading of the
-licence text.** `mcdmproductions.com` is unreachable from the environment this
-package has been authored in — three separate authors have hit the same egress
-block — so the Creator License itself has never been opened by anyone working on
-these files. What the position actually rests on is:
-
-1. the position already established in this repository (`docs/CHARACTER-SHEET-DESIGN.md`
-   set it out when the glossary/skills source was chosen), and
-2. the community **Steel Compendium**'s own reliance: it publishes this same rules
-   text publicly under the same Creator License with the same attribution
-   disclaimer, and this package's data was compiled from it.
-
-That is a reasonable basis for proceeding. It is **not** verification, and nothing
-in this file should be read as a paraphrase of licence terms — no clause of the
-Creator License is quoted or summarised anywhere in this package, because none has
-been read.
-
-**Action for a human maintainer:** open
-<https://www.mcdmproductions.com/draw-steel-creator-license> once and confirm three
-things — (a) that it permits reproducing rules text in a free, open-source product;
-(b) that the attribution wording quoted above is the wording it *requires*, verbatim;
-and (c) that offering this package's own original work under CC-BY-4.0 alongside it
-is compatible with its terms. Then delete this subsection. Until then it stays.
+Not separately confirmed: whether offering this package's own work under CC-BY-4.0
+alongside the rules text fits the licence's terms. That part is this project's
+good-faith position, not legal advice.
 
 ### What is licensed how
 
@@ -367,8 +346,8 @@ creature editor, written in Draw Steel's vocabulary but not reproduced from the
 - **Their damage numbers are placeholders.** The editor replaces them with the
   published damage for the creature's level and organization.
 
-The *Monsters* book's own creature abilities are not in this package. Whether they
-may be copied waits on a person reading the Creator License (#53).
+The *Monsters* book's own creature abilities are not in this file yet. The licence
+allows copying them with the notice above, so they can be added with a real `source`.
 
 ## The CC-BY-4.0 misstatement, and where it was corrected
 
@@ -383,7 +362,7 @@ Every claim has been corrected:
 
 | Where | Was | Now |
 |-------|-----|-----|
-| `LICENSE` | "This content pack contains material licensed under CC-BY-4.0" | Two-part statement: Creator License for the rules text, CC-BY-4.0 for this package's own work, plus the unread-licence limitation |
+| `LICENSE` | "This content pack contains material licensed under CC-BY-4.0" | Two-part statement: Creator License for the rules text, CC-BY-4.0 for this package's own work, plus a record of what the maintainer confirmed from the licence |
 | `README.md` → License | "Content is licensed under **CC-BY-4.0**" | Both positions stated separately, with the attribution block and the limitation |
 | `manifest.json` → `license` | `"CC-BY-4.0"` | `"DRAW STEEL Creator License (rules text) / CC-BY-4.0 (this package's own work)"` — rendered in Chronicle's Admin → Extensions list and system diagnostics header |
 | `manifest.json` → `description` | "Content sourced from publicly available CC-BY-4.0 material." | Creator License attribution + pointer to this file |
@@ -398,7 +377,7 @@ left as-is.
 **The correction is enforced.** `tools/test-licence-claims.mjs` fails CI if a CC-BY or
 Creative Commons mention appears anywhere outside the handful of places allowed to
 scope it to this package's own work, if any `data/*.json` entry's `source` mentions
-Creative Commons, or if the attribution line `DRAW STEEL © 2024 MCDM Productions, LLC`
+Creative Commons, or if the Creator License notice
 goes missing from `LICENSE`, `README.md`, or this file. The misstatement survived
 because nothing was watching for it.
 

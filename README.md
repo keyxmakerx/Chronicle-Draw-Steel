@@ -194,9 +194,9 @@ encounter-building formulas, the animal traits, and the negotiation rules — is
 **DRAW STEEL Creator License**. It is *not* Creative Commons material: MCDM has not
 released Draw Steel under any CC licence, and there is no Draw Steel SRD.
 
-> This package is an independent product published under the DRAW STEEL Creator
-> License and is not affiliated with MCDM Productions, LLC.
-> **DRAW STEEL © 2024 MCDM Productions, LLC.**
+> Chronicle Draw Steel is an independent product published under the DRAW STEEL
+> Creator License and is not affiliated with MCDM Productions, LLC.
+> **DRAW STEEL © 2026 MCDM Productions, LLC.**
 
 No MCDM trademarks, logos, art, or setting material are reproduced here — only rules
 text and its mechanical numbers. MCDM endorsement is not implied. This package cannot
@@ -207,9 +207,6 @@ must carry the same attribution.
 and the data entries flagged `"source": "custom"` (including the 35 example creatures in
 `creatures.json`) — is licensed **CC-BY-4.0**, © the Chronicle Draw Steel contributors.
 
-**A limitation worth knowing about:** the Creator License text itself could not be read
-from the environment this position was written in (`mcdmproductions.com` is unreachable
-there). The statements above rest on this repository's established position and on the
-community Steel Compendium's reliance on the same licence for the same material — not on
-a reading of the licence. A human should read it once and confirm. See the closing
-section of [LICENSE](LICENSE).
+The maintainer has read the Creator License and confirmed that it allows this
+package to copy Draw Steel rules text with the notice above. What it says, and the one
+point not separately confirmed, are in the closing section of [LICENSE](LICENSE).

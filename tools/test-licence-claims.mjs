@@ -23,8 +23,14 @@ const read = (rel) => readFileSync(path.join(ROOT, rel), 'utf8');
 // Any spelling of the thing this package is not.
 const CC = /cc-?by|creative\s*commons|creativecommons/i;
 
-// The verbatim attribution the Creator License position rests on.
-const ATTRIBUTION = 'DRAW STEEL © 2024 MCDM Productions, LLC';
+// The notice the Creator License requires, with this package's name in place
+// of "[Product Name]". Compared with line breaks, quote marks and emphasis
+// removed, since each file wraps it its own way.
+const NOTICE =
+  'Chronicle Draw Steel is an independent product published under the DRAW STEEL ' +
+  'Creator License and is not affiliated with MCDM Productions, LLC. ' +
+  'DRAW STEEL © 2026 MCDM Productions, LLC.';
+const flat = (s) => s.replace(/^[ \t]*>[ \t]?/gm, '').replace(/[*_`]/g, '').replace(/\s+/g, ' ');
 const CREATOR_LICENCE = 'DRAW STEEL Creator License';
 
 // Files allowed to mention Creative Commons at all. Each still has to scope
@@ -162,30 +168,16 @@ test('the manifest declares both positions, and neither alone', () => {
   );
 });
 
-test('the attribution and the Creator License are stated where anyone would look', () => {
-  for (const rel of ['LICENSE', 'README.md', 'data/NOTICE.md']) {
-    const body = read(rel);
-    assert.ok(body.includes(ATTRIBUTION), `${rel} must carry the attribution "${ATTRIBUTION}".`);
-    assert.ok(
-      body.toLowerCase().includes(CREATOR_LICENCE.toLowerCase()),
-      `${rel} must name the ${CREATOR_LICENCE}.`,
-    );
+test('the Creator License notice is stated where anyone would look', () => {
+  const manifest = JSON.parse(read('manifest.json'));
+  const places = { 'LICENSE': read('LICENSE'), 'README.md': read('README.md'), 'data/NOTICE.md': read('data/NOTICE.md'), 'manifest.json description': manifest.description };
+  for (const [where, body] of Object.entries(places)) {
+    assert.ok(flat(body).includes(NOTICE), `${where} must carry the notice, word for word: "${NOTICE}"`);
   }
 });
 
-test('the unread-licence limitation is stated, not papered over', () => {
-  // Nobody working on this package has read the Creator License:
-  // mcdmproductions.com is blocked by the authoring environment's egress proxy.
-  // The position is reasoned, not verified, and saying so is part of the
-  // position. Delete this test only when a human has read the licence and
-  // removed the limitation sections from LICENSE and data/NOTICE.md together.
-  for (const rel of ['LICENSE', 'data/NOTICE.md']) {
-    const body = read(rel).toLowerCase();
-    assert.ok(
-      body.includes('mcdmproductions.com') && body.includes('unreachable'),
-      `${rel} must record that the Creator License text itself could not be read ` +
-        `(mcdmproductions.com is unreachable from the authoring environment), so no ` +
-        `reader mistakes this package's position for a reading of the licence.`,
-    );
-  }
+test('no file keeps the old attribution year', () => {
+  // The licence page gives © 2026; a stale year would contradict the notice.
+  const stale = textFiles().filter((rel) => rel !== 'tools/test-licence-claims.mjs' && /DRAW STEEL (©|\(c\)) 2024/i.test(read(rel)));
+  assert.deepEqual(stale, [], 'these files still carry "DRAW STEEL © 2024"; the notice says 2026.');
 });
