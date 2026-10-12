@@ -332,6 +332,20 @@ published formula's. The panel lists why it chose each thing, and **Try other
 abilities** picks again. **Blank** clears the stat block, asking first if
 anything changed.
 
+**Add abilities** slides a drawer down over the dimmed page with the same
+library. By default it lists only what this creature can use (`fits` for its
+organization and role; with no organization yet, anything but a villain
+action), best matches first; **Show all** lists every ability, marking the ones
+made for other organizations. Filters cover kind, keyword and organization,
+plus a search. Each card shows its damage worked out for this creature's level
+and kind, and can take a damage type and one Draw Steel condition on the tiers
+the published creatures usually put it. Drag a card onto the creature's list, or
+press **Add**. Nothing is added twice, a second signature joins as a main
+action, villain actions go only to leaders and solos (three at most), and every
+add or removal can be undone. **Write your own** adds a blank ability as before.
+In the editor, drag an ability or trait card onto another to reorder them, or
+use its ↑ and ↓ buttons.
+
 **or from a creature…** offers the community bestiary (every Draw Steel creature
 published there) and this campaign's creatures. The copy is named "X (copy)",
 keeps its level, and is recomputed: stale figures are replaced, and abilities
@@ -339,7 +353,8 @@ whose tiers look like formula damage are switched to follow it.
 
 Motion follows Chronicle's setting: opening the editor slides its bar down
 and the panels rise in turn, the Generate panel folds open and shut, and a
-figure that changes flashes briefly. Calm keeps only fades; Off and reduced
+figure that changes flashes briefly; the Add abilities drawer slides down and
+an added ability eases into the creature's list. Calm keeps only fades; Off and reduced
 motion turn it all off. On wide screens the bar with Save stays pinned.
 
 The widget also registers `monster-builder` for placement on a page; on a page

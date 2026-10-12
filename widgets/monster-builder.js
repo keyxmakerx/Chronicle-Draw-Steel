@@ -353,6 +353,131 @@ var DrawSteelCreatureEditor = (function () {
     return why;
   }
 
+  // ── Add abilities ─────────────────────────────────────────────────────────
+
+  var LIB_KINDS = [['signature', 'Signature'], ['action', 'Main action'], ['maneuver', 'Maneuver'], ['triggered', 'Triggered action'], ['villain-action', 'Villain action'], ['trait', 'Trait']];
+  var DTYPES = ['acid', 'cold', 'corruption', 'fire', 'holy', 'lightning', 'poison', 'psychic', 'sonic'];
+  // One Draw Steel condition an added ability can carry, on the tiers the
+  // published creatures usually put it.
+  var RIDERS = [
+    ['', 'Nothing extra'],
+    ['slowed23', '{@condition slowed} ({@duration eot})', ['tier2', 'tier3'], 'Slowed (EoT) on tiers 2 and 3'],
+    ['taunted23', '{@condition taunted} ({@duration eot})', ['tier2', 'tier3'], 'Taunted (EoT) on tiers 2 and 3'],
+    ['weakened3', '{@condition weakened} ({@duration eot})', ['tier3'], 'Weakened (EoT) on tier 3'],
+    ['dazed3', '{@condition dazed} ({@duration save-ends})', ['tier3'], 'Dazed (save ends) on tier 3'],
+    ['restrained3', '{@condition restrained} ({@duration save-ends})', ['tier3'], 'Restrained (save ends) on tier 3']
+  ];
+
+  function plural(o) { return o + 's'; }
+
+  // usable says whether this creature can take a library ability. With no
+  // organization chosen yet, anything but a villain action is open to it.
+  function usable(t, c) {
+    if (!c.organization) return props(t).type !== 'villain-action';
+    if (c.organization === 'swarm') return props(t).type !== 'villain-action';
+    return fits(t, c.organization, c.role);
+  }
+
+  // whyFits names what makes an ability a good match, for its chip.
+  function whyFits(t, c) {
+    var p = props(t), why = [];
+    if (c.organization && specific(t) && listProp(p.organizations).indexOf(c.organization) >= 0) why.push('made for ' + plural(c.organization));
+    if (c.role && !noRole(c.organization) && listProp(p.roles).length < ROLES.length && listProp(p.roles).indexOf(c.role) >= 0) why.push('suits a ' + c.role);
+    THEMES.forEach(function (th) {
+      if (th[2].indexOf(t.slug) >= 0 && c.keywords.some(function (k) { return String(k).toLowerCase() === th[1].toLowerCase(); })) why.push('fits ' + th[1].toLowerCase() + 's');
+    });
+    return why;
+  }
+
+  // libraryRows filters and orders the library for the drawer: by default
+  // only what this creature can use, best matches first.
+  function libraryRows(st, lib, f) {
+    var c = st.c, q = String(f.q || '').toLowerCase();
+    var rows = (lib || []).map(function (t, i) { return { t: t, i: i, ok: usable(t, c), why: whyFits(t, c) }; }).filter(function (r) {
+      var p = props(r.t);
+      if (!f.all && !r.ok) return false;
+      if (f.type && p.type !== f.type) return false;
+      if (f.kw && listProp(p.keywords).indexOf(f.kw) < 0) return false;
+      if (f.org && listProp(p.organizations).indexOf(f.org) < 0) return false;
+      if (q && [r.t.name, p.effect, p.tier1, listProp(p.keywords).join(' ')].join(' ').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    rows.sort(function (x, y) { return ((y.ok ? 8 : 0) + y.why.length) - ((x.ok ? 8 : 0) + x.why.length) || x.i - y.i; });
+    return rows;
+  }
+
+  // shapeAbility is a library ability as it would be on this creature: damage
+  // from the published formula for its level and kind, then the chosen damage
+  // type and condition.
+  function shapeAbility(st, t, opt) {
+    var o = opt || {}, a = fromLibrary(t), pr = st.pr, d = pr.damage.value, hc = pr.hc.value;
+    if (a.auto_damage && d) {
+      var add = (isStrike(a) && hc !== null) ? hc : 0;
+      ['tier1', 'tier2', 'tier3'].forEach(function (k) { a[k] = autoTier(a[k], d[k] + add); });
+    }
+    if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc;
+    if (o.dtype && DTYPES.indexOf(o.dtype) >= 0 && a.auto_damage) {
+      ['tier1', 'tier2', 'tier3'].forEach(function (k) { if (a[k]) a[k] = String(a[k]).replace(/^(\s*\d+)(?:\s+[a-z]+)?(\s+damage)/i, '$1 ' + o.dtype + '$2'); });
+    }
+    var r = RIDERS.filter(function (x) { return x[0] && x[0] === o.rider; })[0];
+    if (r && a.tier1) r[2].forEach(function (k) { a[k] = a[k] ? a[k] + '; ' + r[1] : r[1]; });
+    return a;
+  }
+
+  function hasAbility(st, name) {
+    var n = String(name || '').trim().toLowerCase();
+    return st.c.abilities.concat(st.c.traits, st.c.villain_actions).some(function (a) { return String(a.name || '').trim().toLowerCase() === n; });
+  }
+
+  // addFromLibrary puts a library ability on the creature and returns what
+  // the drawer says about it; `undo` is the lists as they were, or null when
+  // nothing changed. Nothing is added twice.
+  function addFromLibrary(st, t, opt) {
+    var c = st.c, p = props(t);
+    if (hasAbility(st, t.name)) return { message: 'It already has ' + t.name + '.', undo: null };
+    if (p.type === 'villain-action' && !noRole(c.organization)) return { message: 'Only leaders and solos take villain actions.', undo: null };
+    if (p.type === 'villain-action' && c.villain_actions.length >= 3) return { message: 'All three villain actions are filled. Remove one first.', undo: null };
+    var undo = clone({ abilities: c.abilities, traits: c.traits, villain_actions: c.villain_actions });
+    var a = shapeAbility(st, t, opt), msg;
+    if (p.type === 'trait') {
+      c.traits.push({ name: t.name, description: p.effect || t.description || '' });
+      msg = 'Added the trait ' + t.name + '.';
+    } else if (p.type === 'villain-action') {
+      a.order = VA_SLOTS[c.villain_actions.length];
+      delete a.type;
+      delete a.auto_damage;
+      c.villain_actions.push(a);
+      msg = t.name + ' is villain action ' + c.villain_actions.length + '.';
+    } else if (a.type === 'signature' && c.abilities.some(function (x) { return x.type === 'signature'; })) {
+      a.type = 'action';
+      c.abilities.push(a);
+      msg = 'Added ' + t.name + ' as a main action, since it already has a signature ability.';
+    } else {
+      c.abilities.push(a);
+      msg = a.type === 'signature' ? t.name + ' is now the signature ability.' : 'Added ' + t.name + '.';
+    }
+    derive(st);
+    return { message: msg, undo: undo };
+  }
+
+  function restore(st, undo) {
+    st.c.abilities = undo.abilities;
+    st.c.traits = undo.traits;
+    st.c.villain_actions = undo.villain_actions;
+    st.editAb = null;
+    return derive(st);
+  }
+
+  // moveItem reorders an ability or trait; out-of-range moves do nothing.
+  function moveItem(st, kind, from, to) {
+    var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
+    if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return false;
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+    st.editAb = null;
+    return true;
+  }
+
   // toSave is what saving writes: the entity's fields and the name.
   function toSave(st) {
     var S = SB();
@@ -445,8 +570,13 @@ var DrawSteelCreatureEditor = (function () {
         ? '<span class="sbe-chip is-pub"><i class="fa-solid fa-check" aria-hidden="true"></i> Damage from the published formula</span>'
         : '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published damage for this creature yet</span>';
     }
-    return '<div class="sbe-ab">' + SB().abilityHtml(shown, { ref: ui.ref }) + '<div class="sbe-ab-foot">' + note +
-      '<span class="sbe-ab-acts"><button type="button" class="sbe-link" data-sbe-edit="' + kind + i + '">Edit</button>' +
+    var n = (kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits).length, nm = esc(a.name || 'this');
+    // Drag the card to reorder; the arrows do the same for keyboards and phones.
+    return '<div class="sbe-ab" draggable="true" data-sbe-item="' + kind + i + '">' + SB().abilityHtml(shown, { ref: ui.ref }) + '<div class="sbe-ab-foot">' + note +
+      '<span class="sbe-ab-acts"><span class="sbe-grip" aria-hidden="true" title="Drag to reorder">⠿</span>' +
+      '<button type="button" class="sbe-icon" data-sbe-mv="' + kind + i + ':-1" aria-label="Move ' + nm + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+      '<button type="button" class="sbe-icon" data-sbe-mv="' + kind + i + ':1" aria-label="Move ' + nm + ' down"' + (i < n - 1 ? '' : ' disabled') + '>↓</button>' +
+      '<button type="button" class="sbe-link" data-sbe-edit="' + kind + i + '">Edit</button>' +
       '<button type="button" class="sbe-link" data-sbe-del="' + kind + i + '">Remove</button></span></div></div>';
   }
 
@@ -492,7 +622,8 @@ var DrawSteelCreatureEditor = (function () {
       : 'Set a level to see the published highest characteristic.') + '</p>';
     h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add trait</button></h4>' +
       '<div class="sbe-abs">' + listHtml(st, 't', ui) + '</div>';
-    h += '<h4 class="sbe-h">Abilities <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-ab"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add ability</button></h4>' +
+    h += '<h4 class="sbe-h">Abilities <span class="sbe-h-acts"><button type="button" class="btn-secondary btn-sm" id="sbe-add-abs" data-sbe-act="drawer"><i class="fa-solid fa-book-open mr-1" aria-hidden="true"></i> Add abilities</button>' +
+      '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-ab"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Write your own</button></span></h4>' +
       '<div class="sbe-abs">' + (c.abilities.length ? listHtml(st, 'a', ui) : '<p class="sbe-hint">No abilities yet. Every creature needs a signature ability.</p>') + '</div>';
     if (pr.vaCount || c.villain_actions.length) {
       h += '<h4 class="sbe-h">Villain actions <span class="sbe-hint">' + (pr.vaCount ? esc(cap(c.organization)) + 's get ' + pr.vaCount + ', used once each, in order' : 'This organization has no villain actions') + '</span>' +
@@ -721,7 +852,7 @@ var DrawSteelCreatureEditor = (function () {
     var entity = o.entity || null;
     var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
-      gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, lib: null, loading: false } };
+      gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false } };
     var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
     var dirtyKey = 'monster-builder:' + (ctx.entityId || 'new');
     var root = doc.createElement('div');
@@ -801,6 +932,18 @@ var DrawSteelCreatureEditor = (function () {
       var ed = el.getAttribute('data-sbe-edit');
       if (ed) { st.editAb = ed; draw('sbe-ab-name'); return; }
       if (el.hasAttribute('data-sbe-done')) { st.editAb = null; derive(st); draw(); return; }
+      var mv = el.getAttribute('data-sbe-mv');
+      if (mv) {
+        var m = /^([avt])(\d+):(-?1)$/.exec(mv);
+        if (m && moveItem(st, m[1], Number(m[2]), Number(m[2]) + Number(m[3]))) {
+          derive(st); dirty(); draw();
+          // Keep the keyboard on the item that moved.
+          var to = edEl.querySelector('[data-sbe-mv="' + m[1] + (Number(m[2]) + Number(m[3])) + ':' + m[3] + '"]:not([disabled])') ||
+            edEl.querySelector('[data-sbe-item="' + m[1] + (Number(m[2]) + Number(m[3])) + '"] [data-sbe-edit]');
+          if (to) to.focus();
+        }
+        return;
+      }
       var del = el.getAttribute('data-sbe-del');
       if (del) { listOf(st, del.charAt(0)).splice(Number(del.slice(1)), 1); st.editAb = null; derive(st); dirty(); draw(); return; }
       var act = el.getAttribute('data-sbe-act');
@@ -817,6 +960,11 @@ var DrawSteelCreatureEditor = (function () {
         clean(); close(null);
       }
       else if (act === 'gen') toggleGen();
+      else if (act === 'drawer') {
+        // Close any open edit form first, so the drawer's adds land in a clean list.
+        st.editAb = null; draw('sbe-add-abs');
+        ui.drawer = openAbilityDrawer(doc, { st: st, loadLib: loadLib, changed: function () { dirty(); draw(); }, returnTo: 'sbe-add-abs' });
+      }
       else if (act === 'gen-go') { ui.gen.seed = 0; runGenerate(); }
       else if (act === 'gen-again') { ui.gen.seed++; runGenerate(); }
       else if (act === 'blank') {
@@ -858,13 +1006,48 @@ var DrawSteelCreatureEditor = (function () {
         st.origin = 'Generated. Nothing is saved until you press Save' + (ui.isNew ? '; the first save makes the Creature page.' : '.');
         dirty(); draw(g.seed ? 'sbe-g-again' : 'sbe-g-go');
       }
-      if (g.lib) { go(g.lib, false); return; }
-      if (!ctx.campaignId) { go([], true); return; }
       g.loading = true; draw();
-      SB().getJSON('/campaigns/' + encodeURIComponent(ctx.campaignId) + '/systems/drawsteel/data/creature-abilities.json').then(function (d) {
-        g.lib = Array.isArray(d) ? d : SB().unwrap(d);
-        if (!closed) go(g.lib, false);
-      }, function () { if (!closed) go([], true); });
+      loadLib().then(function (lib) { if (!closed) go(lib, !lib.length); });
+    }
+
+    // loadLib reads the package's ability library once; [] when it can't.
+    var libP = null;
+    function loadLib() {
+      if (!libP) {
+        libP = !ctx.campaignId ? Promise.resolve([])
+          : SB().getJSON('/campaigns/' + encodeURIComponent(ctx.campaignId) + '/systems/drawsteel/data/creature-abilities.json')
+            .then(function (d) { return Array.isArray(d) ? d : SB().unwrap(d); }, function () { libP = null; return []; });
+      }
+      return libP;
+    }
+
+    // Drag a card onto another of its own kind to reorder the list. A drag
+    // that starts inside a box is text selection, not a move.
+    var dragging = null;
+    function itemOf(t) { return t && t.closest ? t.closest('[data-sbe-item]') : null; }
+    function onDragStart(e) {
+      var it = itemOf(e.target);
+      if (!it || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName || '')) return;
+      dragging = it.getAttribute('data-sbe-item');
+      e.dataTransfer.setData('text/plain', 'sbe-mv:' + dragging);
+      e.dataTransfer.effectAllowed = 'move';
+      it.classList.add('is-dragging');
+    }
+    function onDragOver(e) {
+      var it = itemOf(e.target);
+      if (dragging && it && it.getAttribute('data-sbe-item').charAt(0) === dragging.charAt(0)) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+    }
+    function onDrop(e) {
+      var it = itemOf(e.target);
+      if (!dragging || !it) return;
+      var to = it.getAttribute('data-sbe-item');
+      e.preventDefault();
+      if (to.charAt(0) === dragging.charAt(0) && moveItem(st, to.charAt(0), Number(dragging.slice(1)), Number(to.slice(1)))) { derive(st); dirty(); draw(); }
+      dragging = null;
+    }
+    function onDragEnd() {
+      dragging = null;
+      [].forEach.call(edEl.querySelectorAll('.is-dragging'), function (x) { x.classList.remove('is-dragging'); });
     }
 
     function suggestForParty() {
@@ -897,6 +1080,10 @@ var DrawSteelCreatureEditor = (function () {
       root.removeEventListener('input', onInput);
       root.removeEventListener('change', onChange);
       root.removeEventListener('click', onClick);
+      root.removeEventListener('dragstart', onDragStart);
+      root.removeEventListener('dragover', onDragOver);
+      root.removeEventListener('drop', onDrop);
+      root.removeEventListener('dragend', onDragEnd);
       root.removeEventListener('pointerdown', onPointerDown, true);
       doc.removeEventListener('pointerup', onPointerUp, true);
       doc.removeEventListener('pointercancel', onPointerUp, true);
@@ -910,6 +1097,10 @@ var DrawSteelCreatureEditor = (function () {
     root.addEventListener('input', onInput);
     root.addEventListener('change', onChange);
     root.addEventListener('click', onClick);
+    root.addEventListener('dragstart', onDragStart);
+    root.addEventListener('dragover', onDragOver);
+    root.addEventListener('drop', onDrop);
+    root.addEventListener('dragend', onDragEnd);
     root.addEventListener('pointerdown', onPointerDown, true);
     doc.addEventListener('pointerup', onPointerUp, true);
     doc.addEventListener('pointercancel', onPointerUp, true);
@@ -936,7 +1127,7 @@ var DrawSteelCreatureEditor = (function () {
 
     return {
       state: st,
-      destroy: function () { clean(); unbind(); host.innerHTML = ''; }
+      destroy: function () { if (ui.drawer) ui.drawer.close(); clean(); unbind(); host.innerHTML = ''; }
     };
   }
 
@@ -1046,6 +1237,241 @@ var DrawSteelCreatureEditor = (function () {
     q.focus();
   }
 
+  // ── The Add abilities drawer ──────────────────────────────────────────────
+
+  // plainRefs shows reference markup as its words, for the drawer's compact
+  // cards; the ability keeps its markup when added.
+  var PLAIN_TERMS = { eot: 'EoT', 'save-ends': 'save ends' };
+  function plainRefs(t) { return String(t || '').replace(/\{@\w+ ([^}|]+)(?:\|([^}]+))?\}/g, function (_, term, shown) { return shown || PLAIN_TERMS[term] || term; }); }
+
+  function drawerCard(st, r, opt, lib) {
+    var t = r.t, p = props(t), o = opt[r.i] || {}, a = shapeAbility(st, t, o), c = st.c;
+    var blocked = p.type === 'villain-action' && !noRole(c.organization) ? 'Only leaders and solos take villain actions.' : '';
+    var on = hasAbility(st, t.name);
+    var kind = (LIB_KINDS.filter(function (k) { return k[0] === p.type; })[0] || [0, cap(p.type)])[1];
+    var h = '<article class="sbe-abc' + (blocked ? ' is-off' : '') + '"' + (blocked || on ? '' : ' draggable="true"') + ' data-dr-i="' + r.i + '">' +
+      '<header><b>' + esc(t.name) + '</b><span class="sbe-tag' + (p.type === 'signature' ? ' is-sig' : '') + '">' + esc(kind) + '</span></header>';
+    var meta = [listProp(p.keywords).join(', '), p.distance, p.target].filter(Boolean).join(' · ');
+    if (meta) h += '<p class="sbe-small sbe-dim">' + esc(meta) + '</p>';
+    if (a.tier1) {
+      h += '<div class="sbe-abc-t">' + [['≤ 11', a.tier1], ['12–16', a.tier2], ['17 +', a.tier3]].map(function (x) {
+        return '<span class="sbe-abc-k">' + x[0] + '</span><span>' + esc(plainRefs(x[1])) + '</span>';
+      }).join('') + '</div>';
+    }
+    if (p.effect) h += '<p class="sbe-small">' + esc(plainRefs(p.effect)) + '</p>';
+    if (a.auto_damage && st.pr.damage.sourced) h += '<p class="sbe-small sbe-ok">Damage worked out for this level ' + esc(c.level) + ' ' + esc(c.organization) + '.</p>';
+    if (a.tier1 && !blocked && !on) {
+      h += '<div class="sbe-abc-o">' + (a.auto_damage
+        ? '<label><span class="sbe-lbl">Damage type</span><select class="input" data-dr-opt="dtype" data-dr-oi="' + r.i + '"><option value="">As written</option>' + options(DTYPES, o.dtype) + '</select></label>' : '') +
+        '<label><span class="sbe-lbl">Adds</span><select class="input" data-dr-opt="rider" data-dr-oi="' + r.i + '">' +
+        RIDERS.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === (o.rider || '') ? ' selected' : '') + '>' + esc(x[3] || x[1]) + '</option>'; }).join('') + '</select></label></div>';
+    }
+    var orgs = listProp(p.organizations);
+    var tag = r.why.length ? '<span class="sbe-chip is-pub">' + esc(cap(r.why.join(', '))) + '</span>'
+      : (!r.ok && orgs.length < 6 ? '<span class="sbe-chip is-none">For ' + esc(orgs.map(plural).join(' and ')) + '</span>' : '');
+    h += '<footer>' + tag + '<span class="sbe-sp"></span>' + (blocked ? '<span class="sbe-small sbe-dim">' + esc(blocked) + '</span>'
+      : on ? '<span class="sbe-small sbe-dim"><i class="fa-solid fa-check" aria-hidden="true"></i> On this creature</span>'
+        : '<button type="button" class="btn-secondary btn-sm" data-dr-add="' + r.i + '" aria-label="Add ' + esc(t.name) + '">Add</button>') + '</footer></article>';
+    return h;
+  }
+
+  function drawerMine(st, fresh) {
+    var c = st.c;
+    function item(kind, i, name, extra) {
+      return '<li class="sbe-mine-i' + extra + (fresh === kind + i ? ' is-new' : '') + '"><span>' + esc(name || 'Unnamed') + '</span>' +
+        '<button type="button" data-dr-rm="' + kind + i + '" aria-label="Remove ' + esc(name || 'this') + '">×</button></li>';
+    }
+    var sig = [], other = [];
+    c.abilities.forEach(function (a, i) { (a.type === 'signature' ? sig : other).push(item('a', i, a.name, a.type === 'signature' ? ' is-sig' : '')); });
+    var h = '<p class="sbe-lbl">Signature</p><ul>' + (sig.join('') || '<li class="sbe-mine-i is-empty">None yet</li>') + '</ul>';
+    if (c.traits.length) h += '<p class="sbe-lbl">Traits</p><ul>' + c.traits.map(function (t, i) { return item('t', i, t.name, ''); }).join('') + '</ul>';
+    h += '<p class="sbe-lbl">Other abilities</p><ul>' + (other.join('') || '<li class="sbe-mine-i is-empty">None yet</li>') + '</ul>';
+    if (noRole(c.organization)) {
+      h += '<p class="sbe-lbl">Villain actions</p><ul>' + [0, 1, 2].map(function (k) {
+        var v = c.villain_actions[k];
+        return v ? item('v', k, v.name, '') : '<li class="sbe-mine-i is-empty">' + (k + 1) + ': empty</li>';
+      }).join('') + '</ul>';
+    }
+    return h;
+  }
+
+  // openAbilityDrawer slides the library down over the page. ctx carries the
+  // editor state, loadLib (a promise of the library, [] when it can't be
+  // read) and changed (redraws the editor). Every add can be undone.
+  function openAbilityDrawer(doc, ctx) {
+    var st = ctx.st, lib = null, f = { q: '', type: '', kw: '', org: '', all: false }, opt = {}, last = null, fresh = null, gone = false;
+    var scrim = doc.createElement('div');
+    scrim.className = 'sbe-scrim';
+    var dr = doc.createElement('div');
+    dr.className = 'sbe-drawer';
+    dr.setAttribute('role', 'dialog');
+    dr.setAttribute('aria-modal', 'true');
+    dr.setAttribute('aria-labelledby', 'sbe-dr-t');
+    dr.innerHTML = '<div class="sbe-dr-h"><h2 id="sbe-dr-t">Add abilities</h2><span class="sbe-small sbe-dim" id="sbe-dr-for"></span><span class="sbe-sp"></span>' +
+      '<button type="button" class="sbe-switch" id="sbe-dr-all" aria-pressed="false">Show all</button>' +
+      '<button type="button" class="btn-primary btn-sm" data-dr-close>Done</button></div>' +
+      '<div class="sbe-dr-f"><input class="input" type="search" id="sbe-dr-q" placeholder="Search abilities" aria-label="Search abilities" autocomplete="off">' +
+      '<div class="sbe-chips" id="sbe-dr-chips"></div></div>' +
+      '<div class="sbe-dr-b"><div class="sbe-dr-lib" id="sbe-dr-lib"><p class="sbe-small sbe-dim">Reading the ability library…</p></div>' +
+      '<aside class="sbe-dr-drop" id="sbe-dr-drop" aria-label="This creature"><p class="sbe-small sbe-dim">Drag an ability here, or press Add.</p><div id="sbe-dr-mine"></div></aside></div>' +
+      '<p class="sbe-dr-status" id="sbe-dr-status" role="status" aria-live="polite"></p>';
+    doc.body.appendChild(scrim);
+    doc.body.appendChild(dr);
+    var bodyOverflow = doc.body.style.overflow;
+    doc.body.style.overflow = 'hidden';
+    var $ = function (id) { return dr.querySelector('#' + id); };
+
+    function chips() {
+      var kws = [];
+      (lib || []).forEach(function (t) { listProp(props(t).keywords).forEach(function (k) { if (kws.indexOf(k) < 0) kws.push(k); }); });
+      kws.sort();
+      function group(label, key, list) {
+        return '<div class="sbe-chip-row" role="group" aria-label="' + label + '">' + list.map(function (x) {
+          return '<button type="button" class="sbe-fchip" data-dr-f="' + key + '" data-dr-v="' + esc(x[0]) + '" aria-pressed="' + (f[key] === x[0]) + '">' + esc(x[1]) + '</button>';
+        }).join('') + '</div>';
+      }
+      $('sbe-dr-chips').innerHTML = group('Kind', 'type', LIB_KINDS) +
+        group('Keyword', 'kw', kws.map(function (k) { return [k, k]; })) +
+        group('Made for', 'org', ORGS.filter(function (o) { return o !== 'swarm'; }).map(function (o) { return [o, 'For ' + plural(o)]; }));
+    }
+    function paint() {
+      var c = st.c;
+      $('sbe-dr-for').textContent = 'For this level ' + c.level + ' ' + (c.organization || 'creature') + (c.role && !noRole(c.organization) ? ' ' + c.role : '');
+      $('sbe-dr-mine').innerHTML = drawerMine(st, fresh);
+      if (!lib) return;
+      var rows = libraryRows(st, lib, f);
+      $('sbe-dr-lib').innerHTML = rows.length ? rows.map(function (r) { return drawerCard(st, r, opt, lib); }).join('')
+        : '<p class="sbe-small sbe-dim">No abilities match. Clear a filter or the search' + (f.all ? '' : ', or press Show all') + '.</p>';
+      $('sbe-dr-all').textContent = f.all ? 'Showing all ' + lib.length : 'Show all';
+    }
+    function say(msg, undoable) {
+      var el = $('sbe-dr-status');
+      el.innerHTML = esc(msg) + (undoable ? ' <button type="button" class="sbe-link" data-dr-undo>Undo</button>' : '');
+    }
+    function add(i) {
+      var t = lib && lib[i];
+      if (!t) return;
+      var res = addFromLibrary(st, t, opt[i]);
+      if (res.undo) {
+        last = res.undo;
+        var p = props(t);
+        fresh = p.type === 'trait' ? 't' + (st.c.traits.length - 1) : p.type === 'villain-action' ? 'v' + (st.c.villain_actions.length - 1) : 'a' + (st.c.abilities.length - 1);
+        ctx.changed();
+      }
+      say(res.message, !!res.undo);
+      paint();
+      fresh = null;
+    }
+    function close() {
+      if (gone) return;
+      gone = true;
+      doc.removeEventListener('keydown', onKey, true);
+      dr.classList.remove('is-open');
+      scrim.classList.remove('is-open');
+      doc.body.style.overflow = bodyOverflow;
+      setTimeout(function () { dr.remove(); scrim.remove(); }, still(doc) ? 0 : 320);
+      // The editor redraws behind the drawer, so its opener is found again by id.
+      var back = ctx.returnTo ? doc.getElementById(ctx.returnTo) : null;
+      if (back) { try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); } }
+    }
+    // Esc closes; Tab stays inside the drawer while it is open.
+    function onKey(e) {
+      // Esc in an open dropdown closes the dropdown, not the drawer.
+      if (e.key === 'Escape' && e.target && e.target.tagName === 'SELECT') return;
+      if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+      if (e.key !== 'Tab') return;
+      var els = [].filter.call(dr.querySelectorAll('button,input,select,[tabindex]'), function (x) { return !x.disabled && x.offsetParent !== null; });
+      if (!els.length) return;
+      var first = els[0], lastEl = els[els.length - 1];
+      if (!dr.contains(doc.activeElement)) { e.preventDefault(); first.focus(); return; }
+      if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); lastEl.focus(); }
+      else if (!e.shiftKey && doc.activeElement === lastEl) { e.preventDefault(); first.focus(); }
+    }
+    doc.addEventListener('keydown', onKey, true);
+    scrim.addEventListener('click', close);
+    dr.addEventListener('input', function (e) { if (e.target.id === 'sbe-dr-q') { f.q = e.target.value; paint(); } });
+    dr.addEventListener('change', function (e) {
+      var s = e.target;
+      if (!s.hasAttribute('data-dr-opt')) return;
+      var i = Number(s.getAttribute('data-dr-oi'));
+      opt[i] = opt[i] || {};
+      opt[i][s.getAttribute('data-dr-opt')] = s.value;
+      paint();
+      var back = dr.querySelector('[data-dr-opt="' + s.getAttribute('data-dr-opt') + '"][data-dr-oi="' + i + '"]');
+      if (back) back.focus();
+    });
+    dr.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b || !dr.contains(b)) return;
+      if (b.hasAttribute('data-dr-close')) { close(); return; }
+      if (b.id === 'sbe-dr-all') { f.all = !f.all; b.setAttribute('aria-pressed', String(f.all)); paint(); return; }
+      if (b.hasAttribute('data-dr-f')) {
+        var k = b.getAttribute('data-dr-f'), v = b.getAttribute('data-dr-v');
+        f[k] = f[k] === v ? '' : v;
+        chips(); paint();
+        [].forEach.call(dr.querySelectorAll('[data-dr-f="' + k + '"]'), function (x) { if (x.getAttribute('data-dr-v') === v) x.focus(); });
+        return;
+      }
+      if (b.hasAttribute('data-dr-add')) {
+        var ai = b.getAttribute('data-dr-add');
+        add(Number(ai));
+        var stay = dr.querySelector('[data-dr-add="' + ai + '"]') || $('sbe-dr-q');
+        if (stay) stay.focus();
+        return;
+      }
+      if (b.hasAttribute('data-dr-undo') && last) {
+        restore(st, last); last = null; ctx.changed(); say('Undone.', false); paint(); $('sbe-dr-q').focus(); return;
+      }
+      var rm = b.getAttribute('data-dr-rm');
+      if (rm) {
+        var kind = rm.charAt(0), idx = Number(rm.slice(1));
+        var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
+        if (!list[idx]) return;
+        last = clone({ abilities: st.c.abilities, traits: st.c.traits, villain_actions: st.c.villain_actions });
+        var name = list[idx].name;
+        list.splice(idx, 1);
+        if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+        st.editAb = null; derive(st); ctx.changed();
+        say('Removed ' + (name || 'it') + '.', true); paint(); $('sbe-dr-q').focus();
+      }
+    });
+    // Drag a card from the library onto the creature.
+    var drop = $('sbe-dr-drop');
+    dr.addEventListener('dragstart', function (e) {
+      var card = e.target.closest ? e.target.closest('.sbe-abc[draggable="true"]') : null;
+      if (!card) return;
+      e.dataTransfer.setData('text/plain', 'sbe-ab:' + card.getAttribute('data-dr-i'));
+      e.dataTransfer.effectAllowed = 'copy';
+      card.classList.add('is-dragging'); drop.classList.add('is-ready');
+    });
+    dr.addEventListener('dragend', function (e) {
+      var card = e.target.closest ? e.target.closest('.sbe-abc') : null;
+      if (card) card.classList.remove('is-dragging');
+      drop.classList.remove('is-ready', 'is-over');
+    });
+    drop.addEventListener('dragover', function (e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; drop.classList.add('is-over'); });
+    drop.addEventListener('dragleave', function (e) { if (!drop.contains(e.relatedTarget)) drop.classList.remove('is-over'); });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      drop.classList.remove('is-over', 'is-ready');
+      var m = /^sbe-ab:(\d+)$/.exec(e.dataTransfer.getData('text/plain'));
+      if (m) add(Number(m[1]));
+    });
+
+    paint();
+    void dr.offsetWidth;
+    dr.classList.add('is-open');
+    scrim.classList.add('is-open');
+    $('sbe-dr-q').focus({ preventScroll: true });
+    ctx.loadLib().then(function (l) {
+      if (gone) return;
+      lib = l || [];
+      if (!lib.length) { $('sbe-dr-lib').innerHTML = '<p class="sbe-small sbe-dim">The ability library could not be read. Close this and use Write your own.</p>'; return; }
+      chips(); paint();
+    });
+    return { close: close };
+  }
+
   // ── Styles ────────────────────────────────────────────────────────────────
 
   // Chronicle's colour tokens carry light and dark; the three status colours
@@ -1053,7 +1479,8 @@ var DrawSteelCreatureEditor = (function () {
   // mount element, so a redraw cannot wipe them.
   var CSS = [
     '.sbe-wrap{--sbe-accent:#DC2626;--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
-    '.dark .sbe-wrap{--sbe-accent:#f87171;--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14)}',
+    '.sbe-drawer{--sbe-accent:#DC2626;--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14)}',
+    '.dark .sbe-wrap,.dark .sbe-drawer{--sbe-accent:#f87171;--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14)}',
     '.sbe{padding:16px 18px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--sbe-accent);color:var(--color-text-body,#374151);font-size:14px}',
     '.sbe-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
     '.sbe-bar-t{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:inline-flex;gap:6px;align-items:center;margin-right:4px}',
@@ -1137,6 +1564,63 @@ var DrawSteelCreatureEditor = (function () {
     'html[data-motion="off"] .sbe-entering *,html[data-motion="off"] .sbe-entering{animation:none}',
     'html[data-motion="off"] .sbe-fold,html[data-motion="off"] .sbe-seg span,html[data-motion="off"] .sbe-f .sbe-num{transition:none}',
     '@media (prefers-reduced-motion:reduce){.sbe-entering,.sbe-entering *{animation:none}.sbe-fold,.sbe-seg span,.sbe-f .sbe-num{transition:none}}',
+    '.sbe-h-acts{display:inline-flex;gap:6px;flex-wrap:wrap}',
+    '.sbe-icon{font:inherit;font-size:13px;line-height:1;width:26px;height:26px;border-radius:6px;border:1px solid var(--color-border,#e5e7eb);background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
+    '.sbe-icon:disabled{opacity:.35;cursor:default}',
+    '.sbe-ab-acts{align-items:center}',
+    '.sbe-grip{color:var(--color-text-secondary,#6b7280);cursor:grab;user-select:none}',
+    '.sbe-ab[draggable="true"]{cursor:grab}.sbe-ab.is-dragging{opacity:.45}',
+    // Add abilities: the drawer slides down from the top and the page dims.
+    '.sbe-scrim{position:fixed;inset:0;z-index:80;background:rgba(8,10,20,.55);opacity:0;transition:opacity 260ms linear}',
+    '.sbe-scrim.is-open{opacity:1}',
+    '.sbe-drawer{position:fixed;z-index:81;top:calc(12px + env(safe-area-inset-top,0px));left:50%;width:min(1180px,calc(100vw - 32px));max-height:calc(100% - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);border:1px solid var(--color-border,#e5e7eb);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;font-size:14px;transform:translate(-50%,calc(-100% - 24px));transition:transform 320ms cubic-bezier(.2,.8,.2,1)}',
+    '.sbe-drawer.is-open{transform:translate(-50%,0)}',
+    '.sbe-dr-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
+    '.sbe-dr-h h2{margin:0;font-size:16px;font-weight:700;color:var(--color-text-primary,#111827)}',
+    '.sbe-switch{font:inherit;font-size:13px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;padding:4px 12px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
+    '.sbe-switch[aria-pressed="true"]{background:var(--sbe-accent,#DC2626);border-color:var(--sbe-accent,#DC2626);color:#fff}',
+    '.sbe-dr-f{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-bottom:1px solid var(--color-border,#e5e7eb);background:var(--color-bg-tertiary,#f9fafb)}',
+    '.sbe-dr-f input{width:100%;font-size:14px}',
+    '.sbe-chips{display:flex;flex-direction:column;gap:6px}',
+    '.sbe-chip-row{display:flex;flex-wrap:wrap;gap:6px}',
+    '.sbe-fchip{font:inherit;font-size:12.5px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;padding:3px 10px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
+    '.sbe-fchip[aria-pressed="true"]{background:var(--sbe-accent,#DC2626);border-color:var(--sbe-accent,#DC2626);color:#fff}',
+    '.sbe-dr-b{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;padding:14px 16px;overflow:auto;min-height:0;flex:1}',
+    '.sbe-dr-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-content:start;min-width:0}',
+    '.sbe-abc{display:flex;flex-direction:column;gap:6px;border:1px solid var(--color-border,#e5e7eb);border-radius:10px;padding:10px 12px;background:var(--color-card-bg,#fff);font-size:13px;min-width:0}',
+    '.sbe-abc[draggable="true"]{cursor:grab}.sbe-abc[draggable="true"]:hover{border-color:color-mix(in srgb,var(--sbe-accent,#DC2626) 50%,var(--color-border,#e5e7eb))}',
+    '.sbe-abc.is-dragging{opacity:.45}.sbe-abc.is-off{opacity:.6}',
+    '.sbe-abc header,.sbe-abc footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}',
+    '.sbe-abc header b{color:var(--color-text-primary,#111827);font-size:14px}',
+    '.sbe-abc p{margin:0}',
+    '.sbe-tag{font-size:11px;border-radius:999px;padding:1px 8px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-tag.is-sig{background:var(--sbe-accent,#DC2626);color:#fff}',
+    '.sbe-abc-t{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;font-size:12.5px}',
+    '.sbe-abc-k{font-variant-numeric:tabular-nums;font-size:11px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-ok{color:var(--sbe-ok,#15803d)}',
+    '.sbe-abc-o{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}',
+    '.sbe-abc-o label{display:flex;flex-direction:column;gap:2px;min-width:0}.sbe-abc-o select{width:100%;font-size:12.5px}',
+    '.sbe-dr-drop{position:sticky;top:0;align-self:start;display:flex;flex-direction:column;gap:6px;border:2px dashed var(--color-border,#e5e7eb);border-radius:12px;padding:12px;transition:border-color 160ms linear,background-color 160ms linear}',
+    '.sbe-dr-drop.is-ready{border-color:var(--sbe-accent,#DC2626)}',
+    '.sbe-dr-drop.is-over{border-color:var(--sbe-accent,#DC2626);background:var(--sbe-ok-soft,rgba(22,163,74,.12))}',
+    '.sbe-dr-drop p{margin:0}.sbe-dr-drop .sbe-lbl{margin-top:6px}',
+    '.sbe-dr-drop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
+    '.sbe-mine-i{display:flex;gap:6px;align-items:center;justify-content:space-between;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:5px 8px;font-size:13px;color:var(--color-text-primary,#111827)}',
+    '.sbe-mine-i.is-sig{border-color:var(--sbe-accent,#DC2626)}',
+    '.sbe-mine-i.is-empty{color:var(--color-text-secondary,#6b7280);border-style:dashed}',
+    '.sbe-mine-i button{font:inherit;border:0;background:none;color:var(--color-text-secondary,#6b7280);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}',
+    '@keyframes sbe-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}',
+    '.sbe-mine-i.is-new{animation:sbe-in 260ms cubic-bezier(.2,.8,.2,1)}',
+    '.sbe-dr-status{margin:0;padding:8px 16px;border-top:1px solid var(--color-border,#e5e7eb);font-size:13px}.sbe-dr-status:empty{display:none}',
+    'html[data-motion="calm"] .sbe-drawer{transform:translate(-50%,0);opacity:0;transition:opacity 180ms linear}',
+    'html[data-motion="calm"] .sbe-drawer.is-open{opacity:1}',
+    'html[data-motion="calm"] .sbe-mine-i.is-new{animation:sbe-fade 180ms linear}',
+    'html[data-motion="off"] .sbe-drawer{transform:translate(-50%,0);transition:none}',
+    'html[data-motion="off"] .sbe-scrim,html[data-motion="off"] .sbe-dr-drop{transition:none}',
+    'html[data-motion="off"] .sbe-mine-i.is-new{animation:none}',
+    '@media (prefers-reduced-motion:reduce){.sbe-drawer{transform:translate(-50%,0);transition:none}.sbe-scrim,.sbe-dr-drop{transition:none}.sbe-mine-i.is-new{animation:none}}',
+    // On a phone the creature's list sits above the library, and the filters scroll sideways.
+    '@media (max-width:760px){.sbe-dr-b{grid-template-columns:minmax(0,1fr)}.sbe-dr-drop{order:-1;position:static}.sbe-dr-lib{grid-template-columns:minmax(0,1fr)}.sbe-chip-row{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.sbe-fchip{flex:none}.sbe-dr-drop ul{flex-direction:row;flex-wrap:wrap}}',
     // On wide screens the bar with Save stays in view while the form scrolls.
     '@media (min-width:901px){.sbe-bar{position:sticky;top:0;z-index:5;margin:-16px -18px 0;padding:12px 18px;background:var(--color-card-bg,#fff);border-bottom:1px solid var(--color-border-light,#f3f4f6)}}',
     '@media (max-width:900px){.sbe-wrap{grid-template-columns:minmax(0,1fr)}.sbe-side{position:static}}',
@@ -1158,7 +1642,9 @@ var DrawSteelCreatureEditor = (function () {
     newState: newState, derive: derive, setFigure: setFigure, useFormula: useFormula,
     startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, autoTier: autoTier, isStrike: isStrike,
     editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
-    applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS
+    applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
+    usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,
+    openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS
   };
   return api;
 })();
