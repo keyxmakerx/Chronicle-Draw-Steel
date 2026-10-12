@@ -77,6 +77,23 @@ test('the Add abilities drawer escapes library text and the creature’s own nam
   assertNoAttrBreakout(assert, Ed.drawerCard(b, { t: Object.assign({}, t, { name: BREAKOUT }), i: 0, ok: true, why: [] }, {}, [t]), 'drawer card');
 });
 
+test('Build with an AI escapes what the AI wrote, in the editor and in its notes', () => {
+  const V = Ed.vocabulary(REFS, {});
+  const answer = (v) => ({ name: v, level: 2, organization: v, role: v, size: v, keywords: [v],
+    traits: [{ name: v, effect: v }], signature: { name: v, keywords: [v], distance: v, target: v, damage_type: v, tier_effects: [v, v, v], effect: v },
+    abilities: [{ name: v, type: 'action', keywords: [v], distance: v, target: v, trigger: v, effect: v, tier_effects: [v, v, v] }],
+    villain_actions: [{ name: v }], stamina: v, ev: v });
+  const st = Ed.newState('', null, REFS);
+  const notes = Ed.fromAI(st, answer(XSS), V);
+  assertNoInjection(assert, Ed.editorHtml(st, {}), 'AI creature');
+  assertNoInjection(assert, Ed.aiNotesHtml(notes), 'AI notes');
+  const b = Ed.newState('', null, REFS);
+  Ed.fromAI(b, answer(BREAKOUT), V);
+  assertNoAttrBreakout(assert, Ed.editorHtml(b, {}), 'AI creature');
+  b.editAb = 'a0';
+  assertNoAttrBreakout(assert, Ed.editorHtml(b, {}), 'AI ability form');
+});
+
 test('the side panel escapes the creature and hero names', () => {
   const heroes = [{ name: XSS, fields_data: { level: 2, class: XSS, might: 1, agility: 1, reason: 1, intuition: 1, presence: 1 } }];
   const st = Ed.newState(XSS, { level: 2, organization: 'horde' }, REFS);
