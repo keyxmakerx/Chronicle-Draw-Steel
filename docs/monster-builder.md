@@ -318,10 +318,29 @@ Every ability opens in a small form. A signature strike is added first, with
 **Damage follows the published formula** on: its tiers' leading number tracks
 the formula, and any words after it ("; push 2") are kept.
 
-**Start from…** offers the community bestiary (every Draw Steel creature
+The row under the bar offers three ways to begin. **Generate one** folds open
+a panel: what the creature is (free text, which becomes the name; words like
+spider, dragon or ghost pick keywords and fitting abilities), what kind of
+creature (fit my party, or an organization), its level, and its role (hidden
+for leaders and solos). It takes abilities only from `data/creature-abilities.json`
+entries whose `organizations` and `roles` fit the creature: a signature that
+deals damage, then one ability made only for that organization and, except for
+a minion, one for its role or theme; a leader or solo also gets three villain
+actions. Characteristics are the role's published spread with its main one at
+the published highest characteristic. Every figure, damage included, is the
+published formula's. The panel lists why it chose each thing, and **Try other
+abilities** picks again. **Blank** clears the stat block, asking first if
+anything changed.
+
+**or from a creature…** offers the community bestiary (every Draw Steel creature
 published there) and this campaign's creatures. The copy is named "X (copy)",
 keeps its level, and is recomputed: stale figures are replaced, and abilities
 whose tiers look like formula damage are switched to follow it.
+
+Motion follows Chronicle's setting: opening the editor slides its bar down
+and the panels rise in turn, the Generate panel folds open and shut, and a
+figure that changes flashes briefly. Calm keeps only fades; Off and reduced
+motion turn it all off. On wide screens the bar with Save stays pinned.
 
 The widget also registers `monster-builder` for placement on a page; on a page
 that already has the stat block panel it steps aside.
