@@ -228,7 +228,7 @@ flagged on that entry, so it can be told apart from published content at a glanc
 Operators adding their own ancestries, kits, and creatures should set
 `"source": "custom"` on those entries. This is a contract, not a habit, and it is
 enforced with a named exception list rather than assumed: `docs/DATA-SCHEMA.md`
-→ "Provenance" states the rule and enumerates the five pre-existing files still
+→ "Provenance" states the rule and enumerates the four pre-existing files still
 pending a citation; `tools/test-render-contract.mjs` fails CI on any entry in any
 other file that carries no root `source`, and on any attempt to grow that pending
 list. `tools/test-build-your-own-data.mjs` additionally fails on a build-your-own
@@ -384,6 +384,24 @@ site.
 
 The `rules-tally` entry is `"source": "custom"`: counts of this package's own
 data files, which `tools/test-handbook-credits.mjs` checks against the files.
+
+## creature-abilities.json is this package's own work
+
+All 51 entries carry `"source": "custom"`. They are ability templates for the
+creature editor, written in Draw Steel's vocabulary but not reproduced from the
+*Monsters* book.
+
+- **The 23 older templates** were committed with the example creatures, described
+  as "template abilities" (`746cac0`, `bce204f`). Each one with a power roll writes
+  it as "Might vs. Agility". None of the 519 published abilities in
+  `abilities.json` uses that form, so the templates were not copied from a book.
+- **The 28 newer ones** (Pack Bite through Rising Fury) were written for the
+  creature codex.
+- **Their damage numbers are placeholders.** The editor replaces them with the
+  published damage for the creature's level and organization.
+
+The *Monsters* book's own creature abilities are not in this package. Whether they
+may be copied waits on a person reading the Creator License (#53).
 
 ## The CC-BY-4.0 misstatement, and where it was corrected
 

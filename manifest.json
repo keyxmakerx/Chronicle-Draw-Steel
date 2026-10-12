@@ -93,6 +93,8 @@
       "icon": "fa-burst",
       "fields": [
         { "key": "type", "label": "Type", "type": "string" },
+        { "key": "organizations_display", "label": "Made for", "type": "string" },
+        { "key": "roles_display", "label": "Roles", "type": "string" },
         { "key": "keywords_display", "label": "Keywords", "type": "string" },
         { "key": "distance", "label": "Distance", "type": "string" },
         { "key": "target", "label": "Target", "type": "string" },
