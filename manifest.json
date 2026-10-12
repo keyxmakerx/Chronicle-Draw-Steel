@@ -88,6 +88,26 @@
       ]
     },
     {
+      "slug": "monsters",
+      "name": "Monsters",
+      "icon": "fa-dragon",
+      "fields": [
+        { "key": "level", "label": "Level", "type": "number" },
+        { "key": "organization", "label": "Organization", "type": "string" },
+        { "key": "role", "label": "Role", "type": "string" },
+        { "key": "ev", "label": "EV", "type": "number" },
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "size", "label": "Size", "type": "string" },
+        { "key": "stamina", "label": "Stamina", "type": "number" },
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "movement", "label": "Movement", "type": "string" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "weaknesses", "label": "Weaknesses", "type": "string" }
+      ]
+    },
+    {
       "slug": "creature-abilities",
       "name": "Creature Abilities",
       "icon": "fa-burst",

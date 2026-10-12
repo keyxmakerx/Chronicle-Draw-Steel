@@ -6,6 +6,7 @@ A game system content pack for [Chronicle](https://github.com/keyxmakerx/Chronic
 
 ### Reference Data
 - **35 creatures** across 7 organization types (Minion, Horde, Platoon, Elite, Leader, Solo, Swarm), levels 1-10 — example stat blocks (`"source": "custom"`), not reproduced Draw Steel monsters
+- **394 Monsters book stat blocks** — the bestiary viewer's "Draw Steel book" source, levels 1-10, every organization; named villains are left out (see `data/NOTICE.md`)
 - **51 ability templates** — signature, action, maneuver, triggered, villain-action and trait types, each marked with the organizations and roles it is made for
 - **519 hero abilities, 12 ancestries, 21 kits** — the nine classes' abilities, kit signature abilities, and common actions
 - **9 role templates** — Ambusher, Artillery, Brute, Controller, Defender, Harrier, Hexer, Mount, Support

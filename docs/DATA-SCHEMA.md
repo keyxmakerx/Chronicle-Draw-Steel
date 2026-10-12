@@ -117,7 +117,7 @@ Four files predate the rule and are still pending:
 A citation is only worth having if it is true, so these say nothing rather than
 guessing a chapter. Everything else in `data/` — all 632 entries added for the
 ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
-`creature-abilities.json`,
+`creature-abilities.json`, `monsters.json`,
 `ability-keywords.json`, `organization-templates.json`, `role-templates.json`
 and `rulebook-examples.json` — carries a real root
 `source`.
@@ -221,6 +221,19 @@ against the published `data/monster-building.json` and
 builder's math must carry its own provenance". `organization-templates.json`
 and `role-templates.json` hold this package's own legacy estimates
 (`source: "custom"`), not published formulas, and must not be treated as one.
+
+## monsters.json
+
+The Monsters book's stat blocks, the bestiary viewer's "Draw Steel book" source.
+Each entry's `properties` are a Creature page's fields, so a book creature reads
+and copies like a page: `level`, `organization` and `role` (capitalized, `role`
+empty for a leader or solo), `ev`, `size`, `keywords` (comma text), `stamina`,
+`winded`, `speed`, `stability`, the five characteristics, `free_strike`
+(`"N damage"`), `immunities`, `weaknesses`, `movement` and `with_captain` (comma
+text, empty when the book prints "-"), `group` (the book chapter), and `traits`,
+`abilities_json` and `villain_actions_json` as JSON text in the shapes the
+creature editor writes. A minion carries `ev_note: "for four minions"`. The
+`source` cites the chapter. `creatures.json` stays this package's own examples.
 
 ## creature-abilities.json
 

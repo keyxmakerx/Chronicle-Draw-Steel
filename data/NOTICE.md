@@ -16,6 +16,7 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `ancestry-point-buy.json` | The ancestry-points budget rule, signature vs. purchased traits, the starting size/speed/stability baseline, the per-ancestry budget table, and the revenant's Previous Life case | *Heroes Book* ch. 3 (Ancestries) |
 | `monster-building.json` | The monster-making formulas: role/damage and organization modifier tables, the EV, Stamina, and damage-tier equations, characteristics and potency, target-count adjustment, Instant Solo Creature, reskinning, and the animal-trait point budget | *Monsters Book* ch. 1 (Monster Basics), ch. 2 (Monsters — Animals) |
 | `encounter-building.json` | The six-step encounter-building procedure: the five difficulty tiers with their budget bands and Victory awards, encounter strength and its table, budget spending rules, creature level and count limits, initiative groups, and Quick Encounter Building | *Monsters Book* ch. 1 (Monster Basics) |
+| `monsters.json` | 394 creature stat blocks from the bestiary: each creature's level, organization, role, EV, size, Stamina, speed, stability, free strike, characteristics, immunities, weaknesses and movement, with its traits, abilities and villain actions as printed | *Monsters Book* ch. 2 (Monsters) |
 | `creature-abilities.json` | 1,555 creature abilities, traits and villain actions from the bestiary, each with keywords, type, distance, target, power-roll tiers and effect text, alongside 51 of this package's own templates | *Monsters Book* ch. 2 (Monsters) |
 | `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
 | `negotiation.json` | The negotiation rules: the six starting attitudes with their Interest and Patience, the twelve motivations and pitfalls, the argument outcomes, the offer at each Interest level, and the procedural rules (when to negotiate, stats, opening, uncovering motivations, making arguments, Renown and Impression, ending) | *Heroes Book* ch. 11 (Negotiation) |
@@ -164,18 +165,29 @@ upgrade, and optional line is complete. `encounter-building.json` and
 sections name no character, place, or god.
 
 From the rest of the Monsters book's bestiary (`Monsters/Monsters/*/Statblocks/*.md`
-in `data-bestiary-md`), only the creatures' **abilities** are reproduced, in
-`creature-abilities.json`: each ability, trait and villain action as printed,
-with its organization and role taken from the creature it belongs to. The stat
-blocks themselves, the lore, and the art are not. Three cuts keep setting
-material out:
+in `data-bestiary-md`), the creatures' **stat blocks** are reproduced in
+`monsters.json`, and their **abilities** again in `creature-abilities.json`: each
+ability, trait and villain action as printed, with its organization and role taken
+from the creature it belongs to. The lore and the art are not. These cuts keep
+setting material out of both:
 - **Named villains are left out whole:** Ajax the Invincible, Count Rhodar von
-  Glauer, Lord Syuul, Xorannox the Tyract and his eyes, and the ten named War Dog
+  Glauer, Lord Syuul, Xorannox the Tyract and his eyes, the ten named War Dog
   and Time Raider leaders (Aeolyxria, Hoplon, Dorzinuuth, Doru, Locratix, Vesper,
-  Lydixavus, Myxovidan, Phrrygalax, Alkestis).
-- **Any ability that names a character or god is left out.**
-- **Malice features with no action type, and the "Solo Monster" rules block, are
-  left out**, because the library has nowhere to put them.
+  Lydixavus, Myxovidan, Phrrygalax, Alkestis), and the Orc Eye of Grole, whose
+  name is a god's.
+- **Any ability that names a character or god is left out.** One creature, the
+  dwarf marauder, loses one ability to this.
+- **In `creature-abilities.json` only, Malice features with no action type and the
+  "Solo Monster" rules block are left out**, because the library has nowhere to
+  put them. `monsters.json` keeps both, as traits.
+- **A creature printed with no organization (a retainer) is left out of
+  `monsters.json`**, because the viewer and the formulas place every creature by
+  its organization.
+
+In `monsters.json` a minion's EV is printed "for four minions"; the number is
+kept and `properties.ev_note` keeps the words. Winded is half the printed
+Stamina, rounded down. The header table's "With Captain" cell is kept as
+`with_captain`, and each creature's chapter as `group`.
 
 Abilities that several creatures share appear once, made for each of those
 creatures' organizations and roles. Where a Malice cost is printed after a name,
@@ -358,9 +370,8 @@ The reclassification is evidenced, not assumed:
   Reproduced statblocks would carry full ability text; these are widget fixtures.
 - **The commit history says so** — `bce204f` ("Expand bestiary to 35 creatures"),
   `fc8432b` ("…example creatures").
-- **This file says the bestiary's stat blocks are not reproduced.** Only the
-  creatures' abilities are (see above). A creature file claiming Draw Steel
-  provenance contradicted that.
+- **None of the 35 is in the book.** The book's own stat blocks are in
+  `monsters.json`, each citing its chapter (see above).
 
 **Flagged for a human, not fixed here:** *Beholder* and *Mind Flayer* are Wizards of
 the Coast trademarks, and using them as creature names is a separate IP problem from
