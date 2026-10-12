@@ -27,7 +27,7 @@ The manifest's `dm_screen` block tells Chronicle's DM Screen what to show for ea
 
 ### Interactive Widgets
 - **Monster Builder** — a one-page creature editor whose figures follow the published formulas and say where they came from; the director sets what no formula covers. It checks completeness, not balance. See `docs/WIDGET-GUIDE.md`.
-- **Bestiary Browser** — filterable/searchable creature catalog with card grid, modal stat blocks, and Add to this campaign
+- **Bestiary** — this campaign's creatures and the Monsters book in one list: stat blocks that open in place, roll buttons, hover cards, and Add to campaign
 - **Creature stat block** — the stat block under each Creature page's title, with Edit stat block and Publish for the director
 - **Character Sheet** — read-only hero reference sheet synced from Foundry (abilities, skills, kit, features). See `docs/CHARACTER-SHEET-DESIGN.md`.
 - **Rulebook Front Page** — an interactive rules page (power roll, characteristics, conditions). See `docs/WIDGET-GUIDE.md`.
@@ -156,7 +156,7 @@ widgets/
   monster-builder.js       One-page creature editor
   monster-engine.js        Published Draw Steel formulas (the only place they're evaluated)
   monster-party.js         Party-aware suggestion data (fetch + derive)
-  bestiary-browser.js      Filterable creature catalog
+  bestiary-browser.js      Bestiary viewer (campaign + book)
   statblock-renderer.js    Creature stat block panel
   character-sheet.js       Read-only hero reference sheet
   rulebook-frontpage.js    Interactive rules page

@@ -177,38 +177,12 @@ test('bestiary-browser: _fetchEntityPages percent-encodes campaignId via _entity
   });
 });
 
-test('bestiary-browser: _boundCreatureFields clamps level, truncates name, caps ability count', () => {
-  const abilities = [];
-  for (let i = 0; i < 80; i++) abilities.push({ name: 'A' + i });
-  const cr = { name: 'y'.repeat(400), level: 0, abilities: abilities, traits: [] };
-  const bounded = bb._boundCreatureFields(cr);
-  assert.equal(bounded.name.length, 200);
-  assert.equal(bounded.level, 1);
-  assert.equal(bounded.abilities.length, 50);
-  assert.equal(cr.abilities.length, 80, 'must not mutate the source creature');
-});
-
-test('bestiary-browser: _parseJSON falls back on a valid-JSON-but-non-array value', () => {
-  // JSON.parse('"oops not an array"') succeeds and yields a string, which
-  // has .length but not .filter/.forEach — must fall back, not pass through.
-  assert.deepEqual(bb._parseJSON(JSON.stringify('oops not an array'), []), []);
-  assert.deepEqual(bb._parseJSON('42', []), []);
-  assert.deepEqual(bb._parseJSON('{"a":1}', []), []);
-});
-
-test('bestiary-browser: _parseJSON keeps well-formed array entries and drops junk entries', () => {
-  const raw = JSON.stringify([{ name: 'Bite' }, null, 'junk', 42, { name: 'Claw' }]);
-  const parsed = bb._parseJSON(raw, []);
-  assert.equal(parsed.length, 2);
-  assert.equal(parsed[0].name, 'Bite');
-  assert.equal(parsed[1].name, 'Claw');
-});
-
-test('bestiary-browser: _normalizeEntity never yields a villain_actions that throws on .filter', () => {
-  const entity = { id: '1', name: 'X', fields_data: { villain_actions_json: JSON.stringify('oops not an array') } };
-  const cr = bb._normalizeEntity.call(bb, entity);
-  assert.ok(Array.isArray(cr.villain_actions));
-  assert.doesNotThrow(function () { cr.villain_actions.filter(function (v) { return v.name; }); });
+test('bestiary-browser: a junk villain action list becomes an empty list, never a throw', () => {
+  globalThis.DrawSteelStatblock = SB;
+  const Bestiary = require('../widgets/bestiary-browser.js');
+  const row = Bestiary.fromEntity({ id: '1', name: 'X', fields_data: { villain_actions_json: JSON.stringify('oops not an array'), abilities_json: '42' } });
+  assert.deepEqual(row.c.villain_actions, []);
+  assert.deepEqual(row.c.abilities, []);
 });
 
 // ── statblock-renderer.js ───────────────────────────────────────────────

@@ -57,30 +57,46 @@ aside and points at **Edit stat block**. Placed elsewhere (or with no
 
 ## Bestiary Browser
 
-**Slug:** `bestiary-browser`
+**Slug:** `bestiary-browser` (shown as **Bestiary**)
 
-A searchable, filterable creature catalog with card grid display and popup statblock modals.
+The creature viewer: this campaign's Creature pages and the Monsters book's
+stat blocks (`data/monsters.json`) in one list. A row opens its stat block in
+place; organizations, roles, abilities and rules terms show hover cards; each
+power roll has a roll button.
 
 ### Config Keys
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
-| `source` | string | `"bestiary"` | Data source: `"campaign"` (campaign entities) or `"bestiary"` (community bestiary) |
-| `per_page` | number | `20` | Number of creatures per page |
-| `editable` | boolean | `true` | Whether Import/Export/Create/Edit/Delete actions are shown |
+| `layout` | string | `"full"` | `"full"` for a Bestiary page, `"compact"` for a block on any page |
+| `source` | string | `"all"` | Starting source: `"all"`, `"campaign"` or `"book"` |
+| `creatures` | string | `""` | Only these creatures, by page name or book id, comma separated |
+| `title` | string | `"Creatures here"` | Heading of a compact block |
+
+Chronicle sets the campaign, and `editable` for Scribes and above.
 
 ### Features
-- **Search** — Full-text search by creature name
-- **Filters** — Organization, role, level range, keywords
-- **Sort** — Level, name, EV
-- **Card Grid** — Visual cards with org-colored borders showing key stats
-- **Modal Statblock** — Click a card to see the full formatted statblock
-- **Add to this campaign** — creates a Creature page with every stat block field filled
-- **Export** — Download creature data as JSON
+- **Search** by name, keyword, book chapter or ability name
+- **Filters**: level range, organization, role and source; picking an
+  organization or role explains it from the package's templates, and **What
+  do these mean?** explains them all
+- **Sort** by name, level or EV, either way
+- **Rows that open in place** with the full stat block; a minion's EV says it
+  buys four
+- **Roll buttons**: 2d10 plus the bonus, the tier picked by the power-roll
+  rule (a natural 19 or 20 is always tier 3), shown in a toast and the last
+  five in the tray's log
+- **Hover cards** for creatures, abilities, organizations, roles and rules
+  terms; click a term to pin its card, and **Pin card** keeps up to eight in
+  the tray
+- **Add to campaign** (Scribes and above, full layout) makes a Creature page
+  from a book stat block with every field filled; **+ New creature** opens
+  the editor
 
 ### Usage
-Best placed on a campaign dashboard or dedicated "Bestiary" page. In `"campaign"` source mode, it shows creatures already in your campaign. In `"bestiary"` mode, it shows the community bestiary's Draw Steel creatures to add.
+The full layout belongs on a dedicated "Bestiary" page. The compact layout is
+for a session or location page: set `creatures` to the ones that appear there.
+It has no filters, no tray and no Add, only each creature's page link.
 
 ---
 
@@ -109,7 +125,7 @@ System Panels** block.
 | `is_gm` | boolean | Shows the director's buttons |
 
 Its global `DrawSteelStatblock` is the one stat block drawing the editor,
-the bestiary modal and hover cards (compact mode) share.
+the bestiary's open rows and hover cards share.
 
 ## Negotiation Tracker
 
