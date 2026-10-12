@@ -34,7 +34,8 @@ it came from. A number the director types is never overwritten.
 
 - Balance checking beyond the published encounter bands.
 - Automated loot/treasure tables.
-- AI-generated creature descriptions.
+- An AI running inside Chronicle (Build with an AI works through the
+  director's own AI chat).
 
 ---
 
@@ -332,6 +333,25 @@ published formula's. The panel lists why it chose each thing, and **Try other
 abilities** picks again. **Blank** clears the stat block, asking first if
 anything changed.
 
+**Build with an AI** folds open in the Generate panel's place; only one is
+open at a time. No AI runs inside Chronicle. The director describes the
+creature and presses **Copy the guide**, which copies a prompt for any AI chat:
+the description, the party read from the hero pages, the exact JSON shape to
+answer in, and every option it may pick, read from the package's own files
+(organizations, roles, sizes, creature keywords, ability keywords other than
+helper tags, damage types, and the condition, duration and movement terms).
+When the browser refuses the copy, the guide is shown selected to copy by hand.
+The answer pasted back is read as it arrives, up to its last complete value, so
+the editor fills in while it is pasted. The AI supplies words and picks only:
+level, organization, role and size must be ones Draw Steel has, characteristics
+are the role's published spread, and every figure, damage included, is the
+published formula's in the AI's damage type. Its own numbers, a role on a
+leader or solo, villain actions on anything else and reference terms the
+glossary doesn't know are dropped, and the panel lists each change. The name,
+traits and abilities it wrote carry a **From the AI** chip until the director
+saves; the chip is never saved to the page. **Try an example answer** shows the
+reading on a typical reply.
+
 **Add abilities** slides a drawer down over the dimmed page with the same
 library. By default it lists only what this creature can use (`fits` for its
 organization and role; with no organization yet, anything but a villain
@@ -352,7 +372,8 @@ keeps its level, and is recomputed: stale figures are replaced, and abilities
 whose tiers look like formula damage are switched to follow it.
 
 Motion follows Chronicle's setting: opening the editor slides its bar down
-and the panels rise in turn, the Generate panel folds open and shut, and a
+and the panels rise in turn, the Generate and AI panels fold open and shut,
+the example answer arrives a little at a time, and a
 figure that changes flashes briefly; the Add abilities drawer slides down and
 an added ability eases into the creature's list. Calm keeps only fades; Off and reduced
 motion turn it all off. On wide screens the bar with Save stays pinned.
