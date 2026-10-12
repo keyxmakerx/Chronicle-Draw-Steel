@@ -130,6 +130,29 @@ nothing to place by hand.
 
 ---
 
+## Class Fights
+
+**Slug:** `class-fights` · **File:** `widgets/class-fights.js`
+
+The Handbook's Classes chapter places it (`book/chapters/classes.yaml`, a
+`type: widget` block). The page shows a tile per class and the chosen class's
+Heroic Resource; each class opens a pop-up book with a practice fight whose
+cut-paper pieces are buttons.
+
+### Config Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `campaign_id` | string | — | Campaign context (auto-set by Chronicle); without it the widget says so and fetches nothing |
+
+### Content Source
+- `data/class-fights.json` (widget-only, not a reference category). The `power-roll`, `winded-and-dying` and `class-resource-<class>` entries are the published rules the fights follow: start and per-turn gains, triggers with their rate (`round`, `fight`, `each`) and amount, ability costs, the conduit's prayer, the shadow's edge discount, the talent's strain and the troubadour's death and return.
+- The `example-fight-<class>` entries are `"source": "custom"`: the scene layout, foes, Stamina, damage and lines. Acts and pieces name triggers by `id` and pieces by `tag`; a class whose scene names something its rules lack is dropped, not played wrong.
+- The drawings (`PIECE`, `HERO`, `FX`, `EMBLEM`) are in the widget. A class in the data with no drawing gets no tile.
+- The pure rules (`ChronicleDrawSteelClassFights`) are tested by `tools/test-class-fights.mjs`; the mount and data route by `tools/test-class-fights-ui.mjs`.
+
+---
+
 ## Rulebook Front Page
 
 **Slug:** `rulebook-frontpage`

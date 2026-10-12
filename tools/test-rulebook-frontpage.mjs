@@ -269,7 +269,7 @@ test('css: the card book is drawn on the same stage as the scene book', () => {
   const rule = (src, sel) => (src.match(new RegExp(sel.replace(/\./g, '\\.') + '\\{([^}]*)\\}')) || [])[1] || '';
   const prop = (body, k) => (body.match(new RegExp('(?:^|;)' + k + ':([^;]*)')) || [])[1];
   for (const k of ['width', 'height']) assert.equal(prop(rule(card, '.rb-bkfit'), k), prop(rule(scene, '.rbs-fit'), k), `stage ${k}`);
-  for (const k of ['perspective', 'perspective-origin']) assert.equal(prop(rule(card, '.rb-bkbook'), k), prop(rule(scene, '.rbs-book'), k), k);
+  for (const k of ['perspective', 'perspective-origin', 'top', 'height']) assert.equal(prop(rule(card, '.rb-bkbook'), k), prop(rule(scene, '.rbs-book'), k), k);
   for (const k of ['left', 'top', 'width', 'height']) assert.equal(prop(rule(card, '.rb-bkspread'), k), prop(rule(scene, '.rbs-spread'), k), `spread ${k}`);
   assert.equal(prop(rule(card, '.rb-bkpl'), 'transform'), prop(rule(scene, '.rbs-closed .rbs-pl'), 'transform'), 'the left page folds over the same way');
   assert.equal(prop(rule(card, '.rb-bkcover'), 'transform'), prop(rule(scene, '.rbs-cover'), 'transform'), 'the cover sits on the page the same way');

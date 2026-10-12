@@ -51,6 +51,8 @@ const MAY_MENTION_CC = new Set([
   // exactly the scoping this guard exists to require. It is allowlisted for the
   // mention, and the scoping assertion below still applies to it.
   'package.json',
+  // The Credits chapter states both positions side by side, as LICENSE does.
+  'widgets/handbook-credits.js',
 ]);
 
 // A mention is scoped when its 3-line neighbourhood says, in words a reader

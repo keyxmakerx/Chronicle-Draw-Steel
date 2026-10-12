@@ -1,0 +1,2295 @@
+[
+  {
+    "slug": "power-roll",
+    "name": "Power roll",
+    "summary": "Roll 2d10 and add a characteristic: 11 or lower is tier 1, 12 to 16 tier 2, 17 or higher tier 3. An edge adds 2.",
+    "source": "Draw Steel Heroes Book, ch. 1 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "power-roll",
+      "dice": 2,
+      "die": 10,
+      "tier1_max": 11,
+      "tier2_max": 16,
+      "edge_bonus": 2
+    }
+  },
+  {
+    "slug": "winded-and-dying",
+    "name": "Winded and dying",
+    "summary": "A creature is winded at half its Stamina or below, and a hero is dying at 0 Stamina or below.",
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "stamina",
+      "winded_fraction": 0.5,
+      "dying_at": 0
+    }
+  },
+  {
+    "slug": "class-resource-censor",
+    "name": "Censor: Wrath",
+    "summary": "Wrath equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+    "description": "Your Judgment marks a foe. The first time each round that a judged creature damages you, and the first time each round you damage a judged creature, you gain 1 wrath.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "censor",
+      "class_name": "Censor",
+      "resource": "Wrath",
+      "quote": "As a censor, you're at your best against the strongest foes. Your judgment terrifies heretics, stops enemies in their tracks, and even hurls them across the battlefield.",
+      "gain_text": "Wrath equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+      "unique_text": "Your Judgment marks a foe. The first time each round that a judged creature damages you, and the first time each round you damage a judged creature, you gain 1 wrath.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain wrath, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": 2,
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "judged-damages-you",
+          "text": "A judged creature damages you",
+          "amount": 1,
+          "per": "round"
+        },
+        {
+          "id": "damage-judged",
+          "text": "You damage a judged creature",
+          "amount": 1,
+          "per": "round"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "class-resource-conduit",
+    "name": "Conduit: Piety",
+    "summary": "Piety equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "Before you roll for piety you can pray. On a 1 you gain 1 more but anger the gods and take 1d6 + your level psychic damage that can't be reduced. On a 2 you gain 1 more. On a 3 you gain 2 more and can activate a domain effect.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "conduit",
+      "class_name": "Conduit",
+      "resource": "Piety",
+      "quote": "As a conduit, you heal and buff your allies, and debuff your foes while smiting them with divine magic.",
+      "gain_text": "Piety equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "Before you roll for piety you can pray. On a 1 you gain 1 more but anger the gods and take 1d6 + your level psychic damage that can't be reduced. On a 2 you gain 1 more. On a 3 you gain 2 more and can activate a domain effect.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain piety, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [],
+      "prayer": {
+        "1": {
+          "extra": 1,
+          "damage_die": 6,
+          "damage_plus": "level",
+          "damage_type": "psychic",
+          "unreducible": true
+        },
+        "2": {
+          "extra": 1
+        },
+        "3": {
+          "extra": 2,
+          "domain_effect": true
+        }
+      }
+    }
+  },
+  {
+    "slug": "class-resource-elementalist",
+    "name": "Elementalist: Essence",
+    "summary": "Essence equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+    "description": "The first time each round that you or a creature within 10 squares takes damage that isn't untyped or holy, you gain 1 essence.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "elementalist",
+      "class_name": "Elementalist",
+      "resource": "Essence",
+      "quote": "As an elementalist, you can unleash your wrath across a field of foes, debilitate enemies, ward yourself and allies, manipulate terrain, warp space, and more.",
+      "gain_text": "Essence equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+      "unique_text": "The first time each round that you or a creature within 10 squares takes damage that isn't untyped or holy, you gain 1 essence.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain essence, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": 2,
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "elemental-damage",
+          "text": "You or a creature within 10 squares takes elemental damage",
+          "note": "not untyped or holy",
+          "amount": 1,
+          "per": "round"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "class-resource-fury",
+    "name": "Fury: Ferocity",
+    "summary": "Ferocity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "Getting hurt feeds you. The first time each round you take damage, you gain 1 ferocity, and the first time you become winded or are dying in an encounter, you gain 1d3.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "fury",
+      "class_name": "Fury",
+      "resource": "Ferocity",
+      "quote": "As a fury, you devastate foes with overwhelming might, hurl yourself and enemies around the battlefield, and grow stronger as your ferocity increases.",
+      "gain_text": "Ferocity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "Getting hurt feeds you. The first time each round you take damage, you gain 1 ferocity, and the first time you become winded or are dying in an encounter, you gain 1d3.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain ferocity, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "take-damage",
+          "text": "You take damage",
+          "amount": 1,
+          "per": "round"
+        },
+        {
+          "id": "winded-or-dying",
+          "text": "You become winded or are dying",
+          "amount": "d3",
+          "per": "fight"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "class-resource-null",
+    "name": "Null: Discipline",
+    "summary": "Discipline equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+    "description": "Your Null Field and the Director's own plans fuel you. The first time each round an enemy in your Null Field uses a main action, and the first time each round the Director uses an ability that costs Malice, you gain 1 discipline.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "null",
+      "class_name": "Null",
+      "resource": "Discipline",
+      "quote": "As a null, you resist the supernatural forces of the universe with composure and confidence.",
+      "gain_text": "Discipline equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+      "unique_text": "Your Null Field and the Director's own plans fuel you. The first time each round an enemy in your Null Field uses a main action, and the first time each round the Director uses an ability that costs Malice, you gain 1 discipline.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain discipline, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": 2,
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "field-main-action",
+          "text": "An enemy in your Null Field uses a main action",
+          "amount": 1,
+          "per": "round"
+        },
+        {
+          "id": "malice-spent",
+          "text": "The Director spends Malice on an ability",
+          "amount": 1,
+          "per": "round"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "class-resource-shadow",
+    "name": "Shadow: Insight",
+    "summary": "Insight equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "The first time each round you deal damage with surges, you gain 1 insight. And a heroic ability with a power roll costs 1 less insight when you have an edge or double edge on it.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "shadow",
+      "class_name": "Shadow",
+      "resource": "Insight",
+      "quote": "As a shadow, you possess abilities that deal significant damage, enable you to move swiftly across the battlefield and evade hazards, and allow you to fade from notice.",
+      "gain_text": "Insight equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "The first time each round you deal damage with surges, you gain 1 insight. And a heroic ability with a power roll costs 1 less insight when you have an edge or double edge on it.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain insight, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "surge-damage",
+          "text": "You deal damage using surges",
+          "amount": 1,
+          "per": "round"
+        }
+      ],
+      "edge_discount": 1
+    }
+  },
+  {
+    "slug": "class-resource-tactician",
+    "name": "Tactician: Focus",
+    "summary": "Focus equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+    "description": "Your Mark and your allies drive you. The first time each round you or an ally damages a creature you marked, and the first time each round an ally within 10 squares uses a heroic ability, you gain 1 focus.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "tactician",
+      "class_name": "Tactician",
+      "resource": "Focus",
+      "quote": "As a tactician, you have abilities that heal your allies and grant them increased damage, movement, and attacks, even as you leave your enemies struggling to respond.",
+      "gain_text": "Focus equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+      "unique_text": "Your Mark and your allies drive you. The first time each round you or an ally damages a creature you marked, and the first time each round an ally within 10 squares uses a heroic ability, you gain 1 focus.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain focus, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": 2,
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "marked-damaged",
+          "text": "You or an ally damage your marked target",
+          "amount": 1,
+          "per": "round"
+        },
+        {
+          "id": "ally-heroic",
+          "text": "An ally within 10 squares uses a heroic ability",
+          "amount": 1,
+          "per": "round"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "class-resource-talent",
+    "name": "Talent: Clarity",
+    "summary": "Clarity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "You can spend clarity you don't have, down to minus (1 + your Reason). Below 0 you are strained, and at the end of each of your turns you take 1 damage per negative point. The first time each round a creature is force moved, you gain 1 clarity.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "talent",
+      "class_name": "Talent",
+      "resource": "Clarity",
+      "quote": "As a talent, you are limited only by the strength of your mind. But the ability to wield multiple powers at once and change reality at will involves a gamble.",
+      "gain_text": "Clarity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "You can spend clarity you don't have, down to minus (1 + your Reason). Below 0 you are strained, and at the end of each of your turns you take 1 damage per negative point. The first time each round a creature is force moved, you gain 1 clarity.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain clarity, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "force-moved",
+          "text": "A creature is force moved",
+          "amount": 1,
+          "per": "round"
+        }
+      ],
+      "strain": {
+        "floor_base": 1,
+        "characteristic": "Reason",
+        "damage_per_point": 1
+      }
+    }
+  },
+  {
+    "slug": "class-resource-troubadour",
+    "name": "Troubadour: Drama",
+    "summary": "Drama equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "The story pays you: 2 the first time three or more heroes use an ability on the same turn, 2 the first time any hero is made winded, 3 whenever a creature in your line of effect rolls a natural 19 or 20, and 10 when you or another hero dies. Dead with 30 drama, you come back with 1 Stamina.",
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "troubadour",
+      "class_name": "Troubadour",
+      "resource": "Drama",
+      "quote": "As a troubadour, you chase drama.",
+      "gain_text": "Drama equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "The story pays you: 2 the first time three or more heroes use an ability on the same turn, 2 the first time any hero is made winded, 3 whenever a creature in your line of effect rolls a natural 19 or 20, and 10 when you or another hero dies. Dead with 30 drama, you come back with 1 Stamina.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain drama, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "three-heroes",
+          "text": "Three or more heroes use an ability on one turn",
+          "amount": 2,
+          "per": "fight"
+        },
+        {
+          "id": "hero-winded",
+          "text": "A hero is made winded",
+          "note": "first time this fight",
+          "amount": 2,
+          "per": "fight"
+        },
+        {
+          "id": "natural-19-20",
+          "text": "A creature in your line of effect rolls a natural 19 or 20",
+          "amount": 3,
+          "per": "each",
+          "natural_min": 19
+        },
+        {
+          "id": "hero-dies",
+          "text": "Another hero dies",
+          "amount": 10,
+          "per": "each"
+        }
+      ],
+      "death": {
+        "gain": 10,
+        "rise_at": 30,
+        "rise_stamina": 1,
+        "resource_after_rising": 0
+      }
+    }
+  },
+  {
+    "slug": "example-fight-censor",
+    "name": "Wrath in the chapel",
+    "summary": "An example fight for the censor's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "censor",
+      "title": "Wrath in the chapel",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Heretic",
+          "stamina": 35
+        },
+        {
+          "id": "foe2",
+          "name": "Cultist",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "chapel",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "candles",
+          "x": 52,
+          "y": 98,
+          "w": 60,
+          "h": 60
+        },
+        {
+          "art": "candles",
+          "x": 488,
+          "y": 64,
+          "w": 60,
+          "h": 60
+        },
+        {
+          "art": "cultist",
+          "x": 480,
+          "y": 118,
+          "w": 80,
+          "h": 115,
+          "tag": "foe2",
+          "act": 3
+        },
+        {
+          "art": "sigil",
+          "x": 382,
+          "y": 141,
+          "w": 70,
+          "h": 222,
+          "tag": "sigil"
+        },
+        {
+          "art": "heretic",
+          "x": 362,
+          "y": 142,
+          "w": 110,
+          "h": 150,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "censor",
+          "x": 118,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 1
+        }
+      ],
+      "acts": [
+        {
+          "b": "The heretic stabs you",
+          "s": "a judged creature damages you",
+          "from": "foe1",
+          "hurt": 5,
+          "trig": [
+            "judged-damages-you"
+          ],
+          "fx": "slash",
+          "at": "me",
+          "say": [
+            "f",
+            "The heretic",
+            "The Whisper takes you!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Strike the heretic",
+          "s": "you damage a judged creature",
+          "to": "foe1",
+          "dmg": 4,
+          "trig": [
+            "damage-judged"
+          ],
+          "fx": "slash",
+          "say": [
+            "h",
+            "The censor",
+            "Your sentence is carried out."
+          ],
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-wrath strike on the heretic",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "holy",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "trig": [
+            "damage-judged"
+          ],
+          "say": [
+            "h",
+            "The censor",
+            "Kneel before the gods!"
+          ]
+        },
+        {
+          "b": "A 5-wrath strike on the cultist",
+          "s": "not judged, so no wrath back",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "holy",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ],
+            [
+              "foe2",
+              "reel-r"
+            ]
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The censor",
+          "I judge you, heretic."
+        ],
+        "end": [
+          "f",
+          "The heretic",
+          "The Whisper… remembers…"
+        ],
+        "win": [
+          "h",
+          "The censor",
+          "Judgment is done."
+        ]
+      },
+      "hint": "**Click the heretic** to be stabbed, **the censor** to strike back, **the cultist** for a big strike, and **the hourglass** to start your turn. The heretic is judged: hurting each other pays wrath once a round each way.",
+      "floor": "runner",
+      "down": [
+        "sigil"
+      ],
+      "rise": [
+        "sigil"
+      ],
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-conduit",
+    "name": "Piety in the crypt",
+    "summary": "An example fight for the conduit's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "conduit",
+      "title": "Piety in the crypt",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Skeleton",
+          "stamina": 28
+        },
+        {
+          "id": "foe2",
+          "name": "Skeleton archer",
+          "stamina": 20
+        }
+      ],
+      "pieces": [
+        {
+          "art": "crypt",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "candles",
+          "x": 70,
+          "y": 90,
+          "w": 60,
+          "h": 60
+        },
+        {
+          "art": "skeleton",
+          "x": 470,
+          "y": 120,
+          "w": 80,
+          "h": 125,
+          "tag": "foe2",
+          "act": 3
+        },
+        {
+          "art": "skeleton",
+          "x": 370,
+          "y": 150,
+          "w": 90,
+          "h": 140,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 120,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 2
+        }
+      ],
+      "acts": [
+        {
+          "b": "The skeleton claws you",
+          "from": "foe1",
+          "hurt": 6,
+          "fx": "slash",
+          "at": "me",
+          "say": [
+            "f",
+            "The skeleton",
+            "…"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Strike with your staff",
+          "s": "a free strike",
+          "to": "foe1",
+          "dmg": 3,
+          "fx": "slash",
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-piety healing prayer",
+          "s": "regain 10 Stamina",
+          "cost": 3,
+          "heal": 10,
+          "fx": "heal",
+          "at": "me",
+          "say": [
+            "h",
+            "The conduit",
+            "Mend, by the gods’ grace."
+          ],
+          "move": [
+            [
+              "me",
+              "glow"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-piety holy strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "holy",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The conduit",
+            "Back to your graves!"
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The conduit",
+          "The gods are with us."
+        ],
+        "end": [
+          "h",
+          "The conduit",
+          "Rest now."
+        ],
+        "win": [
+          "h",
+          "The conduit",
+          "Peace returns to the dead."
+        ],
+        "angry": [
+          "h",
+          "The conduit",
+          "Forgive me!"
+        ],
+        "answered": [
+          "h",
+          "The conduit",
+          "The gods answer!"
+        ]
+      },
+      "hint": "**Tick “Pray”** and **turn the hourglass**: a 1 angers the gods, a 3 pays 2 more. **Click the skeleton** to be clawed, **the archer** for a holy strike, and **the conduit** to heal.",
+      "swing": [
+        "foe1",
+        "foe2"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-elementalist",
+    "name": "Essence among the embers",
+    "summary": "An example fight for the elementalist's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "elementalist",
+      "title": "Essence among the embers",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Fire imp",
+          "stamina": 22
+        },
+        {
+          "id": "foe2",
+          "name": "Stone golem",
+          "stamina": 40
+        }
+      ],
+      "pieces": [
+        {
+          "art": "ruin",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "golem",
+          "x": 400,
+          "y": 130,
+          "w": 140,
+          "h": 170,
+          "tag": "foe2",
+          "act": 1
+        },
+        {
+          "art": "imp",
+          "x": 330,
+          "y": 170,
+          "w": 90,
+          "h": 110,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 110,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 2
+        }
+      ],
+      "acts": [
+        {
+          "b": "The imp burns you",
+          "s": "fire damage: essence",
+          "from": "foe1",
+          "hurt": 4,
+          "trig": [
+            "elemental-damage"
+          ],
+          "fx": "flame",
+          "at": "me",
+          "say": [
+            "f",
+            "The imp",
+            "Sizzle, sizzle!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "hop"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "The golem slams you",
+          "s": "untyped damage: no essence",
+          "from": "foe2",
+          "hurt": 6,
+          "fx": "hit",
+          "at": "me",
+          "move": [
+            [
+              "foe2",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Hurl a firebolt at the golem",
+          "s": "a free strike, fire damage",
+          "to": "foe2",
+          "dmg": 3,
+          "type": "fire",
+          "trig": [
+            "elemental-damage"
+          ],
+          "fx": "flame",
+          "move": [
+            [
+              "me",
+              "strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-essence frost strike",
+          "s": "cold damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "frost",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "type": "cold",
+          "trig": [
+            "elemental-damage"
+          ]
+        },
+        {
+          "b": "A 5-essence lightning strike",
+          "s": "lightning damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "bolt",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "type": "lightning",
+          "trig": [
+            "elemental-damage"
+          ],
+          "say": [
+            "h",
+            "The elementalist",
+            "Feel the storm!"
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The elementalist",
+          "Fire, stone and storm, to me."
+        ],
+        "end": [
+          "h",
+          "The elementalist",
+          "The embers cool."
+        ],
+        "win": [
+          "h",
+          "The elementalist",
+          "Back to the elements with you."
+        ]
+      },
+      "hint": "**Click the imp** for fire, **the golem** for a plain slam, **yourself** to hurl a firebolt. Fire, cold or lightning near you pays essence, but only the first time each round, and the golem’s untyped slam never does.",
+      "swing": [
+        "foe2"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-fury",
+    "name": "Ferocity at the forest’s edge",
+    "summary": "An example fight for the fury's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "fury",
+      "title": "Ferocity at the forest’s edge",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Ogre",
+          "stamina": 45
+        },
+        {
+          "id": "foe2",
+          "name": "Wolf",
+          "stamina": 16
+        }
+      ],
+      "pieces": [
+        {
+          "art": "forest",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "wolf",
+          "x": 460,
+          "y": 150,
+          "w": 110,
+          "h": 74,
+          "tag": "foe2",
+          "act": 1
+        },
+        {
+          "art": "ogre",
+          "x": 330,
+          "y": 140,
+          "w": 160,
+          "h": 190,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 120,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 2
+        }
+      ],
+      "acts": [
+        {
+          "b": "The ogre clubs you",
+          "s": "you take damage",
+          "from": "foe1",
+          "hurt": 7,
+          "fx": "hit",
+          "at": "me",
+          "say": [
+            "f",
+            "The ogre",
+            "SMASH!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "The wolf bites you",
+          "s": "you take damage",
+          "from": "foe2",
+          "hurt": 3,
+          "fx": "slash",
+          "at": "me",
+          "move": [
+            [
+              "foe2",
+              "lunge-l"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Swing your axe at the ogre",
+          "s": "a free strike",
+          "to": "foe1",
+          "dmg": 5,
+          "fx": "slash",
+          "say": [
+            "h",
+            "The fury",
+            "Is that all?"
+          ],
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-ferocity strike",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "slash",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-ferocity strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The fury",
+            "RAAAH!"
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The fury",
+          "Come on, then!"
+        ],
+        "end": [
+          "h",
+          "The fury",
+          "More. I want more."
+        ],
+        "win": [
+          "h",
+          "The fury",
+          "Who’s next?"
+        ]
+      },
+      "hint": "**Click the ogre** or **the wolf** to get hit: the first hurt each round pays 1, and dropping to winded (half your Stamina) pays 1d3 once. **Click the fury** to swing back.",
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass",
+      "on_hurt": "take-damage",
+      "on_winded": "winded-or-dying"
+    }
+  },
+  {
+    "slug": "example-fight-null",
+    "name": "Discipline in the tower",
+    "summary": "An example fight for the null's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "null",
+      "title": "Discipline in the tower",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Sorcerer",
+          "stamina": 32
+        }
+      ],
+      "pieces": [
+        {
+          "art": "tower",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "malice",
+          "x": 470,
+          "y": 120,
+          "w": 50,
+          "h": 80,
+          "tag": "mal",
+          "act": 1
+        },
+        {
+          "art": "sorcerer",
+          "x": 360,
+          "y": 150,
+          "w": 100,
+          "h": 150,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 120,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 2
+        }
+      ],
+      "acts": [
+        {
+          "b": "The sorcerer casts in your field",
+          "s": "an enemy in your Null Field uses a main action",
+          "from": "foe1",
+          "hurt": 4,
+          "trig": [
+            "field-main-action"
+          ],
+          "fx": "bolt",
+          "at": "me",
+          "say": [
+            "f",
+            "The sorcerer",
+            "Burn, null!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "strike glow"
+            ]
+          ]
+        },
+        {
+          "b": "The Director spends Malice",
+          "s": "an ability that costs Malice",
+          "from": "foe1",
+          "hurt": 6,
+          "trig": [
+            "malice-spent"
+          ],
+          "fx": "shadow",
+          "at": "me",
+          "say": [
+            "f",
+            "The sorcerer",
+            "Feel the dark’s favour!"
+          ],
+          "move": [
+            [
+              "mal",
+              "glow hop"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Palm strike",
+          "s": "a free strike",
+          "to": "foe1",
+          "dmg": 4,
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-discipline strike",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "psychic",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-discipline strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe1",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The null",
+            "Your magic ends here."
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The null",
+          "Magic has no hold on me."
+        ],
+        "end": [
+          "h",
+          "The null",
+          "Stillness."
+        ],
+        "win": [
+          "h",
+          "The null",
+          "Silence."
+        ]
+      },
+      "hint": "**Click the sorcerer** to cast at you inside your Null Field, **the dark crystal** to have the Director spend Malice, and **the null** to strike. Each pays discipline the first time each round.",
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-shadow",
+    "name": "Insight in the alley",
+    "summary": "An example fight for the shadow's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "shadow",
+      "title": "Insight in the alley",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Watch sergeant",
+          "stamina": 30
+        },
+        {
+          "id": "foe2",
+          "name": "Watchman",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "alley",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "guard",
+          "x": 470,
+          "y": 120,
+          "w": 80,
+          "h": 135,
+          "tag": "foe2",
+          "act": 4
+        },
+        {
+          "art": "guard",
+          "x": 360,
+          "y": 150,
+          "w": 90,
+          "h": 150,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "crates",
+          "x": 200,
+          "y": 186,
+          "w": 80,
+          "h": 62,
+          "tag": "hide",
+          "act": 1
+        },
+        {
+          "art": "hourglass",
+          "x": 300,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 100,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 2
+        }
+      ],
+      "acts": [
+        {
+          "b": "The sergeant swings at you",
+          "from": "foe1",
+          "hurt": 5,
+          "fx": "slash",
+          "at": "me",
+          "say": [
+            "f",
+            "The sergeant",
+            "Halt, thief!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Slip into the shadows",
+          "s": "an edge on your next power roll",
+          "edge": true,
+          "fx": "shadow",
+          "at": "me",
+          "move": [
+            [
+              "me",
+              "hop"
+            ]
+          ]
+        },
+        {
+          "b": "Strike the sergeant with surges",
+          "s": "you deal damage using surges",
+          "to": "foe1",
+          "dmg": 6,
+          "trig": [
+            "surge-damage"
+          ],
+          "fx": "slash",
+          "say": [
+            "h",
+            "The shadow",
+            "Behind you."
+          ],
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-insight strike",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "slash",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-insight strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "shadow",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The shadow",
+          "They never see me coming."
+        ],
+        "end": [
+          "h",
+          "The shadow",
+          "Gone."
+        ],
+        "win": [
+          "h",
+          "The shadow",
+          "Quiet night."
+        ]
+      },
+      "hint": "**Click the crates** to slip into shadow for an edge: your next strike rolls +2 and costs 1 less insight. **Click the shadow** to strike with surges, which pays insight the first time each round.",
+      "swing": [
+        "foe1",
+        "foe2"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-tactician",
+    "name": "Focus at the palisade",
+    "summary": "An example fight for the tactician's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "tactician",
+      "title": "Focus at the palisade",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Bandit captain",
+          "stamina": 40
+        },
+        {
+          "id": "foe2",
+          "name": "Bandit",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "camp",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "bandit",
+          "x": 480,
+          "y": 120,
+          "w": 80,
+          "h": 115,
+          "tag": "foe2"
+        },
+        {
+          "art": "mark",
+          "x": 392,
+          "y": 146,
+          "w": 70,
+          "h": 222,
+          "tag": "mark"
+        },
+        {
+          "art": "captain",
+          "x": 370,
+          "y": 148,
+          "w": 110,
+          "h": 160,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 318,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "ally",
+          "x": 200,
+          "y": 196,
+          "w": 90,
+          "h": 140,
+          "tag": "ally",
+          "act": 2
+        },
+        {
+          "art": "hero",
+          "x": 76,
+          "y": 226,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 1
+        }
+      ],
+      "acts": [
+        {
+          "b": "The captain cuts you",
+          "from": "foe1",
+          "hurt": 5,
+          "fx": "slash",
+          "at": "me",
+          "say": [
+            "f",
+            "The captain",
+            "Cut them down!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Strike your marked captain",
+          "s": "you damage your marked target",
+          "to": "foe1",
+          "dmg": 4,
+          "trig": [
+            "marked-damaged"
+          ],
+          "fx": "slash",
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "Your ally strikes the captain",
+          "s": "an ally damages your marked target",
+          "to": "foe1",
+          "dmg": 5,
+          "trig": [
+            "marked-damaged"
+          ],
+          "fx": "slash",
+          "at": "foe1",
+          "say": [
+            "h",
+            "The tactician",
+            "Now! Left flank!"
+          ],
+          "move": [
+            [
+              "ally",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "Your ally uses a heroic ability",
+          "s": "an ally within 10 squares uses one",
+          "to": "foe2",
+          "dmg": 9,
+          "trig": [
+            "ally-heroic"
+          ],
+          "fx": "burst",
+          "at": "foe2",
+          "move": [
+            [
+              "ally",
+              "glow strike"
+            ],
+            [
+              "foe2",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-focus strike on the captain",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "trig": [
+            "marked-damaged"
+          ]
+        },
+        {
+          "b": "A 5-focus strike on the bandit",
+          "s": "not marked, so no focus back",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The tactician",
+          "Captain’s marked. On him!"
+        ],
+        "end": [
+          "h",
+          "The tactician",
+          "Regroup."
+        ],
+        "win": [
+          "h",
+          "The tactician",
+          "As planned."
+        ]
+      },
+      "hint": "**Click the captain** to be cut, **the tactician** to strike your marked target, and **your ally** to strike it too. Damage to the marked captain, and an ally’s heroic ability, each pay focus the first time each round.",
+      "down": [
+        "mark"
+      ],
+      "rise": [
+        "mark"
+      ],
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-talent",
+    "name": "Clarity among the floating stones",
+    "summary": "An example fight for the talent's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "talent",
+      "title": "Clarity among the floating stones",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Brute",
+          "stamina": 34
+        },
+        {
+          "id": "foe2",
+          "name": "Cultist",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "rocks",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "cultist",
+          "x": 480,
+          "y": 118,
+          "w": 80,
+          "h": 115,
+          "tag": "foe2",
+          "act": 3
+        },
+        {
+          "art": "brute",
+          "x": 360,
+          "y": 150,
+          "w": 120,
+          "h": 160,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "hero",
+          "x": 110,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 1
+        }
+      ],
+      "acts": [
+        {
+          "b": "The brute punches you",
+          "from": "foe1",
+          "hurt": 5,
+          "fx": "hit",
+          "at": "me",
+          "say": [
+            "f",
+            "The brute",
+            "Get outta my head!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Shove the brute with your mind",
+          "s": "a creature is force moved",
+          "to": "foe1",
+          "dmg": 2,
+          "type": "psychic",
+          "trig": [
+            "force-moved"
+          ],
+          "fx": "push",
+          "at": "foe1",
+          "say": [
+            "h",
+            "The talent",
+            "Move."
+          ],
+          "move": [
+            [
+              "foe1",
+              "reel-r"
+            ],
+            [
+              "me",
+              "glow"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-clarity strike",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "psychic",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-clarity strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe2",
+          "fx": "psychic",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The talent",
+            "I can see your thoughts."
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The talent",
+          "I see how this ends."
+        ],
+        "end": [
+          "h",
+          "The talent",
+          "My head’s ringing."
+        ],
+        "win": [
+          "h",
+          "The talent",
+          "Exactly as I saw it."
+        ]
+      },
+      "hint": "**Click the talent** to shove the brute with your mind: force movement pays clarity the first time each round. You can spend clarity you don’t have, down to −(1 + Reason), and **End your turn** then hurts.",
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-troubadour",
+    "name": "Drama on the stage",
+    "summary": "An example fight for the troubadour's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "troubadour",
+      "title": "Drama on the stage",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "The duke",
+          "stamina": 40
+        }
+      ],
+      "pieces": [
+        {
+          "art": "theatre",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "duke",
+          "x": 380,
+          "y": 140,
+          "w": 100,
+          "h": 160,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "trio",
+          "x": 220,
+          "y": 160,
+          "w": 140,
+          "h": 110,
+          "tag": "trio",
+          "act": 1
+        },
+        {
+          "art": "dice",
+          "x": 300,
+          "y": 236,
+          "w": 70,
+          "h": 44,
+          "tag": "dice",
+          "act": 2
+        },
+        {
+          "art": "hero",
+          "x": 100,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 4
+        }
+      ],
+      "acts": [
+        {
+          "b": "The duke runs you through",
+          "s": "the first hero winded pays drama",
+          "from": "foe1",
+          "hurt": 9,
+          "fx": "slash",
+          "at": "me",
+          "say": [
+            "f",
+            "The duke",
+            "Exit, stage left!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Three heroes use abilities this turn",
+          "s": "pays 2, once a fight",
+          "to": "foe1",
+          "dmg": 9,
+          "trig": [
+            "three-heroes"
+          ],
+          "fx": "music",
+          "at": "foe1",
+          "say": [
+            "h",
+            "The troubadour",
+            "All together now!"
+          ],
+          "move": [
+            [
+              "trio",
+              "hop glow"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "Someone rolls the dice",
+          "s": "a natural 19 or 20 pays 3, every time",
+          "d20": "natural-19-20",
+          "at": "dice",
+          "move": [
+            [
+              "dice",
+              "hop"
+            ]
+          ]
+        },
+        {
+          "b": "Another hero dies",
+          "s": "pays 10, every time",
+          "trig": [
+            "hero-dies"
+          ],
+          "fx": "shadow",
+          "at": "trio",
+          "say": [
+            "h",
+            "The troubadour",
+            "No! What a tragedy… what a scene!"
+          ]
+        },
+        {
+          "b": "A 3-drama strike",
+          "s": "power roll, 5 / 8 / 11 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            5,
+            8,
+            11
+          ],
+          "to": "foe1",
+          "fx": "music",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ]
+        },
+        {
+          "b": "A 5-drama strike",
+          "s": "power roll, 8 / 13 / 17 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            8,
+            13,
+            17
+          ],
+          "to": "foe1",
+          "fx": "music",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The troubadour",
+            "And now, the finale!"
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The troubadour",
+          "Places, everyone!"
+        ],
+        "end": [
+          "h",
+          "The troubadour",
+          "Curtain."
+        ],
+        "win": [
+          "h",
+          "The troubadour",
+          "Encore! Encore!"
+        ],
+        "rise": [
+          "h",
+          "The troubadour",
+          "Did you miss me?"
+        ]
+      },
+      "hint": "**Click the dice** to roll (a natural 19 or 20 pays 3), **the three heroes** for teamwork, and **the duke** to be stabbed. Fall to 0 and you die for 10 drama; at 30 you come back.",
+      "swing": [
+        "foe1"
+      ],
+      "on_winded": "hero-winded"
+    }
+  }
+]

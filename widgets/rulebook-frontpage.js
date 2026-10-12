@@ -363,7 +363,7 @@
       '@media(max-width:480px){.rb-lairface{flex-direction:column;align-items:stretch;gap:10px}.rb-bkslot{align-self:center}}'
     );
     // The closed book on the card: the same 3D book the board's pop-up
-    // scene draws (a 700x360 stage, the spread, the left page folded over
+    // scene draws (a 700x520 stage, the spread, the left page folded over
     // the right with the cover on its back, the same cover), so when it
     // lands on the board's closed book the two match and the hand-over
     // cannot be seen. Only the tilt differs, and the engine eases it into
@@ -371,12 +371,12 @@
     // alone and fade out in flight. Colours mirror the scene's literals.
     s.push(
       '.rb-bkslot{position:relative;flex:none;width:190px;height:132px}',
-      '.rb-bk{--rb-bk-s:.5;position:absolute;left:-157px;top:-66px;width:calc(700px * var(--rb-bk-s));' +
-        'height:calc(360px * var(--rb-bk-s));pointer-events:none;transform-origin:0 0}',
+      '.rb-bk{--rb-bk-s:.5;position:absolute;left:-157px;top:-90px;width:calc(700px * var(--rb-bk-s));' +
+        'height:calc(520px * var(--rb-bk-s));pointer-events:none;transform-origin:0 0}',
       // in flight it rides over the board (62) inside the open card's own stacking context
       '.rb-lair.is-open .rb-bk{z-index:64}',
-      '.rb-bkfit{position:absolute;left:0;top:0;width:700px;height:360px;transform:scale(var(--rb-bk-s));transform-origin:0 0}',
-      '.rb-bkbook{position:absolute;left:0;top:0;right:0;bottom:0;perspective:1200px;perspective-origin:50% 0%}',
+      '.rb-bkfit{position:absolute;left:0;top:0;width:700px;height:520px;transform:scale(var(--rb-bk-s));transform-origin:0 0}',
+      '.rb-bkbook{position:absolute;left:0;top:48px;right:0;height:360px;perspective:1200px;perspective-origin:50% 0%}',
       '.rb-bkspread{position:absolute;left:50px;top:150px;width:600px;height:250px;transform-style:preserve-3d;' +
         'transform:rotateX(34deg) rotateZ(-7deg)}',
       '.rb-bkpage{position:absolute;top:0;width:300px;height:250px;background:#ebe5d3;transform-style:preserve-3d}',

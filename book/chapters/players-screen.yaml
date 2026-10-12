@@ -1,31 +1,8 @@
-title: Players Screen
-intro: The rules you reach for in the middle of a game, on one page.
+title: Player screen
+intro: The rules you reach for in the middle of a game, a ribbon away on every page.
 pages:
-  - title: At the table
-    wide: true
-    columns: true
+  - title: Your turn
     blocks:
-      - type: roll
-        dice: 2d10
-        label: Power roll
-        modifier: true
-        bands:
-          - max: 11
-            label: Tier 1
-            text: 11 or lower. The weakest result.
-          - max: 16
-            label: Tier 2
-            text: 12 to 16. A solid result.
-          - label: Tier 3
-            text: 17 or higher. The strongest result.
-      - type: callout
-        title: Edges and banes
-        text: |
-          An [[edge]] adds 2 to the roll and a [[bane]] takes 2 away.
-
-          - A **double edge** raises the result by a whole tier instead.
-          - A **double bane** lowers it by a whole tier instead.
-          - One edge and one bane cancel each other out.
       - type: cards
         items:
           - title: Main action
@@ -55,6 +32,31 @@ pages:
             rounded down.
           - A [[saving throw]] is a d10 rolled at the end of your turn. On a 6
             or higher, an effect that says "save ends" stops.
+  - title: The power roll
+    blocks:
+      - type: roll
+        dice: 2d10
+        label: Power roll
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: 11 or lower. The weakest result.
+          - max: 16
+            label: Tier 2
+            text: 12 to 16. A solid result.
+          - label: Tier 3
+            text: 17 or higher. The strongest result.
+      - type: callout
+        title: Edges and banes
+        text: |
+          An [[edge]] adds 2 to the roll and a [[bane]] takes 2 away.
+
+          - A **double edge** raises the result by a whole tier instead.
+          - A **double bane** lowers it by a whole tier instead.
+          - One edge and one bane cancel each other out.
+  - title: Conditions
+    blocks:
       - type: cards
         items:
           - title: Bleeding

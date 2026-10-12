@@ -1004,6 +1004,49 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "negotiation-audience",
+      "name": "Negotiation Audience",
+      "description": "A pop-up book for the Handbook's Negotiation chapter: a cut-paper throne room where the reader picks who speaks and what they say, rolls, and watches the king's interest and patience move by the published rules (read from data/negotiation.json).",
+      "icon": "fa-crown",
+      "script_file": "widgets/negotiation-audience.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "slug": "handbook-credits",
+      "name": "Handbook Credits",
+      "description": "The Handbook's Credits chapter: a cut-paper stage where the nine classes in white masks take a bow, the MCDM team by role (read from data/credits.json), where to buy the books, the Creator License notice word for word, and a film-style credits roll over the whole window with pause and fast forward.",
+      "icon": "fa-film",
+      "script_file": "widgets/handbook-credits.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
+    }
+,
+    {
+      "slug": "class-fights",
+      "name": "Class Fights",
+      "description": "Pop-up books for the Handbook's Classes chapter: a tile per class with its Heroic Resource, and for each class a cut-paper practice fight where the reader clicks the pieces and watches the resource rise and fall by that class's rules (read from data/class-fights.json).",
+      "icon": "fa-hand-fist",
+      "script_file": "widgets/class-fights.js",
+      "config": [
+        {
+          "key": "campaign_id",
+          "label": "Campaign ID",
+          "type": "string"
+        }
+      ]
     }
   ],
   "entity_panels": [

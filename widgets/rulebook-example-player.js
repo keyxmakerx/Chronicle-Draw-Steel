@@ -407,6 +407,7 @@ var RulebookExamplePlayer = (function () {
   var FIRST_BEAT_MS = 2100;    // the book opens and its pieces stand up
   var CARD_OUT_MS = 300;       // a card slides or folds away
   var SHUT_MS = 640;           // the cover turns back when the board closes
+  var FOLD_MS = 300;           // the pieces lie down and vanish before the cover turns
   var SPREAD_W = 600, SPREAD_H = 250;   // the open book's page spread, in scene px
 
   // The motions a beat can cue on a piece; each is a class the stylesheet draws.
@@ -1144,15 +1145,16 @@ var RulebookExamplePlayer = (function () {
     var PAPER = '#ebe5d3', LICH = '#3fd68a', SERIF = 'Spectral,Georgia,serif';
     var D = 'var(--dir,1)';
     return [
-      // the book: a 700x360 stage scaled to fit, a spread tilted back in 3D
+      // the book: a 700x520 stage scaled to fit, a spread tilted back in 3D;
+      // tall enough that the near edge and the swinging cover never clip
       '.rbs{position:relative}',
       // a script playing as a pop-up book fills the board edge to edge
       '.rbx-script.rbs-host.rbx-on{border:0;border-radius:0;padding:0;margin:0;background:none}',
       '.rbs-defs{position:absolute;width:0;height:0;overflow:hidden}',
-      '.rbs-scene{position:relative;height:calc(360px * var(--rbs-s,1));overflow:hidden;' +
+      '.rbs-scene{position:relative;height:calc(520px * var(--rbs-s,1));overflow:hidden;' +
         'background:radial-gradient(90% 60% at 50% 105%,rgba(63,214,138,.22),transparent 70%),radial-gradient(120% 90% at 50% 0%,#2a1d3a 0%,#110c18 72%)}',
-      '.rbs-fit{position:absolute;left:50%;top:0;width:700px;height:360px;margin-left:-350px;transform:scale(var(--rbs-s,1));transform-origin:50% 0}',
-      '.rbs-book{position:absolute;left:0;top:0;right:0;bottom:0;perspective:1200px;perspective-origin:50% 0%}',
+      '.rbs-fit{position:absolute;left:50%;top:0;width:700px;height:520px;margin-left:-350px;transform:scale(var(--rbs-s,1));transform-origin:50% 0}',
+      '.rbs-book{position:absolute;left:0;top:48px;right:0;height:360px;perspective:1200px;perspective-origin:50% 0%}',
       '.rbs-spread{position:absolute;left:50px;top:150px;width:600px;height:250px;transform-style:preserve-3d;transform:rotateX(58deg)}',
       '.rbs-page{position:absolute;top:0;width:300px;height:250px;background:' + PAPER + ';transform-style:preserve-3d;' +
         'background-image:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 60%),repeating-linear-gradient(0deg,rgba(80,60,30,.04) 0 2px,transparent 2px 5px)}',
@@ -1162,7 +1164,7 @@ var RulebookExamplePlayer = (function () {
       '.rbs-pr{left:300px;border-radius:0 6px 6px 0;box-shadow:inset 26px 0 30px -18px rgba(40,30,55,.5)}',
       '.rbs-closed .rbs-pl{transform:rotateY(180deg) translateZ(-2px)}',
       // closing the board turns the cover back quicker than it opened
-      '.rbs-shutting .rbs-pl{transition-duration:' + SHUT_MS + 'ms;transition-timing-function:cubic-bezier(.5,0,.4,1)}',
+      '.rbs-shutting .rbs-pl{transition-duration:' + SHUT_MS + 'ms;transition-timing-function:cubic-bezier(.5,0,.4,1);transition-delay:' + FOLD_MS + 'ms}',
       // the cover is the left page's back: dark violet, a skull, green lettering
       '.rbs-cover{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:6px;transform:rotateY(180deg) translateZ(1px);backface-visibility:hidden;' +
         'background:radial-gradient(circle at 50% 40%,#2c2240,#140e1d 75%);box-shadow:inset 0 0 0 6px #1d1528,inset 0 0 0 7px ' + LICH + ',0 0 0 3px #2a2236}',
@@ -1192,6 +1194,13 @@ var RulebookExamplePlayer = (function () {
       // a piece that only stands on its beats is invisible while folded away
       '.rbs-shy>.rbs-card{transition:transform 440ms cubic-bezier(.4,1.4,.5,1),opacity 200ms}',
       '.rbs-shy:not(.rbs-up)>.rbs-card,.rbs-closed .rbs-shy>.rbs-card{opacity:0}',
+      // a folded piece is hidden as well as flat, so no browser's 3D sorting
+      // can show it through the cover; it appears only as it starts to rise
+      '.rbs-pop:not(.rbs-up)>.rbs-card,.rbs-closed .rbs-pop>.rbs-card{opacity:0;visibility:hidden;' +
+        'transition:transform 440ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity 200ms ease-in 100ms,visibility 0s ' + FOLD_MS + 'ms}',
+      '.rbs-opening .rbs-pop.rbs-up>.rbs-card{transition:transform 440ms cubic-bezier(.4,1.4,.5,1),filter .3s,' +
+        'opacity 160ms ease-out calc(770ms + var(--i,0) * 120ms),visibility 0s calc(770ms + var(--i,0) * 120ms)}',
+      '.rbs-opening .rbs-pop.rbs-up.rbs-shy>.rbs-card{transition:transform 440ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity 200ms,visibility 0s}',
       '.rbs-shade{position:absolute;transform:translateZ(.5px);background:radial-gradient(closest-side,rgba(60,35,10,.45),transparent);transition:opacity 400ms}',
       '.rbs-closed .rbs-shade{opacity:0}',
       '.rbs-flat{position:absolute;opacity:.75;transition:opacity .4s}',
@@ -1795,7 +1804,7 @@ var RulebookExamplePlayer = (function () {
       if (quick) sc.classList.add('rbs-shutting');
       sc.classList.add('rbs-closed');
       _bvApply(c, -1);
-      return quick ? SHUT_MS : 0;
+      return quick ? FOLD_MS + SHUT_MS : 0;
     }
     function _bvTogglePause(c, slug) {
       var st = c.__rbx;

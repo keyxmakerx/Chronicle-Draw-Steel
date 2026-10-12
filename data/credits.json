@@ -1,0 +1,125 @@
+[
+  {
+    "slug": "willy-abeel",
+    "name": "Willy Abeel",
+    "summary": "Design",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Design",
+      "order": 1
+    }
+  },
+  {
+    "slug": "lars-bakke",
+    "name": "Lars Bakke",
+    "summary": "Development and Production",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Development and Production",
+      "order": 2
+    }
+  },
+  {
+    "slug": "jerod-m-bennett",
+    "name": "Jerod M. Bennett",
+    "summary": "Technology",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Technology",
+      "order": 3
+    }
+  },
+  {
+    "slug": "grace-cheung",
+    "name": "Grace Cheung",
+    "summary": "Art",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Art",
+      "order": 4
+    }
+  },
+  {
+    "slug": "matt-colville",
+    "name": "Matt Colville",
+    "summary": "Writing & Design",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Writing & Design",
+      "order": 5
+    }
+  },
+  {
+    "slug": "robert-djordjevich",
+    "name": "Robert Djordjevich",
+    "summary": "Design",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Design",
+      "order": 6
+    }
+  },
+  {
+    "slug": "nick-de-spain",
+    "name": "Nick De Spain",
+    "summary": "Art",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Art",
+      "order": 7
+    }
+  },
+  {
+    "slug": "josh-gertz",
+    "name": "Josh Gertz",
+    "summary": "Production",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Production",
+      "order": 8
+    }
+  },
+  {
+    "slug": "jason-hasenauer",
+    "name": "Jason Hasenauer",
+    "summary": "Art & Art Direction",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Art & Art Direction",
+      "order": 9
+    }
+  },
+  {
+    "slug": "james-introcaso",
+    "name": "James Introcaso",
+    "summary": "Lead Game Design",
+    "source": "Draw Steel: Encounters preview (MCDM Productions), credits page: the MCDM Productions team",
+    "properties": {
+      "group": "mcdm-team",
+      "role": "Lead Game Design",
+      "order": 10
+    }
+  },
+  {
+    "slug": "rules-tally",
+    "name": "The rules reproduced in this package",
+    "summary": "Counts of the reference entries shipped in data/, checked against the files by tools/test-handbook-credits.mjs.",
+    "source": "custom",
+    "properties": {
+      "group": "tally",
+      "abilities": 519,
+      "ancestries": 12,
+      "kits": 21,
+      "animal_traits": 35
+    }
+  }
+]
