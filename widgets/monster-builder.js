@@ -1665,6 +1665,9 @@ var DrawSteelCreatureEditor = (function () {
   // read) and changed (redraws the editor). Every add can be undone.
   function openAbilityDrawer(doc, ctx) {
     var st = ctx.st, lib = null, f = { q: '', type: '', kw: '', org: '', all: false }, opt = {}, last = null, fresh = null, gone = false;
+    // The library holds the whole bestiary, so cards are drawn a page at a
+    // time; a new filter or search starts again at the first page.
+    var PAGE = 60, limit = PAGE, shownFor = '';
     var scrim = doc.createElement('div');
     scrim.className = 'sbe-scrim';
     var dr = doc.createElement('div');
@@ -1704,8 +1707,11 @@ var DrawSteelCreatureEditor = (function () {
       $('sbe-dr-for').textContent = 'For this level ' + c.level + ' ' + (c.organization || 'creature') + (c.role && !noRole(c.organization) ? ' ' + c.role : '');
       $('sbe-dr-mine').innerHTML = drawerMine(st, fresh);
       if (!lib) return;
-      var rows = libraryRows(st, lib, f);
-      $('sbe-dr-lib').innerHTML = rows.length ? rows.map(function (r) { return drawerCard(st, r, opt, lib); }).join('')
+      var rows = libraryRows(st, lib, f), key = [f.all, f.type, f.kw, f.org, f.q].join('|');
+      if (key !== shownFor) { shownFor = key; limit = PAGE; }
+      var left = rows.length - limit;
+      $('sbe-dr-lib').innerHTML = rows.length ? rows.slice(0, limit).map(function (r) { return drawerCard(st, r, opt, lib); }).join('') +
+        (left > 0 ? '<p class="sbe-dr-more"><button type="button" class="btn-secondary btn-sm" data-dr-more>Show ' + Math.min(PAGE, left) + ' more (' + left + ' left)</button></p>' : '')
         : '<p class="sbe-small sbe-dim">No abilities match. Clear a filter or the search' + (f.all ? '' : ', or press Show all') + '.</p>';
       $('sbe-dr-all').textContent = f.all ? 'Showing all ' + lib.length : 'Show all';
     }
@@ -1775,6 +1781,14 @@ var DrawSteelCreatureEditor = (function () {
         f[k] = f[k] === v ? '' : v;
         chips(); paint();
         [].forEach.call(dr.querySelectorAll('[data-dr-f="' + k + '"]'), function (x) { if (x.getAttribute('data-dr-v') === v) x.focus(); });
+        return;
+      }
+      if (b.hasAttribute('data-dr-more')) {
+        var from = limit;
+        limit += PAGE; paint();
+        var next = dr.querySelectorAll('.sbe-abc')[from];
+        var go = next && (next.querySelector('[data-dr-add]') || next.querySelector('button, select'));
+        if (go) go.focus();
         return;
       }
       if (b.hasAttribute('data-dr-add')) {
@@ -1957,6 +1971,7 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-fchip{font:inherit;font-size:12.5px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;padding:3px 10px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
     '.sbe-fchip[aria-pressed="true"]{background:var(--sbe-accent,#DC2626);border-color:var(--sbe-accent,#DC2626);color:#fff}',
     '.sbe-dr-b{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;padding:14px 16px;overflow:auto;min-height:0;flex:1}',
+    '.sbe-dr-more{grid-column:1/-1;margin:4px 0 0;text-align:center}',
     '.sbe-dr-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-content:start;min-width:0}',
     '.sbe-abc{display:flex;flex-direction:column;gap:6px;border:1px solid var(--color-border,#e5e7eb);border-radius:10px;padding:10px 12px;background:var(--color-card-bg,#fff);font-size:13px;min-width:0}',
     '.sbe-abc[draggable="true"]{cursor:grab}.sbe-abc[draggable="true"]:hover{border-color:color-mix(in srgb,var(--sbe-accent,#DC2626) 50%,var(--color-border,#e5e7eb))}',

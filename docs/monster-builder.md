@@ -399,7 +399,7 @@ Creature page with every stat block field filled.
 | `data/monster-building.json` | Published monster formulas |
 | `data/encounter-building.json` | Published encounter strength and budget bands |
 | `data/creature-keywords.json` | Keyword definitions and special rules |
-| `data/creature-abilities.json` | Example/template abilities for reference |
+| `data/creature-abilities.json` | The ability library: the Monsters book's creature abilities, plus this package's own templates |
 | `data/creatures.json` | 35 example creatures, figures per the published formulas (`tools/test-creature-examples.mjs`) |
 | `data/ability-keywords.json` | Ability keyword definitions |
 
