@@ -42,13 +42,6 @@ theme:
   heading-font: '"Big Shoulders Display", Oswald, "Arial Narrow", Impact, sans-serif'
   body-font: '"Source Serif 4", Georgia, serif'
   ui-font: '"Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif'
-tabs:
-  - how-to-play
-  - making-a-hero
-  - tests
-  - combat
-  - negotiation
-  - downtime
 first: front
 screen: players-screen
 parts:
