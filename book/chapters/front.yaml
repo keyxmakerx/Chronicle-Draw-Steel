@@ -1,8 +1,7 @@
-title: Welcome
-intro: The one-page tour of the rules.
+title: Handbook
+intro: Every chapter of the Handbook. Pick one to turn to it.
 pages:
-  - title: The front page
+  - title: Contents
     wide: true
     blocks:
-      - type: widget
-        widget: rulebook-frontpage
+      - type: contents
