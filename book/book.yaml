@@ -48,8 +48,7 @@ tabs:
   - combat
   - negotiation
   - downtime
-start: players-screen
-first: how-to-play
+first: front
 screen: players-screen
 parts:
   - title: Player's book
