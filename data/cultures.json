@@ -1,0 +1,577 @@
+[
+  {
+    "slug": "nomadic-environment",
+    "name": "Nomadic environment",
+    "summary": "A nomadic culture travels from place to place to survive. Members of a nomadic culture might follow animal migrations or the weather, travel to sell their wares or services, or simply enjoy a restless lifestyle full of new experiences and peoples. Those who grow up in nomadic cultures learn to navigate the wilderness and work closely with others to survive.",
+    "description": "A nomadic culture travels from place to place to survive. Members of a nomadic culture might follow animal migrations or the weather, travel to sell their wares or services, or simply enjoy a restless lifestyle full of new experiences and peoples. Those who grow up in nomadic cultures learn to navigate the wilderness and work closely with others to survive.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "environment",
+      "skill_options_quick_build": "Navigate",
+      "skill_options": "One skill from the exploration or interpersonal skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "rural-environment",
+    "name": "Rural environment",
+    "summary": "A rural culture is one located in a town, village, or smaller settled enclave. People dwelling in such places often cultivate the land, trade goods or services with travelers passing through, harvest fish from the sea, or mine metals and gems from the earth.",
+    "description": "A rural culture is one located in a town, village, or smaller settled enclave. People dwelling in such places often cultivate the land, trade goods or services with travelers passing through, harvest fish from the sea, or mine metals and gems from the earth.\n\nLiving among a small population, most folks in a rural community learn a trade and are handed down bits of essential knowledge to help their community survive. For example, when a rural culture has only one blacksmith, it's important to have an apprentice already learning at the anvil well before that smith starts to get old. If the only priest in town\n\ngets the sniffles, folks want an acolyte ready to wear the fancy robes should the worst occur.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "environment",
+      "skill_options_quick_build": "Nature",
+      "skill_options": "One skill from the crafting or lore skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "secluded-environment",
+    "name": "Secluded environment",
+    "summary": "A secluded culture is based in one relatively close-quarters structure—a building, a cavern, and so forth—and interacts with other cultures only rarely. Such places are often buildings or complexes such as monasteries, castles, or prisons. Folk in a secluded culture have little or no reason to leave their home or interact with other cultures on the outside, but might have an awareness of those cultures and of events happening beyond their enclave.",
+    "description": "A secluded culture is based in one relatively close-quarters structure—a building, a cavern, and so forth—and interacts with other cultures only rarely. Such places are often buildings or complexes such as monasteries, castles, or prisons. Folk in a secluded culture have little or no reason to leave their home or interact with other cultures on the outside, but might have an awareness of those cultures and of events happening beyond their enclave.\n\nWhen people live together in close quarters, they typically learn to get along. They often spend much time in study or introspection, as there is not much else to do in seclusion.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "environment",
+      "skill_options_quick_build": "Read Person",
+      "skill_options": "One skill from the interpersonal or lore skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "urban-environment",
+    "name": "Urban environment",
+    "summary": "An urban culture is always centered in a city. Such a culture might arise within a network of caverns that hold an underground city, or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
+    "description": "An urban culture is always centered in a city. Such a culture might arise within a network of caverns that hold an underground city, or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "environment",
+      "skill_options_quick_build": "Alertness",
+      "skill_options": "One skill from the interpersonal or intrigue skill groups.",
+      "omissions": [
+        "The clause naming a setting city as an example is not reproduced; the description is otherwise complete."
+      ],
+      "provenance_display": "omissions — The clause naming a setting city as an example is not reproduced; the description is otherwise complete."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "wilderness-environment",
+    "name": "Wilderness environment",
+    "summary": "A wilderness culture doesn't try to tame the terrain in which its people live, whether desert, forest, swamp, tundra, ocean, or more exotic climes. Instead, the folk of such a culture thrive amid nature, taking their sustenance and shelter from the land. A wilderness culture might be a circle of druids protecting a remote wode, a band of brigands hiding out in desert caves, or a camp of orc mercenaries who call the trackless mountains home. People in a wilderness culture learn how to use the land for all they need to live, typically crafting their own tools, clothing, and more.",
+    "description": "A wilderness culture doesn't try to tame the terrain in which its people live, whether desert, forest, swamp, tundra, ocean, or more exotic climes. Instead, the folk of such a culture thrive amid nature, taking their sustenance and shelter from the land. A wilderness culture might be a circle of druids protecting a remote wode, a band of brigands hiding out in desert caves, or a camp of orc mercenaries who call the trackless mountains home. People in a wilderness culture learn how to use the land for all they need to live, typically crafting their own tools, clothing, and more.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "environment",
+      "skill_options_quick_build": "Endurance",
+      "skill_options": "One skill from the crafting or exploration skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "bureaucratic-organization",
+    "name": "Bureaucratic organization",
+    "summary": "Bureaucratic cultures are steeped in official leadership and formally recorded laws. Members of such a culture are often ranked in power according to those laws, with a small group of people holding the power to rule according to birthright, popular vote, or some other official and measurable standard. Many bureaucratic communities",
+    "description": "Bureaucratic cultures are steeped in official leadership and formally recorded laws. Members of such a culture are often ranked in power according to those laws, with a small group of people holding the power to rule according to birthright, popular vote, or some other official and measurable standard. Many bureaucratic communities\n\nhave one person at the top, though others might be ruled by a council. A trade guild with a guildmaster, treasurer, secretary, and a charter of rules and regulations for membership; a feudal lord who rules over a group of knights who in turn rule over peasants working the land; and a militaristic society with ranks and rules that its people must abide are all examples of bureaucratic cultures.\n\nThose who thrive in bureaucratic cultures don't simply follow the rules. They know how to use those rules to their advantage, either bending, changing, or reinterpreting policy to advance their own interests. Schmoozing with those who make the laws is often key to this approach. Others in a bureaucratic culture might specialize in operating outside the strict regulations that govern the culture without getting caught.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "organization",
+      "skill_options_quick_build": "Persuade",
+      "skill_options": "One skill from the interpersonal or intrigue skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "communal-organization",
+    "name": "Communal organization",
+    "summary": "A communal culture is a place where all members of the culture are considered equal. The community works together to make important decisions that affect the majority of the culture. While they elect leaders to carry out these decisions and organize their efforts, each person has a relatively equal say in how the culture operates, and everyone contributes to help their people survive and thrive. Individuals often share the burdens of governing, physical labor, childcare, and other duties. A collective of farmers who work together to cultivate and protect their land without a noble, a city of pirates where each person can do as they wish, and a traveling theatrical troupe whose members vote on every artistic and administrative decision are all communal cultures.",
+    "description": "A communal culture is a place where all members of the culture are considered equal. The community works together to make important decisions that affect the majority of the culture. While they elect leaders to carry out these decisions and organize their efforts, each person has a relatively equal say in how the culture operates, and everyone contributes to help their people survive and thrive. Individuals often share the burdens of governing, physical labor, childcare, and other duties. A collective of farmers who work together to cultivate and protect their land without a noble, a city of pirates where each person can do as they wish, and a traveling theatrical troupe whose members vote on every artistic and administrative decision are all communal cultures.\n\nMany communal cultures operate outside settled lands, sticking to the wilds, a specific district in a larger settlement, city sewers, forgotten ruins, or other isolated places. For even when such cultures are harmless, their members know that outsiders might try to impose rules upon them if they live in the same place. As such, many folks in communal cultures focus on fending for themselves while avoiding the danger that other groups can represent.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "organization",
+      "skill_options_quick_build": "Jump",
+      "skill_options": "One skill from the crafting or exploration skill groups."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "academic-upbringing",
+    "name": "Academic upbringing",
+    "summary": "Your hero was raised by people who collect, study, and share books and other records. Some academics focus on one area of study, such as a college for wizards dedicated to the study of magic, or a church that teaches the word of one deity. People in an academic culture learn how to wield the power that is knowledge.",
+    "description": "Your hero was raised by people who collect, study, and share books and other records. Some academics focus on one area of study, such as a college for wizards dedicated to the study of magic, or a church that teaches the word of one deity. People in an academic culture learn how to wield the power that is knowledge.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "History",
+      "skill_options": "One skill from the lore skill group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "creative-upbringing",
+    "name": "Creative upbringing",
+    "summary": "A hero with a creative upbringing was raised among folk who create art or other works valuable enough to trade. A creative culture might produce fine art such as dance, music, or sculpture, or more practical wares such as wagons, weapons, tools, or buildings. People in such cultures learn the value of quality crafting and attention to detail.",
+    "description": "A hero with a creative upbringing was raised among folk who create art or other works valuable enough to trade. A creative culture might produce fine art such as dance, music, or sculpture, or more practical wares such as wagons, weapons, tools, or buildings. People in such cultures learn the value of quality crafting and attention to detail.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "Perform",
+      "skill_options": "The Music or Perform skill (from the interpersonal skill group), or one skill from the crafting group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "labor-upbringing",
+    "name": "Labor upbringing",
+    "summary": "Your hero came of age in a culture where people labored for a living. They might have been cultivators, typically raising crops or livestock on a farm. They might have harvested natural resources, whether by hunting, trapping, logging, or mining. Or they might have excelled at manual labor tied to settlement and trade, such as construction, carting, loading cargo, and so forth. People with a labor upbringing know the value of hard work.",
+    "description": "Your hero came of age in a culture where people labored for a living. They might have been cultivators, typically raising crops or livestock on a farm. They might have harvested natural resources, whether by hunting, trapping, logging, or mining. Or they might have excelled at manual labor tied to settlement and trade, such as construction, carting, loading cargo, and so forth. People with a labor upbringing know the value of hard work.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "Lift",
+      "skill_options": "The Blacksmithing skill (from the crafting skill group), the Handle Animals skill (from the interpersonal group), or a skill from the exploration group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "lawless-upbringing",
+    "name": "Lawless upbringing",
+    "summary": "Your hero grew up among folk who performed activities that other people—whether within or outside their culture—considered unlawful. A band of pirates, a guild of assassins, or an organization of spies all commit unlawful acts for money. And under tyranny, people engaged in rebellion are often considered lawless in their actions and activities. People brought up in a lawless culture typically don't mind breaking the rules when it suits them—and are good at making sure no one finds out they did.",
+    "description": "Your hero grew up among folk who performed activities that other people—whether within or outside their culture—considered unlawful. A band of pirates, a guild of assassins, or an organization of spies all commit unlawful acts for money. And under tyranny, people engaged in rebellion are often considered lawless in their actions and activities. People brought up in a lawless culture typically don't mind breaking the rules when it suits them—and are good at making sure no one finds out they did.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "Sneak",
+      "skill_options": "One skill from the intrigue skill group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "martial-upbringing",
+    "name": "Martial upbringing",
+    "summary": "A hero with a martial upbringing was raised by warriors. These might have been the soldiers of an established army, a band of mercenaries, a guild of monster-slaying adventurers, or any other folk whose lives revolve around combat. Heroes with a martial upbringing are always ready for a fight—and they know how to finish that fight.",
+    "description": "A hero with a martial upbringing was raised by warriors. These might have been the soldiers of an established army, a band of mercenaries, a guild of monster-slaying adventurers, or any other folk whose lives revolve around combat. Heroes with a martial upbringing are always ready for a fight—and they know how to finish that fight.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "Intimidate",
+      "skill_options": "One of the following: Blacksmithing or Fletching from the crafting skill group; Climb, Endurance, or Ride from the exploration group; Intimidate from the interpersonal group; Alertness or Track from the intrigue group; or Monsters or Strategy from the lore skill group"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "noble-upbringing",
+    "name": "Noble upbringing",
+    "summary": "Your hero grew up among leaders who rule over others and play the games of politics to maintain power. Many families are nobles by birthright, but some cultures have noble titles earned through deeds or popularity. Whatever the case, heroes with this background understand why the whispered words in the right ear can sometimes be more powerful than any army.",
+    "description": "Your hero grew up among leaders who rule over others and play the games of politics to maintain power. Many families are nobles by birthright, but some cultures have noble titles earned through deeds or popularity. Whatever the case, heroes with this background understand why the whispered words in the right ear can sometimes be more powerful than any army.",
+    "properties": {
+      "type": "culture",
+      "kind": "culture aspect",
+      "aspect": "upbringing",
+      "skill_options_quick_build": "Lead",
+      "skill_options": "One skill from the interpersonal skill group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-devil",
+    "name": "Devil (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Devil): Anjali language, urban environment, bureaucratic organization, academic upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Devil): Anjali language, urban environment, bureaucratic organization, academic upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Anjali",
+      "environment": "Urban",
+      "organization": "Bureaucratic",
+      "upbringing": "Academic"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-dragon-knight",
+    "name": "Dragon knight (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Dragon knight): Vastariax language, secluded environment, bureaucratic organization, martial upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Dragon knight): Vastariax language, secluded environment, bureaucratic organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Vastariax",
+      "environment": "Secluded",
+      "organization": "Bureaucratic",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-dwarf",
+    "name": "Dwarf (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Dwarf): Zaliac language, secluded environment, bureaucratic organization, creative upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Dwarf): Zaliac language, secluded environment, bureaucratic organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Zaliac",
+      "environment": "Secluded",
+      "organization": "Bureaucratic",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-wode-elf",
+    "name": "Wode elf (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Wode elf): Yllyric language, wilderness environment, bureaucratic organization, martial upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Wode elf): Yllyric language, wilderness environment, bureaucratic organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Yllyric",
+      "environment": "Wilderness",
+      "organization": "Bureaucratic",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-high-elf",
+    "name": "High elf (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (High elf): Hyrallic language, secluded environment, bureaucratic organization, martial upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (High elf): Hyrallic language, secluded environment, bureaucratic organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Hyrallic",
+      "environment": "Secluded",
+      "organization": "Bureaucratic",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-hakaan",
+    "name": "Hakaan (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Hakaan): Vhoric language, rural environment, communal organization, labor upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Hakaan): Vhoric language, rural environment, communal organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Vhoric",
+      "environment": "Rural",
+      "organization": "Communal",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-human",
+    "name": "Human (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Human): Vaslorian language, urban environment, communal organization, labor upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Human): Vaslorian language, urban environment, communal organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Vaslorian",
+      "environment": "Urban",
+      "organization": "Communal",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-memonek",
+    "name": "Memonek (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Memonek): Axiomatic language, nomadic environment, communal organization, academic upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Memonek): Axiomatic language, nomadic environment, communal organization, academic upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Axiomatic",
+      "environment": "Nomadic",
+      "organization": "Communal",
+      "upbringing": "Academic"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-orc",
+    "name": "Orc (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Orc): Kalliak language, wilderness environment, communal organization, creative upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Orc): Kalliak language, wilderness environment, communal organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Kalliak",
+      "environment": "Wilderness",
+      "organization": "Communal",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-polder",
+    "name": "Polder (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Polder): Khoursirian language, urban environment, communal organization, creative upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Polder): Khoursirian language, urban environment, communal organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Khoursirian",
+      "environment": "Urban",
+      "organization": "Communal",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "typical-time-raider",
+    "name": "Time raider (typical ancestry culture)",
+    "summary": "The sample culture for a hero raised mostly among others of their own ancestry (Time raider): Voll language, nomadic environment, communal organization, martial upbringing.",
+    "description": "The sample culture for a hero raised mostly among others of their own ancestry (Time raider): Voll language, nomadic environment, communal organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "typical ancestry culture",
+      "language": "Voll",
+      "environment": "Nomadic",
+      "organization": "Communal",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "artisan-guild",
+    "name": "Artisan guild",
+    "summary": "An archetypical culture: urban environment, bureaucratic organization, creative upbringing.",
+    "description": "An archetypical culture: urban environment, bureaucratic organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Urban",
+      "organization": "Bureaucratic",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "borderland-homestead",
+    "name": "Borderland homestead",
+    "summary": "An archetypical culture: wilderness environment, communal organization, labor upbringing.",
+    "description": "An archetypical culture: wilderness environment, communal organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Wilderness",
+      "organization": "Communal",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "college-conclave",
+    "name": "College conclave",
+    "summary": "An archetypical culture: urban environment, bureaucratic organization, academic upbringing.",
+    "description": "An archetypical culture: urban environment, bureaucratic organization, academic upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Urban",
+      "organization": "Bureaucratic",
+      "upbringing": "Academic"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "criminal-gang",
+    "name": "Criminal gang",
+    "summary": "An archetypical culture: urban environment, communal organization, lawless upbringing.",
+    "description": "An archetypical culture: urban environment, communal organization, lawless upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Urban",
+      "organization": "Communal",
+      "upbringing": "Lawless"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "farming-village",
+    "name": "Farming village",
+    "summary": "An archetypical culture: rural environment, bureaucratic organization, labor upbringing.",
+    "description": "An archetypical culture: rural environment, bureaucratic organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Rural",
+      "organization": "Bureaucratic",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "herding-community",
+    "name": "Herding community",
+    "summary": "An archetypical culture: nomadic environment, communal organization, labor upbringing.",
+    "description": "An archetypical culture: nomadic environment, communal organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Nomadic",
+      "organization": "Communal",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "knightly-order",
+    "name": "Knightly order",
+    "summary": "An archetypical culture: secluded environment, bureaucratic organization, martial upbringing.",
+    "description": "An archetypical culture: secluded environment, bureaucratic organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Secluded",
+      "organization": "Bureaucratic",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "laborer-neighborhood",
+    "name": "Laborer neighborhood",
+    "summary": "An archetypical culture: urban environment, communal organization, labor upbringing.",
+    "description": "An archetypical culture: urban environment, communal organization, labor upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Urban",
+      "organization": "Communal",
+      "upbringing": "Labor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "mercenary-band",
+    "name": "Mercenary band",
+    "summary": "An archetypical culture: nomadic environment, bureaucratic organization, martial upbringing.",
+    "description": "An archetypical culture: nomadic environment, bureaucratic organization, martial upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Nomadic",
+      "organization": "Bureaucratic",
+      "upbringing": "Martial"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "merchant-caravan",
+    "name": "Merchant caravan",
+    "summary": "An archetypical culture: nomadic environment, bureaucratic organization, creative upbringing.",
+    "description": "An archetypical culture: nomadic environment, bureaucratic organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Nomadic",
+      "organization": "Bureaucratic",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "monastic-order",
+    "name": "Monastic order",
+    "summary": "An archetypical culture: secluded environment, bureaucratic organization, academic upbringing.",
+    "description": "An archetypical culture: secluded environment, bureaucratic organization, academic upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Secluded",
+      "organization": "Bureaucratic",
+      "upbringing": "Academic"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "noble-house",
+    "name": "Noble house",
+    "summary": "An archetypical culture: urban environment, bureaucratic organization, noble upbringing.",
+    "description": "An archetypical culture: urban environment, bureaucratic organization, noble upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Urban",
+      "organization": "Bureaucratic",
+      "upbringing": "Noble"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "outlaw-band",
+    "name": "Outlaw band",
+    "summary": "An archetypical culture: wilderness environment, communal organization, lawless upbringing.",
+    "description": "An archetypical culture: wilderness environment, communal organization, lawless upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Wilderness",
+      "organization": "Communal",
+      "upbringing": "Lawless"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pirate-crew",
+    "name": "Pirate crew",
+    "summary": "An archetypical culture: nomadic environment, communal organization, lawless upbringing.",
+    "description": "An archetypical culture: nomadic environment, communal organization, lawless upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Nomadic",
+      "organization": "Communal",
+      "upbringing": "Lawless"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "telepathic-hive",
+    "name": "Telepathic hive",
+    "summary": "An archetypical culture: secluded environment, communal organization, creative upbringing.",
+    "description": "An archetypical culture: secluded environment, communal organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Secluded",
+      "organization": "Communal",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "traveling-entertainers",
+    "name": "Traveling entertainers",
+    "summary": "An archetypical culture: nomadic environment, communal organization, creative upbringing.",
+    "description": "An archetypical culture: nomadic environment, communal organization, creative upbringing.",
+    "properties": {
+      "type": "culture",
+      "kind": "archetypical culture",
+      "environment": "Nomadic",
+      "organization": "Communal",
+      "upbringing": "Creative"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  }
+]

@@ -26,7 +26,7 @@ Chronicle's Rules page opens the package as a handbook you turn the pages of. Th
 - **Hero sheet**: a read-only hero sheet, synced from Foundry VTT.
 - **DM Screen**: Stamina, Recoveries, the heroic resource and current conditions for each hero.
 - **Page types**: Hero and Creature types that sync with Foundry VTT actors through the [Chronicle Sync module](https://github.com/keyxmakerx/Chronicle-Foundry-Module).
-- **Reference data**: 519 hero abilities, 12 ancestries, 21 kits, 57 skills, 65 glossary entries, the negotiation rules, 1,606 creature abilities (1,555 of them from the Monsters book), the Monsters book's 394 stat blocks (named villains left out, see `data/NOTICE.md`) and 35 example creatures written for this package.
+- **Reference data**: 519 hero abilities, 12 ancestries, 21 kits, 18 careers, 9 classes, 40 cultures and culture aspects, 100 complications, 57 skills, 65 glossary entries, the negotiation rules, 1,606 creature abilities (1,555 of them from the Monsters book), the Monsters book's 394 stat blocks (named villains left out, see `data/NOTICE.md`) and 35 example creatures written for this package.
 
 ## Install
 
@@ -72,7 +72,7 @@ material. See [LICENSE](LICENSE) for the full statement and
 [data/NOTICE.md](data/NOTICE.md) for the file-by-file attribution.
 
 **The Draw Steel rules text in `data/`** — glossary, skills, ancestries, kits,
-abilities, ability keywords, the ancestry point-buy, the monster-making and
+careers, classes, cultures, complications, abilities, ability keywords, the ancestry point-buy, the monster-making and
 encounter-building formulas, the animal traits, and the negotiation rules — is reproduced under MCDM's
 **DRAW STEEL Creator License**. It is *not* Creative Commons material: MCDM has not
 released Draw Steel under any CC licence, and there is no Draw Steel SRD.
