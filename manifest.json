@@ -1007,7 +1007,7 @@
     {
       "slug": "rulebook-frontpage",
       "name": "Rulebook Front Page",
-      "description": "The dynamic rulebook's editorial front page \u2014 hero Power Roll block, characteristic cards with fold-out wings, condition flap rows, and the Lich's Lair worked-scene hub. Best placed on a campaign dashboard or a dedicated 'Rules' page.",
+      "description": "The dynamic rulebook's editorial front page \u2014 hero Power Roll block, characteristic cards with fold-out wings, condition flap rows, and the Lich's Lair worked-scene hub. Best placed on a campaign dashboard or a dedicated 'Rules' page. Inside a Handbook page it shows only the Lich's Lair, as a pop-up book.",
       "icon": "fa-book-open",
       "script_file": "widgets/rulebook-frontpage.js",
       "config": [
