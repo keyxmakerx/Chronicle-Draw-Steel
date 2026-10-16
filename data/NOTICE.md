@@ -50,11 +50,21 @@ The files consulted for `careers.json`, `classes.json`, `cultures.json` and
 `Rules/Cultures/{Environments,Organization,Upbringing}/*.md` (13 files) with the
 two sample-culture tables in `Rules/Chapters/Background.md`, and
 `Rules/Complications/*.md` (100 files). They were converted mechanically; links
-and bold or italic markers are stripped and the text is otherwise as printed. Unlike
-`ancestries.json`, the career, culture and complication introductions are
-reproduced as printed rather than rewritten, so a few of them name setting places
-or peoples (for example the Hawklords in *Hawk Rider*, or Capital in the Urban
-culture). The Steel Compendium file for Sailor prints its six inciting incidents
+and bold or italic markers are stripped and the text is otherwise as printed. These
+files follow the same setting-material rule as the ancestries: a sentence that
+names a setting character, place, god or in-world people is dropped, or its
+proper noun replaced by a neutral phrase, with the mechanics kept complete and the
+change recorded in the entry's `properties.omissions`. Affected entries:
+`complications.json` Hawk Rider (the riders who keep giant hawks), Infernal
+Contract (the place the archdevil sends its servants), Refugee (a named
+conqueror), Shadow Born (the ruler of the dusk land and a chapter pointer),
+War Dog Collar (the owner of the war dogs), Exile and Ivory Tower (a pointer
+naming the setting world); `cultures.json` Urban environment (a named city);
+`classes.json` Shadow and Troubadour (the epigraph quotations and their
+attributions). Language names, the word "timescape", and ancestry and monster
+names used as mechanics stay. The names of Prisoner of the Synlirii and
+Wodewalker, which are the complications' own titles, stay as printed. The Steel
+Compendium file for Sailor prints its six inciting incidents
 as one paragraph without the d6 numbers; they are numbered 1 to 6 in the order
 printed. Class entries do not copy ability text (see `abilities.json`) or the
 deity and domain lists; a conduit's subclass is its pair of domains, so the twelve

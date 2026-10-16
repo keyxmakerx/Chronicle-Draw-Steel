@@ -44,14 +44,18 @@
   {
     "slug": "urban-environment",
     "name": "Urban environment",
-    "summary": "An urban culture is always centered in a city. Such a culture might arise within the walls of Capital, a massive metropolis with a cosmopolitan population; within a network of caverns that hold an underground city; or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
-    "description": "An urban culture is always centered in a city. Such a culture might arise within the walls of Capital, a massive metropolis with a cosmopolitan population; within a network of caverns that hold an underground city; or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
+    "summary": "An urban culture is always centered in a city. Such a culture might arise within a network of caverns that hold an underground city, or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
+    "description": "An urban culture is always centered in a city. Such a culture might arise within a network of caverns that hold an underground city, or in any other place where a large population lives relatively close together. The people of urban cultures often learn to effectively misdirect others in order to navigate the crowds and the political machinations that can come with city life.",
     "properties": {
       "type": "culture",
       "kind": "culture aspect",
       "aspect": "environment",
       "skill_options_quick_build": "Alertness",
-      "skill_options": "One skill from the interpersonal or intrigue skill groups."
+      "skill_options": "One skill from the interpersonal or intrigue skill groups.",
+      "omissions": [
+        "The clause naming a setting city as an example is not reproduced; the description is otherwise complete."
+      ],
+      "provenance_display": "omissions — The clause naming a setting city as an example is not reproduced; the description is otherwise complete."
     },
     "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
   },

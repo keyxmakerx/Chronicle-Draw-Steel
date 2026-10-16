@@ -96,7 +96,8 @@
         { "key": "recoveries", "label": "Recoveries", "type": "number" },
         { "key": "skills", "label": "Skills", "type": "string" },
         { "key": "subclass_type", "label": "Subclass Type", "type": "string" },
-        { "key": "subclasses_display", "label": "Subclasses", "type": "string" }
+        { "key": "subclasses_display", "label": "Subclasses", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -109,7 +110,8 @@
         { "key": "environment", "label": "Environment", "type": "string" },
         { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "upbringing", "label": "Upbringing", "type": "string" },
-        { "key": "skill_options", "label": "Skill Options", "type": "string" }
+        { "key": "skill_options", "label": "Skill Options", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {
@@ -121,7 +123,8 @@
         { "key": "drawback", "label": "Drawback", "type": "string" },
         { "key": "benefit_and_drawback", "label": "Benefit and Drawback", "type": "string" },
         { "key": "special", "label": "Special", "type": "string" },
-        { "key": "details_display", "label": "Details", "type": "string" }
+        { "key": "details_display", "label": "Details", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
     {

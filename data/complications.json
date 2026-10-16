@@ -279,8 +279,12 @@
     "summary": "Whether you're a convicted criminal, a noble stripped of their title, or a person who made one too many enemies, you've been cast forth from your homeland, never to return. At least not until you're strong enough to set things right.",
     "description": "Whether you're a convicted criminal, a noble stripped of their title, or a person who made one too many enemies, you've been cast forth from your homeland, never to return. At least not until you're strong enough to set things right.",
     "properties": {
-      "benefit": "You know one extant language of your choice (see Languages in Orden in Chapter 4: Background).",
-      "drawback": "If any NPC from your homeland recognizes you, whether in your homeland or elsewhere, they attempt to harm you at the Director's discretion."
+      "benefit": "You know one extant language of your choice.",
+      "drawback": "If any NPC from your homeland recognizes you, whether in your homeland or elsewhere, they attempt to harm you at the Director's discretion.",
+      "omissions": [
+        "The cross-reference naming the setting world is not reproduced; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The cross-reference naming the setting world is not reproduced; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -441,11 +445,15 @@
   {
     "slug": "hawk-rider",
     "name": "Hawk Rider",
-    "summary": "You travel with a giant hawk who you stole from the Hawklords (see Vasloria in Chapter 1: The Basics). You might once have been a Hawklord yourself, or perhaps you escaped their captivity. Having a giant hawk companion comes with its share of inconveniences and dangers, but those are a small price to pay for the freedom of the open sky.",
-    "description": "You travel with a giant hawk who you stole from the Hawklords (see Vasloria in Chapter 1: The Basics). You might once have been a Hawklord yourself, or perhaps you escaped their captivity. Having a giant hawk companion comes with its share of inconveniences and dangers, but those are a small price to pay for the freedom of the open sky.",
+    "summary": "You travel with a giant hawk who you stole from the riders who kept it. You might once have been one of those riders yourself, or perhaps you escaped their captivity. Having a giant hawk companion comes with its share of inconveniences and dangers, but those are a small price to pay for the freedom of the open sky.",
+    "description": "You travel with a giant hawk who you stole from the riders who kept it. You might once have been one of those riders yourself, or perhaps you escaped their captivity. Having a giant hawk companion comes with its share of inconveniences and dangers, but those are a small price to pay for the freedom of the open sky.",
     "properties": {
-      "benefit": "As long as you are not in a building or other structure, you can spend 1 uninterrupted minute to summon your giant hawk (see the Humans entry in [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)), which acts as your mount. You can dismiss the hawk at any time (no action required). The hawk won't go inside buildings, dungeons, or other structures, and it won't accept anyone but you as a rider. If the hawk takes damage or dies, you can restore them to full Stamina as a respite activity.",
-      "drawback": "People aware of the origin of your mount are afraid to interact with you, since they worry the Hawklords will come after them by association. You take a bane on any test made to influence anyone who knows of the Hawklords and who has observed you with your giant hawk. Such people might also report you to the Hawklords, who come looking for you at the Director's discretion."
+      "benefit": "As long as you are not in a building or other structure, you can spend 1 uninterrupted minute to summon your giant hawk (see the Humans entry in Draw Steel: Monsters), which acts as your mount. You can dismiss the hawk at any time (no action required). The hawk won't go inside buildings, dungeons, or other structures, and it won't accept anyone but you as a rider. If the hawk takes damage or dies, you can restore them to full Stamina as a respite activity.",
+      "drawback": "People aware of the origin of your mount are afraid to interact with you, since they worry those riders will come after them by association. You take a bane on any test made to influence anyone who knows of those riders and who has observed you with your giant hawk. Such people might also report you to those riders, who come looking for you at the Director's discretion.",
+      "omissions": [
+        "The setting name of the riders who keep giant hawks and the cross-reference to the setting chapter are replaced with the neutral phrase \"those riders\"; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The setting name of the riders who keep giant hawks and the cross-reference to the setting chapter are replaced with the neutral phrase \"those riders\"; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -507,11 +515,15 @@
   {
     "slug": "infernal-contract",
     "name": "Infernal Contract",
-    "summary": "You made a deal (perhaps unknowingly) with an archdevil that has tied you to that fiend's service. When you first learned of this deal, you were taken to the Seven Cities of Hell, where some of the timescape's best minds taught you the ways of battle. The archdevil allows you to use these gifts as you will... until they require a favor from you.",
-    "description": "You made a deal (perhaps unknowingly) with an archdevil that has tied you to that fiend's service. When you first learned of this deal, you were taken to the Seven Cities of Hell, where some of the timescape's best minds taught you the ways of battle. The archdevil allows you to use these gifts as you will... until they require a favor from you.",
+    "summary": "You made a deal (perhaps unknowingly) with an archdevil that has tied you to that fiend's service. When you first learned of this deal, you were taken to a place where some of the timescape's best minds taught you the ways of battle. The archdevil allows you to use these gifts as you will... until they require a favor from you.",
+    "description": "You made a deal (perhaps unknowingly) with an archdevil that has tied you to that fiend's service. When you first learned of this deal, you were taken to a place where some of the timescape's best minds taught you the ways of battle. The archdevil allows you to use these gifts as you will... until they require a favor from you.",
     "properties": {
       "benefit": "Whenever you are present for a battle in which both sides have creatures who aren't surprised, your side determines who goes first if the d10 roll is a 4 or higher (see Combat Round in Chapter 10: Combat).",
-      "drawback": "The archdevil occasionally asks you to defeat enemies on their behalf. If you refuse, your fiendish patron sends devils after you and those you care about."
+      "drawback": "The archdevil occasionally asks you to defeat enemies on their behalf. If you refuse, your fiendish patron sends devils after you and those you care about.",
+      "omissions": [
+        "The name of the place where the archdevil sends its servants is setting material and is replaced with \"a place\"; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The name of the place where the archdevil sends its servants is setting material and is replaced with \"a place\"; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -521,8 +533,12 @@
     "summary": "You studied in an academy or other educational institution. Your training was thorough and your reading list was wide-ranging. But when you left school, you discovered there were serious gaps in your education. Maybe some of those books were a little out of date.",
     "description": "You studied in an academy or other educational institution. Your training was thorough and your reading list was wide-ranging. But when you left school, you discovered there were serious gaps in your education. Maybe some of those books were a little out of date.",
     "properties": {
-      "benefit": "You have three skills of your choice, and you know one dead language of your choice (see Languages in Orden in Chapter 4: Background).",
-      "drawback": "The Director chooses one of the skills you have from this complication. You lose that skill and can't ever learn it again. Additionally, you take a bane on any test to which that skill would apply."
+      "benefit": "You have three skills of your choice, and you know one dead language of your choice.",
+      "drawback": "The Director chooses one of the skills you have from this complication. You lose that skill and can't ever learn it again. Additionally, you take a bane on any test to which that skill would apply.",
+      "omissions": [
+        "The cross-reference naming the setting world is not reproduced; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The cross-reference naming the setting world is not reproduced; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -562,8 +578,8 @@
   {
     "slug": "lost-your-head",
     "name": "Lost Your Head",
-    "summary": "A bredbeddle stole your head! Usually, being beheaded by one of those magical giants is fatal (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)), but your latent psionic ability allows you to survive despite your decapitation.",
-    "description": "A bredbeddle stole your head! Usually, being beheaded by one of those magical giants is fatal (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)), but your latent psionic ability allows you to survive despite your decapitation.",
+    "summary": "A bredbeddle stole your head! Usually, being beheaded by one of those magical giants is fatal (see Draw Steel: Monsters), but your latent psionic ability allows you to survive despite your decapitation.",
+    "description": "A bredbeddle stole your head! Usually, being beheaded by one of those magical giants is fatal (see Draw Steel: Monsters), but your latent psionic ability allows you to survive despite your decapitation.",
     "properties": {
       "benefit": "You have the following ability.\n\nShare Head\n\nYou don't have a head, but you can psionically borrow another.\n\nPsionic, Ranged · Maneuver\nRanged 10 · One willing creature\n\nEffect: You can see, hear, and smell as if you were in the target's space. Additionally, you can borrow their mouth to speak when you wish to do so, speaking in your own voice. This effect ends when you use Share Head on a different target, when the target moves more than 10 squares away from you, or when the target is no longer willing to share their head with you.",
       "drawback": "Having no head, you can't see, hear, smell, taste, or verbalize except by using the Share Head ability. Additionally, you can't wear gear that requires a head, such as a helmet or hat."
@@ -609,7 +625,7 @@
     "summary": "You're not sure what you did to deserve it, but for some reason, your family saddled you with an old, trusted, and extremely irritating family servant. They're supremely competent, of course, but they sometimes seem to forget who's in charge.",
     "description": "You're not sure what you did to deserve it, but for some reason, your family saddled you with an old, trusted, and extremely irritating family servant. They're supremely competent, of course, but they sometimes seem to forget who's in charge.",
     "properties": {
-      "benefit": "You have a retainer, in addition to any followers you acquire through Renown or other means. As usual, you can have only one retainer in your service at a time. (See Renown in Chapter 13: Rewards and Retainers in [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)).",
+      "benefit": "You have a retainer, in addition to any followers you acquire through Renown or other means. As usual, you can have only one retainer in your service at a time. (See Renown in Chapter 13: Rewards and Retainers in Draw Steel: Monsters).",
       "drawback": "Outside of combat, your retainer is under the Director's control. The retainer sometimes acts without orders—always with your best interests at heart, but often in embarrassing or inconvenient ways."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
@@ -703,8 +719,8 @@
   {
     "slug": "prisoner-of-the-synlirii",
     "name": "Prisoner of the Synlirii",
-    "summary": "You were captured by the psionic beings known as voiceless talkers (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)). You escaped them, but you can't escape a feeling that's lingered since then in the back of your mind-the feeling of being watched.",
-    "description": "You were captured by the psionic beings known as voiceless talkers (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)). You escaped them, but you can't escape a feeling that's lingered since then in the back of your mind-the feeling of being watched.",
+    "summary": "You were captured by the psionic beings known as voiceless talkers (see Draw Steel: Monsters). You escaped them, but you can't escape a feeling that's lingered since then in the back of your mind-the feeling of being watched.",
+    "description": "You were captured by the psionic beings known as voiceless talkers (see Draw Steel: Monsters). You escaped them, but you can't escape a feeling that's lingered since then in the back of your mind-the feeling of being watched.",
     "properties": {
       "benefit": "You can telepathically communicate with any creature within 10 squares of you if they share a language with you and you know of each other. A creature you communicate with this way can respond telepathically if they choose.",
       "drawback": "Any voiceless talker within 1 mile knows your location, and can overhear and understand your telepathic conversations."
@@ -747,11 +763,15 @@
   {
     "slug": "refugee",
     "name": "Refugee",
-    "summary": "A hostile army—perhaps the forces of Ajax, the Iron Saint—conquered your homeland. Your family escaped, but you can't return home until your oppressors are defeated once and for all.",
-    "description": "A hostile army—perhaps the forces of Ajax, the Iron Saint—conquered your homeland. Your family escaped, but you can't return home until your oppressors are defeated once and for all.",
+    "summary": "A hostile army conquered your homeland. Your family escaped, but you can't return home until your oppressors are defeated once and for all.",
+    "description": "A hostile army conquered your homeland. Your family escaped, but you can't return home until your oppressors are defeated once and for all.",
     "properties": {
       "benefit": "When your family fled your homeland, they left their most valuable asset behind. Work with the Director to determine whether this asset is a trinket or leveled treasure, several points of Wealth, the project source to create a treasure, or the like. This asset is in the hands of the invaders but can be won back as the Director determines.",
-      "drawback": "The faction that invaded your homeland wants you captured or dead. Any of their agents or sympathizers attempt to harm you if they recognize you, as the Director determines."
+      "drawback": "The faction that invaded your homeland wants you captured or dead. Any of their agents or sympathizers attempt to harm you if they recognize you, as the Director determines.",
+      "omissions": [
+        "The aside naming a setting character as a possible conqueror is not reproduced; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The aside naming a setting character as a possible conqueror is not reproduced; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -845,11 +865,15 @@
   {
     "slug": "shadow-born",
     "name": "Shadow Born",
-    "summary": "You were born in the dusk land ruled by the Queen of Shadows, and its darkness has seeped into your bones. (See The Myriad Worlds of the Timescape in Chapter 1: The Basics.)",
-    "description": "You were born in the dusk land ruled by the Queen of Shadows, and its darkness has seeped into your bones. (See The Myriad Worlds of the Timescape in Chapter 1: The Basics.)",
+    "summary": "You were born in a dusk land of shadow, and its darkness has seeped into your bones.",
+    "description": "You were born in a dusk land of shadow, and its darkness has seeped into your bones.",
     "properties": {
       "benefit": "Whenever you start your turn with concealment, you gain 1 surge.",
-      "drawback": "You have holy weakness 5."
+      "drawback": "You have holy weakness 5.",
+      "omissions": [
+        "The name of the ruler of the dusk land and the cross-reference to the setting chapter are not reproduced; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The name of the ruler of the dusk land and the cross-reference to the setting chapter are not reproduced; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -1021,11 +1045,15 @@
   {
     "slug": "war-dog-collar",
     "name": "War Dog Collar",
-    "summary": "You wear a loyalty collar from one of Ajax's war dogs (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)). You've managed to rig the collar so it explodes outward while keeping you safe.",
-    "description": "You wear a loyalty collar from one of Ajax's war dogs (see [Draw Steel: Monsters](https://mcdm.gg/DS-Monsters)). You've managed to rig the collar so it explodes outward while keeping you safe.",
+    "summary": "You wear a loyalty collar from one of the war dogs (see Draw Steel: Monsters). You've managed to rig the collar so it explodes outward while keeping you safe.",
+    "description": "You wear a loyalty collar from one of the war dogs (see Draw Steel: Monsters). You've managed to rig the collar so it explodes outward while keeping you safe.",
     "properties": {
       "benefit": "Even if you are a war dog yourself, other war dogs can't use their Posthumous Promotion ability on you while you wear your collar. Additionally, you have the following ability.\n\nPosthumous Retirement\n\nYou make your modified collar explode.\n\nArea, Magic · Maneuver\n1 burst · Each enemy in the area\n\nEffect: Your loyalty collar detonates, dealing fire damage equal to 5 plus your level to each target. Once you use this ability, you can't use it again until you spend 1 uninterrupted minute out of combat resetting the collar.",
-      "drawback": "Each time you use your Posthumous Retirement ability, the Director can spend 3 Malice to make your collar malfunction and deal its damage to you in addition to the usual targets."
+      "drawback": "Each time you use your Posthumous Retirement ability, the Director can spend 3 Malice to make your collar malfunction and deal its damage to you in addition to the usual targets.",
+      "omissions": [
+        "The name of the setting character whose war dogs wear the collar is not reproduced; the mechanics are complete."
+      ],
+      "provenance_display": "omissions — The name of the setting character whose war dogs wear the collar is not reproduced; the mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium"
   },
