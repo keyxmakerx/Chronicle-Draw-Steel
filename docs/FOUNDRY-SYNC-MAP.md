@@ -140,7 +140,8 @@ Other item collections are projected the same way:
 
 There is **no single scalar** for conditions. Active conditions come from the actor's
 core `statuses` Set, mapped to `conditions_json` and pull-only: derived combat state,
-not a worldbuilding field to push. The sheet shows each status id Title-cased.
+not a worldbuilding field to push. The sheet shows each status id Title-cased. A player's play edit of
+`conditions_json` is still written to Foundry (`play.to_foundry` in the manifest).
 
 ---
 
@@ -209,8 +210,9 @@ that route gets no creature sync.
 
 A value with no matching Foundry key (an organization of Swarm, a keyword the system
 doesn't list) is left unset rather than guessed. Not mapped yet: winded (Foundry
-derives it), immunities and weaknesses (Foundry stores a number per damage type),
-traits, abilities and villain actions (Foundry stores these as items).
+derives it), immunities and weaknesses (Foundry stores a number per damage type)
+and traits. Abilities and villain actions become Draw Steel ability items; the
+module's `.ai.md` creature-sync row says how.
 `book_source`, the Monsters book entry a page was copied from, is Chronicle-only
 and has no Foundry path. Neither has the token picture (`token_image`, a media
 id): a Chronicle media link needs signing, so the Chronicle Sync module fetches
