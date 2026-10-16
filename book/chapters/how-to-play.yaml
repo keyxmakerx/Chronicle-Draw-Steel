@@ -4,8 +4,9 @@ pages:
   - title: Start here
     blocks:
       - text: |
-          This handbook has a chapter for each part of the game. The tabs
-          along the top go straight to the ones you will use most. The
+          This handbook has a chapter for each part of the game. The
+          Sections ribbon at the top of the book goes straight to any of
+          them. The
           Player screen ribbon under the top bar, or the P key, drops the
           rules you need mid-fight over whatever page you are on.
 
@@ -48,3 +49,13 @@ pages:
             text: 12 to 16. A solid result.
           - label: Tier 3
             text: 17 or higher. The strongest result.
+  - title: Watch a game
+    blocks:
+      - text: |
+          Rules make more sense once you see them at a table. Open the pop-up
+          book to watch four heroes raid a lich's barrow, one part at a time,
+          from bursting the door to the fight with the lich and what the
+          heroes earn afterwards. Every roll is shown, and each part lists the
+          rules it uses.
+      - type: widget
+        widget: rulebook-frontpage

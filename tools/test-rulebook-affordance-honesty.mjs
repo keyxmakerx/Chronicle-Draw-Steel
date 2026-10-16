@@ -30,7 +30,8 @@ const frontpage = readFileSync(W('rulebook-frontpage.js'), 'utf8');
 const engine = readFileSync(W('rulebook-fold-engine.js'), 'utf8');
 const player = readFileSync(W('rulebook-example-player.js'), 'utf8');
 
-// Attributes the engine or player genuinely bind a listener to.
+// Attributes the engine or player genuinely bind a listener to, plus the
+// data-ll-* ones the front page's own Lair pop-up book binds in the Handbook.
 function boundAttributes() {
   const found = new Set();
   // Any quoted selector argument containing [data-rb...] counts: the engine
@@ -43,6 +44,9 @@ function boundAttributes() {
     let m;
     while ((m = re.exec(src)) !== null) found.add(m[1]);
   }
+  const own = /closest\('\[(data-ll-[a-z-]*)\]'\)/g;
+  let m;
+  while ((m = own.exec(frontpage)) !== null) found.add(m[1]);
   return found;
 }
 

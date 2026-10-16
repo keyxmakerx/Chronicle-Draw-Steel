@@ -987,11 +987,278 @@
     return { html: html, scene: scene };
   }
 
+  // ── the Lich's Lair inside the Handbook ─────────────────────────────────
+
+  // Inside a Handbook page the widget is only the Lich's Lair, as a closed
+  // pop-up book on the page: the Handbook already carries the rest of the
+  // front page. Opening it lays a board over the reader with a chip per part;
+  // the example player draws and plays each part, and this view only builds
+  // the board, opens and shuts it and hands the player the scene. Every line
+  // and number in the scene is sample play written for this package.
+  var LAIR_SLUG = 'worked-scene-lichs-lair';
+  var LL_FADE_MS = 320;
+  var LL_D = '"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif';
+  var LL_U = '"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif';
+  var LL_B = '"Source Serif 4",Georgia,"Times New Roman",serif';
+  function calm() {
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  // The tile is the signed Handbook's closed pop-up book card; the board
+  // carries the player's --rb-* tokens, since its scripts are styled by them.
+  function lairCss() {
+    return [
+      '.ll-card{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;width:100%;margin:14px 0;' +
+        'padding:14px;background:#232833;color:#f4f1ea;border-radius:4px;transition:transform .2s;font:16px/1.45 ' + LL_B + '}',
+      '.ll-card:hover{transform:translateY(-2px) rotate(-.4deg)}',
+      '.ll-card:focus-visible{outline:3px solid #e1a32c;outline-offset:3px}',
+      '.ll-card small{font:700 11px/1 ' + LL_U + ';letter-spacing:.2em;text-transform:uppercase;color:#e1a32c}',
+      '.ll-card b{display:block;font:900 26px/.95 ' + LL_D + ';text-transform:uppercase;margin:4px 0 6px}',
+      '.ll-card span.ll-d{display:block;font-size:14px;color:#cfd3dc}',
+      '.ll-card i{display:block;margin-top:8px;font:700 12px/1 ' + LL_U + ';letter-spacing:.12em;text-transform:uppercase;color:#e1a32c;font-style:normal}',
+      '.ll-mini{width:96px;aspect-ratio:3/4;border-radius:2px 5px 5px 2px;background:linear-gradient(135deg,#2f6b4f,#163626);' +
+        'box-shadow:inset 5px 0 0 #0e2219,0 6px 10px rgba(0,0,0,.4);display:grid;place-items:center;position:relative}',
+      '.ll-mini::after{content:"";position:absolute;inset:6px 6px 6px 10px;border:1.5px solid #e9b84a;border-radius:2px}',
+      '.ll-mini svg{width:52%}',
+      '.ll-problem{font:italic 15px/1.5 ' + LL_B + ';opacity:.8;margin:14px 0}',
+      '.ll-veil{position:fixed;inset:0;z-index:9998;background:rgba(8,10,14,.62);opacity:0;transition:opacity .35s}',
+      '.ll-veil.ll-on{opacity:1}',
+      '.ll-board{--rb-bg:#1a1e27;--rb-box:#232833;--rb-box2:#2c3240;--rb-box3:#3a4252;--rb-edge:#3a414e;--rb-edge2:#2c3340;' +
+        '--rb-ink:#f4f1ea;--rb-ink2:#d6dae3;--rb-mut:#a7afbd;--rb-mut2:#7c8597;--rb-pur:#a184e6;--rb-grn:#4fc0bf;--rb-gold:#f0bb4f;' +
+        '--rb-combat:#f0a12e;--rb-spring:cubic-bezier(.34,1.3,.4,1);' +
+        'position:fixed;z-index:9999;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,calc(100vw - 24px));' +
+        'height:min(860px,calc(100vh - 24px));display:flex;flex-direction:column;overflow:hidden;background:var(--rb-box);color:var(--rb-ink);' +
+        'border-radius:6px;box-shadow:0 30px 70px rgba(0,0,0,.5);opacity:0;transition:opacity .3s;font:15px/1.5 ' + LL_B + ';text-align:left}',
+      '.ll-board.ll-on{opacity:1}',
+      '.ll-board *,.ll-board *::before,.ll-board *::after{box-sizing:border-box}',
+      '.ll-board button{font:inherit;color:inherit}',
+      '.ll-head{flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:3px solid #2f6b4f}',
+      '.ll-head h2{flex:1;min-width:0;margin:0;font:900 22px/1 ' + LL_D + ';text-transform:uppercase;letter-spacing:.02em;color:inherit}',
+      '.ll-head h2 small{display:block;font:700 11px/1 ' + LL_U + ';letter-spacing:.2em;text-transform:uppercase;color:#7fd1a8;margin-bottom:4px}',
+      '.ll-ib{all:unset;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:3px;font:700 16px/1 ' + LL_U + ';background:rgba(255,255,255,.08)}',
+      '.ll-ib:hover,.ll-ib:focus-visible{background:rgba(255,255,255,.18)}.ll-ib:focus-visible{outline:3px solid #e1a32c;outline-offset:2px}',
+      '.ll-parts{flex:none;display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--rb-edge2);overflow-x:auto;scrollbar-width:none}',
+      '.ll-parts::-webkit-scrollbar{display:none}',
+      '.ll-board .ll-chip{flex:0 0 auto;cursor:pointer;border:1px solid var(--rb-edge);background:var(--rb-box2);color:var(--rb-ink2);' +
+        'border-radius:3px;padding:6px 10px;font:700 12px/1 ' + LL_U + ';letter-spacing:.08em;text-transform:uppercase}',
+      '.ll-board .ll-chip:hover{border-color:var(--rb-combat)}',
+      '.ll-board .ll-chip[aria-current]{background:var(--rb-combat);border-color:var(--rb-combat);color:#1b1206}',
+      '.ll-board .ll-chip:focus-visible{outline:3px solid #e1a32c;outline-offset:2px}',
+      '.ll-body{flex:1 1 auto;min-height:0;overflow:auto;overflow-x:hidden}',
+      '.ll-body>.rbx-script{margin:12px 14px}',
+      '.ll-drw{display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap}',
+      '.ll-drw details{flex:1 1 240px;min-width:0;border:1px solid var(--rb-edge);border-radius:4px;background:var(--rb-box2)}',
+      '.ll-drw summary{cursor:pointer;padding:9px 12px;font:700 12px/1.2 ' + LL_U + ';letter-spacing:.12em;text-transform:uppercase;color:var(--rb-mut);list-style:none}',
+      '.ll-drw summary::-webkit-details-marker{display:none}',
+      '.ll-drw summary::after{content:"▾";float:right}.ll-drw details[open] summary::after{content:"▴"}',
+      '.ll-drw summary:focus-visible{outline:3px solid #e1a32c;outline-offset:-3px}',
+      '.ll-in{padding:0 12px 10px;font-size:13px;color:var(--rb-ink2)}',
+      '.ll-in .rbx-table,.ll-in .rbx-rip{margin-top:0;padding-top:0;border-top:0}',
+      '.ll-foot{flex:none;margin:0;padding:8px 14px;font:italic 12px/1.4 ' + LL_B + ';color:var(--rb-mut);border-top:1px solid var(--rb-edge2)}',
+      '@media (max-width:600px){.ll-card{grid-template-columns:64px 1fr}.ll-mini{width:64px}.ll-board{width:100vw;height:100%;border-radius:0}}'
+    ].join('\n');
+  }
+
+  function injectLairStyles() {
+    if (typeof document === 'undefined' || document.getElementById('ll-styles')) return;
+    var s = document.createElement('style');
+    s.id = 'll-styles';
+    s.textContent = lairCss();
+    document.head.appendChild(s);
+  }
+
+  var SKULL = '<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 4C11 4 6 10 6 18c0 5 2 8 5 10v6h18v-6c3-2 5-5 5-10 0-8-5-14-14-14z" ' +
+    'fill="#e9b84a" stroke="#0e2219" stroke-width="1.5"/><circle cx="14" cy="19" r="4" fill="#0e2219"/><circle cx="26" cy="19" r="4" fill="#0e2219"/>' +
+    '<path d="M18 27h4l-2-4z" fill="#0e2219"/></svg>';
+
+  function tileHTML(scene) {
+    return '<button type="button" class="ll-card" data-ll-open aria-haspopup="dialog"><span class="ll-mini" aria-hidden="true">' + SKULL + '</span>' +
+      '<span><small>Pop-up book · Worked scene</small><b>' + esc(scene.name) + '</b>' +
+      '<span class="ll-d">' + esc(scene.description) + '</span><i>Open the book →</i></span></button>';
+  }
+
+  // boardHTML follows the example player's DOM contract: a chip per part
+  // plays that part's script into its own container, and the two drawers
+  // are the table and the rules in play for the part on screen.
+  function boardHTML(scene, id) {
+    var p = scene.properties || {}, parts = isArr(p.parts) ? p.parts : [];
+    var chips = '', scripts = '';
+    for (var i = 0; i < parts.length; i++) {
+      var pt = parts[i] || {};
+      if (!pt.play) continue;
+      chips += '<button class="ll-chip" type="button" data-rbx-play="' + escAttr(pt.play) + '" title="' + escAttr(pt.note) + '">' + esc(pt.name) + '</button>';
+      scripts += '<div class="rbx-script" data-rbx-script="' + escAttr(pt.play) + '"></div>';
+    }
+    return '<div class="ll-head"><h2 id="' + escAttr(id) + '"><small>Pop-up book · Worked scene</small>' +
+        '<span data-rbx-board-title>' + esc(scene.name) + '</span></h2>' +
+        '<button class="ll-ib" type="button" data-rbx-board-replay aria-label="Replay this part">↻</button>' +
+        '<button class="ll-ib" type="button" data-ll-shut aria-label="Close the pop-up book">✕</button></div>' +
+      '<div class="ll-parts" role="group" aria-label="Parts">' + chips + '</div>' +
+      '<div class="ll-body">' + scripts +
+        '<div class="ll-drw"><details><summary>The table</summary><div class="ll-in" data-rbx-lair-table></div></details>' +
+        '<details><summary>Rules in this part</summary><div class="ll-in" data-rbx-lair-rules></div></details></div></div>' +
+      '<p class="ll-foot">The scene, its heroes, their lines and every number in it are sample play written for this book.</p>';
+  }
+
+  function LairBook(el, cid) {
+    this.el = el;
+    this.cid = cid;
+    this.timers = [];
+  }
+  LairBook.seq = 0;
+
+  LairBook.prototype.later = function (fn, ms) {
+    var self = this, t = window.setTimeout(function () {
+      self.timers = self.timers.filter(function (x) { return x !== t; });
+      fn();
+    }, ms);
+    this.timers.push(t);
+    return t;
+  };
+
+  LairBook.prototype.problem = function (text) {
+    this.el.innerHTML = '<p class="ll-problem">' + esc(text) + '</p>';
+  };
+
+  LairBook.prototype.mount = function () {
+    var self = this;
+    injectLairStyles();
+    if (!this.cid) { this.problem('The Lich’s Lair needs a campaign to read its scene from.'); return; }
+    if (typeof RulebookExamplePlayer === 'undefined' || !RulebookExamplePlayer || typeof RulebookExamplePlayer.mount !== 'function') {
+      this.problem('The Lich’s Lair could not find its scene player, so the book stays shut.');
+      return;
+    }
+    var fetchFn = (Chronicle && typeof Chronicle.apiFetch === 'function') ? Chronicle.apiFetch : fetch;
+    function get(file, optional) {
+      var p = fetchFn(dataUrl(file, self.cid)).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(unwrap);
+      return optional ? p.catch(function () { return []; }) : p;
+    }
+    this.el.innerHTML = '<p class="ll-problem">Opening the Lich’s Lair…</p>';
+    Promise.all([get('rulebook-frontpage.json'), get('rulebook-examples.json'), get('rules-glossary.json', true),
+      get('creatures.json', true), get('role-templates.json', true)]).then(function (res) {
+      if (!self.el) return;
+      var scene = null;
+      for (var i = 0; i < res[0].length; i++) if (res[0][i] && res[0][i].slug === LAIR_SLUG) scene = res[0][i];
+      if (!scene) throw new Error('no scene');
+      self.scene = scene;
+      self.examples = buildExamplesMap(res[1]);
+      self.refs = { glossary: res[2], creatures: res[3], roles: res[4], frontpage: res[0] };
+      self.lair = buildLairConfig(scene);
+      self.el.innerHTML = tileHTML(scene);
+      self.onPage = function (e) {
+        var b = e.target.closest && e.target.closest('[data-ll-open]');
+        if (b) self.open(b);
+      };
+      self.el.addEventListener('click', self.onPage);
+    }).catch(function () {
+      if (self.el) self.problem('The Lich’s Lair could not load its scene, so the book stays shut.');
+    });
+  };
+
+  LairBook.prototype.build = function () {
+    var self = this, id = 'll-t-' + (++LairBook.seq);
+    var b = this.board = document.createElement('div');
+    b.className = 'll-board';
+    b.setAttribute('role', 'dialog');
+    b.setAttribute('aria-modal', 'true');
+    b.setAttribute('aria-labelledby', id);
+    b.setAttribute('data-rbx-board', '');
+    b.hidden = true;
+    b.innerHTML = boardHTML(this.scene, id);
+    this.veil = document.createElement('div');
+    this.veil.className = 'll-veil';
+    this.veil.hidden = true;
+    document.body.appendChild(this.veil);
+    // The player looks for its board inside the root it is given, so the
+    // board gets a wrapper of its own to be found in.
+    this.wrap = document.createElement('div');
+    this.wrap.appendChild(b);
+    document.body.appendChild(this.wrap);
+    this.player = RulebookExamplePlayer.mount(this.wrap, { examples: this.examples, lair: this.lair, refs: this.refs });
+    this.veil.addEventListener('click', function () { self.close(); });
+    b.addEventListener('click', function (e) { if (e.target.closest('[data-ll-shut]')) self.close(); });
+    // Escape shuts the book; Tab stays inside it while it is open.
+    this.onKey = function (e) {
+      if (!self.board || self.board.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); self.close(); return; }
+      if (e.key !== 'Tab') return;
+      var f = [].filter.call(self.board.querySelectorAll('button, summary, [tabindex="0"]'), function (n) { return n.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', this.onKey, true);
+  };
+
+  // open shows the board with the book shut on its first part, then lets
+  // the player open it once the board has faded in.
+  LairBook.prototype.open = function (from) {
+    if ((this.board && !this.board.hidden) || this.shutting) return;
+    if (!this.board) this.build();
+    var self = this, first = this.lair.openOn;
+    this.opener = from || document.activeElement;
+    this.veil.hidden = false;
+    this.board.hidden = false;
+    if (first) this.player.play(first, { hold: true });
+    window.requestAnimationFrame(function () {
+      if (!self.board) return;
+      self.veil.classList.add('ll-on');
+      self.board.classList.add('ll-on');
+    });
+    this.board.querySelector('[data-ll-shut]').focus();
+    this.later(function () { if (first && self.board && !self.board.hidden) self.player.play(first); }, calm() ? 0 : LL_FADE_MS);
+  };
+
+  // close shuts the pop-up book first, then fades the board away.
+  LairBook.prototype.close = function () {
+    if (!this.board || this.board.hidden || this.shutting) return;
+    var self = this;
+    this.shutting = true;
+    var wait = calm() ? 0 : (this.player.shut() || 0);
+    this.later(function () {
+      self.board.classList.remove('ll-on');
+      self.veil.classList.remove('ll-on');
+      self.later(function () {
+        self.shutting = false;
+        self.player.stopAll();
+        self.player.collapseAll();
+        self.board.hidden = true;
+        self.veil.hidden = true;
+        var back = self.opener && document.contains(self.opener) ? self.opener : self.el && self.el.querySelector('[data-ll-open]');
+        if (back && typeof back.focus === 'function') back.focus();
+      }, calm() ? 0 : LL_FADE_MS);
+    }, wait);
+  };
+
+  LairBook.prototype.destroy = function () {
+    this.timers.forEach(function (t) { window.clearTimeout(t); });
+    this.timers = [];
+    if (this.onKey) document.removeEventListener('keydown', this.onKey, true);
+    if (this.onPage && this.el) this.el.removeEventListener('click', this.onPage);
+    if (this.player && typeof this.player.destroy === 'function') this.player.destroy();
+    if (this.wrap) this.wrap.remove();
+    if (this.veil) this.veil.remove();
+    this.board = this.wrap = this.veil = this.player = null;
+    if (this.el) this.el.innerHTML = '';
+    this.el = null;
+  };
+
   // ── widget registration ──────────────────────────────────────────────────
 
   Chronicle.register('rulebook-frontpage', {
     init: function (el, config) {
       var self = this;
+      if (el.closest && el.closest('.rb-wslot')) {
+        var c = config || {};
+        if (el.__ll) el.__ll.destroy();
+        el.__ll = new LairBook(el, c.campaign_id || c.campaignId || (el.dataset && el.dataset.campaignId) || '');
+        el.__ll.mount();
+        return;
+      }
       this.el = el;
       this.config = config || {};
       el.classList.add('rb-root');
@@ -1050,6 +1317,7 @@
     },
 
     destroy: function (el) {
+      if (el && el.__ll) { el.__ll.destroy(); el.__ll = null; return; }
       if (this._fold && typeof this._fold.destroy === 'function') {
         try { this._fold.destroy(); } catch (e) { /* ignore */ }
       }
@@ -1201,7 +1469,8 @@
       dataUrl: dataUrl, refBrowserUrl: refBrowserUrl,
       buildContent: buildContent, buildLairConfig: buildLairConfig,
       buildTile: buildTile, buildLair: buildLair, buildClosedBook: buildClosedBook, buildReader: buildReader,
-      richProse: richProse, esc: esc, escAttr: escAttr, css: css
+      richProse: richProse, esc: esc, escAttr: escAttr, css: css,
+      LairBook: LairBook, lairTileHTML: tileHTML, lairBoardHTML: boardHTML
     };
   }
 })();
