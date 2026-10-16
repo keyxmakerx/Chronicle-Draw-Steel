@@ -255,7 +255,26 @@
           "foundry_item_type": [
             "ancestry"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "play": {
+            "edit": "owner",
+            "kind": "choice",
+            "options": [
+              "Devil",
+              "Dragon Knight",
+              "Dwarf",
+              "Hakaan",
+              "High Elf",
+              "Human",
+              "Memonek",
+              "Orc",
+              "Polder",
+              "Revenant",
+              "Time Raider",
+              "Wode Elf"
+            ],
+            "max_length": 64
+          }
         },
         {
           "key": "culture",
@@ -265,7 +284,12 @@
           "foundry_item_type": [
             "culture"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "play": {
+            "edit": "owner",
+            "kind": "text",
+            "max_length": 64
+          }
         },
         {
           "key": "career",
@@ -275,7 +299,12 @@
           "foundry_item_type": [
             "career"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "play": {
+            "edit": "owner",
+            "kind": "text",
+            "max_length": 64
+          }
         },
         {
           "key": "level",
@@ -298,7 +327,35 @@
           "foundry_item_type": [
             "kit"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "play": {
+            "edit": "owner",
+            "kind": "choice",
+            "options": [
+              "Arcane Archer",
+              "Battlemind",
+              "Cloak and Dagger",
+              "Dual Wielder",
+              "Guisarmier",
+              "Martial Artist",
+              "Mountain",
+              "Panther",
+              "Pugilist",
+              "Raider",
+              "Ranger",
+              "Rapid-Fire",
+              "Retiarius",
+              "Shining Armor",
+              "Sniper",
+              "Spellsword",
+              "Stick and Robe",
+              "Swashbuckler",
+              "Sword and Board",
+              "Warrior Priest",
+              "Whirlwind"
+            ],
+            "max_length": 64
+          }
         },
         {
           "key": "faction",
@@ -351,7 +408,13 @@
           "key": "stamina_current",
           "label": "Current Stamina",
           "type": "number",
-          "foundry_path": "system.stamina.value"
+          "foundry_path": "system.stamina.value",
+          "play": {
+            "edit": "owner",
+            "kind": "counter",
+            "max_field": "stamina_max",
+            "step": 1
+          }
         },
         {
           "key": "winded",
@@ -363,7 +426,14 @@
           "key": "recoveries",
           "label": "Recoveries",
           "type": "number",
-          "foundry_path": "system.recoveries.value"
+          "foundry_path": "system.recoveries.value",
+          "play": {
+            "edit": "owner",
+            "kind": "counter",
+            "min": 0,
+            "max_field": "recoveries_max",
+            "step": 1
+          }
         },
         {
           "key": "recoveries_max",
@@ -408,19 +478,37 @@
           "key": "heroic_resource_current",
           "label": "Heroic Resource (current)",
           "type": "number",
-          "foundry_path": "system.hero.primary.value"
+          "foundry_path": "system.hero.primary.value",
+          "play": {
+            "edit": "owner",
+            "kind": "resource",
+            "min": 0,
+            "step": 1
+          }
         },
         {
           "key": "stamina_temporary",
           "label": "Temporary Stamina",
           "type": "number",
-          "foundry_path": "system.stamina.temporary"
+          "foundry_path": "system.stamina.temporary",
+          "play": {
+            "edit": "owner",
+            "kind": "counter",
+            "min": 0,
+            "step": 1
+          }
         },
         {
           "key": "surges",
           "label": "Surges",
           "type": "number",
-          "foundry_path": "system.hero.surges"
+          "foundry_path": "system.hero.surges",
+          "play": {
+            "edit": "owner",
+            "kind": "counter",
+            "min": 0,
+            "step": 1
+          }
         },
         {
           "key": "disengage",
@@ -684,7 +772,28 @@
           "label": "Conditions Data",
           "type": "string",
           "foundry_path": "statuses",
-          "foundry_writable": false
+          "foundry_writable": false,
+          "play": {
+            "edit": "owner",
+            "kind": "conditions",
+            "options": [
+              "frightened",
+              "dazed",
+              "slowed",
+              "restrained",
+              "weakened",
+              "bleeding",
+              "burning",
+              "taunted",
+              "prone",
+              "charmed",
+              "poisoned",
+              "grabbed",
+              "hidden",
+              "surprised"
+            ],
+            "to_foundry": true
+          }
         },
         {
           "key": "gm_notes",
