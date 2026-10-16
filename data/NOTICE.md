@@ -11,6 +11,10 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `skills.json` | Skill names and their uses | *Heroes Book* ch. 9 (Tests) |
 | `ancestries.json` | The twelve ancestries: signature traits, purchased traits, point costs, and granted abilities | *Heroes Book* ch. 3 (Ancestries) |
 | `kits.json` | The twenty-one kits: equipment, armor and weapon categories, Stamina/speed/stability/damage/distance/disengage bonuses, and signature abilities | *Heroes Book* ch. 6 (Kits) |
+| `careers.json` | The eighteen careers: description, skills, languages, perk, Renown, wealth and project points where a career grants them, the Quick Build picks, the career questions, and the six inciting incidents | *Heroes Book* ch. 4 (Background) |
+| `classes.json` | The nine classes at class level: Heroic Resource, starting characteristics and primary characteristics, potency, starting Stamina, Stamina per level, Recoveries, skills, and the subclass names (abilities live in `abilities.json`) | *Heroes Book* ch. 5 (Classes) |
+| `cultures.json` | The thirteen culture aspects (five environments, two organizations, six upbringings) with their skill options, plus the Typical Ancestry Cultures and Archetypical Cultures tables as sample cultures | *Heroes Book* ch. 4 (Background) |
+| `complications.json` | The one hundred complications with their benefit and drawback text (including the abilities and projects a few of them grant) | *Heroes Book* ch. 8 (Complications) |
 | `abilities.json` | 519 abilities: the nine classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
 | `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
 | `ancestry-point-buy.json` | The ancestry-points budget rule, signature vs. purchased traits, the starting size/speed/stability baseline, the per-ancestry budget table, and the revenant's Previous Life case | *Heroes Book* ch. 3 (Ancestries) |
@@ -39,6 +43,22 @@ numbers mean). The `echelon` glossary entry added alongside them comes from
 `Rules/Chapters/The Basics.md` ("Echelons of Play"), reduced to its level bands —
 the surrounding passage names setting locations and characters and is excluded
 (see below).
+
+The files consulted for `careers.json`, `classes.json`, `cultures.json` and
+`complications.json` were `Rules/Careers/*.md` (18 files), `Rules/Classes/*.md`
+(the Basics section and the subclass choice of each of the nine files),
+`Rules/Cultures/{Environments,Organization,Upbringing}/*.md` (13 files) with the
+two sample-culture tables in `Rules/Chapters/Background.md`, and
+`Rules/Complications/*.md` (100 files). They were converted mechanically; links
+and bold or italic markers are stripped and the text is otherwise as printed. Unlike
+`ancestries.json`, the career, culture and complication introductions are
+reproduced as printed rather than rewritten, so a few of them name setting places
+or peoples (for example the Hawklords in *Hawk Rider*, or Capital in the Urban
+culture). The Steel Compendium file for Sailor prints its six inciting incidents
+as one paragraph without the d6 numbers; they are numbered 1 to 6 in the order
+printed. Class entries do not copy ability text (see `abilities.json`) or the
+deity and domain lists; a conduit's subclass is its pair of domains, so the twelve
+domain names are the subclass names there.
 
 The files consulted for `abilities.json` were `Rules/Abilities/**/*.md` — all 545
 of them: `Common/{Main Actions,Maneuvers,Move Actions}` (17 files), `Kits/<kit>/`

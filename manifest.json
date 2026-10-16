@@ -71,6 +71,60 @@
       ]
     },
     {
+      "slug": "careers",
+      "name": "Careers",
+      "icon": "fa-briefcase",
+      "fields": [
+        { "key": "skills", "label": "Skills", "type": "string" },
+        { "key": "languages", "label": "Languages", "type": "string" },
+        { "key": "perk", "label": "Perk", "type": "string" },
+        { "key": "renown", "label": "Renown", "type": "string" },
+        { "key": "wealth", "label": "Wealth", "type": "string" },
+        { "key": "project_points", "label": "Project Points", "type": "number" },
+        { "key": "inciting_incidents_display", "label": "Inciting Incidents", "type": "string" }
+      ]
+    },
+    {
+      "slug": "classes",
+      "name": "Classes",
+      "icon": "fa-hat-wizard",
+      "fields": [
+        { "key": "heroic_resource", "label": "Heroic Resource", "type": "string" },
+        { "key": "primary_characteristics_display", "label": "Primary Characteristics", "type": "string" },
+        { "key": "starting_stamina", "label": "Starting Stamina", "type": "number" },
+        { "key": "stamina_per_level", "label": "Stamina per Level", "type": "number" },
+        { "key": "recoveries", "label": "Recoveries", "type": "number" },
+        { "key": "skills", "label": "Skills", "type": "string" },
+        { "key": "subclass_type", "label": "Subclass Type", "type": "string" },
+        { "key": "subclasses_display", "label": "Subclasses", "type": "string" }
+      ]
+    },
+    {
+      "slug": "cultures",
+      "name": "Cultures",
+      "icon": "fa-people-roof",
+      "fields": [
+        { "key": "kind", "label": "Kind", "type": "string" },
+        { "key": "language", "label": "Language", "type": "string" },
+        { "key": "environment", "label": "Environment", "type": "string" },
+        { "key": "organization", "label": "Organization", "type": "string" },
+        { "key": "upbringing", "label": "Upbringing", "type": "string" },
+        { "key": "skill_options", "label": "Skill Options", "type": "string" }
+      ]
+    },
+    {
+      "slug": "complications",
+      "name": "Complications",
+      "icon": "fa-link-slash",
+      "fields": [
+        { "key": "benefit", "label": "Benefit", "type": "string" },
+        { "key": "drawback", "label": "Drawback", "type": "string" },
+        { "key": "benefit_and_drawback", "label": "Benefit and Drawback", "type": "string" },
+        { "key": "special", "label": "Special", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
       "slug": "creatures",
       "name": "Creatures",
       "icon": "fa-paw",
@@ -274,6 +328,16 @@
           "foundry_collection": "items",
           "foundry_item_type": [
             "career"
+          ],
+          "foundry_item_single": true
+        },
+        {
+          "key": "complication",
+          "label": "Complication",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "complication"
           ],
           "foundry_item_single": true
         },
