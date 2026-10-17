@@ -988,7 +988,7 @@
     {
       "slug": "character-sheet",
       "name": "Character Sheet",
-      "description": "Full Draw Steel character renderer for hero entities. Auto-mounts on drawsteel-character pages once Chronicle CH4.5 (manifest-driven renderer registration) ships.",
+      "description": "Full Draw Steel character sheet for hero pages. Mounts on drawsteel-character pages and on any character-preset category, through the manifest's renderers.",
       "icon": "fa-shield-halved",
       "script_file": "widgets/character-sheet.js",
       "config": [
@@ -1117,7 +1117,7 @@
       "name": "Rules References",
       "file": "widgets/reference-renderer.js",
       "entry_point": "DrawSteelRefRenderer",
-      "description": "Resolves {@category term} syntax to styled tooltips with Draw Steel rule definitions. Requires Chronicle platform text_renderers support for campaign-wide coverage."
+      "description": "Resolves {@category term} syntax to styled tooltips with Draw Steel rule definitions. Chronicle loads it as a global before the package's widgets."
     },
     {
       "slug": "monster-engine",

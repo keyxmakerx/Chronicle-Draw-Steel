@@ -118,8 +118,8 @@ A citation is only worth having if it is true, so these say nothing rather than
 guessing a chapter. Everything else in `data/` — all 632 entries added for the
 ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
 `creature-abilities.json`, `monsters.json`,
-`ability-keywords.json`, `organization-templates.json`, `role-templates.json`
-and `rulebook-examples.json` — carries a real root
+`ability-keywords.json`, `organization-templates.json`, `role-templates.json`,
+`rulebook-examples.json`, `class-fights.json` and `credits.json` — carries a real root
 `source`.
 
 **A citation also has to be true about the *licence*.** All 35 `creatures.json`
@@ -573,6 +573,18 @@ animal. This is the one per-creature point-buy Draw Steel actually publishes.
 
 The budget rule lives in `monster-building.json` → `animal-trait-point-buy`, not
 here, so this file stays homogeneous: every entry is a trait with a cost.
+
+## Widget-only data files
+
+These files have no manifest category, so they are not in Chronicle's reference
+browser; the widgets fetch them from the data route.
+
+| File | Read by | Shape |
+|------|---------|-------|
+| `class-fights.json` | Class Fights | Per class, a `class-resource-<class>` rules entry and an `example-fight-<class>` scene (`"source": "custom"`), plus `power-roll` and `winded-and-dying`. See WIDGET-GUIDE.md. |
+| `credits.json` | Handbook Credits | `mcdm-team` entries (`properties.group`, `role`, `order`) and one `rules-tally` entry with the rule counts. |
+| `rulebook-examples.json` | Rulebook Front Page, Example Player | Staged scripts: `properties.stage`, `lines[]`, optional `scene`. |
+| `rulebook-frontpage.json` | Rulebook Front Page | Blocks keyed by `properties.kind`: `hero`, `characteristic`, `conditions`, `worked-scene`. |
 
 ## @Reference Syntax
 
