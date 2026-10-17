@@ -506,13 +506,18 @@ var EncounterBudget = (function () {
     show(current);
   }
 
+  // A failed read is retried once its TTL passes rather than kept for the
+  // life of the page, so one network blip doesn't leave the budget without
+  // its organization templates and rules.
   function ensureRefs(cid) {
-    if (refs[cid]) return;
-    refs[cid] = { status: 'loading', orgs: [], rules: rulesFrom([]) };
+    var r0 = refs[cid];
+    if (r0 && !(r0.status === 'failed' && (Date.now() - r0.at) >= PAGE_TTL_MS)) return;
+    refs[cid] = { status: 'loading', orgs: r0 ? r0.orgs : [], rules: r0 ? r0.rules : rulesFrom([]) };
     var base = '/campaigns/' + encodeURIComponent(cid) + '/systems/drawsteel/data/';
-    function one(f) { return getJSON(base + f).then(function (d) { return Array.isArray(d) ? d : unwrap(d); }, function () { return []; }); }
+    function one(f) { return getJSON(base + f).then(function (d) { return Array.isArray(d) ? d : unwrap(d); }, function () { return null; }); }
     Promise.all([one('organization-templates.json'), one('encounter-building.json')]).then(function (r) {
-      refs[cid] = { status: 'ok', orgs: r[0], rules: rulesFrom(r[1]) };
+      var failed = r[0] === null || r[1] === null;
+      refs[cid] = { status: failed ? 'failed' : 'ok', at: Date.now(), orgs: r[0] || [], rules: rulesFrom(r[1] || []) };
       rerender();
     });
   }
