@@ -1,9 +1,14 @@
 # Widget Configuration Guide
 
-This package provides five interactive widgets — Monster Builder, Bestiary Browser,
-Statblock Renderer, Rulebook Front Page, and Negotiation Tracker — plus three shared utility modules
-(below), addable to entity page layouts via Chronicle's customizer. The Character
-Sheet widget (`widgets/character-sheet.js`) is documented separately, in
+This package registers ten widgets in `manifest.json`: Monster Builder, Bestiary
+Browser, Statblock Renderer, Rulebook Front Page, Negotiation Tracker, Class
+Fights, Negotiation Audience, Handbook Credits, Encounter Budget and Character
+Sheet. The Handbook's own widgets (Class Fights, Negotiation Audience, Handbook
+Credits, and the Front Page's Lich's Lair) are placed by `book/chapters/*.yaml`;
+Statblock Renderer, Negotiation Tracker and Encounter Budget are mounted by
+Chronicle. The rest are placed through Chronicle's customizer. Shared utility
+modules are listed at the end. The Character Sheet widget
+(`widgets/character-sheet.js`) is documented separately, in
 `docs/CHARACTER-SHEET-DESIGN.md`.
 
 ## Adding Widgets
@@ -189,6 +194,66 @@ cut-paper pieces are buttons.
 
 ---
 
+## Negotiation Audience
+
+**Slug:** `negotiation-audience` · **File:** `widgets/negotiation-audience.js`
+
+The Handbook's Negotiation chapter places it (`book/chapters/negotiation.yaml`,
+a `type: widget` block). A card on the page opens a cut-paper throne room where
+the reader talks a king round: pick who speaks and what they say, roll, and
+watch his interest and patience move.
+
+### Config Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
+
+### Content Source
+- Every number the scene moves (the neutral attitude, the argument and uncovering tables, the offers) is read from `data/negotiation.json`.
+- The king, his court, the heroes and their lines are an example written for this package.
+- The pure rules (`Audience`) are tested by `tools/test-negotiation-audience.mjs`; the mount by `tools/test-negotiation-audience-ui.mjs`.
+
+---
+
+## Handbook Credits
+
+**Slug:** `handbook-credits` · **File:** `widgets/handbook-credits.js`
+
+The Handbook's last chapter (`book/chapters/credits.yaml`). A cut-paper stage
+where the nine classes, in plain white masks, take a bow; the MCDM team by
+role; where to buy the books; the Creator License notice word for word; where
+the rules come from; and who made this package. **Roll the credits** plays it
+as film end titles over the whole window, with pause and fast forward.
+
+### Config Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `campaign_id` | string | — | Campaign context (auto-set by Chronicle) |
+
+### Content Source
+- Names and rule counts come from `data/credits.json` (the `mcdm-team` entries and the `rules-tally` entry). All art is drawn for this package; no MCDM art or logo appears.
+- The pure helpers (`ChronicleDrawSteelCredits`) are tested by `tools/test-handbook-credits.mjs`.
+
+---
+
+## Encounter Budget
+
+**Slug:** `encounter-budget` · **File:** `widgets/encounter-budget.js`
+
+Chronicle loads it itself; there is nothing to place and it has no config.
+Chronicle's encounter builder fires `chronicle:encounter-draft` after every
+change, and the widget fills the slot that event carries with the party's
+strength, the EV spent against the published difficulty bands, the guideline
+checks and each initiative group's EV.
+
+- Every figure comes from `DrawSteelFormulas` (`widgets/monster-engine.js`) or `data/encounter-building.json`. A figure they cannot cover (a creature typed by name, a page with no EV, a hero with no level) is said to be missing and left out of the total.
+- Like the monster builder's checks, it reports what the published guidelines say. It is not a balance check.
+- Tested by `tools/test-encounter-budget.mjs`.
+
+---
+
 ## Rulebook Front Page
 
 **Slug:** `rulebook-frontpage`
@@ -210,6 +275,9 @@ that folds open in three matched ways (the SIGNED `rulebook-v10` design):
   Closing shuts the book, the board fades away round it, and the book flies back onto its card.
   The same column is used at every width; a phone (560px and under) frames it inside a small
   inset.
+
+Inside a Handbook page (the How to Play chapter's "Watch a game" page) the
+widget is only the Lich's Lair, as a closed pop-up book on the page.
 
 Plus: cards deal in on load, `/` focuses search, non-matching cards fold face-down,
 related chips hop across fold types, and `✕ / Esc / tap-outside` always folds back
@@ -246,12 +314,9 @@ dismissed by `Esc` / outside-tap / scroll — driven by the fold engine's `terms
 
 ### Placement
 
-There is no other rules-browser widget; the prior rules surface was the
-`reference-renderer.js` tooltip utility plus the glossary data, both of which this
-widget reuses. Place it via the layout customizer on a **campaign dashboard** or a
-dedicated **"Rules" page** as the entry point. Long-form chapters, Lair transcripts,
-and deep glossary search are not yet built; the widget leaves clean seams for them.
-Open work: #48.
+The Handbook places it in `book/chapters/how-to-play.yaml`, where it shows the
+Lich's Lair. Outside the Handbook, place it via the layout customizer on a
+**campaign dashboard** or a dedicated **"Rules" page** for the full spread.
 
 ---
 
@@ -395,7 +460,7 @@ and cards simply appear; the scene's loops rest on `MotionRest` with the rest of
 
 **File:** `widgets/reference-renderer.js`
 
-Not a standalone widget — this is a shared utility loaded by the other three widgets. It provides the @reference tooltip system.
+Not a standalone widget — this is a shared utility loaded as a global (manifest `text_renderers`) before the widgets that resolve `{@category term}` markup. It provides the @reference tooltip system.
 
 ### How It Works
 1. Widget calls `new DrawSteelRefRenderer(basePath)` and `.load()` to fetch the glossary
@@ -409,6 +474,20 @@ Not a standalone widget — this is a shared utility loaded by the other three w
 - **Resources** (green) — temporary stamina, damage resistance
 - **Actions** (orange) — free strike
 - **Combat** (indigo) — power roll, stability, winded
+
+---
+
+## Monster Engine and Monster Party (Shared Utilities)
+
+**Files:** `widgets/monster-engine.js` · **Global:** `MonsterEngine`, `DrawSteelFormulas`;
+`widgets/monster-party.js` · **Global:** `MonsterParty`
+
+Not widgets: loaded as globals (manifest `text_renderers`) before the widget
+scripts, with no UI. `DrawSteelFormulas` is the only place the published
+formulas are evaluated (Encounter Budget, Monster Builder and the stat block
+all use it). `MonsterParty` reads the campaign's hero pages and derives the
+party profile the builder reasons about, skipping a stat a hero lacks instead of
+counting it as zero.
 
 ---
 

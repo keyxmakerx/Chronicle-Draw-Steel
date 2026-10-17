@@ -27,8 +27,8 @@ it came from. A number the director types is never overwritten.
   director sets it, and the page says so instead of guessing.
 - Start a creature from the community bestiary or from this campaign's
   creatures; the copy is recomputed for the level kept.
-- Publish to the Community Bestiary, and add a bestiary creature to the
-  campaign from the Draw Steel browser.
+- Publish to the Community Bestiary, and add a Monsters book creature to the
+  campaign from the Bestiary widget.
 
 ### Non-Goals (for now)
 
@@ -304,7 +304,7 @@ NPC-family types; a creature type created later must have it added in the
 layout editor.
 
 The panel's global `DrawSteelStatblock` is the one stat block drawing used by
-the panel, the editor's preview, the Draw Steel browser's bestiary modal and,
+the panel, the editor's preview, the Bestiary widget's open rows and,
 in compact mode (header, figures and the signature ability's name), a hover card. It reads both a page's `fields_data` and a
 bestiary `statblock_json` (`normalize`), and writes either shape back
 (`toFields`, `toStatblock`). Styles go into `<head>` once.
@@ -399,8 +399,9 @@ that already has the stat block panel it steps aside.
 
 **Publish** posts the creature to the Community Bestiary
 (`POST /bestiary`, private or public) with the page as its source.
-In the Draw Steel browser's bestiary tab, **Add to this campaign** creates a
-Creature page with every stat block field filled.
+The Bestiary widget's **Add to campaign** creates a Creature page from a
+Monsters book stat block with every field filled. The Bestiary widget lists
+the campaign and the book; it does not read the Community Bestiary.
 
 ---
 
