@@ -395,7 +395,41 @@ motion turn it all off. On wide screens the bar with Save stays pinned.
 The widget also registers `monster-builder` for placement on a page; on a page
 that already has the stat block panel it steps aside.
 
-### 6.3 Publishing
+### 6.3 Forms
+
+A creature can have more than one form: a boss's second phase, a disguise and
+what is under it. The page's own fields are the first form. Each other form
+stores only what it changes, so a later change to the first form still reaches
+every form that didn't change that figure. The forms are tabs above the stat
+block; each figure says **Changed in this form** or **From** the first form,
+each ability **Changed in this form**, **Only in this form** or **From** the
+first form, and the director sees what the form drops under **Not in this
+form**. **Edit form** opens the editor on the form; saving it keeps only the
+difference (`DrawSteelForms.diff`, compared against `roundTrip`, what the
+editor would save unchanged, so its own tidying is never a change). A list
+item is matched by name: a changed ability keeps its place, a new one comes
+last.
+
+Forms live in the page's system state, not in its fields, so a player never
+receives a form the director hasn't shown:
+
+| Key | `gm` half | `public` half |
+|-----|-----------|---------------|
+| `forms` | `{v, order: [ids]}` | `{v, shown: [ids], current: id}` |
+| `form-<id>` | the form | the same form once shown, else `{}` |
+
+A form is `{id, name, stamina, changes, lists, art, token}`. `changes` holds
+scalar figures by field key; `lists` holds `{drop: [names], add: [items]}` for
+`traits`, `abilities_json` and `villain_actions_json`; `art` and `token` are
+media ids, empty to borrow the first form's (a form with art and no token lets
+Foundry crop the art). `stamina` is `carry` (damage carries over) or `fresh`
+(the form starts at full Stamina), for changing form at the table. Showing a
+form writes its public copy before the index lists it; hiding does the
+reverse. Each half is at most 16 KiB, so a form that changes very many
+abilities is refused with a reason. `current` is written by whatever changes
+the creature's form at the table.
+
+### 6.4 Publishing
 
 **Publish** posts the creature to the Community Bestiary
 (`POST /bestiary`, private or public) with the page as its source.

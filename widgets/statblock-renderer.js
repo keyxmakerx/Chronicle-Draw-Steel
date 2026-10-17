@@ -227,8 +227,9 @@ var DrawSteelStatblock = (function () {
       '<i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span class="sbx-sr">' + esc(why) + '</span></span>';
   }
 
-  function cell(label, value, extra) {
-    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + (extra || '') + '</span></div>';
+  // note is the form's caption under a figure ("Changed in this form").
+  function cell(label, value, extra, note) {
+    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + (extra || '') + '</span>' + (note || '') + '</div>';
   }
 
   function figure(v) { return v === null || v === undefined || v === '' ? '—' : esc(v); }
@@ -271,8 +272,9 @@ var DrawSteelStatblock = (function () {
     var kind = a.label || KIND[type] || cap(type);
     var name = esc(a.name || 'Untitled');
     if (live) name = '<span class="sbx-term" tabindex="0" data-sbx-ab="' + esc(key) + '">' + name + '</span>';
+    var tag = (o.tag && key) ? o.tag('item', key) : '';
     var h = '<section class="sbx-ab"' + (live ? ' data-sbx-key="' + esc(key) + '"' : '') + '><div class="sbx-ab-top"><h4 class="sbx-ab-name"><i class="fa-solid ' + icon + '" aria-hidden="true"></i>' +
-      name + '</h4>' + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
+      name + '</h4>' + tag + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
     var kws = parseList(a.keywords).filter(function (k) { return k !== 'Attack'; });
     if (kws.length || a.distance || a.target) {
       h += '<dl class="sbx-meta">' +
@@ -351,10 +353,12 @@ var DrawSteelStatblock = (function () {
     h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
       '<span class="sbx-ev">EV ' + figure(c.ev) + (c.organization === 'minion' && c.ev !== null ? ' <span class="sbx-ev-n">for four</span>' : '') +
       mark(pr.ev, 'Encounter value') + '</span></div></header>';
-    h += '<div class="sbx-strip">' + cell('Size', esc(c.size)) + cell('Speed', figure(c.speed)) +
-      cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina')) + cell('Stability', figure(c.stability)) +
-      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike')) + '</div>';
-    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k])); }).join('') + '</div>';
+    // A form's view captions each figure with where it comes from.
+    function tg(k) { return o.tag ? o.tag('fig', k) : ''; }
+    h += '<div class="sbx-strip">' + cell('Size', esc(c.size), '', tg('size')) + cell('Speed', figure(c.speed), '', tg('speed')) +
+      cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina'), tg('stamina')) + cell('Stability', figure(c.stability), '', tg('stability')) +
+      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike'), tg('free_strike')) + '</div>';
+    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k]), '', tg(k)); }).join('') + '</div>';
     if (o.compact) {
       // A hover card names the creature's signature ability; the shared card's
       // looks restyle .sbx-sig from outside, so it carries no colour here.
@@ -668,6 +672,33 @@ var DrawSteelStatblock = (function () {
     '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#6b7280)}',
     '.sbx-cmp-f.is-error{color:#b91c1c}.dark .sbx-cmp-f.is-error{color:#f87171}',
     '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}}',
+    '.sbx-forms{display:flex;gap:2px;align-items:flex-end;border-bottom:1px solid var(--color-border,#e5e7eb);overflow-x:auto}',
+    '.sbx-tab{display:inline-flex;gap:8px;align-items:center;border:0;border-bottom:2px solid transparent;background:none;padding:8px 12px 6px;min-height:36px;font-size:13px;font-weight:600;color:var(--color-text-secondary,#6b7280);cursor:pointer;white-space:nowrap}',
+    '.sbx-tab:hover{color:var(--color-text-primary,#111827)}',
+    '.sbx-tab[aria-selected="true"]{color:var(--color-text-primary,#111827);border-bottom-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-tab:focus-visible,.sbx-forms-add:focus-visible,.sbx-link:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '.sbx-tab-n{font:500 11px/1 ui-monospace,Consolas,monospace;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-tab-hid{font-size:11px;opacity:.7}',
+    '.sbx-forms-add{border:1px dashed var(--color-border,#d1d5db);background:none;color:var(--color-text-secondary,#6b7280);border-radius:6px;padding:4px 10px;margin:0 0 4px 8px;min-height:32px;font-size:13px;cursor:pointer;white-space:nowrap}',
+    '.sbx-forms-add:hover{color:var(--color-accent,#6366f1);border-color:var(--color-accent,#6366f1)}',
+    '.sbx-formnote{display:flex;flex-direction:column;gap:6px;font-size:14px}',
+    '.sbx-formnote-h{color:var(--color-text-secondary,#6b7280);font-size:13px}',
+    '.sbx-formnote-acts{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end}',
+    '.sbx-fstam{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fstam select{min-width:200px}',
+    '.sbx-dm{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-dm-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b45309;margin-right:4px}',
+    '.dark .sbx-dm-t{color:#fbbf24}',
+    '.sbx-from{display:block;max-width:100%;margin-top:2px;font-size:11px;color:var(--color-text-secondary,#6b7280);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-from.is-changed{color:var(--sbx-own);font-weight:600;white-space:normal}',
+    '.sbx-chip{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-chip.is-changed{background:rgba(245,158,11,.14);color:var(--sbx-own)}',
+    '.sbx-chip.is-new{background:rgba(var(--color-accent-rgb,99,102,241),.12);color:var(--color-accent,#6366f1)}',
+    '.sbx-link{border:0;background:none;padding:0;font:inherit;color:var(--color-accent,#6366f1);text-decoration:underline;text-underline-offset:2px;cursor:pointer}',
+    '.sbx-gone{display:flex;flex-direction:column;gap:6px;font-size:14px}',
+    '.sbx-gone ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
+    '.sbx-gone li{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-gone li>span{text-decoration:line-through;text-decoration-color:rgba(107,114,128,.5)}',
     '@media (max-width:640px){.sbx-head.has-pic{flex-wrap:wrap}.sbx-pic{flex-basis:56px;width:56px;height:56px}}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
@@ -810,6 +841,199 @@ var DrawSteelStatblock = (function () {
   };
 })();
 
+// ── Forms ───────────────────────────────────────────────────────────────────
+
+// DrawSteelForms is a creature's other forms, kept apart from its page so a
+// player never receives one before the director shows it. The page's fields
+// are the first form. Every other form is a list of changes to them, stored as
+// the page's system state: `forms` holds the order (gm half) and which forms
+// players have been shown and which one is current (public half); each
+// `form-<id>` holds one form in its gm half, and the same form in its public
+// half once it has been shown. A form a director changes later borrows any
+// change made to the first form, because it stores only what differs.
+var DrawSteelForms = (function () {
+  'use strict';
+  var S = DrawSteelStatblock;
+
+  var INDEX_KEY = 'forms';
+  var ID = /^[a-z0-9]{1,24}$/;
+  var MAX_FORMS = 12;
+  var NAME_MAX = 80;
+  // The figures a form may change: every scalar the editor writes.
+  var FIGURES = ['level', 'organization', 'role', 'ev', 'size', 'keywords', 'faction', 'stamina', 'winded', 'speed',
+    'stability', 'immunities', 'weaknesses', 'movement', 'with_captain', 'free_strike'].concat(S.CHARS);
+  var LABELS = { ev: 'EV', free_strike: 'Free strike', with_captain: 'With a captain' };
+  // Lists a form changes item by item, matched by name.
+  var LISTS = [['traits', 't'], ['abilities_json', 'a'], ['villain_actions_json', 'v']];
+  var STAMINA = { carry: 'Damage carries over', fresh: 'Starts at full Stamina' };
+
+  function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function label(k) { return LABELS[k] || S.cap(k); }
+  function formKey(id) { return 'form-' + id; }
+
+  function scalar(v) {
+    return v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
+  }
+
+  // listOf reads a list field the way the stat block does.
+  function listOf(fields, key) {
+    var v = fields ? fields[key] : undefined;
+    if (key === 'traits') {
+      if (typeof v === 'string' && v.trim() && !/^\s*\[/.test(v)) return S.normalize({ traits: v }).traits;
+    }
+    return S.parseObjects(v);
+  }
+
+  // canon compares two items by content: key order and the editor's own
+  // review marks never count as a change.
+  function canon(v) {
+    if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
+    if (v && typeof v === 'object') {
+      return '{' + Object.keys(v).filter(function (k) { return k !== 'from_ai' && k !== 'from_book' && v[k] !== undefined; }).sort()
+        .map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';
+    }
+    return JSON.stringify(v === undefined ? null : v);
+  }
+
+  function itemName(x) { return String((x && x.name) || '').trim(); }
+
+  // clean reads a stored form defensively; anything malformed is dropped, and
+  // a form without a valid id is no form at all.
+  function clean(raw) {
+    var r = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : null;
+    if (!r || !ID.test(String(r.id || ''))) return null;
+    var f = { id: String(r.id), name: String(r.name || '').trim().slice(0, NAME_MAX) || 'Unnamed form',
+      stamina: r.stamina === 'fresh' ? 'fresh' : 'carry', changes: {}, lists: {}, art: S.mediaId(r.art), token: S.mediaId(r.token) };
+    var ch = (r.changes && typeof r.changes === 'object') ? r.changes : {};
+    FIGURES.forEach(function (k) { if (own(ch, k) && scalar(ch[k])) f.changes[k] = ch[k]; });
+    var ls = (r.lists && typeof r.lists === 'object') ? r.lists : {};
+    LISTS.forEach(function (l) {
+      var d = ls[l[0]];
+      if (!d || typeof d !== 'object') return;
+      var drop = Array.isArray(d.drop) ? d.drop.map(String).filter(Boolean).slice(0, 50) : [];
+      var add = S.parseObjects(d.add);
+      if (drop.length || add.length) f.lists[l[0]] = { drop: drop, add: add };
+    });
+    return f;
+  }
+
+  // mergeList lays a form's change to one list over the first form's: a
+  // dropped name with an added item of the same name is changed in place,
+  // other drops are gone, other adds come last. states runs parallel to items.
+  function mergeList(base, d) {
+    var drop = (d && d.drop) ? d.drop.slice() : [], add = (d && d.add) ? d.add.slice() : [];
+    var items = [], states = [], gone = [];
+    base.forEach(function (b) {
+      var i = drop.indexOf(itemName(b));
+      if (i === -1) { items.push(b); states.push('base'); return; }
+      drop.splice(i, 1);
+      var j = -1;
+      add.forEach(function (a, n) { if (j === -1 && itemName(a) === itemName(b)) j = n; });
+      if (j === -1) { gone.push(b); return; }
+      items.push(add.splice(j, 1)[0]); states.push('changed');
+    });
+    add.forEach(function (a) { items.push(a); states.push('new'); });
+    return { items: items, states: states, gone: gone };
+  }
+
+  // view is a form as the page draws it: the first form's fields with this
+  // form's changes laid over, its pictures, and where each figure and item
+  // comes from. A form without its own picture borrows the first form's; a
+  // form with art but no token lets Foundry crop the art, as a page does.
+  function view(fields, picture, form) {
+    var base = fields || {}, out = {}, k;
+    for (k in base) if (own(base, k)) out[k] = base[k];
+    var pic = picture || {};
+    if (!form) return { fields: out, art: pic.art || '', token: pic.token || '', changed: {}, states: {}, gone: {} };
+    var changed = {};
+    for (k in form.changes) if (own(form.changes, k)) { out[k] = form.changes[k]; changed[k] = true; }
+    var states = {}, gone = {};
+    LISTS.forEach(function (l) {
+      var m = mergeList(listOf(base, l[0]), form.lists[l[0]]);
+      states[l[1]] = m.states; gone[l[1]] = m.gone;
+      if (form.lists[l[0]]) out[l[0]] = JSON.stringify(m.items);
+    });
+    var art = form.art || pic.art || '';
+    var token = form.token || (form.art ? '' : (pic.token || ''));
+    out[S.TOKEN_KEY] = token;
+    return { fields: out, art: art, token: token, changed: changed, states: states, gone: gone };
+  }
+
+  // diffList is the change from one list to another, by name.
+  function diffList(base, now) {
+    var left = base.slice(), drop = [], add = [];
+    now.forEach(function (e) {
+      var i = -1;
+      left.forEach(function (b, n) { if (i === -1 && itemName(b) === itemName(e)) i = n; });
+      if (i === -1) { add.push(e); return; }
+      var b = left.splice(i, 1)[0];
+      if (canon(b) !== canon(e)) { drop.push(itemName(b)); add.push(e); }
+    });
+    left.forEach(function (b) { drop.push(itemName(b)); });
+    return (drop.length || add.length) ? { drop: drop, add: add } : null;
+  }
+
+  // diff is a form saved from the editor: only what differs from the first
+  // form's fields, so later changes to the first form still reach it.
+  function diff(base, edited) {
+    var b = base || {}, e = edited || {}, out = { changes: {}, lists: {} };
+    FIGURES.forEach(function (k) {
+      if (!own(e, k) || !scalar(e[k])) return;
+      if (canon(e[k]) !== canon(own(b, k) ? b[k] : null) && !(e[k] === '' && !own(b, k))) out.changes[k] = e[k];
+    });
+    LISTS.forEach(function (l) {
+      var d = diffList(listOf(b, l[0]), listOf(e, l[0]));
+      if (d) out.lists[l[0]] = d;
+    });
+    return out;
+  }
+
+  // summary says what a form changes, in a phrase: "4 figures, its art and its abilities".
+  function summary(form) {
+    var parts = [], n = Object.keys(form.changes).length;
+    if (n) parts.push(n + ' figure' + (n === 1 ? '' : 's'));
+    if (form.art) parts.push('its art');
+    if (form.token) parts.push('its token');
+    if (form.lists.traits) parts.push('its traits');
+    if (form.lists.abilities_json) parts.push('its abilities');
+    if (form.lists.villain_actions_json) parts.push('its villain actions');
+    if (!parts.length) return 'nothing yet';
+    return parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+  }
+
+  function newId(rand) {
+    var r = typeof rand === 'function' ? rand : Math.random;
+    var id = '';
+    while (id.length < 10) id += Math.floor(r() * 36).toString(36);
+    return id;
+  }
+
+  // index reads the `forms` document: the ids a director has, in order, and
+  // the ids players have been shown and the current one.
+  function index(doc) {
+    var d = doc || {};
+    function ids(v) {
+      var seen = {};
+      return (Array.isArray(v) ? v : []).filter(function (x) {
+        if (typeof x !== 'string' || !ID.test(x) || seen[x]) return false;
+        seen[x] = true; return true;
+      }).slice(0, MAX_FORMS);
+    }
+    var pub = (d.public && typeof d.public === 'object') ? d.public : {};
+    var gm = (d.gm && typeof d.gm === 'object') ? d.gm : null;
+    var current = ID.test(String(pub.current || '')) ? String(pub.current) : '';
+    return { order: gm ? ids(gm.order) : null, shown: ids(pub.shown), current: current, pub: pub };
+  }
+
+  return {
+    INDEX_KEY: INDEX_KEY, MAX_FORMS: MAX_FORMS, NAME_MAX: NAME_MAX, FIGURES: FIGURES, LISTS: LISTS, STAMINA: STAMINA,
+    formKey: formKey, label: label, clean: clean, view: view, diff: diff, mergeList: mergeList, diffList: diffList,
+    summary: summary, newId: newId, index: index
+  };
+})();
+
+DrawSteelStatblock.Forms = DrawSteelForms;
+
 // ── The page panel ──────────────────────────────────────────────────────────
 
 // StatblockPanel is one mounted panel. boot.js calls init with the registered
@@ -827,6 +1051,8 @@ function StatblockPanel(el, config) {
   this.publishOpen = false;
   this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
   this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
+  // tab is the form on show: '' for the first form, else a form id.
+  this.forms = { list: [], shown: [], current: '', loaded: false, error: false, saving: false, tab: '', msg: '', msgKind: '' };
 }
 
 StatblockPanel.prototype.start = function () {
@@ -853,6 +1079,7 @@ StatblockPanel.prototype.start = function () {
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
       if (self.isGM) self.loadFoundry();
+      return self.loadForms();
     });
   }).catch(function (err) {
     if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature', err);
@@ -880,16 +1107,26 @@ StatblockPanel.prototype.render = function () {
     this.bind();
     return;
   }
+  var form = this.form();
   var bar = '<div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-paw" aria-hidden="true"></i> Stat block</span>';
-  if (this.isGM) {
+  if (this.isGM && form) {
+    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="form-edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit form</button></span>';
+  } else if (this.isGM) {
     bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit stat block</button>' +
       '<button type="button" class="btn-ghost btn-sm" data-sbx-act="publish" aria-expanded="' + (this.publishOpen ? 'true' : 'false') + '"><i class="fa-solid fa-share-nodes mr-1" aria-hidden="true"></i> Publish</button></span>';
   }
   bar += '</div>';
-  var pub = (this.isGM && this.publishOpen) ? this.publishHtml() : '';
-  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.sourceHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
-    S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) }) +
-    (this.isGM ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
+  var pub = (this.isGM && this.publishOpen && !form) ? this.publishHtml() : '';
+  var body;
+  if (form) {
+    var v = DrawSteelForms.view(f, S.pictures(this.entity), form);
+    body = this.formNoteHtml(form, v) + S.html(name, v.fields, { ref: this.ref, refs: this.refs, picture: { art: v.art, token: v.token, page: v.art || v.token }, tag: this.tagFor(v) }) +
+      this.goneHtml(v);
+  } else {
+    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) });
+  }
+  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.tabsHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' + body +
+    (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
   this.bind();
 };
 
@@ -1028,6 +1265,306 @@ StatblockPanel.prototype.setSendBack = function (on) {
   });
 };
 
+// ── Forms on the page ───────────────────────────────────────────────────────
+
+StatblockPanel.prototype.formUrl = function (key) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(this.eid) + '/system-state/drawsteel/' + key;
+};
+
+// loadForms reads the director's forms, or for a player the forms they have
+// been shown. A form that fails to load is left out; the first form is
+// always there, so nothing here can hide the stat block.
+StatblockPanel.prototype.loadForms = function () {
+  var self = this, F = DrawSteelForms, S = DrawSteelStatblock, fm = this.forms;
+  return S.getJSON(this.formUrl(F.INDEX_KEY)).then(function (doc) {
+    var idx = F.index(doc);
+    fm.shown = idx.shown; fm.current = idx.current;
+    var ids = self.isGM ? (idx.order || []) : idx.shown;
+    return Promise.all(ids.map(function (id) {
+      return S.getJSON(self.formUrl(F.formKey(id))).then(function (d) {
+        var half = self.isGM ? d && d.gm : d && d.public;
+        var form = F.clean(half);
+        return form && form.id === id ? form : null;
+      }, function () { return null; });
+    }));
+  }).then(function (list) {
+    fm.list = list.filter(Boolean);
+    fm.loaded = true;
+    // A player opens on the form the creature is in at the table.
+    if (!self.isGM && fm.current && self.formById(fm.current)) fm.tab = fm.current;
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature’s forms', err);
+    fm.loaded = true; fm.error = true;
+  }).then(function () { if (!self.editor) self.render(); });
+};
+
+StatblockPanel.prototype.formById = function (id) {
+  var l = this.forms.list;
+  for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+  return null;
+};
+
+// form is the form on show, or null for the first form.
+StatblockPanel.prototype.form = function () {
+  return this.forms.tab ? this.formById(this.forms.tab) : null;
+};
+
+StatblockPanel.prototype.baseName = function () {
+  return (this.entity && this.entity.name) || 'the first form';
+};
+
+// tabsHtml is the strip of forms above the stat block. A creature with one
+// form shows no strip to players; the director always has the dashed slot.
+StatblockPanel.prototype.tabsHtml = function () {
+  var esc = DrawSteelStatblock.esc, fm = this.forms;
+  if (!fm.list.length && !(this.isGM && fm.loaded && !fm.error)) return '';
+  var tabs = [{ id: '', name: this.baseName() }].concat(fm.list);
+  var h = '<div class="sbx-forms" role="tablist" aria-label="Forms">' + tabs.map(function (x, i) {
+    var on = (fm.tab || '') === x.id;
+    return '<button type="button" role="tab" class="sbx-tab" data-sbx-form="' + esc(x.id) + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '">' +
+      '<span class="sbx-tab-n">' + (i + 1) + '</span>' + esc(x.name) +
+      (this.isGM && x.id && fm.shown.indexOf(x.id) === -1 ? '<span class="sbx-sr"> (not shown to players)</span><i class="fa-solid fa-eye-slash sbx-tab-hid" aria-hidden="true" title="Not shown to players yet"></i>' : '') + '</button>';
+  }, this).join('');
+  if (this.isGM && fm.list.length < DrawSteelForms.MAX_FORMS) {
+    h += '<button type="button" class="sbx-forms-add" data-sbx-act="form-add"' + (fm.saving ? ' disabled' : '') + '>Add a form</button>';
+  }
+  return h + '</div>' + (fm.error && this.isGM ? '<p class="sbx-msg is-error">Could not load this creature’s other forms. Reload to try again.</p>' : '');
+};
+
+// formNoteHtml says what the form on show changes and, for the director,
+// how it starts, how Stamina carries, and whether players have seen it.
+StatblockPanel.prototype.formNoteHtml = function (form, v) {
+  var S = DrawSteelStatblock, F = DrawSteelForms, esc = S.esc, fm = this.forms;
+  var cells = { size: 1, speed: 1, stamina: 1, stability: 1, free_strike: 1 };
+  S.CHARS.forEach(function (k) { cells[k] = 1; });
+  var also = Object.keys(v.changed).filter(function (k) { return !cells[k]; }).map(F.label);
+  var h = '<div class="sbx-formnote"><p class="sbx-line"><b>' + esc(form.name) + '</b> changes ' + esc(F.summary(form)) + '.' +
+    (also.length ? ' Also changed: ' + esc(also.join(', ')) + '.' : '') + '</p>';
+  if (!this.isGM) return h + '</div>';
+  var shown = fm.shown.indexOf(form.id) !== -1;
+  h += '<p class="sbx-line sbx-formnote-h">When it starts is up to each encounter, or you by hand from the token in Foundry.</p>' +
+    '<div class="sbx-formnote-acts"><label class="sbx-fstam"><span>When it takes this form</span><select class="input" data-sbx-fstam' + (fm.saving ? ' disabled' : '') + '>' +
+    Object.keys(F.STAMINA).map(function (k) { return '<option value="' + k + '"' + (form.stamina === k ? ' selected' : '') + '>' + esc(F.STAMINA[k]) + '</option>'; }).join('') + '</select></label>' +
+    '<button type="button" class="btn-secondary btn-sm" data-sbx-act="form-show"' + (fm.saving ? ' disabled' : '') + '>' + (shown ? 'Hide from players' : 'Show to players') + '</button>' +
+    '<button type="button" class="btn-ghost btn-sm" data-sbx-act="form-remove"' + (fm.saving ? ' disabled' : '') + '>Remove form</button></div>' +
+    '<p class="sbx-dm"><span class="sbx-dm-t">Only you see this</span> ' + (shown
+      ? 'Players can see this form on the page.'
+      : 'Players see this form on the page once it has been shown to them. Until then it isn’t listed for them at all.') + '</p>' +
+    (fm.msg ? '<p class="sbx-msg' + (fm.msgKind ? ' is-' + fm.msgKind : '') + '" role="status">' + esc(fm.msg) + '</p>' : '');
+  return h + '</div>';
+};
+
+// tagFor captions each figure and item of a form with where it comes from.
+StatblockPanel.prototype.tagFor = function (v) {
+  var esc = DrawSteelStatblock.esc, base = this.baseName(), gm = this.isGM;
+  var from = 'From ' + base;
+  return function (kind, key) {
+    if (kind === 'fig') {
+      if (!v.changed[key]) return '<span class="sbx-from" title="' + esc(from) + '">' + esc(from) + '</span>';
+      return '<span class="sbx-from is-changed">Changed in this form' +
+        (gm ? ' · <button type="button" class="sbx-link" data-sbx-reset="' + esc(key) + '">Use ' + esc(base) + '’s</button>' : '') + '</span>';
+    }
+    var m = /^([atv])(\d+)$/.exec(key);
+    var st = m && v.states[m[1]] ? v.states[m[1]][Number(m[2])] : 'base';
+    if (st === 'changed') return '<span class="sbx-chip is-changed">Changed in this form</span>';
+    if (st === 'new') return '<span class="sbx-chip is-new">Only in this form</span>';
+    return '<span class="sbx-chip">' + esc(from) + '</span>';
+  };
+};
+
+// goneHtml lists, for the director, what the first form has and this one drops.
+StatblockPanel.prototype.goneHtml = function (v) {
+  if (!this.isGM) return '';
+  var esc = DrawSteelStatblock.esc, rows = [];
+  [['t', 'Trait'], ['a', 'Ability'], ['v', 'Villain action']].forEach(function (k) {
+    (v.gone[k[0]] || []).forEach(function (x) {
+      rows.push('<li><span>' + esc(x.name || 'Untitled') + ' <span class="sbx-kind">' + k[1] + '</span></span>' +
+        '<button type="button" class="sbx-link" data-sbx-putback="' + k[0] + '" data-sbx-name="' + esc(x.name || '') + '">Put back</button></li>');
+    });
+  });
+  if (!rows.length) return '';
+  return '<section class="sbx-gone"><p class="sbx-sec">Not in this form</p><ul>' + rows.join('') + '</ul></section>';
+};
+
+StatblockPanel.prototype.pickForm = function (id) {
+  if (id && !this.formById(id)) return;
+  this.forms.tab = id || '';
+  this.forms.msg = '';
+  this.publishOpen = false;
+  this.render();
+  this.focus('.sbx-tab[aria-selected="true"]');
+};
+
+// writeIndex reads the `forms` document fresh and saves it changed by fn, so
+// what Foundry wrote there (the current form) survives.
+StatblockPanel.prototype.writeIndex = function (fn) {
+  var self = this, S = DrawSteelStatblock, F = DrawSteelForms;
+  return S.getJSON(this.formUrl(F.INDEX_KEY)).then(function (doc) {
+    var idx = F.index(doc);
+    var next = fn({ order: idx.order || [], shown: idx.shown, current: idx.current });
+    var pub = {}, k;
+    for (k in idx.pub) if (Object.prototype.hasOwnProperty.call(idx.pub, k)) pub[k] = idx.pub[k];
+    pub.v = 1;
+    pub.shown = next.order.filter(function (id) { return next.shown.indexOf(id) !== -1; });
+    pub.current = pub.shown.indexOf(next.current) !== -1 ? next.current : '';
+    return S.apiFetch(self.formUrl(F.INDEX_KEY), { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gm: { v: 1, order: next.order }, public: pub }) }).then(function (res) {
+      if (!res.ok) throw new Error('save ' + res.status);
+      self.forms.shown = pub.shown; self.forms.current = pub.current;
+      return next.order;
+    });
+  });
+};
+
+// writeForm saves one form; players get the same copy once it is shown.
+StatblockPanel.prototype.writeForm = function (form, shown) {
+  var body = JSON.stringify({ gm: form, public: shown ? form : {} });
+  if (body.length > 15 * 1024) {
+    var e = new Error('This form is too big to save. Change fewer abilities in it, or make it a creature of its own.');
+    e.user = true;
+    return Promise.reject(e);
+  }
+  return DrawSteelStatblock.apiFetch(this.formUrl(DrawSteelForms.formKey(form.id)), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: body
+  }).then(function (res) { if (!res.ok) throw new Error('save ' + res.status); });
+};
+
+// changeForm saves an edit made on the page itself, then redraws.
+StatblockPanel.prototype.changeForm = function (form, said) {
+  var self = this, fm = this.forms;
+  fm.saving = true; fm.msg = 'Saving…'; fm.msgKind = '';
+  this.render();
+  return this.writeForm(form, fm.shown.indexOf(form.id) !== -1).then(function () {
+    var l = fm.list;
+    for (var i = 0; i < l.length; i++) if (l[i].id === form.id) l[i] = form;
+    fm.msg = said || 'Saved.'; fm.msgKind = 'ok';
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not save this form', err);
+    fm.msg = (err && err.user) ? err.message : 'Could not save that. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); });
+};
+
+function copyForm(f) { return DrawSteelForms.clean(JSON.parse(JSON.stringify(f))); }
+
+StatblockPanel.prototype.resetFigure = function (key) {
+  var form = this.form();
+  if (!form || this.forms.saving) return;
+  var next = copyForm(form);
+  delete next.changes[key];
+  this.changeForm(next, 'Now uses ' + this.baseName() + '’s ' + DrawSteelForms.label(key).toLowerCase() + '.');
+};
+
+StatblockPanel.prototype.putBack = function (kind, name) {
+  var form = this.form(), F = DrawSteelForms;
+  if (!form || this.forms.saving) return;
+  var key = null;
+  F.LISTS.forEach(function (l) { if (l[1] === kind) key = l[0]; });
+  var next = copyForm(form), d = key && next.lists[key];
+  if (!d || d.drop.indexOf(name) === -1) return;
+  d.drop.splice(d.drop.indexOf(name), 1);
+  if (!d.drop.length && !d.add.length) delete next.lists[key];
+  this.changeForm(next, 'Put back ' + (name || 'it') + '.');
+};
+
+StatblockPanel.prototype.setStamina = function (mode) {
+  var form = this.form();
+  if (!form || this.forms.saving || !DrawSteelForms.STAMINA[mode]) return;
+  var next = copyForm(form);
+  next.stamina = mode;
+  this.changeForm(next, 'Saved.');
+};
+
+// toggleShown shows a form to players, or takes it back. The form's public
+// copy is written before the index lists it, so a player never sees an id
+// with nothing behind it.
+StatblockPanel.prototype.toggleShown = function () {
+  var self = this, form = this.form(), fm = this.forms;
+  if (!form || fm.saving) return;
+  var show = fm.shown.indexOf(form.id) === -1;
+  fm.saving = true; fm.msg = 'Saving…'; fm.msgKind = '';
+  this.render();
+  var steps = show
+    ? this.writeForm(form, true).then(function () { return self.writeIndex(function (x) { x.shown = x.shown.concat([form.id]); return x; }); })
+    : this.writeIndex(function (x) { x.shown = x.shown.filter(function (id) { return id !== form.id; }); return x; })
+      .then(function () { return self.writeForm(form, false); });
+  steps.then(function () {
+    fm.msg = show ? 'Players can now see ' + form.name + '.' : form.name + ' is hidden from players again.'; fm.msgKind = 'ok';
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not change who sees this form', err);
+    fm.msg = 'Could not save that. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); self.focus('[data-sbx-act="form-show"]'); });
+};
+
+StatblockPanel.prototype.removeForm = function () {
+  var self = this, form = this.form(), fm = this.forms;
+  if (!form || fm.saving) return;
+  if (typeof confirm === 'function' && !confirm('Remove the form ' + form.name + '? Its changes are deleted. The rest of the creature stays as it is.')) return;
+  fm.saving = true; fm.msg = 'Removing…'; fm.msgKind = '';
+  this.render();
+  this.writeIndex(function (x) {
+    x.order = x.order.filter(function (id) { return id !== form.id; });
+    x.shown = x.shown.filter(function (id) { return id !== form.id; });
+    return x;
+  }).then(function () {
+    fm.list = fm.list.filter(function (f) { return f.id !== form.id; });
+    fm.tab = ''; fm.msg = '';
+    // The index no longer lists it, so a failure here leaves only an orphan.
+    return DrawSteelStatblock.apiFetch(self.formUrl(DrawSteelForms.formKey(form.id)), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: {}, public: {} })
+    }).catch(function () { return null; });
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not remove this form', err);
+    fm.msg = 'Could not remove that form. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); self.focus('.sbx-tab[aria-selected="true"]'); });
+};
+
+// editForm opens the editor on a form, or on a new one when form is null.
+// The editor sees the form as the page draws it; what it saves is only what
+// differs from the first form, and a picture it was only borrowing stays
+// borrowed.
+StatblockPanel.prototype.editForm = function (form) {
+  var self = this, S = DrawSteelStatblock, F = DrawSteelForms, fm = this.forms;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed || !Ed.roundTrip) { this.say('The stat block editor did not load. Reload the page to try again.', 'error'); return; }
+  var isNew = !form;
+  var cur = form || { id: F.newId(), name: 'Form ' + (fm.list.length + 2), stamina: 'carry', changes: {}, lists: {}, art: '', token: '' };
+  var v = F.view(this.fields(), S.pictures(this.entity), cur);
+  this.el.innerHTML = '';
+  var host = this.el.ownerDocument.createElement('div');
+  this.el.appendChild(host);
+  this.editor = Ed.mount(host, {
+    campaignId: this.cid,
+    entityId: this.eid,
+    entity: { name: cur.name, image_path: v.art, fields_data: v.fields },
+    refs: this.refs,
+    ref: this.ref,
+    form: { heading: isNew ? 'New form' : 'Editing form', nameLabel: 'Form name', dirtyKey: 'monster-builder:form:' + this.eid + ':' + cur.id },
+    saveAs: function (out, pics) {
+      var base = Ed.roundTrip(self.baseName(), self.fields(), self.refs);
+      var d = F.diff(base, out.fields);
+      var next = F.clean({ id: cur.id, name: out.name, stamina: cur.stamina, changes: d.changes, lists: d.lists,
+        art: pics.art === v.art ? cur.art : pics.art, token: pics.token === v.token ? cur.token : pics.token });
+      var shown = fm.shown.indexOf(cur.id) !== -1;
+      return self.writeForm(next, shown).then(function () {
+        if (!isNew) return null;
+        return self.writeIndex(function (x) { if (x.order.indexOf(cur.id) === -1) x.order = x.order.concat([cur.id]); return x; });
+      }).then(function () {
+        if (isNew) fm.list.push(next);
+        else fm.list = fm.list.map(function (f) { return f.id === next.id ? next : f; });
+        fm.tab = next.id;
+        fm.msg = isNew ? 'Added ' + next.name + '. Players don’t see it until you show it to them.' : 'Saved.';
+        fm.msgKind = 'ok';
+        return next;
+      });
+    },
+    onClose: function () {
+      self.editor = null;
+      self.render();
+      self.focus('.sbx-tab[aria-selected="true"]');
+    }
+  });
+};
+
 StatblockPanel.prototype.publishHtml = function () {
   return '<div class="sbx-pub"><p class="sbx-line">Share this stat block in the community bestiary, where directors on this Chronicle can add it to their campaigns.</p>' +
     '<p class="sbx-pub-acts"><button type="button" class="btn-primary btn-sm" data-sbx-pub="published">Publish for everyone</button>' +
@@ -1045,9 +1582,19 @@ StatblockPanel.prototype.bind = function () {
       var which = act.getAttribute('data-sbx-act');
       if (which === 'edit') self.edit();
       else if (which === 'compare') self.toggleCompare();
+      else if (which === 'form-add') self.editForm(null);
+      else if (which === 'form-edit') { if (self.form()) self.editForm(self.form()); }
+      else if (which === 'form-show') self.toggleShown();
+      else if (which === 'form-remove') self.removeForm();
       else { self.publishOpen = !self.publishOpen; self.render(); }
       return;
     }
+    var tab = e.target.closest && e.target.closest('[data-sbx-form]');
+    if (tab && self.el.contains(tab)) { self.pickForm(tab.getAttribute('data-sbx-form')); return; }
+    var reset = e.target.closest && e.target.closest('[data-sbx-reset]');
+    if (reset && self.el.contains(reset)) { self.resetFigure(reset.getAttribute('data-sbx-reset')); return; }
+    var back = e.target.closest && e.target.closest('[data-sbx-putback]');
+    if (back && self.el.contains(back)) { self.putBack(back.getAttribute('data-sbx-putback'), back.getAttribute('data-sbx-name') || ''); return; }
     var cmp = e.target.closest && e.target.closest('[data-sbx-cmp]');
     if (cmp && self.el.contains(cmp)) { self.take(cmp.getAttribute('data-sbx-cmp')); return; }
     var pub = e.target.closest && e.target.closest('[data-sbx-pub]');
@@ -1056,6 +1603,21 @@ StatblockPanel.prototype.bind = function () {
   this.el.addEventListener('change', function (e) {
     var t = e.target;
     if (t && t.getAttribute && t.getAttribute('data-sbx-fvtt') === 'sendback') self.setSendBack(!!t.checked);
+    if (t && t.hasAttribute && t.hasAttribute('data-sbx-fstam')) self.setStamina(t.value);
+  });
+  // The form tabs move with the arrow keys, Home and End, as tabs do.
+  this.el.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (!t || !t.getAttribute || t.getAttribute('role') !== 'tab') return;
+    var tabs = Array.prototype.slice.call(self.el.querySelectorAll('.sbx-tab'));
+    var i = tabs.indexOf(t), to = -1;
+    if (e.key === 'ArrowRight') to = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') to = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') to = 0;
+    else if (e.key === 'End') to = tabs.length - 1;
+    if (to === -1 || !tabs[to]) return;
+    e.preventDefault();
+    self.pickForm(tabs[to].getAttribute('data-sbx-form'));
   });
 };
 

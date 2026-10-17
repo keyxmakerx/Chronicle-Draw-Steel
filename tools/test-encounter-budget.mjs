@@ -252,3 +252,22 @@ test('the slot is filled with text, and a hostile name never becomes markup', ()
   assert.ok(m.creatures[0].state === 'missing');
   delete globalThis.Chronicle;
 });
+
+test('the builder’s stages learn each creature’s forms from the gm half, in order', async () => {
+  const docs = {
+    '/campaigns/c1/entities/q/system-state/drawsteel/forms': { gm: { order: ['un', 'Bad!', 'sw'] }, public: {} },
+    '/campaigns/c1/entities/q/system-state/drawsteel/form-un': { gm: { id: 'un', name: 'Unmasked' } },
+    '/campaigns/c1/entities/q/system-state/drawsteel/form-sw': { gm: { id: 'other', name: 'Mismatched' } },
+  };
+  globalThis.Chronicle = {
+    apiFetch: (url) => Promise.resolve(docs[url]
+      ? { ok: true, json: () => Promise.resolve(docs[url]) }
+      : { ok: true, json: () => Promise.resolve({ gm: {}, public: {} }) }),
+  };
+  try {
+    const got = await new Promise((resolve) => EB.onForms({ detail: { campaignId: 'c1', entityIds: ['q', 'none'], reply: resolve } }));
+    assert.deepEqual(got, { q: [{ id: 'un', name: 'Unmasked' }], none: [] });
+  } finally {
+    delete globalThis.Chronicle;
+  }
+});
