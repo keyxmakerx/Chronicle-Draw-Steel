@@ -85,7 +85,8 @@
         { "key": "free_strike", "label": "Free Strike", "type": "string" },
         { "key": "keywords", "label": "Keywords", "type": "string" },
         { "key": "traits_display", "label": "Traits", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "monsters",
@@ -105,7 +106,8 @@
         { "key": "keywords", "label": "Keywords", "type": "string" },
         { "key": "immunities", "label": "Immunities", "type": "string" },
         { "key": "weaknesses", "label": "Weaknesses", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "creature-abilities",
@@ -125,7 +127,8 @@
         { "key": "effect_display", "label": "Effect", "type": "string" },
         { "key": "trigger", "label": "Trigger", "type": "string" },
         { "key": "villain_action_order", "label": "VA Order", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "animal-traits",
@@ -138,7 +141,8 @@
         { "key": "upgrade_display", "label": "Upgrade", "type": "string" },
         { "key": "optional", "label": "Optional", "type": "string" },
         { "key": "granted_ability_display", "label": "Granted Ability", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "ancestry-point-buy",
@@ -159,7 +163,8 @@
         { "key": "formula", "label": "Formula", "type": "string" },
         { "key": "rounding", "label": "Rounding", "type": "string" },
         { "key": "details_display", "label": "Details", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "encounter-building",
@@ -171,7 +176,8 @@
         { "key": "budget_band_text", "label": "Budget Band", "type": "string" },
         { "key": "victories", "label": "Victories", "type": "string" },
         { "key": "details_display", "label": "Details", "type": "string" }
-      ]
+      ],
+      "director": true
     },
     {
       "slug": "negotiation",

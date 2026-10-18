@@ -257,6 +257,9 @@ export function deriveSummary(description) {
  * `<key>_display` (see displayKeyFor) since propString can't print objects.
  * `fold: true` adds a "Details" column folding ungrouped keys into one
  * string, for datasets whose entries don't share a key set.
+ * `director: true` keeps the dataset to Directors in Chronicle (its pages,
+ * search, tooltips and raw data file): the Monsters book is the Director's
+ * book's content, and the book hides that chapter from players.
  *
  * Keep column counts low: the list table is `w-full` inside
  * `overflow-hidden`, so extra columns squeeze the rest instead of scrolling.
@@ -334,6 +337,7 @@ export const CATEGORIES = [
     slug: 'creatures',
     name: 'Creatures',
     icon: 'fa-paw',
+    director: true,
     columns: [
       ['level', 'Level', 'number'],
       ['organization', 'Organization', 'string'],
@@ -352,6 +356,7 @@ export const CATEGORIES = [
     slug: 'monsters',
     name: 'Monsters',
     icon: 'fa-dragon',
+    director: true,
     columns: [
       ['level', 'Level', 'number'],
       ['organization', 'Organization', 'string'],
@@ -373,6 +378,7 @@ export const CATEGORIES = [
     slug: 'creature-abilities',
     name: 'Creature Abilities',
     icon: 'fa-burst',
+    director: true,
     columns: [
       ['type', 'Type', 'string'],
       ['organizations', 'Made for', 'string'],
@@ -394,6 +400,7 @@ export const CATEGORIES = [
     slug: 'animal-traits',
     name: 'Animal Traits',
     icon: 'fa-hippo',
+    director: true,
     fold: true,
     columns: [
       ['group', 'Group', 'string'],
@@ -420,6 +427,7 @@ export const CATEGORIES = [
     slug: 'monster-building',
     name: 'Monster Building',
     icon: 'fa-dragon',
+    director: true,
     fold: true,
     // `category` is a constant marker on every entry of the file and just
     // repeats the category name the page is already under.
@@ -435,6 +443,7 @@ export const CATEGORIES = [
     slug: 'encounter-building',
     name: 'Encounter Building',
     icon: 'fa-chess-board',
+    director: true,
     fold: true,
     // `category` is a constant marker on every entry of the file and just
     // repeats the category name the page is already under.
