@@ -560,11 +560,62 @@ var EncounterBudget = (function () {
     show(d);
   }
 
+  // ── Forms for the builder's stages ────────────────────────────────────────
+
+  // The builder asks which other forms each creature page has (the stat
+  // block's forms, in the page's system state) so a stage can name one. Only
+  // the director reaches the builder, and only the gm half lists the forms.
+  var FORM_ID = /^[a-z0-9]{1,24}$/;
+  var formsCache = {};
+
+  function stateUrl(cid, eid, key) {
+    return '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/system-state/drawsteel/' + key;
+  }
+
+  function getState(url) {
+    return Chronicle.apiFetch(url).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
+  }
+
+  // pageForms is [{id, name}] in the director's order; [] when the page has
+  // none or they could not be read.
+  function pageForms(cid, eid) {
+    var key = cid + '/' + eid, hit = formsCache[key];
+    if (hit && Date.now() - hit.at < PAGE_TTL_MS) return hit.p;
+    var p = getState(stateUrl(cid, eid, 'forms')).then(function (doc) {
+      var order = (doc && doc.gm && Array.isArray(doc.gm.order) ? doc.gm.order : []).filter(function (id) {
+        return typeof id === 'string' && FORM_ID.test(id);
+      }).slice(0, 12);
+      return Promise.all(order.map(function (id) {
+        return getState(stateUrl(cid, eid, 'form-' + id)).then(function (d) {
+          var f = d && d.gm;
+          if (!f || f.id !== id) return null;
+          return { id: id, name: String(f.name || '').trim().slice(0, 80) || 'Unnamed form' };
+        });
+      }));
+    }).then(function (list) { return list.filter(Boolean); });
+    formsCache[key] = { at: Date.now(), p: p };
+    return p;
+  }
+
+  function onForms(ev) {
+    var d = ev && ev.detail;
+    if (!d || typeof d.reply !== 'function' || !d.campaignId || typeof Chronicle === 'undefined') return;
+    var cid = String(d.campaignId);
+    var ids = (Array.isArray(d.entityIds) ? d.entityIds : []).map(String).filter(Boolean).slice(0, 30);
+    Promise.all(ids.map(function (eid) { return pageForms(cid, eid); })).then(function (lists) {
+      var out = {};
+      ids.forEach(function (eid, i) { out[eid] = lists[i]; });
+      d.reply(out);
+    });
+  }
+
   if (typeof document !== 'undefined' && document.addEventListener && typeof Chronicle !== 'undefined') {
     document.addEventListener('chronicle:encounter-draft', onDraft);
+    document.addEventListener('chronicle:encounter-forms', onForms);
   }
 
   API.onDraft = onDraft;
+  API.onForms = onForms;
   return API;
 })();
 
