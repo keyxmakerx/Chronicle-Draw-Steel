@@ -633,6 +633,32 @@ var DrawSteelStatblock = (function () {
     '.sbx-pub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);font-size:14px}',
     '.sbx-msg{font-size:13px;color:var(--color-text-secondary,#6b7280)}',
     '.sbx-msg:empty{display:none}',
+    // Variants are rows on the page under a tab, not a box: hairlines, quiet
+    // words and the theme tokens only, so a style kit and the campaign's
+    // colour restyle them like the rest of the page.
+    '.sbx-var{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--color-text-body,#374151)}',
+    '.sbx-var-tab{margin:0;align-self:flex-start;font-size:12px;font-weight:600;font-variant:small-caps;letter-spacing:.06em;text-transform:lowercase;color:var(--color-text-secondary,#6b7280);padding:0 8px 2px 0;border-bottom:1px solid var(--color-border,#e5e7eb);border-right:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-var-line{margin:0}',
+    '.sbx-var a,.sbx-quiet{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-quiet{background:none;border:0;padding:0 2px;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}',
+    '.sbx-quiet:hover{text-decoration-style:solid}',
+    '.sbx-quiet:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '.sbx-var-acts{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
+    '.sbx-var-fold{border-top:1px solid var(--color-border,#e5e7eb);padding-top:8px;display:flex;flex-direction:column;gap:8px}',
+    '.sbx-var-q{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
+    '.sbx-var-q legend{float:left;margin-right:10px;font-size:12px;font-variant:small-caps;letter-spacing:.06em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-q input[type=radio],.sbx-var-q input[type=checkbox]{accent-color:var(--color-accent,#6366f1)}',
+    '.sbx-var-field{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}',
+    '.sbx-var input[type=text]{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid var(--color-border,#e5e7eb);padding:2px 0;min-width:10em}',
+    '.sbx-var input[type=text]:focus{outline:none;border-bottom-color:var(--color-accent,#6366f1)}',
+    '.sbx-var-row{display:grid;grid-template-columns:minmax(7em,auto) auto 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-var-src .sbx-var-row:first-child{border-top:0}',
+    '.sbx-var-s{color:var(--color-text-secondary,#6b7280);font-size:12px;display:flex;flex-wrap:wrap;gap:4px 10px}',
+    '.sbx-var-s.is-recipe{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-var-msg{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-msg:empty{display:none}',
+    '.sbx-var-msg.is-error{color:var(--color-danger,#dc2626)}',
+    '@media (max-width:640px){.sbx-var-row{grid-template-columns:1fr auto}.sbx-var-row .sbx-var-s{grid-column:1 / -1}}',
     '.sbx-msg.is-ok{color:#15803d}.sbx-msg.is-error{color:#b91c1c}',
     '.dark .sbx-msg.is-ok{color:#4ade80}.dark .sbx-msg.is-error{color:#f87171}',
     '.sbx-start{gap:8px}',
@@ -1027,12 +1053,374 @@ var DrawSteelForms = (function () {
 
   return {
     INDEX_KEY: INDEX_KEY, MAX_FORMS: MAX_FORMS, NAME_MAX: NAME_MAX, FIGURES: FIGURES, LISTS: LISTS, STAMINA: STAMINA,
-    formKey: formKey, label: label, clean: clean, view: view, diff: diff, mergeList: mergeList, diffList: diffList,
+    formKey: formKey, label: label, clean: clean, view: view, diff: diff, mergeList: mergeList, diffList: diffList, canon: canon,
     summary: summary, newId: newId, index: index
   };
 })();
 
 DrawSteelStatblock.Forms = DrawSteelForms;
+
+// ── Variants (a campaign's own recipes, such as Remnants) ───────────────────
+
+// DrawSteelVariants turns a creature into a linked variant by a recipe the
+// director made, so no variant rule ships in this package. A recipe is a list
+// of steps read off a sample creature the director edited; a variant keeps
+// only its own changes, so later edits to the original still reach it.
+//
+// One system-state key, `variant`, gm half only (players never read it):
+//   recipe page   {v, recipe: {name, part, label, sample, steps}}
+//   variant page  {v, follow: {of, parts: [recipe page ids], base}}
+//   any page      {v, children: [variant page ids]}
+// `base` is the variant's fields as the original and recipe gave them last
+// time, so whatever changed on the page since (the editor, Foundry, the AI
+// page) is the director's own change and survives the next refresh.
+var DrawSteelVariants = (function () {
+  'use strict';
+  var S = DrawSteelStatblock, F = DrawSteelForms;
+
+  var KEY = 'variant';
+  var ID = /^[A-Za-z0-9_-]{1,64}$/;
+  var NAME_MAX = 60;
+  var MAX_PARTS = 6;
+  var MAX_CHILDREN = 100;
+  // Figures the published formulas work out again after a recipe: a recipe
+  // never carries them.
+  var FORMULA = ['ev', 'stamina', 'free_strike', 'winded'];
+  var NUMBERS = ['level', 'speed', 'stability'].concat(S.CHARS);
+  var WORDS = ['keywords', 'immunities', 'weaknesses', 'movement'];
+  // Organizations ranked by the published organization modifier; a leader
+  // ranks with elite, so a leader one step down is a platoon.
+  var ORG_LADDER = ['minion', 'horde', 'platoon', 'elite', 'solo'];
+  var SIZE_LADDER = ['1T', '1S', '1M', '1L', '2', '3', '4', '5'];
+  var LADDERS = { organization: ORG_LADDER, size: SIZE_LADDER };
+
+  function own(o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); }
+  function obj(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null; }
+  function str(v, max) { return String(v == null ? '' : v).trim().slice(0, max || NAME_MAX); }
+  function int(v) { var n = Number(v); return (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '')) && isFinite(n) ? Math.round(n) : null; }
+  function words(v) { return S.parseList(v).map(function (w) { return String(w).trim(); }).filter(Boolean); }
+  function lower(a) { return a.map(function (w) { return w.toLowerCase(); }); }
+
+  function rank(k, v) {
+    var lad = LADDERS[k], s = String(v == null ? '' : v).toLowerCase();
+    if (!lad) return -1;
+    if (k === 'organization' && s === 'leader') s = 'elite';
+    for (var i = 0; i < lad.length; i++) if (lad[i].toLowerCase() === s) return i;
+    return -1;
+  }
+
+  // cleanStep keeps one step's own shape and drops anything else.
+  function cleanStep(k, raw) {
+    var r = obj(raw);
+    if (!r) return null;
+    if (r.mode === 'by' && NUMBERS.indexOf(k) !== -1 && int(r.by) !== null && int(r.by) !== 0) return { mode: 'by', by: int(r.by), to: int(r.to) };
+    if (r.mode === 'step' && LADDERS[k] && int(r.by) !== null && int(r.by) !== 0) return { mode: 'step', by: int(r.by), to: str(r.to) };
+    if (r.mode === 'words' && WORDS.indexOf(k) !== -1) {
+      var add = Array.isArray(r.add) ? r.add.map(function (w) { return str(w); }).filter(Boolean).slice(0, 20) : [];
+      var drop = Array.isArray(r.drop) ? r.drop.map(function (w) { return str(w); }).filter(Boolean).slice(0, 20) : [];
+      return (add.length || drop.length) ? { mode: 'words', add: add, drop: drop } : null;
+    }
+    if (r.mode === 'set' && (r.to === null || typeof r.to === 'string' || typeof r.to === 'number' || typeof r.to === 'boolean')) {
+      var out = { mode: 'set', to: typeof r.to === 'string' ? r.to.slice(0, 500) : r.to };
+      var was = obj(r.was) && (r.was.mode === 'by' || r.was.mode === 'step') ? cleanStep(k, r.was) : null;
+      if (was) out.was = was;
+      return out;
+    }
+    return null;
+  }
+
+  function cleanSteps(raw) {
+    var r = obj(raw) || {}, out = { changes: {}, lists: {} };
+    var ch = obj(r.changes) || {};
+    F.FIGURES.forEach(function (k) {
+      if (FORMULA.indexOf(k) !== -1 || !own(ch, k)) return;
+      var s = cleanStep(k, ch[k]);
+      if (s) out.changes[k] = s;
+    });
+    var cleaned = F.clean({ id: 'recipe', lists: r.lists });
+    out.lists = cleaned ? cleaned.lists : {};
+    return out;
+  }
+
+  // read takes a stored `variant` document's gm half apart defensively.
+  function read(gm) {
+    var g = obj(gm) || {}, out = { recipe: null, follow: null, children: [] };
+    var rc = obj(g.recipe);
+    if (rc && str(rc.name)) {
+      out.recipe = { name: str(rc.name), part: rc.part === 'addon' ? 'addon' : 'base', label: str(rc.label),
+        sample: ID.test(String(rc.sample || '')) ? String(rc.sample) : '', steps: cleanSteps(rc.steps) };
+      if (out.recipe.part === 'addon' && !out.recipe.label) out.recipe.part = 'base';
+    }
+    var fl = obj(g.follow);
+    if (fl && ID.test(String(fl.of || ''))) {
+      var seen = {};
+      out.follow = { of: String(fl.of), base: obj(fl.base) || {},
+        parts: (Array.isArray(fl.parts) ? fl.parts : []).filter(function (p) {
+          if (typeof p !== 'string' || !ID.test(p) || seen[p]) return false;
+          seen[p] = true; return true;
+        }).slice(0, MAX_PARTS) };
+    }
+    var kids = {};
+    out.children = (Array.isArray(g.children) ? g.children : []).filter(function (x) {
+      if (typeof x !== 'string' || !ID.test(x) || kids[x]) return false;
+      kids[x] = true; return true;
+    }).slice(0, MAX_CHILDREN);
+    return out;
+  }
+
+  // stepsFrom reads a recipe off a sample: what the director changed on it
+  // becomes a step that works on any creature. A number moves by the same
+  // amount, an organization or size by the same steps, a list of words adds
+  // and drops the same words, anything else is set; formula figures are left
+  // to the formulas.
+  function stepsFrom(sample, edited) {
+    var d = F.diff(sample, edited), out = { changes: {}, lists: d.lists };
+    Object.keys(d.changes).forEach(function (k) {
+      if (FORMULA.indexOf(k) !== -1) return;
+      var was = own(sample, k) ? sample[k] : null, now = d.changes[k];
+      if (NUMBERS.indexOf(k) !== -1 && int(was) !== null && int(now) !== null) {
+        if (int(now) !== int(was)) out.changes[k] = { mode: 'by', by: int(now) - int(was), to: int(now) };
+        return;
+      }
+      if (LADDERS[k] && rank(k, was) !== -1 && rank(k, now) !== -1 && rank(k, now) !== rank(k, was)) {
+        out.changes[k] = { mode: 'step', by: rank(k, now) - rank(k, was), to: String(now) };
+        return;
+      }
+      if (WORDS.indexOf(k) !== -1) {
+        var a = words(was), b = words(now), la = lower(a), lb = lower(b);
+        var add = b.filter(function (w) { return la.indexOf(w.toLowerCase()) === -1; });
+        var drop = a.filter(function (w) { return lb.indexOf(w.toLowerCase()) === -1; });
+        if (add.length || drop.length) out.changes[k] = { mode: 'words', add: add, drop: drop };
+        return;
+      }
+      out.changes[k] = { mode: 'set', to: now };
+    });
+    return cleanSteps(out);
+  }
+
+  // fixed turns a relative step into "always set to" what the sample got.
+  function fixed(step) {
+    if (!step || (step.mode !== 'by' && step.mode !== 'step') || step.to === null || step.to === '') return null;
+    return { mode: 'set', to: step.to, was: step };
+  }
+
+  // applyStep is one step on one creature's value; a relative step on a value
+  // it can't move (no number, an organization off the ladder) leaves it.
+  function applyStep(k, v, step) {
+    if (step.mode === 'set') return step.to;
+    if (step.mode === 'by') { var n = int(v); return n === null ? v : n + step.by; }
+    if (step.mode === 'step') {
+      var lad = LADDERS[k], i = rank(k, v);
+      if (i === -1) return v;
+      return lad[Math.max(0, Math.min(lad.length - 1, i + step.by))];
+    }
+    if (step.mode === 'words') {
+      var list = words(v).filter(function (w) { return lower(step.drop).indexOf(w.toLowerCase()) === -1; });
+      step.add.forEach(function (w) { if (lower(list).indexOf(w.toLowerCase()) === -1) list.push(w); });
+      return list.join(', ');
+    }
+    return v;
+  }
+
+  // apply lays a recipe's steps over a creature's fields; only stat block
+  // keys change, and a list step changes items by name as a form does.
+  function apply(fields, steps) {
+    var out = {}, k, st = steps || { changes: {}, lists: {} };
+    for (k in fields) if (own(fields, k)) out[k] = fields[k];
+    Object.keys(st.changes).forEach(function (key) { out[key] = applyStep(key, own(out, key) ? out[key] : null, st.changes[key]); });
+    F.LISTS.forEach(function (l) {
+      if (!st.lists[l[0]]) return;
+      var m = F.mergeList(listOf(out, l[0]), st.lists[l[0]]);
+      out[l[0]] = JSON.stringify(m.items);
+    });
+    return out;
+  }
+
+  function listOf(fields, key) {
+    var v = fields ? fields[key] : undefined;
+    if (key === 'traits' && typeof v === 'string' && v.trim() && !/^\s*\[/.test(v)) return S.normalize({ traits: v }).traits;
+    return S.parseObjects(v);
+  }
+
+  // statKeys are the keys a variant's recipe and own changes may touch; the
+  // page's other fields (its token, its book source, Stamina in a fight) are
+  // its own and never come from the original.
+  function statKeys() { return F.FIGURES.concat(F.LISTS.map(function (l) { return l[0]; })); }
+  function pick(fields) {
+    var out = {};
+    statKeys().forEach(function (k) { if (own(fields, k)) out[k] = fields[k]; });
+    return out;
+  }
+
+  // recompute has the editor work the formula figures out again. Figures the
+  // director typed on the original stay typed; Ed is DrawSteelCreatureEditor.
+  function recompute(Ed, fields, refs, typed) {
+    var st = Ed.newState('', fields, refs);
+    Ed.startFrom(st, null, fields);
+    st.own = {};
+    Object.keys(typed || {}).forEach(function (k) { if (typed[k]) st.own[k] = true; });
+    Ed.derive(st);
+    return pick(Ed.toSave(st).fields);
+  }
+
+  function typedOn(Ed, fields, refs) {
+    var st = Ed.newState('', fields, refs), out = {};
+    Object.keys(st.own || {}).forEach(function (k) { if (st.own[k]) out[k] = true; });
+    return out;
+  }
+
+  // base is the variant as the original and the recipe parts give it.
+  function base(Ed, original, parts, refs) {
+    var f = pick(original || {});
+    (parts || []).forEach(function (p) { if (p && p.steps) f = apply(f, p.steps); });
+    return recompute(Ed, f, refs, typedOn(Ed, pick(original || {}), refs));
+  }
+
+  function hash(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
+  // compact is a base as stored: figures as they are, list items only by
+  // name and a hash of their content, so a long stat block still fits in the
+  // page's state, and a changed item is still told from an untouched one.
+  function compact(b) {
+    var out = {};
+    F.FIGURES.forEach(function (k) { if (own(b, k)) out[k] = b[k]; });
+    F.LISTS.forEach(function (l) {
+      out[l[0]] = listOf(b, l[0]).map(function (x) { return { n: String((x && x.name) || '').trim(), h: hash(F.canon(x)) }; });
+    });
+    return out;
+  }
+
+  // listChanges is one list's change from a compact base to the page, by name.
+  function listChanges(was, now) {
+    var left = (Array.isArray(was) ? was : []).filter(function (x) { return x && typeof x.n === 'string'; }).slice(), drop = [], add = [];
+    now.forEach(function (e) {
+      var name = String((e && e.name) || '').trim(), i = -1;
+      left.forEach(function (b, n) { if (i === -1 && b.n === name) i = n; });
+      if (i === -1) { add.push(e); return; }
+      var b = left.splice(i, 1)[0];
+      if (b.h !== hash(F.canon(e))) { drop.push(name); add.push(e); }
+    });
+    left.forEach(function (b) { drop.push(b.n); });
+    return (drop.length || add.length) ? { drop: drop, add: add } : null;
+  }
+
+  // ownChanges is what the page holds that the last base did not. A formula
+  // figure that still matches its formula is the formula's, not the
+  // director's, so a level change on the variant keeps EV following.
+  function ownChanges(lastBase, page, refs) {
+    var figs = {}, lb = lastBase || {};
+    F.FIGURES.forEach(function (k) { if (own(lb, k)) figs[k] = lb[k]; });
+    var d = F.diff(figs, pick(page || {}));
+    d.lists = {};
+    F.LISTS.forEach(function (l) {
+      var c = listChanges(lb[l[0]], listOf(page || {}, l[0]));
+      if (c) d.lists[l[0]] = c;
+    });
+    var pr = S.provenance(S.normalize(page || {}), refs);
+    FORMULA.forEach(function (k) {
+      if (!own(d.changes, k)) return;
+      if (k === 'winded') { var c = S.normalize(page || {}); if (c.stamina !== null && c.winded === Math.floor(c.stamina / 2)) delete d.changes[k]; return; }
+      if (pr[k] && pr[k].state === 'formula') delete d.changes[k];
+    });
+    return d;
+  }
+
+  // materialize is the variant's stat block now: the base with the
+  // director's own changes laid over, then formulas worked out again for
+  // whatever those changes moved.
+  function materialize(Ed, original, parts, page, lastBase, refs) {
+    var mine = lastBase ? ownChanges(lastBase, page, refs) : { changes: {}, lists: {} };
+    var b = base(Ed, original, parts, refs);
+    var v = F.view(b, null, { changes: mine.changes, lists: mine.lists, art: '', token: '' }).fields;
+    var typed = typedOn(Ed, pick(original || {}), refs);
+    FORMULA.forEach(function (k) { if (own(mine.changes, k)) typed[k] = true; });
+    var fields = recompute(Ed, pick(v), refs, typed);
+    return { base: compact(b), full: b, fields: fields, mine: mine };
+  }
+
+  // stale says whether the page's stat block differs from what it should be.
+  function stale(page, fields) {
+    return statKeys().some(function (k) {
+      var a = own(page, k) ? page[k] : null, b = own(fields, k) ? fields[k] : null;
+      return JSON.stringify(a === undefined ? null : a) !== JSON.stringify(b === undefined ? null : b);
+    });
+  }
+
+  // show writes one figure's value the way the stat block does.
+  function show(k, v) {
+    if (v === null || v === undefined || v === '') return 'empty';
+    if (k === 'organization' || k === 'role') return S.cap(v);
+    if (S.CHARS.indexOf(k) !== -1 && isFinite(Number(v))) return S.signed(Number(v));
+    return String(v);
+  }
+
+  function nameFor(recipeName, originalName) {
+    return (str(recipeName) + ' of ' + String(originalName || '').trim()).slice(0, 200);
+  }
+
+  function partLabel(r) { return r.part === 'addon' ? r.label : r.name; }
+
+  // describe says each step in words, for the recipe page.
+  function describe(steps) {
+    var rows = [];
+    Object.keys(steps.changes).forEach(function (k) {
+      var s = steps.changes[k], what = F.label(k), text;
+      if (s.mode === 'by') text = (s.by > 0 ? 'up ' : 'down ') + Math.abs(s.by);
+      else if (s.mode === 'step') text = Math.abs(s.by) + ' step' + (Math.abs(s.by) === 1 ? '' : 's') + (s.by > 0 ? ' up' : ' down');
+      else if (s.mode === 'words') text = [s.add.length ? 'adds ' + s.add.join(', ') : '', s.drop.length ? 'drops ' + s.drop.join(', ') : ''].filter(Boolean).join('; ');
+      else text = 'becomes ' + show(k, s.to);
+      rows.push({ key: k, what: what, text: text, mode: s.mode, canFix: !!fixed(s), canFree: s.mode === 'set' && !!s.was });
+    });
+    F.LISTS.forEach(function (l) {
+      var d = steps.lists[l[0]];
+      if (!d) return;
+      var kind = l[0] === 'traits' ? 'trait' : l[0] === 'abilities_json' ? 'ability' : 'villain action';
+      var added = d.add.map(function (a) { return a.name; }), changed = added.filter(function (n) { return d.drop.indexOf(n) !== -1; });
+      d.add.forEach(function (a) {
+        rows.push({ key: l[0], what: S.cap(kind), text: (changed.indexOf(a.name) !== -1 ? 'changes ' : 'adds ') + String(a.name || 'one with no name'), mode: 'list' });
+      });
+      d.drop.forEach(function (n) { if (added.indexOf(n) === -1) rows.push({ key: l[0], what: S.cap(kind), text: 'drops ' + n + ' if it has one', mode: 'list' }); });
+    });
+    return rows;
+  }
+
+  // sources says where each figure on a variant comes from, for the director.
+  function sources(original, b, page, parts) {
+    var rows = [], o = pick(original || {}), mine = ownChanges(b, page);
+    var byRecipe = {};
+    (parts || []).forEach(function (p) {
+      if (!p || !p.steps) return;
+      Object.keys(p.steps.changes).forEach(function (k) { byRecipe[k] = true; });
+      F.LISTS.forEach(function (l) { if (p.steps.lists[l[0]]) byRecipe[l[0]] = true; });
+    });
+    F.FIGURES.forEach(function (k) {
+      if (!own(page, k) && !own(b, k)) return;
+      var v = own(page, k) ? page[k] : null;
+      if (v === null || v === '' || v === undefined) return;
+      var src;
+      if (own(mine.changes, k)) src = 'yours';
+      else if (byRecipe[k]) src = 'recipe';
+      else if (FORMULA.indexOf(k) !== -1) src = 'formula';
+      else if (JSON.stringify(o[k]) === JSON.stringify(b[k])) src = 'original';
+      else src = 'formula';
+      rows.push({ key: k, what: F.label(k), value: v, was: own(o, k) ? o[k] : null, src: src });
+    });
+    return rows;
+  }
+
+  return {
+    MAX_BYTES: 15 * 1024, KEY: KEY, ORG_LADDER: ORG_LADDER, SIZE_LADDER: SIZE_LADDER, FORMULA: FORMULA, MAX_PARTS: MAX_PARTS, MAX_CHILDREN: MAX_CHILDREN,
+    read: read, cleanSteps: cleanSteps, stepsFrom: stepsFrom, fixed: fixed, apply: apply, base: base, ownChanges: ownChanges,
+    materialize: materialize, stale: stale, nameFor: nameFor, partLabel: partLabel, describe: describe, sources: sources,
+    pick: pick, rank: rank, show: show, compact: compact
+  };
+})();
+
+DrawSteelStatblock.Variants = DrawSteelVariants;
 
 // ── The page panel ──────────────────────────────────────────────────────────
 
@@ -1053,6 +1441,8 @@ function StatblockPanel(el, config) {
   this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
   // tab is the form on show: '' for the first form, else a form id.
   this.forms = { list: [], shown: [], current: '', loaded: false, error: false, saving: false, tab: '', msg: '', msgKind: '' };
+  // vr is what this page is to variants: a recipe, a variant, an original.
+  this.vr = { loaded: false, doc: null, kids: [], recipes: null, open: '', pick: '', msg: '', msgHtml: '', msgKind: '', saving: false };
 }
 
 StatblockPanel.prototype.start = function () {
@@ -1079,7 +1469,7 @@ StatblockPanel.prototype.start = function () {
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
       if (self.isGM) self.loadFoundry();
-      return self.loadForms();
+      return Promise.all([self.loadForms(), self.isGM ? self.loadVariant() : null]);
     });
   }).catch(function (err) {
     if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature', err);
@@ -1098,6 +1488,17 @@ StatblockPanel.prototype.render = function () {
   var name = (this.entity && this.entity.name) || '';
   this.el.hidden = false;
   this.el.className = 'ds-statblock-panel';
+  if (this.isGM && this.vr.doc && this.vr.doc.recipe) {
+    this.el.innerHTML = this.recipeHtml();
+    this.bind();
+    return;
+  }
+  // A recipe page has no stat block; wait to learn it is one before offering to build one.
+  if (!S.hasStatblock(f) && this.isGM && !this.vr.loaded) { this.el.hidden = true; return; }
+  if (!S.hasStatblock(f) && this.isGM && this.vr.error) {
+    this.el.innerHTML = '<div class="sbx sbx-start"><p class="sbx-line">Could not read whether this page is a variant recipe. Reload to try again.</p></div>';
+    return;
+  }
   if (!S.hasStatblock(f)) {
     // A Creature page with no stat block yet: the director gets a way to start
     // one; a player sees nothing rather than an empty card.
@@ -1126,7 +1527,7 @@ StatblockPanel.prototype.render = function () {
     body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) });
   }
   this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.tabsHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' + body +
-    (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
+    (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' + this.variantsHtml() : '') + '</div>';
   this.bind();
 };
 
@@ -1589,6 +1990,19 @@ StatblockPanel.prototype.bind = function () {
       else { self.publishOpen = !self.publishOpen; self.render(); }
       return;
     }
+    var va = e.target.closest && e.target.closest('[data-sbx-var], [data-sbx-var-fix], [data-sbx-var-free], [data-sbx-var-drop]');
+    if (va && self.el.contains(va)) {
+      if (va.hasAttribute('data-sbx-var-fix')) { self.editStep('fix', va.getAttribute('data-sbx-var-fix')); return; }
+      if (va.hasAttribute('data-sbx-var-free')) { self.editStep('free', va.getAttribute('data-sbx-var-free')); return; }
+      if (va.hasAttribute('data-sbx-var-drop')) { self.editStep('drop', va.getAttribute('data-sbx-var-drop')); return; }
+      var v = va.getAttribute('data-sbx-var');
+      if (v === 'make' || v === 'new') self.openVariantFold(v);
+      else if (v === 'sources') { self.vr.open = self.vr.open === 'sources' ? '' : 'sources'; self.render(); self.focus('[data-sbx-var="sources"]'); }
+      else if (v === 'go') self.makeVariant();
+      else if (v === 'author') self.authorRecipe(null);
+      else if (v === 'reedit') self.reeditRecipe();
+      return;
+    }
     var tab = e.target.closest && e.target.closest('[data-sbx-form]');
     if (tab && self.el.contains(tab)) { self.pickForm(tab.getAttribute('data-sbx-form')); return; }
     var reset = e.target.closest && e.target.closest('[data-sbx-reset]');
@@ -1604,6 +2018,7 @@ StatblockPanel.prototype.bind = function () {
     var t = e.target;
     if (t && t.getAttribute && t.getAttribute('data-sbx-fvtt') === 'sendback') self.setSendBack(!!t.checked);
     if (t && t.hasAttribute && t.hasAttribute('data-sbx-fstam')) self.setStamina(t.value);
+    if (t && t.hasAttribute && t.hasAttribute('data-sbx-var-recipe')) { self.vr.pick = t.value; self.render(); self.focus('[data-sbx-var-recipe]:checked'); }
   });
   // The form tabs move with the arrow keys, Home and End, as tabs do.
   this.el.addEventListener('keydown', function (e) {
@@ -1680,8 +2095,430 @@ StatblockPanel.prototype.edit = function () {
       self.editor = null;
       if (saved) self.entity = saved;
       self.render();
+      if (saved && self.isGM) self.refreshKids();
     }
   });
+};
+
+// ── Variants on the page (directors only) ───────────────────────────────────
+
+StatblockPanel.prototype.variantUrl = function (eid) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid || this.eid) + '/system-state/drawsteel/' + DrawSteelVariants.KEY;
+};
+
+StatblockPanel.prototype.entityUrl = function (eid) {
+  return '/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid || this.eid);
+};
+
+StatblockPanel.prototype.pageHref = function (eid) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid);
+};
+
+// readVariant reads one page's `variant` gm half; a page without one reads empty.
+StatblockPanel.prototype.readVariant = function (eid) {
+  var S = DrawSteelStatblock, V = DrawSteelVariants;
+  return S.getJSON(this.variantUrl(eid)).then(function (d) {
+    var gm = d && d.gm && typeof d.gm === 'object' ? d.gm : {};
+    return { gm: gm, v: V.read(gm) };
+  });
+};
+
+// writeVariant lays a change over a page's gm half, keeping its other keys.
+StatblockPanel.prototype.writeVariant = function (eid, change) {
+  var S = DrawSteelStatblock, self = this;
+  // A failed read stops the write: writing the change alone would drop the
+  // page's other links.
+  return this.readVariant(eid).then(function (cur) {
+    var gm = {}, k;
+    for (k in cur.gm) if (Object.prototype.hasOwnProperty.call(cur.gm, k)) gm[k] = cur.gm[k];
+    change(gm);
+    gm.v = 1;
+    if (JSON.stringify(gm).length > DrawSteelVariants.MAX_BYTES) throw new Error('variant too large');
+    return S.apiFetch(self.variantUrl(eid), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: gm }) })
+      .then(function (res) { if (!res.ok) throw new Error('variant ' + res.status); return gm; });
+  });
+};
+
+// putFields saves another page's stat block keys over its current fields.
+// The page is read fresh, so a value Foundry or the AI page wrote since it
+// loaded survives.
+StatblockPanel.prototype.putFields = function (eid, entity, statFields) {
+  var S = DrawSteelStatblock, url = this.entityUrl(eid);
+  return S.getJSON(url).then(function (cur) {
+    var merged = {}, k, now = (cur && cur.fields_data) || {};
+    for (k in now) if (Object.prototype.hasOwnProperty.call(now, k)) merged[k] = now[k];
+    for (k in statFields) if (Object.prototype.hasOwnProperty.call(statFields, k)) merged[k] = statFields[k];
+    var name = (cur && cur.name) || (entity && entity.name) || '';
+    return S.apiFetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, fields_data: merged }) })
+      .then(function (res) { if (!res.ok) throw new Error('save ' + res.status); return merged; });
+  });
+};
+
+// loadVariant reads what this page is: a recipe, a variant that follows an
+// original (brought up to date now, so the original's edits arrive), and the
+// variants made from it.
+StatblockPanel.prototype.loadVariant = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr;
+  return this.readVariant().then(function (r) {
+    vr.doc = r.v;
+    var jobs = [];
+    if (r.v.recipe && r.v.recipe.sample) {
+      jobs.push(S.getJSON(self.entityUrl(r.v.recipe.sample)).then(function (e) { vr.sampleName = e && e.name ? String(e.name) : ''; }, function () { vr.sampleName = ''; }));
+    }
+    if (r.v.follow) jobs.push(self.followUp(r.v.follow));
+    jobs.push(Promise.all(r.v.children.map(function (id) {
+      return S.getJSON(self.entityUrl(id)).then(function (e) { return { id: id, name: e && e.name ? String(e.name) : '' }; }, function () { return null; });
+    })).then(function (kids) { vr.kids = kids.filter(Boolean); }));
+    return Promise.all(jobs);
+  }).catch(function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not read this creature’s variants', err);
+    vr.error = true;
+  }).then(function () { vr.loaded = true; if (!self.editor) self.render(); });
+};
+
+// refresh brings one variant up to date with its original and recipe parts,
+// saving only when its stat block would change. It returns what it read, so
+// the page it is on can say where each figure comes from.
+StatblockPanel.prototype.refresh = function (vid, ventity, follow) {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed) return Promise.reject(new Error('editor missing'));
+  return Promise.all([
+    S.getJSON(this.entityUrl(follow.of)),
+    Promise.all(follow.parts.map(function (id) {
+      // A recipe that can't be read stops the refresh; one that is gone (its
+      // page deleted) is simply no longer applied.
+      return self.readVariant(id).then(function (r) { return r.v.recipe ? { id: id, recipe: r.v.recipe, steps: r.v.recipe.steps } : null; }, function (err) {
+        if (err && /-> 404$/.test(String(err.message))) return null;
+        throw err;
+      });
+    }))
+  ]).then(function (x) {
+    var orig = x[0], parts = x[1].filter(Boolean);
+    var page = (ventity && ventity.fields_data) || {};
+    var m = V.materialize(Ed, (orig && orig.fields_data) || {}, parts, page, follow.base, self.refs);
+    var out = { original: orig, parts: parts, base: m.base, fields: m.fields };
+    if (!V.stale(page, m.fields) && JSON.stringify(follow.base) === JSON.stringify(m.base)) { out.fields = V.pick(page); return out; }
+    return self.putFields(vid, ventity, m.fields).then(function (merged) {
+      if (vid === self.eid && self.entity) self.entity.fields_data = merged;
+      return self.writeVariant(vid, function (gm) {
+        gm.follow = { of: follow.of, parts: follow.parts, base: m.base };
+      });
+    }).then(function () { return out; });
+  });
+};
+
+StatblockPanel.prototype.followUp = function (follow) {
+  var vr = this.vr;
+  return this.refresh(this.eid, this.entity, follow).then(function (out) {
+    vr.original = out.original ? { id: follow.of, name: String(out.original.name || '') } : null;
+    vr.parts = out.parts;
+    vr.base = out.base;
+    vr.origFields = (out.original && out.original.fields_data) || {};
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not bring this variant up to date', err);
+    vr.msg = err && err.message === 'editor missing'
+      ? 'The stat block editor did not load, so this page may be behind its original. Reload to try again.'
+      : err && err.message === 'variant too large'
+        ? 'This variant’s stat block is too long to keep following its original. Its figures are saved; shorten its abilities to link it again.'
+        : 'Could not read the original or its recipe, so this page may be behind. Reload to try again.';
+    vr.msgKind = 'error';
+  });
+};
+
+// refreshKids passes a saved edit on to every variant made from this page.
+StatblockPanel.prototype.refreshKids = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr;
+  var ids = (vr.doc && vr.doc.children) || [];
+  if (!ids.length) return Promise.resolve();
+  var failed = 0;
+  return Promise.all(ids.map(function (id) {
+    return Promise.all([S.getJSON(self.entityUrl(id)), self.readVariant(id)]).then(function (x) {
+      if (!x[1].v.follow || x[1].v.follow.of !== self.eid) return null;
+      return self.refresh(id, x[0], x[1].v.follow);
+    }).catch(function () { failed++; });
+  })).then(function () {
+    if (failed) { vr.msg = failed + ' of its variants could not be brought up to date. Opening one updates it.'; vr.msgKind = 'error'; self.render(); }
+  });
+};
+
+// loadRecipes lists the campaign's recipe pages, once per page view.
+StatblockPanel.prototype.loadRecipes = function () {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr;
+  if (vr.recipes) return Promise.resolve(vr.recipes);
+  return S.getJSON('/campaigns/' + encodeURIComponent(this.cid) + '/system-state/drawsteel/' + V.KEY).then(function (d) {
+    var items = (d && Array.isArray(d.items)) ? d.items : [];
+    vr.recipes = items.map(function (it) {
+      var r = V.read(it && it.gm).recipe;
+      return r && it.entityId ? { id: String(it.entityId), page: String(it.entityName || ''), recipe: r } : null;
+    }).filter(Boolean);
+    vr.truncated = !!(d && d.truncated);
+    return vr.recipes;
+  });
+};
+
+// recipeNames is each recipe once, its base part first.
+StatblockPanel.prototype.recipeGroups = function () {
+  var groups = {}, order = [];
+  (this.vr.recipes || []).forEach(function (r) {
+    var key = r.recipe.name.toLowerCase();
+    if (!groups[key]) { groups[key] = { name: r.recipe.name, base: null, addons: [] }; order.push(key); }
+    if (r.recipe.part === 'base' && !groups[key].base) groups[key].base = r;
+    else if (r.recipe.part === 'addon') groups[key].addons.push(r);
+  });
+  return order.map(function (k) { return groups[k]; }).filter(function (g) { return g.base; });
+};
+
+StatblockPanel.prototype.openVariantFold = function (which) {
+  var self = this, vr = this.vr;
+  vr.open = vr.open === which ? '' : which;
+  vr.msg = ''; vr.msgKind = '';
+  if (!vr.open) { this.render(); this.focus('[data-sbx-var="' + which + '"]'); return; }
+  vr.loading = true;
+  this.render();
+  this.loadRecipes().catch(function () { vr.listError = true; }).then(function () {
+    vr.loading = false;
+    var g = self.recipeGroups();
+    if (!vr.pick && g.length) vr.pick = g[0].name.toLowerCase();
+    self.render();
+    self.focus('.sbx-var-fold input, .sbx-var-fold button');
+  });
+};
+
+// variantsHtml is the director's Variants section under the stat block.
+StatblockPanel.prototype.variantsHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, self = this;
+  if (!this.isGM || !vr.loaded) return '';
+  var out = '<section class="sbx-var" aria-label="Variants"><h4 class="sbx-var-tab">Variants</h4>';
+  var d = vr.doc || {};
+  if (d.follow && vr.original) {
+    var parts = (vr.parts || []).map(function (p) { return DrawSteelVariants.partLabel(p.recipe); });
+    out += '<p class="sbx-var-line">Follows <a href="' + esc(this.pageHref(vr.original.id)) + '">' + esc(vr.original.name || 'its original') + '</a>' +
+      (parts.length ? ' · ' + esc(parts.join(', ')) : '') + '. Changes to the original reach this page unless you changed the same thing here.' +
+      ' <button type="button" class="sbx-quiet" data-sbx-var="sources" aria-expanded="' + (vr.open === 'sources') + '">Where each figure comes from</button></p>';
+    if (vr.open === 'sources') out += this.sourcesHtml();
+  }
+  if (vr.kids && vr.kids.length) {
+    out += '<p class="sbx-var-line">Made from it: ' + vr.kids.map(function (k) {
+      return '<a href="' + esc(self.pageHref(k.id)) + '">' + esc(k.name || 'a variant') + '</a>';
+    }).join(', ') + '</p>';
+  }
+  out += '<p class="sbx-var-acts"><button type="button" class="sbx-quiet" data-sbx-var="make" aria-expanded="' + (vr.open === 'make') + '">Make a variant</button>' +
+    '<button type="button" class="sbx-quiet" data-sbx-var="new" aria-expanded="' + (vr.open === 'new') + '">New recipe from this creature</button></p>';
+  if (vr.open === 'make') out += this.makeHtml();
+  if (vr.open === 'new') out += this.newRecipeHtml();
+  out += '<p class="sbx-var-msg' + (vr.msgKind ? ' is-' + vr.msgKind : '') + '" role="status" aria-live="polite">' + (vr.msgHtml || esc(vr.msg || '')) + '</p></section>';
+  return out;
+};
+
+StatblockPanel.prototype.sourcesHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr;
+  var rows = DrawSteelVariants.sources(vr.origFields, vr.base || {}, this.fields(), vr.parts);
+  var show = DrawSteelVariants.show;
+  var text = { yours: 'changed by you', original: 'from the original', formula: 'published formula' };
+  return '<div class="sbx-var-fold sbx-var-src">' + rows.map(function (r) {
+    var src = r.src === 'recipe'
+      ? 'recipe' + (r.was !== null && r.was !== '' && r.was !== undefined ? ' (was ' + show(r.key, r.was) + ')' : '')
+      : text[r.src];
+    return '<div class="sbx-var-row"><span>' + esc(r.what) + '</span><b>' + esc(show(r.key, r.value)) + '</b><span class="sbx-var-s is-' + esc(r.src) + '">' + esc(src) + '</span></div>';
+  }).join('') + '</div>';
+};
+
+StatblockPanel.prototype.makeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, self = this;
+  if (vr.loading) return '<div class="sbx-var-fold"><p class="sbx-var-line">Reading this campaign’s recipes…</p></div>';
+  if (vr.listError) return '<div class="sbx-var-fold"><p class="sbx-var-line">Could not read this campaign’s recipes. Try again.</p></div>';
+  var groups = this.recipeGroups();
+  if (!groups.length) return '<div class="sbx-var-fold"><p class="sbx-var-line">No recipes yet. Use <b>New recipe from this creature</b> to make one: change this creature the way the recipe should, and every step is read from what you changed.</p></div>';
+  var g = null;
+  groups.forEach(function (x) { if (x.name.toLowerCase() === vr.pick) g = x; });
+  g = g || groups[0];
+  var name = DrawSteelVariants.nameFor(g.name, this.entity && this.entity.name);
+  var out = '<div class="sbx-var-fold"><fieldset class="sbx-var-q"><legend>Recipe</legend>' + groups.map(function (x) {
+    return '<label><input type="radio" name="sbx-var-recipe-' + esc(self.eid) + '" value="' + esc(x.name.toLowerCase()) + '" data-sbx-var-recipe' +
+      (x === g ? ' checked' : '') + '> ' + esc(x.name) + '</label>';
+  }).join('') + '</fieldset>';
+  if (g.addons.length) {
+    out += '<fieldset class="sbx-var-q"><legend>Add-ons</legend>' + g.addons.map(function (a) {
+      return '<label><input type="checkbox" value="' + esc(a.id) + '" data-sbx-var-addon> ' + esc(a.recipe.label) + '</label>';
+    }).join('') + '</fieldset>';
+  }
+  if (vr.truncated) out += '<p class="sbx-var-line">Only the first 200 recipe pages are listed.</p>';
+  out += '<p class="sbx-var-line">Makes a new page, <b>' + esc(name) + '</b>, that follows this one. You can rename it.</p>' +
+    '<p class="sbx-var-acts"><button type="button" class="btn-primary btn-sm" data-sbx-var="go"' + (vr.saving ? ' disabled' : '') + '>Make the variant</button></p></div>';
+  return out;
+};
+
+StatblockPanel.prototype.newRecipeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, eid = esc(this.eid);
+  var names = this.recipeGroups().map(function (g) { return '<option value="' + esc(g.name) + '"></option>'; }).join('');
+  return '<div class="sbx-var-fold">' +
+    '<p class="sbx-var-line">You change this creature the way the recipe should, and each change becomes a step that works on any creature: a number moves by the same amount, an organization or size by the same steps. This creature itself is not changed.</p>' +
+    '<label class="sbx-var-field">Recipe name <input type="text" maxlength="60" list="sbx-var-names-' + eid + '" data-sbx-var-name placeholder="Remnant"></label>' +
+    '<datalist id="sbx-var-names-' + eid + '">' + names + '</datalist>' +
+    '<fieldset class="sbx-var-q"><legend>This is</legend>' +
+    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="base" checked data-sbx-var-part> the recipe itself</label>' +
+    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="addon" data-sbx-var-part> an add-on to it, called <input type="text" maxlength="60" data-sbx-var-label placeholder="Strong" aria-label="Add-on name"></label></fieldset>' +
+    '<p class="sbx-var-acts"><button type="button" class="btn-primary btn-sm" data-sbx-var="author">Change this creature to show it</button></p></div>';
+};
+
+// makeVariant makes the new page, links it to this one and to its recipe
+// parts, and tells the director where it is.
+StatblockPanel.prototype.makeVariant = function () {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr, esc = S.esc;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  var g = null;
+  this.recipeGroups().forEach(function (x) { if (x.name.toLowerCase() === vr.pick) g = x; });
+  if (!Ed) { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
+  if (!g || vr.saving) return;
+  var ticked = Array.prototype.slice.call(this.el.querySelectorAll('[data-sbx-var-addon]')).filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+  var parts = [g.base].concat(g.addons.filter(function (a) { return ticked.indexOf(a.id) !== -1; })).slice(0, V.MAX_PARTS);
+  var m = V.materialize(Ed, this.fields(), parts.map(function (p) { return { steps: p.recipe.steps }; }), {}, null, this.refs);
+  var fields = {}, k;
+  for (k in m.fields) if (Object.prototype.hasOwnProperty.call(m.fields, k)) fields[k] = m.fields[k];
+  if (this.fields()[S.TOKEN_KEY]) fields[S.TOKEN_KEY] = this.fields()[S.TOKEN_KEY];
+  var name = V.nameFor(g.name, this.entity && this.entity.name);
+  vr.saving = true; vr.msg = 'Making ' + name + '…'; vr.msgKind = ''; vr.msgHtml = '';
+  this.render();
+  var newId = null;
+  S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, entity_type_id: this.entity.entity_type_id, is_private: this.entity.is_private === true, fields_data: fields })
+  }).then(function (res) {
+    if (!res.ok) throw new Error('create ' + res.status);
+    return res.json();
+  }).then(function (made) {
+    newId = made && made.id ? String(made.id) : null;
+    if (!newId) throw new Error('create returned no id');
+    return self.writeVariant(newId, function (gm) { gm.follow = { of: self.eid, parts: parts.map(function (p) { return p.id; }), base: m.base }; });
+  }).then(function () {
+    return self.writeVariant(self.eid, function (gm) {
+      var kids = Array.isArray(gm.children) ? gm.children.slice(0, V.MAX_CHILDREN - 1) : [];
+      if (kids.indexOf(newId) === -1) kids.push(newId);
+      gm.children = kids;
+    });
+  }).then(function () {
+    vr.doc.children = (vr.doc.children || []).concat([newId]);
+    vr.kids = (vr.kids || []).concat([{ id: newId, name: name }]);
+    vr.open = '';
+    vr.msgHtml = 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>.';
+    vr.msgKind = 'ok';
+  }).catch(function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not make the variant', err);
+    vr.msgHtml = newId ? 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>, but could not link it to this page' +
+      (err && err.message === 'variant too large' ? ', because its stat block is too long to follow its original. It stays as a plain copy.' : '. Delete it and try again.') : '';
+    vr.msg = 'Could not make the variant. Try again.';
+    vr.msgKind = 'error';
+  }).then(function () { vr.saving = false; self.render(); self.focus('.sbx-var-msg a, [data-sbx-var="make"]'); });
+};
+
+// authorRecipe opens the editor on this creature; what the director saves is
+// read as recipe steps on a new private page, and this creature is untouched.
+StatblockPanel.prototype.authorRecipe = function (existing) {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr, esc = S.esc;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed || !Ed.roundTrip) { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
+  var recipe = existing ? existing.recipe : null;
+  if (!recipe) {
+    var nameEl = this.el.querySelector('[data-sbx-var-name]'), partEl = this.el.querySelector('[data-sbx-var-part]:checked'), labelEl = this.el.querySelector('[data-sbx-var-label]');
+    var rname = nameEl ? String(nameEl.value || '').trim().slice(0, 60) : '';
+    var part = partEl && partEl.value === 'addon' ? 'addon' : 'base';
+    var label = labelEl ? String(labelEl.value || '').trim().slice(0, 60) : '';
+    if (!rname) { vr.msg = 'Give the recipe a name first, such as Remnant.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-name]'); return; }
+    if (part === 'addon' && !label) { vr.msg = 'Give the add-on a name first, such as Strong.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-label]'); return; }
+    recipe = { name: rname, part: part, label: label, sample: this.eid, steps: { changes: {}, lists: {} } };
+  }
+  var sampleFields = existing ? existing.sampleFields : this.fields();
+  var sampleName = existing ? existing.sampleName : ((this.entity && this.entity.name) || '');
+  var start = V.apply(Ed.roundTrip(sampleName, sampleFields, this.refs), recipe.steps);
+  var title = recipe.part === 'addon' ? recipe.name + ': ' + recipe.label : recipe.name;
+  this.el.innerHTML = '';
+  var host = this.el.ownerDocument.createElement('div');
+  this.el.appendChild(host);
+  this.editor = Ed.mount(host, {
+    campaignId: this.cid,
+    entityId: existing ? existing.sampleId : this.eid,
+    entity: { name: sampleName, image_path: '', fields_data: start },
+    refs: this.refs,
+    ref: this.ref,
+    form: { heading: title + ' recipe, shown on ' + sampleName, nameLabel: 'Name (not saved)', dirtyKey: 'monster-builder:recipe:' + this.eid },
+    saveAs: function (out) {
+      var steps = V.stepsFrom(Ed.roundTrip(sampleName, sampleFields, self.refs), out.fields);
+      var next = { name: recipe.name, part: recipe.part, label: recipe.label, sample: existing ? existing.sampleId : self.eid, steps: steps };
+      if (existing) return self.writeVariant(self.eid, function (gm) { gm.recipe = next; }).then(function () { self.vr.doc.recipe = V.read({ recipe: next }).recipe; return next; });
+      return S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(self.cid) + '/entities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: title + ' (recipe)', entity_type_id: self.entity.entity_type_id, is_private: true, fields_data: {} })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('create ' + res.status);
+        return res.json();
+      }).then(function (made) {
+        var id = made && made.id ? String(made.id) : null;
+        if (!id) throw new Error('create returned no id');
+        return self.writeVariant(id, function (gm) { gm.recipe = next; }).catch(function (err) {
+          vr.msgHtml = 'Made the page <a href="' + esc(self.pageHref(id)) + '">' + esc(title + ' (recipe)') + '</a> but could not save the recipe on it' +
+            (err && err.message === 'variant too large' ? ', because it is too long. Make it with fewer or shorter changes.' : '. Delete that page and try again.');
+          vr.msgKind = 'error';
+          throw err;
+        }).then(function () {
+          vr.recipes = null; vr.open = '';
+          vr.msgHtml = 'Saved the recipe on its own page, <a href="' + esc(self.pageHref(id)) + '">' + esc(title + ' (recipe)') + '</a>, which only directors see. ' +
+            (Object.keys(steps.changes).length || Object.keys(steps.lists).length ? '' : 'You changed nothing, so it has no steps yet.');
+          vr.msgKind = 'ok';
+          return next;
+        });
+      });
+    },
+    onClose: function () { self.editor = null; self.render(); self.focus('.sbx-var-msg a, [data-sbx-var="new"]'); }
+  });
+};
+
+// ── The recipe page ──
+
+StatblockPanel.prototype.recipeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, V = DrawSteelVariants, vr = this.vr, r = vr.doc.recipe;
+  var rows = V.describe(r.steps);
+  var title = r.part === 'addon' ? 'Add-on <b>' + esc(r.label) + '</b> to the recipe <b>' + esc(r.name) + '</b>' : 'The recipe <b>' + esc(r.name) + '</b>';
+  var out = '<div class="sbx-wrap"><div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-flask" aria-hidden="true"></i> Variant recipe</span></div>' +
+    '<section class="sbx-var"><p class="sbx-var-line">' + title + '. Players never see a recipe. Use <b>Make a variant</b> on any creature’s page to apply it.</p>';
+  out += rows.length ? '<div class="sbx-var-src">' + rows.map(function (x, i) {
+    var acts = '';
+    if (x.canFix) acts += '<button type="button" class="sbx-quiet" data-sbx-var-fix="' + esc(x.key) + '">always ' + esc(V.show(x.key, r.steps.changes[x.key].to)) + ' instead</button>';
+    if (x.canFree) acts += '<button type="button" class="sbx-quiet" data-sbx-var-free="' + esc(x.key) + '">' + (r.steps.changes[x.key].was.mode === 'step' ? 'move by steps instead' : 'move by the amount instead') + '</button>';
+    if (x.mode !== 'list') acts += '<button type="button" class="sbx-quiet" data-sbx-var-drop="' + esc(x.key) + '">remove</button>';
+    return '<div class="sbx-var-row" data-i="' + i + '"><span>' + esc(x.what) + '</span><b>' + esc(x.text) + '</b><span class="sbx-var-s">' + acts + '</span></div>';
+  }).join('') + '</div>' : '<p class="sbx-var-line">No steps yet.</p>';
+  out += '<p class="sbx-var-acts"><button type="button" class="sbx-quiet" data-sbx-var="reedit">' +
+    (vr.sampleName ? 'Change it on ' + esc(vr.sampleName) : 'Change it on its sample creature') + '</button></p>' +
+    '<p class="sbx-var-msg' + (vr.msgKind ? ' is-' + vr.msgKind : '') + '" role="status" aria-live="polite">' + (vr.msgHtml || esc(vr.msg || '')) + '</p></section></div>';
+  return out;
+};
+
+// editStep switches one step between relative and fixed, or removes it.
+StatblockPanel.prototype.editStep = function (how, key) {
+  var self = this, V = DrawSteelVariants, vr = this.vr, r = vr.doc.recipe;
+  var s = r.steps.changes[key];
+  if (!s) return;
+  var steps = { changes: {}, lists: r.steps.lists };
+  Object.keys(r.steps.changes).forEach(function (k) { if (k !== key) steps.changes[k] = r.steps.changes[k]; });
+  if (how === 'fix') steps.changes[key] = V.fixed(s);
+  else if (how === 'free' && s.was) steps.changes[key] = s.was;
+  if (how !== 'drop' && !steps.changes[key]) return;
+  var next = { name: r.name, part: r.part, label: r.label, sample: r.sample, steps: V.cleanSteps(steps) };
+  vr.msg = 'Saving…'; vr.msgKind = ''; vr.msgHtml = '';
+  this.render();
+  this.writeVariant(this.eid, function (gm) { gm.recipe = next; }).then(function () {
+    vr.doc.recipe = V.read({ recipe: next }).recipe;
+    vr.msg = 'Saved. Variants made with it change when their page is next opened, or their original is next saved.'; vr.msgKind = 'ok';
+  }, function () { vr.msg = 'Could not save that. Try again.'; vr.msgKind = 'error'; }).then(function () { self.render(); });
+};
+
+StatblockPanel.prototype.reeditRecipe = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr, r = vr.doc.recipe;
+  if (!r.sample) { vr.msg = 'This recipe has no sample creature. Make a new recipe from a creature’s page.'; vr.msgKind = 'error'; this.render(); return; }
+  S.getJSON(this.entityUrl(r.sample)).then(function (e) {
+    self.authorRecipe({ recipe: r, sampleId: r.sample, sampleName: String((e && e.name) || ''), sampleFields: (e && e.fields_data) || {} });
+  }, function () { vr.msg = 'Could not open its sample creature. It may have been deleted; make the recipe again from another creature.'; vr.msgKind = 'error'; self.render(); });
 };
 
 StatblockPanel.prototype.destroy = function () {

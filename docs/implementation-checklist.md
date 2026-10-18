@@ -131,7 +131,7 @@ This is the sprint-by-sprint implementation guide. If work is interrupted, pick 
 - [x] **1.3.1** Create `widgets/statblock-renderer.js`
   - Read-only statblock display widget
   - Reads from entity custom fields
-  - Renders formatted statblock card (see monster-builder.md §6.4)
+  - Renders formatted statblock card (see monster-builder.md §6.1)
   - **File:** `widgets/statblock-renderer.js` (new)
 
 - [x] **1.3.2** Register statblock-renderer widget in manifest.json
