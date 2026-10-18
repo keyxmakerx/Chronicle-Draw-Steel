@@ -1060,7 +1060,7 @@ var DrawSteelForms = (function () {
 
 DrawSteelStatblock.Forms = DrawSteelForms;
 
-// ── Variants (a campaign's own recipes, such as Remnants) ───────────────────
+// ── Variants (a campaign's own homebrew recipes) ────────────────────────────
 
 // DrawSteelVariants turns a creature into a linked variant by a recipe the
 // director made, so no variant rule ships in this package. A recipe is a list
@@ -2354,11 +2354,11 @@ StatblockPanel.prototype.newRecipeHtml = function () {
   var names = this.recipeGroups().map(function (g) { return '<option value="' + esc(g.name) + '"></option>'; }).join('');
   return '<div class="sbx-var-fold">' +
     '<p class="sbx-var-line">You change this creature the way the recipe should, and each change becomes a step that works on any creature: a number moves by the same amount, an organization or size by the same steps. This creature itself is not changed.</p>' +
-    '<label class="sbx-var-field">Recipe name <input type="text" maxlength="60" list="sbx-var-names-' + eid + '" data-sbx-var-name placeholder="Remnant"></label>' +
+    '<label class="sbx-var-field">Recipe name <input type="text" maxlength="60" list="sbx-var-names-' + eid + '" data-sbx-var-name placeholder="Name this recipe"></label>' +
     '<datalist id="sbx-var-names-' + eid + '">' + names + '</datalist>' +
     '<fieldset class="sbx-var-q"><legend>This is</legend>' +
     '<label><input type="radio" name="sbx-var-part-' + eid + '" value="base" checked data-sbx-var-part> the recipe itself</label>' +
-    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="addon" data-sbx-var-part> an add-on to it, called <input type="text" maxlength="60" data-sbx-var-label placeholder="Strong" aria-label="Add-on name"></label></fieldset>' +
+    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="addon" data-sbx-var-part> an add-on to it, called <input type="text" maxlength="60" data-sbx-var-label placeholder="add-on name" aria-label="Add-on name"></label></fieldset>' +
     '<p class="sbx-var-acts"><button type="button" class="btn-primary btn-sm" data-sbx-var="author">Change this creature to show it</button></p></div>';
 };
 
@@ -2424,8 +2424,8 @@ StatblockPanel.prototype.authorRecipe = function (existing) {
     var rname = nameEl ? String(nameEl.value || '').trim().slice(0, 60) : '';
     var part = partEl && partEl.value === 'addon' ? 'addon' : 'base';
     var label = labelEl ? String(labelEl.value || '').trim().slice(0, 60) : '';
-    if (!rname) { vr.msg = 'Give the recipe a name first, such as Remnant.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-name]'); return; }
-    if (part === 'addon' && !label) { vr.msg = 'Give the add-on a name first, such as Strong.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-label]'); return; }
+    if (!rname) { vr.msg = 'Give the recipe a name first.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-name]'); return; }
+    if (part === 'addon' && !label) { vr.msg = 'Give the add-on a name first.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-label]'); return; }
     recipe = { name: rname, part: part, label: label, sample: this.eid, steps: { changes: {}, lists: {} } };
   }
   var sampleFields = existing ? existing.sampleFields : this.fields();
