@@ -429,7 +429,50 @@ reverse. Each half is at most 16 KiB, so a form that changes very many
 abilities is refused with a reason. `current` is written by whatever changes
 the creature's form at the table.
 
-### 6.4 Publishing
+### 6.4 Variants
+
+A campaign makes its own variant rules, such as Remnants; none ships in this
+package. Directors only: players never read a recipe or a variant's link.
+
+**A recipe** is made from a creature's page with **New recipe from this
+creature**: the director names it (a recipe, or an add-on to one such as
+Strong) and changes that creature in the editor the way the recipe should.
+Nothing is saved to that creature. What changed becomes steps
+(`DrawSteelVariants.stepsFrom`): a number moves by the same amount, an
+organization or size by the same steps (organizations ranked minion, horde,
+platoon, elite, solo, with leader as elite), keywords, immunities,
+weaknesses and movement add and drop the same words, anything else is set,
+and traits, abilities and villain actions change by name as forms do. EV,
+Stamina, winded and free strike are never steps. The recipe lives on its
+own private Creature page, which lists its steps; each relative step can be
+fixed to the sample's value and back, or removed, and **Change it on**
+reopens the editor on the sample.
+
+**A variant** is made with **Make a variant**: pick a recipe and any of its
+add-ons, which stack in order. It is a new Creature page, as private as its
+original, named "Recipe of Original". Its stat block is the original's with
+the steps applied and the formulas worked out again; a figure the director
+typed on the original stays typed. The variant follows its original: the
+page keeps the stat block as last worked out (`base`), so whatever differs
+from it on the page is the director's own change, from any source, and
+survives. Opening a variant brings it up to date, and saving the original in
+the editor updates its variants; a change from Foundry or the AI page
+reaches a variant when one of those happens next. **Where each figure comes
+from** lists each figure as from the original, the recipe (with the
+original's value), the published formula or the director.
+
+All of it is one system-state key, `variant`, gm half only:
+
+| Page | `gm` |
+|------|------|
+| recipe | `{v, recipe: {name, part: base\|addon, label, sample, steps: {changes, lists}}}` |
+| variant | `{v, follow: {of, parts: [recipe page ids], base}}` |
+| original | `{v, children: [variant page ids]}` |
+
+Recipes are found through Chronicle's director-only listing,
+`GET /campaigns/:id/system-state/drawsteel/variant`.
+
+### 6.5 Publishing
 
 **Publish** posts the creature to the Community Bestiary
 (`POST /bestiary`, private or public) with the page as its source.
