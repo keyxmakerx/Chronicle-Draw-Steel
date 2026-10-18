@@ -431,7 +431,7 @@ the creature's form at the table.
 
 ### 6.4 Variants
 
-A campaign makes its own variant rules, such as Remnants; none ships in this
+A campaign makes its own variant rules as homebrew; none ships in this
 package. Directors only: players never read a recipe or a variant's link.
 
 **A recipe** is made from a creature's page with **New recipe from this

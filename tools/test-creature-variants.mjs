@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Variants: a campaign's own recipes (such as Remnants) read off a sample
+ * Variants: a campaign's own homebrew recipes read off a sample
  * creature, applied to any creature as a linked page that follows its
  * original. No variant rule ships in this package; every recipe here is the
  * director's. Players never read the `variant` document.
