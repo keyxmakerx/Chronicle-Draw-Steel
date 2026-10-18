@@ -816,6 +816,24 @@
         {
           "key": "immunities",
           "label": "Immunities",
+          "type": "string",
+          "format": "Comma text, e.g. \"fire 5, poison 3\""
+        },
+        {
+          "key": "weaknesses",
+          "label": "Weaknesses",
+          "type": "string",
+          "format": "Comma text, e.g. \"holy 5\""
+        },
+        {
+          "key": "movement",
+          "label": "Movement",
+          "type": "string",
+          "format": "Comma text of special movement, e.g. \"fly, climb\""
+        },
+        {
+          "key": "with_captain",
+          "label": "With Captain",
           "type": "string"
         },
         {
@@ -828,17 +846,20 @@
         {
           "key": "traits",
           "label": "Traits",
-          "type": "string"
+          "type": "string",
+          "format": "A JSON list as text, one object per trait: `name` and `description`"
         },
         {
           "key": "abilities_json",
           "label": "Abilities Data",
-          "type": "string"
+          "type": "string",
+          "format": "A JSON list as text, one object per ability: `name`; `type` (signature, action, maneuver, triggered or free); `keywords` (comma text, e.g. \"Melee, Strike, Weapon\"); `distance` (e.g. \"Melee 1\", \"Ranged 10\", \"3 burst\"); `target`; `power_roll` (the bonus, e.g. \"+3\"); `tier1` (11 or lower), `tier2` (12 to 16), `tier3` (17+), each the result text with potency written in it, e.g. \"6 damage; A<2 prone\"; `trigger` (triggered abilities); `effect`; `spend_vp` and `spend_effect` for a Malice spend"
         },
         {
           "key": "villain_actions_json",
           "label": "Villain Actions Data",
-          "type": "string"
+          "type": "string",
+          "format": "A JSON list as text of up to three villain actions, leaders and solos only: `name`; `order` (opener, crowd-control or ultimate); then the ability keys `keywords`, `distance`, `target`, `power_roll`, `tier1` to `tier3` and `effect`"
         },
         {
           "key": "conditions_json",
