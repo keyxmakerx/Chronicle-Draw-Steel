@@ -60,6 +60,12 @@ shaped for them:
    has no detail-only slot. The list table is `w-full` inside an
    `overflow-hidden` wrapper, so columns do not scroll; each one added squeezes
    the rest.
+5. **A category marked `"director": true` is for Directors only.** Chronicle
+   keeps its pages, search hits, tooltips and raw data file from players. The
+   *Monsters* book datasets and the example creatures (`creatures`, `monsters`,
+   `creature-abilities`, `animal-traits`, `monster-building`,
+   `encounter-building`) carry it; set it in `tools/_render-fields.mjs`, and
+   `tools/test-director-data.mjs` pins the list.
 
 ### Generated fields
 
@@ -119,7 +125,9 @@ guessing a chapter. Everything else in `data/` — all 632 entries added for the
 ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
 `creature-abilities.json`, `monsters.json`,
 `ability-keywords.json`, `organization-templates.json`, `role-templates.json`,
-`rulebook-examples.json`, `class-fights.json` and `credits.json` — carries a real root
+`rulebook-examples.json`, `class-fights.json`, `credits.json`, and the
+`careers.json`, `classes.json`, `cultures.json` and `complications.json` pick
+lists — carries a real root
 `source`.
 
 **A citation also has to be true about the *licence*.** All 35 `creatures.json`
