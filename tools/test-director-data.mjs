@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -31,5 +31,28 @@ test('any category quoting the Monsters book is Director-only', () => {
 test('the director key is only ever true', () => {
   for (const cat of manifest.categories) {
     if ('director' in cat) assert.equal(cat.director, true, cat.slug);
+  }
+});
+
+// Widget-only files reproducing the Monsters book have no category to mark,
+// so the manifest lists them in `director_data` for SystemDataAPI.
+const DIRECTOR_DATA = ['organization-templates.json', 'role-templates.json'];
+
+test('the widget-only monster files are Director-only', () => {
+  assert.deepEqual((manifest.director_data || []).slice().sort(), DIRECTOR_DATA);
+  const slugs = new Set(manifest.categories.map((c) => c.slug));
+  for (const f of DIRECTOR_DATA) {
+    const slug = f.replace(/\.json$/, '');
+    assert.ok(!slugs.has(slug), f + ' has a category; mark the category instead');
+    assert.ok(Array.isArray(data(slug)), f + ' is missing');
+  }
+});
+
+test('every data file quoting the Monsters book is Director-only', () => {
+  const marked = new Set(manifest.categories.filter((c) => c.director === true).map((c) => c.slug + '.json'));
+  for (const f of manifest.director_data || []) marked.add(f);
+  for (const f of readdirSync(join(root, 'data')).filter((n) => n.endsWith('.json'))) {
+    const fromBook = data(f.replace(/\.json$/, '')).some((e) => /Monsters Book/.test(String(e.source || '')));
+    if (fromBook) assert.ok(marked.has(f), f + ' quotes the Monsters book but players can read it');
   }
 });

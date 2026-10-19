@@ -65,7 +65,10 @@ shaped for them:
    *Monsters* book datasets and the example creatures (`creatures`, `monsters`,
    `creature-abilities`, `animal-traits`, `monster-building`,
    `encounter-building`) carry it; set it in `tools/_render-fields.mjs`, and
-   `tools/test-director-data.mjs` pins the list.
+   `tools/test-director-data.mjs` pins the list. Files with no category that
+   only widgets read (`organization-templates.json`, `role-templates.json`) go
+   in the manifest's top-level `director_data` list instead, which keeps the
+   raw file from players the same way.
 
 ### Generated fields
 
