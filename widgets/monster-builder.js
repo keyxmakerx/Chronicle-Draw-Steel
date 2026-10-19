@@ -1015,7 +1015,7 @@ var DrawSteelCreatureEditor = (function () {
   function editorHtml(st, ui) { return editorHead(st, ui) + editorBody(st, ui); }
 
   function editorHead(st, ui) {
-    return '<div class="sbe-bar"><span class="sbe-bar-t"><i class="fa-solid fa-pen" aria-hidden="true"></i> ' + (ui.isNew ? 'New stat block' : 'Editing stat block') + '</span>' +
+    return '<div class="sbe-bar"><span class="sbe-bar-t"><i class="fa-solid fa-pen" aria-hidden="true"></i> ' + esc(ui.heading || (ui.isNew ? 'New stat block' : 'Editing stat block')) + '</span>' +
       '<span class="sbe-sp"></span>' +
       (ui.onClose ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="cancel">Cancel</button>' : '') +
       '<button type="button" class="btn-primary btn-sm" data-sbe-act="save"' + (ui.saving ? ' disabled' : '') + '>' + (ui.saving ? 'Saving…' : 'Save') + '</button></div>' +
@@ -1029,8 +1029,8 @@ var DrawSteelCreatureEditor = (function () {
     if (st.origin) h += '<p class="sbe-origin"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ' + esc(st.origin) + '</p>';
     h += '<div class="sbe-grid sbe-g4">' +
       (st.aiName
-        ? '<label class="sbe-f sbe-wide"><span class="sbe-lbl">Name</span><input class="input" id="sbe-name" value="' + esc(st.name || '') + '" data-sbe-k="name" maxlength="200">' + '<span class="sbe-chip is-ai"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> From the AI</span>' + '</label>'
-        : field('sbe-name', 'Name', st.name, 'data-sbe-k="name" maxlength="200"', true)) +
+        ? '<label class="sbe-f sbe-wide"><span class="sbe-lbl">' + esc(ui.nameLabel || 'Name') + '</span><input class="input" id="sbe-name" value="' + esc(st.name || '') + '" data-sbe-k="name" maxlength="200">' + '<span class="sbe-chip is-ai"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> From the AI</span>' + '</label>'
+        : field('sbe-name', ui.nameLabel || 'Name', st.name, 'data-sbe-k="name" maxlength="200"', true)) +
       '<label class="sbe-f"><span class="sbe-lbl">Level</span><input class="input sbe-num" id="sbe-level" data-sbe-k="level" type="number" min="1" max="20" value="' + esc(c.level) + '"></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Size</span><select class="input" id="sbe-size" data-sbe-k="size">' + optionsKeeping(SIZES, c.size) + '</select></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Organization</span><select class="input" id="sbe-org" data-sbe-k="organization"><option value="">Choose…</option>' + options(ORGS, c.organization) + '</select></label>' +
@@ -1290,6 +1290,13 @@ var DrawSteelCreatureEditor = (function () {
     });
   }
 
+  // roundTrip is what the editor would save for fields it opened and nobody
+  // changed, so a form compares like with like: the editor tidies lists and
+  // fills formula figures, and that tidying is not the director's change.
+  function roundTrip(name, fields, refs) {
+    return toSave(newState(name, fields || {}, refs)).fields;
+  }
+
   // ── Motion ────────────────────────────────────────────────────────────────
 
   // Off and reduced motion skip every animation; Calm keeps fades only (CSS).
@@ -1322,7 +1329,9 @@ var DrawSteelCreatureEditor = (function () {
   }
 
   // mount opens the editor in `host`. opts: { campaignId, entityId, entity,
-  // refs, ref, onClose(savedEntity|null) }. Returns { destroy }.
+  // refs, ref, onClose(savedEntity|null) }. Returns { destroy }. A creature's
+  // other form opens with opts.form ({ heading, nameLabel, dirtyKey }) and
+  // opts.saveAs(out, pictures), which saves it in place of the page.
   function mount(host, opts) {
     var o = opts || {};
     var doc = host.ownerDocument || document;
@@ -1333,9 +1342,9 @@ var DrawSteelCreatureEditor = (function () {
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
       gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false },
       ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() },
-      pics: newPics(entity) };
+      pics: newPics(entity), heading: o.form ? o.form.heading : '', nameLabel: o.form ? o.form.nameLabel : '', saveAs: o.saveAs || null };
     var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
-    var dirtyKey = 'monster-builder:' + (ctx.entityId || 'new');
+    var dirtyKey = (o.form && o.form.dirtyKey) || 'monster-builder:' + (ctx.entityId || 'new');
     var root = doc.createElement('div');
     root.className = 'sbe-wrap' + (still(doc) ? '' : ' sbe-entering');
     root.innerHTML = '<div class="sbe card"></div><aside class="sbe-side" aria-label="Party, budget and checks"></aside>';
@@ -1732,10 +1741,11 @@ var DrawSteelCreatureEditor = (function () {
     }
 
     function doSave() {
-      var problem = !String(st.name || '').trim() ? 'Give the creature a name first.' : (!ctx.campaignId ? 'This editor has no campaign, so it cannot save.' : '');
+      var problem = !String(st.name || '').trim() ? (ui.saveAs ? 'Give the form a name first.' : 'Give the creature a name first.') : (!ctx.campaignId ? 'This editor has no campaign, so it cannot save.' : '');
       if (problem) { ui.msg = problem; ui.msgKind = 'error'; draw('sbe-name'); return; }
       ui.saving = true; ui.msg = ''; draw();
       st.base[SB().TOKEN_KEY] = ui.pics.token || '';
+      if (ui.saveAs) { saveForm(); return; }
       saveArt(ctx.entityId, false).then(function () {
         return save(st, ctx);
       }).then(function (saved) {
@@ -1756,6 +1766,22 @@ var DrawSteelCreatureEditor = (function () {
         if (err && err.artOnly) { ui.isNew = false; clean(); }
         ui.msg = (err && !err.status && err.message) ? err.message : 'Could not save this stat block. Try again.';
         ui.msgKind = 'error'; draw();
+      });
+    }
+
+    // saveForm hands a form to its owner; a failure keeps the editor open.
+    function saveForm() {
+      Promise.resolve().then(function () {
+        return ui.saveAs(toSave(st), { art: ui.pics.art || '', token: ui.pics.token || '' });
+      }).then(function (saved) {
+        ui.saving = false; clean();
+        clearAIMarks(st);
+        if (ui.onClose) { close(saved || null); return; }
+        ui.msg = 'Saved.'; ui.msgKind = 'ok'; draw();
+      }).catch(function (err) {
+        if (typeof console !== 'undefined') console.warn('Monster builder: form save failed', err);
+        ui.saving = false;
+        ui.msg = (err && err.user) ? err.message : 'Could not save this form. Try again.'; ui.msgKind = 'error'; draw();
       });
     }
 
@@ -2378,7 +2404,7 @@ var DrawSteelCreatureEditor = (function () {
     ORGS: ORGS, ROLES: ROLES, SIZES: SIZES, ABILITY_TYPES: ABILITY_TYPES, FIGURES: FIGURES,
     STANDING_LINE: STANDING_LINE,
     newState: newState, derive: derive, setFigure: setFigure, useFormula: useFormula,
-    startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, autoTier: autoTier, isStrike: isStrike,
+    startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, roundTrip: roundTrip, autoTier: autoTier, isStrike: isStrike,
     editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
     applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
     usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,

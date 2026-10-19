@@ -227,8 +227,9 @@ var DrawSteelStatblock = (function () {
       '<i class="fa-solid fa-pen-nib" aria-hidden="true"></i><span class="sbx-sr">' + esc(why) + '</span></span>';
   }
 
-  function cell(label, value, extra) {
-    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + (extra || '') + '</span></div>';
+  // note is the form's caption under a figure ("Changed in this form").
+  function cell(label, value, extra, note) {
+    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + (extra || '') + '</span>' + (note || '') + '</div>';
   }
 
   function figure(v) { return v === null || v === undefined || v === '' ? '—' : esc(v); }
@@ -271,8 +272,9 @@ var DrawSteelStatblock = (function () {
     var kind = a.label || KIND[type] || cap(type);
     var name = esc(a.name || 'Untitled');
     if (live) name = '<span class="sbx-term" tabindex="0" data-sbx-ab="' + esc(key) + '">' + name + '</span>';
+    var tag = (o.tag && key) ? o.tag('item', key) : '';
     var h = '<section class="sbx-ab"' + (live ? ' data-sbx-key="' + esc(key) + '"' : '') + '><div class="sbx-ab-top"><h4 class="sbx-ab-name"><i class="fa-solid ' + icon + '" aria-hidden="true"></i>' +
-      name + '</h4>' + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
+      name + '</h4>' + tag + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
     var kws = parseList(a.keywords).filter(function (k) { return k !== 'Attack'; });
     if (kws.length || a.distance || a.target) {
       h += '<dl class="sbx-meta">' +
@@ -351,10 +353,12 @@ var DrawSteelStatblock = (function () {
     h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
       '<span class="sbx-ev">EV ' + figure(c.ev) + (c.organization === 'minion' && c.ev !== null ? ' <span class="sbx-ev-n">for four</span>' : '') +
       mark(pr.ev, 'Encounter value') + '</span></div></header>';
-    h += '<div class="sbx-strip">' + cell('Size', esc(c.size)) + cell('Speed', figure(c.speed)) +
-      cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina')) + cell('Stability', figure(c.stability)) +
-      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike')) + '</div>';
-    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k])); }).join('') + '</div>';
+    // A form's view captions each figure with where it comes from.
+    function tg(k) { return o.tag ? o.tag('fig', k) : ''; }
+    h += '<div class="sbx-strip">' + cell('Size', esc(c.size), '', tg('size')) + cell('Speed', figure(c.speed), '', tg('speed')) +
+      cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina'), tg('stamina')) + cell('Stability', figure(c.stability), '', tg('stability')) +
+      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike'), tg('free_strike')) + '</div>';
+    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k]), '', tg(k)); }).join('') + '</div>';
     if (o.compact) {
       // A hover card names the creature's signature ability; the shared card's
       // looks restyle .sbx-sig from outside, so it carries no colour here.
@@ -629,6 +633,32 @@ var DrawSteelStatblock = (function () {
     '.sbx-pub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);font-size:14px}',
     '.sbx-msg{font-size:13px;color:var(--color-text-secondary,#6b7280)}',
     '.sbx-msg:empty{display:none}',
+    // Variants are rows on the page under a tab, not a box: hairlines, quiet
+    // words and the theme tokens only, so a style kit and the campaign's
+    // colour restyle them like the rest of the page.
+    '.sbx-var{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--color-text-body,#374151)}',
+    '.sbx-var-tab{margin:0;align-self:flex-start;font-size:12px;font-weight:600;font-variant:small-caps;letter-spacing:.06em;text-transform:lowercase;color:var(--color-text-secondary,#6b7280);padding:0 8px 2px 0;border-bottom:1px solid var(--color-border,#e5e7eb);border-right:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-var-line{margin:0}',
+    '.sbx-var a,.sbx-quiet{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-quiet{background:none;border:0;padding:0 2px;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}',
+    '.sbx-quiet:hover{text-decoration-style:solid}',
+    '.sbx-quiet:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '.sbx-var-acts{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
+    '.sbx-var-fold{border-top:1px solid var(--color-border,#e5e7eb);padding-top:8px;display:flex;flex-direction:column;gap:8px}',
+    '.sbx-var-q{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
+    '.sbx-var-q legend{float:left;margin-right:10px;font-size:12px;font-variant:small-caps;letter-spacing:.06em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-q input[type=radio],.sbx-var-q input[type=checkbox]{accent-color:var(--color-accent,#6366f1)}',
+    '.sbx-var-field{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}',
+    '.sbx-var input[type=text]{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid var(--color-border,#e5e7eb);padding:2px 0;min-width:10em}',
+    '.sbx-var input[type=text]:focus{outline:none;border-bottom-color:var(--color-accent,#6366f1)}',
+    '.sbx-var-row{display:grid;grid-template-columns:minmax(7em,auto) auto 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-var-src .sbx-var-row:first-child{border-top:0}',
+    '.sbx-var-s{color:var(--color-text-secondary,#6b7280);font-size:12px;display:flex;flex-wrap:wrap;gap:4px 10px}',
+    '.sbx-var-s.is-recipe{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-var-msg{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-msg:empty{display:none}',
+    '.sbx-var-msg.is-error{color:var(--color-danger,#dc2626)}',
+    '@media (max-width:640px){.sbx-var-row{grid-template-columns:1fr auto}.sbx-var-row .sbx-var-s{grid-column:1 / -1}}',
     '.sbx-msg.is-ok{color:#15803d}.sbx-msg.is-error{color:#b91c1c}',
     '.dark .sbx-msg.is-ok{color:#4ade80}.dark .sbx-msg.is-error{color:#f87171}',
     '.sbx-start{gap:8px}',
@@ -668,6 +698,33 @@ var DrawSteelStatblock = (function () {
     '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#6b7280)}',
     '.sbx-cmp-f.is-error{color:#b91c1c}.dark .sbx-cmp-f.is-error{color:#f87171}',
     '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}}',
+    '.sbx-forms{display:flex;gap:2px;align-items:flex-end;border-bottom:1px solid var(--color-border,#e5e7eb);overflow-x:auto}',
+    '.sbx-tab{display:inline-flex;gap:8px;align-items:center;border:0;border-bottom:2px solid transparent;background:none;padding:8px 12px 6px;min-height:36px;font-size:13px;font-weight:600;color:var(--color-text-secondary,#6b7280);cursor:pointer;white-space:nowrap}',
+    '.sbx-tab:hover{color:var(--color-text-primary,#111827)}',
+    '.sbx-tab[aria-selected="true"]{color:var(--color-text-primary,#111827);border-bottom-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-tab:focus-visible,.sbx-forms-add:focus-visible,.sbx-link:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '.sbx-tab-n{font:500 11px/1 ui-monospace,Consolas,monospace;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-tab-hid{font-size:11px;opacity:.7}',
+    '.sbx-forms-add{border:1px dashed var(--color-border,#d1d5db);background:none;color:var(--color-text-secondary,#6b7280);border-radius:6px;padding:4px 10px;margin:0 0 4px 8px;min-height:32px;font-size:13px;cursor:pointer;white-space:nowrap}',
+    '.sbx-forms-add:hover{color:var(--color-accent,#6366f1);border-color:var(--color-accent,#6366f1)}',
+    '.sbx-formnote{display:flex;flex-direction:column;gap:6px;font-size:14px}',
+    '.sbx-formnote-h{color:var(--color-text-secondary,#6b7280);font-size:13px}',
+    '.sbx-formnote-acts{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end}',
+    '.sbx-fstam{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fstam select{min-width:200px}',
+    '.sbx-dm{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-dm-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b45309;margin-right:4px}',
+    '.dark .sbx-dm-t{color:#fbbf24}',
+    '.sbx-from{display:block;max-width:100%;margin-top:2px;font-size:11px;color:var(--color-text-secondary,#6b7280);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-from.is-changed{color:var(--sbx-own);font-weight:600;white-space:normal}',
+    '.sbx-chip{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-chip.is-changed{background:rgba(245,158,11,.14);color:var(--sbx-own)}',
+    '.sbx-chip.is-new{background:rgba(var(--color-accent-rgb,99,102,241),.12);color:var(--color-accent,#6366f1)}',
+    '.sbx-link{border:0;background:none;padding:0;font:inherit;color:var(--color-accent,#6366f1);text-decoration:underline;text-underline-offset:2px;cursor:pointer}',
+    '.sbx-gone{display:flex;flex-direction:column;gap:6px;font-size:14px}',
+    '.sbx-gone ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
+    '.sbx-gone li{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-gone li>span{text-decoration:line-through;text-decoration-color:rgba(107,114,128,.5)}',
     '@media (max-width:640px){.sbx-head.has-pic{flex-wrap:wrap}.sbx-pic{flex-basis:56px;width:56px;height:56px}}',
     '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
   ].join('\n');
@@ -810,6 +867,561 @@ var DrawSteelStatblock = (function () {
   };
 })();
 
+// ── Forms ───────────────────────────────────────────────────────────────────
+
+// DrawSteelForms is a creature's other forms, kept apart from its page so a
+// player never receives one before the director shows it. The page's fields
+// are the first form. Every other form is a list of changes to them, stored as
+// the page's system state: `forms` holds the order (gm half) and which forms
+// players have been shown and which one is current (public half); each
+// `form-<id>` holds one form in its gm half, and the same form in its public
+// half once it has been shown. A form a director changes later borrows any
+// change made to the first form, because it stores only what differs.
+var DrawSteelForms = (function () {
+  'use strict';
+  var S = DrawSteelStatblock;
+
+  var INDEX_KEY = 'forms';
+  var ID = /^[a-z0-9]{1,24}$/;
+  var MAX_FORMS = 12;
+  var NAME_MAX = 80;
+  // The figures a form may change: every scalar the editor writes.
+  var FIGURES = ['level', 'organization', 'role', 'ev', 'size', 'keywords', 'faction', 'stamina', 'winded', 'speed',
+    'stability', 'immunities', 'weaknesses', 'movement', 'with_captain', 'free_strike'].concat(S.CHARS);
+  var LABELS = { ev: 'EV', free_strike: 'Free strike', with_captain: 'With a captain' };
+  // Lists a form changes item by item, matched by name.
+  var LISTS = [['traits', 't'], ['abilities_json', 'a'], ['villain_actions_json', 'v']];
+  var STAMINA = { carry: 'Damage carries over', fresh: 'Starts at full Stamina' };
+
+  function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function label(k) { return LABELS[k] || S.cap(k); }
+  function formKey(id) { return 'form-' + id; }
+
+  function scalar(v) {
+    return v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
+  }
+
+  // listOf reads a list field the way the stat block does.
+  function listOf(fields, key) {
+    var v = fields ? fields[key] : undefined;
+    if (key === 'traits') {
+      if (typeof v === 'string' && v.trim() && !/^\s*\[/.test(v)) return S.normalize({ traits: v }).traits;
+    }
+    return S.parseObjects(v);
+  }
+
+  // canon compares two items by content: key order and the editor's own
+  // review marks never count as a change.
+  function canon(v) {
+    if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
+    if (v && typeof v === 'object') {
+      return '{' + Object.keys(v).filter(function (k) { return k !== 'from_ai' && k !== 'from_book' && v[k] !== undefined; }).sort()
+        .map(function (k) { return JSON.stringify(k) + ':' + canon(v[k]); }).join(',') + '}';
+    }
+    return JSON.stringify(v === undefined ? null : v);
+  }
+
+  function itemName(x) { return String((x && x.name) || '').trim(); }
+
+  // clean reads a stored form defensively; anything malformed is dropped, and
+  // a form without a valid id is no form at all.
+  function clean(raw) {
+    var r = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : null;
+    if (!r || !ID.test(String(r.id || ''))) return null;
+    var f = { id: String(r.id), name: String(r.name || '').trim().slice(0, NAME_MAX) || 'Unnamed form',
+      stamina: r.stamina === 'fresh' ? 'fresh' : 'carry', changes: {}, lists: {}, art: S.mediaId(r.art), token: S.mediaId(r.token) };
+    var ch = (r.changes && typeof r.changes === 'object') ? r.changes : {};
+    FIGURES.forEach(function (k) { if (own(ch, k) && scalar(ch[k])) f.changes[k] = ch[k]; });
+    var ls = (r.lists && typeof r.lists === 'object') ? r.lists : {};
+    LISTS.forEach(function (l) {
+      var d = ls[l[0]];
+      if (!d || typeof d !== 'object') return;
+      var drop = Array.isArray(d.drop) ? d.drop.map(String).filter(Boolean).slice(0, 50) : [];
+      var add = S.parseObjects(d.add);
+      if (drop.length || add.length) f.lists[l[0]] = { drop: drop, add: add };
+    });
+    return f;
+  }
+
+  // mergeList lays a form's change to one list over the first form's: a
+  // dropped name with an added item of the same name is changed in place,
+  // other drops are gone, other adds come last. states runs parallel to items.
+  function mergeList(base, d) {
+    var drop = (d && d.drop) ? d.drop.slice() : [], add = (d && d.add) ? d.add.slice() : [];
+    var items = [], states = [], gone = [];
+    base.forEach(function (b) {
+      var i = drop.indexOf(itemName(b));
+      if (i === -1) { items.push(b); states.push('base'); return; }
+      drop.splice(i, 1);
+      var j = -1;
+      add.forEach(function (a, n) { if (j === -1 && itemName(a) === itemName(b)) j = n; });
+      if (j === -1) { gone.push(b); return; }
+      items.push(add.splice(j, 1)[0]); states.push('changed');
+    });
+    add.forEach(function (a) { items.push(a); states.push('new'); });
+    return { items: items, states: states, gone: gone };
+  }
+
+  // view is a form as the page draws it: the first form's fields with this
+  // form's changes laid over, its pictures, and where each figure and item
+  // comes from. A form without its own picture borrows the first form's; a
+  // form with art but no token lets Foundry crop the art, as a page does.
+  function view(fields, picture, form) {
+    var base = fields || {}, out = {}, k;
+    for (k in base) if (own(base, k)) out[k] = base[k];
+    var pic = picture || {};
+    if (!form) return { fields: out, art: pic.art || '', token: pic.token || '', changed: {}, states: {}, gone: {} };
+    var changed = {};
+    for (k in form.changes) if (own(form.changes, k)) { out[k] = form.changes[k]; changed[k] = true; }
+    var states = {}, gone = {};
+    LISTS.forEach(function (l) {
+      var m = mergeList(listOf(base, l[0]), form.lists[l[0]]);
+      states[l[1]] = m.states; gone[l[1]] = m.gone;
+      if (form.lists[l[0]]) out[l[0]] = JSON.stringify(m.items);
+    });
+    var art = form.art || pic.art || '';
+    var token = form.token || (form.art ? '' : (pic.token || ''));
+    out[S.TOKEN_KEY] = token;
+    return { fields: out, art: art, token: token, changed: changed, states: states, gone: gone };
+  }
+
+  // diffList is the change from one list to another, by name.
+  function diffList(base, now) {
+    var left = base.slice(), drop = [], add = [];
+    now.forEach(function (e) {
+      var i = -1;
+      left.forEach(function (b, n) { if (i === -1 && itemName(b) === itemName(e)) i = n; });
+      if (i === -1) { add.push(e); return; }
+      var b = left.splice(i, 1)[0];
+      if (canon(b) !== canon(e)) { drop.push(itemName(b)); add.push(e); }
+    });
+    left.forEach(function (b) { drop.push(itemName(b)); });
+    return (drop.length || add.length) ? { drop: drop, add: add } : null;
+  }
+
+  // diff is a form saved from the editor: only what differs from the first
+  // form's fields, so later changes to the first form still reach it.
+  function diff(base, edited) {
+    var b = base || {}, e = edited || {}, out = { changes: {}, lists: {} };
+    FIGURES.forEach(function (k) {
+      if (!own(e, k) || !scalar(e[k])) return;
+      if (canon(e[k]) !== canon(own(b, k) ? b[k] : null) && !(e[k] === '' && !own(b, k))) out.changes[k] = e[k];
+    });
+    LISTS.forEach(function (l) {
+      var d = diffList(listOf(b, l[0]), listOf(e, l[0]));
+      if (d) out.lists[l[0]] = d;
+    });
+    return out;
+  }
+
+  // summary says what a form changes, in a phrase: "4 figures, its art and its abilities".
+  function summary(form) {
+    var parts = [], n = Object.keys(form.changes).length;
+    if (n) parts.push(n + ' figure' + (n === 1 ? '' : 's'));
+    if (form.art) parts.push('its art');
+    if (form.token) parts.push('its token');
+    if (form.lists.traits) parts.push('its traits');
+    if (form.lists.abilities_json) parts.push('its abilities');
+    if (form.lists.villain_actions_json) parts.push('its villain actions');
+    if (!parts.length) return 'nothing yet';
+    return parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+  }
+
+  function newId(rand) {
+    var r = typeof rand === 'function' ? rand : Math.random;
+    var id = '';
+    while (id.length < 10) id += Math.floor(r() * 36).toString(36);
+    return id;
+  }
+
+  // index reads the `forms` document: the ids a director has, in order, and
+  // the ids players have been shown and the current one.
+  function index(doc) {
+    var d = doc || {};
+    function ids(v) {
+      var seen = {};
+      return (Array.isArray(v) ? v : []).filter(function (x) {
+        if (typeof x !== 'string' || !ID.test(x) || seen[x]) return false;
+        seen[x] = true; return true;
+      }).slice(0, MAX_FORMS);
+    }
+    var pub = (d.public && typeof d.public === 'object') ? d.public : {};
+    var gm = (d.gm && typeof d.gm === 'object') ? d.gm : null;
+    var current = ID.test(String(pub.current || '')) ? String(pub.current) : '';
+    return { order: gm ? ids(gm.order) : null, shown: ids(pub.shown), current: current, pub: pub };
+  }
+
+  return {
+    INDEX_KEY: INDEX_KEY, MAX_FORMS: MAX_FORMS, NAME_MAX: NAME_MAX, FIGURES: FIGURES, LISTS: LISTS, STAMINA: STAMINA,
+    formKey: formKey, label: label, clean: clean, view: view, diff: diff, mergeList: mergeList, diffList: diffList, canon: canon,
+    summary: summary, newId: newId, index: index
+  };
+})();
+
+DrawSteelStatblock.Forms = DrawSteelForms;
+
+// ── Variants (a campaign's own homebrew recipes) ────────────────────────────
+
+// DrawSteelVariants turns a creature into a linked variant by a recipe the
+// director made, so no variant rule ships in this package. A recipe is a list
+// of steps read off a sample creature the director edited; a variant keeps
+// only its own changes, so later edits to the original still reach it.
+//
+// One system-state key, `variant`, gm half only (players never read it):
+//   recipe page   {v, recipe: {name, part, label, sample, steps}}
+//   variant page  {v, follow: {of, parts: [recipe page ids], base}}
+//   any page      {v, children: [variant page ids]}
+// `base` is the variant's fields as the original and recipe gave them last
+// time, so whatever changed on the page since (the editor, Foundry, the AI
+// page) is the director's own change and survives the next refresh.
+var DrawSteelVariants = (function () {
+  'use strict';
+  var S = DrawSteelStatblock, F = DrawSteelForms;
+
+  var KEY = 'variant';
+  var ID = /^[A-Za-z0-9_-]{1,64}$/;
+  var NAME_MAX = 60;
+  var MAX_PARTS = 6;
+  var MAX_CHILDREN = 100;
+  // Figures the published formulas work out again after a recipe: a recipe
+  // never carries them.
+  var FORMULA = ['ev', 'stamina', 'free_strike', 'winded'];
+  var NUMBERS = ['level', 'speed', 'stability'].concat(S.CHARS);
+  var WORDS = ['keywords', 'immunities', 'weaknesses', 'movement'];
+  // Organizations ranked by the published organization modifier; a leader
+  // ranks with elite, so a leader one step down is a platoon.
+  var ORG_LADDER = ['minion', 'horde', 'platoon', 'elite', 'solo'];
+  var SIZE_LADDER = ['1T', '1S', '1M', '1L', '2', '3', '4', '5'];
+  var LADDERS = { organization: ORG_LADDER, size: SIZE_LADDER };
+
+  function own(o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); }
+  function obj(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null; }
+  function str(v, max) { return String(v == null ? '' : v).trim().slice(0, max || NAME_MAX); }
+  function int(v) { var n = Number(v); return (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '')) && isFinite(n) ? Math.round(n) : null; }
+  function words(v) { return S.parseList(v).map(function (w) { return String(w).trim(); }).filter(Boolean); }
+  function lower(a) { return a.map(function (w) { return w.toLowerCase(); }); }
+
+  function rank(k, v) {
+    var lad = LADDERS[k], s = String(v == null ? '' : v).toLowerCase();
+    if (!lad) return -1;
+    if (k === 'organization' && s === 'leader') s = 'elite';
+    for (var i = 0; i < lad.length; i++) if (lad[i].toLowerCase() === s) return i;
+    return -1;
+  }
+
+  // cleanStep keeps one step's own shape and drops anything else.
+  function cleanStep(k, raw) {
+    var r = obj(raw);
+    if (!r) return null;
+    if (r.mode === 'by' && NUMBERS.indexOf(k) !== -1 && int(r.by) !== null && int(r.by) !== 0) return { mode: 'by', by: int(r.by), to: int(r.to) };
+    if (r.mode === 'step' && LADDERS[k] && int(r.by) !== null && int(r.by) !== 0) return { mode: 'step', by: int(r.by), to: str(r.to) };
+    if (r.mode === 'words' && WORDS.indexOf(k) !== -1) {
+      var add = Array.isArray(r.add) ? r.add.map(function (w) { return str(w); }).filter(Boolean).slice(0, 20) : [];
+      var drop = Array.isArray(r.drop) ? r.drop.map(function (w) { return str(w); }).filter(Boolean).slice(0, 20) : [];
+      return (add.length || drop.length) ? { mode: 'words', add: add, drop: drop } : null;
+    }
+    if (r.mode === 'set' && (r.to === null || typeof r.to === 'string' || typeof r.to === 'number' || typeof r.to === 'boolean')) {
+      var out = { mode: 'set', to: typeof r.to === 'string' ? r.to.slice(0, 500) : r.to };
+      var was = obj(r.was) && (r.was.mode === 'by' || r.was.mode === 'step') ? cleanStep(k, r.was) : null;
+      if (was) out.was = was;
+      return out;
+    }
+    return null;
+  }
+
+  function cleanSteps(raw) {
+    var r = obj(raw) || {}, out = { changes: {}, lists: {} };
+    var ch = obj(r.changes) || {};
+    F.FIGURES.forEach(function (k) {
+      if (FORMULA.indexOf(k) !== -1 || !own(ch, k)) return;
+      var s = cleanStep(k, ch[k]);
+      if (s) out.changes[k] = s;
+    });
+    var cleaned = F.clean({ id: 'recipe', lists: r.lists });
+    out.lists = cleaned ? cleaned.lists : {};
+    return out;
+  }
+
+  // read takes a stored `variant` document's gm half apart defensively.
+  function read(gm) {
+    var g = obj(gm) || {}, out = { recipe: null, follow: null, children: [] };
+    var rc = obj(g.recipe);
+    if (rc && str(rc.name)) {
+      out.recipe = { name: str(rc.name), part: rc.part === 'addon' ? 'addon' : 'base', label: str(rc.label),
+        sample: ID.test(String(rc.sample || '')) ? String(rc.sample) : '', steps: cleanSteps(rc.steps) };
+      if (out.recipe.part === 'addon' && !out.recipe.label) out.recipe.part = 'base';
+    }
+    var fl = obj(g.follow);
+    if (fl && ID.test(String(fl.of || ''))) {
+      var seen = {};
+      out.follow = { of: String(fl.of), base: obj(fl.base) || {},
+        parts: (Array.isArray(fl.parts) ? fl.parts : []).filter(function (p) {
+          if (typeof p !== 'string' || !ID.test(p) || seen[p]) return false;
+          seen[p] = true; return true;
+        }).slice(0, MAX_PARTS) };
+    }
+    var kids = {};
+    out.children = (Array.isArray(g.children) ? g.children : []).filter(function (x) {
+      if (typeof x !== 'string' || !ID.test(x) || kids[x]) return false;
+      kids[x] = true; return true;
+    }).slice(0, MAX_CHILDREN);
+    return out;
+  }
+
+  // stepsFrom reads a recipe off a sample: what the director changed on it
+  // becomes a step that works on any creature. A number moves by the same
+  // amount, an organization or size by the same steps, a list of words adds
+  // and drops the same words, anything else is set; formula figures are left
+  // to the formulas.
+  function stepsFrom(sample, edited) {
+    var d = F.diff(sample, edited), out = { changes: {}, lists: d.lists };
+    Object.keys(d.changes).forEach(function (k) {
+      if (FORMULA.indexOf(k) !== -1) return;
+      var was = own(sample, k) ? sample[k] : null, now = d.changes[k];
+      if (NUMBERS.indexOf(k) !== -1 && int(was) !== null && int(now) !== null) {
+        if (int(now) !== int(was)) out.changes[k] = { mode: 'by', by: int(now) - int(was), to: int(now) };
+        return;
+      }
+      if (LADDERS[k] && rank(k, was) !== -1 && rank(k, now) !== -1 && rank(k, now) !== rank(k, was)) {
+        out.changes[k] = { mode: 'step', by: rank(k, now) - rank(k, was), to: String(now) };
+        return;
+      }
+      if (WORDS.indexOf(k) !== -1) {
+        var a = words(was), b = words(now), la = lower(a), lb = lower(b);
+        var add = b.filter(function (w) { return la.indexOf(w.toLowerCase()) === -1; });
+        var drop = a.filter(function (w) { return lb.indexOf(w.toLowerCase()) === -1; });
+        if (add.length || drop.length) out.changes[k] = { mode: 'words', add: add, drop: drop };
+        return;
+      }
+      out.changes[k] = { mode: 'set', to: now };
+    });
+    return cleanSteps(out);
+  }
+
+  // fixed turns a relative step into "always set to" what the sample got.
+  function fixed(step) {
+    if (!step || (step.mode !== 'by' && step.mode !== 'step') || step.to === null || step.to === '') return null;
+    return { mode: 'set', to: step.to, was: step };
+  }
+
+  // applyStep is one step on one creature's value; a relative step on a value
+  // it can't move (no number, an organization off the ladder) leaves it.
+  function applyStep(k, v, step) {
+    if (step.mode === 'set') return step.to;
+    if (step.mode === 'by') { var n = int(v); return n === null ? v : n + step.by; }
+    if (step.mode === 'step') {
+      var lad = LADDERS[k], i = rank(k, v);
+      if (i === -1) return v;
+      return lad[Math.max(0, Math.min(lad.length - 1, i + step.by))];
+    }
+    if (step.mode === 'words') {
+      var list = words(v).filter(function (w) { return lower(step.drop).indexOf(w.toLowerCase()) === -1; });
+      step.add.forEach(function (w) { if (lower(list).indexOf(w.toLowerCase()) === -1) list.push(w); });
+      return list.join(', ');
+    }
+    return v;
+  }
+
+  // apply lays a recipe's steps over a creature's fields; only stat block
+  // keys change, and a list step changes items by name as a form does.
+  function apply(fields, steps) {
+    var out = {}, k, st = steps || { changes: {}, lists: {} };
+    for (k in fields) if (own(fields, k)) out[k] = fields[k];
+    Object.keys(st.changes).forEach(function (key) { out[key] = applyStep(key, own(out, key) ? out[key] : null, st.changes[key]); });
+    F.LISTS.forEach(function (l) {
+      if (!st.lists[l[0]]) return;
+      var m = F.mergeList(listOf(out, l[0]), st.lists[l[0]]);
+      out[l[0]] = JSON.stringify(m.items);
+    });
+    return out;
+  }
+
+  function listOf(fields, key) {
+    var v = fields ? fields[key] : undefined;
+    if (key === 'traits' && typeof v === 'string' && v.trim() && !/^\s*\[/.test(v)) return S.normalize({ traits: v }).traits;
+    return S.parseObjects(v);
+  }
+
+  // statKeys are the keys a variant's recipe and own changes may touch; the
+  // page's other fields (its token, its book source, Stamina in a fight) are
+  // its own and never come from the original.
+  function statKeys() { return F.FIGURES.concat(F.LISTS.map(function (l) { return l[0]; })); }
+  function pick(fields) {
+    var out = {};
+    statKeys().forEach(function (k) { if (own(fields, k)) out[k] = fields[k]; });
+    return out;
+  }
+
+  // recompute has the editor work the formula figures out again. Figures the
+  // director typed on the original stay typed; Ed is DrawSteelCreatureEditor.
+  function recompute(Ed, fields, refs, typed) {
+    var st = Ed.newState('', fields, refs);
+    Ed.startFrom(st, null, fields);
+    st.own = {};
+    Object.keys(typed || {}).forEach(function (k) { if (typed[k]) st.own[k] = true; });
+    Ed.derive(st);
+    return pick(Ed.toSave(st).fields);
+  }
+
+  function typedOn(Ed, fields, refs) {
+    var st = Ed.newState('', fields, refs), out = {};
+    Object.keys(st.own || {}).forEach(function (k) { if (st.own[k]) out[k] = true; });
+    return out;
+  }
+
+  // base is the variant as the original and the recipe parts give it.
+  function base(Ed, original, parts, refs) {
+    var f = pick(original || {});
+    (parts || []).forEach(function (p) { if (p && p.steps) f = apply(f, p.steps); });
+    return recompute(Ed, f, refs, typedOn(Ed, pick(original || {}), refs));
+  }
+
+  function hash(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
+  // compact is a base as stored: figures as they are, list items only by
+  // name and a hash of their content, so a long stat block still fits in the
+  // page's state, and a changed item is still told from an untouched one.
+  function compact(b) {
+    var out = {};
+    F.FIGURES.forEach(function (k) { if (own(b, k)) out[k] = b[k]; });
+    F.LISTS.forEach(function (l) {
+      out[l[0]] = listOf(b, l[0]).map(function (x) { return { n: String((x && x.name) || '').trim(), h: hash(F.canon(x)) }; });
+    });
+    return out;
+  }
+
+  // listChanges is one list's change from a compact base to the page, by name.
+  function listChanges(was, now) {
+    var left = (Array.isArray(was) ? was : []).filter(function (x) { return x && typeof x.n === 'string'; }).slice(), drop = [], add = [];
+    now.forEach(function (e) {
+      var name = String((e && e.name) || '').trim(), i = -1;
+      left.forEach(function (b, n) { if (i === -1 && b.n === name) i = n; });
+      if (i === -1) { add.push(e); return; }
+      var b = left.splice(i, 1)[0];
+      if (b.h !== hash(F.canon(e))) { drop.push(name); add.push(e); }
+    });
+    left.forEach(function (b) { drop.push(b.n); });
+    return (drop.length || add.length) ? { drop: drop, add: add } : null;
+  }
+
+  // ownChanges is what the page holds that the last base did not. A formula
+  // figure that still matches its formula is the formula's, not the
+  // director's, so a level change on the variant keeps EV following.
+  function ownChanges(lastBase, page, refs) {
+    var figs = {}, lb = lastBase || {};
+    F.FIGURES.forEach(function (k) { if (own(lb, k)) figs[k] = lb[k]; });
+    var d = F.diff(figs, pick(page || {}));
+    d.lists = {};
+    F.LISTS.forEach(function (l) {
+      var c = listChanges(lb[l[0]], listOf(page || {}, l[0]));
+      if (c) d.lists[l[0]] = c;
+    });
+    var pr = S.provenance(S.normalize(page || {}), refs);
+    FORMULA.forEach(function (k) {
+      if (!own(d.changes, k)) return;
+      if (k === 'winded') { var c = S.normalize(page || {}); if (c.stamina !== null && c.winded === Math.floor(c.stamina / 2)) delete d.changes[k]; return; }
+      if (pr[k] && pr[k].state === 'formula') delete d.changes[k];
+    });
+    return d;
+  }
+
+  // materialize is the variant's stat block now: the base with the
+  // director's own changes laid over, then formulas worked out again for
+  // whatever those changes moved.
+  function materialize(Ed, original, parts, page, lastBase, refs) {
+    var mine = lastBase ? ownChanges(lastBase, page, refs) : { changes: {}, lists: {} };
+    var b = base(Ed, original, parts, refs);
+    var v = F.view(b, null, { changes: mine.changes, lists: mine.lists, art: '', token: '' }).fields;
+    var typed = typedOn(Ed, pick(original || {}), refs);
+    FORMULA.forEach(function (k) { if (own(mine.changes, k)) typed[k] = true; });
+    var fields = recompute(Ed, pick(v), refs, typed);
+    return { base: compact(b), full: b, fields: fields, mine: mine };
+  }
+
+  // stale says whether the page's stat block differs from what it should be.
+  function stale(page, fields) {
+    return statKeys().some(function (k) {
+      var a = own(page, k) ? page[k] : null, b = own(fields, k) ? fields[k] : null;
+      return JSON.stringify(a === undefined ? null : a) !== JSON.stringify(b === undefined ? null : b);
+    });
+  }
+
+  // show writes one figure's value the way the stat block does.
+  function show(k, v) {
+    if (v === null || v === undefined || v === '') return 'empty';
+    if (k === 'organization' || k === 'role') return S.cap(v);
+    if (S.CHARS.indexOf(k) !== -1 && isFinite(Number(v))) return S.signed(Number(v));
+    return String(v);
+  }
+
+  function nameFor(recipeName, originalName) {
+    return (str(recipeName) + ' of ' + String(originalName || '').trim()).slice(0, 200);
+  }
+
+  function partLabel(r) { return r.part === 'addon' ? r.label : r.name; }
+
+  // describe says each step in words, for the recipe page.
+  function describe(steps) {
+    var rows = [];
+    Object.keys(steps.changes).forEach(function (k) {
+      var s = steps.changes[k], what = F.label(k), text;
+      if (s.mode === 'by') text = (s.by > 0 ? 'up ' : 'down ') + Math.abs(s.by);
+      else if (s.mode === 'step') text = Math.abs(s.by) + ' step' + (Math.abs(s.by) === 1 ? '' : 's') + (s.by > 0 ? ' up' : ' down');
+      else if (s.mode === 'words') text = [s.add.length ? 'adds ' + s.add.join(', ') : '', s.drop.length ? 'drops ' + s.drop.join(', ') : ''].filter(Boolean).join('; ');
+      else text = 'becomes ' + show(k, s.to);
+      rows.push({ key: k, what: what, text: text, mode: s.mode, canFix: !!fixed(s), canFree: s.mode === 'set' && !!s.was });
+    });
+    F.LISTS.forEach(function (l) {
+      var d = steps.lists[l[0]];
+      if (!d) return;
+      var kind = l[0] === 'traits' ? 'trait' : l[0] === 'abilities_json' ? 'ability' : 'villain action';
+      var added = d.add.map(function (a) { return a.name; }), changed = added.filter(function (n) { return d.drop.indexOf(n) !== -1; });
+      d.add.forEach(function (a) {
+        rows.push({ key: l[0], what: S.cap(kind), text: (changed.indexOf(a.name) !== -1 ? 'changes ' : 'adds ') + String(a.name || 'one with no name'), mode: 'list' });
+      });
+      d.drop.forEach(function (n) { if (added.indexOf(n) === -1) rows.push({ key: l[0], what: S.cap(kind), text: 'drops ' + n + ' if it has one', mode: 'list' }); });
+    });
+    return rows;
+  }
+
+  // sources says where each figure on a variant comes from, for the director.
+  function sources(original, b, page, parts) {
+    var rows = [], o = pick(original || {}), mine = ownChanges(b, page);
+    var byRecipe = {};
+    (parts || []).forEach(function (p) {
+      if (!p || !p.steps) return;
+      Object.keys(p.steps.changes).forEach(function (k) { byRecipe[k] = true; });
+      F.LISTS.forEach(function (l) { if (p.steps.lists[l[0]]) byRecipe[l[0]] = true; });
+    });
+    F.FIGURES.forEach(function (k) {
+      if (!own(page, k) && !own(b, k)) return;
+      var v = own(page, k) ? page[k] : null;
+      if (v === null || v === '' || v === undefined) return;
+      var src;
+      if (own(mine.changes, k)) src = 'yours';
+      else if (byRecipe[k]) src = 'recipe';
+      else if (FORMULA.indexOf(k) !== -1) src = 'formula';
+      else if (JSON.stringify(o[k]) === JSON.stringify(b[k])) src = 'original';
+      else src = 'formula';
+      rows.push({ key: k, what: F.label(k), value: v, was: own(o, k) ? o[k] : null, src: src });
+    });
+    return rows;
+  }
+
+  return {
+    MAX_BYTES: 15 * 1024, KEY: KEY, ORG_LADDER: ORG_LADDER, SIZE_LADDER: SIZE_LADDER, FORMULA: FORMULA, MAX_PARTS: MAX_PARTS, MAX_CHILDREN: MAX_CHILDREN,
+    read: read, cleanSteps: cleanSteps, stepsFrom: stepsFrom, fixed: fixed, apply: apply, base: base, ownChanges: ownChanges,
+    materialize: materialize, stale: stale, nameFor: nameFor, partLabel: partLabel, describe: describe, sources: sources,
+    pick: pick, rank: rank, show: show, compact: compact
+  };
+})();
+
+DrawSteelStatblock.Variants = DrawSteelVariants;
+
 // ── The page panel ──────────────────────────────────────────────────────────
 
 // StatblockPanel is one mounted panel. boot.js calls init with the registered
@@ -827,6 +1439,10 @@ function StatblockPanel(el, config) {
   this.publishOpen = false;
   this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
   this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
+  // tab is the form on show: '' for the first form, else a form id.
+  this.forms = { list: [], shown: [], current: '', loaded: false, error: false, saving: false, tab: '', msg: '', msgKind: '' };
+  // vr is what this page is to variants: a recipe, a variant, an original.
+  this.vr = { loaded: false, doc: null, kids: [], recipes: null, open: '', pick: '', msg: '', msgHtml: '', msgKind: '', saving: false };
 }
 
 StatblockPanel.prototype.start = function () {
@@ -853,6 +1469,7 @@ StatblockPanel.prototype.start = function () {
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
       if (self.isGM) self.loadFoundry();
+      return Promise.all([self.loadForms(), self.isGM ? self.loadVariant() : null]);
     });
   }).catch(function (err) {
     if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature', err);
@@ -871,6 +1488,17 @@ StatblockPanel.prototype.render = function () {
   var name = (this.entity && this.entity.name) || '';
   this.el.hidden = false;
   this.el.className = 'ds-statblock-panel';
+  if (this.isGM && this.vr.doc && this.vr.doc.recipe) {
+    this.el.innerHTML = this.recipeHtml();
+    this.bind();
+    return;
+  }
+  // A recipe page has no stat block; wait to learn it is one before offering to build one.
+  if (!S.hasStatblock(f) && this.isGM && !this.vr.loaded) { this.el.hidden = true; return; }
+  if (!S.hasStatblock(f) && this.isGM && this.vr.error) {
+    this.el.innerHTML = '<div class="sbx sbx-start"><p class="sbx-line">Could not read whether this page is a variant recipe. Reload to try again.</p></div>';
+    return;
+  }
   if (!S.hasStatblock(f)) {
     // A Creature page with no stat block yet: the director gets a way to start
     // one; a player sees nothing rather than an empty card.
@@ -880,16 +1508,26 @@ StatblockPanel.prototype.render = function () {
     this.bind();
     return;
   }
+  var form = this.form();
   var bar = '<div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-paw" aria-hidden="true"></i> Stat block</span>';
-  if (this.isGM) {
+  if (this.isGM && form) {
+    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="form-edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit form</button></span>';
+  } else if (this.isGM) {
     bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit stat block</button>' +
       '<button type="button" class="btn-ghost btn-sm" data-sbx-act="publish" aria-expanded="' + (this.publishOpen ? 'true' : 'false') + '"><i class="fa-solid fa-share-nodes mr-1" aria-hidden="true"></i> Publish</button></span>';
   }
   bar += '</div>';
-  var pub = (this.isGM && this.publishOpen) ? this.publishHtml() : '';
-  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.sourceHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' +
-    S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) }) +
-    (this.isGM ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' : '') + '</div>';
+  var pub = (this.isGM && this.publishOpen && !form) ? this.publishHtml() : '';
+  var body;
+  if (form) {
+    var v = DrawSteelForms.view(f, S.pictures(this.entity), form);
+    body = this.formNoteHtml(form, v) + S.html(name, v.fields, { ref: this.ref, refs: this.refs, picture: { art: v.art, token: v.token, page: v.art || v.token }, tag: this.tagFor(v) }) +
+      this.goneHtml(v);
+  } else {
+    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) });
+  }
+  this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.tabsHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' + body +
+    (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' + this.variantsHtml() : '') + '</div>';
   this.bind();
 };
 
@@ -1028,6 +1666,306 @@ StatblockPanel.prototype.setSendBack = function (on) {
   });
 };
 
+// ── Forms on the page ───────────────────────────────────────────────────────
+
+StatblockPanel.prototype.formUrl = function (key) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(this.eid) + '/system-state/drawsteel/' + key;
+};
+
+// loadForms reads the director's forms, or for a player the forms they have
+// been shown. A form that fails to load is left out; the first form is
+// always there, so nothing here can hide the stat block.
+StatblockPanel.prototype.loadForms = function () {
+  var self = this, F = DrawSteelForms, S = DrawSteelStatblock, fm = this.forms;
+  return S.getJSON(this.formUrl(F.INDEX_KEY)).then(function (doc) {
+    var idx = F.index(doc);
+    fm.shown = idx.shown; fm.current = idx.current;
+    var ids = self.isGM ? (idx.order || []) : idx.shown;
+    return Promise.all(ids.map(function (id) {
+      return S.getJSON(self.formUrl(F.formKey(id))).then(function (d) {
+        var half = self.isGM ? d && d.gm : d && d.public;
+        var form = F.clean(half);
+        return form && form.id === id ? form : null;
+      }, function () { return null; });
+    }));
+  }).then(function (list) {
+    fm.list = list.filter(Boolean);
+    fm.loaded = true;
+    // A player opens on the form the creature is in at the table.
+    if (!self.isGM && fm.current && self.formById(fm.current)) fm.tab = fm.current;
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not load this creature’s forms', err);
+    fm.loaded = true; fm.error = true;
+  }).then(function () { if (!self.editor) self.render(); });
+};
+
+StatblockPanel.prototype.formById = function (id) {
+  var l = this.forms.list;
+  for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i];
+  return null;
+};
+
+// form is the form on show, or null for the first form.
+StatblockPanel.prototype.form = function () {
+  return this.forms.tab ? this.formById(this.forms.tab) : null;
+};
+
+StatblockPanel.prototype.baseName = function () {
+  return (this.entity && this.entity.name) || 'the first form';
+};
+
+// tabsHtml is the strip of forms above the stat block. A creature with one
+// form shows no strip to players; the director always has the dashed slot.
+StatblockPanel.prototype.tabsHtml = function () {
+  var esc = DrawSteelStatblock.esc, fm = this.forms;
+  if (!fm.list.length && !(this.isGM && fm.loaded && !fm.error)) return '';
+  var tabs = [{ id: '', name: this.baseName() }].concat(fm.list);
+  var h = '<div class="sbx-forms" role="tablist" aria-label="Forms">' + tabs.map(function (x, i) {
+    var on = (fm.tab || '') === x.id;
+    return '<button type="button" role="tab" class="sbx-tab" data-sbx-form="' + esc(x.id) + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '">' +
+      '<span class="sbx-tab-n">' + (i + 1) + '</span>' + esc(x.name) +
+      (this.isGM && x.id && fm.shown.indexOf(x.id) === -1 ? '<span class="sbx-sr"> (not shown to players)</span><i class="fa-solid fa-eye-slash sbx-tab-hid" aria-hidden="true" title="Not shown to players yet"></i>' : '') + '</button>';
+  }, this).join('');
+  if (this.isGM && fm.list.length < DrawSteelForms.MAX_FORMS) {
+    h += '<button type="button" class="sbx-forms-add" data-sbx-act="form-add"' + (fm.saving ? ' disabled' : '') + '>Add a form</button>';
+  }
+  return h + '</div>' + (fm.error && this.isGM ? '<p class="sbx-msg is-error">Could not load this creature’s other forms. Reload to try again.</p>' : '');
+};
+
+// formNoteHtml says what the form on show changes and, for the director,
+// how it starts, how Stamina carries, and whether players have seen it.
+StatblockPanel.prototype.formNoteHtml = function (form, v) {
+  var S = DrawSteelStatblock, F = DrawSteelForms, esc = S.esc, fm = this.forms;
+  var cells = { size: 1, speed: 1, stamina: 1, stability: 1, free_strike: 1 };
+  S.CHARS.forEach(function (k) { cells[k] = 1; });
+  var also = Object.keys(v.changed).filter(function (k) { return !cells[k]; }).map(F.label);
+  var h = '<div class="sbx-formnote"><p class="sbx-line"><b>' + esc(form.name) + '</b> changes ' + esc(F.summary(form)) + '.' +
+    (also.length ? ' Also changed: ' + esc(also.join(', ')) + '.' : '') + '</p>';
+  if (!this.isGM) return h + '</div>';
+  var shown = fm.shown.indexOf(form.id) !== -1;
+  h += '<p class="sbx-line sbx-formnote-h">When it starts is up to each encounter, or you by hand from the token in Foundry.</p>' +
+    '<div class="sbx-formnote-acts"><label class="sbx-fstam"><span>When it takes this form</span><select class="input" data-sbx-fstam' + (fm.saving ? ' disabled' : '') + '>' +
+    Object.keys(F.STAMINA).map(function (k) { return '<option value="' + k + '"' + (form.stamina === k ? ' selected' : '') + '>' + esc(F.STAMINA[k]) + '</option>'; }).join('') + '</select></label>' +
+    '<button type="button" class="btn-secondary btn-sm" data-sbx-act="form-show"' + (fm.saving ? ' disabled' : '') + '>' + (shown ? 'Hide from players' : 'Show to players') + '</button>' +
+    '<button type="button" class="btn-ghost btn-sm" data-sbx-act="form-remove"' + (fm.saving ? ' disabled' : '') + '>Remove form</button></div>' +
+    '<p class="sbx-dm"><span class="sbx-dm-t">Only you see this</span> ' + (shown
+      ? 'Players can see this form on the page.'
+      : 'Players see this form on the page once it has been shown to them. Until then it isn’t listed for them at all.') + '</p>' +
+    (fm.msg ? '<p class="sbx-msg' + (fm.msgKind ? ' is-' + fm.msgKind : '') + '" role="status">' + esc(fm.msg) + '</p>' : '');
+  return h + '</div>';
+};
+
+// tagFor captions each figure and item of a form with where it comes from.
+StatblockPanel.prototype.tagFor = function (v) {
+  var esc = DrawSteelStatblock.esc, base = this.baseName(), gm = this.isGM;
+  var from = 'From ' + base;
+  return function (kind, key) {
+    if (kind === 'fig') {
+      if (!v.changed[key]) return '<span class="sbx-from" title="' + esc(from) + '">' + esc(from) + '</span>';
+      return '<span class="sbx-from is-changed">Changed in this form' +
+        (gm ? ' · <button type="button" class="sbx-link" data-sbx-reset="' + esc(key) + '">Use ' + esc(base) + '’s</button>' : '') + '</span>';
+    }
+    var m = /^([atv])(\d+)$/.exec(key);
+    var st = m && v.states[m[1]] ? v.states[m[1]][Number(m[2])] : 'base';
+    if (st === 'changed') return '<span class="sbx-chip is-changed">Changed in this form</span>';
+    if (st === 'new') return '<span class="sbx-chip is-new">Only in this form</span>';
+    return '<span class="sbx-chip">' + esc(from) + '</span>';
+  };
+};
+
+// goneHtml lists, for the director, what the first form has and this one drops.
+StatblockPanel.prototype.goneHtml = function (v) {
+  if (!this.isGM) return '';
+  var esc = DrawSteelStatblock.esc, rows = [];
+  [['t', 'Trait'], ['a', 'Ability'], ['v', 'Villain action']].forEach(function (k) {
+    (v.gone[k[0]] || []).forEach(function (x) {
+      rows.push('<li><span>' + esc(x.name || 'Untitled') + ' <span class="sbx-kind">' + k[1] + '</span></span>' +
+        '<button type="button" class="sbx-link" data-sbx-putback="' + k[0] + '" data-sbx-name="' + esc(x.name || '') + '">Put back</button></li>');
+    });
+  });
+  if (!rows.length) return '';
+  return '<section class="sbx-gone"><p class="sbx-sec">Not in this form</p><ul>' + rows.join('') + '</ul></section>';
+};
+
+StatblockPanel.prototype.pickForm = function (id) {
+  if (id && !this.formById(id)) return;
+  this.forms.tab = id || '';
+  this.forms.msg = '';
+  this.publishOpen = false;
+  this.render();
+  this.focus('.sbx-tab[aria-selected="true"]');
+};
+
+// writeIndex reads the `forms` document fresh and saves it changed by fn, so
+// what Foundry wrote there (the current form) survives.
+StatblockPanel.prototype.writeIndex = function (fn) {
+  var self = this, S = DrawSteelStatblock, F = DrawSteelForms;
+  return S.getJSON(this.formUrl(F.INDEX_KEY)).then(function (doc) {
+    var idx = F.index(doc);
+    var next = fn({ order: idx.order || [], shown: idx.shown, current: idx.current });
+    var pub = {}, k;
+    for (k in idx.pub) if (Object.prototype.hasOwnProperty.call(idx.pub, k)) pub[k] = idx.pub[k];
+    pub.v = 1;
+    pub.shown = next.order.filter(function (id) { return next.shown.indexOf(id) !== -1; });
+    pub.current = pub.shown.indexOf(next.current) !== -1 ? next.current : '';
+    return S.apiFetch(self.formUrl(F.INDEX_KEY), { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gm: { v: 1, order: next.order }, public: pub }) }).then(function (res) {
+      if (!res.ok) throw new Error('save ' + res.status);
+      self.forms.shown = pub.shown; self.forms.current = pub.current;
+      return next.order;
+    });
+  });
+};
+
+// writeForm saves one form; players get the same copy once it is shown.
+StatblockPanel.prototype.writeForm = function (form, shown) {
+  var body = JSON.stringify({ gm: form, public: shown ? form : {} });
+  if (body.length > 15 * 1024) {
+    var e = new Error('This form is too big to save. Change fewer abilities in it, or make it a creature of its own.');
+    e.user = true;
+    return Promise.reject(e);
+  }
+  return DrawSteelStatblock.apiFetch(this.formUrl(DrawSteelForms.formKey(form.id)), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: body
+  }).then(function (res) { if (!res.ok) throw new Error('save ' + res.status); });
+};
+
+// changeForm saves an edit made on the page itself, then redraws.
+StatblockPanel.prototype.changeForm = function (form, said) {
+  var self = this, fm = this.forms;
+  fm.saving = true; fm.msg = 'Saving…'; fm.msgKind = '';
+  this.render();
+  return this.writeForm(form, fm.shown.indexOf(form.id) !== -1).then(function () {
+    var l = fm.list;
+    for (var i = 0; i < l.length; i++) if (l[i].id === form.id) l[i] = form;
+    fm.msg = said || 'Saved.'; fm.msgKind = 'ok';
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not save this form', err);
+    fm.msg = (err && err.user) ? err.message : 'Could not save that. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); });
+};
+
+function copyForm(f) { return DrawSteelForms.clean(JSON.parse(JSON.stringify(f))); }
+
+StatblockPanel.prototype.resetFigure = function (key) {
+  var form = this.form();
+  if (!form || this.forms.saving) return;
+  var next = copyForm(form);
+  delete next.changes[key];
+  this.changeForm(next, 'Now uses ' + this.baseName() + '’s ' + DrawSteelForms.label(key).toLowerCase() + '.');
+};
+
+StatblockPanel.prototype.putBack = function (kind, name) {
+  var form = this.form(), F = DrawSteelForms;
+  if (!form || this.forms.saving) return;
+  var key = null;
+  F.LISTS.forEach(function (l) { if (l[1] === kind) key = l[0]; });
+  var next = copyForm(form), d = key && next.lists[key];
+  if (!d || d.drop.indexOf(name) === -1) return;
+  d.drop.splice(d.drop.indexOf(name), 1);
+  if (!d.drop.length && !d.add.length) delete next.lists[key];
+  this.changeForm(next, 'Put back ' + (name || 'it') + '.');
+};
+
+StatblockPanel.prototype.setStamina = function (mode) {
+  var form = this.form();
+  if (!form || this.forms.saving || !DrawSteelForms.STAMINA[mode]) return;
+  var next = copyForm(form);
+  next.stamina = mode;
+  this.changeForm(next, 'Saved.');
+};
+
+// toggleShown shows a form to players, or takes it back. The form's public
+// copy is written before the index lists it, so a player never sees an id
+// with nothing behind it.
+StatblockPanel.prototype.toggleShown = function () {
+  var self = this, form = this.form(), fm = this.forms;
+  if (!form || fm.saving) return;
+  var show = fm.shown.indexOf(form.id) === -1;
+  fm.saving = true; fm.msg = 'Saving…'; fm.msgKind = '';
+  this.render();
+  var steps = show
+    ? this.writeForm(form, true).then(function () { return self.writeIndex(function (x) { x.shown = x.shown.concat([form.id]); return x; }); })
+    : this.writeIndex(function (x) { x.shown = x.shown.filter(function (id) { return id !== form.id; }); return x; })
+      .then(function () { return self.writeForm(form, false); });
+  steps.then(function () {
+    fm.msg = show ? 'Players can now see ' + form.name + '.' : form.name + ' is hidden from players again.'; fm.msgKind = 'ok';
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not change who sees this form', err);
+    fm.msg = 'Could not save that. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); self.focus('[data-sbx-act="form-show"]'); });
+};
+
+StatblockPanel.prototype.removeForm = function () {
+  var self = this, form = this.form(), fm = this.forms;
+  if (!form || fm.saving) return;
+  if (typeof confirm === 'function' && !confirm('Remove the form ' + form.name + '? Its changes are deleted. The rest of the creature stays as it is.')) return;
+  fm.saving = true; fm.msg = 'Removing…'; fm.msgKind = '';
+  this.render();
+  this.writeIndex(function (x) {
+    x.order = x.order.filter(function (id) { return id !== form.id; });
+    x.shown = x.shown.filter(function (id) { return id !== form.id; });
+    return x;
+  }).then(function () {
+    fm.list = fm.list.filter(function (f) { return f.id !== form.id; });
+    fm.tab = ''; fm.msg = '';
+    // The index no longer lists it, so a failure here leaves only an orphan.
+    return DrawSteelStatblock.apiFetch(self.formUrl(DrawSteelForms.formKey(form.id)), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: {}, public: {} })
+    }).catch(function () { return null; });
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not remove this form', err);
+    fm.msg = 'Could not remove that form. Try again.'; fm.msgKind = 'error';
+  }).then(function () { fm.saving = false; self.render(); self.focus('.sbx-tab[aria-selected="true"]'); });
+};
+
+// editForm opens the editor on a form, or on a new one when form is null.
+// The editor sees the form as the page draws it; what it saves is only what
+// differs from the first form, and a picture it was only borrowing stays
+// borrowed.
+StatblockPanel.prototype.editForm = function (form) {
+  var self = this, S = DrawSteelStatblock, F = DrawSteelForms, fm = this.forms;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed || !Ed.roundTrip) { this.say('The stat block editor did not load. Reload the page to try again.', 'error'); return; }
+  var isNew = !form;
+  var cur = form || { id: F.newId(), name: 'Form ' + (fm.list.length + 2), stamina: 'carry', changes: {}, lists: {}, art: '', token: '' };
+  var v = F.view(this.fields(), S.pictures(this.entity), cur);
+  this.el.innerHTML = '';
+  var host = this.el.ownerDocument.createElement('div');
+  this.el.appendChild(host);
+  this.editor = Ed.mount(host, {
+    campaignId: this.cid,
+    entityId: this.eid,
+    entity: { name: cur.name, image_path: v.art, fields_data: v.fields },
+    refs: this.refs,
+    ref: this.ref,
+    form: { heading: isNew ? 'New form' : 'Editing form', nameLabel: 'Form name', dirtyKey: 'monster-builder:form:' + this.eid + ':' + cur.id },
+    saveAs: function (out, pics) {
+      var base = Ed.roundTrip(self.baseName(), self.fields(), self.refs);
+      var d = F.diff(base, out.fields);
+      var next = F.clean({ id: cur.id, name: out.name, stamina: cur.stamina, changes: d.changes, lists: d.lists,
+        art: pics.art === v.art ? cur.art : pics.art, token: pics.token === v.token ? cur.token : pics.token });
+      var shown = fm.shown.indexOf(cur.id) !== -1;
+      return self.writeForm(next, shown).then(function () {
+        if (!isNew) return null;
+        return self.writeIndex(function (x) { if (x.order.indexOf(cur.id) === -1) x.order = x.order.concat([cur.id]); return x; });
+      }).then(function () {
+        if (isNew) fm.list.push(next);
+        else fm.list = fm.list.map(function (f) { return f.id === next.id ? next : f; });
+        fm.tab = next.id;
+        fm.msg = isNew ? 'Added ' + next.name + '. Players don’t see it until you show it to them.' : 'Saved.';
+        fm.msgKind = 'ok';
+        return next;
+      });
+    },
+    onClose: function () {
+      self.editor = null;
+      self.render();
+      self.focus('.sbx-tab[aria-selected="true"]');
+    }
+  });
+};
+
 StatblockPanel.prototype.publishHtml = function () {
   return '<div class="sbx-pub"><p class="sbx-line">Share this stat block in the community bestiary, where directors on this Chronicle can add it to their campaigns.</p>' +
     '<p class="sbx-pub-acts"><button type="button" class="btn-primary btn-sm" data-sbx-pub="published">Publish for everyone</button>' +
@@ -1045,9 +1983,32 @@ StatblockPanel.prototype.bind = function () {
       var which = act.getAttribute('data-sbx-act');
       if (which === 'edit') self.edit();
       else if (which === 'compare') self.toggleCompare();
+      else if (which === 'form-add') self.editForm(null);
+      else if (which === 'form-edit') { if (self.form()) self.editForm(self.form()); }
+      else if (which === 'form-show') self.toggleShown();
+      else if (which === 'form-remove') self.removeForm();
       else { self.publishOpen = !self.publishOpen; self.render(); }
       return;
     }
+    var va = e.target.closest && e.target.closest('[data-sbx-var], [data-sbx-var-fix], [data-sbx-var-free], [data-sbx-var-drop]');
+    if (va && self.el.contains(va)) {
+      if (va.hasAttribute('data-sbx-var-fix')) { self.editStep('fix', va.getAttribute('data-sbx-var-fix')); return; }
+      if (va.hasAttribute('data-sbx-var-free')) { self.editStep('free', va.getAttribute('data-sbx-var-free')); return; }
+      if (va.hasAttribute('data-sbx-var-drop')) { self.editStep('drop', va.getAttribute('data-sbx-var-drop')); return; }
+      var v = va.getAttribute('data-sbx-var');
+      if (v === 'make' || v === 'new') self.openVariantFold(v);
+      else if (v === 'sources') { self.vr.open = self.vr.open === 'sources' ? '' : 'sources'; self.render(); self.focus('[data-sbx-var="sources"]'); }
+      else if (v === 'go') self.makeVariant();
+      else if (v === 'author') self.authorRecipe(null);
+      else if (v === 'reedit') self.reeditRecipe();
+      return;
+    }
+    var tab = e.target.closest && e.target.closest('[data-sbx-form]');
+    if (tab && self.el.contains(tab)) { self.pickForm(tab.getAttribute('data-sbx-form')); return; }
+    var reset = e.target.closest && e.target.closest('[data-sbx-reset]');
+    if (reset && self.el.contains(reset)) { self.resetFigure(reset.getAttribute('data-sbx-reset')); return; }
+    var back = e.target.closest && e.target.closest('[data-sbx-putback]');
+    if (back && self.el.contains(back)) { self.putBack(back.getAttribute('data-sbx-putback'), back.getAttribute('data-sbx-name') || ''); return; }
     var cmp = e.target.closest && e.target.closest('[data-sbx-cmp]');
     if (cmp && self.el.contains(cmp)) { self.take(cmp.getAttribute('data-sbx-cmp')); return; }
     var pub = e.target.closest && e.target.closest('[data-sbx-pub]');
@@ -1056,6 +2017,22 @@ StatblockPanel.prototype.bind = function () {
   this.el.addEventListener('change', function (e) {
     var t = e.target;
     if (t && t.getAttribute && t.getAttribute('data-sbx-fvtt') === 'sendback') self.setSendBack(!!t.checked);
+    if (t && t.hasAttribute && t.hasAttribute('data-sbx-fstam')) self.setStamina(t.value);
+    if (t && t.hasAttribute && t.hasAttribute('data-sbx-var-recipe')) { self.vr.pick = t.value; self.render(); self.focus('[data-sbx-var-recipe]:checked'); }
+  });
+  // The form tabs move with the arrow keys, Home and End, as tabs do.
+  this.el.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (!t || !t.getAttribute || t.getAttribute('role') !== 'tab') return;
+    var tabs = Array.prototype.slice.call(self.el.querySelectorAll('.sbx-tab'));
+    var i = tabs.indexOf(t), to = -1;
+    if (e.key === 'ArrowRight') to = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') to = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') to = 0;
+    else if (e.key === 'End') to = tabs.length - 1;
+    if (to === -1 || !tabs[to]) return;
+    e.preventDefault();
+    self.pickForm(tabs[to].getAttribute('data-sbx-form'));
   });
 };
 
@@ -1118,8 +2095,430 @@ StatblockPanel.prototype.edit = function () {
       self.editor = null;
       if (saved) self.entity = saved;
       self.render();
+      if (saved && self.isGM) self.refreshKids();
     }
   });
+};
+
+// ── Variants on the page (directors only) ───────────────────────────────────
+
+StatblockPanel.prototype.variantUrl = function (eid) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid || this.eid) + '/system-state/drawsteel/' + DrawSteelVariants.KEY;
+};
+
+StatblockPanel.prototype.entityUrl = function (eid) {
+  return '/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid || this.eid);
+};
+
+StatblockPanel.prototype.pageHref = function (eid) {
+  return '/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(eid);
+};
+
+// readVariant reads one page's `variant` gm half; a page without one reads empty.
+StatblockPanel.prototype.readVariant = function (eid) {
+  var S = DrawSteelStatblock, V = DrawSteelVariants;
+  return S.getJSON(this.variantUrl(eid)).then(function (d) {
+    var gm = d && d.gm && typeof d.gm === 'object' ? d.gm : {};
+    return { gm: gm, v: V.read(gm) };
+  });
+};
+
+// writeVariant lays a change over a page's gm half, keeping its other keys.
+StatblockPanel.prototype.writeVariant = function (eid, change) {
+  var S = DrawSteelStatblock, self = this;
+  // A failed read stops the write: writing the change alone would drop the
+  // page's other links.
+  return this.readVariant(eid).then(function (cur) {
+    var gm = {}, k;
+    for (k in cur.gm) if (Object.prototype.hasOwnProperty.call(cur.gm, k)) gm[k] = cur.gm[k];
+    change(gm);
+    gm.v = 1;
+    if (JSON.stringify(gm).length > DrawSteelVariants.MAX_BYTES) throw new Error('variant too large');
+    return S.apiFetch(self.variantUrl(eid), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: gm }) })
+      .then(function (res) { if (!res.ok) throw new Error('variant ' + res.status); return gm; });
+  });
+};
+
+// putFields saves another page's stat block keys over its current fields.
+// The page is read fresh, so a value Foundry or the AI page wrote since it
+// loaded survives.
+StatblockPanel.prototype.putFields = function (eid, entity, statFields) {
+  var S = DrawSteelStatblock, url = this.entityUrl(eid);
+  return S.getJSON(url).then(function (cur) {
+    var merged = {}, k, now = (cur && cur.fields_data) || {};
+    for (k in now) if (Object.prototype.hasOwnProperty.call(now, k)) merged[k] = now[k];
+    for (k in statFields) if (Object.prototype.hasOwnProperty.call(statFields, k)) merged[k] = statFields[k];
+    var name = (cur && cur.name) || (entity && entity.name) || '';
+    return S.apiFetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, fields_data: merged }) })
+      .then(function (res) { if (!res.ok) throw new Error('save ' + res.status); return merged; });
+  });
+};
+
+// loadVariant reads what this page is: a recipe, a variant that follows an
+// original (brought up to date now, so the original's edits arrive), and the
+// variants made from it.
+StatblockPanel.prototype.loadVariant = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr;
+  return this.readVariant().then(function (r) {
+    vr.doc = r.v;
+    var jobs = [];
+    if (r.v.recipe && r.v.recipe.sample) {
+      jobs.push(S.getJSON(self.entityUrl(r.v.recipe.sample)).then(function (e) { vr.sampleName = e && e.name ? String(e.name) : ''; }, function () { vr.sampleName = ''; }));
+    }
+    if (r.v.follow) jobs.push(self.followUp(r.v.follow));
+    jobs.push(Promise.all(r.v.children.map(function (id) {
+      return S.getJSON(self.entityUrl(id)).then(function (e) { return { id: id, name: e && e.name ? String(e.name) : '' }; }, function () { return null; });
+    })).then(function (kids) { vr.kids = kids.filter(Boolean); }));
+    return Promise.all(jobs);
+  }).catch(function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not read this creature’s variants', err);
+    vr.error = true;
+  }).then(function () { vr.loaded = true; if (!self.editor) self.render(); });
+};
+
+// refresh brings one variant up to date with its original and recipe parts,
+// saving only when its stat block would change. It returns what it read, so
+// the page it is on can say where each figure comes from.
+StatblockPanel.prototype.refresh = function (vid, ventity, follow) {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed) return Promise.reject(new Error('editor missing'));
+  return Promise.all([
+    S.getJSON(this.entityUrl(follow.of)),
+    Promise.all(follow.parts.map(function (id) {
+      // A recipe that can't be read stops the refresh; one that is gone (its
+      // page deleted) is simply no longer applied.
+      return self.readVariant(id).then(function (r) { return r.v.recipe ? { id: id, recipe: r.v.recipe, steps: r.v.recipe.steps } : null; }, function (err) {
+        if (err && /-> 404$/.test(String(err.message))) return null;
+        throw err;
+      });
+    }))
+  ]).then(function (x) {
+    var orig = x[0], parts = x[1].filter(Boolean);
+    var page = (ventity && ventity.fields_data) || {};
+    var m = V.materialize(Ed, (orig && orig.fields_data) || {}, parts, page, follow.base, self.refs);
+    var out = { original: orig, parts: parts, base: m.base, fields: m.fields };
+    if (!V.stale(page, m.fields) && JSON.stringify(follow.base) === JSON.stringify(m.base)) { out.fields = V.pick(page); return out; }
+    return self.putFields(vid, ventity, m.fields).then(function (merged) {
+      if (vid === self.eid && self.entity) self.entity.fields_data = merged;
+      return self.writeVariant(vid, function (gm) {
+        gm.follow = { of: follow.of, parts: follow.parts, base: m.base };
+      });
+    }).then(function () { return out; });
+  });
+};
+
+StatblockPanel.prototype.followUp = function (follow) {
+  var vr = this.vr;
+  return this.refresh(this.eid, this.entity, follow).then(function (out) {
+    vr.original = out.original ? { id: follow.of, name: String(out.original.name || '') } : null;
+    vr.parts = out.parts;
+    vr.base = out.base;
+    vr.origFields = (out.original && out.original.fields_data) || {};
+  }, function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not bring this variant up to date', err);
+    vr.msg = err && err.message === 'editor missing'
+      ? 'The stat block editor did not load, so this page may be behind its original. Reload to try again.'
+      : err && err.message === 'variant too large'
+        ? 'This variant’s stat block is too long to keep following its original. Its figures are saved; shorten its abilities to link it again.'
+        : 'Could not read the original or its recipe, so this page may be behind. Reload to try again.';
+    vr.msgKind = 'error';
+  });
+};
+
+// refreshKids passes a saved edit on to every variant made from this page.
+StatblockPanel.prototype.refreshKids = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr;
+  var ids = (vr.doc && vr.doc.children) || [];
+  if (!ids.length) return Promise.resolve();
+  var failed = 0;
+  return Promise.all(ids.map(function (id) {
+    return Promise.all([S.getJSON(self.entityUrl(id)), self.readVariant(id)]).then(function (x) {
+      if (!x[1].v.follow || x[1].v.follow.of !== self.eid) return null;
+      return self.refresh(id, x[0], x[1].v.follow);
+    }).catch(function () { failed++; });
+  })).then(function () {
+    if (failed) { vr.msg = failed + ' of its variants could not be brought up to date. Opening one updates it.'; vr.msgKind = 'error'; self.render(); }
+  });
+};
+
+// loadRecipes lists the campaign's recipe pages, once per page view.
+StatblockPanel.prototype.loadRecipes = function () {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr;
+  if (vr.recipes) return Promise.resolve(vr.recipes);
+  return S.getJSON('/campaigns/' + encodeURIComponent(this.cid) + '/system-state/drawsteel/' + V.KEY).then(function (d) {
+    var items = (d && Array.isArray(d.items)) ? d.items : [];
+    vr.recipes = items.map(function (it) {
+      var r = V.read(it && it.gm).recipe;
+      return r && it.entityId ? { id: String(it.entityId), page: String(it.entityName || ''), recipe: r } : null;
+    }).filter(Boolean);
+    vr.truncated = !!(d && d.truncated);
+    return vr.recipes;
+  });
+};
+
+// recipeNames is each recipe once, its base part first.
+StatblockPanel.prototype.recipeGroups = function () {
+  var groups = {}, order = [];
+  (this.vr.recipes || []).forEach(function (r) {
+    var key = r.recipe.name.toLowerCase();
+    if (!groups[key]) { groups[key] = { name: r.recipe.name, base: null, addons: [] }; order.push(key); }
+    if (r.recipe.part === 'base' && !groups[key].base) groups[key].base = r;
+    else if (r.recipe.part === 'addon') groups[key].addons.push(r);
+  });
+  return order.map(function (k) { return groups[k]; }).filter(function (g) { return g.base; });
+};
+
+StatblockPanel.prototype.openVariantFold = function (which) {
+  var self = this, vr = this.vr;
+  vr.open = vr.open === which ? '' : which;
+  vr.msg = ''; vr.msgKind = '';
+  if (!vr.open) { this.render(); this.focus('[data-sbx-var="' + which + '"]'); return; }
+  vr.loading = true;
+  this.render();
+  this.loadRecipes().catch(function () { vr.listError = true; }).then(function () {
+    vr.loading = false;
+    var g = self.recipeGroups();
+    if (!vr.pick && g.length) vr.pick = g[0].name.toLowerCase();
+    self.render();
+    self.focus('.sbx-var-fold input, .sbx-var-fold button');
+  });
+};
+
+// variantsHtml is the director's Variants section under the stat block.
+StatblockPanel.prototype.variantsHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, self = this;
+  if (!this.isGM || !vr.loaded) return '';
+  var out = '<section class="sbx-var" aria-label="Variants"><h4 class="sbx-var-tab">Variants</h4>';
+  var d = vr.doc || {};
+  if (d.follow && vr.original) {
+    var parts = (vr.parts || []).map(function (p) { return DrawSteelVariants.partLabel(p.recipe); });
+    out += '<p class="sbx-var-line">Follows <a href="' + esc(this.pageHref(vr.original.id)) + '">' + esc(vr.original.name || 'its original') + '</a>' +
+      (parts.length ? ' · ' + esc(parts.join(', ')) : '') + '. Changes to the original reach this page unless you changed the same thing here.' +
+      ' <button type="button" class="sbx-quiet" data-sbx-var="sources" aria-expanded="' + (vr.open === 'sources') + '">Where each figure comes from</button></p>';
+    if (vr.open === 'sources') out += this.sourcesHtml();
+  }
+  if (vr.kids && vr.kids.length) {
+    out += '<p class="sbx-var-line">Made from it: ' + vr.kids.map(function (k) {
+      return '<a href="' + esc(self.pageHref(k.id)) + '">' + esc(k.name || 'a variant') + '</a>';
+    }).join(', ') + '</p>';
+  }
+  out += '<p class="sbx-var-acts"><button type="button" class="sbx-quiet" data-sbx-var="make" aria-expanded="' + (vr.open === 'make') + '">Make a variant</button>' +
+    '<button type="button" class="sbx-quiet" data-sbx-var="new" aria-expanded="' + (vr.open === 'new') + '">New recipe from this creature</button></p>';
+  if (vr.open === 'make') out += this.makeHtml();
+  if (vr.open === 'new') out += this.newRecipeHtml();
+  out += '<p class="sbx-var-msg' + (vr.msgKind ? ' is-' + vr.msgKind : '') + '" role="status" aria-live="polite">' + (vr.msgHtml || esc(vr.msg || '')) + '</p></section>';
+  return out;
+};
+
+StatblockPanel.prototype.sourcesHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr;
+  var rows = DrawSteelVariants.sources(vr.origFields, vr.base || {}, this.fields(), vr.parts);
+  var show = DrawSteelVariants.show;
+  var text = { yours: 'changed by you', original: 'from the original', formula: 'published formula' };
+  return '<div class="sbx-var-fold sbx-var-src">' + rows.map(function (r) {
+    var src = r.src === 'recipe'
+      ? 'recipe' + (r.was !== null && r.was !== '' && r.was !== undefined ? ' (was ' + show(r.key, r.was) + ')' : '')
+      : text[r.src];
+    return '<div class="sbx-var-row"><span>' + esc(r.what) + '</span><b>' + esc(show(r.key, r.value)) + '</b><span class="sbx-var-s is-' + esc(r.src) + '">' + esc(src) + '</span></div>';
+  }).join('') + '</div>';
+};
+
+StatblockPanel.prototype.makeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, self = this;
+  if (vr.loading) return '<div class="sbx-var-fold"><p class="sbx-var-line">Reading this campaign’s recipes…</p></div>';
+  if (vr.listError) return '<div class="sbx-var-fold"><p class="sbx-var-line">Could not read this campaign’s recipes. Try again.</p></div>';
+  var groups = this.recipeGroups();
+  if (!groups.length) return '<div class="sbx-var-fold"><p class="sbx-var-line">No recipes yet. Use <b>New recipe from this creature</b> to make one: change this creature the way the recipe should, and every step is read from what you changed.</p></div>';
+  var g = null;
+  groups.forEach(function (x) { if (x.name.toLowerCase() === vr.pick) g = x; });
+  g = g || groups[0];
+  var name = DrawSteelVariants.nameFor(g.name, this.entity && this.entity.name);
+  var out = '<div class="sbx-var-fold"><fieldset class="sbx-var-q"><legend>Recipe</legend>' + groups.map(function (x) {
+    return '<label><input type="radio" name="sbx-var-recipe-' + esc(self.eid) + '" value="' + esc(x.name.toLowerCase()) + '" data-sbx-var-recipe' +
+      (x === g ? ' checked' : '') + '> ' + esc(x.name) + '</label>';
+  }).join('') + '</fieldset>';
+  if (g.addons.length) {
+    out += '<fieldset class="sbx-var-q"><legend>Add-ons</legend>' + g.addons.map(function (a) {
+      return '<label><input type="checkbox" value="' + esc(a.id) + '" data-sbx-var-addon> ' + esc(a.recipe.label) + '</label>';
+    }).join('') + '</fieldset>';
+  }
+  if (vr.truncated) out += '<p class="sbx-var-line">Only the first 200 recipe pages are listed.</p>';
+  out += '<p class="sbx-var-line">Makes a new page, <b>' + esc(name) + '</b>, that follows this one. You can rename it.</p>' +
+    '<p class="sbx-var-acts"><button type="button" class="btn-primary btn-sm" data-sbx-var="go"' + (vr.saving ? ' disabled' : '') + '>Make the variant</button></p></div>';
+  return out;
+};
+
+StatblockPanel.prototype.newRecipeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, vr = this.vr, eid = esc(this.eid);
+  var names = this.recipeGroups().map(function (g) { return '<option value="' + esc(g.name) + '"></option>'; }).join('');
+  return '<div class="sbx-var-fold">' +
+    '<p class="sbx-var-line">You change this creature the way the recipe should, and each change becomes a step that works on any creature: a number moves by the same amount, an organization or size by the same steps. This creature itself is not changed.</p>' +
+    '<label class="sbx-var-field">Recipe name <input type="text" maxlength="60" list="sbx-var-names-' + eid + '" data-sbx-var-name placeholder="Name this recipe"></label>' +
+    '<datalist id="sbx-var-names-' + eid + '">' + names + '</datalist>' +
+    '<fieldset class="sbx-var-q"><legend>This is</legend>' +
+    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="base" checked data-sbx-var-part> the recipe itself</label>' +
+    '<label><input type="radio" name="sbx-var-part-' + eid + '" value="addon" data-sbx-var-part> an add-on to it, called <input type="text" maxlength="60" data-sbx-var-label placeholder="add-on name" aria-label="Add-on name"></label></fieldset>' +
+    '<p class="sbx-var-acts"><button type="button" class="btn-primary btn-sm" data-sbx-var="author">Change this creature to show it</button></p></div>';
+};
+
+// makeVariant makes the new page, links it to this one and to its recipe
+// parts, and tells the director where it is.
+StatblockPanel.prototype.makeVariant = function () {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr, esc = S.esc;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  var g = null;
+  this.recipeGroups().forEach(function (x) { if (x.name.toLowerCase() === vr.pick) g = x; });
+  if (!Ed) { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
+  if (!g || vr.saving) return;
+  var ticked = Array.prototype.slice.call(this.el.querySelectorAll('[data-sbx-var-addon]')).filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
+  var parts = [g.base].concat(g.addons.filter(function (a) { return ticked.indexOf(a.id) !== -1; })).slice(0, V.MAX_PARTS);
+  var m = V.materialize(Ed, this.fields(), parts.map(function (p) { return { steps: p.recipe.steps }; }), {}, null, this.refs);
+  var fields = {}, k;
+  for (k in m.fields) if (Object.prototype.hasOwnProperty.call(m.fields, k)) fields[k] = m.fields[k];
+  if (this.fields()[S.TOKEN_KEY]) fields[S.TOKEN_KEY] = this.fields()[S.TOKEN_KEY];
+  var name = V.nameFor(g.name, this.entity && this.entity.name);
+  vr.saving = true; vr.msg = 'Making ' + name + '…'; vr.msgKind = ''; vr.msgHtml = '';
+  this.render();
+  var newId = null;
+  S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, entity_type_id: this.entity.entity_type_id, is_private: this.entity.is_private === true, fields_data: fields })
+  }).then(function (res) {
+    if (!res.ok) throw new Error('create ' + res.status);
+    return res.json();
+  }).then(function (made) {
+    newId = made && made.id ? String(made.id) : null;
+    if (!newId) throw new Error('create returned no id');
+    return self.writeVariant(newId, function (gm) { gm.follow = { of: self.eid, parts: parts.map(function (p) { return p.id; }), base: m.base }; });
+  }).then(function () {
+    return self.writeVariant(self.eid, function (gm) {
+      var kids = Array.isArray(gm.children) ? gm.children.slice(0, V.MAX_CHILDREN - 1) : [];
+      if (kids.indexOf(newId) === -1) kids.push(newId);
+      gm.children = kids;
+    });
+  }).then(function () {
+    vr.doc.children = (vr.doc.children || []).concat([newId]);
+    vr.kids = (vr.kids || []).concat([{ id: newId, name: name }]);
+    vr.open = '';
+    vr.msgHtml = 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>.';
+    vr.msgKind = 'ok';
+  }).catch(function (err) {
+    if (typeof console !== 'undefined') console.warn('Stat block: could not make the variant', err);
+    vr.msgHtml = newId ? 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>, but could not link it to this page' +
+      (err && err.message === 'variant too large' ? ', because its stat block is too long to follow its original. It stays as a plain copy.' : '. Delete it and try again.') : '';
+    vr.msg = 'Could not make the variant. Try again.';
+    vr.msgKind = 'error';
+  }).then(function () { vr.saving = false; self.render(); self.focus('.sbx-var-msg a, [data-sbx-var="make"]'); });
+};
+
+// authorRecipe opens the editor on this creature; what the director saves is
+// read as recipe steps on a new private page, and this creature is untouched.
+StatblockPanel.prototype.authorRecipe = function (existing) {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr, esc = S.esc;
+  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  if (!Ed || !Ed.roundTrip) { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
+  var recipe = existing ? existing.recipe : null;
+  if (!recipe) {
+    var nameEl = this.el.querySelector('[data-sbx-var-name]'), partEl = this.el.querySelector('[data-sbx-var-part]:checked'), labelEl = this.el.querySelector('[data-sbx-var-label]');
+    var rname = nameEl ? String(nameEl.value || '').trim().slice(0, 60) : '';
+    var part = partEl && partEl.value === 'addon' ? 'addon' : 'base';
+    var label = labelEl ? String(labelEl.value || '').trim().slice(0, 60) : '';
+    if (!rname) { vr.msg = 'Give the recipe a name first.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-name]'); return; }
+    if (part === 'addon' && !label) { vr.msg = 'Give the add-on a name first.'; vr.msgKind = 'error'; this.render(); this.focus('[data-sbx-var-label]'); return; }
+    recipe = { name: rname, part: part, label: label, sample: this.eid, steps: { changes: {}, lists: {} } };
+  }
+  var sampleFields = existing ? existing.sampleFields : this.fields();
+  var sampleName = existing ? existing.sampleName : ((this.entity && this.entity.name) || '');
+  var start = V.apply(Ed.roundTrip(sampleName, sampleFields, this.refs), recipe.steps);
+  var title = recipe.part === 'addon' ? recipe.name + ': ' + recipe.label : recipe.name;
+  this.el.innerHTML = '';
+  var host = this.el.ownerDocument.createElement('div');
+  this.el.appendChild(host);
+  this.editor = Ed.mount(host, {
+    campaignId: this.cid,
+    entityId: existing ? existing.sampleId : this.eid,
+    entity: { name: sampleName, image_path: '', fields_data: start },
+    refs: this.refs,
+    ref: this.ref,
+    form: { heading: title + ' recipe, shown on ' + sampleName, nameLabel: 'Name (not saved)', dirtyKey: 'monster-builder:recipe:' + this.eid },
+    saveAs: function (out) {
+      var steps = V.stepsFrom(Ed.roundTrip(sampleName, sampleFields, self.refs), out.fields);
+      var next = { name: recipe.name, part: recipe.part, label: recipe.label, sample: existing ? existing.sampleId : self.eid, steps: steps };
+      if (existing) return self.writeVariant(self.eid, function (gm) { gm.recipe = next; }).then(function () { self.vr.doc.recipe = V.read({ recipe: next }).recipe; return next; });
+      return S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(self.cid) + '/entities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: title + ' (recipe)', entity_type_id: self.entity.entity_type_id, is_private: true, fields_data: {} })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('create ' + res.status);
+        return res.json();
+      }).then(function (made) {
+        var id = made && made.id ? String(made.id) : null;
+        if (!id) throw new Error('create returned no id');
+        return self.writeVariant(id, function (gm) { gm.recipe = next; }).catch(function (err) {
+          vr.msgHtml = 'Made the page <a href="' + esc(self.pageHref(id)) + '">' + esc(title + ' (recipe)') + '</a> but could not save the recipe on it' +
+            (err && err.message === 'variant too large' ? ', because it is too long. Make it with fewer or shorter changes.' : '. Delete that page and try again.');
+          vr.msgKind = 'error';
+          throw err;
+        }).then(function () {
+          vr.recipes = null; vr.open = '';
+          vr.msgHtml = 'Saved the recipe on its own page, <a href="' + esc(self.pageHref(id)) + '">' + esc(title + ' (recipe)') + '</a>, which only directors see. ' +
+            (Object.keys(steps.changes).length || Object.keys(steps.lists).length ? '' : 'You changed nothing, so it has no steps yet.');
+          vr.msgKind = 'ok';
+          return next;
+        });
+      });
+    },
+    onClose: function () { self.editor = null; self.render(); self.focus('.sbx-var-msg a, [data-sbx-var="new"]'); }
+  });
+};
+
+// ── The recipe page ──
+
+StatblockPanel.prototype.recipeHtml = function () {
+  var S = DrawSteelStatblock, esc = S.esc, V = DrawSteelVariants, vr = this.vr, r = vr.doc.recipe;
+  var rows = V.describe(r.steps);
+  var title = r.part === 'addon' ? 'Add-on <b>' + esc(r.label) + '</b> to the recipe <b>' + esc(r.name) + '</b>' : 'The recipe <b>' + esc(r.name) + '</b>';
+  var out = '<div class="sbx-wrap"><div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-flask" aria-hidden="true"></i> Variant recipe</span></div>' +
+    '<section class="sbx-var"><p class="sbx-var-line">' + title + '. Players never see a recipe. Use <b>Make a variant</b> on any creature’s page to apply it.</p>';
+  out += rows.length ? '<div class="sbx-var-src">' + rows.map(function (x, i) {
+    var acts = '';
+    if (x.canFix) acts += '<button type="button" class="sbx-quiet" data-sbx-var-fix="' + esc(x.key) + '">always ' + esc(V.show(x.key, r.steps.changes[x.key].to)) + ' instead</button>';
+    if (x.canFree) acts += '<button type="button" class="sbx-quiet" data-sbx-var-free="' + esc(x.key) + '">' + (r.steps.changes[x.key].was.mode === 'step' ? 'move by steps instead' : 'move by the amount instead') + '</button>';
+    if (x.mode !== 'list') acts += '<button type="button" class="sbx-quiet" data-sbx-var-drop="' + esc(x.key) + '">remove</button>';
+    return '<div class="sbx-var-row" data-i="' + i + '"><span>' + esc(x.what) + '</span><b>' + esc(x.text) + '</b><span class="sbx-var-s">' + acts + '</span></div>';
+  }).join('') + '</div>' : '<p class="sbx-var-line">No steps yet.</p>';
+  out += '<p class="sbx-var-acts"><button type="button" class="sbx-quiet" data-sbx-var="reedit">' +
+    (vr.sampleName ? 'Change it on ' + esc(vr.sampleName) : 'Change it on its sample creature') + '</button></p>' +
+    '<p class="sbx-var-msg' + (vr.msgKind ? ' is-' + vr.msgKind : '') + '" role="status" aria-live="polite">' + (vr.msgHtml || esc(vr.msg || '')) + '</p></section></div>';
+  return out;
+};
+
+// editStep switches one step between relative and fixed, or removes it.
+StatblockPanel.prototype.editStep = function (how, key) {
+  var self = this, V = DrawSteelVariants, vr = this.vr, r = vr.doc.recipe;
+  var s = r.steps.changes[key];
+  if (!s) return;
+  var steps = { changes: {}, lists: r.steps.lists };
+  Object.keys(r.steps.changes).forEach(function (k) { if (k !== key) steps.changes[k] = r.steps.changes[k]; });
+  if (how === 'fix') steps.changes[key] = V.fixed(s);
+  else if (how === 'free' && s.was) steps.changes[key] = s.was;
+  if (how !== 'drop' && !steps.changes[key]) return;
+  var next = { name: r.name, part: r.part, label: r.label, sample: r.sample, steps: V.cleanSteps(steps) };
+  vr.msg = 'Saving…'; vr.msgKind = ''; vr.msgHtml = '';
+  this.render();
+  this.writeVariant(this.eid, function (gm) { gm.recipe = next; }).then(function () {
+    vr.doc.recipe = V.read({ recipe: next }).recipe;
+    vr.msg = 'Saved. Variants made with it change when their page is next opened, or their original is next saved.'; vr.msgKind = 'ok';
+  }, function () { vr.msg = 'Could not save that. Try again.'; vr.msgKind = 'error'; }).then(function () { self.render(); });
+};
+
+StatblockPanel.prototype.reeditRecipe = function () {
+  var self = this, S = DrawSteelStatblock, vr = this.vr, r = vr.doc.recipe;
+  if (!r.sample) { vr.msg = 'This recipe has no sample creature. Make a new recipe from a creature’s page.'; vr.msgKind = 'error'; this.render(); return; }
+  S.getJSON(this.entityUrl(r.sample)).then(function (e) {
+    self.authorRecipe({ recipe: r, sampleId: r.sample, sampleName: String((e && e.name) || ''), sampleFields: (e && e.fields_data) || {} });
+  }, function () { vr.msg = 'Could not open its sample creature. It may have been deleted; make the recipe again from another creature.'; vr.msgKind = 'error'; self.render(); });
 };
 
 StatblockPanel.prototype.destroy = function () {

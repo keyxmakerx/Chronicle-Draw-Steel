@@ -257,6 +257,9 @@ export function deriveSummary(description) {
  * `<key>_display` (see displayKeyFor) since propString can't print objects.
  * `fold: true` adds a "Details" column folding ungrouped keys into one
  * string, for datasets whose entries don't share a key set.
+ * `director: true` keeps the dataset to Directors in Chronicle (its pages,
+ * search, tooltips and raw data file): the Monsters book is the Director's
+ * book's content, and the book hides that chapter from players.
  *
  * Keep column counts low: the list table is `w-full` inside
  * `overflow-hidden`, so extra columns squeeze the rest instead of scrolling.
@@ -330,10 +333,69 @@ export const CATEGORIES = [
     ],
   },
   {
+    file: 'careers.json',
+    slug: 'careers',
+    name: 'Careers',
+    icon: 'fa-briefcase',
+    columns: [
+      ['skills', 'Skills', 'string'],
+      ['languages', 'Languages', 'string'],
+      ['perk', 'Perk', 'string'],
+      ['renown', 'Renown', 'string'],
+      ['wealth', 'Wealth', 'string'],
+      ['project_points', 'Project Points', 'number'],
+      ['inciting_incidents', 'Inciting Incidents', 'string'],
+    ],
+  },
+  {
+    file: 'classes.json',
+    slug: 'classes',
+    name: 'Classes',
+    icon: 'fa-hat-wizard',
+    columns: [
+      ['heroic_resource', 'Heroic Resource', 'string'],
+      ['primary_characteristics', 'Primary Characteristics', 'string'],
+      ['starting_stamina', 'Starting Stamina', 'number'],
+      ['stamina_per_level', 'Stamina per Level', 'number'],
+      ['recoveries', 'Recoveries', 'number'],
+      ['skills', 'Skills', 'string'],
+      ['subclass_type', 'Subclass Type', 'string'],
+      ['subclasses', 'Subclasses', 'string'],
+    ],
+  },
+  {
+    file: 'cultures.json',
+    slug: 'cultures',
+    name: 'Cultures',
+    icon: 'fa-people-roof',
+    columns: [
+      ['kind', 'Kind', 'string'],
+      ['language', 'Language', 'string'],
+      ['environment', 'Environment', 'string'],
+      ['organization', 'Organization', 'string'],
+      ['upbringing', 'Upbringing', 'string'],
+      ['skill_options', 'Skill Options', 'string'],
+    ],
+  },
+  {
+    file: 'complications.json',
+    slug: 'complications',
+    name: 'Complications',
+    icon: 'fa-link-slash',
+    fold: true,
+    columns: [
+      ['benefit', 'Benefit', 'string'],
+      ['drawback', 'Drawback', 'string'],
+      ['benefit_and_drawback', 'Benefit and Drawback', 'string'],
+      ['special', 'Special', 'string'],
+    ],
+  },
+  {
     file: 'creatures.json',
     slug: 'creatures',
     name: 'Creatures',
     icon: 'fa-paw',
+    director: true,
     columns: [
       ['level', 'Level', 'number'],
       ['organization', 'Organization', 'string'],
@@ -352,6 +414,7 @@ export const CATEGORIES = [
     slug: 'monsters',
     name: 'Monsters',
     icon: 'fa-dragon',
+    director: true,
     columns: [
       ['level', 'Level', 'number'],
       ['organization', 'Organization', 'string'],
@@ -373,6 +436,7 @@ export const CATEGORIES = [
     slug: 'creature-abilities',
     name: 'Creature Abilities',
     icon: 'fa-burst',
+    director: true,
     columns: [
       ['type', 'Type', 'string'],
       ['organizations', 'Made for', 'string'],
@@ -394,6 +458,7 @@ export const CATEGORIES = [
     slug: 'animal-traits',
     name: 'Animal Traits',
     icon: 'fa-hippo',
+    director: true,
     fold: true,
     columns: [
       ['group', 'Group', 'string'],
@@ -420,6 +485,7 @@ export const CATEGORIES = [
     slug: 'monster-building',
     name: 'Monster Building',
     icon: 'fa-dragon',
+    director: true,
     fold: true,
     // `category` is a constant marker on every entry of the file and just
     // repeats the category name the page is already under.
@@ -435,6 +501,7 @@ export const CATEGORIES = [
     slug: 'encounter-building',
     name: 'Encounter Building',
     icon: 'fa-chess-board',
+    director: true,
     fold: true,
     // `category` is a constant marker on every entry of the file and just
     // repeats the category name the page is already under.
