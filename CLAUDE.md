@@ -78,7 +78,7 @@ says which. This package invents no creature numbers.
 
 ## Manifest
 
-No `"version"` field (comes from GitHub release tags); `"api_version": "1"` is a separate API compatibility version. Widget entries use `"script_file"`, not `"file"`. `"text_renderers"` is forward-compatible (Chronicle platform support pending).
+No `"version"` field (comes from GitHub release tags); `"api_version": "1"` is a separate API compatibility version. Widget entries use `"script_file"`, not `"file"`. `"text_renderers"` lists the scripts Chronicle loads as globals before the widgets (reference renderer, monster engine and party, fold engine, example player).
 
 ## Working with this project
 
