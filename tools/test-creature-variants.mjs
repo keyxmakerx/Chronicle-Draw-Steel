@@ -366,3 +366,81 @@ test('a player’s panel never asks for variant documents when it starts', async
   assert.ok(calls.some((c) => /entities\/hound$/.test(c.url)), 'the page itself was read');
   assert.ok(!calls.some((c) => /\/variant$/.test(c.url)));
 });
+
+// ── Rising as a variant from a Workshop rule ──
+
+// workshop serves a Workshop recipe with one creature mark over server().
+function workshop(w, mark, opts) {
+  const o = opts || {};
+  const calls = server(true, w.entities, w.states);
+  const inner = globalThis.Chronicle.apiFetch;
+  const recipe = { id: 'r1', name: 'Remnant on death', version: 3, doc: { parts: [{ key: 'remnant', kind: 'creature-mark', label: 'Remnant', see: 'director', data: mark }], rules: [] } };
+  let conflicts = o.conflicts || 0;
+  globalThis.Chronicle.apiFetch = (url, op) => {
+    const method = (op && op.method) || 'GET';
+    const ok = (v) => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(JSON.parse(JSON.stringify(v))) });
+    if (/\/systems\/drawsteel\/data\/organization-templates\.json$/.test(url)) return ok(refs.orgs);
+    if (/\/systems\/drawsteel\/data\/role-templates\.json$/.test(url)) return ok(refs.roles);
+    if (/\/campaigns\/c1\/homebrew\/recipes\/r1$/.test(url)) {
+      calls.push({ url, method, body: op && op.body ? JSON.parse(op.body) : null });
+      if (method === 'PUT') {
+        if (conflicts > 0) { conflicts--; recipe.version++; return Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({}) }); }
+        const b = calls[calls.length - 1].body;
+        if (b.version !== recipe.version) return Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({}) });
+        recipe.doc = b.doc; recipe.version++;
+        return ok(recipe);
+      }
+      return ok(recipe);
+    }
+    return inner(url, op);
+  };
+  return { calls, recipe };
+}
+
+const died = (scope) => ({ campaignId: 'c1', run: { id: 'run1', recipeId: 'r1', scope }, step: { action: 'rise-as-variant', part: 'remnant', browser: true } });
+
+test('the rise action is registered for the Homebrew drawer', () => {
+  assert.equal(globalThis.Chronicle.homebrewActions['rise-as-variant'], S.Rise.run);
+});
+
+test('a marked creature that dies rises as its linked variant, noted on the mark', async () => {
+  const w = world();
+  const { recipe } = workshop(w, { recipe: 'rem', addons: ['str'], marked: ['hound'] });
+  const line = await S.Rise.run(died('hound'));
+  assert.equal(line, 'Ashen Hound rose as Remnant of Ashen Hound.');
+  const made = Object.keys(w.entities).find((id) => id.startsWith('new'));
+  assert.equal(w.entities[made].name, 'Remnant of Ashen Hound');
+  assert.equal(w.entities[made].fields_data.organization, 'platoon');
+  assert.equal(w.entities[made].fields_data.might, 3, 'the add-on applies too');
+  assert.deepEqual(w.states[made].gm.follow.parts, ['rem', 'str']);
+  assert.equal(w.states[made].gm.follow.of, 'hound');
+  assert.deepEqual(w.states.hound.gm.children, [made]);
+  assert.deepEqual(recipe.doc.parts[0].data.variants, { hound: made });
+});
+
+test('a creature rises once, and only if it is marked', async () => {
+  const w = world();
+  workshop(w, { recipe: 'rem', marked: ['hound'], variants: { hound: 'old' } });
+  assert.equal(await S.Rise.run(died('hound')), 'Ashen Hound has already risen.');
+  workshop(w, { recipe: 'rem', marked: [] });
+  assert.equal(await S.Rise.run(died('hound')), 'Ashen Hound is not marked, so nothing rose.');
+  assert.ok(!Object.keys(w.entities).some((id) => id.startsWith('new')), 'no page was made');
+});
+
+test('noting the variant retries once when someone saved the recipe in between', async () => {
+  const w = world();
+  const { recipe } = workshop(w, { recipe: 'rem', marked: ['hound'] }, { conflicts: 1 });
+  await S.Rise.run(died('hound'));
+  assert.ok(recipe.doc.parts[0].data.variants.hound);
+});
+
+test('a rise that cannot run says why in plain words', async () => {
+  const w = world();
+  workshop(w, { recipe: 'rem', marked: ['hound'] });
+  await assert.rejects(S.Rise.run({ campaignId: 'c1', run: { recipeId: 'r1' }, step: { part: 'remnant' } }), /does not say which creature died/);
+  await assert.rejects(S.Rise.run(Object.assign(died('hound'), { step: { part: 'gone' } })), /its mark is gone from the recipe/);
+  workshop(w, { recipe: 'str', marked: ['hound'] });
+  await assert.rejects(S.Rise.run(died('hound')), /no longer a recipe/);
+  workshop(w, { recipe: 'rem', marked: ['hound'] }, { conflicts: 5 });
+  await assert.rejects(S.Rise.run(died('hound')), (e) => /^made Remnant of Ashen Hound, but could not note the variant on the mark\.$/.test(e.message));
+});

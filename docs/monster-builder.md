@@ -461,6 +461,18 @@ reaches a variant when one of those happens next. **Where each figure comes
 from** lists each figure as from the original, the recipe (with the
 original's value), the published formula or the director.
 
+**Rising as a variant** is a Homebrew Workshop rule the director builds in
+Chronicle (Rulebook > House rules), not a rule of this package: a
+`creature-mark` part names a recipe, its add-ons and the marked creatures,
+and a rule says "when a marked creature dies, rise as its variant". Chronicle
+holds that rule in the DM Screen's Homebrew drawer; when the director presses
+Run, the drawer calls this package's `rise-as-variant` action
+(`DrawSteelRise.run` in `widgets/statblock-renderer.js`) with the run's
+recipe and the page of the creature that died. It makes the variant exactly
+as **Make a variant** does, then notes it on the mark's `variants`, so one
+creature never rises twice. A creature that isn't marked, or has risen
+already, is left alone and the drawer says so.
+
 All of it is one system-state key, `variant`, gm half only:
 
 | Page | `gm` |
