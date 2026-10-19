@@ -280,6 +280,10 @@
       "icon": "fa-hashtag"
     }
   ],
+  "director_data": [
+    "organization-templates.json",
+    "role-templates.json"
+  ],
   "entity_presets": [
     {
       "slug": "drawsteel-character",
