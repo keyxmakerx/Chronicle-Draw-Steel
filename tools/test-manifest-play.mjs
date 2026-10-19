@@ -51,6 +51,7 @@ test('choice options come from the shipped data', () => {
   const names = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8')).map((x) => x.name);
   assert.deepEqual(field('ancestry').play.options, names('ancestries.json'));
   assert.deepEqual(field('kit').play.options, names('kits.json'));
+  assert.deepEqual(field('career').play.options, names('careers.json'));
   const conds = JSON.parse(readFileSync(new URL('../data/rules-glossary.json', import.meta.url), 'utf8'))
     .filter((x) => x.properties && x.properties.category === 'condition').map((x) => x.slug);
   assert.deepEqual(field('conditions_json').play.options, conds);

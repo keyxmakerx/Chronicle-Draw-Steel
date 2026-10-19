@@ -365,7 +365,27 @@
           "foundry_item_single": true,
           "play": {
             "edit": "owner",
-            "kind": "text",
+            "kind": "choice",
+            "options": [
+              "Agent",
+              "Aristocrat",
+              "Artisan",
+              "Beggar",
+              "Criminal",
+              "Disciple",
+              "Explorer",
+              "Farmer",
+              "Gladiator",
+              "Laborer",
+              "Mage's Apprentice",
+              "Performer",
+              "Politician",
+              "Sage",
+              "Sailor",
+              "Soldier",
+              "Warden",
+              "Watch Officer"
+            ],
             "max_length": 64
           }
         },
