@@ -1220,6 +1220,12 @@ var DrawSteelCreatureEditor = (function () {
     return { art: p.art, token: p.token, art0: p.art, busy: '', msg: '', msgKind: '' };
   }
 
+  // Chronicle's token maker frames a picture into a token; older Chronicle
+  // versions have none, and the token slot then offers only an upload.
+  function canMakeToken() {
+    return typeof Chronicle !== 'undefined' && !!Chronicle.tokenMaker && typeof Chronicle.tokenMaker.open === 'function';
+  }
+
   function picSlot(k, label, id, round, busy, hint) {
     var S = SB();
     var prev = busy ? '<span class="sbe-pic-none">Uploading…</span>'
@@ -1229,6 +1235,7 @@ var DrawSteelCreatureEditor = (function () {
       '<span class="sbe-pic-prev' + (round ? ' is-round' : '') + (round && !id && !busy ? ' is-generic' : '') + '">' + prev + '</span>' +
       '<span class="sbe-pic-acts"><label class="btn-secondary btn-sm sbe-pic-up">' + (id ? 'Change…' : 'Upload…') +
       '<input type="file" class="sbe-sr" accept="' + PIC_TYPES.join(',') + '" data-sbe-pic="' + k + '" aria-label="' + esc(id ? 'Change the ' + label.toLowerCase() : 'Upload ' + label.toLowerCase()) + '"' + (busy ? ' disabled' : '') + '></label>' +
+      (k === 'token' && canMakeToken() ? '<button type="button" class="btn-secondary btn-sm" id="sbe-pic-make" data-sbe-act="pic-make"' + (busy ? ' disabled' : '') + '>Make token…</button>' : '') +
       (id ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="pic-clear" data-sbe-pic-k="' + k + '"' + (busy ? ' disabled' : '') + '>Remove</button>' : '') + '</span>' +
       '<span class="sbe-hint">' + hint + '</span></div>';
   }
@@ -1488,6 +1495,7 @@ var DrawSteelCreatureEditor = (function () {
         st.editAb = 'v' + (st.c.villain_actions.length - 1); dirty(); draw('sbe-ab-name');
       }
       else if (act === 'save') doSave();
+      else if (act === 'pic-make') makeToken(el);
       else if (act === 'pic-clear') {
         var pk = el.getAttribute('data-sbe-pic-k');
         if (pk === 'art' || pk === 'token') { ui.pics[pk] = ''; ui.pics.msg = 'Save to remove the ' + (pk === 'art' ? 'art' : 'token') + '.'; ui.pics.msgKind = ''; dirty(); draw(); }
@@ -1699,6 +1707,26 @@ var DrawSteelCreatureEditor = (function () {
       if (!p || !p.profile) return;
       ui.suggestNote = applySuggestion(st, p.profile);
       dirty(); draw();
+    }
+
+    // makeToken opens Chronicle's token maker on the art, or on a picture the
+    // director picks there. The token it saves becomes this editor's token,
+    // kept like an upload until the director saves the stat block.
+    function makeToken(from) {
+      var p = ui.pics;
+      if (!canMakeToken() || p.busy) return;
+      Chronicle.tokenMaker.open({
+        campaignId: ctx.campaignId, entityId: ctx.entityId, name: st.name || '',
+        art: p.art ? SB().mediaSrc(p.art) : '', from: from,
+        save: function (id) {
+          var mid = SB().mediaId(id);
+          if (!mid) throw new Error('The token came back without an id. Try again.');
+          p.token = mid; p.msg = 'Save to keep the new token.'; p.msgKind = '';
+          dirty(); draw();
+        },
+        // The redraw replaced the button that opened the maker.
+        onClose: function () { var b = doc.getElementById('sbe-pic-make'); if (b) b.focus(); }
+      });
     }
 
     function uploadPic(k, file) {
