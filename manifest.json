@@ -8,6 +8,9 @@
   "api_version": "1",
   "status": "available",
   "foundry_system_id": "draw-steel",
+  "terms": {
+    "gm": "Director"
+  },
   "categories": [
     {
       "slug": "abilities",
@@ -1320,6 +1323,10 @@
     {
       "widget": "statblock-renderer",
       "applies_to": "npc"
+    },
+    {
+      "widget": "statblock-renderer",
+      "applies_to": "creature"
     },
     {
       "widget": "negotiation-tracker",
