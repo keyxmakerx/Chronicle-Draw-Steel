@@ -12,8 +12,8 @@
  *   because widget scripts load in manifest order.
  *
  *   'statblock-renderer' — the panel Chronicle mounts under the title of every
- *   NPC-family page (manifest entity_panels). It draws only on a page whose type
- *   is a Creature, and for the director it carries Edit stat block and Publish.
+ *   Creature and NPC page (manifest entity_panels). It draws only on a page whose
+ *   type is a Creature, and for the director it carries Edit stat block and Publish.
  */
 var DrawSteelStatblock = (function () {
   'use strict';

@@ -74,3 +74,12 @@ test('every text_renderer and widget points at a file that exists', () => {
   }
   assert.deepEqual(missing, [], `manifest points at files that do not exist: ${missing.join('; ')}`);
 });
+
+// Chronicle names the game master with terms.gm across the campaign and
+// rejects the whole manifest for a term that is not up to 24 letters, spaces,
+// hyphens or full stops, starting with a letter.
+test('terms.gm is the Director, in a form Chronicle accepts', () => {
+  const gm = manifest.terms && manifest.terms.gm;
+  assert.equal(gm, 'Director');
+  assert.ok([...gm].length <= 24 && /^\p{L}[\p{L} .-]*$/u.test(gm));
+});

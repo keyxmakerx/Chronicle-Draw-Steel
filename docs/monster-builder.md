@@ -292,16 +292,21 @@ checked. **Suggest a level, organization and role for this party** applies
 ### 6.1 Stat block panel
 
 `widgets/statblock-renderer.js` registers `statblock-renderer` and is declared
-in `manifest.json` → `entity_panels` with `applies_to: "npc"`, so Chronicle
-mounts it under the title of NPC-family pages. It shows itself only on the
-campaign's Creature pages (the type whose preset category is `creature`), or
-on any page that already has a stat block. A player sees nothing on a creature
-with no stat block; the director sees **Build its stat block**.
+in `manifest.json` → `entity_panels` twice, with `applies_to: "creature"` and
+`applies_to: "npc"`, so Chronicle mounts it under the title of Creature pages
+without the owner listing Creature as an NPC type, and of NPC pages too (once
+on a page that is both). It shows itself only on the campaign's Creature pages
+(the type whose preset category is `creature`), or on any page that already
+has a stat block. A player sees nothing on a creature with no stat block; the
+director sees **Build its stat block**.
+
+`applies_to: "creature"` needs a Chronicle that knows that audience; an older
+one rejects the whole manifest, so release this package only once the
+Chronicle it installs into has it.
 
 In page-layout mode Chronicle draws entity panels only where the layout places
-the **Game System Panels** block. Chronicle placed that block once in existing
-NPC-family types; a creature type created later must have it added in the
-layout editor.
+the **Game System Panels** block. Chronicle starts new creature types with it
+and placed it once in existing NPC and creature types.
 
 The panel's global `DrawSteelStatblock` is the one stat block drawing used by
 the panel, the editor's preview, the Bestiary widget's open rows and,
@@ -510,7 +515,7 @@ weaknesses (see FOUNDRY-SYNC-MAP.md §8).
 
 | Dependency | In | Notes |
 |---|---|---|
-| `entity_panels` in the manifest | Chronicle Core | Mounts the stat block under NPC-family page titles |
+| `entity_panels` in the manifest | Chronicle Core | Mounts the stat block under Creature and NPC page titles |
 | Widget JS API | Chronicle Core | `Chronicle.register()` |
 | Entity custom fields API | Chronicle Core | Reads and writes `fields_data` |
 | Community Bestiary addon | Chronicle Core | `internal/plugins/bestiary`: search, stat block, publish |

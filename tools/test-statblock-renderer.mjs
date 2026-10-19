@@ -173,3 +173,12 @@ test('an empty figure gets no mark: the director never set it', () => {
   assert.equal(pr.ev.state, null);
   assert.ok(!/EV —<span class="sbx-mark/.test(S.html('G', goblin({ ev: '' }), { refs: REFS })));
 });
+
+// Chronicle mounts the panel on Creature pages by their type, so a bestiary
+// page shows its stat block without being listed as an NPC; the NPC entry
+// keeps it on NPC pages too. Chronicle mounts a widget aimed at both once.
+test('manifest mounts the stat block on NPC and Creature pages', () => {
+  const m = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const audiences = m.entity_panels.filter((p) => p.widget === 'statblock-renderer').map((p) => p.applies_to);
+  assert.deepEqual(audiences.sort(), ['creature', 'npc']);
+});
