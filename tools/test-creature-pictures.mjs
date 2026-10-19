@@ -87,3 +87,19 @@ test('the editor starts from the page’s pictures', () => {
   const p = Ed.newPics({ image_path: '2026/03/' + A + '.png', fields_data: { token_image: T } });
   assert.deepEqual([p.art, p.token, p.art0], [A, T, A]);
 });
+
+test('the token slot offers Chronicle’s token maker only where Chronicle has one', () => {
+  const make = /id="sbe-pic-make" data-sbe-act="pic-make"/;
+  assert.ok(!make.test(Ed.picsHtml({ art: A, token: '' })), 'no maker, no button');
+  globalThis.Chronicle.tokenMaker = { open() {} };
+  try {
+    const html = Ed.picsHtml({ art: A, token: '' });
+    assert.equal(html.match(/data-sbe-act="pic-make"/g).length, 1, 'on the token slot only');
+    assert.ok(html.indexOf('data-sbe-act="pic-make"') > html.indexOf('data-sbe-pic="token"'));
+    assert.match(Ed.picsHtml({ art: '', token: '' }), make, 'a picture can be chosen in the maker');
+    assert.match(Ed.picsHtml({ art: A, token: '', busy: 'token' }), /data-sbe-act="pic-make" disabled/);
+    assert.match(Ed.picsHtml({ art: A, token: '', busy: 'art' }), /data-sbe-act="pic-make" disabled/, 'held while the art uploads too');
+  } finally {
+    delete globalThis.Chronicle.tokenMaker;
+  }
+});
