@@ -98,6 +98,7 @@ test('the token slot offers Chronicle’s token maker only where Chronicle has o
     assert.ok(html.indexOf('data-sbe-act="pic-make"') > html.indexOf('data-sbe-pic="token"'));
     assert.match(Ed.picsHtml({ art: '', token: '' }), make, 'a picture can be chosen in the maker');
     assert.match(Ed.picsHtml({ art: A, token: '', busy: 'token' }), /data-sbe-act="pic-make" disabled/);
+    assert.match(Ed.picsHtml({ art: A, token: '', busy: 'art' }), /data-sbe-act="pic-make" disabled/, 'held while the art uploads too');
   } finally {
     delete globalThis.Chronicle.tokenMaker;
   }

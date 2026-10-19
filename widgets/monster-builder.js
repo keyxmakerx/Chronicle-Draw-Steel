@@ -1226,7 +1226,9 @@ var DrawSteelCreatureEditor = (function () {
     return typeof Chronicle !== 'undefined' && !!Chronicle.tokenMaker && typeof Chronicle.tokenMaker.open === 'function';
   }
 
-  function picSlot(k, label, id, round, busy, hint) {
+  // busy: this slot is uploading; anyBusy: either is, which also holds the
+  // token maker, since its token would land in the middle of an upload.
+  function picSlot(k, label, id, round, busy, hint, anyBusy) {
     var S = SB();
     var prev = busy ? '<span class="sbe-pic-none">Uploading…</span>'
       : id ? '<img src="' + esc(S.mediaSrc(id)) + '" alt="' + esc(label) + '">'
@@ -1235,7 +1237,7 @@ var DrawSteelCreatureEditor = (function () {
       '<span class="sbe-pic-prev' + (round ? ' is-round' : '') + (round && !id && !busy ? ' is-generic' : '') + '">' + prev + '</span>' +
       '<span class="sbe-pic-acts"><label class="btn-secondary btn-sm sbe-pic-up">' + (id ? 'Change…' : 'Upload…') +
       '<input type="file" class="sbe-sr" accept="' + PIC_TYPES.join(',') + '" data-sbe-pic="' + k + '" aria-label="' + esc(id ? 'Change the ' + label.toLowerCase() : 'Upload ' + label.toLowerCase()) + '"' + (busy ? ' disabled' : '') + '></label>' +
-      (k === 'token' && canMakeToken() ? '<button type="button" class="btn-secondary btn-sm" id="sbe-pic-make" data-sbe-act="pic-make"' + (busy ? ' disabled' : '') + '>Make token…</button>' : '') +
+      (k === 'token' && canMakeToken() ? '<button type="button" class="btn-secondary btn-sm" id="sbe-pic-make" data-sbe-act="pic-make"' + (anyBusy ? ' disabled' : '') + '>Make token…</button>' : '') +
       (id ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="pic-clear" data-sbe-pic-k="' + k + '"' + (busy ? ' disabled' : '') + '>Remove</button>' : '') + '</span>' +
       '<span class="sbe-hint">' + hint + '</span></div>';
   }
@@ -1248,7 +1250,7 @@ var DrawSteelCreatureEditor = (function () {
       : 'Empty: Foundry’s token uses <b>the generic monster token</b>.';
     return '<h4 class="sbe-h">Pictures <span class="sbe-hint">Both optional</span></h4><div class="sbe-pics">' +
       picSlot('art', 'Art', p.art, false, p.busy === 'art', 'The page’s own picture, at the top of the page and the stat block.') +
-      picSlot('token', 'Token', p.token, true, p.busy === 'token', tokHint) + '</div>' +
+      picSlot('token', 'Token', p.token, true, p.busy === 'token', tokHint, !!p.busy) + '</div>' +
       (p.msg ? '<p class="sbe-msg' + (p.msgKind ? ' is-' + p.msgKind : '') + '" role="status">' + esc(p.msg) + '</p>' : '');
   }
 
