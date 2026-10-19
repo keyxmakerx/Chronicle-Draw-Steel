@@ -2365,51 +2365,58 @@ StatblockPanel.prototype.newRecipeHtml = function () {
 // makeVariant makes the new page, links it to this one and to its recipe
 // parts, and tells the director where it is.
 StatblockPanel.prototype.makeVariant = function () {
-  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants, vr = this.vr, esc = S.esc;
-  var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
+  var self = this, V = DrawSteelVariants, vr = this.vr, esc = DrawSteelStatblock.esc;
   var g = null;
   this.recipeGroups().forEach(function (x) { if (x.name.toLowerCase() === vr.pick) g = x; });
-  if (!Ed) { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
+  if (typeof DrawSteelCreatureEditor === 'undefined') { vr.msg = 'The stat block editor did not load. Reload the page to try again.'; vr.msgKind = 'error'; this.render(); return; }
   if (!g || vr.saving) return;
   var ticked = Array.prototype.slice.call(this.el.querySelectorAll('[data-sbx-var-addon]')).filter(function (b) { return b.checked; }).map(function (b) { return b.value; });
   var parts = [g.base].concat(g.addons.filter(function (a) { return ticked.indexOf(a.id) !== -1; })).slice(0, V.MAX_PARTS);
-  var m = V.materialize(Ed, this.fields(), parts.map(function (p) { return { steps: p.recipe.steps }; }), {}, null, this.refs);
-  var fields = {}, k;
-  for (k in m.fields) if (Object.prototype.hasOwnProperty.call(m.fields, k)) fields[k] = m.fields[k];
-  if (this.fields()[S.TOKEN_KEY]) fields[S.TOKEN_KEY] = this.fields()[S.TOKEN_KEY];
-  var name = V.nameFor(g.name, this.entity && this.entity.name);
-  vr.saving = true; vr.msg = 'Making ' + name + '…'; vr.msgKind = ''; vr.msgHtml = '';
+  var made = { id: null, name: V.nameFor(g.name, this.entity && this.entity.name) };
+  vr.saving = true; vr.msg = 'Making ' + made.name + '…'; vr.msgKind = ''; vr.msgHtml = '';
   this.render();
-  var newId = null;
-  S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: name, entity_type_id: this.entity.entity_type_id, is_private: this.entity.is_private === true, fields_data: fields })
-  }).then(function (res) {
-    if (!res.ok) throw new Error('create ' + res.status);
-    return res.json();
-  }).then(function (made) {
-    newId = made && made.id ? String(made.id) : null;
-    if (!newId) throw new Error('create returned no id');
-    return self.writeVariant(newId, function (gm) { gm.follow = { of: self.eid, parts: parts.map(function (p) { return p.id; }), base: m.base }; });
-  }).then(function () {
-    return self.writeVariant(self.eid, function (gm) {
-      var kids = Array.isArray(gm.children) ? gm.children.slice(0, V.MAX_CHILDREN - 1) : [];
-      if (kids.indexOf(newId) === -1) kids.push(newId);
-      gm.children = kids;
-    });
-  }).then(function () {
-    vr.doc.children = (vr.doc.children || []).concat([newId]);
-    vr.kids = (vr.kids || []).concat([{ id: newId, name: name }]);
+  this.makeLinked(parts, made).then(function () {
+    vr.doc.children = (vr.doc.children || []).concat([made.id]);
+    vr.kids = (vr.kids || []).concat([{ id: made.id, name: made.name }]);
     vr.open = '';
-    vr.msgHtml = 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>.';
+    vr.msgHtml = 'Made <a href="' + esc(self.pageHref(made.id)) + '">' + esc(made.name) + '</a>.';
     vr.msgKind = 'ok';
   }).catch(function (err) {
     if (typeof console !== 'undefined') console.warn('Stat block: could not make the variant', err);
-    vr.msgHtml = newId ? 'Made <a href="' + esc(self.pageHref(newId)) + '">' + esc(name) + '</a>, but could not link it to this page' +
+    vr.msgHtml = made.id ? 'Made <a href="' + esc(self.pageHref(made.id)) + '">' + esc(made.name) + '</a>, but could not link it to this page' +
       (err && err.message === 'variant too large' ? ', because its stat block is too long to follow its original. It stays as a plain copy.' : '. Delete it and try again.') : '';
     vr.msg = 'Could not make the variant. Try again.';
     vr.msgKind = 'error';
   }).then(function () { vr.saving = false; self.render(); self.focus('.sbx-var-msg a, [data-sbx-var="make"]'); });
+};
+
+// makeLinked makes this creature's variant by the given recipe parts
+// ({id, recipe}) as a new page that follows it, and links it back here.
+// made.name is the new page's name; made.id is set as soon as the page
+// exists, so a caller can name a page that was made but not linked.
+StatblockPanel.prototype.makeLinked = function (parts, made) {
+  var self = this, S = DrawSteelStatblock, V = DrawSteelVariants;
+  var m = V.materialize(DrawSteelCreatureEditor, this.fields(), parts.map(function (p) { return { steps: p.recipe.steps }; }), {}, null, this.refs);
+  var fields = {}, k;
+  for (k in m.fields) if (Object.prototype.hasOwnProperty.call(m.fields, k)) fields[k] = m.fields[k];
+  if (this.fields()[S.TOKEN_KEY]) fields[S.TOKEN_KEY] = this.fields()[S.TOKEN_KEY];
+  return S.apiFetch('/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: made.name, entity_type_id: this.entity.entity_type_id, is_private: this.entity.is_private === true, fields_data: fields })
+  }).then(function (res) {
+    if (!res.ok) throw new Error('create ' + res.status);
+    return res.json();
+  }).then(function (page) {
+    made.id = page && page.id ? String(page.id) : null;
+    if (!made.id) throw new Error('create returned no id');
+    return self.writeVariant(made.id, function (gm) { gm.follow = { of: self.eid, parts: parts.map(function (p) { return p.id; }), base: m.base }; });
+  }).then(function () {
+    return self.writeVariant(self.eid, function (gm) {
+      var kids = Array.isArray(gm.children) ? gm.children.slice(0, V.MAX_CHILDREN - 1) : [];
+      if (kids.indexOf(made.id) === -1) kids.push(made.id);
+      gm.children = kids;
+    });
+  }).then(function () { return made; });
 };
 
 // authorRecipe opens the editor on this creature; what the director saves is
@@ -2527,6 +2534,107 @@ StatblockPanel.prototype.destroy = function () {
 };
 
 DrawSteelStatblock.Panel = StatblockPanel;
+
+// ── Rise as a variant (a Homebrew Workshop action) ──────────────────────────
+
+// DrawSteelRise is the browser side of the Workshop's `rise-as-variant`
+// action. A campaign's own rule ("when a marked creature dies, it rises as
+// its variant") is held in the Homebrew drawer, and when the director presses
+// Run the drawer calls this: only this package can work a variant's stat
+// block out. The rule's creature-mark part names the recipe, its add-ons and
+// the marked creatures; the run's scope is the creature that died. The new
+// page is recorded on the mark, so one creature never rises twice.
+var DrawSteelRise = (function () {
+  'use strict';
+  var MARK = 'creature-mark';
+
+  // plain is a failure the director can read as it is; any other one (a
+  // network or server answer) is put in words by run.
+  function plain(msg) { var e = new Error(msg); e.plain = true; return e; }
+
+  function recipeUrl(cid, rid) {
+    return '/campaigns/' + encodeURIComponent(cid) + '/homebrew/recipes/' + encodeURIComponent(rid);
+  }
+
+  // markOf finds the step's mark part in a Workshop recipe.
+  function markOf(recipe, key) {
+    var parts = (recipe && recipe.doc && Array.isArray(recipe.doc.parts)) ? recipe.doc.parts : [];
+    for (var i = 0; i < parts.length; i++) if (parts[i] && parts[i].key === key && parts[i].kind === MARK) return parts[i];
+    return null;
+  }
+
+  // record writes the new variant onto the mark, reading the recipe fresh
+  // and trying once more if someone saved it in between.
+  function record(cid, rid, key, from, to, tries) {
+    var S = DrawSteelStatblock;
+    return S.getJSON(recipeUrl(cid, rid)).then(function (r) {
+      var part = markOf(r, key);
+      if (!part) throw plain('its mark is gone from the recipe.');
+      var d = part.data || {};
+      d.variants = d.variants || {};
+      d.variants[from] = to;
+      part.data = d;
+      return S.apiFetch(recipeUrl(cid, rid), { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: r.name, doc: r.doc, version: r.version }) });
+    }).then(function (res) {
+      if (res.status === 409 && tries > 1) return record(cid, rid, key, from, to, tries - 1);
+      if (!res.ok) throw plain('could not note the variant on the mark.');
+    });
+  }
+
+  // run raises the creature named by the run, and says what happened in one
+  // line for the drawer. A failure throws with the reason in plain words.
+  function run(ctx) {
+    var S = DrawSteelStatblock, V = DrawSteelVariants;
+    var cid = ctx && ctx.campaignId ? String(ctx.campaignId) : '';
+    var r = (ctx && ctx.run) || {}, step = (ctx && ctx.step) || {};
+    var rid = r.recipeId ? String(r.recipeId) : '', eid = r.scope ? String(r.scope) : '';
+    if (!cid || !rid || !eid) return Promise.reject(plain('it does not say which creature died.'));
+    if (typeof DrawSteelCreatureEditor === 'undefined') return Promise.reject(plain('the stat block editor did not load. Reload the page to try again.'));
+    var p = Object.create(StatblockPanel.prototype);
+    p.cid = cid; p.eid = eid;
+    var mark, made;
+    return S.getJSON(recipeUrl(cid, rid)).then(function (recipe) {
+      var part = markOf(recipe, step.part);
+      if (!part) throw plain('its mark is gone from the recipe.');
+      mark = part.data || {};
+      return Promise.all([S.getJSON(p.entityUrl(eid)), S.loadRefs(cid)]);
+    }).then(function (x) {
+      p.entity = x[0] || {};
+      p.refs = x[1];
+      var name = String(p.entity.name || 'The creature');
+      if ((mark.marked || []).indexOf(eid) === -1) return name + ' is not marked, so nothing rose.';
+      if (mark.variants && mark.variants[eid]) return name + ' has already risen.';
+      var ids = [mark.recipe].concat(mark.addons || []).slice(0, V.MAX_PARTS);
+      return Promise.all(ids.map(function (id) {
+        return p.readVariant(id).then(function (rv) { return rv.v.recipe ? { id: id, recipe: rv.v.recipe } : null; });
+      })).then(function (parts) {
+        if (!parts[0] || parts[0].recipe.part !== 'base') throw plain('its recipe page is no longer a recipe.');
+        parts = parts.filter(Boolean);
+        made = { id: null, name: V.nameFor(parts[0].recipe.name, name) };
+        return p.makeLinked(parts, made);
+      }).then(function () {
+        return record(cid, rid, step.part, eid, made.id, 2);
+      }).then(function () {
+        return name + ' rose as ' + made.name + '.';
+      });
+    }).catch(function (err) {
+      if (typeof console !== 'undefined') console.warn('Rise as its variant:', err);
+      var why = err && err.plain ? err.message : made ? 'could not make its variant page.' : 'could not read the recipe or the creature.';
+      if (made && made.id) throw plain('made ' + made.name + ', but ' + (err && err.plain ? err.message : 'could not link it to its original.'));
+      throw plain(why);
+    });
+  }
+
+  return { run: run, MARK: MARK };
+})();
+
+DrawSteelStatblock.Rise = DrawSteelRise;
+
+if (typeof Chronicle !== 'undefined' && Chronicle) {
+  Chronicle.homebrewActions = Chronicle.homebrewActions || {};
+  Chronicle.homebrewActions['rise-as-variant'] = DrawSteelRise.run;
+}
 
 if (typeof Chronicle !== 'undefined' && Chronicle && Chronicle.register) {
   Chronicle.register('statblock-renderer', {
