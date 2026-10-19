@@ -109,6 +109,17 @@ test('a benign creature’s fields come back unchanged in the boxes', () => {
   assert.match(html, /<option value="leader" selected>Leader<\/option>/);
 });
 
+test('a size outside the list stays selected instead of falling back to 1T', () => {
+  for (const size of ['2L', '2M', '3L', '4H', '4G']) {
+    const html = Ed.editorHtml(Ed.newState('Drake', { level: 3, size }, REFS), {});
+    assert.match(html, new RegExp('<option value="' + size + '" selected>'));
+    assert.doesNotMatch(html, /<option value="1T" selected>/);
+  }
+  const listed = Ed.editorHtml(Ed.newState('Drake', { level: 3, size: '1L' }, REFS), {});
+  assert.match(listed, /<option value="1L" selected>/);
+  assert.doesNotMatch(listed, /as stored/);
+});
+
 test('Start from… recomputes a copy for the level kept, and marks formula-shaped damage', () => {
   const refs = {
     orgs: JSON.parse(JSON.stringify(require('../data/organization-templates.json'))),

@@ -910,6 +910,13 @@ var DrawSteelCreatureEditor = (function () {
   function esc(s) { return SB().esc(s); }
   function cap(s) { return SB().cap(s); }
 
+  // A stored value outside the list stays selected as its own option, so
+  // opening and saving a creature never rewrites it to the first entry.
+  function optionsKeeping(list, v) {
+    var cur = String(v == null ? '' : v), known = list.some(function (x) { return String(x[0]).toLowerCase() === cur.toLowerCase(); });
+    return options(list, v) + (cur && !known ? '<option value="' + esc(cur) + '" selected>' + esc(cur) + ' (as stored)</option>' : '');
+  }
+
   function options(list, v, label) {
     var cur = String(v == null ? '' : v).toLowerCase();
     return list.map(function (x) {
@@ -1025,7 +1032,7 @@ var DrawSteelCreatureEditor = (function () {
         ? '<label class="sbe-f sbe-wide"><span class="sbe-lbl">' + esc(ui.nameLabel || 'Name') + '</span><input class="input" id="sbe-name" value="' + esc(st.name || '') + '" data-sbe-k="name" maxlength="200">' + '<span class="sbe-chip is-ai"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> From the AI</span>' + '</label>'
         : field('sbe-name', ui.nameLabel || 'Name', st.name, 'data-sbe-k="name" maxlength="200"', true)) +
       '<label class="sbe-f"><span class="sbe-lbl">Level</span><input class="input sbe-num" id="sbe-level" data-sbe-k="level" type="number" min="1" max="20" value="' + esc(c.level) + '"></label>' +
-      '<label class="sbe-f"><span class="sbe-lbl">Size</span><select class="input" id="sbe-size" data-sbe-k="size">' + options(SIZES, c.size) + '</select></label>' +
+      '<label class="sbe-f"><span class="sbe-lbl">Size</span><select class="input" id="sbe-size" data-sbe-k="size">' + optionsKeeping(SIZES, c.size) + '</select></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Organization</span><select class="input" id="sbe-org" data-sbe-k="organization"><option value="">Choose…</option>' + options(ORGS, c.organization) + '</select></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Role</span><select class="input" id="sbe-role" data-sbe-k="role"' + (noRole ? ' disabled' : '') + '><option value="">Choose…</option>' + options(ROLES, c.role) + '</select>' +
       (noRole ? '<span class="sbe-hint">' + esc(cap(c.organization)) + 's have no role. Their own row in the published table stands in for one.</span>' : '') + '</label>' +
