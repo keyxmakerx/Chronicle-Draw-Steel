@@ -58,3 +58,19 @@ test('L-5: scanText treats a $-sequence in the description literally', () => {
   assert.ok(/data-ref-tip="Costs \$1 extra"/.test(out),
     'the $1 in the description must be preserved literally, not treated as a capture-group ref');
 });
+
+test('a term named like an Object method finds no glossary entry', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ json: async () => [{ slug: 'prone', name: 'Prone', description: 'd' }] });
+  try {
+    const r = new RefRenderer('/pkg/', '');
+    await r.load();
+    for (const term of ['constructor', 'toString', '__proto__']) {
+      const out = r.renderText('{@condition ' + term + '}');
+      assert.ok(!/Object|function/.test(out), term + ' must not resolve to a prototype member: ' + out);
+    }
+    assert.ok(/>Prone</.test(r.renderText('{@condition prone}')));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

@@ -38,7 +38,7 @@ var DrawSteelRefRenderer = (function () {
       ? '/campaigns/' + encodeURIComponent(this._campaignId) + '/systems/drawsteel/rules-glossary'
       : (this._basePath ? this._basePath + 'data/rules-glossary.json' : '');
     if (!url) {
-      self._glossary = {};
+      self._glossary = Object.create(null);
       self._loaded = true;
       return Promise.resolve();
     }
@@ -48,7 +48,9 @@ var DrawSteelRefRenderer = (function () {
     return fetchFn(url)
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        var map = {};
+        // No prototype, so a term like "constructor" finds no entry instead
+        // of an Object method.
+        var map = Object.create(null);
         var entries = Array.isArray(data) ? data : (data.results || data.entries || []);
         for (var i = 0; i < entries.length; i++) {
           map[entries[i].slug || entries[i].id] = entries[i];
@@ -60,7 +62,7 @@ var DrawSteelRefRenderer = (function () {
       .catch(function () {
         // Degrade this instance only; don't cache {} into _glossaryCache, or one
         // transient fetch failure freezes every later renderer with no retry.
-        self._glossary = {};
+        self._glossary = Object.create(null);
         self._loaded = true;
       });
   };

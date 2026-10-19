@@ -1,0 +1,353 @@
+[
+  {
+    "slug": "censor",
+    "name": "Censor",
+    "summary": "Demons and deathless fear you. Criminals run from the sight of your shadow. Agents of chaos, blasphemers, and heretics tremble at the sound of your voice. You carry the power of the gods, armed with wrath and sent out into the world first to seek, then censor those whose actions—or even existence—are anathema to your church.",
+    "description": "Demons and deathless fear you. Criminals run from the sight of your shadow. Agents of chaos, blasphemers, and heretics tremble at the sound of your voice. You carry the power of the gods, armed with wrath and sent out into the world first to seek, then censor those whose actions—or even existence—are anathema to your church.\n\nAs a censor, you're at your best against the strongest foes. Your judgment terrifies heretics, stops enemies in their tracks, and even hurls them across the battlefield.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "wrath",
+      "starting_characteristics": "You start with a Might of 2 and a Presence of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Might",
+        "Presence"
+      ],
+      "primary_characteristics_display": "Might, Presence",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Presence - 2",
+      "potency_average": "Presence - 1",
+      "potency_strong": "Presence",
+      "starting_stamina": 21,
+      "stamina_per_level": 9,
+      "recoveries": 12,
+      "skills_quick_build": "Intimidate, Religion",
+      "skills": "Choose any two skills from the interpersonal or lore skill groups.",
+      "subclass_type": "Censor order",
+      "subclasses": [
+        "Exorcist",
+        "Oracle",
+        "Paragon"
+      ],
+      "subclasses_display": "Exorcist, Oracle, Paragon"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "conduit",
+    "name": "Conduit",
+    "summary": "The power of the gods flows through you! As a vessel for divine power, you don't just keep your allies in the fight. You make those allies more effective, even as you rain divine energy down upon your foes. Though the deity or saint you serve might have other faithful and clergy, you are special among worshippers, receiving your abilities from the highest source.",
+    "description": "The power of the gods flows through you! As a vessel for divine power, you don't just keep your allies in the fight. You make those allies more effective, even as you rain divine energy down upon your foes. Though the deity or saint you serve might have other faithful and clergy, you are special among worshippers, receiving your abilities from the highest source.\n\nAs a conduit, you heal and buff your allies, and debuff your foes while smiting them with divine magic. The spark of divinity within you shines, filling your enemies with awe and making you more worldly and aware.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "piety",
+      "starting_characteristics": "You start with an Intuition of 2, and can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Intuition"
+      ],
+      "primary_characteristics_display": "Intuition",
+      "characteristic_arrays": [
+        "2, 2, −1, −1",
+        "2, 1, 1, −1",
+        "2, 1, 0, 0",
+        "1, 1, 1, 0"
+      ],
+      "potency_weak": "Intuition - 2",
+      "potency_average": "Intuition - 1",
+      "potency_strong": "Intuition",
+      "starting_stamina": 18,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Read Person, Religion",
+      "skills": "Choose any two skills from the interpersonal or lore skill groups.",
+      "subclass_type": "Domains (pick two)",
+      "subclasses": [
+        "Creation",
+        "Death",
+        "Fate",
+        "Knowledge",
+        "Life",
+        "Love",
+        "Nature",
+        "Protection",
+        "Storm",
+        "Sun",
+        "Trickery",
+        "War"
+      ],
+      "subclasses_display": "Creation, Death, Fate, Knowledge, Life, Love, Nature, Protection, Storm, Sun, Trickery, War"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "elementalist",
+    "name": "Elementalist",
+    "summary": "Air for movement. Earth for permanence. Fire for destruction. Water for change. Green for growth. Rot for death. Void for the mystery that which cannot be known. Years of study and practice and poring over tomes brought you the revelations that allow you to manipulate these building blocks of reality. Now you use your mastery of the seven elements to destroy, create, and warp the world with magic.",
+    "description": "Air for movement. Earth for permanence. Fire for destruction. Water for change. Green for growth. Rot for death. Void for the mystery that which cannot be known. Years of study and practice and poring over tomes brought you the revelations that allow you to manipulate these building blocks of reality. Now you use your mastery of the seven elements to destroy, create, and warp the world with magic.\n\nAs an elementalist, you can unleash your wrath across a field of foes, debilitate enemies, ward yourself and allies, manipulate terrain, warp space, and more. Your elemental specialization determines which of these talents you excel at.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "essence",
+      "starting_characteristics": "You start with a Reason of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Reason"
+      ],
+      "primary_characteristics_display": "Reason",
+      "characteristic_arrays": [
+        "2, 2, −1, −1",
+        "2, 1, 1, −1",
+        "2, 1, 0, 0",
+        "1, 1, 1, 0"
+      ],
+      "potency_weak": "Reason - 2",
+      "potency_average": "Reason - 1",
+      "potency_strong": "Reason",
+      "starting_stamina": 18,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Alchemy, Blacksmithing, History, Magic",
+      "skills": "You gain the Magic skill. Then choose any three skills from the crafting or lore skill groups.",
+      "subclass_type": "Elemental specialization",
+      "subclasses": [
+        "Earth",
+        "Fire",
+        "Green",
+        "Void"
+      ],
+      "subclasses_display": "Earth, Fire, Green, Void"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fury",
+    "name": "Fury",
+    "summary": "You do not temper the heat of battle within you. You unleash it! Your experience in the wild taught you the secrets of predators, and now, like the raptor, the panther, the wolf, you channel unfettered anger into martial prowess. Primordial Chaos is your ally. Let others use finesse to clean up the wreckage left in your wake.",
+    "description": "You do not temper the heat of battle within you. You unleash it! Your experience in the wild taught you the secrets of predators, and now, like the raptor, the panther, the wolf, you channel unfettered anger into martial prowess. Primordial Chaos is your ally. Let others use finesse to clean up the wreckage left in your wake.\n\nAs a fury, you devastate foes with overwhelming might, hurl yourself and enemies around the battlefield, and grow stronger as your ferocity increases. Nature has no concept of fairness—and neither do you.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "ferocity",
+      "starting_characteristics": "You start with a Might of 2 and an Agility of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Might",
+        "Agility"
+      ],
+      "primary_characteristics_display": "Might, Agility",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Might - 2",
+      "potency_average": "Might - 1",
+      "potency_strong": "Might",
+      "starting_stamina": 21,
+      "stamina_per_level": 9,
+      "recoveries": 10,
+      "skills_quick_build": "Alertness, Jump, Nature",
+      "skills": "You gain the Nature skill. Then choose any two skills from the exploration or intrigue skill groups.",
+      "subclass_type": "Primordial aspect",
+      "subclasses": [
+        "Berserker",
+        "Reaver",
+        "Stormwight"
+      ],
+      "subclasses_display": "Berserker, Reaver, Stormwight"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "null",
+    "name": "Null",
+    "summary": "The mind is not separate from the body. Perfection of one requires perfection of the other. You strive for perfect discipline, perfect order, mastery over mind and body, becoming an unarmed psionic warrior who dampens and absorbs magic and psionics. You require no weapons, no tools. You suffice.",
+    "description": "The mind is not separate from the body. Perfection of one requires perfection of the other. You strive for perfect discipline, perfect order, mastery over mind and body, becoming an unarmed psionic warrior who dampens and absorbs magic and psionics. You require no weapons, no tools. You suffice.\n\nAs a null, you resist the supernatural forces of the universe with composure and confidence. As you strive for perfect order, you are an enemy of the ultimate expression of chaos: the supernatural. Those who break the laws of nature using sorcery or psionics should fear you.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "discipline",
+      "starting_characteristics": "You start with an Agility of 2 and an Intuition of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Agility",
+        "Intuition"
+      ],
+      "primary_characteristics_display": "Agility, Intuition",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Intuition - 2",
+      "potency_average": "Intuition - 1",
+      "potency_strong": "Intuition",
+      "starting_stamina": 21,
+      "stamina_per_level": 9,
+      "recoveries": 8,
+      "skills_quick_build": "Psionics, Read Person, Timescape",
+      "skills": "You gain the Psionics skill. Then choose any two skills from the interpersonal or lore skill groups.",
+      "subclass_type": "Null tradition",
+      "subclasses": [
+        "Chronokinetic",
+        "Cryokinetic",
+        "Metakinetic"
+      ],
+      "subclasses_display": "Chronokinetic, Cryokinetic, Metakinetic"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "shadow",
+    "name": "Shadow",
+    "summary": "Subtlety is your art, the tip of the blade your brush. You studied at a secret college, specializing in alchemy, illusion, or shadow-magics. Your training and knowledge place you among the elite ranks of assassins, spies, and commandos. But more potent than any weapon or sorcery is your insight into your enemies' weaknesses.",
+    "description": "Subtlety is your art, the tip of the blade your brush. You studied at a secret college, specializing in alchemy, illusion, or shadow-magics. Your training and knowledge place you among the elite ranks of assassins, spies, and commandos. But more potent than any weapon or sorcery is your insight into your enemies' weaknesses.\n\nAs a shadow, you possess abilities that deal significant damage, enable you to move swiftly across the battlefield and evade hazards, and allow you to fade from notice even in the midst of the most intense combat encounters. You also possess more skills than any other hero.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "insight",
+      "starting_characteristics": "You start with an Agility of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Agility"
+      ],
+      "primary_characteristics_display": "Agility",
+      "characteristic_arrays": [
+        "2, 2, −1, −1",
+        "2, 1, 1, −1",
+        "2, 1, 0, 0",
+        "1, 1, 1, 0"
+      ],
+      "potency_weak": "Agility - 2",
+      "potency_average": "Agility - 1",
+      "potency_strong": "Agility",
+      "starting_stamina": 18,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Criminal Underworld, Hide, Lie, Pick Lock, Pick Pocket, Sabotage, Sneak",
+      "skills": "You gain the Hide and Sneak skills. Then choose any five skills from Criminal Underworld or the skills of the exploration, interpersonal, or intrigue skill groups.",
+      "subclass_type": "Shadow college",
+      "subclasses": [
+        "College of Black Ash",
+        "College of Caustic Alchemy",
+        "College of the Harlequin Mask"
+      ],
+      "subclasses_display": "College of Black Ash, College of Caustic Alchemy, College of the Harlequin Mask",
+      "omissions": [
+        "The epigraph quotation and its attribution to a named institution are not reproduced; the class description is otherwise complete."
+      ],
+      "provenance_display": "omissions — The epigraph quotation and its attribution to a named institution are not reproduced; the class description is otherwise complete."
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "tactician",
+    "name": "Tactician",
+    "summary": "Strategist. Defender. Leader. With weapon in hand, you lead allies into the maw of battle, barking out commands that inspire your fellow heroes to move faster and strike more precisely. All the while, you stand between your compatriots and death, taunting the followers of evil to best you if they can.",
+    "description": "Strategist. Defender. Leader. With weapon in hand, you lead allies into the maw of battle, barking out commands that inspire your fellow heroes to move faster and strike more precisely. All the while, you stand between your compatriots and death, taunting the followers of evil to best you if they can.\n\nAs a tactician, you have abilities that heal your allies and grant them increased damage, movement, and attacks, even as you leave your enemies struggling to respond.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "focus",
+      "starting_characteristics": "You start with a Might of 2 and a Reason of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Might",
+        "Reason"
+      ],
+      "primary_characteristics_display": "Might, Reason",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Reason - 2",
+      "potency_average": "Reason - 1",
+      "potency_strong": "Reason",
+      "starting_stamina": 21,
+      "stamina_per_level": 9,
+      "recoveries": 10,
+      "skills_quick_build": "Lead, Monsters, Strategy",
+      "skills": "You gain the Lead skill. Then choose any two skills from Alertness, Architecture, Blacksmithing, Brag, Culture, Empathize, Fletching, Mechanics, Monsters, Search, Strategy, or the skills of the exploration skill group.",
+      "subclass_type": "Tactical doctrine",
+      "subclasses": [
+        "Insurgent",
+        "Mastermind",
+        "Vanguard"
+      ],
+      "subclasses_display": "Insurgent, Mastermind, Vanguard"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "talent",
+    "name": "Talent",
+    "summary": "Arare few people are born with the potential to harness psionic power, but only those who experience an awakening, a significant event that activates a talent's abilities, can tap into the mind's full potential. You are one of those people—a master of psionics and a source of incredible power created through sheer force of will. You can move and change matter, time, gravity, the laws of physics, or another creature's mind.",
+    "description": "Arare few people are born with the potential to harness psionic power, but only those who experience an awakening, a significant event that activates a talent's abilities, can tap into the mind's full potential. You are one of those people—a master of psionics and a source of incredible power created through sheer force of will. You can move and change matter, time, gravity, the laws of physics, or another creature's mind.\n\nAs a talent, you are limited only by the strength of your mind. But the ability to wield multiple powers at once and change reality at will involves a gamble. Every manifestation has a chance of harming you, and talents who use too much power too quickly pay a deadly price.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "clarity",
+      "starting_characteristics": "You start with a Reason of 2 and a Presence of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Reason",
+        "Presence"
+      ],
+      "primary_characteristics_display": "Reason, Presence",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Reason - 2",
+      "potency_average": "Reason - 1",
+      "potency_strong": "Reason",
+      "starting_stamina": 18,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Empathize, Psionics, Read Person, Timescape",
+      "skills": "You gain the Psionics and Read Person skills. Then choose any two skills from the interpersonal or lore skill groups.",
+      "subclass_type": "Talent tradition",
+      "subclasses": [
+        "Chronopathy",
+        "Telekinesis",
+        "Telepathy"
+      ],
+      "subclasses_display": "Chronopathy, Telekinesis, Telepathy"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "troubadour",
+    "name": "Troubadour",
+    "summary": "The whole world's a stage, and everyone on it, an actor. No one knows this better than the troubadour. You find energy in the drama of everyday life and know how to draw spectacle forth from even the most mundane of situations. You accent highs and deepen lows in service to whoever might witness your performance.",
+    "description": "The whole world's a stage, and everyone on it, an actor. No one knows this better than the troubadour. You find energy in the drama of everyday life and know how to draw spectacle forth from even the most mundane of situations. You accent highs and deepen lows in service to whoever might witness your performance.\n\nAs a troubadour, you chase drama. The insurmountable dangers of the world might cause many a hero to cower. But you take to that world stage not intending to die, but to find out if you are truly alive.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "drama",
+      "starting_characteristics": "You start with an Agility of 2 and a Presence of 2, and you can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Agility",
+        "Presence"
+      ],
+      "primary_characteristics_display": "Agility, Presence",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Presence - 2",
+      "potency_average": "Presence - 1",
+      "potency_strong": "Presence",
+      "starting_stamina": 18,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Brag, Flirt, Read Person, Rumors",
+      "skills": "You gain the Read Person skill. Then choose two skills from the interpersonal skill group and one skill from the intrigue or lore skill groups.",
+      "subclass_type": "Troubadour class act",
+      "subclasses": [
+        "Auteur",
+        "Duelist",
+        "Virtuoso"
+      ],
+      "subclasses_display": "Auteur, Duelist, Virtuoso",
+      "omissions": [
+        "The epigraph quotation and its attribution to a named character are not reproduced; the class description is otherwise complete."
+      ],
+      "provenance_display": "omissions — The epigraph quotation and its attribution to a named character are not reproduced; the class description is otherwise complete."
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  }
+]

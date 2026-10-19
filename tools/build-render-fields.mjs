@@ -210,6 +210,7 @@ function buildCategories() {
     const out = { slug: cat.slug, name: cat.name };
     if (cat.icon) out.icon = cat.icon;
     if (fields.length) out.fields = fields;
+    if (cat.director) out.director = true;
     return out;
   });
 }
@@ -231,6 +232,7 @@ function renderCategoriesBlock(cats) {
       );
       lines.push(`      "fields": [\n${fs.join(',\n')}\n      ]`);
     }
+    if (c.director) lines.push(`      "director": true`);
     return `    {\n${lines.join(',\n')}\n    }`;
   });
   return `  "categories": [\n${blocks.join(',\n')}\n  ],`;

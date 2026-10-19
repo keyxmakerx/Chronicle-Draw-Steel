@@ -395,7 +395,84 @@ motion turn it all off. On wide screens the bar with Save stays pinned.
 The widget also registers `monster-builder` for placement on a page; on a page
 that already has the stat block panel it steps aside.
 
-### 6.3 Publishing
+### 6.3 Forms
+
+A creature can have more than one form: a boss's second phase, a disguise and
+what is under it. The page's own fields are the first form. Each other form
+stores only what it changes, so a later change to the first form still reaches
+every form that didn't change that figure. The forms are tabs above the stat
+block; each figure says **Changed in this form** or **From** the first form,
+each ability **Changed in this form**, **Only in this form** or **From** the
+first form, and the director sees what the form drops under **Not in this
+form**. **Edit form** opens the editor on the form; saving it keeps only the
+difference (`DrawSteelForms.diff`, compared against `roundTrip`, what the
+editor would save unchanged, so its own tidying is never a change). A list
+item is matched by name: a changed ability keeps its place, a new one comes
+last.
+
+Forms live in the page's system state, not in its fields, so a player never
+receives a form the director hasn't shown:
+
+| Key | `gm` half | `public` half |
+|-----|-----------|---------------|
+| `forms` | `{v, order: [ids]}` | `{v, shown: [ids], current: id}` |
+| `form-<id>` | the form | the same form once shown, else `{}` |
+
+A form is `{id, name, stamina, changes, lists, art, token}`. `changes` holds
+scalar figures by field key; `lists` holds `{drop: [names], add: [items]}` for
+`traits`, `abilities_json` and `villain_actions_json`; `art` and `token` are
+media ids, empty to borrow the first form's (a form with art and no token lets
+Foundry crop the art). `stamina` is `carry` (damage carries over) or `fresh`
+(the form starts at full Stamina), for changing form at the table. Showing a
+form writes its public copy before the index lists it; hiding does the
+reverse. Each half is at most 16 KiB, so a form that changes very many
+abilities is refused with a reason. `current` is written by whatever changes
+the creature's form at the table.
+
+### 6.4 Variants
+
+A campaign makes its own variant rules as homebrew; none ships in this
+package. Directors only: players never read a recipe or a variant's link.
+
+**A recipe** is made from a creature's page with **New recipe from this
+creature**: the director names it (a recipe, or an add-on to one such as
+Strong) and changes that creature in the editor the way the recipe should.
+Nothing is saved to that creature. What changed becomes steps
+(`DrawSteelVariants.stepsFrom`): a number moves by the same amount, an
+organization or size by the same steps (organizations ranked minion, horde,
+platoon, elite, solo, with leader as elite), keywords, immunities,
+weaknesses and movement add and drop the same words, anything else is set,
+and traits, abilities and villain actions change by name as forms do. EV,
+Stamina, winded and free strike are never steps. The recipe lives on its
+own private Creature page, which lists its steps; each relative step can be
+fixed to the sample's value and back, or removed, and **Change it on**
+reopens the editor on the sample.
+
+**A variant** is made with **Make a variant**: pick a recipe and any of its
+add-ons, which stack in order. It is a new Creature page, as private as its
+original, named "Recipe of Original". Its stat block is the original's with
+the steps applied and the formulas worked out again; a figure the director
+typed on the original stays typed. The variant follows its original: the
+page keeps the stat block as last worked out (`base`), so whatever differs
+from it on the page is the director's own change, from any source, and
+survives. Opening a variant brings it up to date, and saving the original in
+the editor updates its variants; a change from Foundry or the AI page
+reaches a variant when one of those happens next. **Where each figure comes
+from** lists each figure as from the original, the recipe (with the
+original's value), the published formula or the director.
+
+All of it is one system-state key, `variant`, gm half only:
+
+| Page | `gm` |
+|------|------|
+| recipe | `{v, recipe: {name, part: base\|addon, label, sample, steps: {changes, lists}}}` |
+| variant | `{v, follow: {of, parts: [recipe page ids], base}}` |
+| original | `{v, children: [variant page ids]}` |
+
+Recipes are found through Chronicle's director-only listing,
+`GET /campaigns/:id/system-state/drawsteel/variant`.
+
+### 6.5 Publishing
 
 **Publish** posts the creature to the Community Bestiary
 (`POST /bestiary`, private or public) with the page as its source.
