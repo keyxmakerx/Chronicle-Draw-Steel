@@ -12,8 +12,10 @@
  *   because widget scripts load in manifest order.
  *
  *   'statblock-renderer' — the panel Chronicle mounts under the title of every
- *   Creature and NPC page (manifest entity_panels). It draws only on a page whose
- *   type is a Creature, and for the director it carries Edit stat block and Publish.
+ *   Creature and NPC page (manifest entity_panels). Players see it once the page
+ *   has a stat block. The director also gets a quiet "Build its stat block" on a
+ *   page without one, plus Edit stat block and Publish; the editor grows out of
+ *   the panel into a full-screen sheet on the page and shrinks back into it.
  */
 var DrawSteelStatblock = (function () {
   'use strict';
@@ -662,6 +664,8 @@ var DrawSteelStatblock = (function () {
     '.sbx-msg.is-ok{color:#15803d}.sbx-msg.is-error{color:#b91c1c}',
     '.dark .sbx-msg.is-ok{color:#4ade80}.dark .sbx-msg.is-error{color:#f87171}',
     '.sbx-start{gap:8px}',
+    '.sbx-quiet{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-quiet b{color:var(--color-text-body,#374151);font-weight:600}',
     '.sbx--compact .sbx-name{font-size:17px}',
     '.sbx-sig{margin:0;font-size:13px;font-weight:600}',
     '.sbx-sig-k{font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:11px;opacity:.75;margin-right:4px}',
@@ -1436,6 +1440,7 @@ function StatblockPanel(el, config) {
   this.refs = { orgs: [], roles: [] };
   this.ref = null;
   this.editor = null;
+  this.fold = null;
   this.publishOpen = false;
   this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
   this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
@@ -1462,7 +1467,9 @@ StatblockPanel.prototype.start = function () {
     var entity = r[0], type = r[1];
     var fields = (entity && (entity.fields_data || entity.custom_fields)) || {};
     var isCreature = !!(type && entity && entity.entity_type_id === type.id) || S.hasStatblock(fields);
-    if (!entity || !isCreature) { self.el.hidden = true; return null; }
+    // On an NPC page with no stat block the director still gets the quiet way
+    // to build one; a player sees the panel only once there is a stat block.
+    if (!entity || (!isCreature && !self.isGM)) { self.el.hidden = true; return null; }
     self.entity = entity;
     return Promise.all([S.loadRefs(self.cid), self.ref ? self.ref.load() : null]).then(function (x) {
       self.refs = x[0];
@@ -1500,11 +1507,12 @@ StatblockPanel.prototype.render = function () {
     return;
   }
   if (!S.hasStatblock(f)) {
-    // A Creature page with no stat block yet: the director gets a way to start
-    // one; a player sees nothing rather than an empty card.
+    // A page with no stat block yet: the director gets a way to start one; a
+    // player sees nothing rather than an empty card.
     if (!this.isGM) { this.el.hidden = true; return; }
-    this.el.innerHTML = '<div class="sbx sbx-start"><p class="sbx-line"><b>' + esc(name) + '</b> has no stat block yet.</p>' +
-      '<p class="sbx-line"><button type="button" class="btn-primary btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Build its stat block</button></p></div>';
+    // One quiet line, not a card: most NPCs never fight.
+    this.el.innerHTML = '<p class="sbx-quiet"><b>' + esc(name) + '</b> has no stat block yet. ' +
+      '<button type="button" class="btn-ghost btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Build its stat block</button></p>';
     this.bind();
     return;
   }
@@ -2075,29 +2083,47 @@ StatblockPanel.prototype.publish = function (visibility) {
     });
 };
 
-// edit swaps the stat block for the builder, in place. The builder lives in
-// monster-builder.js and is looked up now, not at load: widget scripts load in
-// manifest order and this one may run first.
+// edit opens the builder: the panel grows into a full-screen editor on the
+// page and shrinks back when it closes; without a document to lay it over, the
+// editor takes the panel's place. The builder lives in monster-builder.js and
+// is looked up now, not at load: widget scripts load in manifest order and
+// this one may run first.
 StatblockPanel.prototype.edit = function () {
-  var self = this;
+  var self = this, doc = this.el.ownerDocument;
   var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
   if (!Ed) { this.say('The stat block editor did not load. Reload the page to try again.', 'error'); return; }
-  this.el.innerHTML = '';
-  var host = this.el.ownerDocument.createElement('div');
-  this.el.appendChild(host);
+  var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
+  var host = doc.createElement('div');
+  // The panel is redrawn before the editor shrinks, so it shrinks into the
+  // stat block as it now stands.
+  function finish(saved) {
+    self.editor = null;
+    if (saved) self.entity = saved;
+    self.render();
+    if (self.fold) { self.fold.close(); self.fold = null; }
+    if (saved && self.isGM) self.refreshKids();
+  }
+  // The editor is built before it opens so the grow starts from its real size.
   this.editor = Ed.mount(host, {
     campaignId: this.cid,
     entityId: this.eid,
     entity: this.entity,
     refs: this.refs,
     ref: this.ref,
-    onClose: function (saved) {
-      self.editor = null;
-      if (saved) self.entity = saved;
-      self.render();
-      if (saved && self.isGM) self.refreshKids();
+    onClose: finish
+  });
+  var name = (this.entity && this.entity.name) || '';
+  this.fold = DrawSteelStatblock.foldOut(this.el, host, {
+    chronicle: C,
+    label: name ? 'Stat block for ' + name : 'Stat block',
+    isDirty: function () { return !!(self.editor && self.editor.isDirty && self.editor.isDirty()); },
+    detail: name ? 'Your changes to ' + name + '’s stat block haven’t been saved.' : 'Your changes haven’t been saved.',
+    leave: function () {
+      if (self.editor && self.editor.discard) self.editor.discard();
+      else finish(null);
     }
   });
+  if (!this.fold) { this.el.innerHTML = ''; this.el.appendChild(host); }
 };
 
 // ── Variants on the page (directors only) ───────────────────────────────────
@@ -2531,9 +2557,156 @@ StatblockPanel.prototype.reeditRecipe = function () {
 StatblockPanel.prototype.destroy = function () {
   if (this.editor && this.editor.destroy) this.editor.destroy();
   this.editor = null;
+  if (this.fold) { this.fold.close(); this.fold = null; }
 };
 
 DrawSteelStatblock.Panel = StatblockPanel;
+
+// ── The fold-out ────────────────────────────────────────────────────────────
+
+// foldOut grows `content` out of `fromEl` into a full-screen sheet over the
+// page and returns { leave, close }; close shrinks it back into fromEl. It sits
+// at z-index 70: over Chronicle's page chrome, under the editor's own drawers
+// (80) and Chronicle's token maker (92), which it opens on top of itself.
+// Clicking off or Escape leaves through o.leave; with unsaved work it asks
+// first with Chronicle's ask-in-place slip, because a box holding unsaved work
+// never closes behind the person's back. Returns null without a document.
+DrawSteelStatblock.foldOut = function (fromEl, content, o) {
+  o = o || {};
+  var C = o.chronicle || null;
+  var doc = fromEl && fromEl.ownerDocument;
+  if (!doc || !doc.body || !fromEl.getBoundingClientRect) return null;
+  injectFoldStyles(doc);
+  var layer = doc.createElement('div'), bg = doc.createElement('div'), panel = doc.createElement('div');
+  layer.className = 'sbx-fold';
+  bg.className = 'sbx-fold-bg';
+  panel.className = 'sbx-fold-p';
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  panel.setAttribute('tabindex', '-1');
+  if (o.label) panel.setAttribute('aria-label', o.label);
+  layer.appendChild(bg);
+  layer.appendChild(panel);
+  panel.appendChild(content);
+  var from = fromEl.getBoundingClientRect();
+  var prevFocus = doc.activeElement;
+  doc.body.appendChild(layer);
+  foldMove(doc, C, panel, bg, from, false);
+  try { panel.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
+  var open = true;
+
+  function leave() {
+    if (!open) return;
+    if (o.isDirty && o.isDirty() && C && C.askSlip) {
+      C.askSlip(panel, {
+        ask: 'Discard your changes to this stat block?',
+        detail: o.detail || '',
+        discard: 'Discard changes',
+        onDiscard: function () { if (o.leave) o.leave(); }
+      });
+      return;
+    }
+    if (o.leave) o.leave();
+  }
+  // Escape a drawer or picker handled first (they stop it) never reaches here.
+  function onKey(e) {
+    if (!open || e.defaultPrevented) return;
+    if (e.key === 'Escape') { e.preventDefault(); leave(); return; }
+    if (e.key !== 'Tab' || !panel.contains(e.target)) return;
+    var els = [].filter.call(panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'),
+      function (x) { return x.offsetParent !== null; });
+    if (!els.length) return;
+    var first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+  doc.addEventListener('keydown', onKey);
+  bg.addEventListener('click', leave);
+
+  return {
+    leave: leave,
+    close: function () {
+      if (!open) return;
+      open = false;
+      doc.removeEventListener('keydown', onKey);
+      bg.removeEventListener('click', leave);
+      if (C && C.askSlip && C.askSlip.close) C.askSlip.close(panel);
+      var to = fromEl.isConnected === false ? null : fromEl.getBoundingClientRect();
+      var anim = foldMove(doc, C, panel, bg, to, true);
+      var gone = false;
+      function remove() {
+        if (gone) return;
+        gone = true;
+        if (layer.parentNode) layer.parentNode.removeChild(layer);
+        if (prevFocus && prevFocus.isConnected !== false && prevFocus.focus) {
+          try { prevFocus.focus({ preventScroll: true }); } catch (e) { /* element may be gone */ }
+        }
+      }
+      if (anim && anim.finished && anim.finished.then) anim.finished.then(remove, remove);
+      else remove();
+    }
+  };
+};
+
+// foldMotion is how the fold-out moves: 'grow' (the sheet grows out of its
+// spot and shrinks back), 'fade' under Calm or the device's reduce-motion
+// setting, 'none' under Off or without Web Animations.
+function foldMotion(doc, C, panel) {
+  var html = doc.documentElement;
+  var setting = html && html.getAttribute ? html.getAttribute('data-motion') : '';
+  if (setting === 'off' || !panel.animate) return 'none';
+  var reduced = (C && C.reducedMotion) ? C.reducedMotion() :
+    !!(doc.defaultView && doc.defaultView.matchMedia && doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  return reduced ? 'fade' : 'grow';
+}
+
+// foldToken reads one of Chronicle's motion tokens, so the fold-out keeps the
+// site's own timing.
+function foldToken(doc, name, fallback) {
+  try {
+    var v = doc.defaultView.getComputedStyle(doc.documentElement).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  } catch (e) { return fallback; }
+}
+
+// foldMove plays the grow (or, with back, the shrink) between `rect` and where
+// the sheet sits, with the backdrop fading alongside. Returns the sheet's
+// animation, or null when there is nothing to wait for.
+function foldMove(doc, C, panel, bg, rect, back) {
+  var how = foldMotion(doc, C, panel);
+  if (how === 'none') return null;
+  var raw = foldToken(doc, how === 'grow' ? '--dur-large' : '--dur-standard', how === 'grow' ? '280ms' : '200ms');
+  var ms = /ms$/.test(raw) ? parseFloat(raw) : parseFloat(raw) * 1000;
+  if (!isFinite(ms) || ms <= 0) ms = how === 'grow' ? 280 : 200;
+  var ease = foldToken(doc, '--ease-in-out', 'ease-in-out');
+  var shut = { opacity: how === 'grow' ? 0.65 : 0 };
+  var at = panel.getBoundingClientRect();
+  if (how === 'grow' && rect && rect.width && rect.height && at.width && at.height) {
+    panel.style.transformOrigin = 'top left';
+    shut.transform = 'translate(' + (rect.left - at.left) + 'px,' + (rect.top - at.top) + 'px) scale(' +
+      (rect.width / at.width) + ',' + (rect.height / at.height) + ')';
+  } else {
+    shut.opacity = 0;
+  }
+  var still = { opacity: 1, transform: 'none' };
+  var frames = back ? [still, shut] : [shut, still];
+  bg.animate(back ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: ease, fill: 'both' });
+  return panel.animate(frames, { duration: ms, easing: ease, fill: 'both' });
+}
+
+function injectFoldStyles(doc) {
+  if (doc.getElementById('ds-sbx-fold-css')) return;
+  var st = doc.createElement('style');
+  st.id = 'ds-sbx-fold-css';
+  st.textContent = [
+    '.sbx-fold{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:16px}',
+    '.sbx-fold-bg{position:absolute;inset:0;background:rgba(6,7,11,.55)}',
+    '.sbx-fold-p{position:relative;width:min(1180px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--color-bg-primary,#f9fafb);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.28)}',
+    '.sbx-fold-p:focus{outline:none}',
+    '@media (max-width:640px){.sbx-fold{padding:0}.sbx-fold-p{max-height:100dvh;height:100dvh;border-radius:0}}'
+  ].join('\n');
+  (doc.head || doc.body).appendChild(st);
+}
 
 // ── Rise as a variant (a Homebrew Workshop action) ──────────────────────────
 
