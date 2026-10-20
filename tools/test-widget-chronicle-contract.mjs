@@ -272,11 +272,19 @@ test('statblock-renderer: a bestiary-shaped custom_fields payload still draws', 
   assert.match(el.innerHTML, /Level 4 Platoon Brute/);
 });
 
-test('statblock-renderer: a page that is not a creature stays hidden and empty', async () => {
-  serveEntity({ id: 'ent-x', entity_type_id: 1, name: 'Aria the Hero', fields_data: { level: 3 } });
-  const { el } = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-x', isGm: true });
-  assert.equal(el.hidden, true);
-  assert.equal(el.innerHTML, '');
+// Chronicle mounts the panel only on NPC and Creature pages, never on a
+// player's character, so an NPC with no stat block is one the director may
+// want to give one. A player sees nothing until it has one.
+test('statblock-renderer: an NPC page with no stat block offers the director a start, and shows a player nothing', async () => {
+  serveEntity({ id: 'ent-x', entity_type_id: 1, name: 'Ilsa the Innkeeper', fields_data: { level: 3 } });
+  const gm = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-x', isGm: true });
+  assert.equal(gm.el.hidden, false);
+  assert.match(gm.el.innerHTML, /Ilsa the Innkeeper<\/b> has no stat block yet/);
+  assert.match(gm.el.innerHTML, /Build its stat block/);
+  serveEntity({ id: 'ent-x', entity_type_id: 1, name: 'Ilsa the Innkeeper', fields_data: { level: 3 } });
+  const player = await mountPanel({ campaignId: CAMPAIGN, entityId: 'ent-x', isGm: false });
+  assert.equal(player.el.hidden, true);
+  assert.equal(player.el.innerHTML, '');
 });
 
 test('statblock-renderer: a Creature page with no stat block offers the director a start, and shows a player nothing', async () => {

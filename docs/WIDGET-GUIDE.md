@@ -33,7 +33,7 @@ words and replacing its numbers with the formulas'; the guide can offer up to
 by id; **or from a
 creature…** copies one from the community bestiary or this campaign,
 recomputed for its level. Most
-directors reach it through **Edit stat block** on a Creature page (see
+directors reach it through **Edit stat block** on a Creature or NPC page (see
 Statblock Renderer below) rather than placing it.
 
 **What the numbers are.** Encounter value, Stamina, free strike, formula
@@ -112,14 +112,16 @@ It has no filters, no tray and no Add, only each creature's page link.
 
 **Slug:** `statblock-renderer`
 
-The creature stat block, mounted by Chronicle under the title of Creature pages
-(`entity_panels` in `manifest.json`). It shows header and EV, the Size / Speed
+The creature stat block, mounted by Chronicle under the title of Creature and
+NPC pages (`entity_panels` in `manifest.json`). It shows header and EV, the Size / Speed
 / Stamina / Stability / Free strike strip, characteristics, immunities and
 weaknesses, traits, abilities with tier odds, and villain actions. EV, Stamina
 and free strike carry a tick when they match the published formula and a pen
 when the director changed them. The director also gets **Edit stat block** and
-**Publish** (to the Community Bestiary); a player sees nothing on a creature
-with no stat block yet.
+**Publish** (to the Community Bestiary); the editor grows out of the stat block
+into a full-screen sheet on the page. On a page with no stat block yet, a
+player sees nothing and the director sees one quiet **Build its stat block**
+line.
 
 On a page copied from the Monsters book, the director sees "Copied from the
 Draw Steel book" with **Compare with the book**. It folds open a table of each

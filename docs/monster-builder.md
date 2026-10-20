@@ -12,9 +12,13 @@ that page two things:
 - **The stat block** (`widgets/statblock-renderer.js`), mounted under the
   page title as a game-system panel. Everyone who can see the page sees the
   stat block; the director also gets **Edit stat block** and **Publish**.
-- **The editor** (`widgets/monster-builder.js`), one page that opens in place
-  of the stat block: the creature's boxes on the left, and a side panel with
+- **The editor** (`widgets/monster-builder.js`), one page that grows out of
+  the stat block into a full-screen sheet over the page and shrinks back into
+  it when it closes: the creature's boxes on the left, and a side panel with
   the party, the encounter budget and the completeness checks on the right.
+  Clicking off it or pressing Escape closes it; with unsaved changes,
+  Chronicle's ask-in-place slip asks first. Under Calm it fades; under Off it
+  appears.
 
 EV, Stamina, free strike and formula damage follow the published formulas as
 the director changes level, organization or role, and each figure says where
@@ -295,10 +299,10 @@ checked. **Suggest a level, organization and role for this party** applies
 in `manifest.json` → `entity_panels` twice, with `applies_to: "creature"` and
 `applies_to: "npc"`, so Chronicle mounts it under the title of Creature pages
 without the owner listing Creature as an NPC type, and of NPC pages too (once
-on a page that is both). It shows itself only on the campaign's Creature pages
-(the type whose preset category is `creature`), or on any page that already
-has a stat block. A player sees nothing on a creature with no stat block; the
-director sees **Build its stat block**.
+on a page that is both). Chronicle never mounts it on a player's character. A
+player sees it once the page has a stat block. On a Creature or NPC page with
+none, the director sees one quiet line with **Build its stat block**, because
+most NPCs never fight.
 
 `applies_to: "creature"` needs a Chronicle that knows that audience; an older
 one rejects the whole manifest, so release this package only once the

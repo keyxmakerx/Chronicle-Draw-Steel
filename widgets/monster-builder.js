@@ -1338,9 +1338,10 @@ var DrawSteelCreatureEditor = (function () {
   }
 
   // mount opens the editor in `host`. opts: { campaignId, entityId, entity,
-  // refs, ref, onClose(savedEntity|null) }. Returns { destroy }. A creature's
-  // other form opens with opts.form ({ heading, nameLabel, dirtyKey }) and
-  // opts.saveAs(out, pictures), which saves it in place of the page.
+  // refs, ref, onClose(savedEntity|null) }. Returns { state, isDirty, discard,
+  // destroy }. A creature's other form opens with opts.form ({ heading,
+  // nameLabel, dirtyKey }) and opts.saveAs(out, pictures), which saves it in
+  // place of the page.
   function mount(host, opts) {
     var o = opts || {};
     var doc = host.ownerDocument || document;
@@ -1869,6 +1870,10 @@ var DrawSteelCreatureEditor = (function () {
 
     return {
       state: st,
+      isDirty: function () { return !!ui.dirty; },
+      // discard drops unsaved work and closes like Cancel, leaving the editor
+      // drawn so a closing animation still has something to show.
+      discard: function () { if (ui.drawer) ui.drawer.close(); clean(); close(null); },
       destroy: function () { if (ui.drawer) ui.drawer.close(); clean(); unbind(); host.innerHTML = ''; }
     };
   }
