@@ -239,7 +239,20 @@ In the editor the same facts sit under each box: "Published formula",
 "Changed by you (the formula gives N) · Use the formula", or "No published …
 Set it yourself." Clearing a box hands the figure back to the formula.
 
-### 4.2 Default Speed/Stability by Organization
+### 4.2 A creature the campaign's AI wrote
+
+When the campaign's AI sends a creature through Chronicle's AI Import, the
+review row sets each figure the AI wrote beside what the published formulas
+give (`DrawSteelStatblock.reviewCheck`, registered as
+`Chronicle.sheetChecks.creature`): EV, Stamina, Winded (half the formula's
+Stamina, rounded down), free strike, and each ability whose tiers open with
+damage, adding the highest characteristic to a strike. A figure no formula
+covers is left off. The director keeps the AI's figure or presses "Use the
+formula", for one or for all; the patch changes only the number in a tier's
+text, never its damage type or effect. Pinned by
+`tools/test-creature-review-check.mjs`.
+
+### 4.3 Default Speed/Stability by Organization
 
 | Organization | Default Speed | Default Stability |
 |---|---|---|
@@ -251,7 +264,7 @@ Set it yourself." Clearing a box hands the figure back to the formula.
 | Solo | 6 | 3 |
 | Swarm | 5 | 0 |
 
-### 4.3 Characteristic Suggestions by Role
+### 4.4 Characteristic Suggestions by Role
 
 These are starting-point suggestions, not requirements. Users can freely adjust.
 
