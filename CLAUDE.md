@@ -70,7 +70,7 @@ says which. This package invents no creature numbers.
 - The panel is titled "Completeness checks", never "Validation", with a standing, unconditional line saying it is not a balance check. A deviation warning fires only against a figure the published formulas can actually produce.
 - Swarm is not a published organization (it's a creature keyword); its `organization_modifier` and `stamina_organization_modifier` are `null`, so a swarm's EV and Stamina are the director's.
 - `data/creatures.json`'s figures must be what the formulas give (swarms excepted).
-- Pinned by `tools/test-monster-formulas.mjs` (module vs. shipped `monster-building.json` / `encounter-building.json`), `tools/test-monster-builder-honesty.mjs` (the editor's claims), `tools/test-statblock-renderer.mjs` (the marks) and `tools/test-creature-examples.mjs` (the examples, and no second evaluation site). Design: `docs/monster-builder.md`.
+- Pinned by `tools/test-monster-formulas.mjs` (module vs. shipped `monster-building.json` / `encounter-building.json`), `tools/test-monster-builder-honesty.mjs` (the editor's claims), `tools/test-statblock-renderer.mjs` (the marks) `tools/test-creature-examples.mjs` (the examples, and no second evaluation site) and `tools/test-creature-review-check.mjs` (the AI Import review's check, `Chronicle.sheetChecks.creature`). Design: `docs/monster-builder.md`.
 
 ## @Reference Syntax
 

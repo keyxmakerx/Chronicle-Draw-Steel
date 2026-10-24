@@ -172,6 +172,107 @@ var DrawSteelStatblock = (function () {
     return out;
   }
 
+  // An ability's tier text that opens with its damage ("3 damage", "3 fire
+  // damage"); the builder treats such an ability as formula damage.
+  var DAMAGE_TIER = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
+  var REVIEW_TIERS = ['tier1', 'tier2', 'tier3'];
+
+  // formulaAbility says whether an ability's damage is the formula's: every
+  // tier it has opens with a number of damage, as the builder reads it.
+  function formulaAbility(a) {
+    var have = REVIEW_TIERS.filter(function (k) { return a[k]; });
+    return have.length > 0 && have.every(function (k) { return DAMAGE_TIER.test(String(a[k])); });
+  }
+
+  function isStrike(a) {
+    return parseList(a.keywords).some(function (k) { return String(k).toLowerCase() === 'strike'; });
+  }
+
+  // withDamage puts n in place of the damage a tier text opens with, keeping
+  // the damage type and the rest of the text.
+  function withDamage(text, n) {
+    return String(text).replace(/^(\s*)\d+/, '$1' + n);
+  }
+
+  // reviewCheck is the AI Import review's check of a creature the campaign's
+  // AI wrote (Chronicle.sheetChecks.creature): each figure the AI wrote that
+  // a published formula covers, beside what the formula gives, and a patch
+  // that takes the formula's figure for the ones the director picks. Winded
+  // is half the formula's Stamina, rounded down. Figures no formula covers
+  // are left off, and with no formulas or templates there is no check at
+  // all, so the review never implies one that didn't run.
+  function reviewCheck(fields, refs, written) {
+    var f = (fields && typeof fields === 'object') ? fields : {};
+    var c = normalize(f);
+    var pr = provenance(c, refs);
+    if (!formulas() || !pr.org || c.level === null) return null;
+    var wrote = {};
+    (Array.isArray(written) ? written : Object.keys(f)).forEach(function (k) { wrote[String(k).toLowerCase()] = true; });
+    var items = [], set = {};
+    function covered(p) { return p && p.sourced && p.value !== null && p.value !== undefined; }
+    function figure(id, key, label, stored, value, patchValue) {
+      if (!wrote[key] || stored === null) return;
+      items.push({ id: id, label: label, ai: String(stored), formula: String(value), matches: stored === value });
+      set[id] = function (out) { out[key] = patchValue === undefined ? value : patchValue; };
+    }
+    if (covered(pr.ev)) figure('ev', 'ev', 'Encounter value', c.ev, pr.ev.value);
+    if (covered(pr.stamina)) {
+      figure('stamina', 'stamina', 'Stamina', c.stamina, pr.stamina.value);
+      figure('winded', 'winded', 'Winded', c.winded, Math.floor(pr.stamina.value / 2));
+    }
+    if (covered(pr.free_strike)) {
+      // The builder keeps free strike as "N damage"; the AI's own wording
+      // around the number is kept.
+      var fsText = /^\s*-?\d+\s*$/.test(c.free_strike) ? pr.free_strike.value + ' damage'
+        : String(c.free_strike).replace(/-?\d+/, String(pr.free_strike.value));
+      figure('free_strike', 'free_strike', 'Free strike', freeStrikeNumber(c.free_strike), pr.free_strike.value, fsText);
+    }
+
+    var raw = parseJSON(f.abilities_json, null);
+    var d = pr.damage && pr.damage.sourced ? pr.damage.value : null;
+    var hc = pr.hc && pr.hc.value !== null && pr.hc.value !== undefined ? pr.hc.value : null;
+    var picks = {};
+    if (wrote.abilities_json && d && Array.isArray(raw)) {
+      raw.slice(0, MAX_LIST).forEach(function (a, i) {
+        if (!a || typeof a !== 'object' || !formulaAbility(a)) return;
+        var add = isStrike(a) ? hc : 0;
+        if (add === null) return;
+        var ai = [], want = [], same = true;
+        REVIEW_TIERS.forEach(function (k) {
+          if (!a[k]) { ai.push('—'); want.push('—'); return; }
+          var have = Number(/\d+/.exec(String(a[k]))[0]), n = d[k] + add;
+          ai.push(String(have));
+          want.push(String(n));
+          if (have !== n) same = false;
+        });
+        var id = 'ability-' + i;
+        items.push({ id: id, label: a.name ? String(a.name) : 'Ability ' + (i + 1), ai: ai.join(' / '), formula: want.join(' / '), matches: same });
+        picks[id] = function (list) {
+          REVIEW_TIERS.forEach(function (k) { if (list[i][k]) list[i][k] = withDamage(list[i][k], d[k] + add); });
+        };
+      });
+    }
+    if (!items.length) return null;
+
+    var who = 'Level ' + c.level + ' ' + (pr.org.name || cap(c.organization)) + (pr.role ? ' ' + (pr.role.name || cap(c.role)) : '');
+    return {
+      note: who,
+      items: items,
+      patch: function (ids) {
+        var out = {}, list = null;
+        (ids || []).forEach(function (id) {
+          if (set[id]) set[id](out);
+          if (picks[id]) {
+            list = list || JSON.parse(JSON.stringify(raw));
+            picks[id](list);
+          }
+        });
+        if (list) out.abilities_json = JSON.stringify(list);
+        return out;
+      }
+    };
+  }
+
   // tierOdds returns [T1%, T2%, T3%] for a 2d10 + mod power roll, with a
   // natural 19-20 always tier 3. Same rule and enumeration as the character
   // sheet's; tools/test-statblock-renderer.mjs pins the two together.
@@ -826,6 +927,7 @@ var DrawSteelStatblock = (function () {
     apiFetch: apiFetch,
     getJSON: getJSON,
     loadRefs: loadRefs,
+    reviewCheck: reviewCheck,
     unwrap: unwrap,
     creatureType: creatureType,
     toStatblock: toStatblock,
@@ -2807,6 +2909,17 @@ DrawSteelStatblock.Rise = DrawSteelRise;
 if (typeof Chronicle !== 'undefined' && Chronicle) {
   Chronicle.homebrewActions = Chronicle.homebrewActions || {};
   Chronicle.homebrewActions['rise-as-variant'] = DrawSteelRise.run;
+  // The AI Import review's check of a creature the AI wrote, against the
+  // published formulas (Chronicle's docs/system-package-rendering.md).
+  Chronicle.sheetChecks = Chronicle.sheetChecks || {};
+  Chronicle.sheetChecks.creature = {
+    check: function (fields, env) {
+      var e = env || {};
+      return DrawSteelStatblock.loadRefs(e.campaignId).then(function (refs) {
+        return DrawSteelStatblock.reviewCheck(fields, refs, e.written);
+      });
+    }
+  };
 }
 
 if (typeof Chronicle !== 'undefined' && Chronicle && Chronicle.register) {
