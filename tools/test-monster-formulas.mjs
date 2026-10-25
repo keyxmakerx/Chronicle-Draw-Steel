@@ -201,6 +201,23 @@ test('a mixed-level party sums each hero’s encounter strength', () => {
   assert.equal(F.partyEncounterStrength([1, 2, 3]).value, 6 + 8 + 10);
 });
 
+test('Victories add heroes as the published adjustment and its examples say', () => {
+  const v = entry(ENCOUNTER_BUILD, 'encounter-strength-victories').properties;
+  assert.equal(F.VICTORIES_PER_EXTRA_HERO, v.victories_per_extra_hero);
+  assert.match(v.formula, new RegExp('per ' + v.victories_per_extra_hero + ' average Victories'));
+  // The published examples: 3rd-level heroes with 2 or 3 Victories each gain
+  // 10 ES, and with 6 each gain 30.
+  const one = F.heroEncounterStrength(3).value;
+  assert.equal(F.victoriesExtraHeroes(2).value * one, 10);
+  assert.equal(F.victoriesExtraHeroes(3).value * one, 10);
+  assert.equal(F.victoriesExtraHeroes(6).value * one, 30);
+  assert.equal(F.victoriesExtraHeroes(0).value, 0);
+  assert.equal(F.victoriesExtraHeroes(1.9).value, 0);
+  assert.equal(F.victoriesExtraHeroes(-1).sourced, false);
+  assert.equal(F.victoriesExtraHeroes(-1).value, null);
+  assert.equal(F.victoriesExtraHeroes('').value, null);
+});
+
 test('difficulty bands match the published band expressions', () => {
   const bands = F.budgetBands(96, 24).value;   // 4 heroes at level 10
   assert.deepEqual(bands.standard, { lower: 96, upper: 120, upper_inclusive: true });

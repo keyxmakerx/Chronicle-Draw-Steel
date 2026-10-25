@@ -696,6 +696,16 @@ var DrawSteelFormulas = (function () {
     return result(size * per.value, true, ENCOUNTER_SOURCE, []);
   }
 
+  // Published Victories adjustment: every 2 Victories the heroes have on
+  // average count as one more hero of the party's level. A part-way average
+  // adds nothing ("2 or 3 Victories each" is one hero, "6" is three).
+  var VICTORIES_PER_EXTRA_HERO = 2;
+  function victoriesExtraHeroes(averageVictories) {
+    var v = finiteNum(averageVictories);
+    if (v === null || v < 0) return result(null, false, null, ['An average of 0 or more Victories is required.']);
+    return result(Math.floor(v / VICTORIES_PER_EXTRA_HERO), true, ENCOUNTER_SOURCE, []);
+  }
+
   // Published difficulty bands expressed in EV, given a party's encounter
   // strength and one hero's. `upper: null` means unbounded. Mirrors
   // data/encounter-building.json's difficulty entries; pinned by
@@ -744,6 +754,8 @@ var DrawSteelFormulas = (function () {
     highestCharacteristic: highestCharacteristic,
     heroEncounterStrength: heroEncounterStrength,
     partyEncounterStrength: partyEncounterStrength,
+    VICTORIES_PER_EXTRA_HERO: VICTORIES_PER_EXTRA_HERO,
+    victoriesExtraHeroes: victoriesExtraHeroes,
     budgetBands: budgetBands,
     difficultyOf: difficultyOf
   };

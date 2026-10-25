@@ -48,6 +48,95 @@ test('party strength and bands are the published formulas', () => {
   assert.equal(m.max, 70 + 20, "the bar runs two heroes past where extreme starts");
 });
 
+// ── Victories and the director's adjustment ─────────────────────────────────
+
+const vhero = (id, level, victories) => ({ id, name: id, entry: ok(victories === undefined ? { level } : { level, victories }) });
+const seasoned = (v) => [vhero('a', 3, v), vhero('b', 3, v), vhero('c', 3, v), vhero('d', 3, v)];
+const ev54 = () => [row('Pack', 'p', 1, 'A', ok({ level: 3, organization: 'platoon', ev: 54 }))];
+const computeN = (heroes, creatures, nudge) => EB.compute({ heroes, creatures, orgs: ORGS, rules: RULES, nudge });
+
+test('the wider level limit and its Victories come from the shipped data', () => {
+  assert.equal(RULES.maxAboveVictories, 3);
+  assert.equal(RULES.widerLimitVictories, 6);
+});
+
+test('every 2 average Victories count as one more hero of the party level', () => {
+  const m = compute(seasoned(3), ev54());
+  assert.equal(m.party.victoryHeroes, 1);
+  assert.equal(m.party.rulesEs, 50);
+  assert.equal(m.party.es, 50);
+  assert.equal(m.difficulty, 'standard', 'the mockup: 54 EV against four 3rd-level heroes with 3 Victories');
+  assert.equal(EB.partyText(m.party), '4 heroes + 1 for Victories');
+  assert.equal(EB.changedText(m.party), '');
+  assert.equal(compute(seasoned(6), []).party.es, 40 + 30, 'the published example: 6 Victories each gain 30');
+  assert.equal(compute(four, ev54()).difficulty, 'hard', 'no Victories on the pages: levels only, as before');
+});
+
+test('Victories are averaged across the heroes; a part-way average adds no hero', () => {
+  const m = compute([vhero('a', 3, 2), vhero('b', 3, 1)], []);
+  assert.equal(m.party.avgVictories, 1.5);
+  assert.equal(m.party.victoryHeroes, 0);
+  assert.equal(EB.partyText(m.party), '2 heroes (averaging 1.5 Victories; the rules add a hero per 2)');
+  assert.equal(EB.partyText(compute([vhero('a', 3, 1)], []).party), '1 hero (averaging 1 Victory; the rules add a hero per 2)');
+});
+
+test('a hero page with no Victories counts as 0 and is named', () => {
+  const m = compute([vhero('Ana', 3, 4), vhero('Bo', 3, 4), vhero('Cy', 3)], []);
+  assert.equal(m.party.avgVictories, 2.7);
+  assert.equal(m.party.victoryHeroes, 1);
+  assert.ok(m.checks.some((k) => !k.ok && /^Cy: no Victories on that hero page, so counted as 0/.test(k.text)));
+  // When no page has Victories the party simply has none; nothing to flag.
+  assert.ok(!compute(four, []).checks.some((k) => /no Victories/.test(k.text)));
+  // A negative or non-numeric value is treated as no value.
+  assert.equal(EB.readHero({ id: 'x' }, ok({ level: 3, victories: -2 })).victories, null);
+  assert.equal(EB.readHero({ id: 'x' }, ok({ level: 3, victories: 'lots' })).victories, null);
+});
+
+test('the director\'s adjustment moves Strength by whole heroes and is marked as theirs', () => {
+  const m = computeN(seasoned(3), ev54(), 1);
+  assert.equal(m.party.es, 60);
+  assert.equal(m.party.rulesEs, 50);
+  assert.equal(m.difficulty, 'easy', 'the mockup for B: Strength 60, Easy');
+  assert.equal(EB.changedText(m.party), 'Changed by you (the rules give 50).');
+  assert.deepEqual(m.bands, Fm.budgetBands(60, 10).value);
+  assert.equal(computeN(seasoned(3), [], -2).party.es, 30);
+  assert.equal(EB.nudgeText(0), 'the rules say');
+  assert.equal(EB.nudgeText(1), '+1 hero');
+  assert.equal(EB.nudgeText(-2), '−2 heroes');
+});
+
+test('the adjustment stays within two heroes and never leaves the party weaker than one', () => {
+  assert.equal(EB.clampNudge(5), EB.MAX_NUDGE);
+  assert.equal(EB.clampNudge(-5), -EB.MAX_NUDGE);
+  assert.equal(EB.clampNudge(1.5), 0);
+  assert.equal(EB.clampNudge('x'), 0);
+  assert.equal(EB.clampNudge(null), 0);
+  assert.equal(EB.nudgeFrom({ gm: { extraHeroes: 2 } }), 2);
+  assert.equal(EB.nudgeFrom({ gm: {} }), 0);
+  assert.equal(EB.nudgeFrom({ public: { extraHeroes: 2 } }), 0, 'only the director half is read');
+  assert.equal(EB.nudgeFrom(null), 0);
+  const solo = computeN([vhero('a', 3, 0)], [], -2);
+  assert.equal(solo.party.es, 10, 'one hero at level 3, however far it is nudged down');
+  assert.equal(EB.draftOf({ encounter: {} }, {}, [], RULES, 9).nudge, 2);
+});
+
+test('6 or more average Victories widen the level limit to 3; solos keep theirs', () => {
+  const lvl6 = (org) => [row('Big', 'b', 1, 'A', ok({ level: 6, organization: org, ev: 20 }))];
+  const plain = compute(four, lvl6('platoon'));
+  assert.ok(plain.checks.some((k) => !k.ok && /level limit for heroes of level 3: Big/.test(k.text)));
+  const vets = compute(seasoned(6), lvl6('platoon'));
+  assert.ok(!vets.checks.some((k) => /level limit/.test(k.text)));
+  assert.ok(vets.checks.some((k) => k.ok && /more than 3 levels above the heroes, who have 6 or more Victories \(solos 1\)/.test(k.text)));
+  const tooHigh = compute(seasoned(6), [row('Huge', 'h', 1, 'A', ok({ level: 7, organization: 'platoon', ev: 20 }))]);
+  assert.ok(tooHigh.checks.some((k) => !k.ok && /level 3 with 6 or more Victories: Huge/.test(k.text)));
+  const solo = compute(seasoned(6), [row('Dragon', 'd', 1, 'A', ok({ level: 5, organization: 'solo', ev: 60 }))]);
+  assert.ok(solo.checks.some((k) => !k.ok && /Dragon \(level 5, solo\)/.test(k.text)));
+  // Without the data's numbers the wider limit is never applied.
+  const bare = Object.assign({}, RULES, { maxAboveVictories: null });
+  const m = EB.compute({ heroes: seasoned(6), creatures: lvl6('platoon'), orgs: ORGS, rules: bare });
+  assert.ok(m.checks.some((k) => !k.ok && /level limit/.test(k.text)));
+});
+
 test('mixed levels sum per hero; one hero is the rounded average level', () => {
   const m = compute([hero('a', 3), hero('b', 2), hero('c', 4)], []);
   assert.equal(m.party.es, 10 + 8 + 12);
