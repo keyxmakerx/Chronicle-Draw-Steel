@@ -497,6 +497,80 @@ var DrawSteelStatblock = (function () {
   // Stamina and conditions, and sends them only while the toggle is on (the
   // page's `foundry` system state, read by the Chronicle Sync module).
   // state.sendBack is true, false, or null while unknown (toggle disabled).
+  // monsterWhere is where Foundry keeps a matched monster, with the few
+  // numbers it reported, for the match line.
+  function monsterWhere(m) {
+    var bits = [m.pack ? m.pack + ' compendium' : 'An actor in the world'];
+    if (m.level) bits.push('Level ' + m.level);
+    if (m.organization) bits.push(m.organization);
+    if (m.role) bits.push(m.role);
+    if (m.ev) bits.push('EV ' + m.ev);
+    return bits.join(' \u00b7 ');
+  }
+
+  // matchSearchHtml is "Match another": a search of Foundry's monsters.
+  function matchSearchHtml(sr) {
+    var h = '<div class="sbx-fvtt-search">' +
+      '<label class="sbx-fvtt-hint" for="sbx-fvtt-q">Find a monster in Foundry</label>' +
+      '<input id="sbx-fvtt-q" type="search" class="sbx-fvtt-q" data-sbx-match-q value="' + esc(sr.q || '') + '" autocomplete="off" placeholder="Part of its name">';
+    if (sr.loading) h += '<p class="sbx-fvtt-hint" role="status">Searching&hellip;</p>';
+    else if (sr.error) h += '<p class="sbx-msg is-error" role="alert">' + esc(sr.error) + '</p>';
+    else if (sr.results && !sr.results.length) h += '<p class="sbx-fvtt-hint" role="status">No monster in Foundry has that in its name.</p>';
+    else if (sr.results) {
+      h += '<ul class="sbx-fvtt-hits">';
+      sr.results.forEach(function (m, i) {
+        h += '<li><button type="button" class="btn-ghost btn-sm sbx-fvtt-hit" data-sbx-match="pick" data-sbx-i="' + i + '">' + esc(m.name) +
+          '<span class="sbx-fvtt-hint">' + esc(monsterWhere(m)) + '</span></button></li>';
+      });
+      h += '</ul>';
+    }
+    return h + '<button type="button" class="sbx-link" data-sbx-match="close">Cancel</button></div>';
+  }
+
+  // matchHtml is which monster in Foundry this page is (Chronicle matches
+  // each creature page to Foundry's monster of the same name) and whose
+  // numbers play. mt.data is the page's match from Chronicle, null while it
+  // loads or when Chronicle has no matching.
+  function matchHtml(mt) {
+    var m = mt && mt.data;
+    if (!m) return mt && mt.error ? '<p class="sbx-msg is-error" role="alert">' + esc(mt.error) + '</p>' : '';
+    var mon = m.monster || {};
+    var busy = mt.saving ? ' disabled' : '';
+    var other = '<button type="button" class="sbx-link" data-sbx-match="search"' + busy + '>Match another</button>';
+    var h = '<div class="sbx-fvtt-match" data-sbx-match-state="' + esc(m.state) + '">';
+    if (m.state === 'not_reported') {
+      h += '<p class="sbx-fvtt-hint">Foundry hasn&rsquo;t sent its monster list yet, so this page plays with its own numbers.</p>';
+    } else if (m.state === 'none') {
+      h += '<p class="sbx-fvtt-hint">No monster in Foundry has this name, so Foundry makes this creature from this page.</p>' +
+        '<p class="sbx-fvtt-links"><button type="button" class="sbx-link" data-sbx-match="search"' + busy + '>Match a monster in Foundry</button></p>';
+    } else if (m.state === 'suggested') {
+      h += '<p class="sbx-fvtt-line"><span class="sbx-chip is-maybe">Looks like Foundry&rsquo;s ' + esc(mon.name) + '</span></p>' +
+        '<p class="sbx-fvtt-hint">' + esc(monsterWhere(mon)) + '</p>' +
+        '<p class="sbx-fvtt-links"><button type="button" class="btn-primary btn-sm" data-sbx-match="confirm"' + busy + '>Match</button>' +
+        '<button type="button" class="btn-secondary btn-sm" data-sbx-match="notsame"' + busy + '>Not the same</button></p>';
+    } else {
+      var missing = m.state === 'missing';
+      h += '<p class="sbx-fvtt-line"><span class="sbx-chip ' + (missing ? 'is-maybe">Foundry no longer has ' : 'is-ok">Matched to Foundry&rsquo;s ') + esc(mon.name) + '</span></p>' +
+        (missing ? '<p class="sbx-fvtt-hint">Until it is back, this page plays with its own numbers.</p>' : '<p class="sbx-fvtt-hint">' + esc(monsterWhere(mon)) + '</p>') +
+        '<fieldset class="sbx-fvtt-use"><legend>In play, use</legend>' +
+        '<label><input type="radio" name="sbx-fvtt-use" value="foundry" data-sbx-match-use' + (m.use === 'foundry' ? ' checked' : '') + busy + '> Foundry&rsquo;s numbers</label>' +
+        '<label><input type="radio" name="sbx-fvtt-use" value="page" data-sbx-match-use' + (m.use === 'page' ? ' checked' : '') + busy + '> This page&rsquo;s numbers (for a house-ruled ' + esc(mon.name) + ')</label>' +
+        '</fieldset>' +
+        (!m.useChosen && m.inPlay ? '<p class="sbx-fvtt-hint">Foundry already has this creature from this page, so the page&rsquo;s numbers keep playing until you switch.</p>' : '') +
+        '<p class="sbx-fvtt-links"><button type="button" class="sbx-link" data-sbx-match="notsame"' + busy + '>Not the same monster</button>' + other + '</p>';
+    }
+    if (mt.search && mt.search.open) h += matchSearchHtml(mt.search);
+    if (mt.error) h += '<p class="sbx-msg is-error" role="alert">' + esc(mt.error) + '</p>';
+    return h + '</div>';
+  }
+
+  // playsFoundry says the page is matched and Foundry's numbers play, so
+  // nothing on it is sent to or from Foundry.
+  function playsFoundry(mt) {
+    var m = mt && mt.data;
+    return !!(m && m.state === 'matched' && m.use === 'foundry');
+  }
+
   function foundryHtml(f, state) {
     var st = state || {};
     var max = num(f.stamina);
@@ -508,8 +582,15 @@ var DrawSteelStatblock = (function () {
     });
     var stamina = cur === null ? 'Not sent from Foundry yet' : (cur + (max !== null ? ' / ' + max : ''));
     var on = st.sendBack === true;
+    if (playsFoundry(st.match)) {
+      return '<section class="sbx-fvtt" aria-label="In Foundry">' +
+        '<p class="sbx-sec">In Foundry</p>' + matchHtml(st.match) +
+        '<p class="sbx-fvtt-hint">Foundry places its own ' + esc(st.match.data.monster.name) + ' with its own numbers; this page keeps the lore. Nothing on it is sent to Foundry.</p>' +
+        (st.error ? '<p class="sbx-msg is-error" role="alert">' + esc(st.error) + '</p>' : '') +
+      '</section>';
+    }
     return '<section class="sbx-fvtt" aria-label="In Foundry">' +
-      '<p class="sbx-sec">In Foundry</p>' +
+      '<p class="sbx-sec">In Foundry</p>' + matchHtml(st.match) +
       '<dl class="sbx-fvtt-rows">' +
         '<div><dt>Stamina at the table</dt><dd>' + esc(stamina) + '</dd></div>' +
         '<div><dt>Conditions</dt><dd>' + esc(conds.length ? conds.join(', ') : 'None') + '</dd></div>' +
@@ -780,6 +861,20 @@ var DrawSteelStatblock = (function () {
     '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--sbx-accent,#DC2626)}',
     '.sbx-fvtt-toggle b{color:var(--color-text-primary,#111827);font-weight:600;display:block}',
     '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fvtt-match{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--color-border-light,#f3f4f6)}',
+    '.sbx-fvtt-line,.sbx-fvtt-links{margin:0;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}',
+    '.sbx-fvtt .sbx-chip{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}',
+    '.sbx-fvtt .sbx-chip.is-ok{background:rgba(16,185,129,.15);color:var(--color-success-text,#065f46)}',
+    '.sbx-fvtt .sbx-chip.is-maybe{background:rgba(245,158,11,.18);color:var(--color-warning-text,#92400e)}',
+    '.dark .sbx-fvtt .sbx-chip.is-ok{color:#6ee7b7}.dark .sbx-fvtt .sbx-chip.is-maybe{color:#fcd34d}',
+    '.sbx-fvtt-use{margin:0;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}',
+    '.sbx-fvtt-use legend{font-size:13px;font-weight:600;padding:0 4px;color:var(--color-text-primary,#111827)}',
+    '.sbx-fvtt-use label{display:flex;gap:8px;align-items:center;cursor:pointer}',
+    '.sbx-fvtt-use input{accent-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-fvtt-search{display:flex;flex-direction:column;gap:6px}',
+    '.sbx-fvtt-q{font:inherit;padding:6px 10px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-input-bg,var(--color-card-bg,#fff));color:var(--color-text-primary,#111827)}',
+    '.sbx-fvtt-hits{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:240px;overflow:auto}',
+    '.sbx-fvtt-hit{width:100%;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.sbx-head.has-pic{flex-wrap:nowrap;align-items:center}',
     '.sbx-head.has-pic .sbx-title{flex:1}',
     '.sbx-pic{flex:0 0 72px;width:72px;height:72px;border-radius:8px;overflow:hidden;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
@@ -934,6 +1029,7 @@ var DrawSteelStatblock = (function () {
     toFields: toFields,
     html: html,
     foundryHtml: foundryHtml,
+    matchHtml: matchHtml,
     SOURCE_KEY: SOURCE_KEY,
     TOKEN_KEY: TOKEN_KEY,
     GENERIC_TOKEN: GENERIC_TOKEN,
@@ -1544,7 +1640,7 @@ function StatblockPanel(el, config) {
   this.editor = null;
   this.fold = null;
   this.publishOpen = false;
-  this.fvtt = { sendBack: null, gm: {}, saving: false, error: '' };
+  this.fvtt = { sendBack: null, gm: {}, saving: false, error: '', match: { data: null, saving: false, error: '', search: null } };
   this.cmp = { open: false, book: null, missing: false, error: false, loading: false, saving: false, msg: '', msgKind: '', undo: null };
   // tab is the form on show: '' for the first form, else a form id.
   this.forms = { list: [], shown: [], current: '', loaded: false, error: false, saving: false, tab: '', msg: '', msgKind: '' };
@@ -1577,7 +1673,7 @@ StatblockPanel.prototype.start = function () {
       self.refs = x[0];
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
-      if (self.isGM) self.loadFoundry();
+      if (self.isGM) { self.loadFoundry(); self.loadMatch(); }
       return Promise.all([self.loadForms(), self.isGM ? self.loadVariant() : null]);
     });
   }).catch(function (err) {
@@ -1774,6 +1870,99 @@ StatblockPanel.prototype.setSendBack = function (on) {
     self.fvtt.saving = false;
     self.drawFoundry();
   });
+};
+
+// ── Which monster in Foundry this page is ──────────────────────────────────
+
+StatblockPanel.prototype.matchUrl = function () {
+  return '/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/entities/' + encodeURIComponent(this.eid) + '/foundry-match';
+};
+
+// loadMatch reads the page's match. A Chronicle without matching, or a page
+// it does not count as a creature, answers 404: the box then shows no match.
+StatblockPanel.prototype.loadMatch = function () {
+  var self = this, mt = this.fvtt.match;
+  return DrawSteelStatblock.apiFetch(this.matchUrl()).then(function (res) {
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error('match ' + res.status);
+    return res.json();
+  }).then(function (body) {
+    mt.data = (body && body.match) || null;
+    self.drawFoundry();
+  }).catch(function () {
+    mt.error = 'Could not read which monster in Foundry this is. Reload to try again.';
+    self.drawFoundry();
+  });
+};
+
+// changeMatch sends one change and shows the answer. Chronicle's refusal
+// message is plain words, so it is shown as given; anything else gets a
+// fixed one.
+StatblockPanel.prototype.changeMatch = function (body) {
+  var self = this, mt = this.fvtt.match;
+  mt.saving = true;
+  mt.error = '';
+  this.drawFoundry();
+  return DrawSteelStatblock.apiFetch(this.matchUrl(), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  }).then(function (res) {
+    return res.json().catch(function () { return {}; }).then(function (j) {
+      if (!res.ok) throw new Error((res.status === 400 && j && j.message) || 'Could not save that. Try again.');
+      mt.data = j.match || mt.data;
+      mt.search = null;
+    });
+  }).catch(function (err) {
+    mt.error = (err && err.message) || 'Could not save that. Try again.';
+  }).then(function () {
+    mt.saving = false;
+    self.drawFoundry();
+    self.focus('[data-sbx-match-state] input:checked, [data-sbx-match-state] button');
+  });
+};
+
+// searchMatch looks Foundry's monsters up by part of a name, keeping only
+// the newest answer when the director types fast.
+StatblockPanel.prototype.searchMatch = function (q) {
+  var self = this, sr = this.fvtt.match.search;
+  if (!sr) return;
+  sr.q = q;
+  var seq = (sr.seq || 0) + 1;
+  sr.seq = seq;
+  sr.loading = true;
+  sr.error = '';
+  var url = '/api/v1/campaigns/' + encodeURIComponent(this.cid) + '/foundry-monsters?q=' + encodeURIComponent(q);
+  return DrawSteelStatblock.getJSON(url).then(function (body) {
+    if (sr.seq !== seq) return;
+    sr.results = (body && body.data) || [];
+  }).catch(function () {
+    if (sr.seq !== seq) return;
+    sr.error = 'Could not search Foundry\u2019s monsters. Try again.';
+  }).then(function () {
+    if (sr.seq !== seq) return;
+    sr.loading = false;
+    self.drawMatchSearch();
+  });
+};
+
+// drawMatchSearch redraws the box but keeps the search field's focus and
+// caret, so typing is not interrupted.
+StatblockPanel.prototype.drawMatchSearch = function () {
+  var input = this.el.querySelector('[data-sbx-match-q]');
+  var had = input && document.activeElement === input;
+  var at = had ? input.selectionStart : 0;
+  this.drawFoundry();
+  var again = this.el.querySelector('[data-sbx-match-q]');
+  if (again && had) { again.focus(); try { again.setSelectionRange(at, at); } catch (e) { /* not a text field */ } }
+};
+
+StatblockPanel.prototype.matchAct = function (which, i) {
+  var mt = this.fvtt.match, mon = (mt.data && mt.data.monster) || {};
+  if (which === 'confirm') return this.changeMatch({ action: 'match', name: mon.name, pack: mon.pack || '' });
+  if (which === 'notsame') return this.changeMatch({ action: 'not_same', name: mon.name });
+  if (which === 'search') { mt.search = { open: true, q: '', results: null }; this.drawFoundry(); this.focus('[data-sbx-match-q]'); return this.searchMatch(''); }
+  if (which === 'close') { mt.search = null; this.drawFoundry(); this.focus('[data-sbx-match="search"]'); return null; }
+  var hit = which === 'pick' && mt.search && mt.search.results && mt.search.results[Number(i)];
+  return hit ? this.changeMatch({ action: 'match', name: hit.name, pack: hit.pack || '' }) : null;
 };
 
 // ── Forms on the page ───────────────────────────────────────────────────────
@@ -2121,18 +2310,29 @@ StatblockPanel.prototype.bind = function () {
     if (back && self.el.contains(back)) { self.putBack(back.getAttribute('data-sbx-putback'), back.getAttribute('data-sbx-name') || ''); return; }
     var cmp = e.target.closest && e.target.closest('[data-sbx-cmp]');
     if (cmp && self.el.contains(cmp)) { self.take(cmp.getAttribute('data-sbx-cmp')); return; }
+    var ma = e.target.closest && e.target.closest('[data-sbx-match]');
+    if (ma && self.el.contains(ma)) { self.matchAct(ma.getAttribute('data-sbx-match'), ma.getAttribute('data-sbx-i')); return; }
     var pub = e.target.closest && e.target.closest('[data-sbx-pub]');
     if (pub && self.el.contains(pub)) self.publish(pub.getAttribute('data-sbx-pub'));
   });
   this.el.addEventListener('change', function (e) {
     var t = e.target;
     if (t && t.getAttribute && t.getAttribute('data-sbx-fvtt') === 'sendback') self.setSendBack(!!t.checked);
+    if (t && t.hasAttribute && t.hasAttribute('data-sbx-match-use') && t.checked) self.changeMatch({ action: 'use', use: t.value });
     if (t && t.hasAttribute && t.hasAttribute('data-sbx-fstam')) self.setStamina(t.value);
     if (t && t.hasAttribute && t.hasAttribute('data-sbx-var-recipe')) { self.vr.pick = t.value; self.render(); self.focus('[data-sbx-var-recipe]:checked'); }
+  });
+  // Searching Foundry's monsters waits for a pause in typing.
+  this.el.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.hasAttribute || !t.hasAttribute('data-sbx-match-q')) return;
+    clearTimeout(self._matchTimer);
+    self._matchTimer = setTimeout(function () { self.searchMatch(t.value); }, 250);
   });
   // The form tabs move with the arrow keys, Home and End, as tabs do.
   this.el.addEventListener('keydown', function (e) {
     var t = e.target;
+    if (e.key === 'Escape' && t && t.hasAttribute && t.hasAttribute('data-sbx-match-q')) { self.matchAct('close'); return; }
     if (!t || !t.getAttribute || t.getAttribute('role') !== 'tab') return;
     var tabs = Array.prototype.slice.call(self.el.querySelectorAll('.sbx-tab'));
     var i = tabs.indexOf(t), to = -1;

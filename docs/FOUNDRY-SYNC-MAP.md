@@ -223,3 +223,15 @@ Sending back is off for every creature until the director turns it on in the
 page's `foundry` system state (`gm.sendBack`), which the Chronicle Sync module
 reads before it sends current Stamina or conditions. Saving the stat block in
 the editor keeps whatever Foundry already sent back.
+
+The same box says which monster in Foundry the page is. Chronicle matches each
+creature page to the monster of the same name that Foundry reported (a world
+actor, or an entry of a compendium such as the Draw Steel monsters), and the
+director chooses under "In play, use" whose numbers play: Foundry's (the page
+keeps the lore; Foundry places its own actor, and nothing on the page is sent
+to Foundry, so the send-back toggle is not shown) or this page's (for a
+house-ruled copy; creature sync makes the actor as for a homebrew monster). A
+name that only looks alike shows Match and Not the same; "Match another"
+searches Foundry's monsters. The box reads and writes Chronicle's
+`/api/v1/campaigns/:id/entities/:eid/foundry-match` (an older Chronicle answers
+404 and the box shows no match).
