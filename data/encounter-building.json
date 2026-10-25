@@ -278,9 +278,10 @@
     "properties": {
       "rule_type": "adjustment",
       "formula": "add one hero of the party's level per 2 average Victories",
+      "victories_per_extra_hero": 2,
       "caution": "prefer higher-EV creatures over more creatures",
       "category": "encounter-building",
-      "details_display": "formula — add one hero of the party's level per 2 average Victories · caution — prefer higher-EV creatures over more creatures"
+      "details_display": "formula — add one hero of the party's level per 2 average Victories · victories per extra hero — 2 · caution — prefer higher-EV creatures over more creatures"
     },
     "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },
@@ -309,9 +310,10 @@
       "rule_type": "constraint",
       "max_levels_above_party": 2,
       "max_levels_above_party_with_6_victories": 3,
+      "victories_for_wider_limit": 6,
       "max_levels_above_party_solo": 1,
       "category": "encounter-building",
-      "details_display": "max levels above party — 2 · max levels above party with 6 victories — 3 · max levels above party solo — 1"
+      "details_display": "max levels above party — 2 · max levels above party with 6 victories — 3 · victories for wider limit — 6 · max levels above party solo — 1"
     },
     "source": "Draw Steel Monsters Book, ch. 1 (Monster Basics) (mcdm.monsters.v1), via Steel Compendium"
   },

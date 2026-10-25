@@ -253,6 +253,8 @@ change, and the widget fills the slot that event carries with the party's
 strength, the EV spent against the published difficulty bands, the guideline
 checks and each initiative group's EV.
 
+- Strength is the heroes' levels plus the published Victories adjustment: every 2 Victories the heroes average count as one more hero of the party's level. A hero page with no Victories counts as 0, and the panel names it when other heroes do have Victories. With 6 or more average Victories the level-limit check allows creatures 3 levels above the heroes (solos stay at 1).
+- The director can count the party as up to two heroes stronger or weaker than the rules say. The adjustment is saved for the whole campaign in Chronicle's campaign-wide system state (`drawsteel/party`, director half, `{"extraHeroes": N}`), and a moved Strength always reads "Changed by you (the rules give N)". A Chronicle without that store answers 404, and the panel then follows the rules and says so.
 - Every figure comes from `DrawSteelFormulas` (`widgets/monster-engine.js`) or `data/encounter-building.json`. A figure they cannot cover (a creature typed by name, a page with no EV, a hero with no level) is said to be missing and left out of the total.
 - Like the monster builder's checks, it reports what the published guidelines say. It is not a balance check.
 - Tested by `tools/test-encounter-budget.mjs`.
