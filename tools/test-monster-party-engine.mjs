@@ -63,8 +63,8 @@ test('encounterBudget = the published party encounter strength, summed per hero'
 test('encounterBudget degrades to 0 on bad inputs', () => {
   assert.equal(Engine.encounterBudget(0, 5, ORGS), 0);
   assert.equal(Engine.encounterBudget(4, 0, ORGS), 0);
-  // The org templates are no longer an input — the published formula depends
-  // only on the party — so an empty template list no longer zeroes the budget.
+  // Org templates are not an input: the published formula depends only on
+  // the party, so an empty template list does not zero the budget.
   assert.equal(Engine.encounterBudget(4, 5, []), 56);
 });
 

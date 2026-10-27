@@ -77,8 +77,8 @@
   // Chronicle.escapeHtml does NOT, so it is required wherever a value lands
   // inside a "…" attribute (else a value with a double-quote breaks out and
   // injects an event handler). Prefers the platform helper; falls back to a
-  // self-contained implementation so the widget stays robust across Chronicle
-  // versions and testable off-browser.
+  // local implementation so the widget works across Chronicle versions and
+  // off-browser.
   function escAttr(s) {
     s = (s == null) ? '' : String(s);
     if (Chronicle && Chronicle.escapeAttr) return Chronicle.escapeAttr(s);
@@ -572,7 +572,7 @@
   // groupOf buckets a Draw Steel ability into the three list groups. Categories
   // (signature/heroic/freeStrike/villain) and a heroic-resource cost decide it;
   // everything else (maneuvers, free strikes, moves, utility actions) is the
-  // dimmed "Maneuvers" bucket. Defensive for sparse pre-Phase-C data.
+  // dimmed "Maneuvers" bucket. Tolerates sparse data.
   function groupOf(a) {
     var c = String((a && a.category) || '').toLowerCase();
     if (c === 'signature') return 'signature';
@@ -1189,7 +1189,7 @@
   }
 
   // fallbackBodyHtml — when an ability has no derivable tier ladder (a non-damage
-  // effect, or pre-Phase-C data), show a power-roll line + a teaser of its effect.
+  // effect, or sparse data), show a power-roll line + a teaser of its effect.
   function fallbackBodyHtml(a) {
     var bits = '';
     var pr = powerRollLabel(a);
@@ -2596,7 +2596,7 @@
       '.cs-pips-empty { color:var(--color-text-muted,#9ca3af); }',
       '.cs-box[data-box-pinned] .cs-box__caret { display:none; }',
       '.cs-box[data-box-pinned] .cs-box__toggle { cursor:default; }',
-      // v3.2 dynamic affordance: collapsible boxes read as clickable (DDB-style).
+      // Collapsible boxes read as clickable (DDB-style).
       // A subtle accent lift on hover + a pointer/clickable head signal "open me";
       // pinned boxes (always-open) are exempt. Purely additive over the frame chrome.
       '.cs-box:not([data-box-pinned]) { transition:box-shadow 160ms ease, border-color 160ms ease; }',
