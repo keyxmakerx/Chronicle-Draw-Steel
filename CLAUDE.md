@@ -78,7 +78,7 @@ says which. This package invents no creature numbers.
 
 ## Manifest
 
-No `"version"` field (comes from GitHub release tags); `"api_version": "1"` is a separate API compatibility version. Widget entries use `"script_file"`, not `"file"`. `"text_renderers"` lists the scripts Chronicle loads as globals before the widgets (reference renderer, monster engine and party, fold engine, example player).
+No `"version"` field (comes from GitHub release tags); `"api_version": "1"` is a separate API compatibility version. Widget entries use `"script_file"`, not `"file"`. `"text_renderers"` lists the scripts Chronicle loads as globals before the widgets (reference renderer, monster engine and party, fold engine, example player). `"crafting"` is the project roll Chronicle's Crafting app uses: 2d10 plus one of the five characteristics, an edge +2 and a bane −2, tiers breaking at 11 and 16; `tools/test-manifest-caps.mjs` pins it.
 
 ## Working with this project
 

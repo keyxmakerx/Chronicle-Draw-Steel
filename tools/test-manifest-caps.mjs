@@ -83,3 +83,30 @@ test('terms.gm is the Director, in a form Chronicle accepts', () => {
   assert.equal(gm, 'Director');
   assert.ok([...gm].length <= 24 && /^\p{L}[\p{L} .-]*$/u.test(gm));
 });
+
+// Chronicle's Crafting app rolls a project with the crafting block, and
+// rejects the whole manifest for one it could not roll with
+// (internal/systems/crafting.go, validateCrafting). A project roll is 2d10
+// plus a characteristic, an edge is +2 and a bane -2, and a tiered test such
+// as harvesting breaks at 11 and 16, as every power roll does.
+test('the crafting block is a project roll Chronicle accepts', () => {
+  const c = manifest.crafting;
+  assert.ok(c, 'manifest has no crafting block');
+  assert.equal(c.dice, '2d10');
+  assert.equal(c.edge, 2);
+  assert.equal(c.bane, -2);
+  assert.deepEqual(c.tiers, [11, 16]);
+  const label = (s) => typeof s === 'string' && [...s].length <= 40 && s.trim() === s && /^\p{L}[\p{L}\p{N} '’.-]*$/u.test(s);
+  for (const k of ['goal', 'prerequisite', 'source']) assert.ok(label(c.labels[k]), `labels.${k} "${c.labels[k]}"`);
+  // Each characteristic is a number field on the character sheet, so the
+  // roll can read it from a hero.
+  const sheet = (manifest.entity_presets || []).find((p) => p.slug === 'drawsteel-character');
+  const numbers = new Set(sheet.fields.filter((f) => f.type === 'number').map((f) => f.key));
+  assert.deepEqual(c.characteristics.map((s) => s.key), ['might', 'agility', 'reason', 'intuition', 'presence']);
+  assert.ok(c.characteristics.length <= 12);
+  for (const s of c.characteristics) {
+    assert.match(s.key, /^[a-z0-9][a-z0-9_-]*$/);
+    assert.ok(numbers.has(s.key), `${s.key} is not a number field on the character sheet`);
+    assert.ok(label(s.label), `label "${s.label}"`);
+  }
+});
