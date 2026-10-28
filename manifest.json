@@ -11,6 +11,42 @@
   "terms": {
     "gm": "Director"
   },
+  "crafting": {
+    "dice": "2d10",
+    "characteristics": [
+      {
+        "key": "might",
+        "label": "Might"
+      },
+      {
+        "key": "agility",
+        "label": "Agility"
+      },
+      {
+        "key": "reason",
+        "label": "Reason"
+      },
+      {
+        "key": "intuition",
+        "label": "Intuition"
+      },
+      {
+        "key": "presence",
+        "label": "Presence"
+      }
+    ],
+    "edge": 2,
+    "bane": -2,
+    "tiers": [
+      11,
+      16
+    ],
+    "labels": {
+      "goal": "Project goal",
+      "prerequisite": "Item prerequisite",
+      "source": "Project source"
+    }
+  },
   "categories": [
     {
       "slug": "abilities",
