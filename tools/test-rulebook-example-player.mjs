@@ -283,7 +283,7 @@ test('the-lich-fight seed data: its startMalice actually reaches the rendered Ma
   assert.match(html, new RegExp('<b data-rbx-malice>' + lich.properties.startMalice + '</b>'));
 });
 
-// ── richTerm: glossary-term promotion for the Lair's teaching-panel prose ────
+// ── richTerm: glossary-term promotion for script lines and teaching prose ────
 test('richTerm: promotes {@cat slug} into the shared .rb-hl hover term', () => {
   const out = P.richTerm('a {@combat minion|minion} squad');
   assert.match(out, /class="rb-hl" data-rb-term="minion"/);
@@ -294,6 +294,17 @@ test('richTerm: escapes HTML first, so authored data cannot inject markup', () =
   const out = P.richTerm('<img src=x onerror=alert(1)> {@combat malice}');
   assert.ok(!/<img/i.test(out));
   assert.ok(/&lt;img/.test(out));
+});
+
+test('buildScriptHtml: a script line\'s {@cat term} markup becomes a hover term, never raw text', () => {
+  const raw = JSON.parse(readFileSync(join(HERE, '..', 'data', 'rulebook-examples.json'), 'utf8'));
+  const marked = raw.filter((s) => (s.properties.lines || []).some((l) => /\{@/.test(l.text || '')));
+  assert.ok(marked.length > 0, 'the shipped scripts use term markup in their lines');
+  for (const s of marked) {
+    const html = P.buildScriptHtml(s);
+    assert.ok(!html.includes('{@'), s.slug + ': no raw {@…} markup');
+    assert.match(html, /class="rb-hl" data-rb-term="/, s.slug + ': a dotted glossary term');
+  }
 });
 
 // ── buildLairExtras / buildLesson: the table + rules-in-play + teaching panel ─

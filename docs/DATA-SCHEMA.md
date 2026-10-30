@@ -295,7 +295,7 @@ with the published damage for the creature they are added to
 | `tier3` | string | Result for roll 17+ |
 | `effect` | string | Non-roll effect text |
 | `trigger` | string | Trigger condition (for triggered abilities) |
-| `villain_action_order` | string | `opener`, `escalation`, or `closer` |
+| `villain_action_order` | string | `opener`, `crowd-control`, or `ultimate` |
 
 ## abilities.json
 
