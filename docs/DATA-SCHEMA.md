@@ -1,6 +1,6 @@
 # Data Schema Reference
 
-All files in `data/` must be JSON arrays of **ReferenceItem** objects. Chronicle's system loader parses them on package install.
+Every file in `data/` is a JSON array of ReferenceItem objects, parsed by Chronicle's system loader on install.
 
 ## ReferenceItem Base Format
 
@@ -25,41 +25,34 @@ All files in `data/` must be JSON arrays of **ReferenceItem** objects. Chronicle
 | `tags` | array | No | Searchable labels |
 | `source` | string | Yes | Provenance — see "Provenance" |
 
-**Domain-specific fields go inside `properties`. The root carries only the keys
-Chronicle's `ReferenceItem` reads off the root** (`internal/systems/system.go`):
+**Domain-specific fields go inside `properties`.** The root carries only the
+keys Chronicle's `ReferenceItem` reads there (`internal/systems/system.go`):
 `slug`, `name`, `summary`, `description`, `properties`, `tags`, `source`. A
-*domain* field written at the root is invisible to every consumer, because every
-consumer reads `properties` — but `summary` and `source` are root fields
-*because that is where the renderer looks for them*:
-`internal/systems/system_pages.templ` prints `item.Summary` in the list table and
-`item.Source` in the detail header, and neither ever looks inside `properties`.
-(`organization-templates.json` and `role-templates.json` are the two legacy
-exceptions that put *domain* fields at the root — they are read straight off the
-root by `monster-engine.js` and `monster-builder.js`, and are documented as-is
-below. Do not copy that shape into a new file.)
+domain field at the root is invisible to every consumer. `summary` and
+`source` are root fields because `internal/systems/system_pages.templ` prints
+`item.Summary` in the list table and `item.Source` in the detail header and
+never looks inside `properties`. (`organization-templates.json` and
+`role-templates.json` are legacy exceptions with domain fields at the root,
+read there by `monster-engine.js` and `monster-builder.js`; do not copy that
+shape into a new file.)
 
 ## How a data file becomes a page (the rendering contract)
 
-Correct data that nobody can see is not shipped. Chronicle renders this package
-through `internal/systems`, and its rules are narrow enough that data has to be
-shaped for them:
+Chronicle renders this package through `internal/systems`, so data has to be shaped for its rules:
 
-1. **`handler.go` → `Index()` iterates `manifest.Categories` only.** A file in
+1. **`handler.go` `Index()` iterates `manifest.Categories` only.** A file in
    `data/` with no category in `manifest.json` is not in the reference browser at
-   all — no card, no route, nothing.
+   all.
 2. **A category's `fields[].key` is looked up in `properties`.** If the key is
-   absent, `propString` returns `""` — a blank table column and a silently
-   omitted detail row. Nothing errors. This is how twelve ancestries shipped with
-   an empty Traits column: the manifest said `traits`, the data had
-   `signature_traits` / `purchased_traits`.
+   absent, `propString` returns `""`: a blank table column and a silently
+   omitted detail row, with no error.
 3. **`propString` is `fmt.Sprintf("%v", value)`, so it only formats scalars.** An
    object prints as `map[cost:1 name:Beast Legs]`, an array of objects as
    `[map[…] map[…]]`, an array of strings as `[Attack Melee]`, and a JSON `null`
    as `<nil>`.
 4. **Every declared field is a list column *and* a detail row** — the template
    has no detail-only slot. The list table is `w-full` inside an
-   `overflow-hidden` wrapper, so columns do not scroll; each one added squeezes
-   the rest.
+   `overflow-hidden` wrapper, so each added column squeezes the rest.
 5. **A category marked `"director": true` is for Directors only.** Chronicle
    keeps its pages, search hits, tooltips and raw data file from players. The
    *Monsters* book datasets and the example creatures (`creatures`, `monsters`,
@@ -81,7 +74,7 @@ Syntax"). `tools/build-render-fields.mjs` derives a scalar twin beside either:
 |-----|-----------|
 | `<key>_display` | Machine-derived one-line rendering of the structured `<key>`, with any reference markup resolved to the words it displays. The manifest points at this; widgets keep reading `<key>`, markup intact. |
 | `<key>_text` | **Authored** prose rendering of a structured value, where a generic render would be worse (`encounter-building.json`'s `budget_band_text`). Never overwritten by the generator. |
-| `details_display` | For the heterogeneous rules files, everything without its own column, folded into one string — `monster-building.json`'s twelve entries use twenty-eight distinct keys between them. |
+| `details_display` | For heterogeneous rules files (`monster-building.json`), everything without its own column, folded into one string. |
 | `provenance_display` | `custom_fields` / `derived_from` / `omissions`, folded. |
 | `summary` (root) | First sentence of `description`, so the list table's Summary column is never blank. An authored `summary` is kept as-is. |
 
@@ -92,53 +85,41 @@ node tools/build-render-fields.mjs          # rewrite data/*.json + manifest.jso
 node tools/build-render-fields.mjs --check  # CI mode: fail if anything is stale
 ```
 
-It also **generates `manifest.json`'s `categories` array** from the single
-`CATEGORIES` declaration in `tools/_render-fields.mjs`, resolving each declared
-column against the real data. That is what makes failure (2) structurally
-impossible rather than merely discouraged. `tools/test-render-contract.mjs`
-re-checks all of it against the committed manifest, so a hand-edit to
-`manifest.json` is caught too.
+It also generates `manifest.json`'s `categories` from the single `CATEGORIES`
+declaration in `tools/_render-fields.mjs`, resolving each column against the
+real data, which makes failure (2) structurally impossible.
+`tools/test-render-contract.mjs` re-checks the committed manifest, so a
+hand-edit of `manifest.json` is caught.
 
 ## Provenance — root `source`, and `properties.custom_fields`
 
-Every entry in `data/` must declare where it came from, in the root `source`
-field — not `properties.source`, which the item-detail header never reads.
-This is a contract, not a convention: `data/NOTICE.md` is the package's licensing
-position, and it can only be true if published rules text and this package's own
-content can be told apart mechanically.
+Every entry in `data/` declares its origin in the root `source`, not
+`properties.source`, which the detail header never reads. `data/NOTICE.md` is
+the licensing position and is only true if published rules text and this
+package's own content can be told apart mechanically.
 
-**The contract is enforced, and its exceptions are enumerated.**
-`tools/test-render-contract.mjs` fails if any entry in any `data/*.json` lacks a
-root `source`, *unless* its file is in the `SOURCE_PENDING` list in
-`tools/_render-fields.mjs`. That list is pinned in both directions: a file on it
-that becomes fully sourced must be removed, and a file not on it can never be
-added — so it can only shrink, and no new dataset can join it.
+`tools/test-render-contract.mjs` fails if any entry lacks a root `source`
+unless its file is in `SOURCE_PENDING` (`tools/_render-fields.mjs`). The list
+is pinned both ways: a file that becomes fully sourced must be removed, and no
+new file can be added.
 
 Four files predate the rule and are still pending:
 
-| File | Entries | Why still pending |
-|------|---------|-------------------|
-| `rules-glossary.json` | 65 | Sourcing each term means citing a book and chapter per condition, read off the published text |
-| `skills.json` | 57 | As above |
-| `creature-keywords.json` | 23 | Whether each is a published keyword or authored has to be checked, not guessed |
-| `rulebook-frontpage.json` | 8 | Mostly authored UI prose, but some entries carry tier/modifier tables that may reproduce published numbers |
+| File | Why pending |
+|------|-------------|
+| `rules-glossary.json` | Each term needs a book and chapter read off the published text |
+| `skills.json` | Same |
+| `creature-keywords.json` | Whether each keyword is published or authored is unchecked |
+| `rulebook-frontpage.json` | Mostly authored UI prose, but some entries carry tier/modifier tables that may reproduce published numbers |
 
-A citation is only worth having if it is true, so these say nothing rather than
-guessing a chapter. Everything else in `data/` — all 632 entries added for the
-ancestry, kit, ability and build-your-own datasets, plus `creatures.json`,
-`creature-abilities.json`, `monsters.json`,
-`ability-keywords.json`, `organization-templates.json`, `role-templates.json`,
-`rulebook-examples.json`, `class-fights.json`, `credits.json`, and the
-`careers.json`, `classes.json`, `cultures.json` and `complications.json` pick
-lists — carries a real root
-`source`.
+A citation is only worth having if true, so these carry none rather than a
+guess. Every other file carries a real root `source`.
 
-**A citation also has to be true about the *licence*.** All 35 `creatures.json`
-entries carry `"source": "custom"`: Draw Steel is not CC-BY-4.0 (see `LICENSE`
-and `data/NOTICE.md`), and these creatures are not reproduced Draw Steel
-monsters — they are example stat blocks written for this package's
-monster-builder and bestiary widgets. The evidence and the trademark caveat
-are recorded in `data/NOTICE.md` → "creatures.json is example content".
+A citation must also be true about the licence. All `creatures.json` entries
+are `"source": "custom"`: Draw Steel is not CC-BY-4.0 (see `LICENSE` and
+`data/NOTICE.md`), and these are example stat blocks written for this package,
+not reproduced monsters. The evidence and the trademark caveat are in
+`data/NOTICE.md` → "creatures.json is example content".
 
 | Field | Type | Meaning |
 |-------|------|---------|
@@ -147,16 +128,15 @@ are recorded in `data/NOTICE.md` → "creatures.json is example content".
 | `properties.derived_from` | string | On a `"custom"` entry that was computed from other data in this package, the file it was computed from — so the derivation can be re-checked. |
 | `properties.omissions` | array | Published content deliberately not reproduced, and why. |
 
-**Operator-authored content — new ancestries, new creatures, new kits — sets
-the root `"source": "custom"`.** Anything shipped in this package that is a worked
-example, a derived table, or a helper entry does the same. Published entries
-carry their real citation instead. `tools/test-build-your-own-data.mjs` enforces
+Operator-authored content (new ancestries, creatures, kits) and any worked
+example, derived table or helper entry sets the root `"source": "custom"`;
+published entries carry their real citation. `tools/test-build-your-own-data.mjs` enforces
 this for the build-your-own files, and `tools/test-abilities-data.mjs` for
 `abilities.json`.
 
 ## creatures.json
 
-Each creature represents a full Draw Steel stat block.
+Each entry is a full stat block.
 
 ```json
 {
@@ -190,11 +170,10 @@ Each creature represents a full Draw Steel stat block.
 }
 ```
 
-All 35 shipped creatures are `"source": "custom"` — they are example stat blocks
-written for this package, not reproduced Draw Steel monsters. An operator adding
-a creature reproduced from a published book should replace that with a real
-citation naming the book and chapter (the shape used elsewhere in `data/` is
-`"Draw Steel Monsters Book, ch. 2 (mcdm.monsters.v1), via Steel Compendium"`).
+Shipped creatures are all `"source": "custom"`. A creature reproduced from a
+published book needs a real citation naming book and chapter, in the shape used
+elsewhere in `data/` (`"Draw Steel Monsters Book, ch. 2 (mcdm.monsters.v1), via
+Steel Compendium"`).
 
 ### Properties Schema
 
@@ -224,14 +203,12 @@ citation naming the book and chapter (the shape used elsewhere in `data/` is
 
 ### Stat Calculation
 
-`stamina`, `ev`, `winded`, `speed`, `stability` and the characteristics are not
-computed from a formula documented here. The published Draw Steel math is
-evaluated only by the `DrawSteelFormulas` section of `widgets/monster-engine.js`,
-against the published `data/monster-building.json` and
-`data/encounter-building.json` — see that section and CLAUDE.md → "The
-builder's math must carry its own provenance". `organization-templates.json`
-and `role-templates.json` hold this package's own legacy estimates
-(`source: "custom"`), not published formulas, and must not be treated as one.
+The published math is evaluated only by `DrawSteelFormulas` in
+`widgets/monster-engine.js`, against `data/monster-building.json` and
+`data/encounter-building.json` (CLAUDE.md, "The builder's math must carry its
+own provenance"). The custom columns of `organization-templates.json` and
+`role-templates.json` are this package's own legacy estimates, not published
+formulas.
 
 ## monsters.json
 
@@ -295,7 +272,7 @@ with the published damage for the creature they are added to
 | `tier3` | string | Result for roll 17+ |
 | `effect` | string | Non-roll effect text |
 | `trigger` | string | Trigger condition (for triggered abilities) |
-| `villain_action_order` | string | `opener`, `escalation`, or `closer` |
+| `villain_action_order` | string | `opener`, `crowd-control`, or `ultimate` |
 
 ## abilities.json
 
@@ -613,12 +590,8 @@ Use `{@category term}` in any text field to create a cross-reference:
 
 Only the widgets resolve markers. Chronicle's reference browser prints
 `propString(item.Properties, field.Key)` and `item.Summary` as literal text, so
-a marker that reaches a declared field renders as four characters of syntax in
-the middle of a rules sentence — measured on the real render path, 1,835 of them
-across the list pages and 1,870 across the detail pages, including 435 of 519
-abilities.
-
-So the generator resolves markers **in the generated twin only**:
+a marker in a declared field shows as raw syntax mid-sentence. The generator
+therefore resolves markers in the generated twin only:
 
 | Where | Markers |
 |-------|---------|
@@ -627,52 +600,24 @@ So the generator resolves markers **in the generated twin only**:
 
 A key that carries markup anywhere in its file therefore gets a `_display` twin
 even when its value is already a scalar, and the manifest points at the twin.
-The decision is per FILE: were it per entry, a column whose first carrier happens
-to be marker-free would be declared as the bare key and every marker-bearing
-entry in that column would print raw.
+The decision is per file, not per entry: otherwise a column whose first entry is
+marker-free would be declared as the bare key and every marker-bearing entry
+would print raw.
 
-`tools/test-render-contract.mjs` pins both halves — no markup in a declared
-field, and the structured value it came from still carrying it. Stripping
-markers from the data instead of from the twins deletes every tooltip in every
-widget without failing anything else.
+`tools/test-render-contract.mjs` pins both halves: no markup in a declared
+field, and the structured value still carrying it. Stripping markers from the
+data instead of the twins would delete every widget tooltip without failing
+anything else.
 
-**Residue:** the root `description` still carries its markers and the
-item-detail page prints it verbatim (83 occurrences). There is no
-`description_display` slot on Chronicle's `ReferenceItem` to point at, so the
-package cannot flatten it without deleting the interactive rendering. Resolving
-markers server-side in Chronicle's `propString`/templ is the real fix; these
-twins are the interim.
+**Residue:** root `description` keeps its markers and the detail page prints it
+verbatim; `ReferenceItem` has no `description_display` slot. The real fix is
+resolving markers server-side in Chronicle's `propString`/templ.
 
 ## Validation
 
-Verify all data files:
-
 ```bash
-# JSON validity
-python3 -c "import json, glob; [json.load(open(f)) for f in glob.glob('data/*.json')]"
-
-# All arrays with slug+name
-python3 -c "
-import json, glob
-for f in sorted(glob.glob('data/*.json')):
-    d = json.load(open(f))
-    if d and isinstance(d, list) and len(d) > 0:
-        assert 'slug' in d[0] and 'name' in d[0], f'{f} missing slug/name'
-print('All valid')
-"
-
-# Creature stats against the published formulas: tools/test-monster-formulas.mjs
-# (DrawSteelFormulas in widgets/monster-engine.js vs. monster-building.json /
-# encounter-building.json), not the legacy organization-templates.json numbers.
-node --test tools/test-monster-formulas.mjs
-
-# Build-your-own data: provenance flags, @references, and the derived tables
-node --test tools/test-build-your-own-data.mjs
-
-# Does it RENDER? Manifest field keys vs the data, scalar-only values, every
-# file reachable, provenance where the header reads it, derived fields fresh.
-node --test tools/test-render-contract.mjs
-
-# Everything
-node --test tools/test-*.mjs
+node --test tools/test-render-contract.mjs        # manifest keys vs data, scalar values, provenance, derived fields fresh
+node --test tools/test-monster-formulas.mjs       # creature stats vs the published formulas
+node --test tools/test-build-your-own-data.mjs    # provenance flags, @references, derived tables
+node --test tools/test-*.mjs                      # everything
 ```

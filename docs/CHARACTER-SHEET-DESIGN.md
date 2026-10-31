@@ -1,40 +1,35 @@
 # Draw Steel Character Sheet — Design
 
-> The reference for the hero character-sheet widget (`widgets/character-sheet.js`).
-> It records what the sheet does and why, so a redesign starts from the reasons
-> rather than relitigating them. The field paths it reads are in
-> `docs/FOUNDRY-SYNC-MAP.md`.
+> Reference for the hero character-sheet widget (`widgets/character-sheet.js`):
+> what it does and why. Field paths are in `docs/FOUNDRY-SYNC-MAP.md`.
 
 ## Purpose
 
-The sheet is a **read-only DM reference**: a director looks up a player's abilities,
-stats and defenses while building monsters or writing notes. That favors **data
-completeness** over interactivity. The data is a one-way mirror; Foundry is the source
-of truth and nothing on the sheet writes back.
+A read-only DM reference: a director looks up a player's abilities, stats and
+defenses while building monsters or writing notes, so data completeness beats
+interactivity. Foundry is the source of truth; nothing on the sheet writes
+back, except the origin picker in the paper layout.
 
 ## Testing
 
-The widget's pure logic — the "For \<hero>" odds (`tierOdds`), damage-formula
-resolution (`substituteFormula`/`tierFragments`), ability grouping (`groupOf`), the
-feature-origin classifier (`classifyFeature`), skill grouping, and the label
-humanizers — is unit-tested in `tools/test-character-sheet.mjs`
-(`node --test tools/test-character-sheet.mjs`), with the arithmetic evaluator in
-`tools/test-arith-evaluator.mjs` and escaping in `tools/test-character-sheet-xss.mjs`.
-The widget is a browser IIFE that exports these helpers via `module.exports`
-off-browser (the `Chronicle.register` side-effects are guarded on a null `Chronicle`),
-so Node can import and test them with zero change to runtime behavior. Visuals are
-checked by rendering the real widget headlessly against mock data.
+Pure logic (`tierOdds`, `substituteFormula`/`tierFragments`, `groupOf`,
+`classifyFeature`, skill grouping, label humanizers) is tested in
+`tools/test-character-sheet.mjs`, the arithmetic evaluator in
+`tools/test-arith-evaluator.mjs`, escaping in
+`tools/test-character-sheet-xss.mjs`. The widget is a browser IIFE that exports
+these helpers through `module.exports` off-browser (its `Chronicle.register`
+side effects are guarded on a null `Chronicle`). Visuals are checked by
+rendering the real widget headlessly against mock data.
 
 ## Reference renders
 
-Headless renders of the real widget against mock data, to be refreshed when the
-design changes.
+Headless renders against mock data; refresh when the design changes.
 
 | | |
 |---|---|
-| Full sheet (all sections) | `docs/images/character-sheet-full.png` |
-| Ability card — expanded ("For \<hero>" odds) | `docs/images/ability-card-expanded.png` |
-| Ability rail — long list (filter + collapsed Maneuvers) | `docs/images/ability-rail-long-list.png` |
+| Full sheet | `docs/images/character-sheet-full.png` |
+| Ability card, expanded ("For <hero>" odds) | `docs/images/ability-card-expanded.png` |
+| Ability rail, long list (filter + collapsed Maneuvers) | `docs/images/ability-rail-long-list.png` |
 
 ![Full character sheet](images/character-sheet-full.png)
 
@@ -42,48 +37,37 @@ design changes.
 
 ## Layout
 
-The sheet is a Chronicle surface of boxes. Sections that hold no data still render,
-with a muted placeholder, so the structure is visible on a sparse hero.
-
-1. **Header** — portrait, name, and one origin line (ancestry · culture · career ·
-   class (subclass) · kit), with status pills (claimed by you, visibility) and the
-   inert Roll / Level Up / Share buttons.
-2. **Main column** — Vitals (stamina, recoveries, heroic resource, surges, the five
-   characteristics, Roll Might) and Abilities.
-3. **Side column** — Combat, Kit, Damage, Progression.
-4. **Lists row** — Skills, Features, Inventory.
-5. **Background** — the player-private backstory, shown only to the GM and the
-   claiming owner.
-6. **GM Lore** — the director's notes, shown only to a GM.
-
-Background and GM Lore are gated by who is viewing, not by whether data exists, so a
-teammate never sees an empty "No backstory yet." placeholder for a hero that has one:
-the box is not scheduled at all.
+Top to bottom (`buildSchema`): Identity, Vitals and Characteristics (full
+width, pinned open), then a main column (Abilities, Features, Skills) beside a
+side column (Combat, Kit, Damage, Inventory, Progression). The frame stacks the
+columns on a phone, so DOM order is phone order. Chronicle places its own Items
+and money panel; the in-sheet Inventory appears only when the host does not
+show it. Background (player-private backstory) and GM Lore (director notes) are
+permission gates, not data gates: a viewer who may not read them gets no box
+rather than an empty placeholder.
 
 ---
 
 ## Paper layout
 
-When `Chronicle.sheetMotion` exists the widget renders the sheet on
-Chronicle's sheet contract instead of boxes: a `data-sheet` root, a
-`.paper-stack > .paper` holding the parts, and each part that has more to
-show is a `.paper-pull` with a `data-sheet-open` button. Its body is a
-`<template data-sheet-panel>` (turn, abilities, kit, damage, progression,
-items, features, skills, notes). Items, Notes and GM lore keep the box
-sheet's gates. Numbers that change carry `data-v` / `data-pv` and the widget
-calls `Chronicle.sheetMotion.land` after the origin picker changes one.
-Panel content is wired from `sheet:panel-ready`, because the engine clones
-the template on every open. The only write path is still the origin picker.
-The layout rules live in the widget's injected `<style>`, scoped to
+When `Chronicle.sheetMotion` exists the widget renders on Chronicle's sheet
+contract instead of boxes: a `data-sheet` root, a `.paper-stack > .paper`
+holding the parts, and each part with more to show is a `.paper-pull` with a
+`data-sheet-open` button whose body is a `<template data-sheet-panel>` (turn,
+abilities, kit, damage, progression, items, features, skills, notes). Items,
+Notes and GM lore keep the box sheet's gates. Changing numbers carry `data-v` /
+`data-pv`, and the widget calls `Chronicle.sheetMotion.land` after the origin
+picker changes one. Panel content is wired from `sheet:panel-ready`, because the
+engine clones the template on every open. The origin picker (Ancestry, Culture,
+Career, Kit) is the only write path and opens across the full width under the
+identity row. Layout rules live in the widget's injected `<style>`, scoped to
 `[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
-`sheetMotion` the box render above is used unchanged.
+`sheetMotion` the box render is used unchanged.
 
-In the paper layout the Abilities panel has Signature / Heroic / Maneuver
-tabs and lists every ability in the open tab as its own fold, cheapest first;
-the first one in the open tab starts open, and a filter box appears at 10 or
-more abilities. The master-detail pane described below is the box layout only.
-The origin picker (Ancestry, Culture, Career, Kit) opens across the full width
-under the identity row.
+The paper Abilities panel has Signature / Heroic / Maneuver tabs and lists each
+ability in the open tab as its own fold, cheapest first; the first starts open,
+and a filter box appears at 10 or more abilities. The master-detail pane below
+is the box layout only.
 
 ## Abilities section
 
@@ -138,8 +122,7 @@ bands, no action glyphs and no gradient chrome in the resting views.
    narrower the list stacks above the pane and the cards fill the width.
 8. **Long lists.** A hero carries their whole kit plus every universal maneuver
    (about 21 rows), so the rail must not sprawl:
-   - **Capped scroll** — the rail is a fixed-max-height (460px) scroll area, so the
-     list scrolls inside itself and never shoves the pane down.
+   - **Capped scroll** — the rail scrolls inside itself and never shoves the pane down.
    - **Collapsible groups** — each group header is a toggle with a caret and a count
      badge. On a long list (10 or more abilities) the dimmed Maneuvers group starts
      collapsed; Signature and Heroic stay open.
@@ -191,28 +174,20 @@ Every field gets a renderer shaped to its content: vary the UI by what the data 
 - **Background** — a teaser line and a "Read full story" button that opens a typeset
   reading view, so large lore doesn't accordion-shove the sheet.
 
-## Inert actions
-
-Roll, Level Up, Share and Roll Might stay visible as placeholders ("construction
-tape"). Clicking one shows a transient "coming later" toast. There is no roll endpoint
-in the read-only contract, so nothing on the sheet rolls dice.
-
 ## Glossary and skills source
 
-The glossary and skills are built from steelcompendium.io (GitHub org
-`SteelCompendium/data-md`): the Draw Steel 1.0 ruleset as machine-extractable
-Markdown and YAML, with no scraping. It is licensed under MCDM's **Draw Steel Creator
-License** — quoting rules text in our open-source `data/*.json` is permitted
-**provided** we include the licence's notice and don't imply MCDM endorsement. The
+The glossary and skills come from steelcompendium.io (GitHub org
+`SteelCompendium/data-md`), the Draw Steel 1.0 ruleset as machine-extractable
+Markdown and YAML, under MCDM's Draw Steel Creator License (`LICENSE`,
+`data/NOTICE.md`). Rules text may be quoted in `data/*.json` provided the
+licence's notice is included and MCDM endorsement is not implied. The
 maintainer has read the licence and confirmed this (`LICENSE`, closing section).
 
-`data/skills.json` (57 skills) and the ability-keyword entries in
-`data/rules-glossary.json` come from the Steel Compendium under the DSCL
-(`data/NOTICE.md`). Ability keywords are not discrete files at the source, so the
-keyword entries were curated by hand. Skill chips and keyword badges show definition
-tips; `reference-renderer.scanText()` and `refSynced()` wrap bare condition names in
-synced prose, so the glossary fires on real heroes. Only conditions are auto-scanned,
-not movement terms.
+`data/skills.json` and the `keyword` entries of `data/rules-glossary.json` come
+from there; keywords are not discrete files at the source, so they were curated
+by hand. Skill chips and keyword badges show definition tips;
+`reference-renderer.scanText()` and `refSynced()` wrap bare condition names in
+synced prose. Only conditions are auto-scanned, not movement terms.
 
 ## Do not want
 

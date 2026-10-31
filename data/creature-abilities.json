@@ -226,8 +226,8 @@
   {
     "slug": "rallying-cry",
     "name": "Rallying Cry",
-    "summary": "A villain action opener that buffs allies. Good for Leader creatures.",
-    "description": "A villain action opener that buffs allies. Good for Leader creatures.",
+    "summary": "An opener villain action that buffs allies. Good for Leader creatures.",
+    "description": "An opener villain action that buffs allies. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
       "organizations": [
@@ -740,8 +740,8 @@
   {
     "slug": "terrifying-roar",
     "name": "Terrifying Roar",
-    "summary": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures.",
-    "description": "A villain action closer that terrifies enemies. Good for Solo or Leader creatures.",
+    "summary": "An ultimate villain action that terrifies enemies. Good for Solo or Leader creatures.",
+    "description": "An ultimate villain action that terrifies enemies. Good for Solo or Leader creatures.",
     "properties": {
       "type": "villain-action",
       "organizations": [
@@ -757,7 +757,7 @@
       "keywords_display": "Area, Fear",
       "distance": "5 burst",
       "target": "All enemies in area",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "power_roll": "Presence vs. Intuition",
       "tier1": "{@condition frightened} ({@duration eot})",
       "tier1_display": "frightened (eot)",
@@ -771,8 +771,8 @@
   {
     "slug": "summon-minions",
     "name": "Summon Minions",
-    "summary": "A villain action escalation that brings reinforcements. Good for Leader creatures.",
-    "description": "A villain action escalation that brings reinforcements. Good for Leader creatures.",
+    "summary": "A crowd-control villain action that brings reinforcements. Good for Leader creatures.",
+    "description": "A crowd-control villain action that brings reinforcements. Good for Leader creatures.",
     "properties": {
       "type": "villain-action",
       "organizations": [
@@ -788,7 +788,7 @@
       "keywords_display": "Area, Summoning",
       "distance": "Ranged 10",
       "target": "Special",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "effect": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative.",
       "effect_display": "The creature summons a squad of 4 minions of an appropriate type in unoccupied spaces within range. The minions act on the creature's initiative."
     },
@@ -797,8 +797,8 @@
   {
     "slug": "focused-assault",
     "name": "Focused Assault",
-    "summary": "A villain action escalation featuring a flurry of devastating melee attacks.",
-    "description": "A villain action escalation featuring a flurry of devastating melee attacks.",
+    "summary": "A crowd-control villain action featuring a flurry of devastating melee attacks.",
+    "description": "A crowd-control villain action featuring a flurry of devastating melee attacks.",
     "properties": {
       "type": "villain-action",
       "organizations": [
@@ -815,7 +815,7 @@
       "keywords_display": "Strike, Melee, Weapon",
       "distance": "Melee 1",
       "target": "Up to 3 creatures",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "power_roll": "Might vs. Agility",
       "tier1": "4 damage per target",
       "tier1_display": "4 damage per target",
@@ -1798,7 +1798,7 @@
       "tier3_display": "The target moves to the nearest unoccupied space outside the area.",
       "effect": "The area drops 2 squares and is difficult terrain. Each target enemy falls, while each target ally drops safely. Additionally, each target enemy makes an Agility test. Special: A target must be on the ground.",
       "effect_display": "The area drops 2 squares and is difficult terrain. Each target enemy falls, while each target ally drops safely. Additionally, each target enemy makes an Agility test. Special: A target must be on the ground.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -1829,7 +1829,7 @@
       "tier3_display": "4 damage; vertical slide 6; if this movement brings the target into contact with the ceiling, they are restrained (save ends).",
       "effect": "The cryptic makes an initial power roll that calls down stone pillars from the ceiling. The cryptic then makes a second power roll that raises stone pillars from the floor (📏 Ranged 10 | 🎯 Two creatures or objects on the ground)",
       "effect_display": "The cryptic makes an initial power roll that calls down stone pillars from the ceiling. The cryptic then makes a second power roll that raises stone pillars from the floor (📏 Ranged 10 | 🎯 Two creatures or objects on the ground)",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -2067,7 +2067,7 @@
       "target": "Each enemy",
       "effect": "The shambling mound uses Engulf against each target without spending Malice.",
       "effect_display": "The shambling mound uses Engulf against each target without spending Malice.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -2091,7 +2091,7 @@
       "target": "Self",
       "effect": "The shambling mound rips themself apart, exposing the crux of magic holding them together. The distance of the shambling mound's melee abilities increases to melee 10, the creature has a double edge on power rolls, and strikes made against them gain an edge.",
       "effect_display": "The shambling mound rips themself apart, exposing the crux of magic holding them together. The distance of the shambling mound's melee abilities increases to melee 10, the creature has a double edge on power rolls, and strikes made against them gain an edge.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -5331,7 +5331,7 @@
       "tier3_display": "Pull 1 toward the center of the cube",
       "effect": "Each target makes a Presence test. The area turns dark and distorted, and is difficult terrain for enemies.",
       "effect_display": "Each target makes a Presence test. The area turns dark and distorted, and is difficult terrain for enemies.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -5356,7 +5356,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target's free strike now has the Magic keyword and can target two creatures or objects. Additionally, each target glows with magic.",
       "effect_display": "Each target's free strike now has the Magic keyword and can target two creatures or objects. Additionally, each target glows with magic.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -5984,7 +5984,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target can jump up to 4 squares. Each non-minion target can make a free strike at the end of the jump.",
       "effect_display": "Each target can jump up to 4 squares. Each non-minion target can make a free strike at the end of the jump.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -6005,7 +6005,7 @@
       "target": "Special",
       "effect": "The encounter map dries up and each enemy and object on it is illuminated until the end of the encounter. An illuminated creature or object can't hide or become invisible, and any strike made against an illuminated target gains an edge. Additionally, each enemy in the encounter who is wet has that effect end and takes 6 acid damage. Each angulotl in the encounter has a double edge on their next strike.",
       "effect_display": "The encounter map dries up and each enemy and object on it is illuminated until the end of the encounter. An illuminated creature or object can't hide or become invisible, and any strike made against an illuminated target gains an edge. Additionally, each enemy in the encounter who is wet has that effect end and takes 6 acid damage. Each angulotl in the encounter has a double edge on their next strike.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -6587,7 +6587,7 @@
       "target": "Self",
       "effect": "The chimera uses Dragon's Eruption and Roar without spending Malice.",
       "effect_display": "The chimera uses Dragon's Eruption and Roar without spending Malice.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -6608,7 +6608,7 @@
       "target": "Self",
       "effect": "The chimera uses Roar, then shifts up to their speed and can make a free strike against each enemy who comes adjacent to them during the shift. When the chimera ends this shift, they use Dragon's Eruption. The use of these abilities as part of this villain action costs no Malice.",
       "effect_display": "The chimera uses Roar, then shifts up to their speed and can make a free strike against each enemy who comes adjacent to them during the shift. When the chimera ends this shift, they use Dragon's Eruption. The use of these abilities as part of this villain action costs no Malice.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -6814,7 +6814,7 @@
       "target": "Self",
       "effect": "Shields embedded under the dragon's scales emerge, and the dragon gains damage immunity 6 at the start of each round until the end of the encounter. If the dragon takes any damage, they lose this immunity until the end of the current round.",
       "effect_display": "Shields embedded under the dragon's scales emerge, and the dragon gains damage immunity 6 at the start of each round until the end of the encounter. If the dragon takes any damage, they lose this immunity until the end of the current round.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -6841,7 +6841,7 @@
       "tier3_display": "7 damage; pull 5 or push 5.",
       "effect": "Each target makes a Might test.",
       "effect_display": "Each target makes a Might test.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -7029,7 +7029,7 @@
       "tier3_display": "14 psychic damage",
       "effect": "Each target must be dragonsealed. Any target who has I < 3 is also {@condition dazed} ({@duration save-ends|save ends}).",
       "effect_display": "Each target must be dragonsealed. Any target who has I < 3 is also dazed (save ends).",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -7050,7 +7050,7 @@
       "target": "Special",
       "effect": "The dragon disappears from the encounter map. The dragon and three hallucinatory illusions of themself then immediately reappear in unoccupied spaces on the encounter map, and the dragon and each illusion uses Breath of Brume. Each illusion is indistinguishable from the dragon except by supernatural means, has 1 Stamina, and has the dragon's speed. An illusion acts on the dragon's turns but can take only move actions. Once per round before or after using an ability, the dragon can trade places with any duplicate.",
       "effect_display": "The dragon disappears from the encounter map. The dragon and three hallucinatory illusions of themself then immediately reappear in unoccupied spaces on the encounter map, and the dragon and each illusion uses Breath of Brume. Each illusion is indistinguishable from the dragon except by supernatural means, has 1 Stamina, and has the dragon's speed. An illusion acts on the dragon's turns but can take only move actions. Once per round before or after using an ability, the dragon can trade places with any duplicate.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -7271,7 +7271,7 @@
       "target": "Self",
       "effect": "Until the end of the encounter, each enemy who is dragonsealed and weakened and who the dragon has line of effect to loses 1 of their Heroic Resource at the start of each of their turns (to a minimum of 0). The dragon then uses their Cosmic Tail Ray ability with a double edge, targeting four creatures or objects.",
       "effect_display": "Until the end of the encounter, each enemy who is dragonsealed and weakened and who the dragon has line of effect to loses 1 of their Heroic Resource at the start of each of their turns (to a minimum of 0). The dragon then uses their Cosmic Tail Ray ability with a double edge, targeting four creatures or objects.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -7302,7 +7302,7 @@
       "tier3_display": "15 damage; I < 4 the target is annihilated",
       "effect": "Each target makes an Agility test. An annihilated target must make the test again, decreasing the potency for themself by 2 each time they are annihilated. A creature reduced to 0 Stamina by this dies and their soul is destroyed.",
       "effect_display": "Each target makes an Agility test. An annihilated target must make the test again, decreasing the potency for themself by 2 each time they are annihilated. A creature reduced to 0 Stamina by this dies and their soul is destroyed.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -7550,7 +7550,7 @@
       "tier3_display": "P < 5 the target makes a free strike against the nearest ally",
       "effect": "The dragon spits fragments of souls to attempt to possess the targets, making a separate power roll for each target.",
       "effect_display": "The dragon spits fragments of souls to attempt to possess the targets, making a separate power roll for each target.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -7575,7 +7575,7 @@
       "target": "Each creature in the area",
       "effect": "Each target must be dragonsealed. The dragon's eyes glow with unequalled malevolence, and any target who has a Deathcount has that Deathcount reduced to 1.",
       "effect_display": "Each target must be dragonsealed. The dragon's eyes glow with unequalled malevolence, and any target who has a Deathcount has that Deathcount reduced to 1.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -7795,7 +7795,7 @@
       "target": "Self",
       "effect": "The thorns upon the dragon's scales grow longer and sharper. Until the end of the encounter, any adjacent creature who targets the dragon with a melee strike takes 3 damage. The dragon then uses their Provoking Nettles ability.",
       "effect_display": "The thorns upon the dragon's scales grow longer and sharper. Until the end of the encounter, any adjacent creature who targets the dragon with a melee strike takes 3 damage. The dragon then uses their Provoking Nettles ability.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -7816,7 +7816,7 @@
       "target": "Special",
       "effect": "Poisonous overgrowth and seeking vines cover all surfaces on the encounter map. The dragon uses their Bramble Barricade Malice feature twice at no cost. Until the end of the encounter, any creature force moved by the dragon takes 1d3 poison damage, and if they have M < 2, they are {@condition weakened} ({@duration save-ends|save ends}). Special: If the Thorn Dragon's Domain trait is in effect, any creature other than the dragon who starts their turn on the encounter map takes 1d3 poison damage.",
       "effect_display": "Poisonous overgrowth and seeking vines cover all surfaces on the encounter map. The dragon uses their Bramble Barricade Malice feature twice at no cost. Until the end of the encounter, any creature force moved by the dragon takes 1d3 poison damage, and if they have M < 2, they are weakened (save ends). Special: If the Thorn Dragon's Domain trait is in effect, any creature other than the dragon who starts their turn on the encounter map takes 1d3 poison damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -8073,7 +8073,7 @@
       "target": "Self",
       "effect": "The werewolf transforms into a massive wolf of size 3 until they die or until the end of the encounter. They move to a space that can accommodate their new size and push adjacent creatures out of their way. While in wolf form, they have speed 10 and stability 2, their strikes gain a +2 damage bonus and bestow an additional 1 rage, and the potency of Accursed Bite increases by 1.",
       "effect_display": "The werewolf transforms into a massive wolf of size 3 until they die or until the end of the encounter. They move to a space that can accommodate their new size and push adjacent creatures out of their way. While in wolf form, they have speed 10 and stability 2, their strikes gain a +2 damage bonus and bestow an additional 1 rage, and the potency of Accursed Bite increases by 1.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -8105,7 +8105,7 @@
       "tier3_display": "11 damage; the target gains 8 rage; M < 3 bleeding (save ends)",
       "effect": "The werewolf shifts up to their speed before and after using this ability.",
       "effect_display": "The werewolf shifts up to their speed before and after using this ability.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -9103,7 +9103,7 @@
       "target": "Each ally in the area",
       "effect": "The warleader can use Wodeblade. Each target can then make a free strike.",
       "effect_display": "The warleader can use Wodeblade. Each target can then make a free strike.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -9127,7 +9127,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target is invisible until the start of the next round. The warleader then uses Wodeblade.",
       "effect_display": "Each target is invisible until the start of the next round. The warleader then uses Wodeblade.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -10071,7 +10071,7 @@
       "target": "One creature",
       "effect": "Until the end of their next turn, the target halves any damage they take, gains a +4 damage bonus to strikes, and has their speed doubled.",
       "effect_display": "Until the end of their next turn, the target halves any damage they take, gains a +4 damage bonus to strikes, and has their speed doubled.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -10095,7 +10095,7 @@
       "target": "Each dead ally in the area",
       "effect": "Each target stands, makes a free strike, then falls dead again. Any ally of the targets can use Ready Rodent as a free triggered action once in conjunction with these free strikes.",
       "effect_display": "Each target stands, makes a free strike, then falls dead again. Any ally of the targets can use Ready Rodent as a free triggered action once in conjunction with these free strikes.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -11501,7 +11501,7 @@
       "target": "One enemy or object",
       "effect": "Each ally within 10 squares of the target can move up to their speed toward the target.",
       "effect_display": "Each ally within 10 squares of the target can move up to their speed toward the target.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -11522,7 +11522,7 @@
       "target": "Special",
       "effect": "Each enemy in the encounter takes 2 damage for each goblin adjacent to them.",
       "effect_display": "Each enemy in the encounter takes 2 damage for each goblin adjacent to them.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -12611,7 +12611,7 @@
       "target": "Each ally in the area",
       "effect": "Each target shifts up to their speed. Additionally, until the end of the encounter, while the bandit chief or any ally is adjacent to a target, they have damage immunity 2.",
       "effect_display": "Each target shifts up to their speed. Additionally, until the end of the encounter, while the bandit chief or any ally is adjacent to a target, they have damage immunity 2.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -12632,7 +12632,7 @@
       "target": "Self",
       "effect": "The bandit chief shifts up to 10 squares regardless of their speed. During or after this movement, they can use their Whip and Magic Longsword against up to four targets. Additionally, one ally adjacent to each target can make a free strike against that target.",
       "effect_display": "The bandit chief shifts up to 10 squares regardless of their speed. During or after this movement, they can use their Whip and Magic Longsword against up to four targets. Additionally, one ally adjacent to each target can make a free strike against that target.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -12790,7 +12790,7 @@
       "target": "Each enemy in the area",
       "effect": "The blackguard slides each target up to 5 squares.",
       "effect_display": "The blackguard slides each target up to 5 squares.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -12817,7 +12817,7 @@
       "target": "Each enemy in the area",
       "effect": "The blackguard uses their Zweihander Swing against each target. Each ally within 5 squares of the area can then make a free strike against a target (one target per ally).",
       "effect_display": "The blackguard uses their Zweihander Swing against each target. Each ally within 5 squares of the area can then make a free strike against a target (one target per ally).",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -13835,7 +13835,7 @@
       "target": "Special",
       "effect": "The kingfissure worm can use this villain action only while burrowing. The worm burrows up to half their speed, then breaches the surface and moves 5 squares straight up before dropping back to the ground. Each creature or object whose space the worm moves through during this movement takes 10 damage, and if they have A < 4 they are knocked prone. Any creature who is made winded by this damage is swallowed (see Swallowed).",
       "effect_display": "The kingfissure worm can use this villain action only while burrowing. The worm burrows up to half their speed, then breaches the surface and moves 5 squares straight up before dropping back to the ground. Each creature or object whose space the worm moves through during this movement takes 10 damage, and if they have A < 4 they are knocked prone. Any creature who is made winded by this damage is swallowed (see Swallowed).",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -13867,7 +13867,7 @@
       "tier3_display": "17 acid damage; P < 5 weakened (save ends)",
       "effect": "Each creature swallowed by the worm is regurgitated and automatically subject to the tier 3 outcome, then lands prone in an unoccupied space within 5 squares of the kingfissure worm.",
       "effect_display": "Each creature swallowed by the worm is regurgitated and automatically subject to the tier 3 outcome, then lands prone in an unoccupied space within 5 squares of the kingfissure worm.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -14411,7 +14411,7 @@
       "target": "Self",
       "effect": "The medusa temporarily manifests wings and flies up to their speed without provoking opportunity attacks. During or after this movement, they can use Snake Bites and Damning Gaze once each.",
       "effect_display": "The medusa temporarily manifests wings and flies up to their speed without provoking opportunity attacks. During or after this movement, they can use Snake Bites and Damning Gaze once each.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -14443,7 +14443,7 @@
       "tier3_display": "17 acid damage; P < 5 weakened (save ends)",
       "effect": "As a free triggered action, each stone statue and creature restrained or slowed by Petrify within distance moves up to their speed and uses a signature ability that gains an edge, targeting an enemy of the medusa's choice. A stone statue without its own statistics has speed 5 and uses the medusa's free strike.",
       "effect_display": "As a free triggered action, each stone statue and creature restrained or slowed by Petrify within distance moves up to their speed and uses a signature ability that gains an edge, targeting an enemy of the medusa's choice. A stone statue without its own statistics has speed 5 and uses the medusa's free strike.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -14882,7 +14882,7 @@
       "target": "Each ally in the area",
       "effect": "Each target shifts up to their speed. The marauder lord then uses Levitating Axes.",
       "effect_display": "Each target shifts up to their speed. The marauder lord then uses Levitating Axes.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -14907,7 +14907,7 @@
       "target": "Special",
       "effect": "The marauder lord creates three size 2 metal objects in unoccupied spaces within distance. Whenever the marauder lord uses Magnetomancy, they can additionally target one of these objects.",
       "effect_display": "The marauder lord creates three size 2 metal objects in unoccupied spaces within distance. Whenever the marauder lord uses Magnetomancy, they can additionally target one of these objects.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -15615,7 +15615,7 @@
       "target": "Each enemy in the area",
       "effect": "Before using this villain action, the hag shifts up to their speed. They then use Corrosive Claws against each target, push each target up to 2 squares, and shift up to their speed again.",
       "effect_display": "Before using this villain action, the hag shifts up to their speed. They then use Corrosive Claws against each target, push each target up to 2 squares, and shift up to their speed again.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -15647,7 +15647,7 @@
       "tier3_display": "13 fire damage; A < 3 weakened (save ends)",
       "effect": "The hag turns the area into a roiling oven until the end of the encounter. Any creature in area takes an extra 5 damage from the hag's damage-dealing abilities.",
       "effect_display": "The hag turns the area into a roiling oven until the end of the encounter. Any creature in area takes an extra 5 damage from the hag's damage-dealing abilities.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -17341,7 +17341,7 @@
       "target": "One enemy",
       "effect": "Each ally within 5 squares of the target moves up to their speed and can make a free strike against the target. If the target has I < 2, they are frightened of the ground commander (save ends).",
       "effect_display": "Each ally within 5 squares of the target moves up to their speed and can make a free strike against the target. If the target has I < 2, they are frightened of the ground commander (save ends).",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -17366,7 +17366,7 @@
       "target": "Each creature in the area",
       "effect": "Each target ally shifts up to 2 squares and can use the Grab maneuver. Until the end of the encounter, each target enemy takes a bane on the Escape Grab maneuver.",
       "effect_display": "Each target ally shifts up to 2 squares and can use the Grab maneuver. Until the end of the encounter, each target enemy takes a bane on the Escape Grab maneuver.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -18557,7 +18557,7 @@
       "target": "Each war dog in the area",
       "effect": "Each target shifts up to their speed, then can make a free strike or use a maneuver.",
       "effect_display": "Each target shifts up to their speed, then can make a free strike or use a maneuver.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -18588,7 +18588,7 @@
       "tier3_display": "9 lightning damage",
       "effect": "Each target makes an Agility test. See Thunderstruck. Additionally, until the end of the encounter, any enemy who moves within 3 squares of the taxiarch for the first time in a round or starts their turn there takes 3 lightning damage.",
       "effect_display": "Each target makes an Agility test. See Thunderstruck. Additionally, until the end of the encounter, any enemy who moves within 3 squares of the taxiarch for the first time in a round or starts their turn there takes 3 lightning damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -18905,7 +18905,7 @@
       "tier3_display": "16 fire damage; A < 4 slowed (save ends)",
       "effect": "The area is set ablaze until the end of the encounter. While ablaze, the area is difficult terrain, and any creature takes 2 fire damage for each square in the area they enter for the first time in a round.",
       "effect_display": "The area is set ablaze until the end of the encounter. While ablaze, the area is difficult terrain, and any creature takes 2 fire damage for each square in the area they enter for the first time in a round.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -18926,7 +18926,7 @@
       "target": "Self",
       "effect": "Until the end of the encounter, the tetrarch has damage immunity 2, and their Houndblade ability targets three creatures or objects.",
       "effect_display": "Until the end of the encounter, the tetrarch has damage immunity 2, and their Houndblade ability targets three creatures or objects.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -19842,7 +19842,7 @@
       "target": "Self and three allies",
       "effect": "Each target moves up to their speed and can make a free strike. Any creature damaged by one of these free strikes who has M < 2 is knocked prone.",
       "effect_display": "Each target moves up to their speed and can make a free strike. Any creature damaged by one of these free strikes who has M < 2 is knocked prone.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -19873,7 +19873,7 @@
       "tier3_display": "No effect",
       "effect": "The carnage's eyes and all exposed blood within distance glow bright red. Each target makes a Presence test. Until the end of the encounter, all gnolls have a double edge on power rolls that target a winded enemy.",
       "effect_display": "The carnage's eyes and all exposed blood within distance glow bright red. Each target makes a Presence test. Until the end of the encounter, all gnolls have a double edge on power rolls that target a winded enemy.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -20935,7 +20935,7 @@
       "tier3_display": "P < 3 the target is levitated until the end of the encounter",
       "effect": "A levitated target floats 1 square off the ground when first affected, then rises 1 square at the end of each of their turns. If a levitated target can't already fly, they can fly but are slowed and weakened while flying this way.",
       "effect_display": "A levitated target floats 1 square off the ground when first affected, then rises 1 square at the end of each of their turns. If a levitated target can't already fly, they can fly but are slowed and weakened while flying this way.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -20967,7 +20967,7 @@
       "tier3_display": "8 sonic damage",
       "effect": "A target who has P < 2 is reduced to 1 Stamina if they are winded after taking this damage.",
       "effect_display": "A target who has P < 2 is reduced to 1 Stamina if they are winded after taking this damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -21786,7 +21786,7 @@
       "tier3_display": "No effect",
       "effect": "The mummy lord gains a +2 bonus to speed and can automatically burrow at full speed while moving. They can then use the Dig maneuver. The next time the mummy lord breaches the surface, each enemy within 2 squares of the mummy lord makes an Agility test.",
       "effect_display": "The mummy lord gains a +2 bonus to speed and can automatically burrow at full speed while moving. They can then use the Dig maneuver. The next time the mummy lord breaches the surface, each enemy within 2 squares of the mummy lord makes an Agility test.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -21816,7 +21816,7 @@
       "tier2_display": "8 corruption damage; I < 3 frightened (save ends)",
       "tier3": "10 corruption damage; I < 4 frightened and {@condition restrained} ({@duration save-ends|save ends})",
       "tier3_display": "10 corruption damage; I < 4 frightened and restrained (save ends)",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -22639,7 +22639,7 @@
       "tier3_display": "10 damage; M < 5 6 corruption damage",
       "effect": "The vampire turns to mist, filling the area. Until the end of the round, the vampire can't move or be targeted by abilities, but they can use Crimson Embrace against a target in the area. The vampire reforms in an unoccupied space in the area at the end of the round.",
       "effect_display": "The vampire turns to mist, filling the area. Until the end of the round, the vampire can't move or be targeted by abilities, but they can use Crimson Embrace against a target in the area. The vampire reforms in an unoccupied space in the area at the end of the round.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -22670,7 +22670,7 @@
       "tier3_display": "2 corruption damage",
       "effect": "Each target is marked for sacrifice. At the end of the round, each target who isn't dead or destroyed takes 50 corruption damage. The vampire then uses the following ability. Each target makes a Might test. This ability deals an extra 5 damage for each creature killed by the Sacrifice villain action. Wave of Blood:",
       "effect_display": "Each target is marked for sacrifice. At the end of the round, each target who isn't dead or destroyed takes 50 corruption damage. The vampire then uses the following ability. Each target makes a Might test. This ability deals an extra 5 damage for each creature killed by the Sacrifice villain action. Wave of Blood:",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -23550,7 +23550,7 @@
       "target": "Special",
       "effect": "The chief shifts up to 10 squares. Five fire giant fireballer then arrive in unoccupied spaces within distance.",
       "effect_display": "The chief shifts up to 10 squares. Five fire giant fireballer then arrive in unoccupied spaces within distance.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -23580,7 +23580,7 @@
       "tier3_display": "9 fire damage",
       "effect": "Each target unleashes a wave of fire, and each enemy within 2 squares of any target makes an Agility test. An enemy affected by two targets takes a bane on the test, while an enemy affected by three or more targets has a double bane.",
       "effect_display": "Each target unleashes a wave of fire, and each enemy within 2 squares of any target makes an Agility test. An enemy affected by two targets takes a bane on the test, while an enemy affected by three or more targets has a double bane.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -25743,7 +25743,7 @@
       "target": "Special",
       "effect": "The evolutionist teleports eight minions of level 4 or lower into unoccupied spaces within distance. All eight minions can be of any monster type but must share the same name.",
       "effect_display": "The evolutionist teleports eight minions of level 4 or lower into unoccupied spaces within distance. All eight minions can be of any monster type but must share the same name.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -25775,7 +25775,7 @@
       "tier3_display": "15 lightning damage",
       "effect": "Until the end of the encounter, the evolutionist is surrounded by a psionic electrical storm that is a 5 aura. The area is difficult terrain for enemies, and any enemy who enters the area for the first time in a round or starts their turn there takes 8 lightning damage.",
       "effect_display": "Until the end of the encounter, the evolutionist is surrounded by a psionic electrical storm that is a 5 aura. The area is difficult terrain for enemies, and any enemy who enters the area for the first time in a round or starts their turn there takes 8 lightning damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -27035,7 +27035,7 @@
       "target": "Self",
       "effect": "The manticore shifts up to their speed, then can use Tail Spike against each enemy within distance of that ability.",
       "effect_display": "The manticore shifts up to their speed, then can use Tail Spike against each enemy within distance of that ability.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -27056,7 +27056,7 @@
       "target": "Self",
       "effect": "The manticore sours their poison with enmity. Until the end of the encounter, the manticore has a double edge on power rolls against weakened creatures. Additionally, any creature weakened by the manticore's Tail Spike ability has their speed halved and takes an extra 3 poison damage at the start of each of their turns.",
       "effect_display": "The manticore sours their poison with enmity. Until the end of the encounter, the manticore has a double edge on power rolls against weakened creatures. Additionally, any creature weakened by the manticore's Tail Spike ability has their speed halved and takes an extra 3 poison damage at the start of each of their turns.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -29615,7 +29615,7 @@
       "target": "Special",
       "effect": "Aurumvas chooses up to three treasures within distance that he has line of effect to and that aren't artifacts. Until the end of the encounter, ethereal golden snakes swirl around the target treasures. While an affected treasure is worn or held by a hero, each time that hero gains any amount of their Heroic Resource, the Director gains 1 Malice.",
       "effect_display": "Aurumvas chooses up to three treasures within distance that he has line of effect to and that aren't artifacts. Until the end of the encounter, ethereal golden snakes swirl around the target treasures. While an affected treasure is worn or held by a hero, each time that hero gains any amount of their Heroic Resource, the Director gains 1 Malice.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -29648,7 +29648,7 @@
       "tier3_display": "19 fire damage; push 3",
       "effect": "Aurumvas summons treasures from his vaults into the area, then causes them to explode.",
       "effect_display": "Aurumvas summons treasures from his vaults into the area, then causes them to explode.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -30239,7 +30239,7 @@
       "target": "One ally",
       "effect": "The chorogaunt kills the target, and each other ally in the encounter deals an extra 3 damage with strikes until the end of the round. The Director gains Malice equal to the number of heroes in the encounter.",
       "effect_display": "The chorogaunt kills the target, and each other ally in the encounter deals an extra 3 damage with strikes until the end of the round. The Director gains Malice equal to the number of heroes in the encounter.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -30263,7 +30263,7 @@
       "target": "Self",
       "effect": "The chorogaunt shifts up to their speed, uses Agonizing Harmony, shifts up to their speed, and then uses Agonizing Harmony again.",
       "effect_display": "The chorogaunt shifts up to their speed, uses Agonizing Harmony, shifts up to their speed, and then uses Agonizing Harmony again.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -31014,7 +31014,7 @@
       "target": "Self",
       "effect": "The egress folds into their own portal and teleports to an unoccupied space within distance. Four level 4 demon minions (most commonly orliq, grulqins, and wobalas) appear in squares in the egress's former space.",
       "effect_display": "The egress folds into their own portal and teleports to an unoccupied space within distance. Four level 4 demon minions (most commonly orliq, grulqins, and wobalas) appear in squares in the egress's former space.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -31046,7 +31046,7 @@
       "tier3_display": "14 corruption damage; R < 4 weakened (save ends)",
       "effect": "The egress recalls and instantly destroys any minion allies on the encounter map. A torrent of churned-up minion bodies, blood, and ichor erupts from the egress, dealing an extra 1 damage for each minion destroyed this way.",
       "effect_display": "The egress recalls and instantly destroys any minion allies on the encounter map. A torrent of churned-up minion bodies, blood, and ichor erupts from the egress, dealing an extra 1 damage for each minion destroyed this way.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -31786,7 +31786,7 @@
       "tier3_display": "11 sonic damage; push 3; I < 5 dazed (save ends)",
       "effect": "The hivequeen shifts up to her speed.",
       "effect_display": "The hivequeen shifts up to her speed.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -31817,7 +31817,7 @@
       "tier2_display": "11 poison damage; M < 4 bleeding (save ends)",
       "tier3": "14 poison damage; M < 5 {@condition bleeding} ({@duration save-ends|save ends})",
       "tier3_display": "14 poison damage; M < 5 bleeding (save ends)",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -32949,7 +32949,7 @@
       "target": "Each enemy in the area",
       "effect": "The centurion uses Pilum against each target and has a double edge. Each target is then pushed up to 3 squares.",
       "effect_display": "The centurion uses Pilum against each target and has a double edge. Each target is then pushed up to 3 squares.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -32973,7 +32973,7 @@
       "target": "Each enemy in the area",
       "effect": "A target who has P < 2 is {@condition taunted} ({@duration save-ends|save ends}). Each ally within distance can make a free strike. Additionally, until the end of the encounter, the centurion has damage immunity 2.",
       "effect_display": "A target who has P < 2 is taunted (save ends). Each ally within distance can make a free strike. Additionally, until the end of the encounter, the centurion has damage immunity 2.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -34951,7 +34951,7 @@
       "target": "Self",
       "effect": "The warleader shifts up to their speed, and four orc blitzers appear in unoccupied spaces within distance.",
       "effect_display": "The warleader shifts up to their speed, and four orc blitzers appear in unoccupied spaces within distance.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -34972,7 +34972,7 @@
       "target": "Self",
       "effect": "Three times in succession, the warleader shifts up to their speed and can use Mace Lariat.",
       "effect_display": "Three times in succession, the warleader shifts up to their speed and can use Mace Lariat.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -35440,7 +35440,7 @@
       "target": "Each creature in the area",
       "effect": "The olothec slides each target up to 5 squares. Each target takes 12 psychic damage, and if they have M < 3 they are weakened and slimed (save ends). A slimed target takes 4 psychic damage whenever they make a power roll. Additionally, until the start of their next turn, the olothec has damage immunity 4.",
       "effect_display": "The olothec slides each target up to 5 squares. Each target takes 12 psychic damage, and if they have M < 3 they are weakened and slimed (save ends). A slimed target takes 4 psychic damage whenever they make a power roll. Additionally, until the start of their next turn, the olothec has damage immunity 4.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -35472,7 +35472,7 @@
       "tier3_display": "16 psychic damage; R < 3 the target is devolved (save ends)",
       "effect": "A devolved creature has a −1 score for all their characteristics other than Reason.",
       "effect_display": "A devolved creature has a −1 score for all their characteristics other than Reason.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -35880,7 +35880,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target shifts up to their speed. The high judge can make each creature charmed by All Rise, Compel the Jury, or Devilish Suggestion move up to half that creature's speed.",
       "effect_display": "Each target shifts up to their speed. The high judge can make each creature charmed by All Rise, Compel the Jury, or Devilish Suggestion move up to half that creature's speed.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -35905,7 +35905,7 @@
       "target": "One creature",
       "effect": "If the target is an ally or a creature charmed by All Rise, Compel the Jury, or Devilish Suggestion, the high judge and the target teleport to swap places. Each ally within 12 squares of the high judge can then make a free strike against a target of the high judge's choice. Each creature charmed by All Rise, Compel the Jury, or Devilish Suggestion makes a free strike against a target of the high judge's choice.",
       "effect_display": "If the target is an ally or a creature charmed by All Rise, Compel the Jury, or Devilish Suggestion, the high judge and the target teleport to swap places. Each ally within 12 squares of the high judge can then make a free strike against a target of the high judge's choice. Each creature charmed by All Rise, Compel the Jury, or Devilish Suggestion makes a free strike against a target of the high judge's choice.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -37303,7 +37303,7 @@
       "target": "Each enemy in the area",
       "effect": "A target can't use heroic abilities until the start of the lich's next turn.",
       "effect_display": "A target can't use heroic abilities until the start of the lich's next turn.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -37335,7 +37335,7 @@
       "tier3_display": "16 corruption damage; A < 6 frightened (save ends)",
       "effect": "At the end of each of the lich's turns, they regain 10 Stamina for each creature frightened this way.",
       "effect_display": "At the end of each of the lich's turns, they regain 10 Stamina for each creature frightened this way.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -37592,7 +37592,7 @@
       "target": "Self",
       "effect": "The arixx shifts up to their speed. If they end this shift above ground and within 2 squares of a creature, they use Bite against the creature and can then use the Dig maneuver.",
       "effect_display": "The arixx shifts up to their speed. If they end this shift above ground and within 2 squares of a creature, they use Bite against the creature and can then use the Dig maneuver.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -37622,7 +37622,7 @@
       "tier2_display": "8 acid damage; M < 2 weakened (save ends)",
       "tier3": "11 acid damage; M < 3 {@condition weakened} ({@duration save-ends|save ends})",
       "tier3_display": "11 acid damage; M < 3 weakened (save ends)",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -38737,7 +38737,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target can end one effect on them or can move up to their speed.",
       "effect_display": "Each target can end one effect on them or can move up to their speed.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -38761,7 +38761,7 @@
       "target": "Special",
       "effect": "The tyrannis fires a sensor mine into each unoccupied square in the area, and creates a gravity well whose area contains one or more squares of the tyrannis's space (see Gravity Well). Whenever an enemy enters a square with a sensor mine in it, the mine explodes, dealing 3 damage to the enemy.",
       "effect_display": "The tyrannis fires a sensor mine into each unoccupied square in the area, and creates a gravity well whose area contains one or more squares of the tyrannis's space (see Gravity Well). Whenever an enemy enters a square with a sensor mine in it, the mine explodes, dealing 3 damage to the enemy.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -39426,7 +39426,7 @@
       "target": "Each enemy in the area",
       "effect": "Each target loses all their surges. Additionally, until the end of the round, allies ignore edges and double edges on any targets' abilities, and ignore any nondamaging effects of any target's damage-dealing abilities.",
       "effect_display": "Each target loses all their surges. Additionally, until the end of the round, allies ignore edges and double edges on any targets' abilities, and ignore any nondamaging effects of any target's damage-dealing abilities.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -39458,7 +39458,7 @@
       "tier3_display": "15 corruption damage; R < 4 the target has speed 0 (save ends)",
       "effect": "The area is shrouded in darkness that creates concealment until the end of the encounter. Any enemy who starts their turn in the area takes 5 corruption damage.",
       "effect_display": "The area is shrouded in darkness that creates concealment until the end of the encounter. Any enemy who starts their turn in the area takes 5 corruption damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -40317,7 +40317,7 @@
       "target": "Self",
       "effect": "Until the end of the encounter, the bloodlord surrounds themself with a storm of flying skulls. Any enemy who enters the area for the first time in a round or starts their turn there takes 8 corruption damage and takes a bane on their next power roll until the start of their next turn.",
       "effect_display": "Until the end of the encounter, the bloodlord surrounds themself with a storm of flying skulls. Any enemy who enters the area for the first time in a round or starts their turn there takes 8 corruption damage and takes a bane on their next power roll until the start of their next turn.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -40349,7 +40349,7 @@
       "tier3_display": "5 fire damage; P < 4 10 fire damage, push 5, prone",
       "effect": "Until the end of the encounter, the bloodlord is wreathed in black flames. Whenever any adjacent enemy grabs the bloodlord or uses a melee ability against them, that enemy takes 5 corruption damage.",
       "effect_display": "Until the end of the encounter, the bloodlord is wreathed in black flames. Whenever any adjacent enemy grabs the bloodlord or uses a melee ability against them, that enemy takes 5 corruption damage.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -42226,7 +42226,7 @@
       "target": "Special",
       "effect": "The ashen hoarder sprays out six size 1M zombie mines that appear in unoccupied squares within distance. Any enemy who moves adjacent to a zombie mine for the first time in a round or starts their turn there causes the mine to explode, dealing 4 corruption damage to each creature adjacent to the mine. Any other zombie mines adjacent to the exploding mine also explode. At the start of each of the ashen hoarder's turns, each unexploded zombie mine can be moved up to 2 squares.",
       "effect_display": "The ashen hoarder sprays out six size 1M zombie mines that appear in unoccupied squares within distance. Any enemy who moves adjacent to a zombie mine for the first time in a round or starts their turn there causes the mine to explode, dealing 4 corruption damage to each creature adjacent to the mine. Any other zombie mines adjacent to the exploding mine also explode. At the start of each of the ashen hoarder's turns, each unexploded zombie mine can be moved up to 2 squares.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -42252,7 +42252,7 @@
       "target": "Self",
       "effect": "The ashen hoarder moves up to their speed and uses Claw and Blade with a double edge against one target. On a tier 3 outcome, the ashen hoarder can use Impale without spending Malice.",
       "effect_display": "The ashen hoarder moves up to their speed and uses Claw and Blade with a double edge against one target. On a tier 3 outcome, the ashen hoarder can use Impale without spending Malice.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],
@@ -42508,7 +42508,7 @@
       "target": "Self",
       "effect": "The deathrex shifts up to their speed, leaving behind a shed skin duplicate in the space they started in. The duplicate acts on the deathrex's turn and has the deathrex's characteristics, but has 10 Stamina and no villain actions.",
       "effect_display": "The deathrex shifts up to their speed, leaving behind a shed skin duplicate in the space they started in. The duplicate acts on the deathrex's turn and has the deathrex's characteristics, but has 10 Stamina and no villain actions.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "leader"
       ],
@@ -42532,7 +42532,7 @@
       "target": "Self and each ally in the area",
       "effect": "Each target moves up to their speed. Until the end of the encounter, whenever a creature comes adjacent to a target or starts their turn there, the target can make a free strike against them.",
       "effect_display": "Each target moves up to their speed. Until the end of the encounter, whenever a creature comes adjacent to a target or starts their turn there, the target can make a free strike against them.",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "leader"
       ],
@@ -43129,7 +43129,7 @@
       "tier3_display": "The target can choose to deal 40 damage to the bredbeddle or remove the bredbeddle's head.",
       "effect": "The bredbeddle points at the target and issues them a challenge. If the target refuses, they turn green until the end of the encounter (see Turn Green). If the target accepts the challenge, the bredbeddle shifts adjacent to the target, who makes a Might test with no additional modifiers.",
       "effect_display": "The bredbeddle points at the target and issues them a challenge. If the target refuses, they turn green until the end of the encounter (see Turn Green). If the target accepts the challenge, the bredbeddle shifts adjacent to the target, who makes a Might test with no additional modifiers.",
-      "villain_action_order": "escalation",
+      "villain_action_order": "crowd-control",
       "organizations": [
         "solo"
       ],
@@ -43160,7 +43160,7 @@
       "tier2_display": "7 damage; bleeding (save ends); or if the target has A < 2 they are beheaded",
       "tier3": "8 damage; {@condition bleeding} ({@duration save-ends|save ends}); or if the target has A < 3 they are beheaded",
       "tier3_display": "8 damage; bleeding (save ends); or if the target has A < 3 they are beheaded",
-      "villain_action_order": "closer",
+      "villain_action_order": "ultimate",
       "organizations": [
         "solo"
       ],

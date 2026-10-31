@@ -1,28 +1,26 @@
 # Draw Steel Monster Builder
 
-> **Related:** [Community Bestiary](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md) | [API & Security](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/api-security.md) | [Foundry Sync](./foundry-creature-sync.md)
+> **Related:** [Community Bestiary](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/design.md) | [API & Security](https://github.com/keyxmakerx/Chronicle/blob/dfc73c78/docs/bestiary/api-security.md) | [Foundry Sync](./FOUNDRY-SYNC-MAP.md#8-creatures-npc-actors)
 
 ---
 
 ## 1. Overview
 
-A Draw Steel creature lives on a Creature page in Chronicle. The package gives
-that page two things:
+A Draw Steel creature lives on a Creature page. The package gives the page:
 
-- **The stat block** (`widgets/statblock-renderer.js`), mounted under the
-  page title as a game-system panel. Everyone who can see the page sees the
-  stat block; the director also gets **Edit stat block** and **Publish**.
-- **The editor** (`widgets/monster-builder.js`), one page that grows out of
-  the stat block into a full-screen sheet over the page and shrinks back into
-  it when it closes: the creature's boxes on the left, and a side panel with
-  the party, the encounter budget and the completeness checks on the right.
-  Clicking off it or pressing Escape closes it; with unsaved changes,
+- **The stat block** (`widgets/statblock-renderer.js`), mounted under the page
+  title as a game-system panel. Everyone who can see the page sees it; the
+  director also gets **Edit stat block** and **Publish**.
+- **The editor** (`widgets/monster-builder.js`), which grows out of the stat
+  block into a full-screen sheet and shrinks back when closed: the creature's
+  boxes on the left, the party, encounter budget and completeness checks on the
+  right. Clicking off it or pressing Escape closes it; with unsaved changes,
   Chronicle's ask-in-place slip asks first. Under Calm it fades; under Off it
   appears.
 
 EV, Stamina, free strike and formula damage follow the published formulas as
-the director changes level, organization or role, and each figure says where
-it came from. A number the director types is never overwritten.
+level, organization or role change, and each figure says where it came from. A
+number the director types is never overwritten.
 
 ### Goals
 
@@ -34,12 +32,11 @@ it came from. A number the director types is never overwritten.
 - Publish to the Community Bestiary, and add a Monsters book creature to the
   campaign from the Bestiary widget.
 
-### Non-Goals (for now)
+### Non-Goals
 
 - Balance checking beyond the published encounter bands.
-- Automated loot/treasure tables.
-- An AI running inside Chronicle (Build with an AI works through the
-  director's own AI chat).
+- Loot or treasure tables.
+- An AI running inside Chronicle (Build with an AI uses the director's own AI chat).
 
 ---
 
@@ -49,15 +46,14 @@ it came from. A number the director types is never overwritten.
 
 Organizations define a creature's power tier and how many heroes it can face.
 
-> **The "EV Multiplier" column is not Draw Steel's.** The published encounter
-> value is `((2 × level) + 4) × organization modifier` (minion and horde 0.5,
-> platoon 1, elite and leader 2, solo 6) — see `data/monster-building.json`,
-> `encounter-value-formula`. The multipliers below are this package's own and run
-> up to 1.67× the published value; they are kept here only because they still
-> appear in `organization-templates.json` as `ev_multiplier`. **Swarm** is not a
-> published organization at all — it is a creature keyword — so it has no
-> published modifier: the director sets a swarm's EV and Stamina, and the page
-> says so.
+> The "EV Multiplier" column is not Draw Steel's. The published encounter value
+> is `((2 × level) + 4) × organization modifier` (minion and horde 0.5, platoon
+> 1, elite and leader 2, solo 6; `data/monster-building.json`,
+> `encounter-value-formula`). The multipliers below are this package's own (up
+> to 1.67× the published value), kept only because
+> `organization-templates.json` still carries them as `ev_multiplier`.
+> **Swarm** is a creature keyword, not a published organization: it has no
+> modifier, so the director sets a swarm's EV and Stamina.
 
 | Organization | Hero Ratio | EV Multiplier (unsourced — see above) | Villain Actions | Key Mechanic |
 |---|---|---|---|---|
@@ -89,21 +85,8 @@ _Generated from `data/role-templates.json` (`description` + `primary_stat`); the
 
 ### 2.3 Creature Keywords
 
-Keywords define a creature's nature and may trigger special rules:
-
-- **Accursed** — Supernaturally cursed (medusas, werewolves)
-- **Undead** — Reanimated flesh/spirits (ghosts, zombies)
-- **Animal** — Natural creature, animal-level sapience (bears, wolves)
-- **Beast** — Animal-level sapience with supernatural abilities
-- **Abyssal** — From the Abyssal Wasteland (demons, gnolls)
-- **Construct** — Artificially created (golems, animated objects)
-- **Dragon** — Conceptual creatures (thorn dragons, crucible dragons)
-- **Elemental** — Embodiment of elemental force
-- **Fey** — From the Feywild
-- **Fiend** — Devils and infernal creatures
-- **Giant** — Large humanoid creatures
-- **Humanoid** — Human-like creatures
-- **Plant** — Animate plant life
+Keywords give a creature its nature and may trigger special rules. The list
+and definitions are `data/creature-keywords.json`.
 
 ### 2.4 Statblock Components
 
@@ -152,13 +135,6 @@ Each ability has:
 Villain actions are stored separately (`villain_actions_json`) as
 `{ order, name, effect }`, with `order` one of opener, crowd-control, ultimate.
 
-### 2.6 Villain Power (VP) System
-
-- Director generates VP each round = 2 × number of heroes
-- Monster factions award bonus VP for faction-synergistic actions
-- Some abilities cost VP to activate (noted as "VP Cost: X")
-- Villain Actions are separate from VP — they're free, once-per-encounter abilities
-
 ---
 
 ## 3. Entity Preset
@@ -172,31 +148,9 @@ creature's fields. Its Foundry paths, and how each value converts, are in
 - `stamina_current` and `conditions_json` are the only fields Foundry may send back
   (`foundry_pull_fields`).
 
-### 3.2 New Reference Category: Creature Abilities
+The `creature-abilities` reference category (fields in `manifest.json`) holds
+the ability library the builder draws on.
 
-```json
-{
-  "slug": "creature-abilities",
-  "name": "Creature Abilities",
-  "icon": "fa-burst",
-  "fields": [
-    { "key": "type", "label": "Type", "type": "enum" },
-    { "key": "keywords", "label": "Keywords", "type": "list" },
-    { "key": "distance", "label": "Distance", "type": "string" },
-    { "key": "target", "label": "Target", "type": "string" },
-    { "key": "power_roll", "label": "Power Roll", "type": "string" },
-    { "key": "tier1_result", "label": "Tier 1 (≤11)", "type": "markdown" },
-    { "key": "tier2_result", "label": "Tier 2 (12–16)", "type": "markdown" },
-    { "key": "tier3_result", "label": "Tier 3 (17+)", "type": "markdown" },
-    { "key": "effect", "label": "Effect", "type": "markdown" },
-    { "key": "vp_cost", "label": "VP Cost", "type": "number" },
-    { "key": "trigger", "label": "Trigger", "type": "string" },
-    { "key": "villain_action_order", "label": "VA Order", "type": "enum" }
-  ]
-}
-```
-
-This category holds example/template abilities that users can browse and use as starting points in the builder.
 
 ---
 
@@ -219,13 +173,13 @@ through `DrawSteelFormulas` in `widgets/monster-engine.js`, reading
 A strike adds the creature's highest characteristic to its damage, and its
 power roll is `2d10 +` that characteristic. Winded is half Stamina, rounded down.
 
-Where a formula cannot be evaluated — **Swarm** has no published modifiers, and
-the Stamina formula needs a role (leaders and solos take theirs from the table)
-— the figure is left empty for the director to set, and the editor says
-"No published … for this creature. Set it yourself." Nothing is estimated.
-See CLAUDE.md → "The builder's math must carry its own provenance".
+Where a formula cannot be evaluated (Swarm has no published modifiers; the
+Stamina formula needs a role, and leaders and solos take theirs from the table)
+the figure is left empty for the director, and the editor says "No published …
+for this creature. Set it yourself." Nothing is estimated. Rule: CLAUDE.md,
+"The builder's math must carry its own provenance".
 
-### 4.1 Where each figure came from
+### 4.1 Provenance marks
 
 The stat block marks EV, Stamina and free strike:
 
@@ -239,7 +193,7 @@ In the editor the same facts sit under each box: "Published formula",
 "Changed by you (the formula gives N) · Use the formula", or "No published …
 Set it yourself." Clearing a box hands the figure back to the formula.
 
-### 4.2 A creature the campaign's AI wrote
+### 4.2 AI Import review
 
 When the campaign's AI sends a creature through Chronicle's AI Import, the
 review row sets each figure the AI wrote beside what the published formulas
@@ -266,7 +220,7 @@ text, never its damage type or effect. Pinned by
 
 ### 4.4 Characteristic Suggestions by Role
 
-These are starting-point suggestions, not requirements. Users can freely adjust.
+Starting-point suggestions; the director can change any.
 
 | Role | MGT | AGI | RSN | INT | PRS | Primary |
 |---|---|---|---|---|---|---|
@@ -355,38 +309,37 @@ published formula's. The panel lists why it chose each thing, and **Try other
 abilities** picks again. **Blank** clears the stat block, asking first if
 anything changed.
 
-**Build with an AI** folds open in the Generate panel's place; only one is
-open at a time. No AI runs inside Chronicle. The director describes the
-creature and presses **Copy the guide**, which copies a prompt for any AI chat:
-the description, the party read from the hero pages, the exact JSON shape to
-answer in, and every option it may pick, read from the package's own files
-(organizations, roles, sizes, creature keywords, ability keywords other than
-helper tags, damage types, and the condition, duration and movement terms).
-When the browser refuses the copy, the guide is shown selected to copy by hand.
-The answer pasted back is read as it arrives, up to its last complete value, so
-the editor fills in while it is pasted. The AI supplies words and picks only:
-level, organization, role and size must be ones Draw Steel has, characteristics
-are the role's published spread, and every figure, damage included, is the
-published formula's in the AI's damage type. Its own numbers, a role on a
-leader or solo, villain actions on anything else and reference terms the
-glossary doesn't know are dropped, and the panel lists each change. The name,
-traits and abilities it wrote carry a **From the AI** chip until the director
-saves; the chip is never saved to the page. **Try an example answer** shows the
-reading on a typical reply.
+**Build with an AI** folds open in the Generate panel's place (one open at a
+time). The director describes the creature and presses **Copy the guide**,
+which copies a prompt for any AI chat: the description, the party read from the
+hero pages, the exact JSON shape to answer in, and every option the AI may pick,
+read from the package's own files (organizations, roles, sizes, creature
+keywords, ability keywords other than helper tags, damage types, condition,
+duration and movement terms). If the browser refuses the copy, the guide is
+shown selected for a manual copy. The pasted answer is read as it arrives, up
+to its last complete value, so the editor fills in while pasting.
 
-The guide also offers a shortlist of the Monsters book's abilities, since all
-1,555 would not fit in a chat. Filters narrow it: kind, who it was made for
-(**This creature**, the default, uses the same `usable` rule as Add abilities),
-chapter of the book, ability keyword, the condition it inflicts, and a search.
-Each choice shows how many abilities picking it would leave. The guide carries
-at most 10, 25 or 50 (50 by default) of what is left, ranked by the words of
-the description and search they match, then by how closely they were made for
-this creature's organization and role; the director can untick any of them.
+The AI supplies words and picks only. Level, organization, role and size must
+be ones Draw Steel has; characteristics are the role's published spread; every
+figure, damage included, is the published formula's in the AI's damage type.
+Its own numbers, a role on a leader or solo, villain actions on anything else
+and reference terms the glossary doesn't know are dropped, and the panel lists
+each change. The name, traits and abilities it wrote carry a **From the AI**
+chip until the director saves (the chip is never saved). **Try an example
+answer** shows the reading on a typical reply.
+
+The guide also offers a shortlist of the Monsters book's abilities (all 1,555
+would not fit in a chat). Filters: kind, who it was made for (**This creature**,
+the default, uses the same `usable` rule as Add abilities), book chapter,
+ability keyword, the condition it inflicts, and a search; each choice shows how
+many abilities it would leave. The guide carries at most 10, 25 or 50 (default
+50) of what is left, ranked by matches against the description and search, then
+by fit to the creature's organization and role; the director can untick any.
 The AI answers with the ids it picked in `book_abilities`, and the editor adds
-those as the drawer does, with formula damage, nothing twice and villain
-actions only for leaders and solos. A pick made for another organization, or an
-id the library doesn't hold, is left off with a note. Picked abilities carry a
-**From the book** chip, naming the chapter, until the director saves.
+them as the drawer does (formula damage, nothing twice, villain actions only
+for leaders and solos). A pick made for another organization, or an id the
+library doesn't hold, is left off with a note. Picked abilities carry a **From
+the book** chip naming the chapter until the director saves.
 
 **Add abilities** slides a drawer down over the dimmed page with the same
 library. By default it lists only what this creature can use (`fits` for its
@@ -407,12 +360,11 @@ published there) and this campaign's creatures. The copy is named "X (copy)",
 keeps its level, and is recomputed: stale figures are replaced, and abilities
 whose tiers look like formula damage are switched to follow it.
 
-Motion follows Chronicle's setting: opening the editor slides its bar down
-and the panels rise in turn, the Generate and AI panels fold open and shut,
-the example answer arrives a little at a time, and a
-figure that changes flashes briefly; the Add abilities drawer slides down and
-an added ability eases into the creature's list. Calm keeps only fades; Off and reduced
-motion turn it all off. On wide screens the bar with Save stays pinned.
+Motion follows Chronicle's setting: the bar slides down and panels rise in
+turn on open, the Generate and AI panels fold, the example answer arrives a
+little at a time, a changed figure flashes, and the Add abilities drawer slides
+down. Calm keeps only fades; Off and reduced motion turn it all off. On wide
+screens the bar with Save stays pinned.
 
 The widget also registers `monster-builder` for placement on a page; on a page
 that already has the stat block panel it steps aside.
@@ -526,21 +478,15 @@ the campaign and the book; it does not read the Community Bestiary.
 | `data/encounter-building.json` | Published encounter strength and budget bands |
 | `data/creature-keywords.json` | Keyword definitions and special rules |
 | `data/creature-abilities.json` | The ability library: the Monsters book's creature abilities, plus this package's own templates |
-| `data/creatures.json` | 35 example creatures, figures per the published formulas (`tools/test-creature-examples.mjs`) |
+| `data/creatures.json` | Example creatures, figures per the published formulas (`tools/test-creature-examples.mjs`) |
 | `data/ability-keywords.json` | Ability keyword definitions |
 
-Data format: `docs/DATA-SCHEMA.md`.
+Data format: `docs/DATA-SCHEMA.md`. Not yet synced to Foundry: abilities,
+villain actions, traits, immunities and weaknesses (FOUNDRY-SYNC-MAP.md §8).
 
 ---
 
-## 8. Open Questions
-
-Not yet synced to Foundry: abilities, villain actions, traits, immunities and
-weaknesses (see FOUNDRY-SYNC-MAP.md §8).
-
----
-
-## 9. Dependencies
+## 8. Dependencies
 
 | Dependency | In | Notes |
 |---|---|---|

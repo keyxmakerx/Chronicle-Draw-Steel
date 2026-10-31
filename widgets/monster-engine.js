@@ -442,8 +442,7 @@ var MonsterEngine = (function () {
  *
  * The single place the published formulas (data/monster-building.json /
  * data/encounter-building.json) are evaluated, deliberately separate from
- * the monster engine, which previously used invented numbers that disagreed
- * with these by up to 2.4x.
+ * the monster engine, which must not invent numbers.
  *
  * Every return carries its own provenance: { value, sourced, source, notes }.
  * `sourced === false` means the published data does not cover this input

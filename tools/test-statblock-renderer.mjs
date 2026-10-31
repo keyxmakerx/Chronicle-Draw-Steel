@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * The shared creature stat block (widgets/statblock-renderer.js): escaping,
- * the two stored shapes it reads, the provenance marks, the tier odds, and the
- * style injection that used to wipe itself.
+ * the two stored shapes it reads, the provenance marks, the tier odds, and
+ * the style injection.
  *
  * Run: `node --test tools/test-statblock-renderer.mjs`
  */

@@ -44,7 +44,7 @@ test('creature EV is the published ((2 x level) + 4) x organization modifier', (
 
 test('Stamina is the published formula, with the role’s modifier', () => {
   const st = state({ level: 8, organization: 'solo', role: 'brute' });
-  // The audit’s worked case: a level 8 solo gets 550 Stamina, not 240.
+  // A level 8 solo gets 550 Stamina, not 240.
   assert.equal(st.c.stamina, 550);
   assert.equal(st.c.winded, 275);
 });
