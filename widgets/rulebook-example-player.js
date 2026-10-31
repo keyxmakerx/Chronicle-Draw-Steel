@@ -54,9 +54,9 @@ var RulebookExamplePlayer = (function () {
   var STAGE_IN_MS = 60;     // delay before the stage tokens slide in
 
   // TERM_RE matches this repo's {@category term|label} cross-reference markup
-  // (identical to reference-renderer.js / rulebook-frontpage.js's TERM_RE) —
-  // used ONLY for the Lair's teaching-panel prose, since a played script's own
-  // lines are worked examples, not rules prose, and stay plain richText.
+  // (identical to reference-renderer.js / rulebook-frontpage.js's TERM_RE),
+  // promoted to dotted glossary terms in script lines and the Lair's teaching
+  // prose alike. Roll math steps stay plain richText.
   var TERM_RE = /\{@(\w+)\s+([^|}]+)(?:\|([^}]+))?\}/g;
 
   // ── escaping / text helpers ──────────────────────────────────────────────
@@ -86,8 +86,8 @@ var RulebookExamplePlayer = (function () {
 
   function isArr(x) { return Object.prototype.toString.call(x) === '[object Array]'; }
 
-  // richTerm is richText() plus glossary-term promotion, for the Lair's
-  // teaching-panel prose only (lessons[].lede/after) — turns {@cat slug|disp}
+  // richTerm is richText() plus glossary-term promotion, for script lines and
+  // the Lair's teaching-panel prose (lessons[].lede/after). It turns {@cat slug|disp}
   // into the SAME dotted .rb-hl term the fold engine's shared hover card
   // already binds (via bindTerms), so a rule word inside the teaching text
   // gets a hover/tap card exactly like one inside the front page.
@@ -260,14 +260,14 @@ var RulebookExamplePlayer = (function () {
     var kind = l.kind || 'dir';
     var rl = (kind === 'roll') ? ' rbx-rl' : '';
     var diceAttr = (kind === 'roll') ? ' data-rbx-dice="' + escAttr(((l.dice) || []).join(',')) + '"' : '';
-    var tx = (kind === 'roll') ? buildRollTx(l) : richText(l.text);
+    var tx = (kind === 'roll') ? buildRollTx(l) : richTerm(l.text);
     return '<div class="rbx-line' + rl + '" data-rbx-kind="' + escAttr(kind) + '"' + diceAttr + '>' +
       '<span class="rbx-who ' + whoClass(kind) + '">' + esc(l.speaker) + '</span>' +
       '<span class="rbx-tx">' + tx + '</span></div>';
   }
 
   // buildScriptHtml renders the whole script body (banner + stage + lines) that
-  // fills a [data-rbx-script] container. All data text is escaped; only the
+  // authored **bold** / ~~dmg~~ markers and {@cat term} glossary terms become markup.
   // authored **bold** / ~~dmg~~ markers become markup.
   function buildScriptHtml(script) {
     var s = script || {};
