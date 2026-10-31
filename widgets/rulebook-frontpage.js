@@ -912,9 +912,8 @@
       else body += '<p>' + richProse(b.text) + '</p>';
     }
 
-    // readerExtras (v10.4): the worked example + cross-hop chips are DATA now
-    // (hero.properties.readerExtras), not hard-coded to one specific example
-    // or two specific chips — a future hero entry can carry its own.
+    // readerExtras: the worked example and cross-hop chips are data
+    // (hero.properties.readerExtras), so any hero entry can carry its own.
     var extras = p.readerExtras || {};
     var exampleSlug = extras.example;
     var related = isArr(extras.related) ? extras.related : [];

@@ -43,9 +43,8 @@
 var RulebookExamplePlayer = (function () {
   'use strict';
 
-  // Animation cadence (ms). v10.4 slows the mockup's original timings for a
-  // calmer default pace (#732's six fixes) — back/pause/forward let a reader
-  // set their own speed, so autoplay no longer needs to hurry.
+  // Animation cadence (ms). Calm default pace; back/pause/forward let a reader
+  // set their own speed (#732).
   var TICK_MS = 90;         // dice-face tick interval
   var DICE_TICKS = 8;       // ticks before the dice settle on their scripted values
   var STEP_MS = 520;        // gap between math-step reveals
@@ -1505,7 +1504,7 @@ var RulebookExamplePlayer = (function () {
     // lair carries the worked-scene's table/rulesInPlay/lessons + which part
     // each script slug belongs to, plus the fold engine's bindTerms (shared
     // glossary hover card) — all optional; a script with no matching part
-    // renders with no table/lesson extras, same as before v10.4.
+    // renders with no table/lesson extras.
     var lair = opts.lair || {};
     var lairParts = lair.partsBySlug || {};
     // The page may give the table and the rules in play panels of their own
@@ -2130,8 +2129,8 @@ var RulebookExamplePlayer = (function () {
           // :not([data-rb-term]) excludes a glossary hover term: the Lair
           // overview's "this scene teaches" chips are focusable but landing
           // there focuses (and so opens) its hover card instead of a genuine
-          // control — found by the v10.4 Playwright harness, where it also
-          // ate the NEXT Escape press (Esc dismisses the hover card first).
+          // control, and would eat the next Escape press (Esc dismisses the
+          // hover card first).
           var f = sh.querySelector('button:not([disabled]):not([data-rb-term]),a[href]:not([data-rb-term]),' +
             '[tabindex]:not([tabindex="-1"]):not([data-rb-term])');
           if (f && f.focus) { try { f.focus(); } catch (e) {} }

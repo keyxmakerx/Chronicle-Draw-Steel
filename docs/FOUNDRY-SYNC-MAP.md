@@ -90,11 +90,10 @@ Kit details arrive as one projection, `kit_details_json`, from the `kit` item:
 | `meleeDistance` / `rangedDistance` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
 | `stability`, `speed`, `stamina`, `disengage` | `system.bonuses.<name>` |
 
-> Note on `foundry_item_single` collapse: the single-item fields above (class,
-> subclass, ancestry, career, culture, kit name, level, heroic resource name) are
-> declared `foundry_item_single: true`, so the adapter collapses the matching items to
-> one record. The collapse uses the **first projection field by insertion order** —
-> declare projection fields intentionally (see Gotchas).
+The single-item fields above (class, subclass, ancestry, career, culture, kit
+name, level, heroic resource name) are `foundry_item_single: true`: the adapter
+collapses the matching items to one record, using the first projection field in
+insertion order (see Gotchas).
 
 ---
 
@@ -159,24 +158,21 @@ These are **not** on the character document:
 
 ## 7. Gotchas
 
-- **(a)** `level`, the **class name**, and the **heroic-resource name** live on the
-  **class item** (`system.level` / `system.primary`), not on the actor. A read of
-  `system.details.level` or `system.hero.resource.name` finds nothing.
-- **(b)** **Hero Tokens** and **Malice** are **world settings** (`game.settings` under
-  `"draw-steel"`), not character data — do not expect them on the actor document.
-- **(c)** **Potency** and the rest of the pull-only fields in §2 carry
-  `foundry_writable: false`, so Chronicle never writes them back. **Stamina max** and
-  **winded** are derived by Foundry but the manifest does not mark them read-only, so a
-  pushed value would be overwritten on Foundry's next recompute.
-- **(d)** The `foundry_item_single` collapse uses the **FIRST projection field by
-  insertion order** to pick the representative record — order `foundry_item_fields`
-  deliberately so the right field drives the collapse.
-- **(e)** **Abilities need an explicit `foundry_item_fields` projection.** Without one,
-  they sync as **names only** and all the mechanical sub-fields (keywords, distance,
-  power roll, tier effects) are lost.
-- **(f)** Sets (skills, keywords, statuses, power-roll characteristics) and the tier
-  collection serialize to `{}` unless the Foundry adapter converts them to JSON arrays
-  (`normalizeFoundryValue`); the `*_json` fields and projected Set keys rely on that.
+- `level`, the class name and the heroic-resource name live on the class item
+  (`system.level` / `system.primary`); `system.details.level` and
+  `system.hero.resource.name` do not exist.
+- Hero Tokens and Malice are world settings (§6), not on the actor.
+- Potency and the other pull-only fields in §2 carry `foundry_writable: false`.
+  Stamina max and winded are derived by Foundry but not marked read-only, so a
+  pushed value is overwritten on Foundry's next recompute.
+- The `foundry_item_single` collapse picks its representative record by the
+  first projection field in insertion order (§3); order `foundry_item_fields`
+  deliberately.
+- Abilities need the explicit projection in §4, or they sync as names only.
+- Sets (skills, keywords, statuses, power-roll characteristics) and the tier
+  collection serialize to `{}` unless the Foundry adapter converts them to JSON
+  arrays (`normalizeFoundryValue`); the `*_json` fields and projected Set keys
+  rely on that.
 
 ---
 
