@@ -44,7 +44,6 @@ const MAY_MENTION_CC = new Set([
   'manifest.json',
   'data/NOTICE.md',
   'docs/DATA-SCHEMA.md',
-  'docs/implementation-checklist.md',
   'tools/test-licence-claims.mjs', // this file
   // package.json's `description` states BOTH positions in one sentence — Creator
   // License for the rules text, CC-BY-4.0 for this package's own work — which is
