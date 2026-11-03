@@ -1,0 +1,133 @@
+[
+  {
+    "slug": "vampire-scion",
+    "name": "Vampire Scion",
+    "summary": "A vampire bit them. Not undead, or not yet: the Vampire Scion complication, taken on partway through the story.",
+    "source": "Draw Steel Heroes Book, ch. 8 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "complication",
+      "from": "complications.json#vampire-scion",
+      "changes": [
+        {
+          "field": "complication",
+          "op": "set",
+          "value": "Vampire Scion"
+        },
+        {
+          "field": "features_json",
+          "op": "append",
+          "value": {
+            "name": "Vampire Scion",
+            "dsid": "vampire-scion",
+            "type": "complication",
+            "description": "Benefit: Whenever you make a melee free strike against an adjacent creature, you can do so by biting that creature. If you obtain a tier 3 outcome on the free strike, you gain temporary Stamina equal to the damage dealt. If not lost beforehand, this temporary Stamina lasts until the end of your next respite. Drawback: While you have temporary Stamina from this complication, you grow visible fangs, you take a bane on Presence tests made to interact with humanoids, and your vampire progenitor can sense your location."
+          },
+          "label": "Vampire Scion"
+        }
+      ],
+      "choices": []
+    }
+  },
+  {
+    "slug": "revenant",
+    "name": "Revenant",
+    "summary": "Back from death to finish dire business: the Revenant ancestry over the one they had.",
+    "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium",
+    "properties": {
+      "kind": "ancestry",
+      "from": "ancestries.json#revenant",
+      "changes": [
+        {
+          "field": "ancestry",
+          "op": "set",
+          "value": "Revenant"
+        },
+        {
+          "field": "immunities",
+          "op": "set",
+          "value": {
+            "cold": "@level",
+            "corruption": "@level",
+            "lightning": "@level",
+            "poison": "@level"
+          },
+          "label": "Tough But Withered"
+        },
+        {
+          "field": "weaknesses",
+          "op": "set",
+          "value": {
+            "fire": 5
+          },
+          "label": "Tough But Withered"
+        },
+        {
+          "field": "features_json",
+          "op": "append",
+          "value": {
+            "name": "Former Life",
+            "dsid": "revenant-former-life",
+            "type": "ancestry",
+            "description": "Choose the ancestry you were before you died. Your size is that ancestry's size and your speed is 5. Unless you select one of the Previous Life traits, you don't receive any other ancestral traits from your original ancestry."
+          },
+          "label": "Former Life"
+        },
+        {
+          "field": "features_json",
+          "op": "append",
+          "value": {
+            "name": "Tough But Withered",
+            "dsid": "revenant-tough-but-withered",
+            "type": "ancestry",
+            "description": "Your undead body grants you immunity to cold, corruption, lightning, and poison damage equal to your level, but you have fire weakness 5. You can't suffocate, and you don't need to eat or drink to stay alive. Additionally, when your Stamina reaches the negative of your winded value, you become inert instead of dying. You fall prone and can't stand. You continue to observe your surroundings, but you can't speak, take main actions, maneuvers, move actions, or triggered actions. While inert this way, if you take any fire damage, your body is destroyed and you die. Otherwise, after 12 hours, you regain Stamina equal to your recovery value."
+          },
+          "label": "Tough But Withered"
+        }
+      ],
+      "choices": [
+        {
+          "key": "ancestry_points",
+          "kind": "points",
+          "label": "Revenant ancestry points",
+          "budget": 2,
+          "note": "3 ancestry points instead if your size is 1S.",
+          "quick_build": [
+            "Bloodless"
+          ],
+          "traits": [
+            {
+              "name": "Bloodless",
+              "cost": 2,
+              "description": "For you, an open wound is indistinguishable from a scratch. You can't be made bleeding even while dying."
+            },
+            {
+              "name": "Previous Life: 1 Point",
+              "cost": 1,
+              "description": "You select a purchased trait that costs 1 ancestry point from your previous ancestry. You can take this trait multiple times, selecting a different 1 point trait from your previous ancestry each time."
+            },
+            {
+              "name": "Previous Life: 2 Points",
+              "cost": 2,
+              "description": "You select a purchased trait that costs 2 ancestry points from your previous ancestry."
+            },
+            {
+              "name": "Undead Influence",
+              "cost": 1,
+              "description": "Your supernatural gifts allow you to influence other undead. You gain an edge on Reason, Intuition, and Presence tests made to interact with undead creatures."
+            },
+            {
+              "name": "Vengeance Mark",
+              "cost": 2,
+              "description": "As a maneuver, you place a magic sigil on a creature within 10 squares. When you place a sigil, you decide where it appears on the creature's body, and whether the sigil is visible to only you or to all creatures. You always know the direction to the exact location of a creature who bears one of your sigils and is on the same world. You can have a number of active sigils equal to your level, and can remove a sigil from a creature at will (no action required). If you already have the maximum number of sigils activated and you place a new one, your oldest sigil disappears with no other effect. Additionally, you have the following signature ability, which can be used at will."
+            }
+          ]
+        }
+      ],
+      "replaces_ancestry_traits": true,
+      "notes": [
+        "Former Life: size stays the hero's previous ancestry's, and speed is 5 before kit bonuses.",
+        "The hero loses the traits of their previous ancestry unless kept with a Previous Life trait."
+      ]
+    }
+  }
+]
