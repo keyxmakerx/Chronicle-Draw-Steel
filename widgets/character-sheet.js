@@ -140,6 +140,188 @@
     try { return JSON.parse(raw); } catch (e) { return fallback; }
   }
 
+  // ── Transformation layers ─────────────────────────────────────────
+  // Hero layers: what a transformation (a vampire's bite, rising as a
+  // revenant) does to a hero's fields, worked out in the browser.
+  //
+  // Chronicle stores each layer as a list of changes and never writes the
+  // hero's own fields, which mostly come from Foundry. The sheet works out
+  // the fields as the layers make them, and what each layer changed, so it
+  // can draw the old value struck through beside the new one.
+  // Taking a layer off is simply not applying it.
+  //
+  // A change is { field, op, value, label }:
+  //   set     replaces the value; an object value sets those keys of an object
+  //           field (a damage immunity or weakness) and keeps the rest
+  //   add     adds a number
+  //   append  adds an entry to a list field
+  //   remove  hides the list entry with that name
+  // Inside an object value, "@level" (any "@" and a field key) stands for that
+  // field's number now, so a revenant's immunities grow with the hero.
+  var Layers = (function () {
+
+    function isObj(v) { return v != null && typeof v === 'object' && !Array.isArray(v); }
+
+    function parse(v) {
+      if (typeof v !== 'string') return v;
+      var s = v.trim();
+      if (s.charAt(0) !== '[' && s.charAt(0) !== '{') return v;
+      try { return JSON.parse(s); } catch (e) { return v; }
+    }
+
+    // Foundry writes some numbers as { value, … }; a bare number or numeric
+    // string reads as itself; anything else reads as 0.
+    function numberOf(v) {
+      if (isObj(v) && v.value !== undefined) v = v.value;
+      var n = typeof v === 'number' ? v : parseFloat(v);
+      return isFinite(n) ? n : 0;
+    }
+
+    function copy(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+    function entryName(e) {
+      if (e == null) return '';
+      if (typeof e === 'string') return e;
+      return e.name != null ? String(e.name) : '';
+    }
+
+    function sameName(a, b) { return String(a).trim().toLowerCase() === String(b).trim().toLowerCase(); }
+
+    // "@level" and the like, resolved against the fields as they stand.
+    function resolve(v, fields) {
+      if (typeof v === 'string' && /^@[a-z][a-z0-9_]*$/.test(v)) return numberOf(fields[v.slice(1)]);
+      if (isObj(v)) {
+        var out = {};
+        Object.keys(v).forEach(function (k) { out[k] = resolve(v[k], fields); });
+        return out;
+      }
+      return v;
+    }
+
+    function diffFor(diff, key, was) {
+      if (!diff[key]) diff[key] = { was: copy(was), by: [], added: [], removed: [] };
+      return diff[key];
+    }
+    function note(d, name) { if (d.by.indexOf(name) < 0) d.by.push(name); }
+
+    /**
+     * apply returns { fields, diff }. fields is a copy of the hero's fields
+     * with every layer applied, oldest first; the input is never changed.
+     * diff[key] is { was, now, by, added, removed }: the value before any
+     * layer, the value after, the names of the layers that changed it, and
+     * for a list field the entries layers added ({ entry, label, by }) and
+     * hid ({ entry, by }).
+     */
+    function apply(fields, layers) {
+      var out = {};
+      Object.keys(fields || {}).forEach(function (k) { out[k] = fields[k]; });
+      var diff = {};
+      (Array.isArray(layers) ? layers : []).forEach(function (layer) {
+        var name = (layer && layer.name) || 'Layer';
+        (layer && Array.isArray(layer.changes) ? layer.changes : []).forEach(function (c) {
+          if (!c || typeof c.field !== 'string' || !/^[a-z][a-z0-9_]*$/.test(c.field)) return;
+          var key = c.field, cur = out[key], d, list;
+          switch (c.op) {
+            case 'set':
+              d = diffFor(diff, key, cur);
+              if (isObj(c.value)) {
+                var base = parse(cur);
+                var merged = isObj(base) ? copy(base) : {};
+                var val = resolve(c.value, out);
+                Object.keys(val).forEach(function (k) { merged[k] = val[k]; });
+                out[key] = merged;
+              } else {
+                out[key] = resolve(c.value, out);
+              }
+              break;
+            case 'add':
+              d = diffFor(diff, key, cur);
+              out[key] = numberOf(cur) + numberOf(c.value);
+              break;
+            case 'append':
+              d = diffFor(diff, key, cur);
+              list = parse(cur);
+              list = Array.isArray(list) ? list.slice() : [];
+              list.push(copy(c.value));
+              d.added.push({ entry: copy(c.value), label: c.label || entryName(c.value), by: name });
+              out[key] = list;
+              break;
+            case 'remove':
+              list = parse(cur);
+              if (!Array.isArray(list)) return;
+              var keep = [], gone = [];
+              list.forEach(function (e) { (sameName(entryName(e), c.value) ? gone : keep).push(e); });
+              if (!gone.length) return;
+              d = diffFor(diff, key, cur);
+              gone.forEach(function (e) { d.removed.push({ entry: e, by: name }); });
+              out[key] = keep;
+              break;
+            default:
+              return;
+          }
+          note(d, name);
+        });
+      });
+      Object.keys(diff).forEach(function (k) { diff[k].now = out[k]; });
+      return { fields: out, diff: diff };
+    }
+
+    // changed reports whether a layer left the field different from before,
+    // so a sheet marks only real changes (a set to the same value is quiet).
+    function changed(diff, key) {
+      var d = diff && diff[key];
+      if (!d) return false;
+      if (d.added.length || d.removed.length) return true;
+      return JSON.stringify(d.was) !== JSON.stringify(d.now);
+    }
+
+    return { apply: apply, changed: changed, entryName: entryName };
+  })();
+
+  // fetchLayers reads the hero's layers from Chronicle. With the
+  // Transformations add-on off, no campaign, or any failure, the sheet is the
+  // hero's own: an empty list, never an error on the page.
+  function fetchLayers(cid, eid) {
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/pages/' + encodeURIComponent(eid) + '/layers';
+    return Chronicle.apiFetch(url).then(function (res) {
+      if (!res.ok) return [];
+      return res.json().then(function (b) { return (b && Array.isArray(b.layers)) ? b.layers : []; });
+    }).catch(function () { return []; });
+  }
+
+  // withLayers puts the layers into the seed bundle: fields become the
+  // fields as the layers make them, and the hero's own stay beside them.
+  function withLayers(data, layers) {
+    var res = Layers.apply(data.fields, layers);
+    data.ownFields = data.fields;
+    data.fields = res.fields;
+    data.layers = Array.isArray(layers) ? layers : [];
+    data.layerDiff = res.diff;
+    return data;
+  }
+
+  // wasHtml is the struck-through old value before a field a layer changed,
+  // or '' when no layer changed it. show turns a value into the text the
+  // sheet would have shown for it.
+  function wasHtml(data, key, show) {
+    if (!data || !Layers.changed(data.layerDiff, key)) return '';
+    var d = data.layerDiff[key];
+    var was = show ? show(d.was) : scalar(d.was);
+    var txt = (was == null || was === '') ? '' : String(was);
+    var by = d.by.join(', ');
+    return '<s class="sh-was" title="' + escAttr('Before ' + by) + '"><span class="sh-sr">Was </span>' + (txt ? esc(txt) : '&ndash;') + '</s> ';
+  }
+
+  // The layers on the hero, by name, for the sheet's title.
+  function layerChips(data) {
+    var ls = (data && data.layers) || [];
+    if (!ls.length) return '';
+    return '<span class="sh-layers" aria-label="Transformed">' + ls.map(function (l) {
+      return '<span class="sh-layer" title="' + escAttr(l.note || 'A transformation layered over the hero') + '">' + esc(l.name || 'Layer') + '</span>';
+    }).join('') + '</span>';
+  }
+
   // f / num read a custom field off the seed bundle (data.fields = the entity's
   // custom_fields), mirroring the former this._f / this._num helpers.
   function f(data, key, fallback) {
@@ -1896,7 +2078,7 @@
 
   function pHead(data) {
     return '<header class="sh-head paper-title"><div><div class="paper-kind">Hero · Draw Steel</div>' +
-      '<div class="sh-name"><h2>' + esc(data.name || 'Unnamed Hero') + '</h2></div></div></header>';
+      '<div class="sh-name"><h2>' + esc(data.name || 'Unnamed Hero') + '</h2>' + layerChips(data) + '</div></div></header>';
   }
 
   // The origin values are pickers only when the host allows editing and
@@ -1912,7 +2094,7 @@
 
     var slots = ORIGIN_SLOTS.map(function (s) {
       var v = f(data, s.key, '');
-      var text = v ? esc(v) : '<span class="sh-unset">Not set</span>';
+      var text = wasHtml(data, s.key) + (v ? esc(v) : '<span class="sh-unset">Not set</span>');
       var inner = canPick
         ? '<button type="button" class="sh-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
@@ -1968,7 +2150,7 @@
   function pStats(data) {
     function stat(label, key) {
       var v = f(data, key, null);
-      return '<span>' + label + '<b>' + ((v == null || v === '') ? '–' : esc(String(scalar(v)))) + '</b></span>';
+      return '<span>' + label + '<b>' + wasHtml(data, key) + ((v == null || v === '') ? '–' : esc(String(scalar(v)))) + '</b></span>';
     }
     var out = stat('Speed', 'speed') + stat('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') out += stat('Disengage', 'disengage');
@@ -2002,7 +2184,7 @@
       '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
       '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
-        (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
+        (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
         (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
         (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
     return '<section class="sh-turn paper-pull" data-sheet-section="turn" aria-label="This turn">' +
@@ -2127,12 +2309,16 @@
 
   function pDamagePart(data) {
     var d = damageLists(data);
-    var line = function (label, list) {
-      return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
+    var shown = function (v) {
+      var t = toDamageEntries(v).map(dmgEntryText).filter(Boolean).join(' · ');
+      return t || 'None';
+    };
+    var line = function (label, list, key) {
+      return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + wasHtml(data, key, shown) + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
     };
     return '<section class="sh-sec paper-pull sh-o4" data-sheet-section="damage" aria-label="Damage">' +
       pullBtn('damage', '<span class="paper-kind">Damage</span>', 'Sources') +
-      line('Immunities', d.imm) + line('Weaknesses', d.weak) + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
+      line('Immunities', d.imm, 'immunities') + line('Weaknesses', d.weak, 'weaknesses') + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
   }
 
   // Progression values are shown as the sheet has them; "–" when unset.
@@ -2227,22 +2413,44 @@
       ? '<div class="lf-money"><span>Wealth <b class="num">' + esc(String(wealth)) + '</b></span><small>Draw Steel uses Wealth instead of coins.</small></div>' : '');
   }
 
-  function pFeatureFold(ft) {
-    var name = esc((ft && ft.name) || 'Feature');
+  // layerOf names the layer that added a feature, or '' for the hero's own.
+  function layerOf(data, ft) {
+    var d = data && data.layerDiff && data.layerDiff.features_json;
+    if (!d || !ft) return '';
+    for (var i = 0; i < d.added.length; i++) {
+      var e = d.added[i].entry;
+      if (e && typeof e === 'object' && e.name === ft.name && (e.dsid || '') === (ft.dsid || '')) return d.added[i].by;
+    }
+    return '';
+  }
+
+  function pFeatureFold(ft, data) {
+    var by = layerOf(data, ft);
+    var name = esc((ft && ft.name) || 'Feature') + (by ? ' <span class="sh-layer sh-layer-sm">' + esc(by) + '</span>' : '');
     var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
     var desc = cleanFoundryText(ft && ft.description);
     if (!desc) return '<div class="ft ft-flat">' + name + lvl + '</div>';
     return foldHtml('', name + lvl, '<p>' + refSynced(desc) + '</p>', false);
   }
-  function pFeatureGroup(label, list) {
+  function pFeatureGroup(label, list, data) {
     if (!list || !list.length) return '';
-    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(pFeatureFold).join('') + '</div>';
+    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(function (ft) { return pFeatureFold(ft, data); }).join('') + '</div>';
+  }
+
+  // The hero's own features a layer set aside, struck through, so the
+  // Director and player can see what the transformation took away.
+  function pSetAside(data) {
+    var d = data && data.layerDiff && data.layerDiff.features_json;
+    if (!d || !d.removed.length) return '';
+    return '<div class="lf-grp"><span class="sh-k">Set aside by a transformation</span>' + d.removed.map(function (r) {
+      return '<div class="ft ft-flat"><s class="sh-was">' + esc(Layers.entryName(r.entry) || 'Feature') + '</s> <span class="sh-layer sh-layer-sm">' + esc(r.by) + '</span></div>';
+    }).join('') + '</div>';
   }
 
   function pFeaturesPanel(data) {
     var feats = parseJson(f(data, 'features_json', ''), []);
-    var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), [])) +
-      pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []));
+    var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), []), data) +
+      pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []), data) + pSetAside(data);
     if (Array.isArray(feats) && feats.length) {
       var origins = FEATURE_ORIGINS.map(function (o) {
         var nm = f(data, o.field, '');
@@ -2252,8 +2460,8 @@
       feats.forEach(function (ft) { var g = classifyFeature(ft, origins); (buckets[g] = buckets[g] || []).push(ft); });
       var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
       // With nothing placed, one flat list is more honest than a lone "Features" group.
-      if (!placed.length) return pFeatureGroup('Features', feats) + extra;
-      return FEATURE_GROUP_ORDER.map(function (k) { return pFeatureGroup(FEATURE_GROUP_LABELS[k], buckets[k]); }).join('') + extra;
+      if (!placed.length) return pFeatureGroup('Features', feats, data) + extra;
+      return FEATURE_GROUP_ORDER.map(function (k) { return pFeatureGroup(FEATURE_GROUP_LABELS[k], buckets[k], data); }).join('') + extra;
     }
     return extra || pEmpty('No features yet.');
   }
@@ -2964,6 +3172,12 @@
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
       '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
       '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
+      // A layer's struck old value, and the names of the layers on the hero.
+      '[data-sheet] .sh-was { color:var(--paper-mute);font-weight:400;text-decoration-thickness:1px;margin-right:2px; }',
+      '[data-sheet] .sh-sr { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }',
+      '[data-sheet] .sh-layers { display:inline-flex;gap:6px;flex-wrap:wrap; }',
+      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);white-space:nowrap; }',
+      '[data-sheet] .sh-layer-sm { font-size:calc(10px * var(--ts));line-height:16px;padding:0 6px;vertical-align:1px; }',
       '[data-sheet] .sh-folio { position:relative;isolation:isolate;width:920px;max-width:100%;margin-inline:auto; }',
       '[data-sheet] .sh-stack { position:relative;z-index:2;width:100%; }',
       '[data-sheet] .sh-sheet { padding:24px 36px 26px;display:flex;flex-direction:column;gap:16px;font-size:calc(13.5px * var(--ts));line-height:1.55; }',
@@ -3485,9 +3699,9 @@
           armoryItems: flag(ds.armoryItems)
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
-        Promise.all([loadRef, loadSkillDefs(campaignId)]).then(function () {
+        Promise.all([loadRef, loadSkillDefs(campaignId), fetchLayers(campaignId, entityId)]).then(function (got) {
           if (refRenderer) refRenderer.injectStyles();
-          mountSheet(self, el, data);
+          mountSheet(self, el, withLayers(data, got[2]));
         });
       }
 
@@ -3550,7 +3764,8 @@
       pIdentity: pIdentity, pTurn: pTurn, pKitPart: pKitPart, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
-      staminaState: staminaState, mountSheet: mountSheet
+      staminaState: staminaState, mountSheet: mountSheet,
+      Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers
     };
   }
 })();
