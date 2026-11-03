@@ -271,14 +271,107 @@ test('drawer text is escaped', () => {
   assert.ok(!/<img src=x|<script>|<b>Mirela|<i>no|data-tf-on="">/.test(html));
 });
 
-test('loadTransformData: missing files are empty lists', async () => {
+test('loadTransformData: missing files are empty lists, and no Workshop means no Save', async () => {
   const saved = globalThis.window.Chronicle.apiFetch;
   const seen = [];
   globalThis.window.Chronicle.apiFetch = (url) => { seen.push(url); return url.endsWith('transformations.json')
     ? Promise.resolve({ ok: true, json: () => Promise.resolve([{ slug: 'a' }]) }) : Promise.resolve({ ok: false }); };
-  assert.deepEqual(await cs.loadTransformData('c1'), { presets: [{ slug: 'a' }], ancestries: [] });
-  assert.deepEqual(seen, ['/campaigns/c1/systems/drawsteel/data/transformations.json', '/campaigns/c1/systems/drawsteel/data/ancestries.json']);
+  assert.deepEqual(await cs.loadTransformData('c1'), { presets: [{ slug: 'a' }], ancestries: [], canSave: false });
+  assert.deepEqual(seen, ['/campaigns/c1/systems/drawsteel/data/transformations.json', '/campaigns/c1/systems/drawsteel/data/ancestries.json', '/campaigns/c1/homebrew/recipes']);
   globalThis.window.Chronicle.apiFetch = () => Promise.reject(new Error('down'));
-  assert.deepEqual(await cs.loadTransformData('c1'), { presets: [], ancestries: [] });
+  assert.deepEqual(await cs.loadTransformData('c1'), { presets: [], ancestries: [], canSave: false });
   globalThis.window.Chronicle.apiFetch = saved;
+});
+
+// ── The Director's own presets ──────────────────────────────────────────
+
+const THRALL = { name: 'Thrall', source: 'homebrew', note: 'Bitten twice.', changes: [{ field: 'weaknesses', op: 'set', value: { holy: 3 } }] };
+const recipe = (id, data) => ({ id, name: 'Thrall recipe', doc: { parts: [{ key: 'layer', kind: 'transformation', label: 'Thrall', see: 'director', data }], rules: [] } });
+
+test('own presets are read from Workshop recipes with a transformation part', async () => {
+  const saved = globalThis.window.Chronicle.apiFetch;
+  const seen = [];
+  globalThis.window.Chronicle.apiFetch = (url) => {
+    seen.push(url);
+    if (url === '/campaigns/c1/homebrew/recipes') return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [
+      { id: 'r1', partKinds: ['transformation'] }, { id: 'r2', partKinds: ['tracker'] }, { id: 'r3', partKinds: ['clock', 'transformation'] }], total: 3 }) });
+    if (url.endsWith('/r1')) return Promise.resolve({ ok: true, json: () => Promise.resolve(recipe('r1', THRALL)) });
+    if (url.endsWith('/r3')) return Promise.resolve({ ok: false });
+    return Promise.resolve({ ok: false });
+  };
+  const got = await cs.loadOwnPresets('c1');
+  assert.equal(got.canSave, true);
+  assert.deepEqual(got.presets.map((p) => [p.slug, p.name, p.own, p.recipeId]), [['own-r1', 'Thrall', true, 'r1']]);
+  assert.ok(!seen.some((u) => u.endsWith('/r2')), 'a recipe with no transformation is not opened');
+  globalThis.window.Chronicle.apiFetch = saved;
+});
+
+test('Save as my preset stores the layer as previewed, as the Director\'s alone', () => {
+  const built = cs.presetLayer(preset('revenant'), sheet(), pick('revenant'), ANCESTRIES).layer;
+  const r = cs.presetRecipe('Revenant (yours)', built);
+  assert.equal(r.name, 'Revenant (yours)');
+  assert.deepEqual(r.doc.rules, []);
+  assert.equal(r.doc.parts.length, 1);
+  const part = r.doc.parts[0];
+  assert.deepEqual([part.kind, part.see, part.key], ['transformation', 'director', 'layer']);
+  assert.deepEqual(Object.keys(part.data).sort(), ['changes', 'name', 'note', 'source'], 'only the keys Chronicle checks');
+  assert.equal(part.data.name, 'Revenant (yours)');
+  assert.deepEqual(part.data.changes, built.changes);
+  // Saved and read back, it is the same layer under the new name.
+  const back = cs.ownPreset({ id: 'r9', name: 'Revenant (yours)', doc: r.doc });
+  assert.equal(cs.presetLayer(back, sheet(), cs.tfState(), ANCESTRIES).layer.source, 'homebrew:r9');
+  assert.deepEqual(cs.presetLayer(back, sheet(), cs.tfState(), ANCESTRIES).layer.changes, built.changes);
+  assert.equal(cs.ownPreset({ id: 'x', doc: { parts: [{ kind: 'tracker', data: {} }] } }), null);
+});
+
+test('the drawer groups canon and own presets, and offers Save only for a canon one', () => {
+  const own = cs.ownPreset(recipe('r1', THRALL));
+  const data = sheet({ tf: { canEdit: true, canSave: true, layers: [], presets: PRESETS.concat([own]), ancestries: ANCESTRIES } });
+  data.tfState = pick('revenant', { open: true });
+  cs.withLayers(data, [], cs.tfPreview(data, data.tfState));
+  let html = cs.pChanges(data);
+  assert.match(html, /From Draw Steel · ready to use[\s\S]*Your own · kept in the Homebrew Workshop[\s\S]*data-tf-p="own-r1"/);
+  assert.match(html, /data-tf="save">Save as my preset</);
+  data.tfState = Object.assign(cs.tfState(), { open: true, add: 'own-r1' });
+  html = cs.pChanges(data);
+  assert.ok(!/data-tf="save"/.test(html), 'an own preset is not saved again');
+  data.tf.canSave = false;
+  data.tfState = pick('revenant', { open: true });
+  assert.ok(!/data-tf="save"/.test(cs.pChanges(data)), 'no Save when the Workshop did not answer');
+  data.tf.canSave = true;
+  data.tfState = pick('revenant', { open: true, saving: true, saveName: '"><img>' });
+  html = cs.pChanges(data);
+  assert.match(html, /data-tf-name value="&quot;&gt;&lt;img&gt;"/);
+  assert.match(html, /data-tf="save-go"/);
+});
+
+test('?transform= opens the drawer on that preset, previewed', () => {
+  const own = cs.ownPreset(recipe('r1', THRALL));
+  const data = sheet({ tf: { canEdit: true, canSave: true, layers: [], presets: PRESETS.concat([own]), ancestries: ANCESTRIES } });
+  const st = cs.tfFromAddress(data, '?transform=r1');
+  assert.equal(st.open, true);
+  assert.equal(st.add, 'own-r1');
+  cs.withLayers(data, [], cs.tfPreview(data, st));
+  assert.deepEqual(data.fields.weaknesses, { holy: 3 });
+  assert.equal(data.ownFields.weaknesses, '', 'previewed, not stored');
+  assert.equal(cs.tfFromAddress(data, ''), null);
+  assert.match(cs.tfFromAddress(data, '?transform=gone').err, /not in the Homebrew Workshop/);
+  const on = sheet({ tf: { canEdit: true, layers: [{ id: 'l1', name: 'Thrall', source: 'homebrew:r1', changes: THRALL.changes }], presets: [own], ancestries: [] } });
+  const again = cs.tfFromAddress(on, '?transform=r1');
+  assert.equal(again.add, null, 'a preset already on is not previewed twice');
+  assert.match(again.msg, /already on Mirela/);
+});
+
+test('the Workshop action opens the hero it was set off on, and never pushes', () => {
+  const saved = globalThis.window.location;
+  let went = '';
+  globalThis.window.location = { assign: (u) => { went = u; } };
+  const line = cs.putOnFromRule({ campaignId: 'c 1', run: { recipeId: 'r1', scope: 'e/1' }, step: {} });
+  assert.equal(went, '/campaigns/c%201/entities/e%2F1?transform=r1');
+  assert.match(line, /press Push there/);
+  went = '';
+  assert.match(cs.putOnFromRule({ campaignId: 'c1', run: { recipeId: 'r1', scope: '' } }), /not set off from a hero/);
+  assert.equal(went, '');
+  globalThis.window.location = saved;
+  assert.equal(globalThis.window.Chronicle.homebrewActions['put-on-transformation'], cs.putOnFromRule);
 });

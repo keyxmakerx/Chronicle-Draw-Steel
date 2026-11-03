@@ -2678,9 +2678,29 @@
     return String(s == null ? '' : s).replace(/\{@\w+ ([^}|]+)(?:\|([^}]+))?\}/g, function (m, a, b) { return b || a; });
   }
 
-  function tfState() { return { open: false, add: null, remove: null, pick: {}, keep: {}, adjust: {}, busy: false, msg: '', err: '' }; }
+  function tfState() { return { open: false, add: null, remove: null, pick: {}, keep: {}, adjust: {}, busy: false, msg: '', err: '', saving: false, saveName: '' }; }
 
-  function presetSource(p) { return 'drawsteel:' + p.slug; }
+  // A canon preset is named after its Draw Steel entry; one of the
+  // Director's own after the Workshop recipe that holds it.
+  function presetSource(p) { return p.own ? 'homebrew:' + p.recipeId : 'drawsteel:' + p.slug; }
+
+  // ownPreset reads one Workshop recipe as a preset: its transformation
+  // part holds the whole layer. null for a recipe without a usable one.
+  function ownPreset(recipe) {
+    var parts = (recipe && recipe.doc && Array.isArray(recipe.doc.parts)) ? recipe.doc.parts : [];
+    var part = parts.filter(function (x) { return x && x.kind === 'transformation'; })[0];
+    var d = part && part.data;
+    if (!recipe.id || !d || !Array.isArray(d.changes) || !d.changes.length) return null;
+    return { slug: 'own-' + recipe.id, own: true, recipeId: String(recipe.id), name: d.name || recipe.name || 'Transformation',
+      summary: d.note || 'Saved in the Homebrew Workshop.', source: 'Homebrew Workshop', properties: { changes: d.changes } };
+  }
+
+  // The recipe "Save as my preset" stores: one Director-only part holding
+  // the layer as previewed, and no rules yet (the Workshop adds those).
+  function presetRecipe(name, layer) {
+    return { name: name, doc: { rules: [], parts: [{ key: 'layer', kind: 'transformation', label: name, see: 'director',
+      data: { name: name, source: 'homebrew', note: layer.note, changes: layer.changes } }] } };
+  }
   function pointsChoice(p) {
     var cs = (p && p.properties && p.properties.choices) || [];
     for (var i = 0; i < cs.length; i++) if (cs[i] && cs[i].kind === 'points') return cs[i];
@@ -2816,13 +2836,17 @@
     }).join('');
     var onSources = tf.layers.map(function (l) { return l.source; });
     var avail = tf.presets.filter(function (p) { return p && p.slug && onSources.indexOf(presetSource(p)) < 0; });
-    var list = avail.map(function (p) {
-      return '<button type="button" class="sh-tf-row" data-tf-p="' + escAttr(p.slug) + '" aria-pressed="' + (st.add === p.slug ? 'true' : 'false') + '" data-name="' + escAttr(String(p.name || '').toLowerCase()) + '"' + (st.busy ? ' disabled' : '') + '>' +
-        '<b>' + esc(p.name || p.slug) + '</b><span class="sh-sub">' + esc(p.summary || '') + '</span><span class="sh-tf-mk">Draw Steel</span></button>';
-    }).join('');
+    function rows(list) {
+      return list.map(function (p) {
+        return '<button type="button" class="sh-tf-row" data-tf-p="' + escAttr(p.slug) + '" aria-pressed="' + (st.add === p.slug ? 'true' : 'false') + '" data-name="' + escAttr(String(p.name || '').toLowerCase()) + '"' + (st.busy ? ' disabled' : '') + '>' +
+          '<b>' + esc(p.name || p.slug) + '</b><span class="sh-sub">' + esc(p.summary || '') + '</span><span class="sh-tf-mk">' + (p.own ? 'Yours' : 'Draw Steel') + '</span></button>';
+      }).join('');
+    }
+    var canon = avail.filter(function (p) { return !p.own; }), own = avail.filter(function (p) { return p.own; });
     var find = avail.length > 8 ? '<input type="search" class="sh-tf-find" data-tf-find placeholder="Find a preset" aria-label="Find a preset">' : '';
     var presetsHtml = avail.length
-      ? '<span class="sh-k">From Draw Steel · ready to use</span>' + find + '<div class="sh-tf-list">' + list + '</div>'
+      ? find + (canon.length ? '<span class="sh-k">From Draw Steel · ready to use</span><div class="sh-tf-list">' + rows(canon) + '</div>' : '') +
+        (own.length ? '<span class="sh-k">Your own · kept in the Homebrew Workshop</span><div class="sh-tf-list">' + rows(own) + '</div>' : '')
       : (tf.presets.length ? '<p class="sh-sub">Every preset is already on ' + esc(first) + '.</p>' : '<p class="sh-sub">The presets did not load. Reload the page to try again.</p>');
 
     var preset = st.add && tf.presets.filter(function (p) { return p.slug === st.add; })[0];
@@ -2832,9 +2856,16 @@
     if (built || removing) {
       var what = built ? first + ' as ' + preset.name : first + ' without ' + (removing.name || 'the layer');
       var block = built && built.problems.length;
-      bar = '<div class="sh-tf-bar"><span>Previewing ' + esc(what) + '. Only you see this.</span>' +
+      var canSave = built && !preset.own && tf.canSave;
+      var saveRow = canSave && st.saving
+        ? '<div class="sh-tf-save"><label><span>Preset name</span><input type="text" maxlength="80" data-tf-name value="' + escAttr(st.saveName) + '"></label>' +
+          '<button type="button" class="sh-tf-btn sh-tf-pri" data-tf="save-go"' + (block || st.busy ? ' disabled' : '') + '>Save</button>' +
+          '<button type="button" class="sh-tf-btn" data-tf="save-cancel"' + (st.busy ? ' disabled' : '') + '>Cancel</button></div>'
+        : '';
+      bar = saveRow + '<div class="sh-tf-bar"><span>Previewing ' + esc(what) + '. Only you see this.</span>' +
         (block ? '<span class="sh-tf-err" role="alert">' + esc(built.problems.join(' ')) + '</span>' : '') +
         '<span class="sh-tf-sp"></span>' +
+        (canSave && !st.saving ? '<button type="button" class="sh-tf-btn" data-tf="save"' + (block || st.busy ? ' disabled' : '') + '>Save as my preset</button>' : '') +
         '<button type="button" class="sh-tf-btn" data-tf="discard"' + (st.busy ? ' disabled' : '') + '>Discard</button>' +
         '<button type="button" class="sh-tf-btn sh-tf-pri" data-tf="push"' + (block || st.busy ? ' disabled' : '') + '>' +
         (st.busy ? 'Saving…' : (built ? 'Push to ' + esc(first) : 'Take it off')) + '</button></div>';
@@ -2926,6 +2957,40 @@
     });
   }
 
+  // tfSave keeps the preview as one of the Director's own presets, in a new
+  // Workshop recipe, and keeps previewing it from there.
+  function tfSave(inst, el, data) {
+    var st = inst._tf, tf = data.tf;
+    var preset = tf.presets.filter(function (p) { return p.slug === st.add; })[0];
+    var name = String(st.saveName || '').trim().slice(0, 80);
+    if (!preset) return;
+    if (!name) { st.err = 'Give the preset a name.'; tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' }); return; }
+    var built = presetLayer(preset, data, st, tf.ancestries);
+    if (built.problems.length) { st.err = built.problems.join(' '); tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' }); return; }
+    st.busy = true; st.msg = st.err = '';
+    tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' });
+    Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) + '/homebrew/recipes', { method: 'POST', body: presetRecipe(name, built.layer) })
+      .then(function (res) {
+        if (!res.ok) throw res;
+        return res.json();
+      }).then(function (recipe) {
+        var mine = ownPreset(recipe);
+        st.busy = false; st.saving = false;
+        if (mine) {
+          tf.presets = tf.presets.concat([mine]);
+          st.add = mine.slug; st.pick = {}; st.keep = {}; st.adjust = {};
+        }
+        st.msg = 'Saved as “' + name + '” in the Homebrew Workshop, under Your own here. A rule there can offer it to you, when a clock fills for one.';
+        tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
+      }, function (res) {
+        st.busy = false;
+        st.err = res && res.status === 422
+          ? 'The Workshop would not keep it; a recipe may already be called “' + name + '”. Try another name.'
+          : tfError(res);
+        tfRerender(inst, el, data, { attr: 'data-tf-name', val: '' });
+      });
+  }
+
   function attachChanges(inst, el, data) {
     if (!data.tf || !data.tf.canEdit || !data.isGm) return;
     if (!inst._tf) inst._tf = tfState();
@@ -2957,6 +3022,17 @@
         again('data-tf', 'tab');
       } else if (a === 'push') {
         tfPush(inst, el, data);
+      } else if (a === 'save') {
+        var sp = data.tf.presets.filter(function (x) { return x.slug === st.add; })[0];
+        st.saving = true; st.saveName = sp ? sp.name + ' (yours)' : ''; clear();
+        again('data-tf-name', '');
+        var box = el.querySelector('[data-tf-name]');
+        if (box && box.focus) { box.focus(); if (box.select) box.select(); }
+      } else if (a === 'save-cancel') {
+        st.saving = false; clear();
+        again('data-tf', 'save');
+      } else if (a === 'save-go') {
+        tfSave(inst, el, data);
       }
     };
     inst._onTfChange = function (e) {
@@ -2980,6 +3056,7 @@
     inst._onTfInput = function (e) {
       var t = e.target, k;
       if (!t || !t.getAttribute) return;
+      if (t.hasAttribute('data-tf-name')) { st.saveName = String(t.value || ''); return; }
       if ((k = t.getAttribute('data-tf-adj')) != null) {
         var n = parseInt(t.value, 10);
         st.adjust[k] = isFinite(n) ? Math.max(-99, Math.min(99, n)) : 0;
@@ -3037,6 +3114,37 @@
     return null;
   }
 
+  // tfFromAddress opens the drawer on one of the Director's own presets
+  // when the page was opened with ?transform=<recipe>, as a Workshop rule's
+  // "Put the transformation on the hero" does. null when there is nothing
+  // to open; a preset already on the hero opens the drawer saying so.
+  function tfFromAddress(data, search) {
+    var m = /[?&]transform=([^&#]+)/.exec(String(search || ''));
+    if (!m || !data.tf) return null;
+    var rid = decodeURIComponent(m[1]);
+    var p = data.tf.presets.filter(function (x) { return x.own && x.recipeId === rid; })[0];
+    var st = Object.assign(tfState(), { open: true });
+    if (!p) { st.err = 'That preset is not in the Homebrew Workshop any more.'; return st; }
+    if (data.tf.layers.some(function (l) { return l.source === presetSource(p); })) {
+      st.msg = p.name + ' is already on ' + firstName(data.name || 'the hero') + '.';
+      return st;
+    }
+    st.add = p.slug;
+    return st;
+  }
+
+  // putOnFromRule is the browser half of the Workshop's "Put the
+  // transformation on the hero": it opens the hero the rule was set off on,
+  // with the preset previewed, so the Director looks before pressing Push.
+  function putOnFromRule(ctx) {
+    var run = (ctx && ctx.run) || {};
+    if (!run.scope) return 'Nothing to put it on: this rule was not set off from a hero’s page.';
+    var url = '/campaigns/' + encodeURIComponent(ctx.campaignId) + '/entities/' + encodeURIComponent(run.scope) +
+      '?transform=' + encodeURIComponent(run.recipeId || '');
+    if (typeof window !== 'undefined' && window.location) window.location.assign(url);
+    return 'Opening the hero with the transformation previewed; press Push there to put it on.';
+  }
+
   // loadTransformData reads what the drawer needs: the presets (Director
   // data) and the ancestries, to price the traits a Revenant may keep.
   // A failure is an empty list, and the drawer says the presets did not load.
@@ -3047,7 +3155,26 @@
       return Chronicle.apiFetch(base + file).then(function (r) { return r.ok ? r.json() : []; })
         .then(function (a) { return Array.isArray(a) ? a : []; }, function () { return []; });
     }
-    return Promise.all([get('transformations.json'), get('ancestries.json')]).then(function (r) { return { presets: r[0], ancestries: r[1] }; });
+    return Promise.all([get('transformations.json'), get('ancestries.json'), loadOwnPresets(cid)]).then(function (r) {
+      return { presets: r[0].concat(r[2].presets), ancestries: r[1], canSave: r[2].canSave };
+    });
+  }
+
+  // loadOwnPresets reads the Director's own presets: every Workshop recipe
+  // with a transformation part. canSave is false when the Workshop did not
+  // answer, so the drawer offers no Save it cannot keep.
+  function loadOwnPresets(cid) {
+    var base = '/campaigns/' + encodeURIComponent(cid) + '/homebrew/recipes';
+    return Chronicle.apiFetch(base).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) {
+      if (!b) return { presets: [], canSave: false };
+      var list = Array.isArray(b) ? b : (Array.isArray(b.data) ? b.data : []);
+      var withLayer = list.filter(function (x) { return x && x.id && Array.isArray(x.partKinds) && x.partKinds.indexOf('transformation') >= 0; });
+      return Promise.all(withLayer.map(function (x) {
+        return Chronicle.apiFetch(base + '/' + encodeURIComponent(x.id)).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
+      })).then(function (recipes) {
+        return { presets: recipes.map(function (x) { return x ? ownPreset(x) : null; }).filter(Boolean), canSave: true };
+      });
+    }).catch(function () { return { presets: [], canSave: false }; });
   }
 
   function paperSheetHtml(data) {
@@ -3671,6 +3798,8 @@
       '[data-sheet] .sh-tf-choice { border:1px dashed var(--paper-warn, #b45309);border-radius:6px;margin:0;padding:8px 10px;display:grid;gap:6px;min-width:0; }',
       '[data-sheet] .sh-tf-choice legend, [data-sheet] .sh-tf-nums summary { padding:0 4px;font-weight:600;color:var(--paper-ink); }',
       '[data-sheet] .sh-tf-nums summary { cursor:pointer;min-height:28px;display:flex;align-items:center; }',
+      '[data-sheet] .sh-tf-nums summary::before { content:"\\25B8";margin-right:6px;color:var(--paper-mute); }',
+      '[data-sheet] .sh-tf-nums[open] summary::before { content:"\\25BE"; }',
       '[data-sheet] .sh-tf p { margin:0; }',
       '[data-sheet] .sh-tf-opt { display:flex;align-items:center;gap:8px;min-height:32px; }',
       '[data-sheet] .sh-tf-adjs { display:flex;flex-wrap:wrap;gap:8px 14px; }',
@@ -3678,6 +3807,9 @@
       '[data-sheet] .sh-tf-adj input { width:4.5em;border:1px solid var(--paper-edge);border-radius:4px;background:transparent;color:var(--paper-ink);padding:4px 6px;font:inherit; }',
       '[data-sheet] .sh-tf-bar { display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-top:1px solid var(--paper-edge);padding-top:8px;color:var(--paper-warn, #b45309);font-weight:600; }',
       '[data-sheet] .sh-tf-sp { flex:1; }',
+      '[data-sheet] .sh-tf-save { display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px; }',
+      '[data-sheet] .sh-tf-save label { display:grid;gap:4px;flex:1;min-width:12em; }',
+      '[data-sheet] .sh-tf-save input { border:1px solid var(--paper-edge);border-radius:4px;background:transparent;color:var(--paper-ink);padding:6px 8px;font:inherit;min-height:36px; }',
       '[data-sheet] .sh-tf-btn { min-height:36px;border:1px solid var(--paper-edge);border-radius:6px;background:transparent;color:var(--paper-ink);padding:0 14px;font:600 calc(12.5px * var(--ts)) var(--paper-ui-font);cursor:pointer; }',
       '[data-sheet] .sh-tf-pri { border:0;background:var(--paper-accent);color:var(--paper-on-accent, #fff); }',
       '[data-sheet] .sh-tf-btn:disabled, [data-sheet] .sh-tf-row:disabled { opacity:.45;cursor:default; }',
@@ -4210,13 +4342,15 @@
         var layered = fetchLayers(campaignId, entityId).then(function (lv) {
           if (!lv.canEdit || !data.isGm) return { lv: lv, tf: null };
           return loadTransformData(campaignId).then(function (d) {
-            return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries } };
+            return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries, canSave: d.canSave } };
           });
         });
         Promise.all([loadRef, loadSkillDefs(campaignId), layered]).then(function (got) {
           if (refRenderer) refRenderer.injectStyles();
           data.tf = got[2].tf;
-          mountSheet(self, el, withLayers(data, got[2].lv.layers));
+          var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
+          if (st) { self._tf = st; data.tfState = st; }
+          mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null));
         });
       }
 
@@ -4248,6 +4382,13 @@
 
   if (Chronicle) registerBoxes();
 
+  // The Workshop's "Put the transformation on the hero" runs here, in the
+  // Director's browser, because only the sheet can preview it before Push.
+  if (Chronicle) {
+    Chronicle.homebrewActions = Chronicle.homebrewActions || {};
+    Chronicle.homebrewActions['put-on-transformation'] = putOnFromRule;
+  }
+
   // Test seam: expose the pure helpers for Node unit tests. Inert in a browser
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
   if (typeof module !== 'undefined' && module.exports) {
@@ -4268,7 +4409,9 @@
       staminaState: staminaState, mountSheet: mountSheet,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
-      tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData
+      tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
+      ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
+      loadOwnPresets: loadOwnPresets
     };
   }
 })();

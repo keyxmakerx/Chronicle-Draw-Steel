@@ -92,6 +92,17 @@ layer (`POST`), unticking previews the hero without one and Take it off removes
 it (`DELETE`); Discard or closing the drawer drops the preview. The box render
 has no drawer.
 
+The Director's own presets live in the Homebrew Workshop: **Save as my preset**
+(on a canon preset's preview, once the Workshop has answered) asks for a name
+and stores a recipe with one Director-only `transformation` part holding the
+layer exactly as previewed, choices settled. The drawer lists them under "Your
+own", read from the recipes whose `partKinds` include `transformation`. A
+Workshop rule's **Put the transformation on the hero** runs in the browser
+(`Chronicle.homebrewActions['put-on-transformation']`): it opens the hero the
+rule was set off on with `?transform=<recipe>`, which opens the drawer with that
+preset previewed, so a rule never puts a layer on without the Director pressing
+Push.
+
 ---
 
 ## Abilities section
