@@ -461,7 +461,7 @@ Every claim has been corrected:
 | `data/creatures.json` (×35) | `"source": "Draw Steel CC-BY-4.0, MCDM Productions"` | `"source": "custom"` (see above) |
 | `docs/DATA-SCHEMA.md` | the same string, as the worked `creatures.json` example | `"custom"`, plus the correction recorded in "Provenance" |
 | `docs/PROJECT-HANDOFF.md` | `LICENSE \| CC-BY-4.0`; "if Draw Steel CC-BY-4.0 content is available" | both corrected to the Creator License position |
-| `docs/implementation-checklist.md` | "Sourced from CC-BY-4.0 Draw Steel content only" | struck through and corrected in place, since it is a historical record |
+| `docs/implementation-checklist.md` | "Sourced from CC-BY-4.0 Draw Steel content only" | removed with the rest of that old sprint plan |
 
 `docs/CHARACTER-SHEET-DESIGN.md` already stated the Creator License position and was
 left as-is.
