@@ -25,8 +25,11 @@
  * The Abilities box is a master-detail (rail + detail pane) wired via one
  * delegated listener, since the frame re-renders box bodies.
  *
- * Foundry is the source of truth. The one write path is the origin picker
- * (ancestry / culture / career / kit), delegated to Chronicle.pickChoice.
+ * Foundry is the source of truth. The write paths are the origin picker
+ * (ancestry / culture / career / kit), delegated to Chronicle.pickChoice, and
+ * the Director's Changes drawer, which puts transformation layers on and
+ * takes them off through Chronicle's layer routes; neither writes the
+ * Foundry-synced fields themselves.
  *
  * LAYOUT: cross-system slot points (character_skills / character_inventory /
  * character_purchase_history) are appended after the surface, inert + hidden
@@ -138,6 +141,226 @@
   function parseJsonAttr(raw, fallback) {
     if (!raw) return fallback;
     try { return JSON.parse(raw); } catch (e) { return fallback; }
+  }
+
+  // ── Transformation layers ─────────────────────────────────────────
+  // Hero layers: what a transformation (a vampire's bite, rising as a
+  // revenant) does to a hero's fields, worked out in the browser.
+  //
+  // Chronicle stores each layer as a list of changes and never writes the
+  // hero's own fields, which mostly come from Foundry. The sheet works out
+  // the fields as the layers make them, and what each layer changed, so it
+  // can draw the old value struck through beside the new one.
+  // Taking a layer off is simply not applying it.
+  //
+  // A change is { field, op, value, label }:
+  //   set     replaces the value; an object value sets those keys of an object
+  //           field (a damage immunity or weakness) and keeps the rest
+  //   add     adds a number
+  //   append  adds an entry to a list field
+  //   remove  hides the list entry with that name
+  // Inside an object value, "@level" (any "@" and a field key) stands for that
+  // field's number now, so a revenant's immunities grow with the hero.
+  var Layers = (function () {
+
+    function isObj(v) { return v != null && typeof v === 'object' && !Array.isArray(v); }
+
+    function parse(v) {
+      if (typeof v !== 'string') return v;
+      var s = v.trim();
+      if (s.charAt(0) !== '[' && s.charAt(0) !== '{') return v;
+      try { return JSON.parse(s); } catch (e) { return v; }
+    }
+
+    // Foundry writes some numbers as { value, … }; a bare number or numeric
+    // string reads as itself; anything else reads as 0.
+    function numberOf(v) {
+      if (isObj(v) && v.value !== undefined) v = v.value;
+      var n = typeof v === 'number' ? v : parseFloat(v);
+      return isFinite(n) ? n : 0;
+    }
+
+    function copy(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+    function entryName(e) {
+      if (e == null) return '';
+      if (typeof e === 'string') return e;
+      return e.name != null ? String(e.name) : '';
+    }
+
+    function sameName(a, b) { return String(a).trim().toLowerCase() === String(b).trim().toLowerCase(); }
+
+    // "@level" and the like, resolved against the fields as they stand.
+    function resolve(v, fields) {
+      if (typeof v === 'string' && /^@[a-z][a-z0-9_]*$/.test(v)) return numberOf(fields[v.slice(1)]);
+      if (isObj(v)) {
+        var out = {};
+        Object.keys(v).forEach(function (k) { out[k] = resolve(v[k], fields); });
+        return out;
+      }
+      return v;
+    }
+
+    function diffFor(diff, key, was) {
+      if (!diff[key]) diff[key] = { was: copy(was), by: [], added: [], removed: [] };
+      return diff[key];
+    }
+    function note(d, name) { if (d.by.indexOf(name) < 0) d.by.push(name); }
+
+    /**
+     * apply returns { fields, diff }. fields is a copy of the hero's fields
+     * with every layer applied, oldest first; the input is never changed.
+     * diff[key] is { was, now, by, added, removed }: the value before any
+     * layer, the value after, the names of the layers that changed it, and
+     * for a list field the entries layers added ({ entry, label, by }) and
+     * hid ({ entry, by }).
+     */
+    function apply(fields, layers) {
+      var out = {};
+      Object.keys(fields || {}).forEach(function (k) { out[k] = fields[k]; });
+      var diff = {};
+      (Array.isArray(layers) ? layers : []).forEach(function (layer) {
+        var name = (layer && layer.name) || 'Layer';
+        (layer && Array.isArray(layer.changes) ? layer.changes : []).forEach(function (c) {
+          if (!c || typeof c.field !== 'string' || !/^[a-z][a-z0-9_]*$/.test(c.field)) return;
+          var key = c.field, cur = out[key], d, list;
+          switch (c.op) {
+            case 'set':
+              d = diffFor(diff, key, cur);
+              if (isObj(c.value)) {
+                var base = parse(cur);
+                var merged = isObj(base) ? copy(base) : {};
+                var val = resolve(c.value, out);
+                Object.keys(val).forEach(function (k) { merged[k] = val[k]; });
+                out[key] = merged;
+              } else {
+                out[key] = resolve(c.value, out);
+              }
+              break;
+            case 'add':
+              d = diffFor(diff, key, cur);
+              out[key] = numberOf(cur) + numberOf(c.value);
+              break;
+            case 'append':
+              d = diffFor(diff, key, cur);
+              list = parse(cur);
+              list = Array.isArray(list) ? list.slice() : [];
+              list.push(copy(c.value));
+              d.added.push({ entry: copy(c.value), label: c.label || entryName(c.value), by: name });
+              out[key] = list;
+              break;
+            case 'remove':
+              list = parse(cur);
+              if (!Array.isArray(list)) return;
+              var keep = [], gone = [];
+              list.forEach(function (e) { (sameName(entryName(e), c.value) ? gone : keep).push(e); });
+              if (!gone.length) return;
+              d = diffFor(diff, key, cur);
+              gone.forEach(function (e) { d.removed.push({ entry: e, by: name }); });
+              out[key] = keep;
+              break;
+            default:
+              return;
+          }
+          note(d, name);
+        });
+      });
+      Object.keys(diff).forEach(function (k) { diff[k].now = out[k]; });
+      return { fields: out, diff: diff };
+    }
+
+    // changed reports whether a layer left the field different from before,
+    // so a sheet marks only real changes (a set to the same value is quiet).
+    function changed(diff, key) {
+      var d = diff && diff[key];
+      if (!d) return false;
+      if (d.added.length || d.removed.length) return true;
+      return JSON.stringify(d.was) !== JSON.stringify(d.now);
+    }
+
+    return { apply: apply, changed: changed, entryName: entryName };
+  })();
+
+  // fetchLayers reads the hero's layers from Chronicle, and whether this
+  // viewer may change them. With the Transformations add-on off, no
+  // campaign, or any failure, the sheet is the hero's own: no layers and no
+  // drawer, never an error on the page.
+  function fetchLayers(cid, eid) {
+    var none = { layers: [], canEdit: false };
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(none);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/pages/' + encodeURIComponent(eid) + '/layers';
+    return Chronicle.apiFetch(url).then(function (res) {
+      if (!res.ok) return none;
+      return res.json().then(function (b) {
+        return { layers: (b && Array.isArray(b.layers)) ? b.layers : [], canEdit: !!(b && b.canEdit) };
+      });
+    }).catch(function () { return none; });
+  }
+
+  function sameJson(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+
+  // withLayers puts the layers into the seed bundle: fields become the
+  // fields as the layers make them, and the hero's own stay beside them.
+  // preview is the Director's unpushed change, { add: layer } or
+  // { remove: layer }: the sheet then shows the hero as they would be, and
+  // keeps the fields the player has now so it can mark what the preview moves.
+  function withLayers(data, layers, preview) {
+    var own = data.ownFields || data.fields;
+    var pushed = Array.isArray(layers) ? layers : [];
+    var view = pushed;
+    var pv = preview && (preview.add || preview.remove) ? preview : null;
+    if (pv && pv.remove) view = pushed.filter(function (l) { return l !== pv.remove; });
+    if (pv && pv.add) view = view.concat([pv.add]);
+    var res = Layers.apply(own, view);
+    data.ownFields = own;
+    data.fields = res.fields;
+    data.layers = pushed;
+    data.layerDiff = res.diff;
+    data.preview = null;
+    if (pv) {
+      var now = Layers.apply(own, pushed);
+      data.preview = { add: pv.add || null, remove: pv.remove || null, fields: now.fields, diff: now.diff };
+    }
+    return data;
+  }
+
+  // wasHtml is the struck-through old value before a field a layer changed,
+  // or '' when no layer changed it. show turns a value into the text the
+  // sheet would have shown for it. While the Director previews, a field the
+  // preview moves is struck in the preview colour with the value the player
+  // has now; otherwise the strike shows the hero's own value.
+  function wasHtml(data, key, show) {
+    if (!data) return '';
+    var pv = data.preview, was, title, cls = 'sh-was';
+    if (pv && !sameJson(pv.fields[key], data.fields[key])) {
+      was = pv.fields[key];
+      cls += ' sh-was-pv';
+      title = 'Preview: only you see this. Now ';
+    } else if (Layers.changed(data.layerDiff, key)) {
+      was = data.layerDiff[key].was;
+      title = 'Before ' + data.layerDiff[key].by.join(', ');
+    } else {
+      return '';
+    }
+    was = show ? show(was) : scalar(was);
+    var txt = (was == null || was === '') ? '' : String(was);
+    if (cls !== 'sh-was') title += txt || 'nothing';
+    return '<s class="' + cls + '" title="' + escAttr(title) + '"><span class="sh-sr">Was </span>' + (txt ? esc(txt) : '&ndash;') + '</s> ';
+  }
+
+  // The layers on the hero, by name, for the sheet's title. A previewed
+  // layer is drawn in the preview colour, one being taken off struck.
+  function layerChips(data) {
+    var ls = (data && data.layers) || [], pv = data && data.preview;
+    if (!ls.length && !(pv && pv.add)) return '';
+    var chips = ls.map(function (l) {
+      var off = pv && pv.remove === l;
+      var t = esc(l.name || 'Layer');
+      return '<span class="sh-layer' + (off ? ' sh-layer-pv' : '') + '" title="' + escAttr(off ? 'Preview: coming off' : (l.note || 'A transformation layered over the hero')) + '">' +
+        (off ? '<s><span class="sh-sr">Coming off: </span>' + t + '</s>' : t) + '</span>';
+    });
+    if (pv && pv.add) chips.push('<span class="sh-layer sh-layer-pv" title="Preview: only you see this"><span class="sh-sr">Preview: </span>' + esc(pv.add.name || 'Layer') + '</span>');
+    return '<span class="sh-layers" aria-label="Transformed">' + chips.join('') + '</span>';
   }
 
   // f / num read a custom field off the seed bundle (data.fields = the entity's
@@ -1914,8 +2137,8 @@
   }
 
   // The hero's name is printed once, in Chronicle's page header.
-  function pHead() {
-    return '<header class="sh-head paper-title"><div class="paper-kind">Hero · Draw Steel</div></header>';
+  function pHead(data) {
+    return '<header class="sh-head paper-title"><div class="paper-kind">Hero · Draw Steel</div>' + layerChips(data) + '</header>';
   }
 
   // The identity is one line: ancestry, class and level, subclass, kit. The
@@ -1924,7 +2147,7 @@
   // career sit one fold away and keep their pickers.
   function pOrigin(data, s, canPick) {
     var v = f(data, s.key, '');
-    var text = v ? esc(v) : '<span class="sh-unset">Not set</span>';
+    var text = wasHtml(data, s.key) + (v ? esc(v) : '<span class="sh-unset">Not set</span>');
     return canPick
       ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
           ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
@@ -1993,7 +2216,7 @@
   function pStats(data) {
     function stat(label, key) {
       var v = f(data, key, null);
-      return '<span>' + label + '<b>' + ((v == null || v === '') ? '–' : esc(String(scalar(v)))) + '</b></span>';
+      return '<span>' + label + '<b>' + wasHtml(data, key) + ((v == null || v === '') ? '–' : esc(String(scalar(v)))) + '</b></span>';
     }
     var out = stat('Speed', 'speed') + stat('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') out += stat('Disengage', 'disengage');
@@ -2027,7 +2250,7 @@
       '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
       '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
-        (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
+        (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
         (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
         (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
     return '<section class="sh-turn paper-pull" data-sheet-section="turn" aria-label="This turn">' +
@@ -2253,12 +2476,16 @@
 
   function pDamagePart(data) {
     var d = damageLists(data);
-    var line = function (label, list) {
-      return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
+    var shown = function (v) {
+      var t = toDamageEntries(v).map(dmgEntryText).filter(Boolean).join(' · ');
+      return t || 'None';
+    };
+    var line = function (label, list, key) {
+      return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + wasHtml(data, key, shown) + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
     };
     return '<section class="sh-sec paper-pull sh-o4" data-sheet-section="damage" aria-label="Damage">' +
       pullBtn('damage', '<span class="paper-kind">Damage</span>') +
-      line('Immunities', d.imm) + line('Weaknesses', d.weak) + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
+      line('Immunities', d.imm, 'immunities') + line('Weaknesses', d.weak, 'weaknesses') + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
   }
 
   // Progression values are shown as the sheet has them; "–" when unset.
@@ -2353,22 +2580,63 @@
       ? '<div class="lf-money"><span>Wealth <b class="num">' + esc(String(wealth)) + '</b></span><small>Draw Steel uses Wealth instead of coins.</small></div>' : '');
   }
 
-  function pFeatureFold(ft) {
-    var name = esc((ft && ft.name) || 'Feature');
+  // layerOf names the layer that added a feature, or '' for the hero's own.
+  function layerOf(data, ft) {
+    var d = data && data.layerDiff && data.layerDiff.features_json;
+    if (!d || !ft) return '';
+    for (var i = 0; i < d.added.length; i++) {
+      var e = d.added[i].entry;
+      if (e && typeof e === 'object' && e.name === ft.name && (e.dsid || '') === (ft.dsid || '')) return d.added[i].by;
+    }
+    return '';
+  }
+
+  // A layer's tag on a feature it added; the preview's own is in the
+  // preview colour, since the player does not have it yet.
+  function layerTag(data, by) {
+    if (!by) return '';
+    var pv = data && data.preview && data.preview.add && data.preview.add.name === by;
+    return ' <span class="sh-layer sh-layer-sm' + (pv ? ' sh-layer-pv' : '') + '">' + (pv ? '<span class="sh-sr">Preview: </span>' : '') + esc(by) + '</span>';
+  }
+
+  function pFeatureFold(ft, data) {
+    var name = esc((ft && ft.name) || 'Feature') + layerTag(data, layerOf(data, ft));
     var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
     var desc = cleanFoundryText(ft && ft.description);
     if (!desc) return '<div class="ft ft-flat">' + name + lvl + '</div>';
     return foldHtml('', name + lvl, '<p>' + refSynced(desc) + '</p>', false);
   }
-  function pFeatureGroup(label, list) {
+  function pFeatureGroup(label, list, data) {
     if (!list || !list.length) return '';
-    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(pFeatureFold).join('') + '</div>';
+    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(function (ft) { return pFeatureFold(ft, data); }).join('') + '</div>';
+  }
+
+  // The hero's own features a layer set aside, struck through, so the
+  // Director and player can see what the transformation took away. While
+  // the Director previews taking a layer off, what it added is listed as
+  // coming off with it.
+  function pSetAside(data) {
+    var d = data && data.layerDiff && data.layerDiff.features_json;
+    var pv = data && data.preview, out = '';
+    if (d && d.removed.length) {
+      out += '<div class="lf-grp"><span class="sh-k">Set aside by a transformation</span>' + d.removed.map(function (r) {
+        return '<div class="ft ft-flat"><s class="sh-was">' + esc(Layers.entryName(r.entry) || 'Feature') + '</s>' + layerTag(data, r.by) + '</div>';
+      }).join('') + '</div>';
+    }
+    var was = pv && pv.remove && pv.diff.features_json;
+    var going = was ? was.added.filter(function (a) { return a.by === pv.remove.name; }) : [];
+    if (going.length) {
+      out += '<div class="lf-grp"><span class="sh-k">Coming off with ' + esc(pv.remove.name || 'the layer') + ' · preview</span>' + going.map(function (a) {
+        return '<div class="ft ft-flat"><s class="sh-was sh-was-pv">' + esc(a.label || Layers.entryName(a.entry) || 'Feature') + '</s></div>';
+      }).join('') + '</div>';
+    }
+    return out;
   }
 
   function pFeaturesPanel(data) {
     var feats = parseJson(f(data, 'features_json', ''), []);
-    var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), [])) +
-      pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []));
+    var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), []), data) +
+      pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []), data) + pSetAside(data);
     if (Array.isArray(feats) && feats.length) {
       var origins = FEATURE_ORIGINS.map(function (o) {
         var nm = f(data, o.field, '');
@@ -2378,8 +2646,8 @@
       feats.forEach(function (ft) { var g = classifyFeature(ft, origins); (buckets[g] = buckets[g] || []).push(ft); });
       var placed = FEATURE_GROUP_ORDER.filter(function (k) { return k !== 'other' && buckets[k]; });
       // With nothing placed, one flat list is more honest than a lone "Features" group.
-      if (!placed.length) return pFeatureGroup('Features', feats) + extra;
-      return FEATURE_GROUP_ORDER.map(function (k) { return pFeatureGroup(FEATURE_GROUP_LABELS[k], buckets[k]); }).join('') + extra;
+      if (!placed.length) return pFeatureGroup('Features', feats, data) + extra;
+      return FEATURE_GROUP_ORDER.map(function (k) { return pFeatureGroup(FEATURE_GROUP_LABELS[k], buckets[k], data); }).join('') + extra;
     }
     return extra || pEmpty('No features yet.');
   }
@@ -2518,13 +2786,530 @@
     return list;
   }
 
+  // ── Changes drawer ─────────────────────────────────────────────────────────
+  // The Director's way to put a transformation on: a Changes tab under the
+  // identity panel opens a drawer of presets. Picking one turns the sheet
+  // into the preview (old values struck in the preview colour), the preset's
+  // choices sit in the drawer, and nothing is stored until Push. A layer
+  // already on is a tick box; unticking previews the hero without it.
+  // Only a Director whom Chronicle lets change the page sees the drawer.
+
+  // Numbers the Director may correct by hand: Foundry works them out with
+  // the hero's old traits, and only the Director knows what a lost trait
+  // gave (Staying Power adds recoveries, for one).
+  var TF_ADJUST = [['recoveries_max', 'Recoveries'], ['stamina_max', 'Stamina'], ['speed', 'Speed'], ['stability', 'Stability']];
+  var TF_MAX_CHANGES = 40;
+
+  function plainRules(s) {
+    return String(s == null ? '' : s).replace(/\{@\w+ ([^}|]+)(?:\|([^}]+))?\}/g, function (m, a, b) { return b || a; });
+  }
+
+  function tfState() { return { open: false, add: null, remove: null, pick: {}, keep: {}, adjust: {}, busy: false, msg: '', err: '', saving: false, saveName: '' }; }
+
+  // A canon preset is named after its Draw Steel entry; one of the
+  // Director's own after the Workshop recipe that holds it.
+  function presetSource(p) { return p.own ? 'homebrew:' + p.recipeId : 'drawsteel:' + p.slug; }
+
+  // ownPreset reads one Workshop recipe as a preset: its transformation
+  // part holds the whole layer. null for a recipe without a usable one.
+  function ownPreset(recipe) {
+    var parts = (recipe && recipe.doc && Array.isArray(recipe.doc.parts)) ? recipe.doc.parts : [];
+    var part = parts.filter(function (x) { return x && x.kind === 'transformation'; })[0];
+    var d = part && part.data;
+    if (!recipe.id || !d || !Array.isArray(d.changes) || !d.changes.length) return null;
+    return { slug: 'own-' + recipe.id, own: true, recipeId: String(recipe.id), name: d.name || recipe.name || 'Transformation',
+      summary: d.note || 'Saved in the Homebrew Workshop.', source: 'Homebrew Workshop', properties: { changes: d.changes } };
+  }
+
+  // The recipe "Save as my preset" stores: one Director-only part holding
+  // the layer as previewed, and no rules yet (the Workshop adds those).
+  function presetRecipe(name, layer) {
+    return { name: name, doc: { rules: [], parts: [{ key: 'layer', kind: 'transformation', label: name, see: 'director',
+      data: { name: name, source: 'homebrew', note: layer.note, changes: layer.changes } }] } };
+  }
+  function pointsChoice(p) {
+    var cs = (p && p.properties && p.properties.choices) || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i] && cs[i].kind === 'points') return cs[i];
+    return null;
+  }
+  function isPreviousLife(t) { return /^previous life/i.test(String((t && t.name) || '')); }
+
+  // The traits the hero has from their own ancestry, each with its point
+  // cost when it is a purchased trait of that ancestry in the Draw Steel
+  // data (only those can be kept with Previous Life); 0 means it cannot be.
+  function oldAncestryTraits(data, ancestries) {
+    var own = data.ownFields || data.fields || {};
+    var anc = own.ancestry;
+    if (!anc) return [];
+    var origins = [{ key: 'ancestry', lname: String(anc).toLowerCase(), slug: slugify(anc) }];
+    var entry = (ancestries || []).filter(function (a) { return a && (a.slug === slugify(anc) || String(a.name || '').toLowerCase() === String(anc).toLowerCase()); })[0];
+    var costs = {};
+    ((entry && entry.properties && entry.properties.purchased_traits) || []).forEach(function (t) { costs[String(t.name).toLowerCase()] = Number(t.cost) || 0; });
+    var feats = parseJson(own.features_json, []);
+    return (Array.isArray(feats) ? feats : []).filter(function (ft) { return ft && ft.name && classifyFeature(ft, origins) === 'ancestry'; })
+      .map(function (ft) { return { name: String(ft.name), cost: costs[String(ft.name).toLowerCase()] || 0 }; });
+  }
+
+  // presetLayer turns a preset and the Director's choices into the layer
+  // Push stores, so stored changes are final. problems are reasons Push is
+  // held back (too many points spent).
+  function presetLayer(preset, data, st, ancestries) {
+    var pr = preset.properties || {};
+    var changes = (pr.changes || []).map(function (c) { return JSON.parse(JSON.stringify(c)); });
+    var notes = [], problems = [], spent = 0, budget = 0;
+    var ch = pointsChoice(preset);
+    var prev = {};
+    if (ch) {
+      budget = Number(ch.budget) || 0;
+      (ch.traits || []).forEach(function (t) {
+        if (isPreviousLife(t)) { prev[Number(t.cost) || 0] = t; return; }
+        if (!st.pick[t.name]) return;
+        spent += Number(t.cost) || 0;
+        changes.push({ field: 'features_json', op: 'append', label: t.name,
+          value: { name: t.name, dsid: preset.slug + '-' + slugify(t.name), type: 'ancestry', description: plainRules(t.description) } });
+      });
+    }
+    if (pr.replaces_ancestry_traits) {
+      oldAncestryTraits(data, ancestries).forEach(function (t) {
+        var pl = t.cost && prev[t.cost];
+        if (pl && st.keep[t.name]) {
+          spent += t.cost;
+          notes.push(pl.name + ' keeps ' + t.name + '.');
+          changes.push({ field: 'features_json', op: 'append', label: 'Previous Life: ' + t.name,
+            value: { name: 'Previous Life: ' + t.name, dsid: preset.slug + '-previous-life', type: 'ancestry', description: plainRules(pl.description) } });
+          return;
+        }
+        changes.push({ field: 'features_json', op: 'remove', value: t.name, label: t.name });
+      });
+    }
+    TF_ADJUST.forEach(function (a) {
+      var n = parseInt(st.adjust[a[0]], 10);
+      if (n && isFinite(n)) changes.push({ field: a[0], op: 'add', value: n, label: 'Set by the Director' });
+    });
+    if (ch && spent > budget) problems.push('That spends ' + spent + ' of ' + budget + ' ancestry points.');
+    if (changes.length > TF_MAX_CHANGES) problems.push('That is more than ' + TF_MAX_CHANGES + ' changes; Chronicle keeps at most that many in one layer.');
+    return {
+      layer: { name: String(preset.name || 'Transformation').slice(0, 80), source: presetSource(preset), note: notes.join(' ').slice(0, 1000), changes: changes },
+      spent: spent, budget: budget, problems: problems
+    };
+  }
+
+  // The preview the sheet draws for the drawer's state, or null.
+  function tfPreview(data, st) {
+    var tf = data.tf;
+    if (!tf || !st) return null;
+    if (st.remove) {
+      var on = tf.layers.filter(function (l) { return l.id === st.remove; })[0];
+      return on ? { remove: on } : null;
+    }
+    var p = st.add && tf.presets.filter(function (x) { return x.slug === st.add; })[0];
+    return p ? { add: presetLayer(p, data, st, tf.ancestries).layer } : null;
+  }
+
+  // The preset's choices, in the drawer under the preset list.
+  function tfChoicesHtml(data, preset, st, built) {
+    var tf = data.tf, pr = preset.properties || {}, first = firstName(data.name || 'The hero');
+    var ch = pointsChoice(preset), out = '';
+    if (ch) {
+      var rows = (ch.traits || []).filter(function (t) { return !isPreviousLife(t); }).map(function (t) {
+        return '<label class="sh-tf-opt"><input type="checkbox" data-tf-pick="' + escAttr(t.name) + '"' + (st.pick[t.name] ? ' checked' : '') + '> ' +
+          '<span><b>' + esc(t.name) + '</b> <span class="sh-sub">' + esc(String(t.cost)) + ' pt</span></span></label>';
+      }).join('');
+      var hasPrev = (ch.traits || []).some(isPreviousLife);
+      var old = pr.replaces_ancestry_traits ? oldAncestryTraits(data, tf.ancestries) : [];
+      var oldName = (data.ownFields || {}).ancestry || 'the old ancestry';
+      var keep = old.map(function (t) {
+        if (hasPrev && t.cost) {
+          return '<label class="sh-tf-opt"><input type="checkbox" data-tf-keep="' + escAttr(t.name) + '"' + (st.keep[t.name] ? ' checked' : '') + '> ' +
+            '<span><b>' + esc(t.name) + '</b> <span class="sh-sub">' + t.cost + ' pt · Previous Life</span></span></label>';
+        }
+        return '<div class="sh-tf-opt sh-tf-lost"><s class="sh-was">' + esc(t.name) + '</s> <span class="sh-sub">set aside</span></div>';
+      }).join('');
+      var over = built.spent > built.budget;
+      out += '<fieldset class="sh-tf-choice"><legend>' + esc(preset.name) + ' asks · ancestry points <b class="' + (over ? 'sh-neg' : '') + '">' +
+        built.spent + ' of ' + built.budget + '</b></legend>' +
+        (ch.note ? '<p class="sh-sub">' + esc(ch.note) + '</p>' : '') + rows +
+        (keep ? '<span class="sh-k">From ' + esc(oldName) + '</span>' + keep : '') + '</fieldset>';
+    }
+    var adj = TF_ADJUST.map(function (a) {
+      var v = st.adjust[a[0]] || '';
+      return '<label class="sh-tf-adj"><span>' + a[1] + '</span><input type="number" step="1" min="-99" max="99" inputmode="numeric" data-tf-adj="' + a[0] + '" value="' + escAttr(String(v)) + '" placeholder="0" aria-label="' + escAttr('Change ' + a[1] + ' by') + '"></label>';
+    }).join('');
+    var moved = TF_ADJUST.some(function (a) { return parseInt(st.adjust[a[0]], 10); });
+    out += '<details class="sh-tf-choice sh-tf-nums"' + (moved || pr.replaces_ancestry_traits ? ' open' : '') + '><summary>Numbers to check</summary><p class="sh-sub">' +
+      (pr.replaces_ancestry_traits
+        ? 'Foundry worked out ' + esc(first) + '’s numbers with the traits being set aside. If one of them changed a number (Staying Power adds recoveries), change it by that much here.'
+        : 'If this changes a number the preset does not, change it by that much here.') +
+      '</p><div class="sh-tf-adjs">' + adj + '</div></details>';
+    (pr.notes || []).forEach(function (n) { out += '<p class="sh-sub sh-tf-note">' + fa('circle-info') + ' ' + esc(n) + '</p>'; });
+    return out;
+  }
+
+  // pChanges is the Changes tab and its drawer, '' for anyone who may not
+  // change the hero's layers or when no layer data loaded.
+  function pChanges(data) {
+    var tf = data.tf, st = data.tfState || tfState();
+    if (!tf || !tf.canEdit || !data.isGm) return '';
+    var first = firstName(data.name || 'The hero');
+    var id = 'sh-tf-' + slugify(data.entityId || 'hero');
+    var tab = '<div class="sh-tf-tabrow"><button type="button" class="sh-tf-tab" data-tf="tab" aria-expanded="' + (st.open ? 'true' : 'false') + '" aria-controls="' + id + '">' +
+      fa('masks-theater') + ' Changes' + (tf.layers.length ? ' · ' + tf.layers.length : '') + '</button></div>';
+    if (!st.open) return '<section class="sh-tf" aria-label="Changes">' + tab + '</section>';
+
+    var onRows = tf.layers.map(function (l) {
+      return '<label class="sh-tf-on"><input type="checkbox" data-tf-on="' + escAttr(l.id) + '"' + (st.remove === l.id ? '' : ' checked') + (st.busy ? ' disabled' : '') + '> ' +
+        '<b>' + esc(l.name || 'Layer') + '</b><span class="sh-sub">untick to take it off</span></label>';
+    }).join('');
+    var onSources = tf.layers.map(function (l) { return l.source; });
+    var avail = tf.presets.filter(function (p) { return p && p.slug && onSources.indexOf(presetSource(p)) < 0; });
+    function rows(list) {
+      return list.map(function (p) {
+        return '<button type="button" class="sh-tf-row" data-tf-p="' + escAttr(p.slug) + '" aria-pressed="' + (st.add === p.slug ? 'true' : 'false') + '" data-name="' + escAttr(String(p.name || '').toLowerCase()) + '"' + (st.busy ? ' disabled' : '') + '>' +
+          '<b>' + esc(p.name || p.slug) + '</b><span class="sh-sub">' + esc(p.summary || '') + '</span><span class="sh-tf-mk">' + (p.own ? 'Yours' : 'Draw Steel') + '</span></button>';
+      }).join('');
+    }
+    var canon = avail.filter(function (p) { return !p.own; }), own = avail.filter(function (p) { return p.own; });
+    var find = avail.length > 8 ? '<input type="search" class="sh-tf-find" data-tf-find placeholder="Find a preset" aria-label="Find a preset">' : '';
+    var presetsHtml = avail.length
+      ? find + (canon.length ? '<span class="sh-k">From Draw Steel · ready to use</span><div class="sh-tf-list">' + rows(canon) + '</div>' : '') +
+        (own.length ? '<span class="sh-k">Your own · kept in the Homebrew Workshop</span><div class="sh-tf-list">' + rows(own) + '</div>' : '')
+      : (tf.presets.length ? '<p class="sh-sub">Every preset is already on ' + esc(first) + '.</p>' : '<p class="sh-sub">The presets did not load. Reload the page to try again.</p>');
+
+    var preset = st.add && tf.presets.filter(function (p) { return p.slug === st.add; })[0];
+    var built = preset ? presetLayer(preset, data, st, tf.ancestries) : null;
+    var removing = st.remove && tf.layers.filter(function (l) { return l.id === st.remove; })[0];
+    var bar = '';
+    if (built || removing) {
+      var what = built ? first + ' as ' + preset.name : first + ' without ' + (removing.name || 'the layer');
+      var block = built && built.problems.length;
+      var canSave = built && !preset.own && tf.canSave;
+      var saveRow = canSave && st.saving
+        ? '<div class="sh-tf-save"><label><span>Preset name</span><input type="text" maxlength="80" data-tf-name value="' + escAttr(st.saveName) + '"></label>' +
+          '<button type="button" class="sh-tf-btn sh-tf-pri" data-tf="save-go"' + (block || st.busy ? ' disabled' : '') + '>Save</button>' +
+          '<button type="button" class="sh-tf-btn" data-tf="save-cancel"' + (st.busy ? ' disabled' : '') + '>Cancel</button></div>'
+        : '';
+      bar = saveRow + '<div class="sh-tf-bar"><span>Previewing ' + esc(what) + '. Only you see this.</span>' +
+        (block ? '<span class="sh-tf-err" role="alert">' + esc(built.problems.join(' ')) + '</span>' : '') +
+        '<span class="sh-tf-sp"></span>' +
+        (canSave && !st.saving ? '<button type="button" class="sh-tf-btn" data-tf="save"' + (block || st.busy ? ' disabled' : '') + '>Save as my preset</button>' : '') +
+        '<button type="button" class="sh-tf-btn" data-tf="discard"' + (st.busy ? ' disabled' : '') + '>Discard</button>' +
+        '<button type="button" class="sh-tf-btn sh-tf-pri" data-tf="push"' + (block || st.busy ? ' disabled' : '') + '>' +
+        (st.busy ? 'Saving…' : (built ? 'Push to ' + esc(first) : 'Take it off')) + '</button></div>';
+    }
+    var msg = st.err ? '<p class="sh-tf-msg sh-tf-err" role="alert">' + esc(st.err) + '</p>'
+      : (st.msg ? '<p class="sh-tf-msg" role="status">' + esc(st.msg) + '</p>' : '');
+    return '<section class="sh-tf" aria-label="Changes">' + tab +
+      '<div class="sh-tf-drawer" id="' + id + '">' +
+      (onRows ? '<span class="sh-k">On ' + esc(first) + ' now</span>' + onRows : '') +
+      '<span class="sh-k">Add a change</span>' + presetsHtml +
+      (built ? tfChoicesHtml(data, preset, st, built) : '') + bar + msg + '</div></section>';
+  }
+
+  // The preset's quick build, ticked when a preset is first picked.
+  function quickPicks(preset) {
+    var ch = pointsChoice(preset), out = {};
+    ((ch && ch.quick_build) || []).forEach(function (n) { out[n] = true; });
+    return out;
+  }
+
+  // The sheet is drawn from data, so the drawer redraws it whole; focus and
+  // the page's scroll stay where they were.
+  function tfRerender(inst, el, data, focus) {
+    var y = typeof window !== 'undefined' ? window.scrollY : 0;
+    data.tfState = inst._tf;
+    withLayers(data, data.tf.layers, tfPreview(data, inst._tf));
+    detachListeners(inst, el);
+    mountPaper(inst, el, data);
+    if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo(0, y);
+    if (!focus) return;
+    var hit = Array.prototype.filter.call(el.querySelectorAll('[' + focus.attr + ']'), function (n) { return n.getAttribute(focus.attr) === focus.val; })[0];
+    if (hit && hit.focus) hit.focus({ preventScroll: true });
+  }
+
+  // A fixed sentence per refusal; the server's own text is never shown.
+  function tfError(res) {
+    var s = res && res.status;
+    if (s === 403) return 'Chronicle says you may not change this hero. Nothing changed.';
+    if (s === 400 || s === 422) return 'Chronicle refused this change as too large or not well formed. Nothing changed.';
+    if (s === 404) return 'The Transformations add-on is off for this campaign, or the page or layer is gone. Nothing changed.';
+    return 'Could not reach Chronicle. Nothing changed; try again.';
+  }
+
+  function tfPush(inst, el, data) {
+    var st = inst._tf, tf = data.tf, first = firstName(data.name || 'The hero');
+    var base = '/campaigns/' + encodeURIComponent(data.campaignId);
+    var req;
+    if (st.remove) {
+      var gone = tf.layers.filter(function (l) { return l.id === st.remove; })[0];
+      if (!gone) return;
+      req = function () {
+        return Chronicle.apiFetch(base + '/layers/' + encodeURIComponent(gone.id), { method: 'DELETE' }).then(function (res) {
+          if (!res.ok) throw res;
+          tf.layers = tf.layers.filter(function (l) { return l !== gone; });
+          return (gone.name || 'The layer') + ' is off. ' + first + ' is exactly as before.';
+        });
+      };
+    } else {
+      var preset = tf.presets.filter(function (p) { return p.slug === st.add; })[0];
+      if (!preset) return;
+      var built = presetLayer(preset, data, st, tf.ancestries);
+      if (built.problems.length) {
+        st.err = built.problems.join(' ');
+        tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
+        return;
+      }
+      req = function () {
+        return Chronicle.apiFetch(base + '/pages/' + encodeURIComponent(data.entityId) + '/layers', { method: 'POST', body: built.layer }).then(function (res) {
+          if (!res.ok) throw res;
+          return res.json().then(function (saved) {
+            tf.layers = tf.layers.concat([saved && saved.id ? saved : built.layer]);
+            return built.layer.name + ' is on ' + first + '’s sheet, and their player sees it now.';
+          });
+        });
+      };
+    }
+    st.busy = true;
+    st.msg = st.err = '';
+    tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
+    req().then(function (msg) {
+      st.busy = false;
+      st.add = st.remove = null;
+      st.msg = msg;
+      tfRerender(inst, el, data, { attr: 'data-tf', val: 'tab' });
+    }, function (res) {
+      st.busy = false;
+      st.err = tfError(res);
+      tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
+    });
+  }
+
+  // tfSave keeps the preview as one of the Director's own presets, in a new
+  // Workshop recipe, and keeps previewing it from there.
+  function tfSave(inst, el, data) {
+    var st = inst._tf, tf = data.tf;
+    var preset = tf.presets.filter(function (p) { return p.slug === st.add; })[0];
+    var name = String(st.saveName || '').trim().slice(0, 80);
+    if (!preset) return;
+    if (!name) { st.err = 'Give the preset a name.'; tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' }); return; }
+    var built = presetLayer(preset, data, st, tf.ancestries);
+    if (built.problems.length) { st.err = built.problems.join(' '); tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' }); return; }
+    st.busy = true; st.msg = st.err = '';
+    tfRerender(inst, el, data, { attr: 'data-tf', val: 'save-go' });
+    Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) + '/homebrew/recipes', { method: 'POST', body: presetRecipe(name, built.layer) })
+      .then(function (res) {
+        if (!res.ok) throw res;
+        return res.json();
+      }).then(function (recipe) {
+        var mine = ownPreset(recipe);
+        st.busy = false; st.saving = false;
+        if (mine) {
+          tf.presets = tf.presets.concat([mine]);
+          st.add = mine.slug; st.pick = {}; st.keep = {}; st.adjust = {};
+        }
+        st.msg = 'Saved as “' + name + '” in the Homebrew Workshop, under Your own here. A rule there can offer it to you, when a clock fills for one.';
+        tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
+      }, function (res) {
+        st.busy = false;
+        st.err = res && res.status === 422
+          ? 'The Workshop would not keep it; a recipe may already be called “' + name + '”. Try another name.'
+          : tfError(res);
+        tfRerender(inst, el, data, { attr: 'data-tf-name', val: '' });
+      });
+  }
+
+  function attachChanges(inst, el, data) {
+    if (!data.tf || !data.tf.canEdit || !data.isGm) return;
+    if (!inst._tf) inst._tf = tfState();
+    var st = inst._tf;
+    function again(attr, val) { tfRerender(inst, el, data, attr ? { attr: attr, val: val } : null); }
+    function clear() { st.msg = ''; st.err = ''; }
+    inst._onTfClick = function (e) {
+      var t = e.target && e.target.closest ? e.target.closest('[data-tf],[data-tf-p]') : null;
+      if (!t || !el.contains(t) || st.busy) return;
+      if (t.hasAttribute('data-tf-p')) {
+        var slug = t.getAttribute('data-tf-p');
+        clear();
+        if (st.add === slug) st.add = null;
+        else {
+          var p = data.tf.presets.filter(function (x) { return x.slug === slug; })[0];
+          st.add = slug; st.remove = null; st.pick = quickPicks(p); st.keep = {}; st.adjust = {};
+        }
+        again('data-tf-p', slug);
+        return;
+      }
+      var a = t.getAttribute('data-tf');
+      if (a === 'tab') {
+        // Closing the drawer puts an unpushed preview away with it.
+        st.open = !st.open;
+        if (!st.open) { st.add = st.remove = null; clear(); }
+        again('data-tf', 'tab');
+      } else if (a === 'discard') {
+        st.add = st.remove = null; clear();
+        again('data-tf', 'tab');
+      } else if (a === 'push') {
+        tfPush(inst, el, data);
+      } else if (a === 'save') {
+        var sp = data.tf.presets.filter(function (x) { return x.slug === st.add; })[0];
+        st.saving = true; st.saveName = sp ? sp.name + ' (yours)' : ''; clear();
+        again('data-tf-name', '');
+        var box = el.querySelector('[data-tf-name]');
+        if (box && box.focus) { box.focus(); if (box.select) box.select(); }
+      } else if (a === 'save-cancel') {
+        st.saving = false; clear();
+        again('data-tf', 'save');
+      } else if (a === 'save-go') {
+        tfSave(inst, el, data);
+      }
+    };
+    inst._onTfChange = function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute || !el.contains(t) || st.busy) return;
+      var k;
+      if ((k = t.getAttribute('data-tf-on')) != null) {
+        clear();
+        st.remove = t.checked ? null : k;
+        if (!t.checked) st.add = null;
+        again('data-tf-on', k);
+      } else if ((k = t.getAttribute('data-tf-pick')) != null) {
+        st.pick[k] = !!t.checked; again('data-tf-pick', k);
+      } else if ((k = t.getAttribute('data-tf-keep')) != null) {
+        st.keep[k] = !!t.checked; again('data-tf-keep', k);
+      }
+    };
+    // Typing in a number box or the find line changes no markup: a number
+    // is drawn when the box is left (or on Enter), and finding filters the
+    // rows in place, so typing keeps its focus.
+    inst._onTfInput = function (e) {
+      var t = e.target, k;
+      if (!t || !t.getAttribute) return;
+      if (t.hasAttribute('data-tf-name')) { st.saveName = String(t.value || ''); return; }
+      if ((k = t.getAttribute('data-tf-adj')) != null) {
+        var n = parseInt(t.value, 10);
+        st.adjust[k] = isFinite(n) ? Math.max(-99, Math.min(99, n)) : 0;
+        inst._tfAdjDirty = true;
+        return;
+      }
+      if (!t.hasAttribute('data-tf-find')) return;
+      var q = String(t.value || '').trim().toLowerCase();
+      Array.prototype.forEach.call(el.querySelectorAll('.sh-tf-row'), function (r) { r.hidden = !!q && r.getAttribute('data-name').indexOf(q) < 0; });
+    };
+    // Leaving a changed number box redraws the sheet with focus where it
+    // went. While a press is still down that waits until the press is over:
+    // redrawing the button under it (Push, often) would drop the click.
+    inst._onTfLeave = function (e) {
+      if (!inst._tfAdjDirty || !e.target || !e.target.hasAttribute || !e.target.hasAttribute('data-tf-adj')) return;
+      inst._tfAdjDirty = false;
+      var to = tfFocusKey(e.relatedTarget);
+      var go = function () { if (inst._tf === st) tfRerender(inst, el, data, to); };
+      if (inst._tfDown) inst._tfPending = go; else go();
+    };
+    inst._onTfKey = function (e) {
+      if (e.key !== 'Enter' || !inst._tfAdjDirty || !e.target.hasAttribute || !e.target.hasAttribute('data-tf-adj')) return;
+      e.preventDefault();
+      inst._tfAdjDirty = false;
+      again('data-tf-adj', e.target.getAttribute('data-tf-adj'));
+    };
+    inst._onTfDown = function () { inst._tfDown = true; };
+    inst._onTfUp = function () {
+      setTimeout(function () {
+        inst._tfDown = false;
+        var go = inst._tfPending;
+        inst._tfPending = null;
+        if (go) go();
+      }, 0);
+    };
+    el.addEventListener('click', inst._onTfClick);
+    el.addEventListener('change', inst._onTfChange);
+    el.addEventListener('input', inst._onTfInput);
+    el.addEventListener('focusout', inst._onTfLeave);
+    el.addEventListener('keydown', inst._onTfKey);
+    el.addEventListener('pointerdown', inst._onTfDown, true);
+    document.addEventListener('pointerup', inst._onTfUp, true);
+    document.addEventListener('pointercancel', inst._onTfUp, true);
+  }
+
+  // The drawer control a node is, as the attribute and value a redraw
+  // finds it by again, or null.
+  function tfFocusKey(node) {
+    if (!node || !node.getAttribute) return null;
+    var attrs = ['data-tf', 'data-tf-p', 'data-tf-on', 'data-tf-pick', 'data-tf-keep', 'data-tf-adj'];
+    for (var i = 0; i < attrs.length; i++) {
+      var v = node.getAttribute(attrs[i]);
+      if (v != null) return { attr: attrs[i], val: v };
+    }
+    return null;
+  }
+
+  // tfFromAddress opens the drawer on one of the Director's own presets
+  // when the page was opened with ?transform=<recipe>, as a Workshop rule's
+  // "Put the transformation on the hero" does. null when there is nothing
+  // to open; a preset already on the hero opens the drawer saying so.
+  function tfFromAddress(data, search) {
+    var m = /[?&]transform=([^&#]+)/.exec(String(search || ''));
+    if (!m || !data.tf) return null;
+    var rid = decodeURIComponent(m[1]);
+    var p = data.tf.presets.filter(function (x) { return x.own && x.recipeId === rid; })[0];
+    var st = Object.assign(tfState(), { open: true });
+    if (!p) { st.err = 'That preset is not in the Homebrew Workshop any more.'; return st; }
+    if (data.tf.layers.some(function (l) { return l.source === presetSource(p); })) {
+      st.msg = p.name + ' is already on ' + firstName(data.name || 'the hero') + '.';
+      return st;
+    }
+    st.add = p.slug;
+    return st;
+  }
+
+  // putOnFromRule is the browser half of the Workshop's "Put the
+  // transformation on the hero": it opens the hero the rule was set off on,
+  // with the preset previewed, so the Director looks before pressing Push.
+  function putOnFromRule(ctx) {
+    var run = (ctx && ctx.run) || {};
+    if (!run.scope) return 'Nothing to put it on: this rule was not set off from a hero’s page.';
+    var url = '/campaigns/' + encodeURIComponent(ctx.campaignId) + '/entities/' + encodeURIComponent(run.scope) +
+      '?transform=' + encodeURIComponent(run.recipeId || '');
+    if (typeof window !== 'undefined' && window.location) window.location.assign(url);
+    return 'Opening the hero with the transformation previewed; press Push there to put it on.';
+  }
+
+  // loadTransformData reads what the drawer needs: the presets (Director
+  // data) and the ancestries, to price the traits a Revenant may keep.
+  // A failure is an empty list, and the drawer says the presets did not load.
+  function loadTransformData(cid) {
+    if (!cid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve({ presets: [], ancestries: [] });
+    var base = '/campaigns/' + encodeURIComponent(cid) + '/systems/drawsteel/data/';
+    function get(file) {
+      return Chronicle.apiFetch(base + file).then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (a) { return Array.isArray(a) ? a : []; }, function () { return []; });
+    }
+    return Promise.all([get('transformations.json'), get('ancestries.json'), loadOwnPresets(cid)]).then(function (r) {
+      return { presets: r[0].concat(r[2].presets), ancestries: r[1], canSave: r[2].canSave };
+    });
+  }
+
+  // loadOwnPresets reads the Director's own presets: every Workshop recipe
+  // with a transformation part. canSave is false when the Workshop did not
+  // answer, so the drawer offers no Save it cannot keep.
+  function loadOwnPresets(cid) {
+    var base = '/campaigns/' + encodeURIComponent(cid) + '/homebrew/recipes';
+    return Chronicle.apiFetch(base).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) {
+      if (!b) return { presets: [], canSave: false };
+      var list = Array.isArray(b) ? b : (Array.isArray(b.data) ? b.data : []);
+      var withLayer = list.filter(function (x) { return x && x.id && Array.isArray(x.partKinds) && x.partKinds.indexOf('transformation') >= 0; });
+      return Promise.all(withLayer.map(function (x) {
+        return Chronicle.apiFetch(base + '/' + encodeURIComponent(x.id)).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; });
+      })).then(function (recipes) {
+        return { presets: recipes.map(function (x) { return x ? ownPreset(x) : null; }).filter(Boolean), canSave: true };
+      });
+    }).catch(function () { return { presets: [], canSave: false }; });
+  }
+
   function paperSheetHtml(data) {
     var name = data.name || 'Unnamed Hero';
     var templates = paperPanels(data).map(function (p) {
       return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '">' + p.html + '</template>';
     }).join('');
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
-      pHead() + pIdentity(data) + pTurn(data) +
+      pHead(data) + pIdentity(data) + pChanges(data) + pTurn(data) +
       '<div class="sh-body"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
       '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
     return '<div class="sh-root" data-sheet>' +
@@ -2642,6 +3427,25 @@
     else img.addEventListener('error', swap);
   }
 
+  // detachListeners takes off everything a mount put on el, so the
+  // Changes drawer can redraw the sheet without doubling its listeners.
+  function detachListeners(inst, el) {
+    [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
+      ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
+      ['click', '_onTfClick'], ['change', '_onTfChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey']].forEach(function (p) {
+      if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
+    });
+    if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    if (inst._onTfDown) el.removeEventListener('pointerdown', inst._onTfDown, true);
+    if (inst._onTfUp && typeof document !== 'undefined') {
+      document.removeEventListener('pointerup', inst._onTfUp, true);
+      document.removeEventListener('pointercancel', inst._onTfUp, true);
+    }
+    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onTfInput',
+      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_pin'].forEach(function (k) { inst[k] = null; });
+  }
+
   function mountPaper(inst, el, data) {
     var sm = Chronicle.sheetMotion;
     if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
@@ -2655,6 +3459,7 @@
     attachInteractions(inst, el, data);
     if (root) attachPaperPanels(inst, el, root);
     attachTooltips(inst, el);
+    attachChanges(inst, el, data);
   }
 
 
@@ -3090,6 +3895,53 @@
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
       '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
       '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
+      // A layer's struck old value, and the names of the layers on the hero.
+      '[data-sheet] .sh-was { color:var(--paper-mute);font-weight:400;text-decoration-thickness:1px;margin-right:2px; }',
+      '[data-sheet] .sh-sr { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }',
+      '[data-sheet] .sh-layers { display:inline-flex;gap:6px;flex-wrap:wrap; }',
+      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);white-space:nowrap; }',
+      '[data-sheet] .sh-layer-sm { font-size:calc(10px * var(--ts));line-height:16px;padding:0 6px;vertical-align:1px; }',
+      // The Director's preview is drawn in the sheet's warning colour, which
+      // the player never sees on a layer; a pushed layer keeps the accent.
+      '[data-sheet] .sh-was-pv { color:var(--paper-warn, #b45309);text-decoration-color:var(--paper-warn, #b45309);text-decoration-thickness:2px; }',
+      '[data-sheet] .sh-layer-pv { border-style:dashed;border-color:var(--paper-warn, #b45309);color:var(--paper-warn, #b45309); }',
+      '[data-sheet] .sh-tf { margin:-4px 0 10px; }',
+      '[data-sheet] .sh-tf-tabrow { display:flex;justify-content:flex-end; }',
+      '[data-sheet] .sh-tf-tab { display:inline-flex;align-items:center;gap:6px;border:1px solid var(--paper-edge);border-top:0;border-radius:0 0 8px 8px;background:transparent;color:var(--paper-ink-soft);font:600 calc(12px * var(--ts))/1 var(--paper-ui-font);padding:6px 12px;cursor:pointer; }',
+      '[data-sheet] .sh-tf-tab[aria-expanded="true"], [data-sheet] .sh-tf-tab:hover { color:var(--paper-accent);border-color:var(--paper-accent); }',
+      '[data-sheet] .sh-tf-drawer { border:1px solid var(--paper-edge);border-radius:8px;margin-top:6px;padding:10px 12px;display:grid;gap:8px;font-family:var(--paper-ui-font); }',
+      '[data-sheet] .sh-tf-drawer > .sh-k { margin-top:2px; }',
+      '[data-sheet] .sh-tf-on { display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--paper-ink); }',
+      '[data-sheet] .sh-tf-on input, [data-sheet] .sh-tf-opt input { accent-color:var(--paper-accent);width:16px;height:16px; }',
+      '[data-sheet] .sh-tf-list { display:grid;gap:6px; }',
+      '[data-sheet] .sh-tf-row { display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;border:1px solid var(--paper-edge);border-radius:6px;background:transparent;color:var(--paper-ink);padding:8px 10px;min-height:44px;cursor:pointer;font-family:var(--paper-ui-font); }',
+      '[data-sheet] .sh-tf-row b { font-family:var(--paper-head-font, var(--paper-font)); }',
+      '[data-sheet] .sh-tf-row .sh-sub { grid-column:1; }',
+      '[data-sheet] .sh-tf-row:hover { border-color:var(--paper-accent); }',
+      '[data-sheet] .sh-tf-row[aria-pressed="true"] { border-color:var(--paper-warn, #b45309);box-shadow:inset 3px 0 0 var(--paper-warn, #b45309); }',
+      '[data-sheet] .sh-tf-mk { grid-column:2;grid-row:1;font-size:calc(10.5px * var(--ts));color:var(--paper-mute);text-transform:uppercase;letter-spacing:.06em; }',
+      '[data-sheet] .sh-tf-find { border:1px solid var(--paper-edge);border-radius:4px;background:transparent;color:var(--paper-ink);padding:6px 8px;font:inherit; }',
+      '[data-sheet] .sh-tf-choice { border:1px dashed var(--paper-warn, #b45309);border-radius:6px;margin:0;padding:8px 10px;display:grid;gap:6px;min-width:0; }',
+      '[data-sheet] .sh-tf-choice legend, [data-sheet] .sh-tf-nums summary { padding:0 4px;font-weight:600;color:var(--paper-ink); }',
+      '[data-sheet] .sh-tf-nums summary { cursor:pointer;min-height:28px;display:flex;align-items:center; }',
+      '[data-sheet] .sh-tf-nums summary::before { content:"\\25B8";margin-right:6px;color:var(--paper-mute); }',
+      '[data-sheet] .sh-tf-nums[open] summary::before { content:"\\25BE"; }',
+      '[data-sheet] .sh-tf p { margin:0; }',
+      '[data-sheet] .sh-tf-opt { display:flex;align-items:center;gap:8px;min-height:32px; }',
+      '[data-sheet] .sh-tf-adjs { display:flex;flex-wrap:wrap;gap:8px 14px; }',
+      '[data-sheet] .sh-tf-adj { display:inline-flex;align-items:center;gap:6px; }',
+      '[data-sheet] .sh-tf-adj input { width:4.5em;border:1px solid var(--paper-edge);border-radius:4px;background:transparent;color:var(--paper-ink);padding:4px 6px;font:inherit; }',
+      '[data-sheet] .sh-tf-bar { display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-top:1px solid var(--paper-edge);padding-top:8px;color:var(--paper-warn, #b45309);font-weight:600; }',
+      '[data-sheet] .sh-tf-sp { flex:1; }',
+      '[data-sheet] .sh-tf-save { display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px; }',
+      '[data-sheet] .sh-tf-save label { display:grid;gap:4px;flex:1;min-width:12em; }',
+      '[data-sheet] .sh-tf-save input { border:1px solid var(--paper-edge);border-radius:4px;background:transparent;color:var(--paper-ink);padding:6px 8px;font:inherit;min-height:36px; }',
+      '[data-sheet] .sh-tf-btn { min-height:36px;border:1px solid var(--paper-edge);border-radius:6px;background:transparent;color:var(--paper-ink);padding:0 14px;font:600 calc(12.5px * var(--ts)) var(--paper-ui-font);cursor:pointer; }',
+      '[data-sheet] .sh-tf-pri { border:0;background:var(--paper-accent);color:var(--paper-on-accent, #fff); }',
+      '[data-sheet] .sh-tf-btn:disabled, [data-sheet] .sh-tf-row:disabled { opacity:.45;cursor:default; }',
+      '[data-sheet] .sh-tf-err { color:var(--paper-neg);font-weight:600; }',
+      '[data-sheet] .sh-tf-msg { margin:0;color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-tf :focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       '[data-sheet] .sh-folio { position:relative;isolation:isolate;width:920px;max-width:100%;margin-inline:auto; }',
       '[data-sheet] .sh-stack { position:relative;z-index:2;width:100%; }',
       '[data-sheet] .sh-sheet { padding:24px 36px 26px;display:flex;flex-direction:column;gap:16px;font-size:calc(13.5px * var(--ts));line-height:1.55; }',
@@ -3644,9 +4496,20 @@
           armoryItems: flag(ds.armoryItems)
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
-        Promise.all([loadRef, loadSkillDefs(campaignId)]).then(function () {
+        // The drawer's presets load only for a Director Chronicle lets
+        // change this hero, after the layers say so.
+        var layered = fetchLayers(campaignId, entityId).then(function (lv) {
+          if (!lv.canEdit || !data.isGm) return { lv: lv, tf: null };
+          return loadTransformData(campaignId).then(function (d) {
+            return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries, canSave: d.canSave } };
+          });
+        });
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered]).then(function (got) {
           if (refRenderer) refRenderer.injectStyles();
-          mountSheet(self, el, data);
+          data.tf = got[2].tf;
+          var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
+          if (st) { self._tf = st; data.tfState = st; }
+          mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null));
         });
       }
 
@@ -3667,22 +4530,8 @@
 
     destroy: function (el) {
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
-      if (this._onAbilityClick) el.removeEventListener('click', this._onAbilityClick);
-      if (this._onAbilityKey) el.removeEventListener('keydown', this._onAbilityKey);
-      if (this._onAbilityInput) el.removeEventListener('input', this._onAbilityInput);
-      if (this._onPaperKey) el.removeEventListener('keydown', this._onPaperKey, true);
-      this._onPaperKey = null;
-      this._onPanelReady = null;
-      this._onPanelClose = null;
-      this._panelBody = null;
-      this._pin = null;
-      if (this._onTipShow) { el.removeEventListener('mouseover', this._onTipShow); el.removeEventListener('focusin', this._onTipShow); }
-      if (this._onTipHide) { el.removeEventListener('mouseout', this._onTipHide); el.removeEventListener('focusout', this._onTipHide); }
-      this._onAbilityClick = null;
-      this._onAbilityKey = null;
-      this._onAbilityInput = null;
-      this._onTipShow = null;
-      this._onTipHide = null;
+      detachListeners(this, el);
+      this._tf = null;
       if (_tipbox && _tipbox.parentNode) _tipbox.parentNode.removeChild(_tipbox);
       _tipbox = null;
       el.classList.remove('ds-sheet');
@@ -3691,6 +4540,13 @@
   });
 
   if (Chronicle) registerBoxes();
+
+  // The Workshop's "Put the transformation on the hero" runs here, in the
+  // Director's browser, because only the sheet can preview it before Push.
+  if (Chronicle) {
+    Chronicle.homebrewActions = Chronicle.homebrewActions || {};
+    Chronicle.homebrewActions['put-on-transformation'] = putOnFromRule;
+  }
 
   // Test seam: expose the pure helpers for Node unit tests. Inert in a browser
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
@@ -3709,7 +4565,12 @@
       pIdentity: pIdentity, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
-      staminaState: staminaState, mountSheet: mountSheet
+      staminaState: staminaState, mountSheet: mountSheet,
+      Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
+      presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
+      tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
+      ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
+      loadOwnPresets: loadOwnPresets
     };
   }
 })();

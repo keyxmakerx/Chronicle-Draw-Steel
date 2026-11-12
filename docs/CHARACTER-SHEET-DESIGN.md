@@ -8,7 +8,7 @@
 A read-only DM reference: a director looks up a player's abilities, stats and
 defenses while building monsters or writing notes, so data completeness beats
 interactivity. Foundry is the source of truth; nothing on the sheet writes
-back, except the origin picker in the paper layout.
+back, except the origin picker and the Changes drawer in the paper layout.
 
 ## Testing
 
@@ -60,8 +60,7 @@ Notes and GM lore keep the box sheet's gates. Changing numbers carry `data-v` /
 `data-pv`, and the widget calls `Chronicle.sheetMotion.land` after the origin
 picker changes one. Panel content is wired from `sheet:panel-ready`, because the
 engine clones the template on every open. The origin picker (Ancestry, Culture,
-Career, Kit) is the only write path and opens across the full width under the
-identity row. Layout rules live in the widget's injected `<style>`, scoped to
+Career, Kit) opens across the full width under the identity row. Layout rules live in the widget's injected `<style>`, scoped to
 `[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
 `sheetMotion` the box render is used unchanged.
 
@@ -85,6 +84,43 @@ The paper Abilities panel has Signature / Heroic / Other tabs and lists each
 ability in the open tab as its own fold, cheapest first; the first starts open,
 and a filter box appears at 10 or more abilities. The master-detail pane below
 is the box layout only.
+
+## Transformation layers
+
+A layer is a transformation over the hero (Revenant, Vampire Scion) that
+Chronicle stores beside the page and the sheet applies when it draws; the
+hero's Foundry fields are never written, so taking a layer off restores them.
+The sheet reads `GET /campaigns/:id/pages/:eid/layers` (`{layers, canEdit}`;
+any refusal means no layers). A changed value shows the old one struck through,
+added features carry the layer's tag, and features a layer set aside are listed
+struck under "Set aside by a transformation". The ready-made presets are
+`data/transformations.json` (Director data); `tools/test-hero-layers.mjs` pins
+the engine, the presets' wording and the drawer.
+
+The Changes drawer is the Director's, shown only when the viewer is a Director
+and Chronicle answers `canEdit`. A Changes tab under the identity row opens it
+inline: the layers on the hero as tick boxes, then the presets not yet on.
+Picking a preset redraws the sheet as the preview, with what it moves struck in
+the style's warning colour, and the preset's choices sit in the drawer:
+Revenant's ancestry points (its quick build ticked), which priced traits of the
+old ancestry Previous Life keeps, and numbers the Director corrects by hand
+because a lost trait changed them. Overspending holds Push back. Push stores the
+layer (`POST`), unticking previews the hero without one and Take it off removes
+it (`DELETE`); Discard or closing the drawer drops the preview. The box render
+has no drawer.
+
+The Director's own presets live in the Homebrew Workshop: **Save as my preset**
+(on a canon preset's preview, once the Workshop has answered) asks for a name
+and stores a recipe with one Director-only `transformation` part holding the
+layer exactly as previewed, choices settled. The drawer lists them under "Your
+own", read from the recipes whose `partKinds` include `transformation`. A
+Workshop rule's **Put the transformation on the hero** runs in the browser
+(`Chronicle.homebrewActions['put-on-transformation']`): it opens the hero the
+rule was set off on with `?transform=<recipe>`, which opens the drawer with that
+preset previewed, so a rule never puts a layer on without the Director pressing
+Push.
+
+---
 
 ## Abilities section
 

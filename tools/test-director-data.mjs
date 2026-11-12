@@ -35,8 +35,9 @@ test('the director key is only ever true', () => {
 });
 
 // Widget-only files reproducing the Monsters book have no category to mark,
-// so the manifest lists them in `director_data` for SystemDataAPI.
-const DIRECTOR_DATA = ['organization-templates.json', 'role-templates.json'];
+// so the manifest lists them in `director_data` for SystemDataAPI; so are the
+// ready-made transformations, which only the Director puts on a hero.
+const DIRECTOR_DATA = ['organization-templates.json', 'role-templates.json', 'transformations.json'];
 
 test('the widget-only monster files are Director-only', () => {
   assert.deepEqual((manifest.director_data || []).slice().sort(), DIRECTOR_DATA);
