@@ -566,7 +566,7 @@
   // box renderer stays a pure function of (def, data).
 
   var GROUP_ORDER = ['signature', 'heroic', 'maneuver'];
-  var GROUP_LABELS = { signature: 'Signature', heroic: 'Heroic', maneuver: 'Maneuver' };
+  var GROUP_LABELS = { signature: 'Signature', heroic: 'Heroic', maneuver: 'Other' };
   var CHAR_LABELS = { might: 'Might', agility: 'Agility', reason: 'Reason', intuition: 'Intuition', presence: 'Presence' };
 
   // groupOf buckets a Draw Steel ability into the three list groups. Categories
@@ -579,6 +579,25 @@
     if (c === 'heroic') return 'heroic';
     if (Number(a && a.cost) > 0) return 'heroic';
     return 'maneuver';
+  }
+
+  // The sheet's face lists abilities by when they are used. Foundry's
+  // system.type names it (action, maneuver, move, triggered, freeTriggered) and
+  // a free strike is told apart by its category. A type the sheet does not know
+  // falls back to what the ability is: signature, heroic or rolled abilities are
+  // main actions, the rest maneuvers. Moves share the Maneuver heading.
+  var ACTION_ORDER = ['main', 'maneuver', 'triggered', 'free'];
+  var ACTION_LABELS = { main: 'Main action', maneuver: 'Maneuver', triggered: 'Triggered', free: 'Free strike' };
+
+  function actionKind(a) {
+    var cat = String((a && a.category) || '').toLowerCase();
+    var t = String((a && a.type) || '').toLowerCase();
+    if (cat === 'freestrike') return 'free';
+    if (t.indexOf('trigger') !== -1) return 'triggered';
+    if (t === 'action') return 'main';
+    if (t === 'maneuver' || t === 'move' || t === 'free') return 'maneuver';
+    var g = groupOf(a);
+    return (g === 'signature' || g === 'heroic' || (Array.isArray(a && a.powerRollChars) && a.powerRollChars.length)) ? 'main' : 'maneuver';
   }
 
   function charLabel(k) {
@@ -1294,7 +1313,7 @@
   function bigCardHtml(a, idx, data) {
     var g = groupOf(a);
     var star = g === 'signature' ? '★ ' : '';
-    var meta = [costLabel(a, data), GROUP_LABELS[g]].filter(Boolean).join(' · ');
+    var meta = [costLabel(a, data), g === 'maneuver' ? ACTION_LABELS[actionKind(a)] : GROUP_LABELS[g]].filter(Boolean).join(' · ');
     var forHero = forHeroHtml(a, data);
 
     return '<div class="ds-big" data-ds-collapse="' + idx + '">' +
@@ -1894,46 +1913,52 @@
     return null;
   }
 
-  function pHead(data) {
-    return '<header class="sh-head paper-title"><div><div class="paper-kind">Hero · Draw Steel</div>' +
-      '<div class="sh-name"><h2>' + esc(data.name || 'Unnamed Hero') + '</h2></div></div></header>';
+  // The hero's name is printed once, in Chronicle's page header.
+  function pHead() {
+    return '<header class="sh-head paper-title"><div class="paper-kind">Hero · Draw Steel</div></header>';
   }
 
-  // The origin values are pickers only when the host allows editing and
-  // Chronicle can open its picker; the picker itself stays Chronicle's.
+  // The identity is one line: ancestry, class and level, subclass, kit. The
+  // origin values are pickers only when the host allows editing and Chronicle
+  // can open its picker; the picker itself stays Chronicle's. Culture and
+  // career sit one fold away and keep their pickers.
+  function pOrigin(data, s, canPick) {
+    var v = f(data, s.key, '');
+    var text = v ? esc(v) : '<span class="sh-unset">Not set</span>';
+    return canPick
+      ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+          ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
+          '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span></button>'
+      : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + text + '</span>';
+  }
+
   function pIdentity(data) {
     var name = data.name || 'Unnamed Hero';
     var canPick = !!data.canEditIdentity && typeof Chronicle.pickChoice === 'function';
-    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
-    var portrait = safePortrait
-      ? '<img src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '" data-cs-portrait>'
-      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
-    var chip = data.canChangeImage ? '<button type="button" data-cs-change-image>' + fa('camera') + ' Change</button>' : '';
-
-    var slots = ORIGIN_SLOTS.map(function (s) {
-      var v = f(data, s.key, '');
-      var text = v ? esc(v) : '<span class="sh-unset">Not set</span>';
-      var inner = canPick
-        ? '<button type="button" class="sh-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
-            ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
-            '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span>' + fa('chevron-right') + '</button>'
-        : '<div class="sh-v-plain" data-cs-val data-v="origin-' + s.key + '">' + text + '</div>';
-      return '<div class="sh-slot" data-slot="' + s.key + '"><span class="sh-k">' + s.label + '</span>' + inner + '</div>';
-    }).join('');
+    var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
+    var bySlot = {};
+    ORIGIN_SLOTS.forEach(function (s) { bySlot[s.key] = s; });
 
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
-    var fixed = '<div class="sh-fixed">' +
-      '<span><span class="sh-k">Class</span>' + (className ? esc(className) : '&ndash;') + '</span>' +
-      '<span><span class="sh-k">Subclass</span>' + (subclass ? esc(subclass) : '&ndash;') + '</span>' +
-      '<span><span class="sh-k">Level</span>' + num(data, 'level', 1) + '</span>' +
-      (faction ? '<span><span class="sh-k">Faction</span>' + esc(faction) + '</span>' : '') +
-      '<small>' + fa('arrows-rotate') + ' set in Foundry</small></div>';
+    var level = num(data, 'level', 1);
+    var line = [
+      pOrigin(data, bySlot.ancestry, canPick),
+      '<span class="sh-idval">' + (className ? esc(className) : '&ndash;') + ' ' + level + '</span>',
+      subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
+      pOrigin(data, bySlot.kit, canPick),
+      faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
+    ].filter(Boolean).join('<span class="sh-dot" aria-hidden="true"> · </span>');
+
+    var more = foldHtml('sh-origins', 'Culture and career',
+      '<div class="sh-origin-row"><span class="sh-k">Culture</span>' + pOrigin(data, bySlot.culture, canPick) + '</div>' +
+      '<div class="sh-origin-row"><span class="sh-k">Career</span>' + pOrigin(data, bySlot.career, canPick) + '</div>' +
+      '<p class="sh-sub">' + fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.</p>', false);
 
     return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
-      '<div class="sh-port">' + portrait + chip + '</div>' +
-      '<div><div class="sh-slots">' + slots + '</div>' + fixed + '</div>' +
+      '<p class="sh-idline">' + line + '</p>' +
+      '<div class="sh-idmore">' + more + chip + '</div>' +
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
   }
 
@@ -2006,7 +2031,7 @@
         (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
         (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
     return '<section class="sh-turn paper-pull" data-sheet-section="turn" aria-label="This turn">' +
-      '<div class="sh-turnhead">' + pullBtn('turn', '<span class="paper-kind">This turn</span>', 'Rules') + '</div>' +
+      '<div class="sh-turnhead">' + pullBtn('turn', '<span class="paper-kind">This turn</span>') + '</div>' +
       '<div class="sh-turn-top">' + top + '</div>' + pConditions(data) + pStats(data) + '</section>';
   }
 
@@ -2018,22 +2043,130 @@
     return '<section class="sh-o1" aria-label="Characteristics"><div class="paper-kind">Characteristics</div><div class="sh-chars">' + cells + '</div></section>';
   }
 
-  function pAbilityBand(data) {
-    var abilities = parseAbilities(data);
-    var n = { signature: 0, heroic: 0, maneuver: 0 };
-    var sigs = [];
-    abilities.forEach(function (a) {
-      var g = groupOf(a);
-      n[g]++;
-      if (g === 'signature') sigs.push(esc(a.name || 'Untitled'));
+  // ── The abilities on the sheet's face ──────────────────────────────────────
+
+  // This hero's own power-roll modifier for an ability: the highest of its
+  // characteristics the hero has synced, or null when it has no roll.
+  function heroBest(a, data) {
+    var best = null;
+    powerRollChars(a).forEach(function (k) {
+      var key = String(k).toLowerCase();
+      if (!isNum(data, key)) return;
+      var v = num(data, key, 0);
+      if (best == null || v > best) best = v;
     });
-    var row = abilities.length
-      ? '<span class="sh-row">' +
-          (sigs.length ? '<span>' + fa('star') + ' <b>' + sigs.join(', ') + '</b></span>' : '') +
-          '<span>Signature <b>' + n.signature + '</b></span><span>Heroic <b>' + n.heroic + '</b></span><span>Maneuvers <b>' + n.maneuver + '</b></span></span>'
-      : '<span class="sh-row"><span>No abilities yet.</span></span>';
-    return '<section class="sh-band paper-pull sh-o2" data-sheet-section="abilities">' +
-      pullBtn('abilities', '<span class="paper-kind">Abilities</span>' + row) + '</section>';
+    return best;
+  }
+
+  // The three tier results as one phrase ("4 · 7 · 9 holy"), from the first
+  // damage effect. Empty when the ability has no damage roll the sheet can work out.
+  function heroResult(a, best) {
+    var tiers = a && a.tiers;
+    if (best == null || !Array.isArray(tiers)) return '';
+    for (var i = 0; i < tiers.length; i++) {
+      var eff = tiers[i];
+      if (!eff || !eff.damage || !eff.damage.tier1) continue;
+      var vals = [];
+      for (var n = 1; n <= 3; n++) {
+        var td = eff.damage['tier' + n];
+        var v = td ? safeEvalArith(String(td.value == null ? '' : td.value).replace(/@chr/gi, String(best))) : null;
+        if (v == null) return '';
+        vals.push(v);
+      }
+      var types = Array.isArray(eff.damage.tier1.types) ? eff.damage.tier1.types.filter(Boolean) : [];
+      return vals.join(' · ') + (types.length ? ' ' + types.map(String).join('/') : '');
+    }
+    return '';
+  }
+
+  // The first sentence of an ability's effect, short enough for one line.
+  function effectSnippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim().replace(/([.!?])\s.*$/, '$1');
+    return t ? teaser(t, 70) : '';
+  }
+
+  function abilityEffectText(a) {
+    return cleanFoundryText(a.effectAfter) || cleanFoundryText(a.effectBefore) || (a.story ? cleanFoundryText(a.story) : '');
+  }
+
+  // One ability as a line that unfolds in place: name, the hero's own result,
+  // and under it the distance and the main effect. The cost tag turns into the
+  // reason when the hero cannot pay it.
+  function abilityLine(a, data) {
+    var g = groupOf(a), kind = actionKind(a);
+    var name = a.name || 'Untitled';
+    var best = heroBest(a, data);
+    var result = heroResult(a, best);
+    var dist = distanceLabel(a);
+    var eff = abilityEffectText(a);
+    var trig = a.trigger ? cleanFoundryText(a.trigger) : '';
+    var cost = Number(a.cost) > 0 ? Number(a.cost) : 0;
+    var have = num(data, 'heroic_resource_current', 0);
+    var short = cost > have;
+    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + have : '')) + '</span>' : '';
+    var star = g === 'signature' ? '<span class="sx-star" role="img" aria-label="Signature">★</span>' : '';
+    var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
+    var meta = (result ? [dist, one] : [one]).filter(Boolean).join(' · ');
+    var head = '<span class="sx-top"><b class="sx-name">' + star + esc(name) + tag + '</b>' +
+      '<span class="sx-res num">' + esc(result || dist) + '</span></span>' +
+      (meta ? '<span class="sx-meta">' + esc(meta) + '</span>' : '');
+    var tiers = tierLinesHtml(a, best);
+    var body = (tiers ? '<div class="sx-tiers">' + tiers + '</div>' : '') +
+      (trig ? '<p class="sx-eff"><span class="ds-big__block-k">Trigger</span>' + refSynced(trig) + '</p>' : '') +
+      (eff ? '<p class="sx-eff">' + refSynced(teaser(eff, 420)) + '</p>' : '') +
+      ((!tiers && !trig && !eff) ? '<p class="sx-eff ds-muted">No detail synced yet.</p>' : '') +
+      '<button type="button" class="sh-link" data-sheet-open="abilities">Full card</button>';
+    return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
+  }
+
+  // The kit as raw values, for the free strike line.
+  function kitObject(data) {
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    return Array.isArray(arr) ? (arr[0] || null) : (arr && typeof arr === 'object' ? arr : null);
+  }
+
+  // A hero with no free strike synced still gets one line, worked out from
+  // the kit: its distance and the kit's damage bonus per tier. The base damage
+  // is Foundry's, so no total is invented here.
+  function freeStrikeLine(data) {
+    var k = kitObject(data) || {};
+    var has = function (v) { return v != null && v !== '' && v !== 0; };
+    var sets = [['Melee', 'melee', 'Melee 1'], ['Ranged', 'ranged', 'Ranged']].filter(function (p) {
+      return has(k[p[1] + 'DamageT1']) || has(k[p[1] + 'DamageT2']) || has(k[p[1] + 'DamageT3']);
+    });
+    var set = sets[0] || ['Melee', 'melee', 'Melee 1'];
+    var bonus = sets[0] ? [1, 2, 3].map(function (n) {
+      var v = k[set[1] + 'DamageT' + n];
+      return (typeof v === 'number') ? (v >= 0 ? '+' + v : String(v)) : '–';
+    }).join(' · ') : '';
+    var en = glossaryEntry('free-strike');
+    var head = '<span class="sx-top"><b class="sx-name">' + set[0] + ' free strike</b><span class="sx-res num">' +
+      (bonus ? 'kit ' + esc(bonus) : '') + '</span></span><span class="sx-meta">' + esc(set[2]) + '</span>';
+    var body = '<p class="sx-eff">' + (en && en.description ? refText(en.description) : 'A quick, automatic attack you can make outside your turn.') + '</p>' +
+      (bonus ? '<p class="sx-eff ds-muted">Damage bonus from your kit at each tier: ' + esc(bonus) + '.</p>' : '');
+    return foldHtml('sx-line', head, body, false);
+  }
+
+  function pAbilities(data) {
+    var abilities = parseAbilities(data);
+    var groups = { main: [], maneuver: [], triggered: [], free: [] };
+    abilities.forEach(function (a) {
+      if (a && typeof a === 'object') groups[actionKind(a)].push(a);
+    });
+    groups.main.sort(function (x, y) {
+      var sx = groupOf(x) === 'signature' ? 0 : 1, sy = groupOf(y) === 'signature' ? 0 : 1;
+      return (sx - sy) || ((Number(x.cost) || 0) - (Number(y.cost) || 0));
+    });
+    var html = ACTION_ORDER.map(function (k) {
+      var lines = groups[k].map(function (a) { return abilityLine(a, data); }).join('');
+      if (k === 'free' && !lines) lines = freeStrikeLine(data);
+      if (!lines) return '';
+      var rolled = groups[k].some(function (a) { return heroBest(a, data) != null; });
+      return '<div class="sx-grp"><div class="sx-h"><span class="paper-kind">' + ACTION_LABELS[k] + '</span>' +
+        (rolled ? '<span class="sh-sub">tier 1 · 2 · 3</span>' : '') + '</div>' + lines + '</div>';
+    }).join('');
+    return '<section class="sh-band sh-abs sh-o2" aria-label="Abilities">' +
+      (abilities.length ? '' : pEmpty('No abilities yet.')) + html + '</section>';
   }
 
   // Counts shown on the ledger lines. Each is a number or an escaped label.
@@ -2068,8 +2201,10 @@
     lines.push(['features', 'Features', fc ? plural(fc, 'feature', 'features') : 'None synced yet']);
     var sl = skillLists(data);
     lines.push(['skills', 'Skills', plural(sl.skills.length, 'skill', 'skills') + (sl.langs.length ? ' · ' + plural(sl.langs.length, 'language', 'languages') : '')]);
+    var kit = kitFacts(data);
+    lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : 'No kit equipped']);
     if (data.isGm || data.isOwner) lines.push(['notes', 'Notes', 'Background' + (data.isGm ? ', GM lore' : '')]);
-    return '<section class="sh-ledger sh-o6">' + lines.map(function (l) {
+    return '<section class="sh-ledger sh-o3">' + lines.map(function (l) {
       return '<div class="paper-pull" data-sheet-section="' + l[0] + '">' +
         pullBtn(l[0], '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds" data-ds="' + l[0] + '">' + l[2] + '</span>') + '</div>';
     }).join('') + '</section>';
@@ -2116,22 +2251,13 @@
     return { name: name, grid: grid, chips: chips };
   }
 
-  function pKitPart(data) {
-    var k = kitFacts(data);
-    var body = (k.name ? '<div class="sh-kit-name">' + esc(k.name) + '</div>' : '') + k.grid +
-      (k.chips.length ? '<div class="sh-line">' + k.chips.join('') + '</div>' : '') +
-      ((!k.name && !k.grid && !k.chips.length) ? '<div class="sh-line">No kit equipped.</div>' : '');
-    return '<section class="sh-sec paper-pull sh-o3" data-sheet-section="kit" aria-label="Kit">' +
-      pullBtn('kit', '<span class="paper-kind">Kit</span>', 'Details') + body + '</section>';
-  }
-
   function pDamagePart(data) {
     var d = damageLists(data);
     var line = function (label, list) {
       return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
     };
     return '<section class="sh-sec paper-pull sh-o4" data-sheet-section="damage" aria-label="Damage">' +
-      pullBtn('damage', '<span class="paper-kind">Damage</span>', 'Sources') +
+      pullBtn('damage', '<span class="paper-kind">Damage</span>') +
       line('Immunities', d.imm) + line('Weaknesses', d.weak) + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
   }
 
@@ -2147,7 +2273,7 @@
       return '<div><span class="sh-k">' + p[0] + '</span><b' + attr + '>' + progValue(data, p[1]) + '</b></div>';
     }).join('');
     return '<section class="sh-sec paper-pull sh-o5" data-sheet-section="progression" aria-label="Progression">' +
-      pullBtn('progression', '<span class="paper-kind">Progression</span>', 'Details') + '<div class="sh-dl">' + cells + '</div></section>';
+      pullBtn('progression', '<span class="paper-kind">Progression</span>') + '<div class="sh-dl">' + cells + '</div></section>';
   }
 
   function pFoot() {
@@ -2398,9 +2524,9 @@
       return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '">' + p.html + '</template>';
     }).join('');
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
-      pHead(data) + pIdentity(data) + pTurn(data) +
-      '<div class="sh-body"><div class="sh-col">' + pCharacteristics(data) + pAbilityBand(data) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pKitPart(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
+      pHead() + pIdentity(data) + pTurn(data) +
+      '<div class="sh-body"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
       templates + '</div>';
@@ -2974,7 +3100,6 @@
       '[data-sheet] .sh-o3 { order:3; }',
       '[data-sheet] .sh-o4 { order:4; }',
       '[data-sheet] .sh-o5 { order:5; }',
-      '[data-sheet] .sh-o6 { order:6; }',
       '[data-sheet] .sh-k { display:block; }',
       '[data-sheet] .sh-sec.paper-pull { padding:8px 10px 8px 0; }',
       '[data-sheet] .sh-pullbtn { display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer; }',
@@ -3012,7 +3137,7 @@
       '[data-sheet] .sh-bar span { position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--paper-bar);transition:width var(--dur-slide) var(--ease-slide); }',
       '[data-sheet] .sh-bar .w { position:absolute;top:0;bottom:0;width:1.5px;background:var(--paper-ink);border-radius:0; }',
       '[data-sheet] .sh-sub { font:500 calc(11.5px * var(--ts))/1.35 var(--paper-ui-font);color:var(--paper-mute); }',
-      '[data-sheet] .sh-pips { font-size:calc(10px * var(--ts));letter-spacing:1.5px;color:var(--paper-accent); }',
+      '[data-sheet] .sh-pips { display:block;max-width:100%;font-size:calc(10px * var(--ts));line-height:1.3;letter-spacing:1.5px;color:var(--paper-accent);word-break:break-all; }',
       '[data-sheet] .sh-cond { display:flex;flex-wrap:wrap;align-items:center;gap:6px; }',
       '[data-sheet] .sh-cond .lbl { margin-right:2px; }',
       '[data-sheet] .sh-cnd { display:inline-flex;align-items:center;gap:6px;border:1px solid var(--paper-neg);color:var(--paper-neg);border-radius:3px;padding:0 4px 0 7px;font:600 calc(12px * var(--ts))/20px var(--paper-ui-font);background:color-mix(in srgb,var(--paper-neg) 6%,transparent); }',
@@ -3083,7 +3208,7 @@
       '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts)); }',
       '@container sheet (max-width:819px) {',
       '  [data-sheet] .sh-sheet { padding:22px 26px 24px;gap:14px; }',
-      '  [data-sheet] .sh-body { display:flex;flex-direction:column;gap:14px; }',
+      '  [data-sheet] .sh-body { display:flex;flex-direction:column;align-items:stretch;gap:14px; }',
       '  [data-sheet] .sh-col { display:contents; }',
       '}',
       '@container sheet (max-width:600px) {',
@@ -3423,6 +3548,40 @@
       '[data-sheet] .ab-rules > .ds-big__kw { border-bottom: 1px dashed var(--paper-edge); }',
       '[data-sheet] .ab-fold .ds-big__sec--for { padding: 2px 2px 0; border: 0; }',
       '[data-sheet] .ab-fold .ds-for { padding: 4px 2px 10px; }',
+      // The identity is one line; culture and career are a quiet word under it.
+      '[data-sheet] .sh-id { display:block;padding:0; }',
+      '[data-sheet] .sh-idline { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;min-width:0;font:700 calc(15px * var(--ts))/1.45 var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '[data-sheet] .sh-idval { min-width:0; }',
+      '[data-sheet] .sh-dot { margin:0 .45em;color:var(--paper-mute); }',
+      '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
+      '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '[data-sheet] .sh-idmore { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px; }',
+      '[data-sheet] .sh-idmore > .sh-idpick { font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-origins { border:0;min-width:0; }',
+      '[data-sheet] .sh-origins > summary { padding:4px 0;font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-origins > summary::after { display:none; }',
+      '[data-sheet] .sh-origins > summary:hover { color:var(--paper-accent); }',
+      '[data-sheet] .sh-origin-row { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;padding:3px 0;font:600 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '[data-sheet] .sh-origin-row .sh-k { flex:none; }',
+      '[data-sheet] .sh-origins .sh-sub { margin:4px 0 6px; }',
+      // The abilities on the face: a heading per kind of action, one line per ability.
+      '[data-sheet] .sh-abs { padding:8px 12px 10px; }',
+      '[data-sheet] .sh-abs > .sh-empty { margin:0 0 10px; }',
+      '[data-sheet] .sx-grp + .sx-grp { margin-top:12px; }',
+      '[data-sheet] .sx-h { display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px; }',
+      '[data-sheet] .sx-line > summary { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;align-items:center;position:relative;padding:8px 20px 8px 2px;min-height:44px; }',
+      '[data-sheet] .sx-line > summary::after { position:absolute;right:2px;top:15px;margin:0; }',
+      '[data-sheet] .sx-top { display:contents; }',
+      '[data-sheet] .sx-name { min-width:0;overflow-wrap:anywhere;font:700 calc(14.5px * var(--ts)) var(--paper-head-font);color:var(--paper-ink); }',
+      '[data-sheet] .sx-res { text-align:right;white-space:nowrap;font:700 calc(13px * var(--ts)) var(--paper-num-font);color:var(--paper-ink);font-variant-numeric:tabular-nums; }',
+      '[data-sheet] .sx-meta { grid-column:1/-1;font:500 calc(11.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sx-star { margin-right:4px;color:var(--paper-accent); }',
+      '[data-sheet] .sx-cost { margin-left:8px;border:1px solid var(--paper-edge);border-radius:999px;padding:0 7px;color:var(--paper-accent);font:700 calc(10.5px * var(--ts))/16px var(--paper-ui-font);white-space:nowrap; }',
+      '[data-sheet] .sx-no .sx-name,[data-sheet] .sx-no .sx-res { color:var(--paper-mute); }',
+      '[data-sheet] .sx-no .sx-cost { color:var(--paper-mute);border-style:dashed; }',
+      '[data-sheet] .sx-tiers { padding:0 2px 4px; }',
+      '[data-sheet] .sx-eff { margin:2px 2px 8px;font-size:calc(13px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
+      '[data-sheet] .sx-line .sh-link { margin:0 2px 10px; }',
       // The floating definition tooltip is appended to <body>, outside the sheet, as on the box render.
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
@@ -3547,7 +3706,7 @@
       esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
-      pIdentity: pIdentity, pTurn: pTurn, pKitPart: pKitPart, pKitPanel: pKitPanel,
+      pIdentity: pIdentity, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
       staminaState: staminaState, mountSheet: mountSheet

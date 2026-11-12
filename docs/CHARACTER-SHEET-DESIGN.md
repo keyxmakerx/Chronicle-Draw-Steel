@@ -54,7 +54,8 @@ When `Chronicle.sheetMotion` exists the widget renders on Chronicle's sheet
 contract instead of boxes: a `data-sheet` root, a `.paper-stack > .paper`
 holding the parts, and each part with more to show is a `.paper-pull` with a
 `data-sheet-open` button whose body is a `<template data-sheet-panel>` (turn,
-abilities, kit, damage, progression, items, features, skills, notes). Items,
+abilities, kit, damage, progression, items, features, skills, notes; the
+abilities panel opens from a Full card link, not from a part). Items,
 Notes and GM lore keep the box sheet's gates. Changing numbers carry `data-v` /
 `data-pv`, and the widget calls `Chronicle.sheetMotion.land` after the origin
 picker changes one. Panel content is wired from `sheet:panel-ready`, because the
@@ -64,7 +65,23 @@ identity row. Layout rules live in the widget's injected `<style>`, scoped to
 `[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
 `sheetMotion` the box render is used unchanged.
 
-The paper Abilities panel has Signature / Heroic / Maneuver tabs and lists each
+On paper the sheet's face is the hero's turn: Hero · Draw Steel, an identity
+line (ancestry, class and level, subclass, kit; Culture and career are one fold
+away and keep their pickers), the This turn part, then the abilities. The name
+is printed once, in Chronicle's page header.
+
+The face lists abilities under Main action, Maneuver, Triggered and Free strike
+(`actionKind`: Foundry's `system.type`, with `category: freeStrike` for free
+strikes; a heading with nothing under it is left out, and moves share Maneuver).
+Each is a fold: name, a star for signature, the cost as a tag (the reason when
+the hero cannot pay it), the hero's own tier results from the first damage
+effect (`heroResult`), and under it the distance and one effect sentence. The
+fold shows the three tiers and the effect, and a Full card link opens the
+Abilities panel. A free strike is always listed: the synced one, or a line from
+the kit's damage bonus per tier, because the base damage is Foundry's and is not
+invented here. Kit, Items, Features, Skills and Notes are quiet ledger lines.
+
+The paper Abilities panel has Signature / Heroic / Other tabs and lists each
 ability in the open tab as its own fold, cheapest first; the first starts open,
 and a filter box appears at 10 or more abilities. The master-detail pane below
 is the box layout only.
