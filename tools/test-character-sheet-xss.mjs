@@ -90,13 +90,11 @@ test('paper: hostile name, origin values and class cannot inject', () => {
   assert.ok(/&lt;img/.test(html));
 });
 
-test('paper: portrait_url breakout and javascript: scheme', () => {
-  const bad = cs.pIdentity(PX({ portrait_url: BREAKOUT }, { name: 'Hero' }));
-  assertNoAttrBreakout(assert, bad, 'paper portrait breakout');
-  assert.ok(/&quot;/.test(bad));
-  const js = cs.pIdentity(PX({ portrait_url: 'javascript:alert(1)' }));
-  assert.ok(!/<img/.test(js) && /sh-port-ph/.test(js));
-  assert.ok(/<img src="\/media\/h.png"/.test(cs.pIdentity(PX({ portrait_url: '/media/h.png' }))));
+test('paper: the identity line carries no picture, so portrait_url never reaches the markup', () => {
+  for (const u of [BREAKOUT, 'javascript:alert(1)', '/media/h.png']) {
+    const html = cs.pIdentity(PX({ portrait_url: u }, { name: 'Hero' }));
+    assert.ok(!/<img/.test(html) && !html.includes(u.slice(0, 8)), 'portrait ' + u);
+  }
 });
 
 test('paper: panel title and kind attributes cannot break out', () => {

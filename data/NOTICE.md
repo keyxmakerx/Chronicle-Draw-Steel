@@ -18,6 +18,7 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `abilities.json` | 519 abilities: the nine classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
 | `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
 | `ancestry-point-buy.json` | The ancestry-points budget rule, signature vs. purchased traits, the starting size/speed/stability baseline, the per-ancestry budget table, and the revenant's Previous Life case | *Heroes Book* ch. 3 (Ancestries) |
+| `transformations.json` | The ready-made transformations a Director can put on a hero partway through a campaign: Vampire Scion (the complication's benefit and drawback text) and Revenant (its signature and purchased traits, its ancestry points, and its immunity and weakness figures). The text is copied from `complications.json` and `ancestries.json`; the field changes are this package's own arrangement of it | *Heroes Book* ch. 3 (Ancestries), ch. 8 (Complications) |
 | `monster-building.json` | The monster-making formulas: role/damage and organization modifier tables, the EV, Stamina, and damage-tier equations, characteristics and potency, target-count adjustment, Instant Solo Creature, reskinning, and the animal-trait point budget | *Monsters Book* ch. 1 (Monster Basics), ch. 2 (Monsters — Animals) |
 | `encounter-building.json` | The six-step encounter-building procedure: the five difficulty tiers with their budget bands and Victory awards, encounter strength and its table, budget spending rules, creature level and count limits, initiative groups, and Quick Encounter Building | *Monsters Book* ch. 1 (Monster Basics) |
 | `monsters.json` | 394 creature stat blocks from the bestiary: each creature's level, organization, role, EV, size, Stamina, speed, stability, free strike, characteristics, immunities, weaknesses and movement, with its traits, abilities and villain actions as printed | *Monsters Book* ch. 2 (Monsters) |
@@ -461,7 +462,7 @@ Every claim has been corrected:
 | `data/creatures.json` (×35) | `"source": "Draw Steel CC-BY-4.0, MCDM Productions"` | `"source": "custom"` (see above) |
 | `docs/DATA-SCHEMA.md` | the same string, as the worked `creatures.json` example | `"custom"`, plus the correction recorded in "Provenance" |
 | `docs/PROJECT-HANDOFF.md` | `LICENSE \| CC-BY-4.0`; "if Draw Steel CC-BY-4.0 content is available" | both corrected to the Creator License position |
-| `docs/implementation-checklist.md` | "Sourced from CC-BY-4.0 Draw Steel content only" | struck through and corrected in place, since it is a historical record |
+| `docs/implementation-checklist.md` | "Sourced from CC-BY-4.0 Draw Steel content only" | removed with the rest of that old sprint plan |
 
 `docs/CHARACTER-SHEET-DESIGN.md` already stated the Creator License position and was
 left as-is.
