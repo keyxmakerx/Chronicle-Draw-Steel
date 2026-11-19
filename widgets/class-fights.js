@@ -1,7 +1,7 @@
 /**
  * Draw Steel Class Fights Widget
  *
- * The Handbook's Classes chapter as nine pop-up books: the page shows a tile
+ * The Handbook's Classes chapter as a pop-up book per class: the page shows a tile
  * for each class and the chosen class's Heroic Resource, and each class opens
  * a cut-paper practice fight where the reader clicks the pieces and watches
  * the resource rise and fall by that class's rules.
@@ -496,14 +496,16 @@
     '<path d="M0 11h40M20 0v11M0 22V11M40 22V11" stroke="#4d3a47" stroke-width="2"/></pattern></defs></svg>';
 
   // Each class's colour on the page and the board.
-  var COLOR = {censor: '#b8862a', conduit: '#d0a23a', elementalist: '#1d8f80', fury: '#c22f39', 'null': '#5d6f8c', shadow: '#4a3d6e', tactician: '#2f6fae', talent: '#7a4d8f', troubadour: '#cf6a1a'};
+  var COLOR = {beastheart: '#5e8c3a', censor: '#b8862a', conduit: '#d0a23a', elementalist: '#1d8f80', fury: '#c22f39', 'null': '#5d6f8c', shadow: '#4a3d6e', summoner: '#b24d7a', tactician: '#2f6fae', talent: '#7a4d8f', troubadour: '#cf6a1a'};
   var EMBLEM = {
+    beastheart: '<ellipse cx="50" cy="68" rx="23" ry="19" fill="#cfe58a"/><ellipse cx="21" cy="42" rx="8" ry="12" fill="#cfe58a"/><ellipse cx="40" cy="26" rx="8" ry="13" fill="#cfe58a"/><ellipse cx="60" cy="26" rx="8" ry="13" fill="#cfe58a"/><ellipse cx="79" cy="42" rx="8" ry="12" fill="#cfe58a"/>',
     censor: '<circle cx="50" cy="50" r="30" fill="#f0bb4f"/><g fill="#f0bb4f"><path d="M50 6l5 14H45z"/><path d="M50 94l-5-14h10z"/><path d="M6 50l14-5v10z"/><path d="M94 50l-14 5V45z"/></g><path d="M28 50c8-12 36-12 44 0-8 12-36 12-44 0z" fill="#fff8e6"/><circle cx="50" cy="50" r="8" fill="#3d0b15"/>',
     conduit: '<path d="M50 8l8 28 28 8-28 8-8 28-8-28-28-8 28-8z" fill="#ffe27a"/><circle cx="50" cy="44" r="10" fill="#fff8e6"/><path d="M30 92c4-16 36-16 40 0z" fill="#d0a23a"/>',
     elementalist: '<path d="M50 8c14 18 26 30 26 50a26 26 0 0 1-52 0c0-10 6-18 12-24 0 10 4 16 10 18-4-16 0-30 4-44z" fill="#4fc0bf"/><path d="M50 46c8 10 12 16 12 24a12 12 0 0 1-24 0c0-8 6-14 12-24z" fill="#f6a23a"/>',
     fury: '<g fill="#e2545d"><path d="M22 12l14 4-6 74-10-4z"/><path d="M46 8l14 4-6 82-10-4z"/><path d="M70 12l12 6-10 70-8-4z"/></g>',
     null: '<circle cx="50" cy="50" r="38" fill="none" stroke="#a7b4cc" stroke-width="7"/><path d="M34 70V36c0-4 6-4 6 0v18-24c0-4 6-4 6 0v24-28c0-4 6-4 6 0v28-24c0-4 6-4 6 0v30c0 10-6 18-14 18-6 0-12-4-16-12z" fill="#e8ebf0"/>',
     shadow: '<path d="M64 14a34 34 0 1 0 22 54A28 28 0 1 1 64 14z" fill="#c9b8f0"/><path d="M30 82l34-46 4 4-34 46z" fill="#e8ebf0"/><path d="M26 86l6-10 6 4-6 10z" fill="#3a2a1e"/>',
+    summoner: '<circle cx="50" cy="52" r="38" fill="none" stroke="#f3b9d4" stroke-width="6"/><path d="M50 18L63 78 20 42H80L37 78z" fill="#fff0f6"/><circle cx="50" cy="52" r="6" fill="#b24d7a"/>',
     tactician: '<path d="M28 8h6v86h-6z" fill="#e8ebf0"/><path d="M34 12h46l-10 14 10 14H34z" fill="#2f6fae"/><path d="M34 12h46l-10 14 10 14H34z" fill="none" stroke="#f0bb4f" stroke-width="3"/><circle cx="56" cy="26" r="5" fill="#f0bb4f"/>',
     talent: '<circle cx="50" cy="52" r="16" fill="#e7d4ff"/><circle cx="50" cy="52" r="6" fill="#3a2350"/><g fill="none" stroke="#c9a8ef" stroke-width="4"><circle cx="50" cy="52" r="27"/><circle cx="50" cy="52" r="38" stroke-dasharray="6 7"/></g>',
     troubadour: '<path d="M20 22c18 6 40 6 58 0 0 30-8 52-29 58C28 74 20 52 20 22z" fill="#f4f1ea"/><path d="M34 40c4-4 10-4 12 0M54 40c4-4 10-4 12 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M36 58c8 10 20 10 28 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M78 22l10-8 2 12z" fill="#cf6a1a"/>'
@@ -620,6 +622,20 @@
     hero: function (c) { return HERO[c.id](c); },
 
     // the foes
+    grove: function () {
+      var tree = function (x, r) { return '<path d="M' + (x - 8) + ' 170V96h16v74z" fill="#5a3a24"' + K + '/><circle cx="' + x + '" cy="' + (88 - r * .3) + '" r="' + r + '" fill="#3a7a40"' + K + '/><circle cx="' + (x - r * .7) + '" cy="' + (96 - r * .2) + '" r="' + (r * .65) + '" fill="#4a8a4c"' + K + '/>'; };
+      return art('0 0 540 170', '<path d="M0 170V76c90-34 170-8 260-26s190 8 280 28v92z" fill="#4a6a30"' + K + '/>' +
+        tree(70, 40) + tree(480, 34) +
+        '<path d="M200 170c0-20 38-20 38 0zM300 170c0-14 30-14 30 0z" fill="#2f6a45"' + K + '/>' +
+        '<g fill="#f4f1ea"><circle cx="150" cy="150" r="3"/><circle cx="390" cy="146" r="3"/><circle cx="420" cy="158" r="2.5"/></g>');
+    },
+    circle: function () {
+      return art('0 0 540 170', TOP('#3a3550') +
+        '<path d="M50 156V76h30v80zM460 156V76h30v80z" fill="#4a4560"' + K + '/>' +
+        '<circle cx="65" cy="62" r="9" fill="#f3b9d4"' + K + '/><circle cx="475" cy="62" r="9" fill="#f3b9d4"' + K + '/>' +
+        '<ellipse cx="270" cy="148" rx="170" ry="16" fill="none" stroke="#f3b9d4" stroke-width="4"/>' +
+        '<g stroke="#f3b9d4" stroke-width="2" stroke-dasharray="3 5" fill="none"><ellipse cx="270" cy="148" rx="130" ry="11"/></g>');
+    },
     skeleton: function () {
       return art('0 0 90 140',
         '<path d="M34 138l4-40h14l4 40" fill="none" stroke="#e8e2d6" stroke-width="6"/>' +
@@ -753,6 +769,14 @@
       '<g class="clf-arm">' + (o.arm || line('M84 92l18-30', 5, o.coat || c.k)) + '</g>');
   }
   var HERO = {
+    beastheart: function (c) { return figure(c, { coat: '#6b4a2a', trim: c.k, skin: '#c99a74', legs: '#4a3a26',
+      head: '<path d="M44 46c-2-24 32-24 30 0-6-8-24-8-30 0z" fill="#5a3a22"' + K + '/><path d="M72 40c6 4 8 12 4 20" stroke="#5a3a22" stroke-width="5" fill="none" stroke-linecap="round"/>',
+      off: '<path d="M32 78c-16 4-20 18-14 32l18-10z" fill="#9a8a70"' + K + '/>',
+      arm: line('M84 92l16-26', 5, '#c99a74') + line('M104 168V28', 3, '#8a6a4a') + '<path d="M104 12l8 18H96z" fill="#c9cfd8"' + K + '/>' }); },
+    summoner: function (c) { return figure(c, { coat: '#3a2850', trim: c.k, skin: '#e0b894', legs: '#241a34',
+      head: '<path d="M42 52c-4-30 40-30 36 0l-6-12H48z" fill="#3a2850"' + K + '/>',
+      back: '<g fill="#f3b9d4"><circle cx="16" cy="44" r="5"/><circle cx="104" cy="26" r="4"/><circle cx="108" cy="100" r="4"/></g>',
+      arm: line('M84 92l16-24', 5, '#3a2850') + '<circle cx="104" cy="62" r="10" fill="#f3b9d4"' + K + '/><circle cx="104" cy="62" r="4" fill="#b24d7a"/>' }); },
     conduit: function (c) { return figure(c, { trim: '#f4f1ea', back: '<circle cx="60" cy="46" r="26" fill="none" stroke="#f0bb4f" stroke-width="4"/>',
       head: '<path d="M44 46c0-20 32-20 32 0l-4-6H48z" fill="#f4f1ea"' + K + '/>',
       arm: line('M84 92l14-24', 5, c.k) + line('M100 168V30', 3, '#8a6a4a') + '<circle cx="100" cy="26" r="9" fill="#ffe27a"' + K + '/>' }); },
@@ -902,7 +926,7 @@
     return this.list.filter(function (c) { return c.id === id; })[0] || null;
   };
 
-  // renderPage draws the nine tiles and the chosen class's resource.
+  // renderPage draws a tile for each class and the chosen class's resource.
   View.prototype.renderPage = function () {
     var c = this.cls(this.at) || this.list[0], lc = c.name.toLowerCase();
     var tiles = this.list.map(function (x) {

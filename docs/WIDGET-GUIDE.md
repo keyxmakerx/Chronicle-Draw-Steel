@@ -224,7 +224,7 @@ watch his interest and patience move.
 **Slug:** `handbook-credits` · **File:** `widgets/handbook-credits.js`
 
 The Handbook's last chapter (`book/chapters/credits.yaml`). A cut-paper stage
-where the nine classes, in plain white masks, take a bow; the MCDM team by
+where the eleven classes, in plain white masks, take a bow; the MCDM team by
 role; where to buy the books; the Creator License notice word for word; where
 the rules come from; and who made this package. **Roll the credits** plays it
 as film end titles over the whole window, with pause and fast forward.

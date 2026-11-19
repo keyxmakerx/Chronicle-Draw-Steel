@@ -1,5 +1,35 @@
 [
   {
+    "slug": "beastheart",
+    "name": "Beastheart",
+    "summary": "A beastheart never fights alone! You travel with a ferocious beast by your side—no trained pet, but an untamed creature such as a wolf, a basilisk, or even a young dragon. Bound to you by a primordial connection, your companion honors your wishes just as you are guided by their instincts. But beware! As battle rages on, your companion may succumb to a blood-soaked rampage, lashing out at enemies and friends alike.",
+    "description": "A beastheart never fights alone! You travel with a ferocious beast by your side—no trained pet, but an untamed creature such as a wolf, a basilisk, or even a young dragon. Bound to you by a primordial connection, your companion honors your wishes just as you are guided by their instincts. But beware! As battle rages on, your companion may succumb to a blood-soaked rampage, lashing out at enemies and friends alike.\n\nAs a beastheart, you face the world's dangers alongside your wild companion. With your combined might, you rush into the thick of combat to challenge enemy champions or prowl around the outskirts to pick off vulnerable foes.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "ferocity",
+      "starting_characteristics": "You start with a Might of 2 and an Intuition of 2, and can choose one of the following arrays for your other characteristic scores:",
+      "primary_characteristics": [
+        "Might",
+        "Intuition"
+      ],
+      "primary_characteristics_display": "Might, Intuition",
+      "characteristic_arrays": [
+        "2, −1, −1",
+        "1, 1, −1",
+        "1, 0, 0"
+      ],
+      "potency_weak": "Might - 2",
+      "potency_average": "Might - 1",
+      "potency_strong": "Might",
+      "starting_stamina": 21,
+      "stamina_per_level": 12,
+      "recoveries": 12,
+      "skills_quick_build": "Animal Handling, Navigate, Track",
+      "skills": "You gain the Animal Handling skill. Then choose any two skills from the exploration or intrigue skill groups."
+    },
+    "source": "The Beastheart for Draw Steel (mcdm.beastheart.v1), via Steel Compendium"
+  },
+  {
     "slug": "censor",
     "name": "Censor",
     "summary": "Demons and deathless fear you. Criminals run from the sight of your shadow. Agents of chaos, blasphemers, and heretics tremble at the sound of your voice. You carry the power of the gods, armed with wrath and sent out into the world first to seek, then censor those whose actions—or even existence—are anathema to your church.",
@@ -234,6 +264,44 @@
       "provenance_display": "omissions — The epigraph quotation and its attribution to a named institution are not reproduced; the class description is otherwise complete."
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "summoner",
+    "name": "Summoner",
+    "summary": "You are the armada. The kings of old would trade armies for your abilities. You've undertaken the tradition that conjures an endless supply of warriors. You are the summoner, the mage who takes their dreams and makes them manifest.",
+    "description": "You are the armada. The kings of old would trade armies for your abilities. You've undertaken the tradition that conjures an endless supply of warriors. You are the summoner, the mage who takes their dreams and makes them manifest.\n\nYou call forth minions to trudge fearlessly into the fray and provide support, holding the enemy at bay while you and your fellow heroes ready the counteroffensive. Your minions serve unflinchingly, unerringly, to their death or to yours.\n\nYou can also take advantage of powerful magic to buff your allies, whittle down your enemies, or enlist the fallen into your ranks. And when push comes to shove, you can call upon your champion to finish the fight.",
+    "properties": {
+      "type": "class",
+      "heroic_resource": "essence",
+      "starting_characteristics": "You start with a Reason of 2, and you can choose one of the following arrays for your other characteristics scores:",
+      "primary_characteristics": [
+        "Reason"
+      ],
+      "primary_characteristics_display": "Reason",
+      "characteristic_arrays": [
+        "2, 2, −1, −1",
+        "2, 1, 1, −1",
+        "2, 1, 0, 0",
+        "1, 1, 1, 0"
+      ],
+      "potency_weak": "Reason - 2",
+      "potency_average": "Reason - 1",
+      "potency_strong": "Reason",
+      "starting_stamina": 15,
+      "stamina_per_level": 6,
+      "recoveries": 8,
+      "skills_quick_build": "Eavesdrop, Magic, Monsters, Strategy",
+      "skills": "You gain the Magic and Strategy skills and can choose any two skills from the intrigue or lore skill groups.",
+      "subclass_type": "Summoner circle",
+      "subclasses": [
+        "Blight",
+        "Graves",
+        "Spring",
+        "Storms"
+      ],
+      "subclasses_display": "Blight, Graves, Spring, Storms"
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
   },
   {
     "slug": "tactician",

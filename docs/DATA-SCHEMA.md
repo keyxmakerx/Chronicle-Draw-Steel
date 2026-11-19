@@ -276,7 +276,7 @@ with the published damage for the creature they are added to
 
 ## abilities.json
 
-Hero-facing abilities: the nine classes' abilities, the kit signature abilities,
+Hero-facing abilities: the eleven classes' abilities, the kit signature abilities,
 and the common actions every creature has. (Monster abilities live in
 `creature-abilities.json`, which uses a deliberately similar but smaller shape.)
 
@@ -614,6 +614,25 @@ The 16 downtime projects, with the same four project fields as a treasure.
 | `project_roll_characteristic` | string | No | The characteristics the project roll may use |
 | `project_goal` | string | No | The project goal, as printed |
 | `omissions` | array | No | Published text left out (Imbue Treasure's enhancement lists) |
+
+## companions.json
+
+The Beastheart's 14 companions, visible to players (the books they come from are
+not the Monsters book). `properties`: `kind` (`companion`), `level`, `organization`
+(`Companion`), `size`, `speed`, `stability`, `stamina` (printed text, `= yours`),
+`free_strike` (printed text, `1 + M`), the five characteristics, `keywords`,
+`skills`, `immunities`, and three arrays: `traits` (`{name, description}`),
+`abilities` (`{name, type, action_type, keywords, distance, target, trigger,
+power_roll, tier1..3, effect}`) and `advancement` (`{level, name, effect}` for
+levels 3, 6 and 10).
+
+## summons.json
+
+The Summoner's 49 portfolio minions and four portfolio champions. Same shape as
+`companions.json`, plus `kind` (`minion` or `champion`), `portfolio` (Demon,
+Elemental, Fey, Undead), `circle` (Blight, Storms, Spring, Graves), `role` and
+`cost` (the essence cost as printed). A champion's `advancement` holds its
+10th-level features, including its Champion Action.
 
 ## Widget-only data files
 

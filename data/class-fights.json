@@ -25,6 +25,38 @@
     }
   },
   {
+    "slug": "class-resource-beastheart",
+    "name": "Beastheart: Ferocity",
+    "summary": "Ferocity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+    "description": "The first time each combat round that a creature adjacent to your companion takes damage, you gain 2 ferocity.",
+    "source": "The Beastheart for Draw Steel (mcdm.beastheart.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "beastheart",
+      "class_name": "Beastheart",
+      "resource": "Ferocity",
+      "quote": "As a beastheart, you face the world's dangers alongside your wild companion. With your combined might, you rush into the thick of combat to challenge enemy champions or prowl around the outskirts to pick off vulnerable foes.",
+      "gain_text": "Ferocity equal to your Victories when the fight starts, then 1d3 at the start of each of your turns.",
+      "unique_text": "The first time each combat round that a creature adjacent to your companion takes damage, you gain 2 ferocity.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain ferocity, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": "d3",
+      "heroic_ability_costs": [
+        3,
+        5
+      ],
+      "triggers": [
+        {
+          "id": "adjacent-to-companion-damaged",
+          "text": "A creature adjacent to your companion takes damage",
+          "amount": 2,
+          "per": "round"
+        }
+      ]
+    }
+  },
+  {
     "slug": "class-resource-censor",
     "name": "Censor: Wrath",
     "summary": "Wrath equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
@@ -243,6 +275,37 @@
         }
       ],
       "edge_discount": 1
+    }
+  },
+  {
+    "slug": "class-resource-summoner",
+    "name": "Summoner: Essence",
+    "summary": "Essence equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+    "description": "The first time each round that any minion, yours or an enemy's, dies unwillingly within your Summoner's Range, you gain 1 essence. When you use a heroic ability or call forth a minion that costs essence, you can willingly sacrifice one or more of your minions within your Summoner's Range to reduce the cost by 1.",
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium",
+    "properties": {
+      "kind": "class-resource",
+      "class": "summoner",
+      "class_name": "Summoner",
+      "resource": "Essence",
+      "quote": "You call forth minions to trudge fearlessly into the fray and provide support, holding the enemy at bay while you and your fellow heroes ready the counteroffensive.",
+      "gain_text": "Essence equal to your Victories when the fight starts, then 2 at the start of each of your turns.",
+      "unique_text": "The first time each round that any minion, yours or an enemy's, dies unwillingly within your Summoner's Range, you gain 1 essence. When you use a heroic ability or call forth a minion that costs essence, you can willingly sacrifice one or more of your minions within your Summoner's Range to reduce the cost by 1.",
+      "ends_text": "You lose what's left at the end of the encounter.",
+      "outside_text": "You can't gain essence, but you can use an ability that costs it without spending any, once until you earn a Victory or finish a respite.",
+      "start_gain": "victories",
+      "turn_gain": 2,
+      "heroic_ability_costs": [
+        7
+      ],
+      "triggers": [
+        {
+          "id": "minion-dies",
+          "text": "A minion dies unwillingly within your Summoner's Range",
+          "amount": 1,
+          "per": "round"
+        }
+      ]
     }
   },
   {
@@ -2290,6 +2353,443 @@
         "foe1"
       ],
       "on_winded": "hero-winded"
+    }
+  },
+  {
+    "slug": "example-fight-beastheart",
+    "name": "Ferocity in the glade",
+    "summary": "An example fight for the beastheart's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "beastheart",
+      "title": "Ferocity in the glade",
+      "hero": {
+        "stamina": 30,
+        "victories": 2,
+        "reason": 2,
+        "level": 1,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Brute",
+          "stamina": 34
+        },
+        {
+          "id": "foe2",
+          "name": "Bandit",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "grove",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "bandit",
+          "x": 480,
+          "y": 118,
+          "w": 80,
+          "h": 115,
+          "tag": "foe2",
+          "act": 4
+        },
+        {
+          "art": "brute",
+          "x": 360,
+          "y": 150,
+          "w": 120,
+          "h": 160,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "wolf",
+          "x": 172,
+          "y": 262,
+          "w": 100,
+          "h": 68,
+          "tag": "pal",
+          "act": 2
+        },
+        {
+          "art": "hero",
+          "x": 90,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 1
+        }
+      ],
+      "acts": [
+        {
+          "b": "The brute punches you",
+          "s": "you take damage",
+          "from": "foe1",
+          "hurt": 6,
+          "fx": "hit",
+          "at": "me",
+          "say": [
+            "f",
+            "The brute",
+            "Get out of my way!"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Strike beside your companion",
+          "s": "a free strike on a creature next to your companion",
+          "to": "foe1",
+          "dmg": 4,
+          "fx": "slash",
+          "trig": [
+            "adjacent-to-companion-damaged"
+          ],
+          "move": [
+            [
+              "me",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "Your companion bites the brute",
+          "s": "a creature next to your companion takes damage",
+          "to": "foe1",
+          "dmg": 4,
+          "fx": "slash",
+          "at": "foe1",
+          "trig": [
+            "adjacent-to-companion-damaged"
+          ],
+          "move": [
+            [
+              "pal",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "A 3-ferocity strike",
+          "s": "power roll, 6 / 9 / 13 damage",
+          "cost": 3,
+          "roll": true,
+          "dmg": [
+            6,
+            9,
+            13
+          ],
+          "to": "foe1",
+          "fx": "slash",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ],
+            [
+              "pal",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The beastheart",
+            "Together!"
+          ]
+        },
+        {
+          "b": "A 5-ferocity strike",
+          "s": "power roll, 10 / 14 / 18 damage",
+          "cost": 5,
+          "roll": true,
+          "dmg": [
+            10,
+            14,
+            18
+          ],
+          "to": "foe2",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The beastheart",
+            "You let me get too close."
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The beastheart",
+          "Stay close, friend."
+        ],
+        "end": [
+          "h",
+          "The beastheart",
+          "Easy now. It’s over."
+        ],
+        "win": [
+          "h",
+          "The beastheart",
+          "Good hunting."
+        ]
+      },
+      "hint": "**Click your companion** or **the beastheart** to hit the brute: the first time each round a creature next to your companion takes damage, you gain 2 ferocity. **Click the brute** to get hit.",
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
+    }
+  },
+  {
+    "slug": "example-fight-summoner",
+    "name": "Essence in the summoning circle",
+    "summary": "An example fight for the summoner's pop-up book, written for this package.",
+    "source": "custom",
+    "properties": {
+      "kind": "example-fight",
+      "class": "summoner",
+      "title": "Essence in the summoning circle",
+      "hero": {
+        "stamina": 27,
+        "victories": 2,
+        "reason": 2,
+        "level": 3,
+        "characteristic": 2
+      },
+      "foes": [
+        {
+          "id": "foe1",
+          "name": "Brute",
+          "stamina": 34
+        },
+        {
+          "id": "foe2",
+          "name": "Cultist",
+          "stamina": 18
+        }
+      ],
+      "pieces": [
+        {
+          "art": "circle",
+          "x": 30,
+          "y": 34,
+          "w": 540,
+          "h": 170
+        },
+        {
+          "art": "cultist",
+          "x": 480,
+          "y": 118,
+          "w": 80,
+          "h": 115,
+          "tag": "foe2",
+          "act": 3
+        },
+        {
+          "art": "brute",
+          "x": 360,
+          "y": 150,
+          "w": 120,
+          "h": 160,
+          "tag": "foe1",
+          "act": 0
+        },
+        {
+          "art": "hourglass",
+          "x": 282,
+          "y": 238,
+          "w": 36,
+          "h": 58,
+          "tag": "glass",
+          "act": "turn"
+        },
+        {
+          "art": "skeleton",
+          "x": 250,
+          "y": 170,
+          "w": 80,
+          "h": 125,
+          "tag": "min2",
+          "act": 2
+        },
+        {
+          "art": "skeleton",
+          "x": 190,
+          "y": 205,
+          "w": 80,
+          "h": 125,
+          "tag": "min1",
+          "act": 1
+        },
+        {
+          "art": "hero",
+          "x": 70,
+          "y": 222,
+          "w": 120,
+          "h": 170,
+          "tag": "me",
+          "act": 4
+        }
+      ],
+      "acts": [
+        {
+          "b": "The brute smashes a skeleton",
+          "s": "a minion dies unwillingly",
+          "from": "foe1",
+          "fx": "hit",
+          "at": "min1",
+          "trig": [
+            "minion-dies"
+          ],
+          "move": [
+            [
+              "foe1",
+              "lunge-l strike"
+            ],
+            [
+              "min1",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "Your skeleton strikes the brute",
+          "s": "a free strike",
+          "to": "foe1",
+          "dmg": 3,
+          "fx": "slash",
+          "move": [
+            [
+              "min1",
+              "lunge-r strike"
+            ],
+            [
+              "foe1",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "Your other skeleton strikes the cultist",
+          "s": "a free strike",
+          "to": "foe2",
+          "dmg": 3,
+          "fx": "slash",
+          "move": [
+            [
+              "min2",
+              "lunge-r strike"
+            ],
+            [
+              "foe2",
+              "reel-r"
+            ]
+          ]
+        },
+        {
+          "b": "The cultist hurls a bolt at you",
+          "s": "you take damage",
+          "from": "foe2",
+          "hurt": 5,
+          "fx": "hit",
+          "at": "me",
+          "move": [
+            [
+              "foe2",
+              "lunge-l strike"
+            ],
+            [
+              "me",
+              "reel-l"
+            ]
+          ]
+        },
+        {
+          "b": "A 7-essence ability",
+          "s": "power roll, 5 / 9 / 12 damage",
+          "cost": 7,
+          "roll": true,
+          "dmg": [
+            5,
+            9,
+            12
+          ],
+          "to": "foe1",
+          "fx": "burst",
+          "move": [
+            [
+              "me",
+              "glow strike"
+            ]
+          ],
+          "say": [
+            "h",
+            "The summoner",
+            "Rise, all of you!"
+          ]
+        }
+      ],
+      "say": {
+        "start": [
+          "h",
+          "The summoner",
+          "Come forth, my army."
+        ],
+        "end": [
+          "h",
+          "The summoner",
+          "Rest. You’ve earned it."
+        ],
+        "win": [
+          "h",
+          "The summoner",
+          "The army prevails."
+        ]
+      },
+      "hint": "**Click the brute** to have it cut down a skeleton: the first time each round a minion dies unwillingly, you gain 1 essence. **Click your skeletons** to strike back, and **the summoner** for the 7-essence ability once you have saved up.",
+      "swing": [
+        "foe1"
+      ],
+      "turn_flip": "glass"
     }
   }
 ]

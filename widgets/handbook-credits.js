@@ -1,7 +1,7 @@
 /**
  * Draw Steel Handbook Credits Widget
  *
- * The Handbook's last chapter: a cut-paper stage where the nine classes, in
+ * The Handbook's last chapter: a cut-paper stage where the classes, in
  * plain white masks, take a bow for the team that made the game; the MCDM
  * team by role; where to buy the books; the Creator License notice word for
  * word; where the rules come from; and who made this package. "Roll the
@@ -56,7 +56,7 @@
 
   var STYLE_ID = 'hbc-style';
   var DEFS_ID = 'hbc-defs';
-  // Gradients, filters and the nine masked figures, shared by every stage.
+  // Gradients, filters and the masked class figures, shared by every stage.
   var DEFS = '<linearGradient id="hbc-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22103e"/><stop offset="' +
     '.38" stop-color="#7a2459"/><stop offset=".62" stop-color="#e0573a"/><stop offset=".8" stop-color="#f6a23a"/></' +
     'linearGradient><radialGradient id="hbc-sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2b0"/><sto' +
@@ -70,96 +70,117 @@
     'e0f19"/></linearGradient><filter id="hbc-cut" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2' +
     '.5" dy="3" stdDeviation=".8" flood-color="#000" flood-opacity=".55"/></filter><filter id="hbc-glow" x="-80%" y' +
     '="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="S' +
-    'ourceGraphic"/></feMerge></filter><!-- the nine classes in masks: the team behind the game, taking a bow --><s' +
-    'ymbol id="hbc-m-censor-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rec' +
-    't x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/' +
-    '></symbol><symbol id="hbc-m-censor-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#b8862a"/><pa' +
-    'th d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#b8862a"/><rect x="-17" y="-8" width="34" height="' +
-    '5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r=' +
-    '"30" fill="#f0bb4f"/><g fill="#f0bb4f"><path d="M50 6l5 14H45z"/><path d="M50 94l-5-14h10z"/><path d="M6 50l14' +
-    '-5v10z"/><path d="M94 50l-14 5V45z"/></g><path d="M28 50c8-12 36-12 44 0-8 12-36 12-44 0z" fill="#fff8e6"/><ci' +
-    'rcle cx="50" cy="50" r="8" fill="#3d0b15"/></svg><circle cy="-72" r="11" fill="#c99a74"/><path d="M-11 -76c0-6' +
-    ' 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stro' +
-    'ke-width="2.2" stroke-linecap="round"/><path d="M-2 -84c4-14 16-16 20-10-8 0-14 4-16 12z" fill="#c22f39"/></sy' +
-    'mbol><symbol id="hbc-m-conduit-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a223' +
-    '0"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#' +
-    '15171d"/></symbol><symbol id="hbc-m-conduit-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#d0a' +
-    '23a"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#d0a23a"/><rect x="-17" y="-8" width="34"' +
-    ' height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><path d="M50 8l8 ' +
-    '28 28 8-28 8-8 28-8-28-28-8 28-8z" fill="#ffe27a"/><circle cx="50" cy="44" r="10" fill="#fff8e6"/><path d="M30' +
-    ' 92c4-16 36-16 40 0z" fill="#d0a23a"/></svg><circle cy="-72" r="11" fill="#e8b48f"/><path d="M-11 -76c0-6 22-6' +
+    'ourceGraphic"/></feMerge></filter><!-- the classes in masks: the team behind the game, taking a bow --><symbol' +
+    ' id="hbc-m-beastheart-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rect' +
+    ' x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/>' +
+    '</symbol><symbol id="hbc-m-beastheart-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#5e8c3a"/>' +
+    '<path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#5e8c3a"/><rect x="-17" y="-8" width="34" heigh' +
+    't="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><ellipse cx="50" cy="68' +
+    '" rx="23" ry="19" fill="#cfe58a"/><ellipse cx="21" cy="42" rx="8" ry="12" fill="#cfe58a"/><ellipse cx="40" cy=' +
+    '"26" rx="8" ry="13" fill="#cfe58a"/><ellipse cx="60" cy="26" rx="8" ry="13" fill="#cfe58a"/><ellipse cx="79" c' +
+    'y="42" rx="8" ry="12" fill="#cfe58a"/></svg><circle cy="-72" r="11" fill="#c99a74"/><path d="M-11 -76c0-6 22-6' +
     ' 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-wi' +
-    'dth="2.2" stroke-linecap="round"/><circle cy="-74" r="17" fill="none" stroke="#f0bb4f" stroke-width="3" filter' +
-    '="url(#hbc-glow)"/></symbol><symbol id="hbc-m-elementalist-legs" overflow="visible"><rect x="-11" y="0" width=' +
-    '"9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h' +
-    '-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-elementalist-top" overflow="visible"><path d="' +
-    'M-17 -58h34l7 58h-48z" fill="#1d8f80"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#1d8f80"' +
-    '/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBo' +
-    'x="0 0 100 100"><path d="M50 8c14 18 26 30 26 50a26 26 0 0 1-52 0c0-10 6-18 12-24 0 10 4 16 10 18-4-16 0-30 4-' +
-    '44z" fill="#4fc0bf"/><path d="M50 46c8 10 12 16 12 24a12 12 0 0 1-24 0c0-8 6-14 12-24z" fill="#f6a23a"/></svg>' +
-    '<circle cy="-72" r="11" fill="#8d5a3b"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4' +
-    'f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path d="M' +
-    '26 -30c-8-6-4-14 0-20 2 6 8 10 0 20z" fill="#4fc0bf" filter="url(#hbc-glow)"/></symbol><symbol id="hbc-m-fury-' +
-    'legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9"' +
-    ' height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="h' +
-    'bc-m-fury-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#c22f39"/><path d="M-17 -56l-7 44 6 2 ' +
-    '6-30zM17 -56l7 44-6 2-6-30z" fill="#c22f39"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x' +
-    '="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><g fill="#e2545d"><path d="M22 12l14 4-6 74-10-4z"/' +
-    '><path d="M46 8l14 4-6 82-10-4z"/><path d="M70 12l12 6-10 70-8-4z"/></g></svg><circle cy="-72" r="11" fill="#d' +
-    '9b48f"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -7' +
-    '4l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path d="M-10 -82l-8-12 12 6zM10 -82l8-12-' +
-    '12 6z" fill="#e8e2d6"/></symbol><symbol id="hbc-m-null-legs" overflow="visible"><rect x="-11" y="0" width="9" ' +
-    'height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15z' +
-    'M1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-null-top" overflow="visible"><path d="M-17 -58h34l' +
-    '7 58h-48z" fill="#5d6f8c"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#5d6f8c"/><rect x="-' +
-    '17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 1' +
-    '00"><circle cx="50" cy="50" r="38" fill="none" stroke="#a7b4cc" stroke-width="7"/><path d="M34 70V36c0-4 6-4 6' +
-    ' 0v18-24c0-4 6-4 6 0v24-28c0-4 6-4 6 0v28-24c0-4 6-4 6 0v30c0 10-6 18-14 18-6 0-12-4-16-12z" fill="#e8ebf0"/><' +
-    '/svg><circle cy="-72" r="11" fill="#b07a52"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill' +
-    '="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path' +
-    ' d="M-14 -66c-4-22 6-32 14-32s18 10 14 32l-4-14h-20z" fill="#3c4a63"/></symbol><symbol id="hbc-m-shadow-legs" ' +
-    'overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" heigh' +
-    't="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-s' +
-    'hadow-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#4a3d6e"/><path d="M-17 -56l-7 44 6 2 6-30' +
-    'zM17 -56l7 44-6 2-6-30z" fill="#4a3d6e"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9' +
-    '" y="-48" width="18" height="18" viewBox="0 0 100 100"><path d="M64 14a34 34 0 1 0 22 54A28 28 0 1 1 64 14z" f' +
-    'ill="#c9b8f0"/><path d="M30 82l34-46 4 4-34 46z" fill="#e8ebf0"/><path d="M26 86l6-10 6 4-6 10z" fill="#3a2a1e' +
-    '"/></svg><circle cy="-72" r="11" fill="#e8c3a0"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" ' +
-    'fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><' +
-    'path d="M-15 -64c-4-24 7-36 15-36s19 12 15 36l-5-16h-20z" fill="#2a2140"/><path d="M-24 -20l-6 18" stroke="#e8' +
-    'ebf0" stroke-width="3"/></symbol><symbol id="hbc-m-tactician-legs" overflow="visible"><rect x="-11" y="0" widt' +
+    'dth="2.2" stroke-linecap="round"/><path d="M-15 -64c-4-24 7-36 15-36s19 12 15 36l-5-16h-20z" fill="#5a3a22"/><' +
+    'path d="M20 -100v70" stroke="#8a6a4a" stroke-width="3"/><path d="M20 -108l6 12h-12z" fill="#c9cfd8"/></symbol>' +
+    '<symbol id="hbc-m-censor-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><r' +
+    'ect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d' +
+    '"/></symbol><symbol id="hbc-m-censor-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#b8862a"/><' +
+    'path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#b8862a"/><rect x="-17" y="-8" width="34" height' +
+    '="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" ' +
+    'r="30" fill="#f0bb4f"/><g fill="#f0bb4f"><path d="M50 6l5 14H45z"/><path d="M50 94l-5-14h10z"/><path d="M6 50l' +
+    '14-5v10z"/><path d="M94 50l-14 5V45z"/></g><path d="M28 50c8-12 36-12 44 0-8 12-36 12-44 0z" fill="#fff8e6"/><' +
+    'circle cx="50" cy="50" r="8" fill="#3d0b15"/></svg><circle cy="-72" r="11" fill="#c99a74"/><path d="M-11 -76c0' +
+    '-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" st' +
+    'roke-width="2.2" stroke-linecap="round"/><path d="M-2 -84c4-14 16-16 20-10-8 0-14 4-16 12z" fill="#c22f39"/></' +
+    'symbol><symbol id="hbc-m-conduit-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2' +
+    '230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill=' +
+    '"#15171d"/></symbol><symbol id="hbc-m-conduit-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#d' +
+    '0a23a"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#d0a23a"/><rect x="-17" y="-8" width="3' +
+    '4" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><path d="M50 8l' +
+    '8 28 28 8-28 8-8 28-8-28-28-8 28-8z" fill="#ffe27a"/><circle cx="50" cy="44" r="10" fill="#fff8e6"/><path d="M' +
+    '30 92c4-16 36-16 40 0z" fill="#d0a23a"/></svg><circle cy="-72" r="11" fill="#e8b48f"/><path d="M-11 -76c0-6 22' +
+    '-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-' +
+    'width="2.2" stroke-linecap="round"/><circle cy="-74" r="17" fill="none" stroke="#f0bb4f" stroke-width="3" filt' +
+    'er="url(#hbc-glow)"/></symbol><symbol id="hbc-m-elementalist-legs" overflow="visible"><rect x="-11" y="0" widt' +
     'h="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v' +
-    '8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-tactician-top" overflow="visible"><path d="M' +
-    '-17 -58h34l7 58h-48z" fill="#2f6fae"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#2f6fae"/' +
+    '8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-elementalist-top" overflow="visible"><path d' +
+    '="M-17 -58h34l7 58h-48z" fill="#1d8f80"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#1d8f8' +
+    '0"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" view' +
+    'Box="0 0 100 100"><path d="M50 8c14 18 26 30 26 50a26 26 0 0 1-52 0c0-10 6-18 12-24 0 10 4 16 10 18-4-16 0-30 ' +
+    '4-44z" fill="#4fc0bf"/><path d="M50 46c8 10 12 16 12 24a12 12 0 0 1-24 0c0-8 6-14 12-24z" fill="#f6a23a"/></sv' +
+    'g><circle cy="-72" r="11" fill="#8d5a3b"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#' +
+    'f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path d=' +
+    '"M26 -30c-8-6-4-14 0-20 2 6 8 10 0 20z" fill="#4fc0bf" filter="url(#hbc-glow)"/></symbol><symbol id="hbc-m-fur' +
+    'y-legs" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="' +
+    '9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id=' +
+    '"hbc-m-fury-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#c22f39"/><path d="M-17 -56l-7 44 6 ' +
+    '2 6-30zM17 -56l7 44-6 2-6-30z" fill="#c22f39"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg' +
+    ' x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><g fill="#e2545d"><path d="M22 12l14 4-6 74-10-4z' +
+    '"/><path d="M46 8l14 4-6 82-10-4z"/><path d="M70 12l12 6-10 70-8-4z"/></g></svg><circle cy="-72" r="11" fill="' +
+    '#d9b48f"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 ' +
+    '-74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path d="M-10 -82l-8-12 12 6zM10 -82l8-1' +
+    '2-12 6z" fill="#e8e2d6"/></symbol><symbol id="hbc-m-null-legs" overflow="visible"><rect x="-11" y="0" width="9' +
+    '" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-1' +
+    '5zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-null-top" overflow="visible"><path d="M-17 -58h3' +
+    '4l7 58h-48z" fill="#5d6f8c"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#5d6f8c"/><rect x=' +
+    '"-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100' +
+    ' 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#a7b4cc" stroke-width="7"/><path d="M34 70V36c0-4 6-4' +
+    ' 6 0v18-24c0-4 6-4 6 0v24-28c0-4 6-4 6 0v28-24c0-4 6-4 6 0v30c0 10-6 18-14 18-6 0-12-4-16-12z" fill="#e8ebf0"/' +
+    '></svg><circle cy="-72" r="11" fill="#b07a52"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fi' +
+    'll="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><pa' +
+    'th d="M-14 -66c-4-22 6-32 14-32s18 10 14 32l-4-14h-20z" fill="#3c4a63"/></symbol><symbol id="hbc-m-shadow-legs' +
+    '" overflow="visible"><rect x="-11" y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" hei' +
+    'ght="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m' +
+    '-shadow-top" overflow="visible"><path d="M-17 -58h34l7 58h-48z" fill="#4a3d6e"/><path d="M-17 -56l-7 44 6 2 6-' +
+    '30zM17 -56l7 44-6 2-6-30z" fill="#4a3d6e"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="' +
+    '-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><path d="M64 14a34 34 0 1 0 22 54A28 28 0 1 1 64 14z"' +
+    ' fill="#c9b8f0"/><path d="M30 82l34-46 4 4-34 46z" fill="#e8ebf0"/><path d="M26 86l6-10 6 4-6 10z" fill="#3a2a' +
+    '1e"/></svg><circle cy="-72" r="11" fill="#e8c3a0"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z' +
+    '" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/' +
+    '><path d="M-15 -64c-4-24 7-36 15-36s19 12 15 36l-5-16h-20z" fill="#2a2140"/><path d="M-24 -20l-6 18" stroke="#' +
+    'e8ebf0" stroke-width="3"/></symbol><symbol id="hbc-m-summoner-legs" overflow="visible"><rect x="-11" y="0" wid' +
+    'th="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12' +
+    'v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-summoner-top" overflow="visible"><path d="M' +
+    '-17 -58h34l7 58h-48z" fill="#b24d7a"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#b24d7a"/' +
     '><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox' +
-    '="0 0 100 100"><path d="M28 8h6v86h-6z" fill="#e8ebf0"/><path d="M34 12h46l-10 14 10 14H34z" fill="#2f6fae"/><' +
-    'path d="M34 12h46l-10 14 10 14H34z" fill="none" stroke="#f0bb4f" stroke-width="3"/><circle cx="56" cy="26" r="' +
-    '5" fill="#f0bb4f"/></svg><circle cy="-72" r="11" fill="#6e4428"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 1' +
-    '4s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-li' +
-    'necap="round"/><path d="M20 -100v70" stroke="#8a6a4a" stroke-width="3"/><path d="M21 -100h18l-5 7 5 7h-18z" fi' +
-    'll="#2f6fae"/></symbol><symbol id="hbc-m-talent-legs" overflow="visible"><rect x="-11" y="0" width="9" height=' +
-    '"46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1 42h1' +
-    '2l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-talent-top" overflow="visible"><path d="M-17 -58h34l7 58h' +
-    '-48z" fill="#7a4d8f"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#7a4d8f"/><rect x="-17" y' +
-    '="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 100"><' +
-    'circle cx="50" cy="52" r="16" fill="#e7d4ff"/><circle cx="50" cy="52" r="6" fill="#3a2350"/><g fill="none" str' +
-    'oke="#c9a8ef" stroke-width="4"><circle cx="50" cy="52" r="27"/><circle cx="50" cy="52" r="38" stroke-dasharray' +
-    '="6 7"/></g></svg><circle cy="-72" r="11" fill="#c99a74"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5' +
-    '-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="' +
-    'round"/><g fill="#e7d4ff" filter="url(#hbc-glow)"><circle cx="-16" cy="-98" r="3"/><circle cy="-104" r="3"/><c' +
-    'ircle cx="16" cy="-98" r="3"/></g></symbol><symbol id="hbc-m-troubadour-legs" overflow="visible"><rect x="-11"' +
-    ' y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="' +
-    'M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-troubadour-top" overflow="visible' +
-    '"><path d="M-17 -58h34l7 58h-48z" fill="#cf6a1a"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fil' +
-    'l="#cf6a1a"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height=' +
-    '"18" viewBox="0 0 100 100"><path d="M20 22c18 6 40 6 58 0 0 30-8 52-29 58C28 74 20 52 20 22z" fill="#f4f1ea"/>' +
-    '<path d="M34 40c4-4 10-4 12 0M54 40c4-4 10-4 12 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-lineca' +
-    'p="round"/><path d="M36 58c8 10 20 10 28 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-linecap="roun' +
-    'd"/><path d="M78 22l10-8 2 12z" fill="#cf6a1a"/></svg><circle cy="-72" r="11" fill="#e8b48f"/><path d="M-11 -7' +
-    '6c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418"' +
-    ' stroke-width="2.2" stroke-linecap="round"/><path d="M-16 -82h32l-4-8h-24z" fill="#cf6a1a"/><path d="M8 -90c8-' +
-    '12 18-14 22-12-8 2-14 8-18 14z" fill="#f4f1ea"/></symbol><!-- the lit stage, shared by the page and the end of' +
-    ' the roll -->';
+    '="0 0 100 100"><circle cx="50" cy="52" r="38" fill="none" stroke="#f3b9d4" stroke-width="6"/><path d="M50 18L6' +
+    '3 78 20 42H80L37 78z" fill="#fff0f6"/><circle cx="50" cy="52" r="6" fill="#b24d7a"/></svg><circle cy="-72" r="' +
+    '11" fill="#e0b894"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 ' +
+    '-74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-linecap="round"/><path d="M-15 -64c-4-24 7-36 1' +
+    '5-36s19 12 15 36l-5-16h-20z" fill="#3a2850"/><circle cx="28" cy="-52" r="7" fill="#f3b9d4"/><circle cx="28" cy' +
+    '="-52" r="3" fill="#b24d7a"/></symbol><symbol id="hbc-m-tactician-legs" overflow="visible"><rect x="-11" y="0"' +
+    ' width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 4' +
+    '2h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-tactician-top" overflow="visible"><path' +
+    ' d="M-17 -58h34l7 58h-48z" fill="#2f6fae"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#2f6' +
+    'fae"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" vi' +
+    'ewBox="0 0 100 100"><path d="M28 8h6v86h-6z" fill="#e8ebf0"/><path d="M34 12h46l-10 14 10 14H34z" fill="#2f6fa' +
+    'e"/><path d="M34 12h46l-10 14 10 14H34z" fill="none" stroke="#f0bb4f" stroke-width="3"/><circle cx="56" cy="26' +
+    '" r="5" fill="#f0bb4f"/></svg><circle cy="-72" r="11" fill="#6e4428"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14' +
+    '-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stro' +
+    'ke-linecap="round"/><path d="M20 -100v70" stroke="#8a6a4a" stroke-width="3"/><path d="M21 -100h18l-5 7 5 7h-18' +
+    'z" fill="#2f6fae"/></symbol><symbol id="hbc-m-talent-legs" overflow="visible"><rect x="-11" y="0" width="9" he' +
+    'ight="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><path d="M-13 42h12v8h-15zM1' +
+    ' 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-talent-top" overflow="visible"><path d="M-17 -58h34l' +
+    '7 58h-48z" fill="#7a4d8f"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z" fill="#7a4d8f"/><rect x="-' +
+    '17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" height="18" viewBox="0 0 100 1' +
+    '00"><circle cx="50" cy="52" r="16" fill="#e7d4ff"/><circle cx="50" cy="52" r="6" fill="#3a2350"/><g fill="none' +
+    '" stroke="#c9a8ef" stroke-width="4"><circle cx="50" cy="52" r="27"/><circle cx="50" cy="52" r="38" stroke-dash' +
+    'array="6 7"/></g></svg><circle cy="-72" r="11" fill="#c99a74"/><path d="M-11 -76c0-6 22-6 22 0 0 9-5 14-11 14s' +
+    '-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c1418" stroke-width="2.2" stroke-line' +
+    'cap="round"/><g fill="#e7d4ff" filter="url(#hbc-glow)"><circle cx="-16" cy="-98" r="3"/><circle cy="-104" r="3' +
+    '"/><circle cx="16" cy="-98" r="3"/></g></symbol><symbol id="hbc-m-troubadour-legs" overflow="visible"><rect x=' +
+    '"-11" y="0" width="9" height="46" fill="#2a2230"/><rect x="2" y="0" width="9" height="46" fill="#2a2230"/><pat' +
+    'h d="M-13 42h12v8h-15zM1 42h12l3 8H1z" fill="#15171d"/></symbol><symbol id="hbc-m-troubadour-top" overflow="vi' +
+    'sible"><path d="M-17 -58h34l7 58h-48z" fill="#cf6a1a"/><path d="M-17 -56l-7 44 6 2 6-30zM17 -56l7 44-6 2-6-30z' +
+    '" fill="#cf6a1a"/><rect x="-17" y="-8" width="34" height="5" fill="#2a2230"/><svg x="-9" y="-48" width="18" he' +
+    'ight="18" viewBox="0 0 100 100"><path d="M20 22c18 6 40 6 58 0 0 30-8 52-29 58C28 74 20 52 20 22z" fill="#f4f1' +
+    'ea"/><path d="M34 40c4-4 10-4 12 0M54 40c4-4 10-4 12 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-l' +
+    'inecap="round"/><path d="M36 58c8 10 20 10 28 0" stroke="#3d0b15" stroke-width="4" fill="none" stroke-linecap=' +
+    '"round"/><path d="M78 22l10-8 2 12z" fill="#cf6a1a"/></svg><circle cy="-72" r="11" fill="#e8b48f"/><path d="M-' +
+    '11 -76c0-6 22-6 22 0 0 9-5 14-11 14s-11-5-11-14z" fill="#f4f1ea"/><path d="M-7 -74l5 1M7 -74l-5 1" stroke="#1c' +
+    '1418" stroke-width="2.2" stroke-linecap="round"/><path d="M-16 -82h32l-4-8h-24z" fill="#cf6a1a"/><path d="M8 -' +
+    '90c8-12 18-14 22-12-8 2-14 8-18 14z" fill="#f4f1ea"/></symbol><!-- the lit stage, shared by the page and the e' +
+    'nd of the roll -->';
   // The stage: drapes, footlights, the banner and the cast taking a bow.
   var STAGE = '<rect width="640" height="440" fill="url(#hbc-wall)"/><g class="hbc-beams"><path d="M150 0L60 392h190z" fill="' +
     'url(#hbc-spot)" opacity=".5"/><path d="M320 0L220 392h200z" fill="url(#hbc-spot)" opacity=".7"/><path d="M490 ' +
@@ -172,71 +193,75 @@
     'l="#f4f1ea">THE GAME</text><path d="M236 222h168" stroke="#c22f39" stroke-width="4"/><text x="320" y="250" fon' +
     't-size="19" letter-spacing="6" fill="#f4f1ea">MCDM PRODUCTIONS</text><g fill="#f0bb4f"><path d="M170 176l5 10 ' +
     '11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z"/><path d="M470 176l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z"/></g><' +
-    '/g><g class="hbc-cast"><g transform="translate(124 340) scale(.92)"><use href="#hbc-m-censor-legs" filter="url' +
-    '(#hbc-cut)"/><g class="hbc-bow" style="--d:0.00s"><use href="#hbc-m-censor-top" filter="url(#hbc-cut)"/></g></' +
-    'g><g transform="translate(173 340) scale(.92)"><use href="#hbc-m-conduit-legs" filter="url(#hbc-cut)"/><g clas' +
-    's="hbc-bow" style="--d:0.10s"><use href="#hbc-m-conduit-top" filter="url(#hbc-cut)"/></g></g><g transform="tra' +
-    'nslate(222 340) scale(.92)"><use href="#hbc-m-elementalist-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" st' +
-    'yle="--d:0.20s"><use href="#hbc-m-elementalist-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(27' +
-    '1 340) scale(.92)"><use href="#hbc-m-fury-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.30s"><' +
-    'use href="#hbc-m-fury-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(320 340) scale(.92)"><use h' +
-    'ref="#hbc-m-null-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.40s"><use href="#hbc-m-null-top' +
-    '" filter="url(#hbc-cut)"/></g></g><g transform="translate(369 340) scale(.92)"><use href="#hbc-m-shadow-legs" ' +
-    'filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.50s"><use href="#hbc-m-shadow-top" filter="url(#hbc-cu' +
-    't)"/></g></g><g transform="translate(418 340) scale(.92)"><use href="#hbc-m-tactician-legs" filter="url(#hbc-c' +
-    'ut)"/><g class="hbc-bow" style="--d:0.60s"><use href="#hbc-m-tactician-top" filter="url(#hbc-cut)"/></g></g><g' +
-    ' transform="translate(467 340) scale(.92)"><use href="#hbc-m-talent-legs" filter="url(#hbc-cut)"/><g class="hb' +
-    'c-bow" style="--d:0.70s"><use href="#hbc-m-talent-top" filter="url(#hbc-cut)"/></g></g><g transform="translate' +
-    '(516 340) scale(.92)"><use href="#hbc-m-troubadour-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d' +
-    ':0.80s"><use href="#hbc-m-troubadour-top" filter="url(#hbc-cut)"/></g></g></g><g filter="url(#hbc-cut)"><path ' +
-    'd="M0 0h96c-10 120 6 260 -20 392H0z" fill="url(#hbc-drape)"/><path d="M28 0c4 140 -6 260 6 392M60 0c-6 130 8 2' +
-    '60 -4 392" stroke="#4a0b14" stroke-width="3" fill="none"/><path d="M640 0H544c10 120 -6 260 20 392h76z" fill="' +
-    'url(#hbc-drape)"/><path d="M612 0c-4 140 6 260 -6 392M580 0c6 130 -8 260 4 392" stroke="#4a0b14" stroke-width=' +
-    '"3" fill="none"/><path d="M0 0h640v34c-20 0-20 18-40 18s-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18' +
-    '-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-4' +
-    '0 18-20-18-40-18-20 18-40 18z" fill="#8e1f28"/><path d="M0 34c20 0 20 18 40 18s20-18 40-18 20 18 40 18 20-18 4' +
-    '0-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 ' +
-    '18 20-18 40-18 20 18 40 18 20-18 40-18" stroke="#e1a32c" stroke-width="3" fill="none"/></g><g filter="url(#hbc' +
-    '-cut)" transform="translate(320 92)"><path d="M-200 -26h400l-18 26 18 26h-400l18-26z" fill="#e9b84a"/><path d=' +
-    '"M-176 -20h352v40h-352z" fill="none" stroke="#7a4b08" stroke-width="1.5" stroke-dasharray="5 4"/><text y="13" ' +
-    'text-anchor="middle" font-family="Big Shoulders Display, Oswald, Impact, sans-serif" font-weight="900" font-si' +
-    'ze="32" letter-spacing="5" fill="#3d0b15">THANK YOU, MCDM</text></g><g class="hbc-confetti"><rect class="hbc-c' +
-    '" x="275" y="168" width="8" height="5" fill="#f4f1ea" style="--d:3.88s;--x:13px" transform="rotate(114 275 168' +
-    ')"/><rect class="hbc-c" x="134" y="148" width="9" height="3" fill="#f4f1ea" style="--d:4.30s;--x:26px" transfo' +
-    'rm="rotate(171 134 148)"/><rect class="hbc-c" x="297" y="279" width="5" height="5" fill="#f4f1ea" style="--d:0' +
-    '.14s;--x:-1px" transform="rotate(90 297 279)"/><rect class="hbc-c" x="219" y="139" width="5" height="4" fill="' +
-    '#e9b84a" style="--d:3.67s;--x:1px" transform="rotate(15 219 139)"/><rect class="hbc-c" x="324" y="147" width="' +
-    '6" height="3" fill="#e9b84a" style="--d:4.61s;--x:-22px" transform="rotate(63 324 147)"/><rect class="hbc-c" x' +
-    '="392" y="238" width="5" height="5" fill="#e2545d" style="--d:2.35s;--x:25px" transform="rotate(127 392 238)"/' +
-    '><rect class="hbc-c" x="173" y="187" width="9" height="3" fill="#f0bb4f" style="--d:1.00s;--x:-5px" transform=' +
-    '"rotate(140 173 187)"/><rect class="hbc-c" x="405" y="279" width="8" height="3" fill="#f4f1ea" style="--d:5.30' +
-    's;--x:22px" transform="rotate(110 405 279)"/><rect class="hbc-c" x="223" y="141" width="9" height="3" fill="#4' +
-    'fc0bf" style="--d:1.67s;--x:-4px" transform="rotate(91 223 141)"/><rect class="hbc-c" x="258" y="237" width="6' +
-    '" height="5" fill="#e2545d" style="--d:5.75s;--x:-21px" transform="rotate(21 258 237)"/><rect class="hbc-c" x=' +
-    '"170" y="276" width="7" height="5" fill="#e9b84a" style="--d:0.91s;--x:12px" transform="rotate(59 170 276)"/><' +
-    'rect class="hbc-c" x="527" y="304" width="6" height="3" fill="#f0bb4f" style="--d:2.91s;--x:7px" transform="ro' +
-    'tate(46 527 304)"/><rect class="hbc-c" x="407" y="276" width="6" height="4" fill="#f4f1ea" style="--d:1.69s;--' +
-    'x:-21px" transform="rotate(107 407 276)"/><rect class="hbc-c" x="159" y="270" width="5" height="5" fill="#4fc0' +
-    'bf" style="--d:2.22s;--x:6px" transform="rotate(81 159 270)"/><rect class="hbc-c" x="140" y="288" width="6" he' +
-    'ight="4" fill="#e9b84a" style="--d:4.14s;--x:2px" transform="rotate(158 140 288)"/><rect class="hbc-c" x="458"' +
-    ' y="266" width="8" height="4" fill="#f0bb4f" style="--d:2.74s;--x:25px" transform="rotate(174 458 266)"/><rect' +
-    ' class="hbc-c" x="348" y="279" width="8" height="4" fill="#4fc0bf" style="--d:2.35s;--x:-5px" transform="rotat' +
-    'e(100 348 279)"/><rect class="hbc-c" x="263" y="193" width="6" height="5" fill="#f0bb4f" style="--d:2.89s;--x:' +
-    '-5px" transform="rotate(15 263 193)"/><rect class="hbc-c" x="509" y="192" width="5" height="5" fill="#e9b84a" ' +
-    'style="--d:0.40s;--x:-17px" transform="rotate(112 509 192)"/><rect class="hbc-c" x="263" y="264" width="8" hei' +
-    'ght="4" fill="#e9b84a" style="--d:0.66s;--x:8px" transform="rotate(13 263 264)"/><rect class="hbc-c" x="483" y' +
-    '="244" width="7" height="5" fill="#f0bb4f" style="--d:0.00s;--x:-21px" transform="rotate(137 483 244)"/><rect ' +
-    'class="hbc-c" x="147" y="160" width="9" height="4" fill="#f0bb4f" style="--d:5.69s;--x:9px" transform="rotate(' +
-    '6 147 160)"/><rect class="hbc-c" x="194" y="323" width="7" height="3" fill="#f0bb4f" style="--d:5.25s;--x:9px"' +
-    ' transform="rotate(96 194 323)"/><rect class="hbc-c" x="360" y="237" width="5" height="5" fill="#e9b84a" style' +
-    '="--d:3.81s;--x:-8px" transform="rotate(154 360 237)"/><rect class="hbc-c" x="149" y="325" width="9" height="5' +
-    '" fill="#f4f1ea" style="--d:2.84s;--x:-23px" transform="rotate(124 149 325)"/><rect class="hbc-c" x="514" y="3' +
-    '54" width="7" height="4" fill="#e2545d" style="--d:2.88s;--x:-11px" transform="rotate(21 514 354)"/><rect clas' +
-    's="hbc-c" x="465" y="219" width="9" height="4" fill="#e9b84a" style="--d:0.61s;--x:-9px" transform="rotate(67 ' +
-    '465 219)"/><rect class="hbc-c" x="406" y="334" width="8" height="3" fill="#e2545d" style="--d:4.97s;--x:-20px"' +
-    ' transform="rotate(132 406 334)"/><rect class="hbc-c" x="157" y="199" width="8" height="5" fill="#f0bb4f" styl' +
-    'e="--d:1.23s;--x:30px" transform="rotate(135 157 199)"/><rect class="hbc-c" x="450" y="146" width="5" height="' +
-    '5" fill="#f4f1ea" style="--d:0.88s;--x:4px" transform="rotate(6 450 146)"/></g>';
+    '/g><g class="hbc-cast"><g transform="translate(110 347) scale(.78)"><use href="#hbc-m-beastheart-legs" filter=' +
+    '"url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.00s"><use href="#hbc-m-beastheart-top" filter="url(#hbc-cut)"' +
+    '/></g></g><g transform="translate(151 347) scale(.78)"><use href="#hbc-m-censor-legs" filter="url(#hbc-cut)"/>' +
+    '<g class="hbc-bow" style="--d:0.08s"><use href="#hbc-m-censor-top" filter="url(#hbc-cut)"/></g></g><g transfor' +
+    'm="translate(192 347) scale(.78)"><use href="#hbc-m-conduit-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" s' +
+    'tyle="--d:0.16s"><use href="#hbc-m-conduit-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(233 34' +
+    '7) scale(.78)"><use href="#hbc-m-elementalist-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.24' +
+    's"><use href="#hbc-m-elementalist-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(274 347) scale(' +
+    '.78)"><use href="#hbc-m-fury-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.32s"><use href="#hb' +
+    'c-m-fury-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(315 347) scale(.78)"><use href="#hbc-m-n' +
+    'ull-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.40s"><use href="#hbc-m-null-top" filter="url' +
+    '(#hbc-cut)"/></g></g><g transform="translate(356 347) scale(.78)"><use href="#hbc-m-shadow-legs" filter="url(#' +
+    'hbc-cut)"/><g class="hbc-bow" style="--d:0.48s"><use href="#hbc-m-shadow-top" filter="url(#hbc-cut)"/></g></g>' +
+    '<g transform="translate(397 347) scale(.78)"><use href="#hbc-m-summoner-legs" filter="url(#hbc-cut)"/><g class' +
+    '="hbc-bow" style="--d:0.56s"><use href="#hbc-m-summoner-top" filter="url(#hbc-cut)"/></g></g><g transform="tra' +
+    'nslate(438 347) scale(.78)"><use href="#hbc-m-tactician-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style' +
+    '="--d:0.64s"><use href="#hbc-m-tactician-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(479 347)' +
+    ' scale(.78)"><use href="#hbc-m-talent-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.72s"><use ' +
+    'href="#hbc-m-talent-top" filter="url(#hbc-cut)"/></g></g><g transform="translate(520 347) scale(.78)"><use hre' +
+    'f="#hbc-m-troubadour-legs" filter="url(#hbc-cut)"/><g class="hbc-bow" style="--d:0.80s"><use href="#hbc-m-trou' +
+    'badour-top" filter="url(#hbc-cut)"/></g></g></g><g filter="url(#hbc-cut)"><path d="M0 0h96c-10 120 6 260 -20 3' +
+    '92H0z" fill="url(#hbc-drape)"/><path d="M28 0c4 140 -6 260 6 392M60 0c-6 130 8 260 -4 392" stroke="#4a0b14" st' +
+    'roke-width="3" fill="none"/><path d="M640 0H544c10 120 -6 260 20 392h76z" fill="url(#hbc-drape)"/><path d="M61' +
+    '2 0c-4 140 6 260 -6 392M580 0c6 130 -8 260 4 392" stroke="#4a0b14" stroke-width="3" fill="none"/><path d="M0 0' +
+    'h640v34c-20 0-20 18-40 18s-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18' +
+    '-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18-20-18-40-18-20 18-40 18z"' +
+    ' fill="#8e1f28"/><path d="M0 34c20 0 20 18 40 18s20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 2' +
+    '0 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-18 40-18 20 18 40 18 20-' +
+    '18 40-18" stroke="#e1a32c" stroke-width="3" fill="none"/></g><g filter="url(#hbc-cut)" transform="translate(32' +
+    '0 92)"><path d="M-200 -26h400l-18 26 18 26h-400l18-26z" fill="#e9b84a"/><path d="M-176 -20h352v40h-352z" fill=' +
+    '"none" stroke="#7a4b08" stroke-width="1.5" stroke-dasharray="5 4"/><text y="13" text-anchor="middle" font-fami' +
+    'ly="Big Shoulders Display, Oswald, Impact, sans-serif" font-weight="900" font-size="32" letter-spacing="5" fil' +
+    'l="#3d0b15">THANK YOU, MCDM</text></g><g class="hbc-confetti"><rect class="hbc-c" x="275" y="168" width="8" he' +
+    'ight="5" fill="#f4f1ea" style="--d:3.88s;--x:13px" transform="rotate(114 275 168)"/><rect class="hbc-c" x="134' +
+    '" y="148" width="9" height="3" fill="#f4f1ea" style="--d:4.30s;--x:26px" transform="rotate(171 134 148)"/><rec' +
+    't class="hbc-c" x="297" y="279" width="5" height="5" fill="#f4f1ea" style="--d:0.14s;--x:-1px" transform="rota' +
+    'te(90 297 279)"/><rect class="hbc-c" x="219" y="139" width="5" height="4" fill="#e9b84a" style="--d:3.67s;--x:' +
+    '1px" transform="rotate(15 219 139)"/><rect class="hbc-c" x="324" y="147" width="6" height="3" fill="#e9b84a" s' +
+    'tyle="--d:4.61s;--x:-22px" transform="rotate(63 324 147)"/><rect class="hbc-c" x="392" y="238" width="5" heigh' +
+    't="5" fill="#e2545d" style="--d:2.35s;--x:25px" transform="rotate(127 392 238)"/><rect class="hbc-c" x="173" y' +
+    '="187" width="9" height="3" fill="#f0bb4f" style="--d:1.00s;--x:-5px" transform="rotate(140 173 187)"/><rect c' +
+    'lass="hbc-c" x="405" y="279" width="8" height="3" fill="#f4f1ea" style="--d:5.30s;--x:22px" transform="rotate(' +
+    '110 405 279)"/><rect class="hbc-c" x="223" y="141" width="9" height="3" fill="#4fc0bf" style="--d:1.67s;--x:-4' +
+    'px" transform="rotate(91 223 141)"/><rect class="hbc-c" x="258" y="237" width="6" height="5" fill="#e2545d" st' +
+    'yle="--d:5.75s;--x:-21px" transform="rotate(21 258 237)"/><rect class="hbc-c" x="170" y="276" width="7" height' +
+    '="5" fill="#e9b84a" style="--d:0.91s;--x:12px" transform="rotate(59 170 276)"/><rect class="hbc-c" x="527" y="' +
+    '304" width="6" height="3" fill="#f0bb4f" style="--d:2.91s;--x:7px" transform="rotate(46 527 304)"/><rect class' +
+    '="hbc-c" x="407" y="276" width="6" height="4" fill="#f4f1ea" style="--d:1.69s;--x:-21px" transform="rotate(107' +
+    ' 407 276)"/><rect class="hbc-c" x="159" y="270" width="5" height="5" fill="#4fc0bf" style="--d:2.22s;--x:6px" ' +
+    'transform="rotate(81 159 270)"/><rect class="hbc-c" x="140" y="288" width="6" height="4" fill="#e9b84a" style=' +
+    '"--d:4.14s;--x:2px" transform="rotate(158 140 288)"/><rect class="hbc-c" x="458" y="266" width="8" height="4" ' +
+    'fill="#f0bb4f" style="--d:2.74s;--x:25px" transform="rotate(174 458 266)"/><rect class="hbc-c" x="348" y="279"' +
+    ' width="8" height="4" fill="#4fc0bf" style="--d:2.35s;--x:-5px" transform="rotate(100 348 279)"/><rect class="' +
+    'hbc-c" x="263" y="193" width="6" height="5" fill="#f0bb4f" style="--d:2.89s;--x:-5px" transform="rotate(15 263' +
+    ' 193)"/><rect class="hbc-c" x="509" y="192" width="5" height="5" fill="#e9b84a" style="--d:0.40s;--x:-17px" tr' +
+    'ansform="rotate(112 509 192)"/><rect class="hbc-c" x="263" y="264" width="8" height="4" fill="#e9b84a" style="' +
+    '--d:0.66s;--x:8px" transform="rotate(13 263 264)"/><rect class="hbc-c" x="483" y="244" width="7" height="5" fi' +
+    'll="#f0bb4f" style="--d:0.00s;--x:-21px" transform="rotate(137 483 244)"/><rect class="hbc-c" x="147" y="160" ' +
+    'width="9" height="4" fill="#f0bb4f" style="--d:5.69s;--x:9px" transform="rotate(6 147 160)"/><rect class="hbc-' +
+    'c" x="194" y="323" width="7" height="3" fill="#f0bb4f" style="--d:5.25s;--x:9px" transform="rotate(96 194 323)' +
+    '"/><rect class="hbc-c" x="360" y="237" width="5" height="5" fill="#e9b84a" style="--d:3.81s;--x:-8px" transfor' +
+    'm="rotate(154 360 237)"/><rect class="hbc-c" x="149" y="325" width="9" height="5" fill="#f4f1ea" style="--d:2.' +
+    '84s;--x:-23px" transform="rotate(124 149 325)"/><rect class="hbc-c" x="514" y="354" width="7" height="4" fill=' +
+    '"#e2545d" style="--d:2.88s;--x:-11px" transform="rotate(21 514 354)"/><rect class="hbc-c" x="465" y="219" widt' +
+    'h="9" height="4" fill="#e9b84a" style="--d:0.61s;--x:-9px" transform="rotate(67 465 219)"/><rect class="hbc-c"' +
+    ' x="406" y="334" width="8" height="3" fill="#e2545d" style="--d:4.97s;--x:-20px" transform="rotate(132 406 334' +
+    ')"/><rect class="hbc-c" x="157" y="199" width="8" height="5" fill="#f0bb4f" style="--d:1.23s;--x:30px" transfo' +
+    'rm="rotate(135 157 199)"/><rect class="hbc-c" x="450" y="146" width="5" height="5" fill="#f4f1ea" style="--d:0' +
+    '.88s;--x:4px" transform="rotate(6 450 146)"/></g>';
 
   function esc(s) { return Chronicle.escapeHtml(s == null ? '' : String(s)); }
   function calm() {

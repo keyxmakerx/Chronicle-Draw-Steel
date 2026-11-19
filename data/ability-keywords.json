@@ -240,5 +240,35 @@
       "group": "Core"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "beastheart",
+    "name": "Beastheart",
+    "summary": "Abilities with the Beastheart keyword can be used only by the beastheart.",
+    "description": "Abilities with the Beastheart keyword can be used only by the beastheart.",
+    "properties": {
+      "group": "Beastheart ability"
+    },
+    "source": "The Beastheart for Draw Steel (mcdm.beastheart.v1), via Steel Compendium"
+  },
+  {
+    "slug": "champion",
+    "name": "Champion",
+    "summary": "You have an edge whenever you use an ability with the Champion keyword from your champion's space.",
+    "description": "You have an edge whenever you use an ability with the Champion keyword from your champion's space.",
+    "properties": {
+      "group": "Summoner ability"
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "companion",
+    "name": "Companion",
+    "summary": "Abilities with the Companion keyword can be used only by the companion.",
+    "description": "Abilities with the Companion keyword can be used only by the companion.",
+    "properties": {
+      "group": "Beastheart ability"
+    },
+    "source": "The Beastheart for Draw Steel (mcdm.beastheart.v1), via Steel Compendium"
   }
 ]
