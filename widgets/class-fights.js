@@ -369,7 +369,12 @@
       '.clf-problem{padding:10px 12px;border-radius:4px;background:var(--rb-box2,var(--color-bg-tertiary,#f3efe6));color:' + INKP + ';font-size:14px}',
       // Settle: a newly picked class's page rises 6px into place as it fades in.
       '.clf-settle{animation:clf-settle var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
-      '@keyframes clf-settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'
+      '@keyframes clf-settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}',
+      // The Handbook's open mark: what opens a pop-up book breathes gently, as
+      // the How to Play page's read and play marks do, and rests once reached.
+      '.clf-mark{display:inline-block;flex:none;white-space:nowrap;animation:clf-breathe 2.6s ease-in-out infinite}',
+      '.clf-open:hover .clf-mark,.clf-open:focus-visible .clf-mark{animation:none}',
+      '@keyframes clf-breathe{0%,100%{transform:none;opacity:.7}50%{transform:scale(1.1);opacity:1}}'
     ];
   }
 
@@ -953,7 +958,7 @@
         '<div><b>When it ends</b><span>' + esc(c.ends) + '</span></div>' +
         '<div><b>Outside a fight</b><span>' + esc(c.outside) + '</span></div></div>' +
         '<div class="clf-uniq"><small>What makes the ' + esc(lc) + ' different</small>' + esc(c.uniq) + '</div>' +
-        '<button type="button" class="clf-open" data-clf-open="' + attr(c.id) + '" aria-haspopup="dialog"><span>Open the ' + esc(lc) + '’s pop-up book</span><span aria-hidden="true">→</span></button>' +
+        '<button type="button" class="clf-open" data-clf-open="' + attr(c.id) + '" aria-haspopup="dialog"><span>Open the ' + esc(lc) + '’s pop-up book</span><span class="clf-mark" aria-hidden="true">⤪ play</span></button>' +
       '</div></div></div>';
   };
 
