@@ -370,6 +370,7 @@ var DrawSteelCreatureEditor = (function () {
 
   // vocabulary is every option the AI may pick from, read from the package's
   // own data files so the guide never drifts from them.
+  var MOVE_WORDS = ['push', 'pull', 'slide', 'shift', 'teleport', 'fly', 'jump', 'burrow', 'climb-or-swim', 'crawl', 'hover', 'walk'];
   function vocabulary(refs, files) {
     var f = files || {};
     var names = function (list, keep) { return (list || []).filter(keep || function () { return true; }).map(function (x) { return x.name; }).filter(Boolean); };
@@ -383,7 +384,10 @@ var DrawSteelCreatureEditor = (function () {
       abilityKeywords: names(f.abilityKeywords, function (k) { return props(k).group !== 'Helper'; }),
       conditions: terms('condition'),
       durations: terms('duration'),
-      movement: terms('movement'),
+      // The glossary's movement topics include rules sections ("when a creature
+      // moves"); the guide offers only the words that name a movement.
+      movement: terms('movement').filter(function (t) { return MOVE_WORDS.indexOf(t) >= 0; }),
+      movementAny: terms('movement'),
       damageTypes: DTYPES.slice()
     };
   }
@@ -425,7 +429,7 @@ var DrawSteelCreatureEditor = (function () {
     if (v.durations.length) lines.push('Mark durations as {@duration name}, one of: ' + v.durations.join(', '));
     if (v.movement.length) lines.push('Mark forced movement as {@movement name}, one of: ' + v.movement.join(', '));
     if (book && book.length) {
-      lines.push('', 'Book abilities you may use (' + book.length + '). Pick them by id in "book_abilities" and do not copy them into "abilities"; Chronicle adds them with damage from the published formulas:');
+      lines.push('', 'Book abilities you may use (' + book.length + '). Pick them by id in "book_abilities" and do not copy them into "abilities"; Chronicle adds them with damage from the published formulas. Choose the organization first: an ability marked "only for" some organizations can be used only if you chose one of them, and the rest suit any:');
       book.forEach(function (t) { lines.push(bookLine(t)); });
     }
     return lines.join('\n');
@@ -437,7 +441,7 @@ var DrawSteelCreatureEditor = (function () {
   // them with filters and the guide offers at most BOOK_LIMITS' largest.
   var BOOK_LIMITS = [10, 25, 50];
   function newBookFilter() { return { kind: '', fit: 'this', group: '', kw: '', cond: '', q: '', lim: 50, off: {} }; }
-  var SHORT_STOP = ['a', 'an', 'the', 'who', 'and', 'that', 'with', 'into', 'onto', 'from', 'their', 'them', 'they', 'this', 'his', 'her', 'its', 'for', 'of', 'to', 'on', 'in', 'at', 'by', 'or', 'as', 'is', 'are', 'be', 'leads'];
+  var SHORT_STOP = ['a', 'an', 'the', 'who', 'and', 'that', 'with', 'into', 'onto', 'from', 'their', 'them', 'they', 'this', 'his', 'her', 'its', 'for', 'of', 'to', 'on', 'in', 'at', 'by', 'or', 'as', 'is', 'are', 'be', 'leads', 'down', 'over', 'away', 'back', 'near', 'while', 'which', 'than', 'more', 'most', 'some', 'also', 'then', 'when', 'each', 'have', 'will', 'what', 'your'];
 
   // bookGroup is the Monsters book chapter an ability came from, read from its
   // source line; '' for the package's own.
@@ -450,13 +454,24 @@ var DrawSteelCreatureEditor = (function () {
     return out;
   }
 
-  function shortWords(text) {
-    return String(text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3 && SHORT_STOP.indexOf(w) < 0; })
-      .map(function (w) { return w.replace(/ies$/, 'y').replace(/s$/, ''); });
+  // stem lowers a word to a form that "drags", "dragged" and "dragging" share.
+  // Words are compared whole by their stems, so "drag" never matches "dragon".
+  function stem(w) {
+    w = String(w).toLowerCase().replace(/ies$/, 'y');
+    if (w.length > 5) w = w.replace(/(?:ing|ed)$/, '').replace(/([^aeiou])\1$/, '$1');
+    return w.replace(/s$/, '');
   }
+  function shortWords(text) {
+    return String(text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3 && SHORT_STOP.indexOf(w) < 0; }).map(stem);
+  }
+  // haystack is the ability's words as stems, to match whole words against.
   function haystack(t) {
     var p = props(t);
-    return [t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' ').toLowerCase();
+    return shortWords([t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' '));
+  }
+  function rawHaystack(t) {
+    var p = props(t);
+    return [t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' ').toLowerCase().split(/[^a-z0-9]+/);
   }
 
   // shortPass applies every filter but `skip`, so a chip's count says what
@@ -473,8 +488,9 @@ var DrawSteelCreatureEditor = (function () {
     if (skip !== 'kw' && f.kw && listProp(p.keywords).indexOf(f.kw) < 0) return false;
     if (skip !== 'cond' && f.cond && inflicts(t).indexOf(f.cond) < 0) return false;
     if (f.q) {
-      var h = haystack(t);
-      if (!String(f.q).toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return h.indexOf(w) >= 0; })) return false;
+      // Typed search matches the start of a word, so a half-typed word still finds things.
+      var h = rawHaystack(t);
+      if (!String(f.q).toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return h.some(function (x) { return x.indexOf(w) === 0; }); })) return false;
     }
     return true;
   }
@@ -503,7 +519,8 @@ var DrawSteelCreatureEditor = (function () {
   // bookLine is one shortlisted ability as the guide lists it.
   function bookLine(t) {
     var p = props(t), text = plainRefs(p.trigger ? 'Trigger: ' + p.trigger + '. ' + (p.effect || p.tier3 || '') : (p.effect || p.tier3 || p.tier1 || ''));
-    return '- ' + [t.slug, t.name, p.type, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
+    var orgs = listProp(p.organizations), only = specific(t) && orgs.length ? 'only for ' + orgs.join('/') : '';
+    return '- ' + [t.slug, t.name, p.type, only, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
   }
 
   // scanObject reads one { … } block starting at text[start], mending what
@@ -585,9 +602,11 @@ var DrawSteelCreatureEditor = (function () {
   // keepKnownRefs turns reference markup the glossary doesn't know into its
   // plain words, so a made-up term never becomes a broken hover card.
   function keepKnownRefs(text, v) {
-    var known = { condition: v.conditions, duration: v.durations, movement: v.movement };
+    var known = { condition: v.conditions, duration: v.durations, movement: v.movementAny || v.movement };
     return String(text || '').replace(/\{@(\w+) ([^}|]+)(\|[^}]+)?\}/g, function (m, cat, term, shown) {
       var list = known[cat], t = String(term).trim().toLowerCase().replace(/\s+/g, '-');
+      // The guide offers only conditions, durations and movement, so any other marker is plain words.
+      if (!(cat in known)) return shown ? shown.slice(1) : term;
       if (!list || !list.length) return m;
       if (list.indexOf(t) >= 0) return '{@' + cat + ' ' + t + (shown || '') + '}';
       return shown ? shown.slice(1) : term;
@@ -631,7 +650,16 @@ var DrawSteelCreatureEditor = (function () {
       if (noRole(c.organization)) notes.push('The AI gave a ' + c.organization + ' the role “' + o.role + '”. ' + cap(c.organization) + 's have no role in the published tables, so it was left off.');
       else if (v.roles.indexOf(rl) >= 0) c.role = rl; else notes.push('“' + o.role + '” is not a Draw Steel role, so it has none yet.');
     }
-    var kws = strList(o.keywords);
+    // Keywords the guide's lists don't hold are dropped and named, as the other unknowns are.
+    function known(list, allowed, what) {
+      if (!allowed || !allowed.length) return list;
+      var lc = {}, out = [], bad = [];
+      allowed.forEach(function (k) { lc[String(k).toLowerCase()] = k; });
+      list.forEach(function (k) { var h = lc[String(k).toLowerCase()]; if (h) { if (out.indexOf(h) < 0) out.push(h); } else if (bad.length < 5) bad.push(k); });
+      if (bad.length) notes.push(what + ' keywords that are not in the lists were left off: ' + bad.join(', ') + '.');
+      return out;
+    }
+    var kws = known(strList(o.keywords), v.creatureKeywords, 'Creature');
     if (kws.length) c.keywords = kws;
     if (o.size != null) { if (v.sizes.indexOf(String(o.size)) >= 0) c.size = String(o.size); else notes.push('Size “' + o.size + '” is not one Draw Steel uses, so it stays ' + c.size + '.'); }
     if (o.speed != null && isFinite(Number(o.speed))) c.speed = Math.max(0, Math.min(20, Math.round(Number(o.speed))));
@@ -664,7 +692,7 @@ var DrawSteelCreatureEditor = (function () {
     var sg = o.signature;
     if (sg && typeof sg === 'object' && str(sg.name)) {
       var ranged = /ranged/i.test(str(sg.distance) + ' ' + str(sg.kind));
-      var a = { name: str(sg.name, 200), type: 'signature', keywords: strList(sg.keywords), distance: str(sg.distance, 80) || (ranged ? 'Ranged 10' : 'Melee 1'), target: str(sg.target, 120) || 'One creature or object', trigger: '', effect: keepKnownRefs(str(sg.effect), v), from_ai: true };
+      var a = { name: str(sg.name, 200), type: 'signature', keywords: known(strList(sg.keywords), v.abilityKeywords, str(sg.name, 60) + '’s ability'), distance: str(sg.distance, 80) || (ranged ? 'Ranged 10' : 'Melee 1'), target: str(sg.target, 120) || 'One creature or object', trigger: '', effect: keepKnownRefs(str(sg.effect), v), from_ai: true };
       if (!a.keywords.length) a.keywords = ranged ? ['Ranged', 'Strike', 'Weapon'] : ['Melee', 'Strike', 'Weapon'];
       tiers(a, sg, true);
       c.abilities.push(a);
@@ -672,7 +700,7 @@ var DrawSteelCreatureEditor = (function () {
     if (Array.isArray(o.abilities)) {
       o.abilities.filter(function (x) { return x && str(x.name); }).slice(0, 20).forEach(function (x) {
         var t = /trigger/i.test(str(x.type)) ? 'triggered' : /maneuver/i.test(str(x.type)) ? 'maneuver' : 'action';
-        var a = { name: str(x.name, 200), type: t, keywords: strList(x.keywords), distance: str(x.distance, 80), target: str(x.target, 120), trigger: keepKnownRefs(str(x.trigger), v), effect: keepKnownRefs(str(x.effect), v), from_ai: true };
+        var a = { name: str(x.name, 200), type: t, keywords: known(strList(x.keywords), v.abilityKeywords, str(x.name, 60) + '’s ability'), distance: str(x.distance, 80), target: str(x.target, 120), trigger: keepKnownRefs(str(x.trigger), v), effect: keepKnownRefs(str(x.effect), v), from_ai: true };
         tiers(a, x, x.deals_damage === true || /^true$/i.test(String(x.deals_damage).trim()));
         c.abilities.push(a);
       });
@@ -791,7 +819,7 @@ var DrawSteelCreatureEditor = (function () {
     var wc = shortCounts(st, lib, f, 'kw', function (t) { return listProp(props(t).keywords); });
     var cc = shortCounts(st, lib, f, 'cond', inflicts);
     var gc = shortCounts(st, lib, f, 'group', function (t) { return [bookGroup(t)]; });
-    var me = 'This creature' + (c.organization ? ' (' + c.organization + (c.role && !noRole(c.organization) ? ' ' + c.role : '') + ')' : '');
+    var me = 'This creature' + (c.organization ? ' (' + c.organization + (c.role && !noRole(c.organization) ? ' ' + c.role : '') + ')' : ' (organization not chosen yet)');
     return row('Kind', 'kind', [['', 'Any']].concat(LIB_KINDS.map(function (k) { return [k[0], k[1], kc[k[0]] || 0]; }))) +
       row('Made for', 'fit', [['this', me], ['any', 'Any creature']].concat(ORGS.filter(function (o) { return o !== 'swarm'; }).map(function (o) { return [o, 'For ' + plural(o)]; }))) +
       '<div class="sbe-chip-row"><label class="sbe-bk-k" for="sbe-ai-bkg">Chapter</label><select class="input sbe-bk-sel" id="sbe-ai-bkg" data-sbe-bkg><option value="">Every chapter</option>' +
