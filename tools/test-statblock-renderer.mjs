@@ -182,3 +182,20 @@ test('manifest mounts the stat block on NPC and Creature pages', () => {
   const audiences = m.entity_panels.filter((p) => p.widget === 'statblock-renderer').map((p) => p.applies_to);
   assert.deepEqual(audiences.sort(), ['creature', 'npc']);
 });
+
+test('a book creature’s printed figure carries the book mark, not the director’s pen', () => {
+  const p = load('monsters.json').find((m) => m.slug === 'angulotl-pollywog').properties;
+  const fields = Object.assign({}, p, { organization: 'minion', role: 'harrier' });
+  const plain = S.html('Pollywog', fields, { refs: REFS });
+  const booked = S.html('Pollywog', fields, { refs: REFS, book: p });
+  assert.match(plain, /was set by the director/);
+  assert.doesNotMatch(booked, /Free strike was set by the director/);
+  assert.match(booked, /Free strike is the Monsters book’s/);
+  assert.equal(S.provenance(S.normalize(fields), REFS, p).free_strike.state, 'book');
+});
+
+test('a swarm’s damage is unsourced, so the stat block has no published damage for it', () => {
+  const sw = Engine.Formulas.damageTiers(3, REFS.orgs.find((o) => o.slug === 'swarm'), REFS.roles.find((r) => r.slug === 'brute'));
+  assert.equal(sw.sourced, false);
+  assert.equal(sw.value, null);
+});

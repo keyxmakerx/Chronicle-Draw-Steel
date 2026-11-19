@@ -24,6 +24,7 @@ globalThis.DrawSteelFormulas = F;
 globalThis.MonsterEngine = Engine;
 globalThis.MonsterParty = require('../widgets/monster-party.js');
 globalThis.DrawSteelStatblock = require('../widgets/statblock-renderer.js');
+const S = globalThis.DrawSteelStatblock;
 const Ed = require('../widgets/monster-builder.js');
 
 const load = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8'));
@@ -246,4 +247,267 @@ test('the From the AI note ends cleanly', () => {
   Ed.fromAI(st, { name: 'X', level: 2, organization: 'horde', role: 'brute' }, Ed.vocabulary(REFS, { creatureKeywords: [], abilityKeywords: [], glossary: [] }), []);
   assert.ok(!/formulas’/.test(st.origin || ''), st.origin);
   assert.match(st.origin || '', /are the published formulas\.$/);
+});
+
+// ── Second audit pass: levels, typed numbers, villain actions, book marks ───
+
+const LIBRARY = load('creature-abilities.json');
+const highest = (st) => Math.max(...['might', 'agility', 'reason', 'intuition', 'presence'].map((k) => st.c[k]));
+const rollOf = (a) => Number(/\+\s*(-?\d+)/.exec(a.power_roll)[1]);
+
+test('a level change moves the role’s spread, and every power roll follows the highest characteristic', () => {
+  const st = state({}, 'x');
+  Ed.generate(st, { kind: 'elite', role: 'harrier', level: 3 }, LIBRARY, 0);
+  const hc3 = F.highestCharacteristic(3, org('elite')).value;
+  assert.equal(st.c.agility, hc3, 'harrier’s main characteristic is the published highest');
+  // A non-strike ability written with a roll when it was added.
+  Ed.addFromLibrary(st, LIBRARY.find((t) => t.properties.type === 'action' && !/strike/i.test(String(t.properties.keywords)) && t.properties.organizations.includes('elite') && /^\d+ damage/.test(t.properties.tier1)), {});
+  st.c.level = 7; Ed.derive(st);
+  const hc7 = F.highestCharacteristic(7, org('elite')).value;
+  assert.ok(hc7 > hc3);
+  assert.equal(st.c.agility, hc7);
+  assert.equal(highest(st), hc7);
+  st.c.abilities.forEach((a) => { if (a.power_roll) assert.equal(rollOf(a), hc7, a.name); });
+});
+
+test('a characteristic the director typed stays put on a level change', () => {
+  const st = state({}, 'x');
+  Ed.generate(st, { kind: 'elite', role: 'harrier', level: 3 }, LIBRARY, 0);
+  Ed.applyField(st, 'reason', '4');
+  st.c.level = 8; Ed.derive(st);
+  assert.equal(st.c.reason, 4);
+  assert.equal(st.c.agility, F.highestCharacteristic(8, org('elite')).value);
+});
+
+test('opening a creature whose characteristics are the spread keeps them following', () => {
+  const sp = state({ level: 3, organization: 'elite', role: 'harrier', agility: 2, might: 0, reason: 0, intuition: 0, presence: 0 });
+  const before = Object.keys(sp.spread);
+  assert.ok(before.length > 0);
+  sp.c.level = 7; Ed.derive(sp);
+  assert.equal(sp.c.agility, F.highestCharacteristic(7, org('elite')).value);
+  const typed = state({ level: 3, organization: 'elite', role: 'harrier', agility: 1, might: 0, reason: 0, intuition: 0, presence: 0 });
+  typed.c.level = 7; Ed.derive(typed);
+  assert.equal(typed.c.agility, 1, 'a value that differs from the spread is the director’s');
+});
+
+test('the highest-characteristic line says “an elite”', () => {
+  const html = Ed.editorHtml(state({ level: 3, organization: 'elite', role: 'brute' }), {});
+  assert.match(html, /an elite’s highest characteristic/);
+  assert.doesNotMatch(html, /a elite/);
+});
+
+test('Add abilities puts formula damage only on tiers that deal damage (#205)', () => {
+  const st = state({ level: 5, organization: 'platoon', role: 'brute' });
+  const quake = LIBRARY.find((t) => t.name === 'Hill Quake');
+  Ed.addFromLibrary(st, quake, {});
+  const a = st.c.abilities.find((x) => x.name === 'Hill Quake');
+  assert.match(a.tier1, /^\d+ damage; /);
+  assert.match(a.tier2, /^\d+ damage; /);
+  assert.equal(a.tier3, 'Push 2', 'a tier with no damage stays as written');
+  Ed.derive(st); st.c.level = 9; Ed.derive(st);
+  assert.equal(a.tier3, 'Push 2', 'and a later level change leaves it alone');
+});
+
+test('abilities with damage-free tiers keep them: the six named entries', () => {
+  const slugs = ['steam-powered-snare-3-malice', 'hill-quake', 'glare-of-the-old-judgments-5-malice', 'final-warning-fissure', 'kings-fissure', 'and-the-sun-forsook-her-children'];
+  const entries = slugs.map((s) => LIBRARY.find((t) => t.slug === s));
+  entries.forEach((t) => assert.ok(t, 'library has it'));
+  entries.forEach((t) => {
+    const st = state({ level: 5, organization: 'solo' });
+    const a = Ed.shapeAbility(st, t, {});
+    ['tier1', 'tier2', 'tier3'].forEach((k) => {
+      const written = t.properties[k] || '';
+      if (!/^\s*\d+(?:\s+[a-z]+)?\s+damage/i.test(written) && written) assert.equal(a[k], written, t.name + ' ' + k);
+    });
+  });
+});
+
+test('a typed tier or power roll is never rewritten (#206)', () => {
+  const st = state({ level: 5, organization: 'platoon', role: 'brute' });
+  Ed.generate(st, { kind: 'platoon', role: 'brute', level: 5 }, LIBRARY, 0);
+  st.editAb = 'a0';
+  const a = st.c.abilities[0];
+  assert.equal(a.auto_damage, true);
+  const note = Ed.applyAbility(st, 'tier1', '20 damage');
+  assert.match(note, /no longer follows the published formula/);
+  assert.equal(a.auto_damage, false);
+  Ed.applyAbility(st, 'power_roll', '2d10 + 9 edge');
+  st.c.level = 7; Ed.derive(st);
+  assert.equal(a.tier1, '20 damage');
+  assert.equal(a.power_roll, '2d10 + 9 edge');
+  // A non-strike ability's typed roll is kept too.
+  const b = { name: 'Howl', type: 'action', keywords: ['Area'], tier1: '', tier2: '', tier3: '', auto_roll: true, power_roll: '2d10 + 2' };
+  st.c.abilities.push(b); st.editAb = 'a' + (st.c.abilities.length - 1);
+  Ed.derive(st);
+  assert.equal(b.power_roll, '2d10 + ' + highest(st), 'a written roll follows');
+  Ed.applyAbility(st, 'power_roll', '2d10 + 1');
+  Ed.derive(st);
+  assert.equal(b.power_roll, '2d10 + 1');
+});
+
+test('a free strike keeps its words when its number is the formula’s (#206)', () => {
+  const n = F.freeStrike(3, org('elite'), REFS.roles.find((r) => r.slug === 'brute')).value;
+  ['damage; push 1', 'fire damage'].forEach((w) => {
+    const st = state({ level: 3, organization: 'elite', role: 'brute', free_strike: n + ' ' + w });
+    assert.equal(st.c.free_strike, n + ' ' + w);
+    Ed.derive(st);
+    assert.equal(st.c.free_strike, n + ' ' + w);
+  });
+  const st = state({ level: 3, organization: 'elite', role: 'brute', free_strike: 'Free strike: ' + n });
+  Ed.derive(st);
+  assert.equal(st.c.free_strike, 'Free strike: ' + n);
+  st.c.level = 6; Ed.derive(st);
+  assert.equal(st.c.free_strike, 'Free strike: ' + F.freeStrike(6, org('elite'), REFS.roles.find((r) => r.slug === 'brute')).value);
+});
+
+test('clearing a figure no formula covers empties it, and text that is not a number is refused (#206)', () => {
+  const st = state({ level: 3, organization: 'elite', stamina: 80 });
+  assert.equal(st.pr.stamina.value, null, 'an elite with no role has no published Stamina');
+  Ed.setFigure(st, 'stamina', '');
+  assert.equal(st.c.stamina, null);
+  assert.equal(st.c.winded, null);
+  Ed.setFigure(st, 'stamina', '90');
+  Ed.setFigure(st, 'stamina', 'abc');
+  assert.equal(st.c.stamina, 90);
+  assert.equal(st.own.stamina, true);
+  const fresh = state({ level: 3, organization: 'elite', role: 'brute' });
+  Ed.setFigure(fresh, 'ev', 'abc');
+  assert.ok(!fresh.own.ev, 'a refused entry marks nothing as the director’s');
+});
+
+test('removing a villain action renumbers the orders, from every path (#207)', () => {
+  const st = state({ level: 5, organization: 'solo' });
+  for (let i = 0; i < 3; i++) Ed.addVillain(st);
+  Ed.removeItem(st, 'v', 0);
+  assert.deepEqual(st.c.villain_actions.map((v) => v.order), ['opener', 'crowd-control']);
+  Ed.addVillain(st);
+  assert.deepEqual(st.c.villain_actions.map((v) => v.order), ['opener', 'crowd-control', 'ultimate']);
+  st.c.villain_actions.forEach((v, i) => { v.name = 'V' + i; });
+  assert.ok(Ed.checks(st).find((r) => /villain actions/.test(r.message)).severity === 'ok');
+  st.c.villain_actions[2].order = 'ultimate'; st.c.villain_actions[1].order = 'ultimate';
+  assert.equal(Ed.checks(st).find((r) => /villain actions/.test(r.message)).severity, 'miss', 'two ultimates do not pass');
+  Ed.moveItem(st, 'v', 2, 0);
+  assert.deepEqual(st.c.villain_actions.map((v) => v.order), ['opener', 'crowd-control', 'ultimate']);
+});
+
+test('a villain action’s damage follows the level (#207)', () => {
+  const st = state({ level: 3, organization: 'solo' });
+  const t = LIBRARY.find((x) => x.properties.type === 'villain-action' && /^\d+ damage/.test(x.properties.tier1) && x.properties.organizations.includes('solo'));
+  assert.ok(t);
+  Ed.addFromLibrary(st, t, {});
+  const v = st.c.villain_actions[0];
+  const at3 = parseInt(v.tier1, 10);
+  st.c.level = 9; Ed.derive(st);
+  assert.ok(parseInt(v.tier1, 10) > at3);
+});
+
+test('swarm damage is not sourced, and its abilities say so (#208)', () => {
+  const r = F.damageTiers(3, org('swarm'), REFS.roles.find((x) => x.slug === 'brute'));
+  assert.equal(r.sourced, false);
+  assert.equal(r.value, null);
+  const st = state({ level: 3, organization: 'swarm', role: 'brute' });
+  Ed.addFromLibrary(st, LIBRARY.find((t) => t.properties.type === 'signature'), {});
+  const html = Ed.editorHtml(st, {});
+  assert.match(html, /No published damage for this creature yet/);
+  assert.doesNotMatch(html, /Damage from the published formula/);
+});
+
+test('a book creature’s printed figure is the book’s, not “Changed by you” (#208)', () => {
+  const book = load('monsters.json').find((m) => m.slug === 'angulotl-pollywog');
+  const p = book.properties;
+  const fields = Object.assign({}, p, { organization: String(p.organization).toLowerCase(), role: String(p.role).toLowerCase() });
+  const noBook = Ed.newState('Pollywog', fields, REFS);
+  const withBook = Ed.newState('Pollywog', fields, REFS, p);
+  const f = F.freeStrike(p.level, org(fields.organization), REFS.roles.find((r) => r.slug === fields.role)).value;
+  assert.notEqual(f, Number(/\d+/.exec(p.free_strike)[0]), 'the book’s free strike differs from the formula');
+  assert.match(Ed.editorHtml(noBook, {}), /Changed by you/);
+  const html = Ed.editorHtml(withBook, {});
+  assert.match(html, /From the Monsters book/);
+  assert.equal(withBook.c.free_strike, p.free_strike, 'opening never rewrites it');
+  const sb = S.provenance(S.normalize(fields), REFS, p);
+  assert.equal(sb.free_strike.state, 'book');
+  assert.match(S.html('Pollywog', fields, { refs: REFS, book: p }), /Monsters book/);
+  assert.doesNotMatch(S.html('Pollywog', fields, { refs: REFS, book: p }), /was set by the director/);
+  assert.equal(S.provenance(S.normalize(Object.assign({}, fields, { free_strike: '9 damage' })), REFS, p).free_strike.state, 'changed');
+});
+
+test('a minion copied from the book carries its EV note (#208)', () => {
+  const m = load('monsters.json').find((x) => x.properties.ev_note);
+  const c = S.normalize(m.properties);
+  assert.equal(c.ev_note, 'for four minions');
+  assert.equal(S.toFields(c).ev_note, 'for four minions');
+});
+
+test('saving keeps what Foundry sent while the editor was open (#203)', async () => {
+  const st = Ed.newState('Ogre', { level: 3, organization: 'elite', role: 'brute', stamina_current: 10, conditions_json: '[]', notes_gm: 'keep' }, REFS);
+  const out = Ed.toSave(st);
+  assert.ok(!('stamina_current' in out.fields) && !('conditions_json' in out.fields), 'the editor sends only keys it owns');
+  assert.equal(out.fields.notes_gm, 'keep');
+  const calls = [];
+  const saved = globalThis.DrawSteelStatblock.apiFetch;
+  globalThis.DrawSteelStatblock.apiFetch = (url, opts) => {
+    calls.push({ url, opts });
+    if (!opts) return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'e1', fields_data: { stamina_current: 3, conditions_json: '["dazed"]', notes_gm: 'keep' } }) });
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'e1' }) });
+  };
+  try {
+    await Ed.save(st, { campaignId: 'c1', entityId: 'e1' });
+  } finally { globalThis.DrawSteelStatblock.apiFetch = saved; }
+  const body = JSON.parse(calls.find((c) => c.opts && c.opts.method === 'PUT').opts.body);
+  assert.equal(body.fields_data.stamina_current, 3);
+  assert.equal(body.fields_data.conditions_json, '["dazed"]');
+});
+
+test('the Foundry-owned keys the editor leaves alone are the manifest’s foundry_pull_fields (#203)', () => {
+  const m = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const creature = JSON.stringify(m).match(/"foundry_pull_fields":\s*(\[[^\]]*\])/);
+  assert.ok(BUILDER_SRC.includes('FOUNDRY_OWNED = ' + creature[1].replace(/\s+/g, ' ').replace(/"/g, "'").replace('[ ', '[').replace(' ]', ']').replace(/,\s*/g, ', ')));
+});
+
+test('levels are whole numbers from 1 to 20, and the figures match the level saved (#209)', () => {
+  const st = state({ level: 5, organization: 'platoon', role: 'brute' });
+  Ed.applyField(st, 'level', '25'); Ed.derive(st);
+  assert.equal(st.c.level, 20);
+  assert.equal(st.c.ev, F.encounterValue(20, org('platoon')).value);
+  assert.equal(Ed.toSave(st).fields.level, 20);
+  Ed.applyField(st, 'level', '7.5'); Ed.derive(st);
+  assert.equal(Number.isInteger(st.c.level), true);
+  assert.equal(Ed.toSave(st).fields.ev, st.c.ev);
+});
+
+test('a copy keeps the source’s level and the dialog says so (#209)', () => {
+  const st = state({ level: 7, organization: 'platoon', role: 'brute' });
+  Ed.startFrom(st, 'Ogre', { level: 3, organization: 'platoon', role: 'brute' }, 'x');
+  assert.equal(st.c.level, 3);
+  assert.match(BUILDER_SRC, /Copies its stat block into this one, level included/);
+});
+
+test('a condition the tier already inflicts is not added twice (#209)', () => {
+  const st = state({ level: 3, organization: 'platoon', role: 'brute' });
+  const t = { slug: 'x', name: 'Scream', properties: { type: 'action', organizations: ['platoon'], tier1: '3 damage', tier2: '5 damage; dazed (save ends)', tier3: '7 damage; dazed (save ends)' } };
+  const a = Ed.shapeAbility(st, t, { rider: 'dazed3' });
+  assert.equal((a.tier3.match(/dazed/gi) || []).length, 1);
+});
+
+test('party suggestions name the band the spend actually lands in (#209)', () => {
+  const s = Engine.suggest({ size: 7, levelAvg: 1, weaknesses: [], immunities: [], defenses: {} }, 'standard', { orgTemplates: REFS.orgs, roleTemplates: REFS.roles });
+  const why = s.rationale.organization;
+  const spent = Number(/spend (\d+)/.exec(why)[1]);
+  const band = F.difficultyOf(spent, F.partyEncounterStrength(7, 1).value, F.heroEncounterStrength(1).value).value;
+  assert.ok(why.indexOf(band + '-difficulty') >= 0, why);
+});
+
+test('toStatblock carries movement and “with captain” (#209)', () => {
+  const c = S.normalize({ level: 2, organization: 'minion', movement: 'Fly, swim', with_captain: '+1 damage' });
+  const sb = S.toStatblock('x', c);
+  assert.deepEqual(sb.movement, ['Fly', 'swim']);
+  assert.equal(sb.with_captain, '+1 damage');
+});
+
+test('a form is measured per copy in bytes (#209)', () => {
+  const F2 = S.Forms;
+  const multi = { id: 'a', name: 'x', changes: { faction: 'é'.repeat(8000) }, lists: {} };
+  assert.ok(F2.tooBig(multi), 'multi-byte text counts its bytes');
+  const plain = { id: 'a', name: 'x', changes: { faction: 'a'.repeat(9000) }, lists: {} };
+  assert.ok(!F2.tooBig(plain), '9,000 characters is far under the 16 KiB per copy Chronicle allows');
 });
