@@ -72,6 +72,156 @@
       .catch(function () { skillDefs = {}; });
   }
 
+  // ── Reference data for the editors ────────────────────────────────
+
+  // Perk catalog (lower-cased name → entry) so a perk stored as a bare name
+  // still shows its rules; Foundry writes whole objects, the sheet's own
+  // editor writes names.
+  var perkDefs = null;
+  var refCache = {};
+
+  // loadRefFile reads one reference file through the campaign route, the only one
+  // Chronicle serves. A failed or empty read is not cached, so reopening an
+  // editor tries again.
+  function loadRefFile(campaignId, file) {
+    if (!campaignId || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var key = campaignId + '/' + file;
+    if (refCache[key]) return refCache[key];
+    var p = Chronicle.apiFetch('/campaigns/' + encodeURIComponent(campaignId) + '/systems/drawsteel/data/' + file)
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (a) { return Array.isArray(a) ? a : []; })
+      .catch(function () { return []; });
+    refCache[key] = p;
+    p.then(function (a) { if (!a.length && refCache[key] === p) delete refCache[key]; });
+    return p;
+  }
+
+  function loadPerkDefs(campaignId) {
+    if (perkDefs) return Promise.resolve();
+    return loadRefFile(campaignId, 'perks.json').then(function (arr) {
+      var m = {};
+      arr.forEach(function (e) { if (e && e.name) m[String(e.name).toLowerCase()] = e; });
+      perkDefs = m;
+    });
+  }
+
+  // featureOf lets a perk be a bare name (what the sheet's own editor writes)
+  // as well as the object Foundry writes, looking the rules up by name.
+  function featureOf(ft) {
+    if (typeof ft !== 'string') return ft;
+    var d = perkDefs && perkDefs[ft.toLowerCase()];
+    return { name: ft, description: d ? (d.description || d.summary || '') : '' };
+  }
+
+  // findEntry matches a reference entry by name or slug, ignoring case.
+  function findEntry(list, name) {
+    var n = String(name == null ? '' : name).trim().toLowerCase();
+    if (!n || !Array.isArray(list)) return null;
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (e && ((e.name && String(e.name).toLowerCase() === n) || (e.slug && String(e.slug).toLowerCase() === n))) return e;
+    }
+    return null;
+  }
+
+  // ancestryPurchase reads what a hero may buy from an ancestry the way the
+  // server's hero creator does, so a pick the sheet allows is one it accepts:
+  // the budget is the first positive numeric property ending in "_points",
+  // the list is the first property that is a list of {name, cost} throughout.
+  // null when the ancestry has no budget or no such list.
+  function ancestryPurchase(entry) {
+    var p = (entry && entry.properties) || {};
+    var keys = Object.keys(p).sort();
+    var budget = 0, traits = null, i;
+    for (i = 0; i < keys.length; i++) {
+      if (/_points$/.test(keys[i]) && typeof p[keys[i]] === 'number' && p[keys[i]] > 0) { budget = p[keys[i]]; break; }
+    }
+    if (!budget) return null;
+    for (i = 0; i < keys.length && !traits; i++) {
+      var list = p[keys[i]];
+      if (!Array.isArray(list) || !list.length) continue;
+      var ok = list.every(function (t) {
+        return t && typeof t === 'object' && typeof t.name === 'string' && t.name.trim() && typeof t.cost === 'number' && t.cost >= 0;
+      });
+      if (ok) traits = list;
+    }
+    return traits ? { budget: budget, traits: traits } : null;
+  }
+
+  // The names of the traits a hero bought: the `ancestry_choices_json` array.
+  function boughtTraits(data) {
+    return parseStrList(f(data, 'ancestry_choices_json', ''));
+  }
+
+  // splitNames turns a data string such as "Disguise, Lie, Sneak" into names.
+  // A phrase with no list in it ("One language") has no names to offer.
+  function splitNames(s) {
+    if (s == null || typeof s !== 'string') return [];
+    return s.split(/\s*,\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+
+  // grantsFor reads what one origin entry (a culture, career or kit) gives:
+  // the rule text and, where the data has one, the suggested quick-build
+  // names. Properties absent from the entry stay absent.
+  function grantsFor(entry) {
+    var p = (entry && entry.properties) || {};
+    function one(text, quick) {
+      return { text: typeof text === 'string' ? text : '', quick: splitNames(quick) };
+    }
+    return {
+      skills: one(p.skills || p.skill_options, p.skills_quick_build || p.skill_options_quick_build),
+      languages: one(p.languages || p.language, ''),
+      perks: one(p.perk, p.perk_quick_build)
+    };
+  }
+
+  // skillSlug maps a skill name from the data ("Handle Animals") to the id
+  // the sheet stores and reads ("handleAnimals"); null when none matches.
+  function skillSlug(name, skills) {
+    var e = findEntry(skills, name);
+    if (e && e.slug) return e.slug;
+    var n = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (var i = 0; i < (skills || []).length; i++) {
+      var s = skills[i];
+      if (s && String(s.slug || '').toLowerCase() === n) return s.slug;
+    }
+    return null;
+  }
+
+  // The most entries and the longest entry the server takes in one list.
+  var LIST_MAX = 40, ENTRY_MAX = 64;
+
+  // cleanList drops blanks and case-insensitive repeats, keeping order.
+  function cleanList(arr) {
+    var seen = {}, out = [];
+    (arr || []).forEach(function (x) {
+      var t = String(x == null ? '' : x).trim();
+      if (t && !seen[t.toLowerCase()]) { seen[t.toLowerCase()] = true; out.push(t); }
+    });
+    return out;
+  }
+
+  // listProblem says in words why a list cannot be saved, or '' when it can.
+  function listProblem(arr, noun) {
+    if (arr.length > LIST_MAX) return 'Choose at most ' + LIST_MAX + ' ' + noun + '.';
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].length > ENTRY_MAX) return 'Each of the ' + noun + ' can be at most ' + ENTRY_MAX + ' characters.';
+    }
+    return '';
+  }
+
+  // saveFields writes only the changed keys, the way Chronicle's own picker
+  // does; a refused save rejects so the editor can say so and stay open.
+  function saveFields(data, patch) {
+    if (!data.campaignId || !data.entityId || !Chronicle || typeof Chronicle.apiFetch !== 'function') {
+      return Promise.reject(new Error('no save'));
+    }
+    return Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) +
+      '/entities/' + encodeURIComponent(data.entityId) + '/fields', {
+      method: 'PUT', body: { fields_patch: patch }
+    }).then(function (r) { if (!r.ok) throw new Error('save ' + r.status); });
+  }
+
   // ── primitive helpers ──────────────────────────────────────────────
 
   function esc(s) {
@@ -975,6 +1125,7 @@
   // expand) so a long feature list collapses with zero JS. Flat row when there's
   // no description to reveal.
   function renderFeature(ft) {
+    ft = featureOf(ft);
     var name = esc((ft && ft.name) || 'Feature');
     var lvl = (ft && ft.level) ? '<span class="cs-tag cs-tag-level">L' + esc(String(ft.level)) + '</span>' : '';
     var descTxt = cleanFoundryText(ft && ft.description);
@@ -1848,6 +1999,9 @@
           if ((!a || a === document.body || fold.contains(a)) && btn.focus) btn.focus();
           return;
         }
+        // The server clears the bought traits when the ancestry changes, and
+        // the sheet drops them too so the list never names the old ancestry's.
+        if (key === 'ancestry' && res.value !== f(data, 'ancestry', '')) delete data.fields.ancestry_choices_json;
         data.fields[key] = res.value;
         // On paper the identity is drawn again: a first choice leaves the
         // "Still to choose" line and takes its place among the values.
@@ -1884,6 +2038,111 @@
       });
     }
 
+    // Inline editors open under a quiet word in the panel or band that holds
+    // them. The form is filled from the data at open time and read back on
+    // Save, so a redraw of the sheet never leaves half an edit behind.
+    function edScope(node) { return node && node.closest ? node.closest('[data-cs-ed-scope]') : null; }
+
+    inst._closeEditor = function (scope, focus) {
+      if (!scope) return;
+      var host = scope.querySelector('[data-cs-ed-host]');
+      var open = scope.querySelector('[data-cs-ed-open]');
+      if (host) host.innerHTML = '';
+      if (open) {
+        open.setAttribute('aria-expanded', 'false');
+        if (focus && open.focus) open.focus({ preventScroll: true });
+      }
+    };
+
+    function openEditor(btn) {
+      var kind = btn.getAttribute('data-cs-ed-open');
+      var scope = edScope(btn);
+      var host = scope ? scope.querySelector('[data-cs-ed-host]') : null;
+      var build = { backstory: edBackstoryHtml, traits: edTraitsHtml, skills: edSkillsHtml, perks: edPerksHtml }[kind];
+      if (!host || !build) return;
+      if (host.firstChild) { inst._closeEditor(scope, true); return; }
+      btn.setAttribute('aria-expanded', 'true');
+      Promise.resolve(ensureEditRefs(data.campaignId, EDIT_FILES[kind] || [])).then(function () {
+        // The panel may have been put away while the lists loaded.
+        if (!host.isConnected || host.firstChild) return;
+        host.innerHTML = build(data);
+        var first = host.querySelector('textarea, input');
+        if (first && first.focus) first.focus({ preventScroll: true });
+      });
+    }
+
+    // After a save the part of the sheet that shows the field is drawn
+    // again, in the panel on screen and in the template it opens from.
+    var EDIT_PANEL = { backstory: ['notes', pNotesPanel], skills: ['skills', pSkillsPanel], perks: ['features', pFeaturesPanel] };
+    function redrawAfterSave(kind) {
+      if (kind === 'traits') {
+        var idin = el.querySelector('[data-cs-idin]');
+        if (idin) idin.innerHTML = pIdentityInner(data);
+        return;
+      }
+      var def = EDIT_PANEL[kind];
+      if (!def) return;
+      var html = def[1](data);
+      var tpl = el.querySelector('template[data-sheet-panel="' + def[0] + '"]');
+      if (tpl) tpl.innerHTML = html;
+      if (kind === 'backstory') inst._pin = null;
+      if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === def[0]) {
+        inst._panelBody.innerHTML = html;
+        var again = inst._panelBody.querySelector('[data-cs-ed-open="' + kind + '"]');
+        if (again && again.focus) again.focus({ preventScroll: true });
+      }
+      var ds = { skills: ['skills', skillsLine], perks: ['features', featuresLine] }[kind];
+      var cell = ds ? el.querySelector('[data-ds="' + ds[0] + '"]') : null;
+      if (cell) cell.innerHTML = ds[1](data);
+    }
+
+    function saveEditor(btn) {
+      var root = btn.closest('[data-cs-ed-form]');
+      if (!root || btn.disabled) return;
+      var kind = root.getAttribute('data-cs-ed-form');
+      var msg = root.querySelector('[data-cs-ed-msg]');
+      var got = collectEditor(kind, root, data);
+      if (got.problem) { if (msg) msg.textContent = got.problem; return; }
+      btn.disabled = true;
+      if (msg) msg.textContent = 'Saving…';
+      saveFields(data, got.patch).then(function () {
+        Object.keys(got.patch).forEach(function (k) { data.fields[k] = got.patch[k]; });
+        redrawAfterSave(kind);
+      }, function () {
+        btn.disabled = false;
+        if (msg) msg.textContent = 'That did not save. Try again in a moment.';
+      });
+    }
+
+    // The suggested names a career, culture or kit gives, ticked in one go.
+    function useSuggested(btn) {
+      var root = btn.closest('[data-cs-ed-form]');
+      var kind = btn.getAttribute('data-cs-ed-quick');
+      if (!root) return;
+      var names = parseJson(btn.getAttribute('data-names'), []);
+      (Array.isArray(names) ? names : []).forEach(function (n) {
+        var want = kind === 'skills' ? skillSlug(n, editRefs['skills.json']) : String(n);
+        if (!want) return;
+        [].forEach.call(root.querySelectorAll('input[data-cs-opt="' + kind + '"]'), function (box) {
+          if (box.value.toLowerCase() === want.toLowerCase()) box.checked = true;
+        });
+      });
+    }
+
+    inst._onEdChange = function (e) {
+      var t = e.target;
+      if (!t || !t.matches || !t.matches('input[data-cs-opt="traits"]')) return;
+      var root = t.closest('[data-cs-ed-form]');
+      var buy = ancestryPurchase(ancestryOf(data));
+      if (!root || !buy) return;
+      var spent = [].reduce.call(root.querySelectorAll('input[data-cs-opt="traits"]:checked'), function (n, b) { return n + (Number(b.getAttribute('data-cost')) || 0); }, 0);
+      var tot = root.querySelector('[data-cs-ed-total]');
+      if (tot) tot.textContent = traitsTotalText(buy.budget, spent);
+      var save = root.querySelector('[data-cs-ed-save]');
+      if (save) save.disabled = spent > buy.budget;
+    };
+    el.addEventListener('change', inst._onEdChange);
+
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
@@ -1893,6 +2152,14 @@
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
       var pick = t.closest('[data-cs-pick]');
       if (pick) { e.preventDefault(); pickOrigin(pick); return; }
+      var edOpenBtn = t.closest('[data-cs-ed-open]');
+      if (edOpenBtn) { e.preventDefault(); openEditor(edOpenBtn); return; }
+      var edSave = t.closest('[data-cs-ed-save]');
+      if (edSave) { e.preventDefault(); saveEditor(edSave); return; }
+      var edCancel = t.closest('[data-cs-ed-cancel]');
+      if (edCancel) { e.preventDefault(); inst._closeEditor(edScope(edCancel), true); return; }
+      var edQuick = t.closest('[data-cs-ed-quick]');
+      if (edQuick) { e.preventDefault(); useSuggested(edQuick); return; }
       var unp = t.closest('[data-unpin]');
       if (unp) { e.preventDefault(); unpin(inst, true); return; }
       var rs = t.closest('[data-cs-read-story]');
@@ -2265,7 +2532,7 @@
     }).join('') + '</dl>' : '';
 
     var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
-    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) +
+    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) + pTraits(data) +
       '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
 
@@ -2516,6 +2783,15 @@
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
+  function featuresLine(data) {
+    var fc = featureCount(data);
+    return fc ? plural(fc, 'feature', 'features') : 'None synced yet';
+  }
+  function skillsLine(data) {
+    var sl = skillLists(data);
+    return plural(sl.skills.length, 'skill', 'skills') + (sl.langs.length ? ' · ' + plural(sl.langs.length, 'language', 'languages') : '');
+  }
+
   // The ledger lines for the panels that exist. Items is absent when the
   // host shows its own item list; Notes is a permission gate, as before.
   function paperLedger(data) {
@@ -2525,10 +2801,8 @@
       var wealth = f(data, 'wealth', null);
       lines.push(['items', 'Items', plural(count, 'item', 'items') + (wealth != null ? ' · Wealth ' + esc(String(wealth)) : '')]);
     }
-    var fc = featureCount(data);
-    lines.push(['features', 'Features', fc ? plural(fc, 'feature', 'features') : 'None synced yet']);
-    var sl = skillLists(data);
-    lines.push(['skills', 'Skills', plural(sl.skills.length, 'skill', 'skills') + (sl.langs.length ? ' · ' + plural(sl.langs.length, 'language', 'languages') : '')]);
+    lines.push(['features', 'Features', featuresLine(data)]);
+    lines.push(['skills', 'Skills', skillsLine(data)]);
     var kit = kitFacts(data);
     lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : 'No kit equipped']);
     if (data.isGm || data.isOwner) lines.push(['notes', 'Notes', 'Background' + (data.isGm ? ', GM lore' : '')]);
@@ -2705,6 +2979,7 @@
   }
 
   function pFeatureFold(ft, data) {
+    ft = featureOf(ft);
     var name = esc((ft && ft.name) || 'Feature') + layerTag(data, layerOf(data, ft));
     var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
     var desc = cleanFoundryText(ft && ft.description);
@@ -2738,7 +3013,13 @@
     return out;
   }
 
+  // Perks are the one list in Features the sheet lets a viewer change, and
+  // only when Foundry does not own them.
   function pFeaturesPanel(data) {
+    return pFeaturesBody(data) + (canEditLists(data) ? '<div class="lf-grp">' + edOpen('perks', 'Choose perks') + '</div>' : '');
+  }
+
+  function pFeaturesBody(data) {
     var feats = parseJson(f(data, 'features_json', ''), []);
     var extra = pFeatureGroup('Perks', parseJson(f(data, 'perks_json', ''), []), data) +
       pFeatureGroup('Titles', parseJson(f(data, 'titles_json', ''), []), data) + pSetAside(data);
@@ -2781,12 +3062,15 @@
       html += '<div class="lf-grp"><span class="sh-k">Languages</span><div class="skills">' +
         sl.langs.map(function (l) { return '<span class="sh-chip">' + esc(humanizeId(l)) + '</span>'; }).join('') + '</div></div>';
     }
-    return html || pEmpty('No trained skills.');
+    return (html || pEmpty('No trained skills.')) +
+      (canEditLists(data) ? '<div class="lf-grp">' + edOpen('skills', 'Choose skills and languages') + '</div>' : '');
   }
 
   function pNotesPanel(data) {
     var notes = f(data, 'backstory', '') || f(data, 'notes', '');
-    var out = '<div class="lf-grp"><span class="sh-k">Background</span>' + (notes
+    var edit = data.canEditIdentity && data.campaignId
+      ? edOpen('backstory', notes ? 'Edit' : 'Write your backstory') : '';
+    var out = '<div class="lf-grp"><span class="sh-k">Background</span> ' + edit + (notes
       ? '<p class="lf-text">' + esc(teaser(cleanFoundryText(notes), 180)) + '</p>' +
         '<button type="button" class="sh-link" data-cs-read-story aria-expanded="false">Read full story</button>'
       : pEmpty('No backstory yet.')) + '</div>';
@@ -2889,6 +3173,221 @@
     list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
     if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Notes', kind: name, html: pNotesPanel(data) });
     return list;
+  }
+
+  // ── Editors: backstory, bought traits, skills, languages and perks ─────────
+  // Each opens inline under a quiet word, never a modal. The form is plain
+  // DOM; Save reads it back, so nothing is kept in state between redraws.
+
+  // The reference lists the editors read, keyed by file ("ancestries.json").
+  var editRefs = {};
+
+  function ensureEditRefs(campaignId, files) {
+    return Promise.all(files.map(function (file) {
+      if (editRefs[file] && editRefs[file].length) return null;
+      return loadRefFile(campaignId, file).then(function (a) { editRefs[file] = a; });
+    }));
+  }
+
+  // The files each editor needs; ancestries are read at mount because the
+  // identity band shows the bought traits on first paint.
+  var EDIT_FILES = {
+    traits: ['ancestries.json'],
+    skills: ['skills.json', 'careers.json', 'cultures.json', 'kits.json'],
+    perks: ['perks.json', 'careers.json', 'cultures.json', 'kits.json']
+  };
+
+  // The viewer may change the hero's sheet choices; with a Foundry world
+  // linked, Foundry owns skills, languages and perks, so those stay read-only.
+  function canEditLists(data) { return !!data.canEditIdentity && !foundryLinked(data) && !!data.campaignId; }
+
+  function ancestryOf(data) {
+    return findEntry(editRefs['ancestries.json'], f(data, 'ancestry', ''));
+  }
+
+  function edBar(label) {
+    return '<p class="sh-ed-msg sh-sub" role="alert" data-cs-ed-msg></p>' +
+      '<div class="sh-ed-bar"><button type="button" class="sh-edsave" data-cs-ed-save>' + esc(label || 'Save') + '</button>' +
+      '<button type="button" class="sh-link" data-cs-ed-cancel>Cancel</button></div>';
+  }
+
+  // The quiet word that opens an editor, with the host it fills.
+  function edOpen(kind, label, extra) {
+    return '<span class="sh-edwrap" data-cs-ed-scope><button type="button" class="sh-link sh-edopen" data-cs-ed-open="' + kind + '"' +
+      ' aria-expanded="false">' + esc(label) + '</button>' + (extra || '') +
+      '<div class="sh-edhost" data-cs-ed-host="' + kind + '"></div></span>';
+  }
+
+  // Backstory is plain text. A hero synced from Foundry holds HTML there, so
+  // the box opens with its readable text rather than the tags.
+  function backstoryDraft(data) {
+    var raw = String(f(data, 'backstory', '') || f(data, 'notes', ''));
+    return /<\/?[a-z][^>]*>/i.test(raw) ? cleanFoundryProse(raw) : raw;
+  }
+
+  var BACKSTORY_MAX = 20000;
+
+  function edBackstoryHtml(data) {
+    return '<div class="sh-ed" data-cs-ed-form="backstory"><label class="sh-k" for="cs-ed-backstory">Backstory</label>' +
+      '<textarea id="cs-ed-backstory" class="sh-edta" data-cs-ed-ta rows="8" maxlength="' + BACKSTORY_MAX + '">' + esc(backstoryDraft(data)) + '</textarea>' +
+      edBar('Save') + '</div>';
+  }
+
+  // The traits a hero bought, and the quiet word to change them. Nothing
+  // shows for a viewer who may not edit, or an ancestry with nothing to buy.
+  function pTraits(data) {
+    if (!data.canEditIdentity || !data.campaignId) return '';
+    var buy = ancestryPurchase(ancestryOf(data));
+    if (!buy) return '';
+    var costs = {};
+    buy.traits.forEach(function (t) { costs[t.name.toLowerCase()] = t.cost; });
+    var bought = boughtTraits(data);
+    var list = bought.length
+      ? '<ul class="sh-trl">' + bought.map(function (n) {
+          var c = costs[n.toLowerCase()];
+          return '<li>' + esc(n) + (c != null ? ' <span class="sh-sub">' + c + (c === 1 ? ' point' : ' points') + '</span>' : '') + '</li>';
+        }).join('') + '</ul>'
+      : '<p class="sh-sub">No traits bought yet.</p>';
+    return '<div class="sh-traits"><span class="sh-k">Ancestry traits</span>' + list +
+      edOpen('traits', bought.length ? 'Change traits' : 'Choose traits') + '</div>';
+  }
+
+  function traitsSpent(buy, names) {
+    var costs = {};
+    buy.traits.forEach(function (t) { costs[t.name.toLowerCase()] = t.cost; });
+    return names.reduce(function (n, x) { return n + (costs[String(x).toLowerCase()] || 0); }, 0);
+  }
+
+  function edTraitsHtml(data) {
+    var buy = ancestryPurchase(ancestryOf(data));
+    if (!buy) return '';
+    var have = boughtTraits(data).map(function (n) { return n.toLowerCase(); });
+    var rows = buy.traits.map(function (t, i) {
+      var id = 'cs-ed-tr' + i;
+      return '<div class="sh-opt"><input type="checkbox" id="' + id + '" data-cs-opt="traits" data-cost="' + t.cost + '" value="' + escAttr(t.name) + '"' +
+        (have.indexOf(t.name.toLowerCase()) >= 0 ? ' checked' : '') + '>' +
+        '<label for="' + id + '"><span class="sh-opt-n">' + esc(t.name) + '</span> <span class="sh-sub">' + t.cost + (t.cost === 1 ? ' point' : ' points') + '</span>' +
+        (t.description ? '<span class="sh-sub sh-opt-d">' + esc(teaser(cleanFoundryText(t.description), 140)) + '</span>' : '') + '</label></div>';
+    }).join('');
+    return '<div class="sh-ed" data-cs-ed-form="traits" data-budget="' + buy.budget + '"><div class="sh-edlist">' + rows + '</div>' +
+      '<p class="sh-ed-total" aria-live="polite" data-cs-ed-total>' + traitsTotalText(buy.budget, traitsSpent(buy, have)) + '</p>' +
+      edBar('Save') + '</div>';
+  }
+
+  function traitsTotalText(budget, spent) {
+    return spent > budget
+      ? spent + ' of ' + budget + ' points — over budget by ' + (spent - budget)
+      : spent + ' of ' + budget + ' points';
+  }
+
+  // What the hero's culture, career and kit give for one list (skills,
+  // languages or perks): their own rule text, and the names the data suggests.
+  function grantRows(data, kind) {
+    var rows = [];
+    [['Culture', 'culture', 'cultures.json'], ['Career', 'career', 'careers.json'], ['Kit', 'kit', 'kits.json']].forEach(function (o) {
+      var name = f(data, o[1], '');
+      var g = grantsFor(findEntry(editRefs[o[2]], name))[kind];
+      if (name && (g.text || g.quick.length)) rows.push({ label: o[0], name: name, text: g.text, quick: g.quick });
+    });
+    return rows;
+  }
+
+  function grantsHtml(data, kind) {
+    var rows = grantRows(data, kind);
+    if (!rows.length) return '';
+    return '<ul class="sh-grants">' + rows.map(function (r) {
+      return '<li><span class="sh-k">' + esc(r.label) + ' · ' + esc(r.name) + '</span> ' + (r.text ? esc(r.text) : '') +
+        (r.quick.length ? ' <span class="sh-sub">Suggested: ' + esc(r.quick.join(', ')) + '</span> ' +
+          '<button type="button" class="sh-link" data-cs-ed-quick="' + kind + '" data-names="' + escAttr(JSON.stringify(r.quick)) + '">Use the suggested picks</button>' : '') +
+        '</li>';
+    }).join('') + '</ul>';
+  }
+
+  function optBox(kind, id, value, label, checked, hint) {
+    return '<div class="sh-opt"><input type="checkbox" id="' + id + '" data-cs-opt="' + kind + '" value="' + escAttr(value) + '"' + (checked ? ' checked' : '') + '>' +
+      '<label for="' + id + '"><span class="sh-opt-n">' + esc(label) + '</span>' + (hint ? '<span class="sh-sub sh-opt-d">' + esc(hint) + '</span>' : '') + '</label></div>';
+  }
+
+  // The hero's list as plain names: a perk Foundry wrote is an object.
+  function listNames(data, key) {
+    var raw = parseJson(f(data, key, ''), []);
+    if (!Array.isArray(raw)) raw = parseStrList(raw);
+    return cleanList(raw.map(function (x) { return x && typeof x === 'object' ? x.name : x; }));
+  }
+
+  function edSkillsHtml(data) {
+    var cat = editRefs['skills.json'] || [];
+    var have = {};
+    listNames(data, 'skills_json').forEach(function (s) { have[s.toLowerCase()] = s; });
+    var used = {};
+    var groups = SKILL_GROUPS.map(function (g) {
+      var boxes = g.ids.map(function (id) {
+        var e = findEntry(cat, id);
+        used[id.toLowerCase()] = true;
+        return optBox('skills', 'cs-ed-sk-' + id, id, e ? e.name : humanizeId(id), !!have[id.toLowerCase()], '');
+      }).join('');
+      return '<fieldset class="sh-edset"><legend class="sh-k">' + esc(g.label) + '</legend><div class="sh-edcols">' + boxes + '</div></fieldset>';
+    }).join('');
+    var rest = Object.keys(have).filter(function (k) { return !used[k]; });
+    if (rest.length) {
+      groups += '<fieldset class="sh-edset"><legend class="sh-k">Other</legend><div class="sh-edcols">' + rest.map(function (k, i) {
+        return optBox('skills', 'cs-ed-skx-' + i, have[k], humanizeId(have[k]), true, '');
+      }).join('') + '</div></fieldset>';
+    }
+    return '<div class="sh-ed" data-cs-ed-form="skills">' + grantsHtml(data, 'skills') + groups +
+      '<label class="sh-k" for="cs-ed-lang">Languages, separated by commas</label>' + grantsHtml(data, 'languages') +
+      '<input type="text" id="cs-ed-lang" class="sh-edin" data-cs-ed-lang value="' + escAttr(listNames(data, 'languages_json').join(', ')) + '" autocomplete="off">' +
+      edBar('Save') + '</div>';
+  }
+
+  function edPerksHtml(data) {
+    var cat = (editRefs['perks.json'] || []).slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+    var have = {}, known = {};
+    listNames(data, 'perks_json').forEach(function (n) { have[n.toLowerCase()] = n; });
+    var boxes = cat.map(function (e, i) {
+      known[String(e.name).toLowerCase()] = true;
+      return optBox('perks', 'cs-ed-pk-' + i, e.name, e.name, !!have[String(e.name).toLowerCase()], e.summary || '');
+    }).join('');
+    boxes += Object.keys(have).filter(function (k) { return !known[k]; }).map(function (k, i) {
+      return optBox('perks', 'cs-ed-pkx-' + i, have[k], have[k], true, '');
+    }).join('');
+    return '<div class="sh-ed" data-cs-ed-form="perks">' + grantsHtml(data, 'perks') +
+      '<div class="sh-edlist">' + (boxes || '<p class="sh-sub">The perk list did not load. Close this and open it again.</p>') + '</div>' + edBar('Save') + '</div>';
+  }
+
+  // collectEditor reads a form back into the fields it saves, or says why it
+  // cannot be saved. The server checks the same limits again.
+  function collectEditor(kind, root, data) {
+    function checked(name) {
+      return [].map.call(root.querySelectorAll('input[data-cs-opt="' + name + '"]'), function (n) { return n.checked ? n.value : null; }).filter(Boolean);
+    }
+    if (kind === 'backstory') {
+      var ta = root.querySelector('[data-cs-ed-ta]');
+      var text = ta ? ta.value : '';
+      if (text.length > BACKSTORY_MAX) return { problem: 'The backstory can be at most ' + BACKSTORY_MAX + ' characters.' };
+      return { patch: { backstory: text } };
+    }
+    if (kind === 'traits') {
+      var buy = ancestryPurchase(ancestryOf(data));
+      if (!buy) return { problem: 'This ancestry has no traits to buy.' };
+      var names = checked('traits');
+      var spent = traitsSpent(buy, names);
+      if (spent > buy.budget) return { problem: traitsTotalText(buy.budget, spent) + '.' };
+      return { patch: { ancestry_choices_json: JSON.stringify(names) } };
+    }
+    if (kind === 'skills') {
+      var skills = cleanList(checked('skills'));
+      var li = root.querySelector('[data-cs-ed-lang]');
+      var langs = cleanList((li ? li.value : '').split(/[,;\n]/));
+      var bad = listProblem(skills, 'skills') || listProblem(langs, 'languages');
+      return bad ? { problem: bad } : { patch: { skills_json: JSON.stringify(skills), languages_json: JSON.stringify(langs) } };
+    }
+    if (kind === 'perks') {
+      var perks = cleanList(checked('perks'));
+      var pb = listProblem(perks, 'perks');
+      return pb ? { problem: pb } : { patch: { perks_json: JSON.stringify(perks) } };
+    }
+    return { problem: 'Nothing to save.' };
   }
 
   // ── Changes drawer ─────────────────────────────────────────────────────────
@@ -3487,9 +3986,10 @@
       var d = e.detail || {};
       inst._pin = null;
       inst._panelBody = d.body || null;
+      inst._panelId = d.id || null;
       if (d.id === 'abilities' && inst._selectFirst) inst._selectFirst();
     };
-    inst._onPanelClose = function () { inst._pin = null; inst._panelBody = null; };
+    inst._onPanelClose = function () { inst._pin = null; inst._panelBody = null; inst._panelId = null; };
     root.addEventListener('sheet:panel-ready', inst._onPanelReady);
     root.addEventListener('sheet:close', inst._onPanelClose);
 
@@ -3499,6 +3999,10 @@
     // a smaller layer to put away.
     inst._onPaperKey = function (e) {
       if (e.key !== 'Escape' && e.key !== 'Esc') return;
+      // Escape in an open editor puts the editor away, not the panel; any
+      // other key is left alone so typing in a box is never taken over.
+      var ed = e.target && e.target.closest ? e.target.closest('[data-cs-ed-scope]') : null;
+      if (ed && inst._closeEditor) { e.preventDefault(); e.stopPropagation(); inst._closeEditor(ed, true); return; }
       if (inst._pin) { e.preventDefault(); e.stopPropagation(); unpin(inst, true); return; }
       var big = inst._panelBody && inst._panelBody.querySelector ? inst._panelBody.querySelector('[data-ds-collapse]') : null;
       if (big && inst._collapse) { e.preventDefault(); e.stopPropagation(); inst._collapse(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
@@ -3537,7 +4041,7 @@
   function detachListeners(inst, el) {
     [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
-      ['click', '_onTfClick'], ['change', '_onTfChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey']].forEach(function (p) {
+      ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
@@ -3546,9 +4050,9 @@
       document.removeEventListener('pointerup', inst._onTfUp, true);
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
-    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onTfInput',
+    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_pin'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_pin', '_closeEditor'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -4095,6 +4599,28 @@
       '[data-sheet] .sh-k { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-link { border:0;background:none;padding:0;color:var(--paper-accent);font:600 calc(12.5px * var(--ts)) var(--paper-ui-font); }',
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
+      // Inline editors: a quiet word opens a plain form under it. Colours are
+      // the sheet's own tokens with light fallbacks, so dark mode follows the
+      // host.
+      '[data-sheet] .sh-edwrap { display:block;margin:4px 0 0; }',
+      '[data-sheet] .sh-ed { margin-top:8px;padding:2px 0 2px 12px;border-left:2px solid var(--paper-edge,#d1d5db);display:grid;gap:10px; }',
+      '[data-sheet] .sh-edta,[data-sheet] .sh-edin { width:100%;box-sizing:border-box;font:inherit;color:var(--paper-ink,inherit);background:transparent;border:1px solid var(--paper-edge,#d1d5db);border-radius:6px;padding:8px 10px; }',
+      '[data-sheet] .sh-edta { min-height:150px;line-height:1.5;resize:vertical; }',
+      '[data-sheet] .sh-edta:focus-visible,[data-sheet] .sh-edin:focus-visible { outline:2px solid var(--paper-accent,#7c3aed);outline-offset:1px; }',
+      '[data-sheet] .sh-edlist { max-height:280px;overflow:auto;display:grid;gap:8px; }',
+      '[data-sheet] .sh-edset { border:0;padding:0;margin:0;min-width:0; }',
+      '[data-sheet] .sh-edcols { display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:2px 12px; }',
+      '[data-sheet] .sh-opt { display:flex;gap:8px;align-items:flex-start; }',
+      '[data-sheet] .sh-opt input { margin-top:4px;accent-color:var(--paper-accent,#7c3aed); }',
+      '[data-sheet] .sh-opt label { cursor:pointer;padding:2px 0; }',
+      '[data-sheet] .sh-opt-d { display:block; }',
+      '[data-sheet] .sh-ed-bar { display:flex;gap:16px;align-items:center; }',
+      '[data-sheet] .sh-edsave { border:0;border-radius:6px;padding:8px 16px;font:600 calc(13px * var(--ts)) var(--paper-ui-font);background:var(--paper-accent,#7c3aed);color:var(--paper-on-accent,#fff);cursor:pointer; }',
+      '[data-sheet] .sh-edsave:disabled { opacity:.45;cursor:not-allowed; }',
+      '[data-sheet] .sh-ed-total { margin:0;font-weight:600; }',
+      '[data-sheet] .sh-grants,[data-sheet] .sh-trl { list-style:none;margin:0;padding:0;display:grid;gap:4px; }',
+      '[data-sheet] .sh-traits { margin-top:8px; }',
+      '@media (pointer:coarse) { [data-sheet] .sh-opt label,[data-sheet] .sh-edopen,[data-sheet] .sh-ed .sh-link { padding:10px 0; } }',
       '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
       '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
       // A layer's struck old value, and the names of the layers on the hero.
@@ -4693,7 +5219,8 @@
             return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries, canSave: d.canSave } };
           });
         });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered]).then(function (got) {
+        var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing]).then(function (got) {
           if (refRenderer) refRenderer.injectStyles();
           data.tf = got[2].tf;
           var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
@@ -4759,7 +5286,11 @@
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
       ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
-      loadOwnPresets: loadOwnPresets
+      loadOwnPresets: loadOwnPresets,
+      ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
+      listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edTraitsHtml: edTraitsHtml,
+      edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
+      setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
   }
 })();
