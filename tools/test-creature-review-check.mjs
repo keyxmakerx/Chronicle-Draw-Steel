@@ -60,13 +60,13 @@ test('each covered figure the AI wrote sits beside the published formula', () =>
   assert.notEqual(stamina, 20, 'the fixture must differ from the formula to test anything');
 });
 
-test('the patch takes the formula only for what the director picked, keeping the AI’s words', () => {
+test('the patch takes the formula only for what the director picked, keeping the AI’s ability words', () => {
   const r = S.reviewCheck(raider({ free_strike: '2 damage, or 4 against a prone target' }), REFS, ALL);
   assert.deepEqual(r.patch([]), {});
   const p = r.patch(['stamina', 'winded', 'free_strike', 'ability-0']);
   assert.equal(p.stamina, stamina);
   assert.equal(p.winded, Math.floor(stamina / 2));
-  assert.equal(p.free_strike, d.tier1 + ' damage, or 4 against a prone target');
+  assert.equal(p.free_strike, d.tier1 + ' damage', 'wording that is not a bare number is replaced whole');
   assert.ok(!('ev' in p));
   const list = JSON.parse(p.abilities_json);
   assert.deepEqual(list[0], Object.assign({}, SPEAR, {
@@ -105,4 +105,38 @@ test('Chronicle.sheetChecks.creature loads the campaign’s templates and checks
   const r = await Chronicle.sheetChecks.creature.check(raider(), { campaignId: 'camp-9', written: ['stamina'] });
   assert.deepEqual(asked, ['/campaigns/camp-9/systems/drawsteel/data/organization-templates.json', '/campaigns/camp-9/systems/drawsteel/data/role-templates.json']);
   assert.deepEqual(r.items.map((i) => [i.id, i.formula]), [['stamina', String(stamina)]]);
+});
+
+test('a dice or worded free strike is not a match, and the fix replaces the whole value', () => {
+  for (const fs of ['2d6', 'Free strike 3, or 5 vs prone', '2 + 1 damage']) {
+    const r = S.reviewCheck(raider({ free_strike: fs }), REFS, ['free_strike']);
+    const row = r.items.find((i) => i.id === 'free_strike');
+    assert.equal(row.matches, false, fs);
+    assert.equal(r.patch(['free_strike']).free_strike, d.tier1 + ' damage', fs);
+  }
+  assert.equal(S.reviewCheck(raider({ free_strike: d.tier1 + ' damage' }), REFS, ['free_strike']).items[0].matches, true);
+  assert.equal(S.reviewCheck(raider({ free_strike: String(d.tier1) }), REFS, ['free_strike']).items[0].matches, true);
+});
+
+test('abilities whose damage is worded oddly are named in the note, not dropped silently', () => {
+  const ODD = { name: 'Corrupt Bite', type: 'action', keywords: ['Melee', 'Strike'], tier1: '3 damage', tier2: '5 damage; push 1', tier3: '7 + 2 corruption damage' };
+  const r = S.reviewCheck(raider({ abilities_json: JSON.stringify([ODD, TAUNT]) }), REFS, ALL);
+  assert.ok(!r.items.some((i) => i.id.startsWith('ability')));
+  assert.match(r.note, /Not checked.*Corrupt Bite/);
+  assert.doesNotMatch(r.note, /Taunt/, 'an ability with no damage needs no check');
+  const only = S.reviewCheck(raider({ abilities_json: JSON.stringify([ODD]) }), REFS, ['abilities_json']);
+  assert.deepEqual(only.items, []);
+  assert.match(only.note, /Corrupt Bite/);
+});
+
+test('a level outside 1 to 10, or a fraction, gets no check', () => {
+  for (const level of [11, 0, 3.5, -1]) assert.equal(S.reviewCheck(raider({ level }), REFS, ALL), null, String(level));
+});
+
+test('taking Stamina also takes Winded when the AI wrote one, so they cannot disagree', () => {
+  const r = S.reviewCheck(raider(), REFS, ALL);
+  const p = r.patch(['stamina']);
+  assert.equal(p.stamina, stamina);
+  assert.equal(p.winded, Math.floor(stamina / 2));
+  assert.ok(!('winded' in S.reviewCheck(raider(), REFS, ['stamina']).patch(['stamina'])), 'no Winded written, none added');
 });

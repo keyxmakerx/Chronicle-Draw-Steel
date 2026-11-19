@@ -175,6 +175,7 @@ var DrawSteelStatblock = (function () {
   // An ability's tier text that opens with its damage ("3 damage", "3 fire
   // damage"); the builder treats such an ability as formula damage.
   var DAMAGE_TIER = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
+  var FREE_STRIKE = /^\s*\d+(?:\s+[a-z]+)?\s+damage\s*$|^\s*\d+\s*$/i;
   var REVIEW_TIERS = ['tier1', 'tier2', 'tier3'];
 
   // formulaAbility says whether an ability's damage is the formula's: every
@@ -205,7 +206,8 @@ var DrawSteelStatblock = (function () {
     var f = (fields && typeof fields === 'object') ? fields : {};
     var c = normalize(f);
     var pr = provenance(c, refs);
-    if (!formulas() || !pr.org || c.level === null) return null;
+    // The book's levels are the whole numbers 1 to 10, as the editor allows.
+    if (!formulas() || !pr.org || c.level === null || c.level % 1 !== 0 || c.level < 1 || c.level > 10) return null;
     var wrote = {};
     (Array.isArray(written) ? written : Object.keys(f)).forEach(function (k) { wrote[String(k).toLowerCase()] = true; });
     var items = [], set = {};
@@ -219,22 +221,33 @@ var DrawSteelStatblock = (function () {
     if (covered(pr.stamina)) {
       figure('stamina', 'stamina', 'Stamina', c.stamina, pr.stamina.value);
       figure('winded', 'winded', 'Winded', c.winded, Math.floor(pr.stamina.value / 2));
+      // Winded is half of Stamina, so taking one without the other would leave them disagreeing.
+      if (set.stamina && wrote.winded) {
+        var takeStamina = set.stamina;
+        set.stamina = function (out) { takeStamina(out); out.winded = Math.floor(pr.stamina.value / 2); };
+      }
     }
-    if (covered(pr.free_strike)) {
-      // The builder keeps free strike as "N damage"; the AI's own wording
-      // around the number is kept.
-      var fsText = /^\s*-?\d+\s*$/.test(c.free_strike) ? pr.free_strike.value + ' damage'
-        : String(c.free_strike).replace(/-?\d+/, String(pr.free_strike.value));
-      figure('free_strike', 'free_strike', 'Free strike', freeStrikeNumber(c.free_strike), pr.free_strike.value, fsText);
+    if (covered(pr.free_strike) && wrote.free_strike && c.free_strike !== null && c.free_strike !== undefined && String(c.free_strike).trim() !== '') {
+      // Only a bare number or "N damage" is a figure the formula can be
+      // read against; any other wording is not a match, and the fix writes
+      // the whole value so no stray number is left beside it.
+      var fsRaw = String(c.free_strike), fsWant = pr.free_strike.value, plainFs = FREE_STRIKE.test(fsRaw);
+      items.push({ id: 'free_strike', label: 'Free strike', ai: plainFs ? String(freeStrikeNumber(fsRaw)) : fsRaw.slice(0, 60), formula: String(fsWant), matches: plainFs && freeStrikeNumber(fsRaw) === fsWant });
+      set.free_strike = function (out) { out.free_strike = plainFs && /\s/.test(fsRaw.trim()) ? withDamage(fsRaw, fsWant) : fsWant + ' damage'; };
     }
 
     var raw = parseJSON(f.abilities_json, null);
     var d = pr.damage && pr.damage.sourced ? pr.damage.value : null;
     var hc = pr.hc && pr.hc.value !== null && pr.hc.value !== undefined ? pr.hc.value : null;
-    var picks = {};
+    var picks = {}, unread = [];
     if (wrote.abilities_json && d && Array.isArray(raw)) {
       raw.slice(0, MAX_LIST).forEach(function (a, i) {
-        if (!a || typeof a !== 'object' || !formulaAbility(a)) return;
+        if (!a || typeof a !== 'object') return;
+        if (!formulaAbility(a)) {
+          // Damage worded another way can't be set against the formula; say so rather than imply it was checked.
+          if (REVIEW_TIERS.some(function (k) { return /damage/i.test(String(a[k] || '')); })) unread.push(a.name ? String(a.name) : 'Ability ' + (i + 1));
+          return;
+        }
         var add = isStrike(a) ? hc : 0;
         if (add === null) return;
         var ai = [], want = [], same = true;
@@ -252,9 +265,10 @@ var DrawSteelStatblock = (function () {
         };
       });
     }
-    if (!items.length) return null;
+    if (!items.length && !unread.length) return null;
 
     var who = 'Level ' + c.level + ' ' + (pr.org.name || cap(c.organization)) + (pr.role ? ' ' + (pr.role.name || cap(c.role)) : '');
+    if (unread.length) who += '. Not checked, because its damage is worded in a way the check can’t read: ' + unread.slice(0, 8).join(', ') + (unread.length > 8 ? ' and ' + (unread.length - 8) + ' more' : '');
     return {
       note: who,
       items: items,
