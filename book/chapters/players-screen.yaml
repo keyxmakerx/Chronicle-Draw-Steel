@@ -60,30 +60,24 @@ pages:
       - type: cards
         items:
           - title: Bleeding
-            text: A bleeding creature takes damage at the start of each of their turns equal to the bleeding value.
-          - title: Burning
-            text: A burning creature takes fire damage at the start of each of their turns equal to the burning value.
-          - title: Charmed
-            text: A charmed creature can't attack the source of the charm and the source gains an edge on social interactions with the charmed creature.
+            text: Whenever a bleeding creature uses a main action, uses a triggered action, or makes a test or ability roll using Might or Agility, they lose Stamina equal to 1d6 + their level once it is resolved. Nothing can prevent the loss, and it happens once per action.
           - title: Dazed
-            text: "A dazed creature can only do one thing on their turn: take an action, take a maneuver, or take a move action. They also can't take triggered actions or free triggered actions."
+            text: "A dazed creature can do only one thing on their turn: use a main action, a maneuver or a move action. They can't use triggered actions, free triggered actions or free maneuvers."
           - title: Frightened
-            text: A frightened creature takes a bane on all power rolls against the source of their fear. The creature can't willingly move closer to the source of their fear.
+            text: A frightened creature's ability rolls against the source of their fear take a bane, and that source's ability rolls against them gain an edge. They can't willingly move closer to the source if they know where it is.
           - title: Grabbed
-            text: A grabbed creature's speed is 0. The grabber can move the grabbed creature with them when they move. The grabbed creature can use an action to attempt to escape.
+            text: A grabbed creature has speed 0, can be force moved only by whatever has them grabbed, can't use the Knockback maneuver, and takes a bane on abilities that don't target their grabber. They can try to get free with the Escape Grab maneuver.
           - title: Hidden
-            text: A hidden creature can't be seen or detected by the creatures they are hidden from. Attacks against a hidden creature take a bane; attacks by a hidden creature gain an edge.
-          - title: Poisoned
-            text: A poisoned creature takes a bane on all power rolls.
+            text: A creature can't target someone hidden from them with abilities that lack the Area keyword, and the hidden creature gains an edge on ability rolls against them. Using an ability or losing cover or concealment ends it.
           - title: Prone
-            text: A prone creature is flat on the ground. They must spend half their movement to stand up. Melee attacks against them gain an edge; ranged attacks take a bane.
+            text: A prone creature's strikes take a bane and melee abilities used against them gain an edge. They must crawl, which costs 1 extra square of movement for every square, and they get up with the Stand Up maneuver.
           - title: Restrained
-            text: A restrained creature's speed is 0 and they can't benefit from bonuses to speed. Attacks against a restrained creature gain an edge.
+            text: A restrained creature has speed 0, can't use the Stand Up maneuver and can't be force moved. They take a bane on ability rolls and on Might and Agility tests, and abilities used against them gain an edge.
           - title: Slowed
-            text: A slowed creature's speed is reduced to 2 and they can't benefit from bonuses to speed. They also can't shift.
+            text: A slowed creature has speed 2 unless their speed is already lower, and they can't shift.
           - title: Surprised
             text: A creature who isn't ready for combat when it starts is surprised until the end of the first combat round.
           - title: Taunted
-            text: A taunted creature takes a bane on attacks that don't include the source of the taunt as a target.
+            text: A taunted creature has a double bane on ability rolls for any ability that doesn't target the creature who taunted them, as long as they have line of effect to that creature.
           - title: Weakened
-            text: A weakened creature's power rolls and damage are halved.
+            text: A weakened creature takes a bane on power rolls.

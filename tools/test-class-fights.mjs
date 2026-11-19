@@ -15,7 +15,9 @@ const DATA = JSON.parse(readFileSync(new URL('../data/class-fights.json', import
 const ABILITIES = JSON.parse(readFileSync(new URL('../data/abilities.json', import.meta.url), 'utf8'));
 const WIDGET = readFileSync(new URL('../widgets/class-fights.js', import.meta.url), 'utf8');
 const R = F.rulesFrom(DATA);
-const NINE = ['censor', 'conduit', 'elementalist', 'fury', 'null', 'shadow', 'tactician', 'talent', 'troubadour'];
+// Every class has a pop-up book, in the order the data lists them.
+const NINE = ['beastheart', 'censor', 'conduit', 'elementalist', 'fury', 'null', 'shadow', 'summoner', 'tactician', 'talent', 'troubadour'];
+const HEROES_BOOK = ['censor', 'conduit', 'elementalist', 'fury', 'null', 'shadow', 'tactician', 'talent', 'troubadour'];
 const entry = (slug) => DATA.find((e) => e.slug === slug);
 const rules = (id) => entry('class-resource-' + id).properties;
 const cls = (id) => R.classes.find((c) => c.id === id);
@@ -34,6 +36,11 @@ test('the rules come from class-fights.json, and a missing rule means no fights'
   assert.equal(F.rulesFrom(DATA.filter((e) => e.slug !== 'power-roll')), null);
   assert.equal(F.rulesFrom(DATA.filter((e) => e.slug !== 'winded-and-dying')), null);
   assert.equal(F.rulesFrom(null), null);
+});
+
+test('the six classes of the older books and the two newer ones all stay in the data', () => {
+  assert.equal(HEROES_BOOK.length + 2, NINE.length);
+  for (const id of ['beastheart', 'summoner']) assert.ok(entry('class-resource-' + id) && entry('example-fight-' + id), id);
 });
 
 test('a class whose scene names a trigger it does not have is left out, not played wrong', () => {
@@ -170,7 +177,8 @@ test('every fight can be won, and winning ends it', () => {
 test('the data: rules cite Draw Steel, examples are flagged custom, and the two agree', () => {
   for (const id of NINE) {
     const e = entry('class-resource-' + id), sc = entry('example-fight-' + id);
-    assert.match(e.source, /^Draw Steel Heroes Book, ch\. 5/);
+    if (HEROES_BOOK.includes(id)) assert.match(e.source, /^Draw Steel Heroes Book, ch\. 5/);
+    else assert.match(e.source, new RegExp('\\(mcdm\\.' + id + '\\.v1\\)'));
     assert.equal(sc.source, 'custom');
     const p = e.properties;
     assert.ok(p.gain_text.includes(p.turn_gain === 'd3' ? '1d3' : String(p.turn_gain)), id + ' gain text and number disagree');
@@ -182,10 +190,14 @@ test('the data: rules cite Draw Steel, examples are flagged custom, and the two 
     for (const a of sc.properties.acts.filter((x) => x.cost)) {
       assert.ok(a.b.includes(a.cost + '-' + p.resource.toLowerCase()), id + ': "' + a.b + '" does not name its cost');
     }
+    // A class whose heroic abilities start above 1st level (the summoner's
+    // start at 3rd) is checked against the level they are printed at.
+    const heroic = ABILITIES.filter((x) => x.properties.class === p.class_name && x.properties.type === 'heroic');
+    const startsAtOne = heroic.some((x) => (x.properties.levels || [x.properties.level]).includes(1));
     for (const cost of p.heroic_ability_costs) {
-      const found = ABILITIES.some((x) => x.properties.class === p.class_name && x.properties.type === 'heroic' &&
-        x.properties.cost_amount === cost && (x.properties.levels || [x.properties.level]).includes(1));
-      assert.ok(found, id + ' has no 1st-level heroic ability costing ' + cost);
+      const found = heroic.some((x) => x.properties.cost_amount === cost &&
+        (!startsAtOne || (x.properties.levels || [x.properties.level]).includes(1)));
+      assert.ok(found, id + ' has no heroic ability costing ' + cost);
     }
   }
   for (const s of ['power-roll', 'winded-and-dying']) assert.match(entry(s).source, /^Draw Steel Heroes Book/);

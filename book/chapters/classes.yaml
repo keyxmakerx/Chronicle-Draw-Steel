@@ -1,7 +1,7 @@
 title: Classes
 intro: Your calling, and the resource that powers it.
 pages:
-  - title: Nine classes
+  - title: Eleven classes
     blocks:
       - text: |
           A class is the heart of a hero. It gives you abilities, and most of
@@ -9,6 +9,12 @@ pages:
           is different for each class.
       - type: cards
         items:
+          - title: Beastheart
+            summary: Heroic Resource, Ferocity.
+            text: |
+              Spend Ferocity to power your heroic abilities. A beastheart
+              fights beside a wild companion, and the two of you share one
+              turn.
           - title: Censor
             summary: Heroic Resource, Wrath.
             text: Spend Wrath to power your heroic abilities.
@@ -32,6 +38,11 @@ pages:
           - title: Shadow
             summary: Heroic Resource, Insight.
             text: Spend Insight to power your heroic abilities.
+          - title: Summoner
+            summary: Heroic Resource, Essence.
+            text: |
+              Spend Essence to power your heroic abilities. A summoner calls
+              forth squads of minions and keeps them fighting.
           - title: Tactician
             summary: Heroic Resource, Focus.
             text: Spend Focus to power your heroic abilities.

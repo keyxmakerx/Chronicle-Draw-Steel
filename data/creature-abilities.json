@@ -102,8 +102,8 @@
       "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
-      "effect": "The creature gains {@resource damage-resistance} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-resistance} 1.",
-      "effect_display": "The creature gains damage-resistance 3 until the start of its next turn. Each ally adjacent to the creature also gains damage-resistance 1."
+      "effect": "The creature gains {@resource damage-immunity|damage immunity} 3 until the start of its next turn. Each ally adjacent to the creature also gains {@resource damage-immunity|damage immunity} 1.",
+      "effect_display": "The creature gains damage immunity 3 until the start of its next turn. Each ally adjacent to the creature also gains damage immunity 1."
     },
     "source": "custom"
   },
@@ -653,8 +653,8 @@
       "keywords_display": "Resistance",
       "distance": "Self",
       "target": "Self",
-      "effect": "The creature gains {@resource damage-resistance} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
-      "effect_display": "The creature gains damage-resistance 5 and taunts all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
+      "effect": "The creature gains {@resource damage-immunity|damage immunity} 5 and {@condition taunted|taunts} all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift.",
+      "effect_display": "The creature gains damage immunity 5 and taunts all enemies within 2 until the start of its next turn. While in this stance, the creature cannot shift."
     },
     "source": "custom"
   },
@@ -1284,8 +1284,8 @@
       "roles_display": "defender",
       "distance": "Self",
       "target": "Self",
-      "effect": "When the creature takes damage, it gains {@resource damage-resistance|damage resistance} 3 against that damage.",
-      "effect_display": "When the creature takes damage, it gains damage resistance 3 against that damage."
+      "effect": "When the creature takes damage, it gains {@resource damage-immunity|damage immunity} 3 against that damage.",
+      "effect_display": "When the creature takes damage, it gains damage immunity 3 against that damage."
     },
     "source": "custom"
   },
@@ -3740,8 +3740,8 @@
       "power_roll": "2d10 + 3",
       "tier1": "9 damage; the null shifts up to 3 squares; A < 1 6 damage",
       "tier1_display": "9 damage; the null shifts up to 3 squares; A < 1 6 damage",
-      "tier2": "14 damage; the null shifts up to 4 squares; A < 2 11 damage",
-      "tier2_display": "14 damage; the null shifts up to 4 squares; A < 2 11 damage",
+      "tier2": "14 damage; the null shifts up to 4 squares; A < 2 8 damage",
+      "tier2_display": "14 damage; the null shifts up to 4 squares; A < 2 8 damage",
       "tier3": "17 damage; the null shifts up to 5 squares; A < 3 11 damage",
       "tier3_display": "17 damage; the null shifts up to 5 squares; A < 3 11 damage",
       "organizations": [
@@ -4215,12 +4215,12 @@
       "distance": "Melee 1",
       "target": "One creature",
       "power_roll": "2d10 + 5",
-      "tier1": "15 damage; M < 3 grabbed",
-      "tier1_display": "15 damage; M < 3 grabbed",
-      "tier2": "21 damage; M < 4 grabbed",
-      "tier2_display": "21 damage; M < 4 grabbed",
-      "tier3": "25 damage; M < 5 grabbed",
-      "tier3_display": "25 damage; M < 5 grabbed",
+      "tier1": "17 damage; M < 3 grabbed",
+      "tier1_display": "17 damage; M < 3 grabbed",
+      "tier2": "24 damage; M < 4 grabbed",
+      "tier2_display": "24 damage; M < 4 grabbed",
+      "tier3": "30 damage; M < 5 grabbed",
+      "tier3_display": "30 damage; M < 5 grabbed",
       "effect": "The target must be the fury's size or smaller. While the target is grabbed this way, the fury and their allies have a double edge on strikes against them.",
       "effect_display": "The target must be the fury's size or smaller. While the target is grabbed this way, the fury and their allies have a double edge on strikes against them.",
       "organizations": [
@@ -6730,8 +6730,8 @@
       "distance": "Self",
       "target": "Self",
       "trigger": "While flying, the dragon starts their turn or moves.",
-      "effect": "The dragon drops to the ground and uses Forge Hammer Tail Slam, which deals an extra 4 damage for each square they descended.",
-      "effect_display": "The dragon drops to the ground and uses Forge Hammer Tail Slam, which deals an extra 4 damage for each square they descended.",
+      "effect": "The dragon drops to the ground and uses Forge Hammer Tail Slam, which deals an extra 4 damage for each square they descended. The dragon loses their ability to fly until they use Thermodynamic Flight again.",
+      "effect_display": "The dragon drops to the ground and uses Forge Hammer Tail Slam, which deals an extra 4 damage for each square they descended. The dragon loses their ability to fly until they use Thermodynamic Flight again.",
       "organizations": [
         "solo"
       ],
@@ -10957,8 +10957,8 @@
       "tier1_display": "7 damage",
       "tier2": "10 damage; M < 1 prone",
       "tier2_display": "10 damage; M < 1 prone",
-      "tier3": "13 damage; M < 1 prone",
-      "tier3_display": "13 damage; M < 1 prone",
+      "tier3": "13 damage; M < 2 prone",
+      "tier3_display": "13 damage; M < 2 prone",
       "organizations": [
         "elite"
       ],
@@ -11062,8 +11062,8 @@
       "tier1_display": "7 damage",
       "tier2": "11 damage; {@movement push} 1; M < 1 prone",
       "tier2_display": "11 damage; push 1; M < 1 prone",
-      "tier3": "14 damage; {@movement push} 2; M < 1 prone",
-      "tier3_display": "14 damage; push 2; M < 1 prone",
+      "tier3": "14 damage; {@movement push} 2; M < 2 prone",
+      "tier3_display": "14 damage; push 2; M < 2 prone",
       "organizations": [
         "elite"
       ],

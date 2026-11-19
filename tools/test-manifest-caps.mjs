@@ -21,7 +21,7 @@ const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'));
 
 // Mirrors internal/systems/manifest.go.
 const CAPS = {
-  categories: 20,
+  categories: 40,
   fields_per_category: 100,
   entity_presets: 10,
   relation_presets: 20,

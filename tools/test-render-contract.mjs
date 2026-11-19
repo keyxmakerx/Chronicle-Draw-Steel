@@ -136,10 +136,10 @@ test('every manifest category resolves to a data file, and every data file is ac
 });
 
 test('the manifest stays inside Chronicle ValidateManifest limits', () => {
-  // internal/systems/manifest.go: maxCategories 20, maxFieldsPerCategory 100,
+  // internal/systems/manifest.go: maxCategories 40, maxFieldsPerCategory 100,
   // and a slug pattern. A manifest that trips these fails to LOAD — the whole
   // package disappears, not just one column.
-  assert.ok(MANIFEST.categories.length <= 20, `too many categories (${MANIFEST.categories.length}, max 20)`);
+  assert.ok(MANIFEST.categories.length <= 40, `too many categories (${MANIFEST.categories.length}, max 40)`);
   for (const cat of MANIFEST.categories) {
     assert.match(cat.slug, /^[a-z0-9][a-z0-9_-]*$/, `category slug "${cat.slug}" is not a valid slug`);
     assert.ok(cat.name, `category "${cat.slug}" needs a name`);

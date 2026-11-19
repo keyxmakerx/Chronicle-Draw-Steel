@@ -276,7 +276,7 @@ with the published damage for the creature they are added to
 
 ## abilities.json
 
-Hero-facing abilities: the nine classes' abilities, the kit signature abilities,
+Hero-facing abilities: the eleven classes' abilities, the kit signature abilities,
 and the common actions every creature has. (Monster abilities live in
 `creature-abilities.json`, which uses a deliberately similar but smaller shape.)
 
@@ -380,10 +380,10 @@ Rule definitions for the @reference tooltip system.
 
 | Category | Examples |
 |----------|----------|
-| `condition` | frightened, dazed, slowed, restrained, weakened, bleeding, burning, taunted, prone, charmed, poisoned, grabbed, hidden |
-| `movement` | shift, push, pull |
+| `condition` | frightened, dazed, slowed, restrained, weakened, bleeding, burning, taunted, prone, charmed, grabbed, hidden |
+| `movement` | shift, push, pull, slide, walk, climb-or-swim, jump, crawl, fly, hover, burrow, teleport, vertical |
 | `duration` | eot (End of Turn), save-ends |
-| `resource` | temporary-stamina, damage-resistance |
+| `resource` | temporary-stamina |
 | `action` | free-strike |
 | `combat` | forced-movement, power-roll, stability, winded |
 
@@ -561,6 +561,78 @@ animal. This is the one per-creature point-buy Draw Steel actually publishes.
 
 The budget rule lives in `monster-building.json` → `animal-trait-point-buy`, not
 here, so this file stays homogeneous: every entry is a trait with a cost.
+
+## perks.json
+
+The 47 perks. A perk's whole published text is its `description`; a perk that
+grants an ability carries the ability as plain text in the same field.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group` | string | Yes | `Crafting`, `Exploration`, `Interpersonal`, `Intrigue`, `Lore`, or `Supernatural` |
+
+## titles.json
+
+The 59 titles. The root `description` is the prerequisite line; the rules are in
+`properties`.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `echelon` | string | Yes | `1st`, `2nd`, `3rd`, or `4th` |
+| `prerequisite` | string | Yes | What a hero does to earn the title |
+| `effect` | string | Yes | The benefit, or the benefits a hero chooses between |
+| `special` | string | No | The title's published "Special:" line |
+| `omissions` | array | No | Setting references dropped or reworded |
+
+## treasures.json
+
+The 98 treasures: consumables, trinkets, leveled treasures and artifacts.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | string | Yes | `Consumable`, `Trinket`, `Leveled`, or `Artifact` |
+| `kind` | string | No | A leveled treasure's kind: `Armor`, `Implement`, `Weapon`, or `Other` |
+| `echelon` | string | No | `1st` to `4th`, for consumables and trinkets |
+| `keywords` | string | No | The treasure's keywords, comma-separated |
+| `item_prerequisite` | string | No | The item the crafting project needs |
+| `project_source` | string | No | The texts or lore the crafting project needs |
+| `project_roll_characteristic` | string | No | The characteristics the project roll may use |
+| `project_goal` | string | No | The project goal, as printed |
+| `effect` | string | No | The treasure's effect; an artifact's whole rules text |
+| `level_1`, `level_5`, `level_9` | string | No | A leveled treasure's benefit at each level |
+| `omissions` | array | No | Setting references dropped or reworded |
+
+## projects.json
+
+The 16 downtime projects, with the same four project fields as a treasure.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group` | string | Yes | `Crafting`, `Research`, or `Other` |
+| `item_prerequisite` | string | No | The item the project needs |
+| `project_source` | string | No | The texts or lore the project needs |
+| `project_roll_characteristic` | string | No | The characteristics the project roll may use |
+| `project_goal` | string | No | The project goal, as printed |
+| `omissions` | array | No | Published text left out (Imbue Treasure's enhancement lists) |
+
+## companions.json
+
+The Beastheart's 14 companions, visible to players (the books they come from are
+not the Monsters book). `properties`: `kind` (`companion`), `level`, `organization`
+(`Companion`), `size`, `speed`, `stability`, `stamina` (printed text, `= yours`),
+`free_strike` (printed text, `1 + M`), the five characteristics, `keywords`,
+`skills`, `immunities`, and three arrays: `traits` (`{name, description}`),
+`abilities` (`{name, type, action_type, keywords, distance, target, trigger,
+power_roll, tier1..3, effect}`) and `advancement` (`{level, name, effect}` for
+levels 3, 6 and 10).
+
+## summons.json
+
+The Summoner's 49 portfolio minions and four portfolio champions. Same shape as
+`companions.json`, plus `kind` (`minion` or `champion`), `portfolio` (Demon,
+Elemental, Fey, Undead), `circle` (Blight, Storms, Spring, Graves), `role` and
+`cost` (the essence cost as printed). A champion's `advancement` holds its
+10th-level features, including its Champion Action.
 
 ## Widget-only data files
 

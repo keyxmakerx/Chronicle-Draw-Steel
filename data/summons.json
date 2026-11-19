@@ -1,0 +1,2535 @@
+[
+  {
+    "slug": "archer-spittlich",
+    "name": "Archer Spittlich",
+    "summary": "Artillery minion · Demon portfolio",
+    "description": "These minor demons resemble larger pitlings. They can spit a nerve-numbing phlegm at long distance that makes it easy to catch their next meal.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1S",
+      "speed": 5,
+      "stability": 2,
+      "stamina": "5 | 5",
+      "free_strike": "5",
+      "might": 0,
+      "agility": 2,
+      "reason": -1,
+      "intuition": -1,
+      "presence": 0,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Splash Strike",
+          "description": "The spittlich's ranged {@action free-strike|free strikes} have a distance of 10 and deal 2 poison damage to an enemy adjacent to the target. Creatures that take poison damage from this spittlich can't {@movement shift} until the start of the spittlich's next turn."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the spittlich can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 0 · agility — 2 · reason — -1 · intuition — -1 · presence — 0 · traits — Splash Strike — The spittlich's ranged free strikes have a distance of 10 and deal 2 poison damage to an enemy adjacent to the target. Creatures that take poison damage from this spittlich can't shift until the start of the spittlich's next turn. · Soulsight — Each creature adjacent to the spittlich can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "ensnarer",
+    "name": "Ensnarer",
+    "summary": "Brute minion · Demon portfolio",
+    "description": "This vaguely humanoid form is warped and distorted by a demon nestled inside them. They extend long tongues from multiple orifices to drag victims in close.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "1M",
+      "speed": 5,
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "2",
+      "might": 2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Extended Barbed Strike",
+          "description": "The ensnarer's melee {@action free-strike|free strikes} have a distance of 3 and inflict {@movement pull} 1. The {@movement pull} distance increases by 1 for each additional ensnarer striking the same target. Choose the ensnarer that the target is being pulled to before applying {@combat forced-movement}."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the ensnarer can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — 0 · reason — -1 · intuition — -1 · presence — -1 · traits — Extended Barbed Strike — The ensnarer's melee free strikes have a distance of 3 and inflict pull 1. The pull distance increases by 1 for each additional ensnarer striking the same target. Choose the ensnarer that the target is being pulled to before applying forced-movement. · Soulsight — Each creature adjacent to the ensnarer can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "faded-blightling",
+    "name": "Faded Blightling",
+    "summary": "Support minion · Demon portfolio",
+    "description": "This cherubin creature is bloated and warped by demonic energy. The lights from their myriad eyes have all but gone out, now resembling pustules across their body.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Support",
+      "size": "1L",
+      "speed": 5,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "17 | 17",
+      "free_strike": "7",
+      "might": 0,
+      "agility": 0,
+      "reason": -1,
+      "intuition": 4,
+      "presence": 3,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Wilted Wings",
+          "description": "The blightling must land on the ground at the end of their turn or fall {@condition prone}."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the blightling can't be hidden from them."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Blighted Strike",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 5",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "7 corruption damage; P < WEAK {@condition bleeding} ({@duration eot})",
+          "tier2": "11 corruption damage; P < AVERAGE {@condition bleeding} ({@duration eot})",
+          "tier3": "16 corruption damage; P < STRONG {@condition bleeding} ({@duration eot})",
+          "effect": "Instead of taking damage, you or an ally targeted by this ability impose a double {@combat bane} on the next strike that targets them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 0 · agility — 0 · reason — -1 · intuition — 4 · presence — 3 · traits — Wilted Wings — The blightling must land on the ground at the end of their turn or fall prone. · Soulsight — Each creature adjacent to the blightling can't be hidden from them. · abilities — Blighted Strike — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 5; target: One creature or object per minion; power roll: 2d10 + R; tier1: 7 corruption damage; P < WEAK bleeding (eot); tier2: 11 corruption damage; P < AVERAGE bleeding (eot); tier3: 16 corruption damage; P < STRONG bleeding (eot); effect: Instead of taking damage, you or an ally targeted by this ability impose a double bane on the next strike that targets them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fanged-musilex",
+    "name": "Fanged Musilex",
+    "summary": "Brute minion · Demon portfolio",
+    "description": "Ensnarers knot and twist their bodies together to form heaving, heavy musilexes. They're compelled to drag everything in toward their body.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "1L",
+      "speed": 6,
+      "stability": 1,
+      "stamina": "6 | 6",
+      "free_strike": "5",
+      "might": 2,
+      "agility": 1,
+      "reason": -1,
+      "intuition": -1,
+      "presence": 0,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Mawful Strike",
+          "description": "The musilex's melee {@action free-strike|free strikes} have a distance of 2 + R and inflict {@movement pull} 2. The {@movement pull} distance increases by 2 for each additional musilex striking the same target. Choose the musilex that the target is being pulled to before applying {@combat forced-movement}. If the target is pulled adjacent to the musilex, the musilex either deals an additional 2 damage or grabs them."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the musilex can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 2 · agility — 1 · reason — -1 · intuition — -1 · presence — 0 · traits — Mawful Strike — The musilex's melee free strikes have a distance of 2 + R and inflict pull 2. The pull distance increases by 2 for each additional musilex striking the same target. Choose the musilex that the target is being pulled to before applying forced-movement. If the target is pulled adjacent to the musilex, the musilex either deals an additional 2 damage or grabs them. · Soulsight — Each creature adjacent to the musilex can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "gorrre",
+    "name": "Gorrre",
+    "summary": "Brute minion · Demon portfolio",
+    "description": "The gorrre demons evoke features of rhino and orangutan while clad in heavy armor. They've been utilized as jail guards by devils, as few prisoners can ever hope to outrun a monster with unlimited endurance.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "2",
+      "speed": 5,
+      "stability": 2,
+      "stamina": "17 | 17",
+      "free_strike": "8",
+      "might": 4,
+      "agility": 3,
+      "reason": 0,
+      "intuition": -1,
+      "presence": 0,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Gorrring Strike",
+          "description": "The gorrre must charge before making a strike. The target is M < STRONG knocked {@condition prone} if the gorrre moved through an enemy or object other than the target during the charge."
+        },
+        {
+          "name": "Devastating Charge",
+          "description": "The gorrre ignores {@combat difficult-terrain} while charging and destroys unattended, size 1 objects in their path. Each enemy they move through during a charge takes 3 damage."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the gorrre can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 4 · agility — 3 · reason — 0 · intuition — -1 · presence — 0 · traits — Gorrring Strike — The gorrre must charge before making a strike. The target is M < STRONG knocked prone if the gorrre moved through an enemy or object other than the target during the charge. · Devastating Charge — The gorrre ignores difficult-terrain while charging and destroys unattended, size 1 objects in their path. Each enemy they move through during a charge takes 3 damage. · Soulsight — Each creature adjacent to the gorrre can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "gushing-spewler",
+    "name": "Gushing Spewler",
+    "summary": "Controller minion · Demon portfolio",
+    "description": "A spewler's mouth makes up most of its size. They unleash torrents of acid and bile from their pitless stomachs before consuming their prey with bag-like maws.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "1M",
+      "speed": 5,
+      "stability": 0,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "3",
+      "might": -2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": 3,
+      "presence": 3,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Gushing Strike",
+          "description": "The spewler's ranged {@action free-strike|free strikes} have a distance of 10 and {@combat forced-movement|slides} the target R + 2 squares."
+        },
+        {
+          "name": "Spew Slide",
+          "description": "Each time the spewler takes damage, the spewler {@movement shift|shifts} 2 after all effects resolve. Each square they exit during this movement is covered in slime until the end of the encounter. An enemy has a {@combat bane} on strikes while occupying a slimed square."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the spewler can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 0 · reason — -1 · intuition — 3 · presence — 3 · traits — Gushing Strike — The spewler's ranged free strikes have a distance of 10 and slides the target R + 2 squares. · Spew Slide — Each time the spewler takes damage, the spewler shifts 2 after all effects resolve. Each square they exit during this movement is covered in slime until the end of the encounter. An enemy has a bane on strikes while occupying a slimed square. · Soulsight — Each creature adjacent to the spewler can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hulking-chimor",
+    "name": "Hulking Chimor",
+    "summary": "Defender minion · Demon portfolio",
+    "description": "Chimors have no true shape; their bodies restructure and change endlessly. Pieces of the chimor demon snap off inside their prey, causing their bodies to also restructure from the inside out.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "2",
+      "speed": 5,
+      "stability": 3,
+      "stamina": "7 | 7 | 7",
+      "free_strike": "3",
+      "might": 3,
+      "agility": 0,
+      "reason": 2,
+      "intuition": 1,
+      "presence": 1,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Mercurial Strike",
+          "description": "The chimor's melee {@action free-strike|free strikes} inflict M < WEAK {@condition weakened} ({@duration eot}). The {@combat potency} is increased by the current round number."
+        },
+        {
+          "name": "Evershifting",
+          "description": "The chimor doesn't provoke opportunity attacks by moving."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the chimor can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 3 · might — 3 · agility — 0 · reason — 2 · intuition — 1 · presence — 1 · traits — Mercurial Strike — The chimor's melee free strikes inflict M < WEAK weakened (eot). The potency is increased by the current round number. · Evershifting — The chimor doesn't provoke opportunity attacks by moving. · Soulsight — Each creature adjacent to the chimor can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "rasquine",
+    "name": "Rasquine",
+    "summary": "Ambusher minion · Demon portfolio",
+    "description": "The rasquine are skulking demons that shimmer in the light. They teleport into position before biting the necks of their prey.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1S",
+      "speed": 4,
+      "movement": "Teleport",
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "2",
+      "might": -1,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": 2,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Skulker",
+          "description": "Once per turn, the rasquine can hide as a free maneuver after {@movement teleport|teleporting}."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the rasquine can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -1 · agility — 0 · reason — -1 · intuition — -1 · presence — 2 · traits — Skulker — Once per turn, the rasquine can hide as a free maneuver after teleporting. · Soulsight — Each creature adjacent to the rasquine can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "razor",
+    "name": "Razor",
+    "summary": "Harrier minion · Demon portfolio",
+    "description": "Razors appear to be a diminutive variant of the ruinant demon. Their bodies are swift, tumbling mounds of scarred flesh and deadly claws.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1M",
+      "speed": 6,
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "1",
+      "might": 0,
+      "agility": 2,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Teeth!",
+          "description": "Once per turn, whenever an adjacent enemy grabs the razor or uses a melee ability against them, that enemy takes 1 damage for each razor adjacent to them."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the razor can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 0 · agility — 2 · reason — -1 · intuition — -1 · presence — -1 · traits — Teeth! — Once per turn, whenever an adjacent enemy grabs the razor or uses a melee ability against them, that enemy takes 1 damage for each razor adjacent to them. · Soulsight — Each creature adjacent to the razor can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "twisted-bengrul",
+    "name": "Twisted Bengrul",
+    "summary": "Hexer minion · Demon portfolio",
+    "description": "The bengrul is an undulating heap of glass and flesh. They shatter pieces of themselves to disrupt senses and inflict grisly wounds on their prey.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Hexer",
+      "size": "1L",
+      "speed": 5,
+      "stability": 1,
+      "stamina": "5 | 5",
+      "free_strike": "4",
+      "might": 2,
+      "agility": 1,
+      "reason": -1,
+      "intuition": -1,
+      "presence": 0,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the ensnarer can't be hidden from them."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Mind Twist",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 5",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "4 damage; P < WEAK twisted ({@duration save-ends|save ends})",
+          "tier2": "6 damage; P < AVERAGE twisted ({@duration save-ends|save ends})",
+          "tier3": "8 damage; P < STRONG twisted ({@duration save-ends|save ends})",
+          "effect": "A twisted target can't take advantage of {@combat edge|edges} or search for hidden creatures until the condition ends."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 2 · agility — 1 · reason — -1 · intuition — -1 · presence — 0 · traits — Soulsight — Each creature adjacent to the ensnarer can't be hidden from them. · abilities — Mind Twist — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 5; target: One creature or object per minion; power roll: 2d10 + R; tier1: 4 damage; P < WEAK twisted (save ends); tier2: 6 damage; P < AVERAGE twisted (save ends); tier3: 8 damage; P < STRONG twisted (save ends); effect: A twisted target can't take advantage of edges or search for hidden creatures until the condition ends."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "vicisittante",
+    "name": "Vicisittante",
+    "summary": "Harrier minion · Demon portfolio",
+    "description": "It's difficult to identify the base nature of a vicisittante apart from an ever-changing mass of burning flesh. Any surface they touch immediately scars as the demon leaves parts of themselves behind.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "2",
+      "speed": 10,
+      "stability": 0,
+      "stamina": "17 | 17",
+      "free_strike": "7",
+      "might": 3,
+      "agility": 4,
+      "reason": 0,
+      "intuition": 0,
+      "presence": -1,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the vicisittante can't be hidden from them."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Cerebral Flay",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Psionic",
+            "Strike"
+          ],
+          "distance": "Melee 1",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "7 psychic damage; P < WEAK {@condition weakened} ({@duration save-ends|save ends})",
+          "tier2": "11 psychic damage; P < AVERAGE {@condition weakened} ({@duration save-ends|save ends})",
+          "tier3": "16 psychic damage; P < STRONG {@condition weakened} ({@duration save-ends|save ends})",
+          "effect": "A target {@condition weakened} by this ability is always considered flanked by the vicisittante regardless of position until the condition ends."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 3 · agility — 4 · reason — 0 · intuition — 0 · presence — -1 · traits — Soulsight — Each creature adjacent to the vicisittante can't be hidden from them. · abilities — Cerebral Flay — type: signature; action type: Main action; keywords: Melee, Psionic, Strike; distance: Melee 1; target: One creature or object per minion; power roll: 2d10 + R; tier1: 7 psychic damage; P < WEAK weakened (save ends); tier2: 11 psychic damage; P < AVERAGE weakened (save ends); tier3: 16 psychic damage; P < STRONG weakened (save ends); effect: A target weakened by this ability is always considered flanked by the vicisittante regardless of position until the condition ends."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "violent",
+    "name": "Violent",
+    "summary": "Ambusher minion · Demon portfolio",
+    "description": "The violents are lanky, oily bipeds with bright red flesh that contort and snap their bodies into unassuming objects. Their mimicry is particularly precise, to the point where it's unclear whether their victims die from the surprise or the violent transformation process first.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1M",
+      "speed": 7,
+      "movement": "Climb",
+      "stability": 1,
+      "stamina": "5 | 5 | 5",
+      "free_strike": "4",
+      "might": 2,
+      "agility": 3,
+      "reason": 0,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Abyssal, Demon",
+      "weaknesses": "Holy 1",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Transforming Strike",
+          "description": "The violent's melee {@action free-strike|free strikes} deal an additional 2 damage to each adjacent enemy from whom they were hidden. The violent loses their disguise after striking."
+        },
+        {
+          "name": "Mimicry",
+          "description": "The violent uses the Hide maneuver at the start of their turn as a free maneuver, disguising themselves as a a size 1M or smaller object."
+        },
+        {
+          "name": "Soulsight",
+          "description": "Each creature adjacent to the violent can't be hidden from them."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 2 · agility — 3 · reason — 0 · intuition — -1 · presence — -1 · traits — Transforming Strike — The violent's melee free strikes deal an additional 2 damage to each adjacent enemy from whom they were hidden. The violent loses their disguise after striking. · Mimicry — The violent uses the Hide maneuver at the start of their turn as a free maneuver, disguising themselves as a a size 1M or smaller object. · Soulsight — Each creature adjacent to the violent can't be hidden from them."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "brisk-gale",
+    "name": "Brisk Gale",
+    "summary": "Harrier minion · Elemental portfolio",
+    "description": "The gales are twisting ribbons of cloud and debris endlessly dancing in place. They disrupt the air and allow their allies to move freely.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1S",
+      "speed": 5,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "1",
+      "might": -2,
+      "agility": 2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Elemental (Air)",
+      "immunities": "Sonic R",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Cutting the Air",
+          "description": "The gale doesn't provoke opportunity attacks by moving."
+        },
+        {
+          "name": "Whirlwind",
+          "description": "When the gale is reduced to 0 Stamina, winds whip in their space until the end of the encounter. You or an ally that enters this space or starts their turn there can immediately {@movement shift} (including vertically)."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 2 · reason — 0 · intuition — 0 · presence — 1 · traits — Cutting the Air — The gale doesn't provoke opportunity attacks by moving. · Whirlwind — When the gale is reduced to 0 Stamina, winds whip in their space until the end of the encounter. You or an ally that enters this space or starts their turn there can immediately shift (including vertically)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "crux-of-ash",
+    "name": "Crux of Ash",
+    "summary": "Ambusher minion · Elemental portfolio",
+    "description": "The crux is a curtain of billowing hot ash with an avian head. They cover their victims in a burning cloak of charcoal and soot.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1M",
+      "speed": 5,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "6 | 6",
+      "free_strike": "5",
+      "might": -2,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Elemental (Fire), Elemental (Air)",
+      "immunities": "Fire R; Sonic R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Soot Strike",
+          "description": "The crux's melee {@action free-strike|free strikes} M < AVERAGE automatically hide each ally from the target until the start of the crux's next turn, until the target uses a {@action maneuver} to clear the soot, until the crux takes damage, or until the crux is destroyed."
+        },
+        {
+          "name": "Ashen Cloud",
+          "description": "When the crux is reduced to 0 Stamina, the area within 1 square of the crux is clouded by ash until it is dispersed by wind. You or any ally are concealed while occupying an affected square. An enemy can't establish line of effect beyond the ash while occupying an affected square."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — -2 · reason — 0 · intuition — 0 · presence — 1 · traits — Soot Strike — The crux's melee free strikes M < AVERAGE automatically hide each ally from the target until the start of the crux's next turn, until the target uses a maneuver to clear the soot, until the crux takes damage, or until the crux is destroyed. · Ashen Cloud — When the crux is reduced to 0 Stamina, the area within 1 square of the crux is clouded by ash until it is dispersed by wind. You or any ally are concealed while occupying an affected square. An enemy can't establish line of effect beyond the ash while occupying an affected square."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "dancing-silk",
+    "name": "Dancing Silk",
+    "summary": "Controller minion · Elemental portfolio",
+    "description": "The silks are akin to baby spiders ballooning through the air on strands of webbing. They spin silk from their legs as they fly, eventually turning huge swaths of the environment into tangled web mazes.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "3",
+      "might": -1,
+      "agility": 2,
+      "reason": 3,
+      "intuition": 0,
+      "presence": -1,
+      "keywords": "Elemental (Earth), Elemental (Air), Elemental (Green)",
+      "immunities": "Poison R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Entangling Strike",
+          "description": "The silk's ranged {@action free-strike|free strikes} inflict A < AVERAGE {@condition restrained} ({@duration eot}). Each creature adjacent to the target is A < WEAK {@condition slowed} ({@duration eot})."
+        },
+        {
+          "name": "Web",
+          "description": "When the silk is reduced to 0 Stamina, they launch ribbons of webbing into an area equal to their size + 1 within 5 before being destroyed. The affected area is considered {@combat difficult-terrain} for enemies until the end of the encounter. An enemy that ends their turn in the webbing is M < STRONG {@condition slowed} ({@duration eot})."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -1 · agility — 2 · reason — 3 · intuition — 0 · presence — -1 · traits — Entangling Strike — The silk's ranged free strikes inflict A < AVERAGE restrained (eot). Each creature adjacent to the target is A < WEAK slowed (eot). · Web — When the silk is reduced to 0 Stamina, they launch ribbons of webbing into an area equal to their size + 1 within 5 before being destroyed. The affected area is considered difficult-terrain for enemies until the end of the encounter. An enemy that ends their turn in the webbing is M < STRONG slowed (eot)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "desolation-of-sand",
+    "name": "Desolation of Sand",
+    "summary": "Hexer minion · Elemental portfolio",
+    "description": "The desolations have vaguely humanoid sand forms with no legs. Their glass hose “arms” shift and bristle before firing high pressure streams of sand at their foes.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Hexer",
+      "size": "1M",
+      "speed": 5,
+      "movement": "Burrow",
+      "stability": 1,
+      "stamina": "5 | 5",
+      "free_strike": "4",
+      "might": 1,
+      "agility": 2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": -2,
+      "keywords": "Elemental (Air), Elemental (Earth)",
+      "immunities": "Sonic R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Burying Strike",
+          "description": "The desolation's {@action free-strike|free strikes} inflict M < AVERAGE {@condition slowed} ({@duration save-ends|save ends}). If the target is already {@condition slowed}, then they are M < STRONG {@condition restrained} ({@duration eot})."
+        },
+        {
+          "name": "Sand Through Your Fingers",
+          "description": "The desolation doesn't provoke opportunity attacks by moving."
+        },
+        {
+          "name": "Shifting Sand Pit",
+          "description": "When the desolation is reduced to 0 Stamina, the area within 1 square of the desolation becomes {@combat difficult-terrain} for enemies until the end of the encounter. You or an ally that enters the affected area can immediately {@movement shift} 3."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 1 · agility — 2 · reason — 0 · intuition — 0 · presence — -2 · traits — Burying Strike — The desolation's free strikes inflict M < AVERAGE slowed (save ends). If the target is already slowed, then they are M < STRONG restrained (eot). · Sand Through Your Fingers — The desolation doesn't provoke opportunity attacks by moving. · Shifting Sand Pit — When the desolation is reduced to 0 Stamina, the area within 1 square of the desolation becomes difficult-terrain for enemies until the end of the encounter. You or an ally that enters the affected area can immediately shift 3."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "elemental-mote",
+    "name": "Elemental Mote",
+    "summary": "Hexer minion · Elemental portfolio",
+    "description": "This near-pure form of autonomous essence just barely maintains their form. They can shift their nature to match their surroundings.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Hexer",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "1",
+      "free_strike": "1",
+      "might": 0,
+      "agility": 0,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Elemental",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Dweomer Burst",
+          "description": "When the mote is reduced to 0 Stamina, each enemy adjacent to the mote has a {@combat bane} on their next strike."
+        },
+        {
+          "name": "Catalyst",
+          "description": "Once per turn, the mote can transform into an adjacent allied signature minion, maintaining their current Stamina. The minion must be reassigned to a new squad if their new name differs from the other squad members.\n\nAlternatively, you can spend 1 essence to transform the mote into any signature minion in the elemental portfolio you don't have, as if you summoned the new minion into the mote's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 0 · agility — 0 · reason — 0 · intuition — 0 · presence — 2 · traits — Dweomer Burst — When the mote is reduced to 0 Stamina, each enemy adjacent to the mote has a bane on their next strike. · Catalyst — Once per turn, the mote can transform into an adjacent allied signature minion, maintaining their current Stamina. The minion must be reassigned to a new squad if their new name differs from the other squad members.\n\nAlternatively, you can spend 1 essence to transform the mote into any signature minion in the elemental portfolio you don't have, as if you summoned the new minion into the mote's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fire-plume",
+    "name": "Fire Plume",
+    "summary": "Artillery minion · Elemental portfolio",
+    "description": "A fire plume burns so bright that their true shape is hard to discern from the flames. They sputter and spit motes of fire in high arcs.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1T",
+      "speed": 5,
+      "stability": 0,
+      "stamina": "1",
+      "free_strike": "2",
+      "might": -2,
+      "agility": 1,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Elemental (Fire)",
+      "immunities": "Fire R",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Spitfire Strike",
+          "description": "The plume's ranged {@action free-strike|free strikes} have a distance of 10."
+        },
+        {
+          "name": "Pyre",
+          "description": "When the plume is reduced to 0 Stamina, their space becomes wreathed in flames until the end of the encounter. An enemy that enters this space or starts their turn there takes 2 fire damage."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 1 · reason — 0 · intuition — 0 · presence — 2 · traits — Spitfire Strike — The plume's ranged free strikes have a distance of 10. · Pyre — When the plume is reduced to 0 Stamina, their space becomes wreathed in flames until the end of the encounter. An enemy that enters this space or starts their turn there takes 2 fire damage."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "flow-of-magma",
+    "name": "Flow of Magma",
+    "summary": "Harrier minion · Elemental portfolio",
+    "description": "This elemental is a long, serpentine creature of heated rock. Flows of magma drool trails of lava from their fangs after biting their prey.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1L",
+      "speed": 5,
+      "movement": "Climb",
+      "stability": 2,
+      "stamina": "6 | 6",
+      "free_strike": "4",
+      "might": 2,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Elemental (Fire), Elemental (Earth)",
+      "immunities": "Fire R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Eruption",
+          "description": "When the flow is reduced to 0 Stamina, they launch lava into an area equal to 1 + their size within 5 squares. The affected area becomes {@combat difficult-terrain} for enemies until the end of the encounter. An enemy that enters an affected square or starts their turn there takes A < AVERAGE 4 fire damage."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Molten Strike",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Melee",
+            "Strike"
+          ],
+          "distance": "Melee 2",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "4 fire damage; {@movement shift} 3",
+          "tier2": "6 fire damage; {@movement shift} 4",
+          "tier3": "8 fire damage; {@movement shift} 5",
+          "effect": "Each square that the flow {@movement shift|shifts} into becomes wreathed in flames until the start of the flow's next turn. An enemy that enters an affected square takes 2 damage."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 2 · agility — -2 · reason — 0 · intuition — 0 · presence — 1 · traits — Eruption — When the flow is reduced to 0 Stamina, they launch lava into an area equal to 1 + their size within 5 squares. The affected area becomes difficult-terrain for enemies until the end of the encounter. An enemy that enters an affected square or starts their turn there takes A < AVERAGE 4 fire damage. · abilities — Molten Strike — type: signature; action type: Main action; keywords: Magic, Melee, Strike; distance: Melee 2; target: One creature or object per minion; power roll: 2d10 + R; tier1: 4 fire damage; shift 3; tier2: 6 fire damage; shift 4; tier3: 8 fire damage; shift 5; effect: Each square that the flow shifts into becomes wreathed in flames until the start of the flow's next turn. An enemy that enters an affected square takes 2 damage."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "iron-reaver",
+    "name": "Iron Reaver",
+    "summary": "Harrier minion · Elemental portfolio",
+    "description": "Iron reavers are long, gnashing lines of centipede-like bladed legs. Their bodies endlessly shed metal shavings and hard sheets of iron as they move.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1L",
+      "speed": 6,
+      "movement": "Burrow",
+      "stability": 0,
+      "stamina": "10 | 10 | 10",
+      "free_strike": "6",
+      "might": 3,
+      "agility": 4,
+      "reason": 0,
+      "intuition": 0,
+      "presence": -1,
+      "keywords": "Elemental (Earth), Elemental (Fire), Elemental (Void)",
+      "immunities": "Poison R",
+      "cost": "7 essence for three minions",
+      "traits": [
+        {
+          "name": "Decentralized Segments",
+          "description": "The reaver has cover while adjacent to another reaver they were summoned with. Whenever they receive an effect that allows them to move or {@movement shift} outside of their move action, they share the effect with each adjacent reaver they were summoned with."
+        },
+        {
+          "name": "Bladed Strike",
+          "description": "The reaver's {@action free-strike|free strikes} inflict M < WEAK {@condition bleeding} ({@duration save-ends|save ends}). Each time the reaver inflicts {@condition bleeding} on a creature, they can {@movement shift} 2 and make an additional {@action free-strike} on a new target."
+        },
+        {
+          "name": "Iron Barricade",
+          "description": "When the reaver is reduced to 0 Stamina, they create a line equal to 2 × their size centered on their space of iron shards on the ground until the end of the encounter. You or any ally has cover and {@resource damage-immunity} 2 while occupying an affected square."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 3 · agility — 4 · reason — 0 · intuition — 0 · presence — -1 · traits — Decentralized Segments — The reaver has cover while adjacent to another reaver they were summoned with. Whenever they receive an effect that allows them to move or shift outside of their move action, they share the effect with each adjacent reaver they were summoned with. · Bladed Strike — The reaver's free strikes inflict M < WEAK bleeding (save ends). Each time the reaver inflicts bleeding on a creature, they can shift 2 and make an additional free-strike on a new target. · Iron Barricade — When the reaver is reduced to 0 Stamina, they create a line equal to 2 × their size centered on their space of iron shards on the ground until the end of the encounter. You or any ally has cover and damage-immunity 2 while occupying an affected square."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "knight-of-blood",
+    "name": "Knight of Blood",
+    "summary": "Controller minion · Elemental portfolio",
+    "description": "These faceless suits of armor have visible rivers of deep red blood flowing throughout their being. Their blood has a powerful pull to it, causing any open wounds nearby to rip deeper and leak toward the knight.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "1L",
+      "speed": 6,
+      "stability": 0,
+      "stamina": "16 | 16",
+      "free_strike": "7",
+      "might": 4,
+      "agility": 2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 3,
+      "keywords": "Elemental (Earth), Elemental (Fire), Elemental (Rot), Elemental (Water)",
+      "immunities": "Corruption R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Scarlet Death",
+          "description": "The knight's melee strikes inflict P < STRONG {@condition bleeding} ({@duration save-ends|save ends}). While {@condition bleeding} this way, the target can't roll lower than a 3 on the die used to resolve {@condition bleeding} damage."
+        },
+        {
+          "name": "Red River",
+          "description": "When the knight is reduced to 0 Stamina, they move up to their speed ignoring opportunity attacks. Each square that they exit during this movement pools with blood until the end of the encounter. Each affected square is considered {@combat difficult-terrain} for enemies and deals 3 corruption damage to an enemy when they first enter it on a turn. Whenever a {@condition bleeding} enemy starts their turn within 10 squares of the blood pool, they are pulled 2 toward the nearest affected square, ignoring {@combat stability}."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 4 · agility — 2 · reason — 0 · intuition — 0 · presence — 3 · traits — Scarlet Death — The knight's melee strikes inflict P < STRONG bleeding (save ends). While bleeding this way, the target can't roll lower than a 3 on the die used to resolve bleeding damage. · Red River — When the knight is reduced to 0 Stamina, they move up to their speed ignoring opportunity attacks. Each square that they exit during this movement pools with blood until the end of the encounter. Each affected square is considered difficult-terrain for enemies and deals 3 corruption damage to an enemy when they first enter it on a turn. Whenever a bleeding enemy starts their turn within 10 squares of the blood pool, they are pulled 2 toward the nearest affected square, ignoring stability."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "light-of-the-sun",
+    "name": "Light of the Sun",
+    "summary": "Support minion · Elemental portfolio",
+    "description": "These elementals are blazing white avian-shaped beings that are nearly impossible to perceive directly. Between a light of the sun's talons is a massive glowing sword that can split the heaviest of defenses asunder.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Support",
+      "size": "2",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "17 | 17",
+      "free_strike": "7",
+      "might": 0,
+      "agility": 2,
+      "reason": 4,
+      "intuition": 0,
+      "presence": 3,
+      "keywords": "Elemental (Air), Elemental (Green), Elemental (Fire), Elemental (Void)",
+      "immunities": "Corruption R; fire R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Radiant Field",
+          "description": "When the light is reduced to 0 Stamina, the area within 1 square of the light becomes wreathed in sentient flames until the end of the encounter. An enemy that enters this area or starts their turn there takes 3 fire damage and is {@condition slowed} ({@duration eot}). You or any ally that enters this area or starts their turn there gains 5 {@resource temporary-stamina} and their speed increases by 2 until the end of their turn."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Solar Blade",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Melee",
+            "Strike"
+          ],
+          "distance": "Melee 1",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "7 fire damage; I < WEAK {@condition dazed} ({@duration eot})",
+          "tier2": "11 fire damage; I < AVERAGE {@condition dazed} ({@duration eot})",
+          "tier3": "16 fire damage; I < STRONG {@condition dazed} ({@duration save-ends|save ends})",
+          "effect": "A target {@condition dazed} by this ability has their {@combat stability} reduced to 0 until the condition ends."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 0 · agility — 2 · reason — 4 · intuition — 0 · presence — 3 · traits — Radiant Field — When the light is reduced to 0 Stamina, the area within 1 square of the light becomes wreathed in sentient flames until the end of the encounter. An enemy that enters this area or starts their turn there takes 3 fire damage and is slowed (eot). You or any ally that enters this area or starts their turn there gains 5 temporary-stamina and their speed increases by 2 until the end of their turn. · abilities — Solar Blade — type: signature; action type: Main action; keywords: Magic, Melee, Strike; distance: Melee 1; target: One creature or object per minion; power roll: 2d10 + R; tier1: 7 fire damage; I < WEAK dazed (eot); tier2: 11 fire damage; I < AVERAGE dazed (eot); tier3: 16 fire damage; I < STRONG dazed (save ends); effect: A target dazed by this ability has their stability reduced to 0 until the condition ends."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "principle-of-the-swamp",
+    "name": "Principle of the Swamp",
+    "summary": "Brute minion · Elemental portfolio",
+    "description": "The manes of these equine sludge dwellers extend and hook into things like strong, fraying arms. This allows the principle of the swamp to either pull themselves onto dry land, or pull their prey into the dank depths.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "2",
+      "speed": 4,
+      "movement": "Swim",
+      "stability": 0,
+      "stamina": "5 | 5 | 5",
+      "free_strike": "4",
+      "might": 3,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 2,
+      "presence": -2,
+      "keywords": "Elemental (Green), Elemental (Water), Elemental (Rot)",
+      "immunities": "Corruption R; Poison R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Encroaching Strike",
+          "description": "The principle's melee {@action free-strike|free strikes} have a distance of R and inflict M < STRONG {@condition grabbed}. The principle can have an unlimited number of creatures or objects {@condition grabbed}. A creature {@condition grabbed} by this strike still has their normal speed, but can't move farther away from the principle."
+        },
+        {
+          "name": "Sludgefoot",
+          "description": "When the principle is reduced to 0 Stamina, the area within 1 square of the principle becomes {@combat difficult-terrain} for enemies until the end of the encounter. An enemy that ends their turn in the affected area is pulled 4 toward the center of the area."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 3 · agility — -2 · reason — 0 · intuition — 2 · presence — -2 · traits — Encroaching Strike — The principle's melee free strikes have a distance of R and inflict M < STRONG grabbed. The principle can have an unlimited number of creatures or objects grabbed. A creature grabbed by this strike still has their normal speed, but can't move farther away from the principle. · Sludgefoot — When the principle is reduced to 0 Stamina, the area within 1 square of the principle becomes difficult-terrain for enemies until the end of the encounter. An enemy that ends their turn in the affected area is pulled 4 toward the center of the area."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "quiet-of-snow",
+    "name": "Quiet of Snow",
+    "summary": "Artillery minion · Elemental portfolio",
+    "description": "This elemental is a pure-white vulpine with six legs that freely sprints through the air. Their howls are telepathic, washing over the receivers with a strong chill and a wave of goosebumps.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1S",
+      "speed": 5,
+      "movement": "Fly, hover",
+      "stability": 1,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "4",
+      "might": -1,
+      "agility": 2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 3,
+      "keywords": "Elemental (Air), Elemental (Rot), Elemental (Water)",
+      "immunities": "Sonic R; Cold R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Cold Surge",
+          "description": "When the quiet is reduced to 0 Stamina, they launch a refreshing blast of air into an area equal to their size + 1 within 5 before being destroyed. Each ally in the affected area gains a {@resource surge}."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Freezing Howl",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 5",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "4 cold damage; M < WEAK {@condition slowed} ({@duration eot})",
+          "tier2": "6 cold damage; M < AVERAGE {@condition slowed} ({@duration eot})",
+          "tier3": "8 cold damage; M < STRONG speed is 0 ({@duration eot})",
+          "effect": "Frost slows the enemy down, allowing one ally adjacent to each target to {@movement shift} 2 and either hide or defend."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — -1 · agility — 2 · reason — 0 · intuition — 0 · presence — 3 · traits — Cold Surge — When the quiet is reduced to 0 Stamina, they launch a refreshing blast of air into an area equal to their size + 1 within 5 before being destroyed. Each ally in the affected area gains a surge. · abilities — Freezing Howl — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 5; target: One creature or object per minion; power roll: 2d10 + R; tier1: 4 cold damage; M < WEAK slowed (eot); tier2: 6 cold damage; M < AVERAGE slowed (eot); tier3: 8 cold damage; M < STRONG speed is 0 (eot); effect: Frost slows the enemy down, allowing one ally adjacent to each target to shift 2 and either hide or defend."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "walking-boulder",
+    "name": "Walking Boulder",
+    "summary": "Defender minion · Elemental portfolio",
+    "description": "These massive clods of animated stone roll upon smaller piles of rocks that could be perceived as limbs. Walking boulders are useful for taking up space and forming barricades.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "2",
+      "speed": 4,
+      "movement": "Climb",
+      "stability": 0,
+      "stamina": "3",
+      "free_strike": "1",
+      "might": 2,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Elemental (Earth)",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Obstruct",
+          "description": "The boulder obstructs line of effect for enemies."
+        },
+        {
+          "name": "Pile Up",
+          "description": "When one or more boulders is reduced to 0 Stamina, they each leave behind a stone wall equal to their size in their space until the end of the encounter."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — -2 · reason — 0 · intuition — 0 · presence — 1 · traits — Obstruct — The boulder obstructs line of effect for enemies. · Pile Up — When one or more boulders is reduced to 0 Stamina, they each leave behind a stone wall equal to their size in their space until the end of the encounter."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "nixie-corallia",
+    "name": "Nixie Corallia",
+    "summary": "Support minion · Fey portfolio",
+    "description": "Corallias are saltwater nixies with coarse, coral-like skin and curly hair with hooked ends. Their salty tears are used to hallow places of worship and ward off demons.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Support",
+      "size": "1T",
+      "speed": 6,
+      "movement": "Swim",
+      "stability": 0,
+      "stamina": "17 | 17",
+      "free_strike": "7",
+      "might": -2,
+      "agility": 3,
+      "reason": 3,
+      "intuition": 4,
+      "presence": 1,
+      "keywords": "Fey",
+      "immunities": "Lightning R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Water Weird",
+          "description": "Once per turn during their move action, each nixie under your control can {@movement teleport} to a body of water within 6. The corallia can't {@movement teleport} into water created by their own seafoam pool."
+        },
+        {
+          "name": "Seafoam Pool",
+          "description": "The area within 2 squares of the corallia is filled with purifying saltwater that disables the effects of {@combat difficult-terrain} created by enemies. At the end of the corallia's turn, the corallia can scrub you or an ally in the affected area and end one condition."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The coralia has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 3 · reason — 3 · intuition — 4 · presence — 1 · traits — Water Weird — Once per turn during their move action, each nixie under your control can teleport to a body of water within 6. The corallia can't teleport into water created by their own seafoam pool. · Seafoam Pool — The area within 2 squares of the corallia is filled with purifying saltwater that disables the effects of difficult-terrain created by enemies. At the end of the corallia's turn, the corallia can scrub you or an ally in the affected area and end one condition. · Minuscule — The coralia has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "nixie-hemloche",
+    "name": "Nixie Hemloche",
+    "summary": "Hexer minion · Fey portfolio",
+    "description": "Hemloches are spotted nixies whose long, wavy hair endlessly bobs and flows into the water surrounding them. Any sailor caught in a whirlpool created by hemloches knows that their ship won't survive the encounter.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Hexer",
+      "size": "1T",
+      "speed": 6,
+      "movement": "Swim",
+      "stability": 0,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "3",
+      "might": -2,
+      "agility": 0,
+      "reason": 1,
+      "intuition": 3,
+      "presence": 2,
+      "keywords": "Fey",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Water Weird",
+          "description": "Once per turn during their move action, each nixie under your control can {@movement teleport} to a body of water within 6. The hemloche can't {@movement teleport} into water created by their own whirling waves."
+        },
+        {
+          "name": "Whirling Waves",
+          "description": "The area within 1 square of the hemloche is filled with churning water and is considered {@combat difficult-terrain}. At the end of the hemloche's turn, the hemloche can choose to {@movement slide} each enemy in the affected area 3 squares. An enemy that takes damage while being {@combat forced-movement|force moved} is also M < AVERAGE knocked {@condition prone}."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The hemloche has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 0 · reason — 1 · intuition — 3 · presence — 2 · traits — Water Weird — Once per turn during their move action, each nixie under your control can teleport to a body of water within 6. The hemloche can't teleport into water created by their own whirling waves. · Whirling Waves — The area within 1 square of the hemloche is filled with churning water and is considered difficult-terrain. At the end of the hemloche's turn, the hemloche can choose to slide each enemy in the affected area 3 squares. An enemy that takes damage while being force moved is also M < AVERAGE knocked prone. · Minuscule — The hemloche has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "nixie-soakreed",
+    "name": "Nixie Soakreed",
+    "summary": "Controller minion · Fey portfolio",
+    "description": "These nixies are especially tiny. Their hair grows longer than their bodies and curls into reeds. The water soakreeds swim in tends to turn thick and cling to surfaces.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Swim",
+      "stability": 0,
+      "stamina": "1",
+      "free_strike": "1",
+      "might": -2,
+      "agility": -1,
+      "reason": 0,
+      "intuition": 2,
+      "presence": 1,
+      "keywords": "Fey",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Water Weird",
+          "description": "Once per turn during their move action, each nixie under your control can {@movement teleport} to a body of water within 5. The soakreed can't {@movement teleport} into water created by their own soaking bog."
+        },
+        {
+          "name": "Soaking Bog",
+          "description": "The area within 1 square of the soakreed is filled with swampy water. An enemy that starts their turn in the area is A < WEAK {@condition slowed} ({@duration eot}). The {@combat potency} increases by 1 for each additional soaking bog the target occupies (maximum +2)."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The soakreed has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — -1 · reason — 0 · intuition — 2 · presence — 1 · traits — Water Weird — Once per turn during their move action, each nixie under your control can teleport to a body of water within 5. The soakreed can't teleport into water created by their own soaking bog. · Soaking Bog — The area within 1 square of the soakreed is filled with swampy water. An enemy that starts their turn in the area is A < WEAK slowed (eot). The potency increases by 1 for each additional soaking bog the target occupies (maximum +2). · Minuscule — The soakreed has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pixie-belladonix",
+    "name": "Pixie Belladonix",
+    "summary": "Artillery minion · Fey portfolio",
+    "description": "The belladonix are found among the elite guard of fey monarchs and carry themselves like royalty. Their moth-like wings ooze with vibrant colors and are barbed; the poison within threatening to completely shift the reality of their victims.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1T",
+      "speed": 6,
+      "movement": "Fly, hover",
+      "stability": 0,
+      "stamina": "16 | 16",
+      "free_strike": "8",
+      "might": -2,
+      "agility": 2,
+      "reason": 4,
+      "intuition": 0,
+      "presence": 4,
+      "keywords": "Fey",
+      "immunities": "Poison R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Minuscule",
+          "description": "The belladonix has cover while occupying a larger creature's space."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "A Thorn, Woe to the Pricked",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 15",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "8 poison damage; M < WEAK {@condition restrained} ({@duration save-ends|save ends})",
+          "tier2": "12 poison damage; M < AVERAGE {@condition restrained} ({@duration save-ends|save ends})",
+          "tier3": "17 poison damage; M < STRONG {@condition restrained} ({@duration save-ends|save ends})",
+          "effect": "A target {@condition restrained} by this ability is trapped in a poison-fueled haze and considers each creature within 1 square of them to be an enemy until the condition ends."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 2 · reason — 4 · intuition — 0 · presence — 4 · traits — Minuscule — The belladonix has cover while occupying a larger creature's space. · abilities — A Thorn, Woe to the Pricked — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 15; target: One creature or object per minion; power roll: 2d10 + R; tier1: 8 poison damage; M < WEAK restrained (save ends); tier2: 12 poison damage; M < AVERAGE restrained (save ends); tier3: 17 poison damage; M < STRONG restrained (save ends); effect: A target restrained by this ability is trapped in a poison-fueled haze and considers each creature within 1 square of them to be an enemy until the condition ends."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pixie-bellringer",
+    "name": "Pixie Bellringer",
+    "summary": "Support minion · Fey portfolio",
+    "description": "The bellringers are glowing pixies that jingle as they fly. Historically, these pixies worked alongside bowman to ensure their arrows struck true.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Support",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Fly, hover",
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "1",
+      "might": -3,
+      "agility": 1,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Fey",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Ringing Strike",
+          "description": "The bellringer's {@action free-strike|free strikes} grant an {@combat edge} to the next strike made against the target, or a double {@combat edge} if two or more bellringers strike the same target."
+        },
+        {
+          "name": "Fairy Chime",
+          "description": "Each ally within 1 square of a bellringer has a +1 to {@combat saving-throw|saving throws}. Each enemy within 1 square of a bellringer has a -1 to {@combat saving-throw|saving throws}."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The bellringer has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -3 · agility — 1 · reason — 0 · intuition — 0 · presence — 2 · traits — Ringing Strike — The bellringer's free strikes grant an edge to the next strike made against the target, or a double edge if two or more bellringers strike the same target. · Fairy Chime — Each ally within 1 square of a bellringer has a +1 to saving throws. Each enemy within 1 square of a bellringer has a -1 to saving throws. · Minuscule — The bellringer has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pixie-hydrain",
+    "name": "Pixie Hydrain",
+    "summary": "Artillery minion · Fey portfolio",
+    "description": "This pixie flies on a delicate array of vibrant flower petals for wings. The color drains from their wings as they call forth acid rain showers.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Fly, hover",
+      "stability": 0,
+      "stamina": "5 | 5",
+      "free_strike": "5",
+      "might": -3,
+      "agility": 0,
+      "reason": 1,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Fey",
+      "immunities": "Acid R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Minuscule",
+          "description": "The hydrain has cover while occupying a larger creature's space."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Burning/Healing Rain",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 5",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "5 acid damage; M < WEAK {@condition weakened} ({@duration eot})",
+          "tier2": "7 acid damage; M < AVERAGE {@condition weakened} ({@duration eot})",
+          "tier3": "9 acid damage; M < STRONG {@condition weakened} ({@duration save-ends|save ends})",
+          "effect": "After the hydrain's squad uses this ability, you or one ally within distance can spend a {@resource recovery} or end a condition."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -3 · agility — 0 · reason — 1 · intuition — 0 · presence — 2 · traits — Minuscule — The hydrain has cover while occupying a larger creature's space. · abilities — Burning/Healing Rain — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 5; target: One creature or object per minion; power roll: 2d10 + R; tier1: 5 acid damage; M < WEAK weakened (eot); tier2: 7 acid damage; M < AVERAGE weakened (eot); tier3: 9 acid damage; M < STRONG weakened (save ends); effect: After the hydrain's squad uses this ability, you or one ally within distance can spend a recovery or end a condition."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pixie-loftlilly",
+    "name": "Pixie Loftlilly",
+    "summary": "Controller minion · Fey portfolio",
+    "description": "Loftlillies lazily drift through the air in flower cups. They sip on toxic nectar to emit a powerful haze from their skin.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "1T",
+      "speed": 5,
+      "movement": "Fly, hover",
+      "stability": 0,
+      "stamina": "5 | 5",
+      "free_strike": "4",
+      "might": -2,
+      "agility": 1,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Fey",
+      "immunities": "Poison R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Floating Toxins",
+          "description": "The area within 1 square of the loftlilly causes each enemy and object with a size equal to your Reason or smaller to float 1 square off the ground until they leave the area. A floating enemy that can't {@movement fly} is unable to {@movement shift}, moves 2 additional squares from {@combat forced-movement}, and has a {@combat bane} on strikes."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The loftlilly has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — 1 · reason — 0 · intuition — 0 · presence — 2 · traits — Floating Toxins — The area within 1 square of the loftlilly causes each enemy and object with a size equal to your Reason or smaller to float 1 square off the ground until they leave the area. A floating enemy that can't fly is unable to shift, moves 2 additional squares from forced-movement, and has a bane on strikes. · Minuscule — The loftlilly has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "pixie-rosenthall",
+    "name": "Pixie Rosenthall",
+    "summary": "Harrier minion · Fey portfolio",
+    "description": "The collective of blood-eyed pixie warriors that make up a rosenthall are also known as rosies. It's said that some rosenthall armies contain thousands of pixies and can span half the length of a wode.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "2",
+      "speed": 6,
+      "movement": "Fly, hover",
+      "stability": 1,
+      "stamina": "5 | 5 | 5",
+      "free_strike": "3",
+      "might": 0,
+      "agility": 2,
+      "reason": 4,
+      "intuition": 0,
+      "presence": 3,
+      "keywords": "Fey, Swarm",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Swarm",
+          "description": "The rosenthall can move through squares as if they were size 1T, and can occupy other creatures' spaces. At the start of the rosenthall's turn, they deal 2 damage to each enemy whose space they share."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Stickerbush Symphony",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 2",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "3 damage; {@movement pull} 2; A < WEAK {@condition bleeding} ({@duration eot})",
+          "tier2": "6 damage; {@movement pull} 3; A < AVERAGE {@condition bleeding} ({@duration eot})",
+          "tier3": "8 damage; {@movement pull} 4; A < STRONG {@condition bleeding} ({@duration eot})",
+          "effect": "A target can't {@movement shift} while {@condition bleeding} from this ability."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 0 · agility — 2 · reason — 4 · intuition — 0 · presence — 3 · traits — Swarm — The rosenthall can move through squares as if they were size 1T, and can occupy other creatures' spaces. At the start of the rosenthall's turn, they deal 2 damage to each enemy whose space they share. · abilities — Stickerbush Symphony — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: One creature or object per minion; power roll: 2d10 + R; tier1: 3 damage; pull 2; A < WEAK bleeding (eot); tier2: 6 damage; pull 3; A < AVERAGE bleeding (eot); tier3: 8 damage; pull 4; A < STRONG bleeding (eot); effect: A target can't shift while bleeding from this ability."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sprite-dandeknight",
+    "name": "Sprite Dandeknight",
+    "summary": "Harrier minion · Fey portfolio",
+    "description": "Dandeknights are sprite warriors whose dragonfly wingbeats emit a tonal drone. They're usually clad in tassels that shift color as they swing their weapons.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1T",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "1",
+      "might": 2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Fey",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Magic Strike",
+          "description": "When the dandeknight strikes, you can choose one of the following damage types: acid, cold, corruption, fire, lightning, poison, or sonic. The strike deals that damage."
+        },
+        {
+          "name": "Staccato Swings",
+          "description": "When the dandeknight makes a {@action free-strike}, they can make two {@action free-strike|free strikes} instead. The damage is added together and treated as a single strike if both strikes hit the same target."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The dandeknight has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — 0 · reason — -1 · intuition — -1 · presence — -1 · traits — Magic Strike — When the dandeknight strikes, you can choose one of the following damage types: acid, cold, corruption, fire, lightning, poison, or sonic. The strike deals that damage. · Staccato Swings — When the dandeknight makes a free-strike, they can make two free strikes instead. The damage is added together and treated as a single strike if both strikes hit the same target. · Minuscule — The dandeknight has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sprite-foxglow",
+    "name": "Sprite Foxglow",
+    "summary": "Ambusher minion · Fey portfolio",
+    "description": "Foxglows are masked sprites that leave behind an evanescent trail of tiny glowing orbs as they fly. They beat their wings at a frequency that completely blocks out all nearby noise.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1T",
+      "speed": 8,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "5 | 5 | 5",
+      "free_strike": "4",
+      "might": -1,
+      "agility": 3,
+      "reason": 0,
+      "intuition": 1,
+      "presence": 2,
+      "keywords": "Fey",
+      "immunities": "Fire R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Flash Strike",
+          "description": "The foxglow's melee strikes inflict I < STRONG {@condition dazed} ({@duration eot}) if they were hidden when they make the strike."
+        },
+        {
+          "name": "Quiet Flight",
+          "description": "The area within 2 squares of the foxglow is completely silent. Each enemy has a {@combat bane} on tests made to search for the foxglow and allies hidden in the affected area."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The foxglow has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -1 · agility — 3 · reason — 0 · intuition — 1 · presence — 2 · traits — Flash Strike — The foxglow's melee strikes inflict I < STRONG dazed (eot) if they were hidden when they make the strike. · Quiet Flight — The area within 2 squares of the foxglow is completely silent. Each enemy has a bane on tests made to search for the foxglow and allies hidden in the affected area. · Minuscule — The foxglow has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sprite-olyender",
+    "name": "Sprite Olyender",
+    "summary": "Brute minion · Fey portfolio",
+    "description": "These brawny sprites wear heavy beetle armor and have a halo hovering away from their backs where their wings used to be. The faster the halo spins, the more power the olyender generates, enabling them to stand toe to toe with giants.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "1T",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 0,
+      "stamina": "17 | 17",
+      "free_strike": "8",
+      "might": 4,
+      "agility": 3,
+      "reason": 0,
+      "intuition": 1,
+      "presence": 2,
+      "keywords": "Fey",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Warrior's Toss",
+          "description": "The olyender's melee strikes inflict {@movement push} 4. If the target is {@combat forced-movement|force moved} into an object, they are M < AVERAGE knocked {@condition prone} and can't stand ({@duration save-ends|save ends})."
+        },
+        {
+          "name": "Use Their Might",
+          "description": "When targeting a creature with a grab or {@combat forced-movement}, the olyender's size is considered one larger than the target."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The olyender has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 4 · agility — 3 · reason — 0 · intuition — 1 · presence — 2 · traits — Warrior's Toss — The olyender's melee strikes inflict push 4. If the target is force moved into an object, they are M < AVERAGE knocked prone and can't stand (save ends). · Use Their Might — When targeting a creature with a grab or forced-movement, the olyender's size is considered one larger than the target. · Minuscule — The olyender has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sprite-orchiguard",
+    "name": "Sprite Orchiguard",
+    "summary": "Defender minion · Fey portfolio",
+    "description": "The orchiguard is a sprite surrounded by a wheel of shields. They are usually crushed by the pressures of their own impenetrable defenses before ever being felled by enemy hands.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "1S",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 2,
+      "stamina": "8 | 8",
+      "free_strike": "4",
+      "might": 2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Fey",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Fairy Guard",
+          "description": "Each non-orchiguard ally takes half damage from abilities while within 1 square of the orchiguard. Whenever the orchiguard reduces damage this way, they take damage equal to half their maximum Stamina and their {@action free-strike} damage increases by 1."
+        },
+        {
+          "name": "Minuscule",
+          "description": "The orchiguard has cover while occupying a larger creature's space."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 2 · agility — 0 · reason — -1 · intuition — -1 · presence — -1 · traits — Fairy Guard — Each non-orchiguard ally takes half damage from abilities while within 1 square of the orchiguard. Whenever the orchiguard reduces damage this way, they take damage equal to half their maximum Stamina and their free-strike damage increases by 1. · Minuscule — The orchiguard has cover while occupying a larger creature's space."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "accursed-mummy",
+    "name": "Accursed Mummy",
+    "summary": "Hexer minion · Undead portfolio",
+    "description": "The preserved dead, bound for eternal rest, know only violence when robbed of their future. Accursed mummies use their wrappings to bind others to the same fate.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Hexer",
+      "size": "1M",
+      "speed": 5,
+      "stability": 2,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "3",
+      "might": 2,
+      "agility": -1,
+      "reason": 1,
+      "intuition": 3,
+      "presence": -1,
+      "keywords": "Mummy, Undead",
+      "immunities": "Corruption R; Poison R",
+      "weaknesses": "Fire 1",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Mummy Dust",
+          "description": "Whenever the mummy takes damage, each enemy adjacent to the mummy takes 2 poison damage."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Fetid Bindings",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee R",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "3 poison damage; pull R",
+          "tier2": "4 poison damage; pull R + 1",
+          "tier3": "6 poison damage; pull R + 2",
+          "effect": "A target pulled adjacent to the mummy is M < STRONG {@condition weakened} ({@duration eot})."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 2 · agility — -1 · reason — 1 · intuition — 3 · presence — -1 · traits — Mummy Dust — Whenever the mummy takes damage, each enemy adjacent to the mummy takes 2 poison damage. · abilities — Fetid Bindings — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee R; target: One creature or object per minion; power roll: 2d10 + R; tier1: 3 poison damage; pull R; tier2: 4 poison damage; pull R + 1; tier3: 6 poison damage; pull R + 2; effect: A target pulled adjacent to the mummy is M < STRONG weakened (eot)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "ceaseless-mournling",
+    "name": "Ceaseless Mournling",
+    "summary": "Controller minion · Undead portfolio",
+    "description": "Mournlings are hulking amalgams of mismatched cadavers with tear-stained trenches where their cheeks used to be. Their crying shakes enemies to their bone and renders them struggling to move.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Controller",
+      "size": "2",
+      "speed": 4,
+      "movement": "Burrow",
+      "stability": 0,
+      "stamina": "4 | 4 | 4",
+      "free_strike": "3",
+      "might": 3,
+      "agility": 2,
+      "reason": -1,
+      "intuition": 1,
+      "presence": -2,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Always Crying",
+          "description": "At the end of the mournling's turn, each enemy within 1 of the mournling takes 2 sonic damage and can't {@movement shift} until the start of the mournling's next turn."
+        },
+        {
+          "name": "Immutable Form",
+          "description": "The mournling's shape can't change via any external effects."
+        },
+        {
+          "name": "Rupture",
+          "description": "The first time the mournling burrows out of the ground on their turn, they can make a {@action free-strike} against each adjacent enemy."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 3 · agility — 2 · reason — -1 · intuition — 1 · presence — -2 · traits — Always Crying — At the end of the mournling's turn, each enemy within 1 of the mournling takes 2 sonic damage and can't shift until the start of the mournling's next turn. · Immutable Form — The mournling's shape can't change via any external effects. · Rupture — The first time the mournling burrows out of the ground on their turn, they can make a free-strike against each adjacent enemy."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "false-vampire",
+    "name": "False Vampire",
+    "summary": "Brute minion · Undead portfolio",
+    "description": "A false vampire is a bestial, bipedal ghoul that draws life from liquified remains. In death, their hands curl into thick hooks, their bodies turn a putrid red-green as if wearing a dress suit, and their mouth twists and extends into a large feeding needle that can pierce steel.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "1L",
+      "speed": 6,
+      "movement": "Climb",
+      "stability": 2,
+      "stamina": "17 | 17",
+      "free_strike": "8",
+      "might": 4,
+      "agility": 1,
+      "reason": 3,
+      "intuition": 0,
+      "presence": 0,
+      "keywords": "Undead",
+      "immunities": "Corruption R; poison R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Proboscis Strike",
+          "description": "The false vampire's melee {@action free-strike|free strikes} have a distance of 2 and inflict M < AVERAGE {@condition restrained} ({@duration eot}). The false vampire can move the target while they are {@condition restrained} this way. At the start of a {@condition restrained} creature's turn, they take acid damage equal to your Reason."
+        },
+        {
+          "name": "Bloodthirsty",
+          "description": "The false vampire has a speed of 10 while a creature is {@condition bleeding} within 10."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 4 · agility — 1 · reason — 3 · intuition — 0 · presence — 0 · traits — Proboscis Strike — The false vampire's melee free strikes have a distance of 2 and inflict M < AVERAGE restrained (eot). The false vampire can move the target while they are restrained this way. At the start of a restrained creature's turn, they take acid damage equal to your Reason. · Bloodthirsty — The false vampire has a speed of 10 while a creature is bleeding within 10."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "grave-knight",
+    "name": "Grave Knight",
+    "summary": "Brute minion · Undead portfolio",
+    "description": "The grave knights are zombie warriors that continue to fight after death. Any blood spilled at a grave knight's hand runs pitch black.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Brute",
+      "size": "1M",
+      "speed": 6,
+      "stability": 1,
+      "stamina": "6 | 6",
+      "free_strike": "5",
+      "might": 2,
+      "agility": 1,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "To the Grave",
+          "description": "When the grave knight is reduced to 0 Stamina, they can make a melee {@action free-strike} before being destroyed."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Knight Strike",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 1",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "5 corruption damage; M < WEAK {@condition bleeding} ({@duration eot})",
+          "tier2": "7 corruption damage; M < AVERAGE {@condition bleeding} ({@duration eot})",
+          "tier3": "9 corruption damage; M < STRONG {@condition bleeding} ({@duration save-ends|save ends})"
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 2 · agility — 1 · reason — 0 · intuition — 0 · presence — 1 · traits — To the Grave — When the grave knight is reduced to 0 Stamina, they can make a melee free-strike before being destroyed. · abilities — Knight Strike — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature or object per minion; power roll: 2d10 + R; tier1: 5 corruption damage; M < WEAK bleeding (eot); tier2: 7 corruption damage; M < AVERAGE bleeding (eot); tier3: 9 corruption damage; M < STRONG bleeding (save ends)"
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "husk",
+    "name": "Husk",
+    "summary": "Defender minion · Undead portfolio",
+    "description": "Husks have stiff corpses that snap and crackle with each sudden movement. Corrosive breath endlessly billows from their slackjawed faces.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "1M",
+      "speed": 5,
+      "stability": 1,
+      "stamina": "3",
+      "free_strike": "1",
+      "might": 2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Undead",
+      "immunities": "Damage 2; Corruption R; Poison R",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Rotting Strike",
+          "description": "The husk's melee {@action free-strike|free strikes} inflict M < WEAK {@condition slowed} ({@duration eot}). The {@combat potency} increases by 1 for each additional husk adjacent to the target (maximum +2)."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 2 · agility — 0 · reason — -1 · intuition — -1 · presence — -1 · traits — Rotting Strike — The husk's melee free strikes inflict M < WEAK slowed (eot). The potency increases by 1 for each additional husk adjacent to the target (maximum +2)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "phantom-of-the-ripper",
+    "name": "Phantom of the Ripper",
+    "summary": "Ambusher minion · Undead portfolio",
+    "description": "These phantoms puppet the remnants of their corporeal forms. Unlike other spirits, the ripper tears the reality around them and leaves behind distorted or uneven \"bumps\" in the air, which can affect stone, metal, and flesh.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1M",
+      "speed": 6,
+      "movement": "Fly, hover",
+      "stability": 1,
+      "stamina": "17 | 17",
+      "free_strike": "8",
+      "might": 0,
+      "agility": 4,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 3,
+      "keywords": "Undead",
+      "immunities": "Corruption R; poison R",
+      "cost": "7 essence for two minions",
+      "traits": [
+        {
+          "name": "Ripping Phase",
+          "description": "The phantom can move through other creatures and objects at normal speed. The first time in a round that the phantom passes through a creature, that creature takes 3 corruption damage and has a {@combat bane} on their next strike. The phantom doesn't take damage from being {@combat forced-movement|force moved} into objects."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Plunge of the Knife",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 1",
+          "target": "One creature or object per minion",
+          "power_roll": "2d10 + R",
+          "tier1": "8 damage; A < WEAK {@condition slowed} ({@duration save-ends|save ends})",
+          "tier2": "13 damage; A < AVERAGE {@condition slowed} ({@duration save-ends|save ends})",
+          "tier3": "17 damage; A < STRONG {@condition slowed} ({@duration save-ends|save ends})",
+          "effect": "The phantom deals an additional 3 damage if they have an {@combat edge}."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — 0 · agility — 4 · reason — 0 · intuition — 0 · presence — 3 · traits — Ripping Phase — The phantom can move through other creatures and objects at normal speed. The first time in a round that the phantom passes through a creature, that creature takes 3 corruption damage and has a bane on their next strike. The phantom doesn't take damage from being force moved into objects. · abilities — Plunge of the Knife — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 1; target: One creature or object per minion; power roll: 2d10 + R; tier1: 8 damage; A < WEAK slowed (save ends); tier2: 13 damage; A < AVERAGE slowed (save ends); tier3: 17 damage; A < STRONG slowed (save ends); effect: The phantom deals an additional 3 damage if they have an edge."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "phase-ghoul",
+    "name": "Phase Ghoul",
+    "summary": "Harrier minion · Undead portfolio",
+    "description": "Phase ghouls are bilocated undead caught between two different manifolds, rapidly flickering between them. They almost appear transparent save for their long, bright blue tongues that appears to lag behind their movements by a full second.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1M",
+      "speed": 5,
+      "movement": "Teleport",
+      "stability": 0,
+      "stamina": "5 | 5 | 5",
+      "free_strike": "3",
+      "might": 2,
+      "agility": 3,
+      "reason": -2,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "5 essence for three minions",
+      "traits": [
+        {
+          "name": "Leaping Strike",
+          "description": "The ghoul {@movement teleport|teleports} 5 squares before making a melee {@action free-strike}. The target is M < AVERAGE knocked {@condition prone}. If the target is in the air, the {@combat potency} increases by 1."
+        },
+        {
+          "name": "Nerveless",
+          "description": "The ghoul takes no damage from falling and always lands on their feet."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — 3 · reason — -2 · intuition — 0 · presence — 1 · traits — Leaping Strike — The ghoul teleports 5 squares before making a melee free-strike. The target is M < AVERAGE knocked prone. If the target is in the air, the potency increases by 1. · Nerveless — The ghoul takes no damage from falling and always lands on their feet."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "shrieker",
+    "name": "Shrieker",
+    "summary": "Artillery minion · Undead portfolio",
+    "description": "The shrieker expresses their unending pain in a way that can be heard and felt for miles. A white-hot fire smolders within each of their sunken eye sockets.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Artillery",
+      "size": "1M",
+      "speed": 4,
+      "stability": 0,
+      "stamina": "1",
+      "free_strike": "2",
+      "might": -2,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Howling Strike",
+          "description": "The shrieker's ranged {@action free-strike|free strikes} have a distance of 12."
+        },
+        {
+          "name": "Shrill Alarm",
+          "description": "Each enemy within 2 squares of the shrieker can't hide or be hidden."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — -2 · agility — -2 · reason — 0 · intuition — 0 · presence — 2 · traits — Howling Strike — The shrieker's ranged free strikes have a distance of 12. · Shrill Alarm — Each enemy within 2 squares of the shrieker can't hide or be hidden."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "skeleton",
+    "name": "Skeleton",
+    "summary": "Harrier minion · Undead portfolio",
+    "description": "These autonomous bone networks fall just short of replicating the structure they had in life. Skeleton bones are especially brittle and can splinter into huge shards when met with enough force.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Harrier",
+      "size": "1M",
+      "speed": 6,
+      "stability": 0,
+      "stamina": "2",
+      "free_strike": "1",
+      "might": 2,
+      "agility": 0,
+      "reason": -1,
+      "intuition": -1,
+      "presence": -1,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "1 essence per minion summoned",
+      "traits": [
+        {
+          "name": "Bonetrops",
+          "description": "When the skeleton is reduced to 0 Stamina, their square becomes {@combat difficult-terrain} for enemies. The first time any enemy enters this space, they take 2 damage and end this effect."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — 0 · reason — -1 · intuition — -1 · presence — -1 · traits — Bonetrops — When the skeleton is reduced to 0 Stamina, their square becomes difficult-terrain for enemies. The first time any enemy enters this space, they take 2 damage and end this effect."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "stalker-shade",
+    "name": "Stalker Shade",
+    "summary": "Ambusher minion · Undead portfolio",
+    "description": "Shades are a form of umbral stalker that float free from any floor or surface. They can bend their appearance to completely vanish in the light.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Ambusher",
+      "size": "1M",
+      "speed": 5,
+      "movement": "Fly, hover",
+      "stability": 1,
+      "stamina": "6 | 6",
+      "free_strike": "5",
+      "might": -2,
+      "agility": 1,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 2,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Shadow Strike",
+          "description": "The stalker shade turns invisible, {@movement shift|shifts} 3 squares, and reappears after making a strike."
+        },
+        {
+          "name": "Shadow Phasing",
+          "description": "The stalker shade can move through other creatures and objects at normal speed. The first time in a round that the stalker shade passes through a creature, that creature takes 2 corruption damage. The stalker shade doesn't take damage from being {@combat forced-movement|force moved} into objects."
+        }
+      ],
+      "details_display": "level — 0 · stability — 1 · might — -2 · agility — 1 · reason — 0 · intuition — 0 · presence — 2 · traits — Shadow Strike — The stalker shade turns invisible, shifts 3 squares, and reappears after making a strike. · Shadow Phasing — The stalker shade can move through other creatures and objects at normal speed. The first time in a round that the stalker shade passes through a creature, that creature takes 2 corruption damage. The stalker shade doesn't take damage from being force moved into objects."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "zombie-lumberer",
+    "name": "Zombie Lumberer",
+    "summary": "Defender minion · Undead portfolio",
+    "description": "These massive, animated ogre corpses still maintain their incredible grip strength. When a lumberer falls, they'll take anything within reach down with them.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "2",
+      "speed": 5,
+      "stability": 0,
+      "stamina": "8 | 8",
+      "free_strike": "1",
+      "might": 2,
+      "agility": -2,
+      "reason": 0,
+      "intuition": 0,
+      "presence": 1,
+      "keywords": "Undead",
+      "immunities": "Corruption R; Poison R",
+      "cost": "3 essence for two minions",
+      "traits": [
+        {
+          "name": "Zombie Clutch",
+          "description": "The lumberer's melee {@action free-strike|free strikes} inflict A < AVERAGE {@condition grabbed}. A creature or object that starts their turn {@condition grabbed} by the lumberer takes corruption damage equal to your Reason."
+        },
+        {
+          "name": "Death Grasp",
+          "description": "When the lumberer is reduced to 0 Stamina, they can latch onto an adjacent enemy before being destroyed. The enemy is M < STRONG {@condition restrained} ({@duration eot})."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — -2 · reason — 0 · intuition — 0 · presence — 1 · traits — Zombie Clutch — The lumberer's melee free strikes inflict A < AVERAGE grabbed. A creature or object that starts their turn grabbed by the lumberer takes corruption damage equal to your Reason. · Death Grasp — When the lumberer is reduced to 0 Stamina, they can latch onto an adjacent enemy before being destroyed. The enemy is M < STRONG restrained (eot)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "zombie-titan",
+    "name": "Zombie Titan",
+    "summary": "Defender minion · Undead portfolio",
+    "description": "Zombie titan is a catchall for undead giants, patchwork ogres and mournlings, or amalgamations of a graveyard's entire population. The titan lumbers and slumps across battlefields, wanting desperately to collapse and crash into the earth like a sea of flesh and bone.",
+    "properties": {
+      "kind": "minion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Minion",
+      "role": "Defender",
+      "size": "4",
+      "speed": 4,
+      "stability": 0,
+      "stamina": "40",
+      "free_strike": "7",
+      "might": 4,
+      "agility": -3,
+      "reason": 0,
+      "intuition": 2,
+      "presence": 3,
+      "keywords": "Undead",
+      "immunities": "Corruption R; poison R",
+      "cost": "7 essence for one minion",
+      "traits": [
+        {
+          "name": "Big Stomp",
+          "description": "The titan's melee {@action free-strike|free strikes} M < STRONG knock the target {@condition prone}."
+        },
+        {
+          "name": "Overwhelming Size",
+          "description": "The titan can move through enemies at normal speed. If the titan ends their turn in a {@condition prone} size 2 or smaller creature's space, the creature can't stand."
+        },
+        {
+          "name": "Flesh to Mountains",
+          "description": "When the titan is reduced to 0 Stamina, their space becomes {@combat difficult-terrain}. If a creature was {@condition prone} underneath the titan when the titan is killed, they take 10 damage and are {@condition restrained} ({@duration save-ends|save ends})."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 4 · agility — -3 · reason — 0 · intuition — 2 · presence — 3 · traits — Big Stomp — The titan's melee free strikes M < STRONG knock the target prone. · Overwhelming Size — The titan can move through enemies at normal speed. If the titan ends their turn in a prone size 2 or smaller creature's space, the creature can't stand. · Flesh to Mountains — When the titan is reduced to 0 Stamina, their space becomes difficult-terrain. If a creature was prone underneath the titan when the titan is killed, they take 10 damage and are restrained (save ends)."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "demon-lords-aspect",
+    "name": "Demon Lord's Aspect",
+    "summary": "Champion · Demon portfolio",
+    "description": "Champion · Demon portfolio",
+    "properties": {
+      "kind": "champion",
+      "portfolio": "Demon",
+      "circle": "Blight",
+      "level": 0,
+      "organization": "Champion",
+      "size": "2",
+      "speed": 5,
+      "movement": "Teleport",
+      "stability": 2,
+      "stamina": "SPECIAL",
+      "free_strike": "9",
+      "might": 2,
+      "agility": 5,
+      "reason": 5,
+      "intuition": 2,
+      "presence": 2,
+      "keywords": "Abyssal, Demon",
+      "immunities": "Corruption 5",
+      "cost": "9 essence for one champion",
+      "traits": [
+        {
+          "name": "Warping Strike",
+          "description": "The Aspect's {@action free-strike|free strikes} {@movement teleport} the target 5 squares."
+        },
+        {
+          "name": "Champion's Ire",
+          "description": "If the Aspect only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason."
+        },
+        {
+          "name": "Frenzy",
+          "description": "When the Aspect is reduced to 0 Stamina, they make a {@action free-strike} against each adjacent enemy before {@combat dying}."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Grasping Appendages",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 5",
+          "target": "Two creatures or objects",
+          "power_roll": "2d10 + 5",
+          "tier1": "9 corruption damage; {@movement pull} 2",
+          "tier2": "12 corruption damage; {@movement pull} 4",
+          "tier3": "14 corruption damage; {@movement pull} 5",
+          "effect": "A target {@movement pull|pulled} adjacent to the Aspect is {@condition grabbed}."
+        },
+        {
+          "name": "I Like Your Taste",
+          "type": "triggered",
+          "action_type": "Free triggered action",
+          "distance": "Self",
+          "target": "Self",
+          "trigger": "The Aspect takes damage from an enemy.",
+          "effect": "The Aspect has a double {@combat edge} on their next {@combat power-roll}. They can choose to give this benefit to an ally within your Summoner's Range instead."
+        }
+      ],
+      "advancement": [
+        {
+          "level": 10,
+          "name": "Size Increase",
+          "effect": "The Aspect is now size 3."
+        },
+        {
+          "level": 10,
+          "name": "Reality Flense",
+          "type": "action",
+          "action_type": "Champion Action",
+          "distance": "20 burst",
+          "target": "Self and each non-minion ally in the area",
+          "cost": "1 Eidos",
+          "effect": "Each target {@movement teleport|teleports} up to their speed and makes a {@action free-strike}. If a target has a {@duration save-ends|save ends} condition, they can inflict the condition onto a creature with their strike and end the condition on themself."
+        }
+      ],
+      "details_display": "level — 0 · stability — 2 · might — 2 · agility — 5 · reason — 5 · intuition — 2 · presence — 2 · traits — Warping Strike — The Aspect's free strikes teleport the target 5 squares. · Champion's Ire — If the Aspect only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason. · Frenzy — When the Aspect is reduced to 0 Stamina, they make a free-strike against each adjacent enemy before dying. · abilities — Grasping Appendages — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 5; target: Two creatures or objects; power roll: 2d10 + 5; tier1: 9 corruption damage; pull 2; tier2: 12 corruption damage; pull 4; tier3: 14 corruption damage; pull 5; effect: A target pulled adjacent to the Aspect is grabbed. · I Like Your Taste — type: triggered; action type: Free triggered action; distance: Self; target: Self; trigger: The Aspect takes damage from an enemy.; effect: The Aspect has a double edge on their next power-roll. They can choose to give this benefit to an ally within your Summoner's Range instead. · advancement — Size Increase — level: 10; effect: The Aspect is now size 3. · Reality Flense — level: 10; type: action; action type: Champion Action; distance: 20 burst; target: Self and each non-minion ally in the area; cost: 1 Eidos; effect: Each target teleports up to their speed and makes a free-strike. If a target has a save ends condition, they can inflict the condition onto a creature with their strike and end the condition on themself."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "dragons-portent",
+    "name": "Dragon's Portent",
+    "summary": "Champion · Elemental portfolio",
+    "description": "Champion · Elemental portfolio",
+    "properties": {
+      "kind": "champion",
+      "portfolio": "Elemental",
+      "circle": "Storms",
+      "level": 0,
+      "organization": "Champion",
+      "size": "2",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 4,
+      "stamina": "SPECIAL",
+      "free_strike": "9",
+      "might": 2,
+      "agility": 2,
+      "reason": 5,
+      "intuition": 5,
+      "presence": 2,
+      "keywords": "Dragon, Elemental",
+      "immunities": "Affinity 5",
+      "cost": "9 essence for one champion",
+      "traits": [
+        {
+          "name": "Affinity",
+          "description": "The Portent selects an affinity for one of the following damage types when they are summoned: acid, cold, corruption, fire, lightning, or poison. This type determines the Portent's affinity {@resource damage-immunity|immunity} and the damage type of their abilities."
+        },
+        {
+          "name": "Sealing Strike",
+          "description": "The Portent's {@action free-strike|free strikes} inflict M < STRONG {@condition slowed} ({@duration save-ends|save ends}). While {@condition slowed} this way, the target takes 1d6 affinity damage at the start of each of their turns."
+        },
+        {
+          "name": "Champion's Ire",
+          "description": "If the Portent only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason."
+        },
+        {
+          "name": "Searing Wyrmscale",
+          "description": "Whenever an adjacent creature deals damage to the Portent, they take 4 affinity damage."
+        },
+        {
+          "name": "Dragon Heart",
+          "description": "Once per turn, the Portent can take 10 damage to allow you or an ally within your Summoner's Range to gain 1 heroic resource. This damage can't be reduced in any way."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Elemental Tail Swing",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Charge",
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 2",
+          "target": "Two creatures or objects",
+          "power_roll": "2d10 + 5",
+          "tier1": "9 affinity damage; {@movement push} 2",
+          "tier2": "12 affinity damage; {@movement push} 4",
+          "tier3": "14 affinity damage; {@movement push} 6"
+        }
+      ],
+      "advancement": [
+        {
+          "level": 10,
+          "name": "Size Increase",
+          "effect": "The Portent is now size 3."
+        },
+        {
+          "level": 10,
+          "name": "A Breath Felt in a Hurricane",
+          "type": "action",
+          "action_type": "Champion Action",
+          "keywords": [
+            "Area",
+            "Magic",
+            "Ranged"
+          ],
+          "distance": "4 cube within 10",
+          "target": "Each enemy and object in the area",
+          "cost": "1 Eidos",
+          "effect": "9 affinity damage. The damage ignores {@resource damage-immunity|immunity}. The affected area becomes {@combat difficult-terrain}. An enemy has affinity {@resource damage-weakness|weakness} 5 while occupying an affected square."
+        }
+      ],
+      "details_display": "level — 0 · stability — 4 · might — 2 · agility — 2 · reason — 5 · intuition — 5 · presence — 2 · traits — Affinity — The Portent selects an affinity for one of the following damage types when they are summoned: acid, cold, corruption, fire, lightning, or poison. This type determines the Portent's affinity immunity and the damage type of their abilities. · Sealing Strike — The Portent's free strikes inflict M < STRONG slowed (save ends). While slowed this way, the target takes 1d6 affinity damage at the start of each of their turns. · Champion's Ire — If the Portent only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason. · Searing Wyrmscale — Whenever an adjacent creature deals damage to the Portent, they take 4 affinity damage. · Dragon Heart — Once per turn, the Portent can take 10 damage to allow you or an ally within your Summoner's Range to gain 1 heroic resource. This damage can't be reduced in any way. · abilities — Elemental Tail Swing — type: signature; action type: Main action; keywords: Charge, Melee, Strike, Weapon; distance: Melee 2; target: Two creatures or objects; power roll: 2d10 + 5; tier1: 9 affinity damage; push 2; tier2: 12 affinity damage; push 4; tier3: 14 affinity damage; push 6 · advancement — Size Increase — level: 10; effect: The Portent is now size 3. · A Breath Felt in a Hurricane — level: 10; type: action; action type: Champion Action; keywords: Area, Magic, Ranged; distance: 4 cube within 10; target: Each enemy and object in the area; cost: 1 Eidos; effect: 9 affinity damage. The damage ignores immunity. The affected area becomes difficult-terrain. An enemy has affinity weakness 5 while occupying an affected square."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "celestial-attendant",
+    "name": "Celestial Attendant",
+    "summary": "Champion · Fey portfolio",
+    "description": "Champion · Fey portfolio",
+    "properties": {
+      "kind": "champion",
+      "portfolio": "Fey",
+      "circle": "Spring",
+      "level": 0,
+      "organization": "Champion",
+      "size": "2",
+      "speed": 7,
+      "movement": "Fly, hover",
+      "stability": 0,
+      "stamina": "SPECIAL",
+      "free_strike": "9",
+      "might": 2,
+      "agility": 2,
+      "reason": 5,
+      "intuition": 2,
+      "presence": 5,
+      "keywords": "Fey",
+      "immunities": "Damage 2",
+      "cost": "9 essence for one champion",
+      "traits": [
+        {
+          "name": "Neurotoxic Strike",
+          "description": "A creature that takes damage from the Attendant's {@action free-strike} is I < AVERAGE unable to establish line of effect beyond 3 squares ({@duration eot})."
+        },
+        {
+          "name": "Champion's Ire",
+          "description": "If the Attendant only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason."
+        },
+        {
+          "name": "Pixie Bouquet",
+          "description": "The Attendant starts their turn with {@resource temporary-stamina} equal to 2 × the number of fey minions within 1 square of them. This {@resource temporary-stamina} lasts until the start of their next turn."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Pixie Swarm",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Magic",
+            "Ranged",
+            "Strike"
+          ],
+          "distance": "Ranged 10",
+          "target": "Two creatures or objects",
+          "power_roll": "2d10 + 5",
+          "tier1": "9 damage; {@movement slide} 3",
+          "tier2": "12 damage; {@movement slide} 5",
+          "tier3": "14 damage; {@movement slide} 6",
+          "effect": "An ally targeted by this ability can, instead, spend Recovery and {@movement shift} the slide amount."
+        },
+        {
+          "name": "Celestial Bell",
+          "type": "triggered",
+          "action_type": "Free triggered action",
+          "distance": "Self",
+          "target": "Self",
+          "trigger": "The Attendant takes damage from an enemy.",
+          "effect": "The Attendant rings a bell, and you summon a signature minion into an unoccupied space adjacent to the Attendant."
+        }
+      ],
+      "advancement": [
+        {
+          "level": 10,
+          "name": "Size Increase",
+          "effect": "The Attendant is now size 3."
+        },
+        {
+          "level": 10,
+          "name": "A Shower of Dust",
+          "type": "action",
+          "action_type": "Champion Action",
+          "distance": "20 burst",
+          "target": "Self and each non-minion ally in the area",
+          "cost": "1 Eidos",
+          "effect": "Each target gains 20 {@resource temporary-stamina} and receives the benefits of one of your Flash Powder effects until the end of their next turn."
+        }
+      ],
+      "details_display": "level — 0 · stability — 0 · might — 2 · agility — 2 · reason — 5 · intuition — 2 · presence — 5 · traits — Neurotoxic Strike — A creature that takes damage from the Attendant's free-strike is I < AVERAGE unable to establish line of effect beyond 3 squares (eot). · Champion's Ire — If the Attendant only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason. · Pixie Bouquet — The Attendant starts their turn with temporary-stamina equal to 2 × the number of fey minions within 1 square of them. This temporary-stamina lasts until the start of their next turn. · abilities — Pixie Swarm — type: signature; action type: Main action; keywords: Magic, Ranged, Strike; distance: Ranged 10; target: Two creatures or objects; power roll: 2d10 + 5; tier1: 9 damage; slide 3; tier2: 12 damage; slide 5; tier3: 14 damage; slide 6; effect: An ally targeted by this ability can, instead, spend Recovery and shift the slide amount. · Celestial Bell — type: triggered; action type: Free triggered action; distance: Self; target: Self; trigger: The Attendant takes damage from an enemy.; effect: The Attendant rings a bell, and you summon a signature minion into an unoccupied space adjacent to the Attendant. · advancement — Size Increase — level: 10; effect: The Attendant is now size 3. · A Shower of Dust — level: 10; type: action; action type: Champion Action; distance: 20 burst; target: Self and each non-minion ally in the area; cost: 1 Eidos; effect: Each target gains 20 temporary-stamina and receives the benefits of one of your Flash Powder effects until the end of their next turn."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  },
+  {
+    "slug": "avatar-of-death",
+    "name": "Avatar of Death",
+    "summary": "Champion · Undead portfolio",
+    "description": "Champion · Undead portfolio",
+    "properties": {
+      "kind": "champion",
+      "portfolio": "Undead",
+      "circle": "Graves",
+      "level": 0,
+      "organization": "Champion",
+      "size": "2",
+      "speed": 6,
+      "movement": "Fly",
+      "stability": 3,
+      "stamina": "SPECIAL",
+      "free_strike": "9",
+      "might": 5,
+      "agility": 2,
+      "reason": 5,
+      "intuition": 2,
+      "presence": 2,
+      "keywords": "Undead",
+      "immunities": "Corruption 5; poison 5",
+      "cost": "9 essence for one champion",
+      "traits": [
+        {
+          "name": "Revelation Strike",
+          "description": "The Avatar's melee {@action free-strike|free strikes} P < WEAK instantly reduce a {@combat winded} non-leader or solo creature to 0 Stamina, including targets {@combat winded} by the strike."
+        },
+        {
+          "name": "Champion's Ire",
+          "description": "If the Avatar only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason."
+        },
+        {
+          "name": "Drifting Spirit",
+          "description": "The Avatar is unaffected by {@combat difficult-terrain} and damage from {@combat forced-movement}."
+        }
+      ],
+      "abilities": [
+        {
+          "name": "Culling Scythe",
+          "type": "signature",
+          "action_type": "Main action",
+          "keywords": [
+            "Melee",
+            "Strike",
+            "Weapon"
+          ],
+          "distance": "Melee 2",
+          "target": "Two creatures or objects",
+          "power_roll": "2d10 + 5",
+          "tier1": "9 corruption damage; M < WEAK {@condition bleeding} ({@duration save-ends|save ends})",
+          "tier2": "12 corruption damage; M < AVERAGE {@condition bleeding} ({@duration save-ends|save ends})",
+          "tier3": "14 corruption damage; M < STRONG {@condition bleeding} ({@duration save-ends|save ends})",
+          "effect": "If the target is a creature that isn't a leader or a solo and they are still {@condition bleeding} at the end of the encounter, they instantly die."
+        },
+        {
+          "name": "Dust and Rot",
+          "type": "triggered",
+          "action_type": "Free triggered action",
+          "keywords": [
+            "Area"
+          ],
+          "distance": "1 burst",
+          "target": "Each enemy in the burst",
+          "trigger": "The Avatar takes damage.",
+          "effect": "M < AVERAGE {@condition weakened} ({@duration eot})."
+        }
+      ],
+      "advancement": [
+        {
+          "level": 10,
+          "name": "Size Increase",
+          "effect": "The Avatar is now size 3."
+        },
+        {
+          "level": 10,
+          "name": "Gravemaker",
+          "type": "action",
+          "action_type": "Champion Action",
+          "keywords": [
+            "Area",
+            "Magic",
+            "Ranged"
+          ],
+          "distance": "5 × 3 line within 1",
+          "target": "Each enemy and object in the line",
+          "cost": "1 Eidos",
+          "effect": "9 holy damage. Each target is vertically {@movement pull|pulled} a number of squares equal to their size straight down, ignoring {@combat stability}. If the target would be {@combat forced-movement|force moved} into the ground, they are buried beneath the ground instead."
+        }
+      ],
+      "details_display": "level — 0 · stability — 3 · might — 5 · agility — 2 · reason — 5 · intuition — 2 · presence — 2 · traits — Revelation Strike — The Avatar's melee free strikes P < WEAK instantly reduce a winded non-leader or solo creature to 0 Stamina, including targets winded by the strike. · Champion's Ire — If the Avatar only targets one creature or object with a strike, they deal additional damage to the target equal to your Reason. · Drifting Spirit — The Avatar is unaffected by difficult-terrain and damage from forced-movement. · abilities — Culling Scythe — type: signature; action type: Main action; keywords: Melee, Strike, Weapon; distance: Melee 2; target: Two creatures or objects; power roll: 2d10 + 5; tier1: 9 corruption damage; M < WEAK bleeding (save ends); tier2: 12 corruption damage; M < AVERAGE bleeding (save ends); tier3: 14 corruption damage; M < STRONG bleeding (save ends); effect: If the target is a creature that isn't a leader or a solo and they are still bleeding at the end of the encounter, they instantly die. · Dust and Rot — type: triggered; action type: Free triggered action; keywords: Area; distance: 1 burst; target: Each enemy in the burst; trigger: The Avatar takes damage.; effect: M < AVERAGE weakened (eot). · advancement — Size Increase — level: 10; effect: The Avatar is now size 3. · Gravemaker — level: 10; type: action; action type: Champion Action; keywords: Area, Magic, Ranged; distance: 5 × 3 line within 1; target: Each enemy and object in the line; cost: 1 Eidos; effect: 9 holy damage. Each target is vertically pulled a number of squares equal to their size straight down, ignoring stability. If the target would be force moved into the ground, they are buried beneath the ground instead."
+    },
+    "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
+  }
+]

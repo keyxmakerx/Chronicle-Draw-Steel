@@ -12,10 +12,10 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `ancestries.json` | The twelve ancestries: signature traits, purchased traits, point costs, and granted abilities | *Heroes Book* ch. 3 (Ancestries) |
 | `kits.json` | The twenty-one kits: equipment, armor and weapon categories, Stamina/speed/stability/damage/distance/disengage bonuses, and signature abilities | *Heroes Book* ch. 6 (Kits) |
 | `careers.json` | The eighteen careers: description, skills, languages, perk, Renown, wealth and project points where a career grants them, the Quick Build picks, the career questions, and the six inciting incidents | *Heroes Book* ch. 4 (Background) |
-| `classes.json` | The nine classes at class level: Heroic Resource, starting characteristics and primary characteristics, potency, starting Stamina, Stamina per level, Recoveries, skills, and the subclass names (abilities live in `abilities.json`) | *Heroes Book* ch. 5 (Classes) |
+| `classes.json` | The eleven classes at class level (the Beastheart and Summoner rows come from their own books, see below): Heroic Resource, starting characteristics and primary characteristics, potency, starting Stamina, Stamina per level, Recoveries, skills, and the subclass names (abilities live in `abilities.json`) | *Heroes Book* ch. 5 (Classes) |
 | `cultures.json` | The thirteen culture aspects (five environments, two organizations, six upbringings) with their skill options, plus the Typical Ancestry Cultures and Archetypical Cultures tables as sample cultures | *Heroes Book* ch. 4 (Background) |
 | `complications.json` | The one hundred complications with their benefit and drawback text (including the abilities and projects a few of them grant) | *Heroes Book* ch. 8 (Complications) |
-| `abilities.json` | 519 abilities: the nine classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
+| `abilities.json` | 604 abilities: the eleven classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
 | `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
 | `ancestry-point-buy.json` | The ancestry-points budget rule, signature vs. purchased traits, the starting size/speed/stability baseline, the per-ancestry budget table, and the revenant's Previous Life case | *Heroes Book* ch. 3 (Ancestries) |
 | `transformations.json` | The ready-made transformations a Director can put on a hero partway through a campaign: Vampire Scion (the complication's benefit and drawback text) and Revenant (its signature and purchased traits, its ancestry points, and its immunity and weakness figures). The text is copied from `complications.json` and `ancestries.json`; the field changes are this package's own arrangement of it | *Heroes Book* ch. 3 (Ancestries), ch. 8 (Complications) |
@@ -25,7 +25,11 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `creature-abilities.json` | 1,555 creature abilities, traits and villain actions from the bestiary, each with keywords, type, distance, target, power-roll tiers and effect text, alongside 51 of this package's own templates | *Monsters Book* ch. 2 (Monsters) |
 | `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
 | `negotiation.json` | The negotiation rules: the six starting attitudes with their Interest and Patience, the twelve motivations and pitfalls, the argument outcomes, the offer at each Interest level, and the procedural rules (when to negotiate, stats, opening, uncovering motivations, making arguments, Renown and Impression, ending) | *Heroes Book* ch. 11 (Negotiation) |
-| `class-fights.json` | The class pop-up books' rules: for each of the nine classes, its Heroic Resource, the quote and gain text from its class chapter, the start-of-fight and start-of-turn gains, the triggers with how often each pays and how much, the 3 and 5 costs of its 1st-level heroic abilities, and its own rules (the conduit's prayer, the shadow's edge discount, the talent's strain, the troubadour's death and return); plus the power roll and the winded and dying thresholds the fights use | *Heroes Book* ch. 1 (The Basics), ch. 5 (Classes), ch. 10 (Combat) |
+| `class-fights.json` | The class pop-up books' rules: for each of the eleven classes, its Heroic Resource, the quote and gain text from its class chapter, the start-of-fight and start-of-turn gains, the triggers with how often each pays and how much, the 3 and 5 costs of its 1st-level heroic abilities (the Beastheart's 3 and 5, the Summoner's 7), and its own rules (the conduit's prayer, the shadow's edge discount, the talent's strain, the troubadour's death and return); plus the power roll and the winded and dying thresholds the fights use | *Heroes Book* ch. 1 (The Basics), ch. 5 (Classes), ch. 10 (Combat) |
+| `perks.json` | The forty-seven perks with their full text, including the abilities a few of them grant | *Heroes Book* ch. 7 (Perks) |
+| `titles.json` | The fifty-nine titles: echelon, prerequisite, benefits and special lines | *Heroes Book* ch. 13 (Rewards) |
+| `treasures.json` | The ninety-eight treasures (consumables, trinkets, leveled treasures and artifacts): keywords, crafting-project lines, effects and the benefits at 1st, 5th and 9th level | *Heroes Book* ch. 13 (Rewards) |
+| `projects.json` | The sixteen downtime projects: prerequisite, source, roll characteristics, goal and rules text | *Heroes Book* ch. 12 (Downtime Projects) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -115,8 +119,8 @@ motivation/pitfall descriptions were converted from that file; the tier numbers
 in `properties.tiers` and the interest/patience values are encodings of the
 published text, not new rules.
 
-The class entries in `class-fights.json` (`class-resource-*`) come from the nine
-class files `Rules/Classes/*.md` in `SteelCompendium/data-md` (`source:
+The class entries in `class-fights.json` (`class-resource-*`) come, for the nine
+Heroes book classes, from the nine class files `Rules/Classes/*.md` in `SteelCompendium/data-md` (`source:
 mcdm.heroes.v1`): each class's opening quote and its "<Resource> in Combat" and
 "<Resource> Outside of Combat" sections. The `power-roll` entry comes from
 `Rules/Chapters/The Basics.md` and `winded-and-dying` from
@@ -175,6 +179,18 @@ dropped and only the mechanics kept; the affected traits record this in
 dragon knight's Remember Your Oath, whose recited verse is omitted). The mechanics of
 every such trait are complete.
 
+The perks, titles, treasures and downtime projects were treated the same way. Each
+title's opening quotation is left out, because the quotations are spoken by named
+setting characters. Where a title or a treasure named a setting character, place or
+people inside its rules, the name was replaced with a neutral phrase and the entry
+records it in `properties.omissions` (the titles Ancient Loremaster and Marshal; the
+treasures Black Ash Dart, Elixir of Saint Elspeth, Blade of Quintessence, Thief of Joy
+and Gallios Visiting Card). A treasure keeps its own printed name. Three things are
+left out for size rather than setting: the boxed asides in those chapters, the
+Director's project-events tables, and the enhancement lists under Imbue Treasure,
+which that entry records in `properties.omissions`. The twenty-three movement terms
+added to `rules-glossary.json` are the published text from ch. 10 (Combat).
+
 The ability entries needed none of this treatment either. Ability names, flavor lines,
 and effect text are mechanics and fighting-style description; nothing in the 545 source
 files names a character, a place, or a god. One structural omission is recorded rather
@@ -214,6 +230,17 @@ setting material out of both:
 - **A creature printed with no organization (a retainer) is left out of
   `monsters.json`**, because the viewer and the formulas place every creature by
   its organization.
+
+Five stat blocks carry corrections from MCDM's core rules errata (last updated
+14 November 2025) that the Steel Compendium files do not have: Predator A and
+Predator B (Natural Weapon's tier 3 potency), Predator B (level 2), the level 5
+Rival Null (Agile Stride's tier 2 potency damage), the level 10 Rival Fury
+(Death Grip's damage) and the Crucible Dragon (Hammer and Anvil's last sentence).
+
+The nine conditions in `rules-glossary.json` are the text of
+`Rules/Conditions/*.md`, with the chapter pointers removed. Burning and charmed
+are not conditions: an ability that uses one says what it does, and their
+glossary entries are this package's own note saying so.
 
 In `monsters.json` a minion's EV is printed "for four minions"; the number is
 kept and `properties.ev_note` keeps the words. Winded is half the printed
@@ -335,9 +362,9 @@ and highest characteristic are what those formulas give.
 Organization Modifier table has rows for minion, horde, platoon, leader, elite,
 and solo only. The `swarm` entry carries `"source": "custom"` and null modifiers.
 
-**`abilities.json` contains no custom content.** Every one of the 519 entries is
+**`abilities.json` contains no custom content.** Every one of the 604 entries is
 published rules text and carries its real provenance in its root `source`
-(ch. 5 for class abilities, ch. 6 for kit signature abilities, ch. 10 for the
+(ch. 5 for the nine Heroes book classes' abilities, the Beastheart and Summoner books for theirs, ch. 6 for kit signature abilities, ch. 10 for the
 common actions). As with `kits.json`, the only non-published thing about the file
 is the *shape* of the data: field names such as `cost_resource` and
 `additional_power_rolls`, the `class`/`kit`/`common` split in `properties.category`,
@@ -365,8 +392,8 @@ parts are the *shape*: `properties.kind`, the numeric `interest`/`patience` and
 rows.
 
 **`class-fights.json` is mixed, and says so per entry.** The `power-roll`,
-`winded-and-dying` and nine `class-resource-*` entries are published rules text and
-carry their real provenance. The nine `example-fight-*` entries are this package's
+`winded-and-dying` and eleven `class-resource-*` entries are published rules text and
+carry their real provenance. The eleven `example-fight-*` entries are this package's
 own: the scenes, the foes and their Stamina, the hero's example numbers, every
 spoken line, the damage each move deals and the stage layout were written for the
 pop-up books, and each carries `"source": "custom"`. The widget's footer says so on
@@ -473,6 +500,54 @@ scope it to this package's own work, if any `data/*.json` entry's `source` menti
 Creative Commons, or if the Creator License notice
 goes missing from `LICENSE`, `README.md`, or this file. The misstatement survived
 because nothing was watching for it.
+
+## The Beastheart and the Summoner
+
+*The Beastheart for Draw Steel* and *The Summoner* are separate MCDM books, not
+chapters of the Heroes book. MCDM's Creator License page (edited June 9, 2026)
+names both in the note at its top, next to the Heroes and Monsters books and the
+two backer packets; it does not name *Encounters*, so nothing from that book is
+here. That reading was made through a tool that summarises pages, so the wording
+is not quoted in `LICENSE` until the maintainer has read the page
+(keyxmakerx/Chronicle-Draw-Steel#179). Until then this content is not released.
+
+| File | Content | Source |
+|------|---------|--------|
+| `classes.json` (2 entries) | The Beastheart and Summoner at class level: Heroic Resource, characteristics, potency, Stamina, Recoveries, skills, and the Summoner's four circles (Blight, Graves, Spring, Storms) as subclasses | *The Beastheart for Draw Steel*, *The Summoner*: the class chapters |
+| `abilities.json` (85 entries) | 59 Beastheart abilities and 26 Summoner abilities with keywords, distance, target, power-roll tiers, spend lines and effect text | each book's ability pages |
+| `ability-keywords.json` (3 entries) | Beastheart, Companion (both from the Beastheart's companion rules) and Champion (from the Summoner's portfolio champion rules) | the two books |
+| `class-fights.json` (2 `class-resource-*` entries) | Ferocity and Essence: what each gains at the start of a fight and of a turn, and its own trigger | the two books' Ferocity and Essence features |
+| `companions.json` | The Beastheart's 14 companions: stat block, the companion's own abilities and traits, and the features they gain at levels 3, 6 and 10 | *The Beastheart for Draw Steel*, the companion stat blocks and advancement features |
+| `summons.json` | The Summoner's 49 portfolio minions (12 Blight, 13 Storms, 12 Spring, 12 Graves) and four portfolio champions with their 10th-level features | *The Summoner*, the minion and champion stat blocks and advancement features |
+
+They were converted mechanically from the Steel Compendium's `data-unified`
+repository (`SteelCompendium/data-unified`, `en/unified/json/`: `class/`,
+`feature/ability/{beastheart,summoner}/`, `monster/companion/`,
+`monster/minion/summoner/`, `monster/champion/summoner/` and the matching
+`advancement-features/` folders), which publishes them under the same Creator
+License notice. `{@category term}` markers replace the source's links where a
+glossary entry exists and plain words where it does not.
+
+What is left out, so nobody mistakes a gap for an oversight: the class features
+text (as for the other classes), perks, titles, treasures, the Summoner's circle
+fixtures, retainers and rivals, and each book's chapters of advice and setting.
+
+Two things do not match the other classes, and both are in the data on purpose:
+
+- **Summoner heroic-ability costs.** The published data prints no cost on any
+  Summoner ability. The class's own features state them: each ability offered at
+  3rd, 6th and 9th level costs 7, 9 and 11 essence, and those are `heroic` entries
+  with that cost. The 14 abilities offered at 1st level carry no cost and no
+  signature mark, because the data does not say which of them are the 5-essence
+  heroic abilities and which are free; they stay `ability` entries until someone
+  with the book settles it.
+- **Setting names.** The same rule as above. The Beastheart ability *Let's Take
+  This Outside* named two planes of the setting; both are replaced by neutral
+  phrases and the entry's `properties.omissions` says so. Creature names, circle
+  names and the word "timescape" stay as mechanics.
+
+`example-fight-beastheart` and `example-fight-summoner` in `class-fights.json` are
+this package's own and carry `"source": "custom"`, like the other nine.
 
 ## Corrections to previously-shipped rules text
 

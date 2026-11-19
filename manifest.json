@@ -167,6 +167,98 @@
       ]
     },
     {
+      "slug": "perks",
+      "name": "Perks",
+      "icon": "fa-star",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" }
+      ]
+    },
+    {
+      "slug": "titles",
+      "name": "Titles",
+      "icon": "fa-award",
+      "fields": [
+        { "key": "echelon", "label": "Echelon", "type": "string" },
+        { "key": "prerequisite", "label": "Prerequisite", "type": "string" },
+        { "key": "effect", "label": "Effect", "type": "string" },
+        { "key": "special", "label": "Special", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
+      ]
+    },
+    {
+      "slug": "treasures",
+      "name": "Treasures",
+      "icon": "fa-gem",
+      "fields": [
+        { "key": "type", "label": "Type", "type": "string" },
+        { "key": "kind", "label": "Kind", "type": "string" },
+        { "key": "echelon", "label": "Echelon", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "item_prerequisite", "label": "Item Prerequisite", "type": "string" },
+        { "key": "project_source", "label": "Project Source", "type": "string" },
+        { "key": "project_roll_characteristic", "label": "Project Roll", "type": "string" },
+        { "key": "project_goal", "label": "Project Goal", "type": "string" },
+        { "key": "effect", "label": "Effect", "type": "string" },
+        { "key": "level_1", "label": "1st Level", "type": "string" },
+        { "key": "level_5", "label": "5th Level", "type": "string" },
+        { "key": "level_9", "label": "9th Level", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
+      ]
+    },
+    {
+      "slug": "projects",
+      "name": "Downtime Projects",
+      "icon": "fa-hammer",
+      "fields": [
+        { "key": "group", "label": "Group", "type": "string" },
+        { "key": "item_prerequisite", "label": "Item Prerequisite", "type": "string" },
+        { "key": "project_source", "label": "Project Source", "type": "string" },
+        { "key": "project_roll_characteristic", "label": "Project Roll", "type": "string" },
+        { "key": "project_goal", "label": "Project Goal", "type": "string" },
+        { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
+      ]
+    },
+    {
+      "slug": "companions",
+      "name": "Beastheart Companions",
+      "icon": "fa-paw",
+      "fields": [
+        { "key": "level", "label": "Level", "type": "number" },
+        { "key": "size", "label": "Size", "type": "string" },
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "stability", "label": "Stability", "type": "number" },
+        { "key": "stamina", "label": "Stamina", "type": "string" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "skills", "label": "Skills", "type": "string" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
+      "slug": "summons",
+      "name": "Summoner Minions and Champions",
+      "icon": "fa-ghost",
+      "fields": [
+        { "key": "kind", "label": "Kind", "type": "string" },
+        { "key": "portfolio", "label": "Portfolio", "type": "string" },
+        { "key": "circle", "label": "Circle", "type": "string" },
+        { "key": "organization", "label": "Organization", "type": "string" },
+        { "key": "role", "label": "Role", "type": "string" },
+        { "key": "cost", "label": "Essence Cost", "type": "string" },
+        { "key": "size", "label": "Size", "type": "string" },
+        { "key": "stamina", "label": "Stamina", "type": "string" },
+        { "key": "speed", "label": "Speed", "type": "number" },
+        { "key": "movement", "label": "Movement", "type": "string" },
+        { "key": "free_strike", "label": "Free Strike", "type": "string" },
+        { "key": "keywords", "label": "Keywords", "type": "string" },
+        { "key": "immunities", "label": "Immunities", "type": "string" },
+        { "key": "weaknesses", "label": "Weaknesses", "type": "string" },
+        { "key": "details_display", "label": "Details", "type": "string" }
+      ]
+    },
+    {
       "slug": "creatures",
       "name": "Creatures",
       "icon": "fa-paw",
@@ -924,7 +1016,6 @@
               "taunted",
               "prone",
               "charmed",
-              "poisoned",
               "grabbed",
               "hidden",
               "surprised"
@@ -1321,7 +1412,7 @@
     {
       "slug": "handbook-credits",
       "name": "Handbook Credits",
-      "description": "The Handbook's Credits chapter: a cut-paper stage where the nine classes in white masks take a bow, the MCDM team by role (read from data/credits.json), where to buy the books, the Creator License notice word for word, and a film-style credits roll over the whole window with pause and fast forward.",
+      "description": "The Handbook's Credits chapter: a cut-paper stage where the eleven classes in white masks take a bow, the MCDM team by role (read from data/credits.json), where to buy the books, the Creator License notice word for word, and a film-style credits roll over the whole window with pause and fast forward.",
       "icon": "fa-film",
       "script_file": "widgets/handbook-credits.js",
       "config": [

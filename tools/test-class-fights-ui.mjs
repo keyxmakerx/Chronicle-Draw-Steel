@@ -50,7 +50,7 @@ test('with a campaign it reads class-fights.json over the systems route and draw
   assert.deepEqual(tiles, classes.map((e) => 'data-clf-pick="' + e.properties.class + '"'), 'a class in the data has no drawing');
   const first = classes[0].properties;
   assert.ok(el.innerHTML.includes(globalThis.Chronicle.escapeHtml(first.gain_text)));
-  assert.match(el.innerHTML, /data-clf-open="censor"/);
+  assert.ok(el.innerHTML.includes('data-clf-open="' + first.class + '"'));
   def.destroy(el);
   assert.equal(el.__clf, null);
   assert.equal(el.innerHTML, '');

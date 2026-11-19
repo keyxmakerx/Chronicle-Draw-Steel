@@ -69,9 +69,26 @@ line (ancestry, class and level, subclass, kit; Culture and career are one fold
 away and keep their pickers), the This turn part, then the abilities. The name
 is printed once, in Chronicle's page header.
 
+A choice not made yet (ancestry, culture, career, kit) is never printed as an
+empty value. It is named on one "Still to choose" line under the identity, each
+word opening its picker; the line goes when nothing is left. After a pick the
+identity is drawn again (`pIdentityInner`).
+
+The default style, "modern", is the quiet look (`quietLookCss`): no frames,
+hairlines between the parts, the class and level as a heading with every
+choice made as a labelled value, and the Items to Notes rows beside the
+abilities. Both identities are in the markup (`sh-id-l` for the paper styles,
+`sh-id-q` for the quiet look) and the style shows one, so a style changed in
+the Customizer preview needs no redraw. The other styles keep their own frames.
+
 The face lists abilities under Main action, Maneuver, Triggered and Free strike
 (`actionKind`: Foundry's `system.type`, with `category: freeStrike` for free
 strikes; a heading with nothing under it is left out, and moves share Maneuver).
+Under each heading the hero's own abilities come first. The ones every hero has
+(`COMMON_ABILITIES`, the pack's `common` abilities by name) follow in one fold,
+"Every hero's main actions" or "Every hero's maneuvers and moves". The fold is
+rendered open; the quiet look gives it a heading and shuts it at mount, and a
+redraw keeps whichever way the reader left it.
 Each is a fold: name, a star for signature, the cost as a tag (the reason when
 the hero cannot pay it), the hero's own tier results from the first damage
 effect (`heroResult`), and under it the distance and one effect sentence. The
