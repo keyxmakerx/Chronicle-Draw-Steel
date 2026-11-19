@@ -634,7 +634,7 @@ var DrawSteelCreatureEditor = (function () {
     });
     if (o.characteristics != null) notes.push('The AI’s characteristics were dropped; they come from the published tables above.');
     derive(st);
-    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save' + (Array.isArray(o.book_abilities) && o.book_abilities.length ? ', and the book abilities it picked say so' : '') + '. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas’.';
+    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save' + (Array.isArray(o.book_abilities) && o.book_abilities.length ? ', and the book abilities it picked say so' : '') + '. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas.';
     return notes;
   }
 
@@ -648,7 +648,7 @@ var DrawSteelCreatureEditor = (function () {
     ids.slice(0, 20).forEach(function (id) {
       var t = typeof id === 'string' ? bySlug(lib || [], id.trim()) : null;
       if (!t) { if (unknown.length < 5) unknown.push(String(id).slice(0, 60)); return; }
-      if (!usable(t, c)) { notes.push(t.name + ' is made for ' + listProp(props(t).organizations).map(plural).join(', ') + ', not a ' + c.organization + ', so it was left off.'); return; }
+      if (!usable(t, c)) { notes.push(refusal(t, c)); return; }
       var lists = [c.abilities, c.traits, c.villain_actions], before = lists.map(function (l) { return l.length; });
       var res = addFromLibrary(st, t, {});
       if (!res.undo) { notes.push(res.message); return; }
@@ -781,6 +781,16 @@ var DrawSteelCreatureEditor = (function () {
   ];
 
   function plural(o) { return o + 's'; }
+  // refusal names what the ability is made for and what this creature is. A
+  // role mismatch lists roles, an organization mismatch lists organizations.
+  function refusal(t, c) {
+    var made, is;
+    if (!c.organization) return t.name + ' is a villain action, which only a leader or solo takes, so it was left off.';
+    if (c.organization !== 'swarm' && fits(t, c.organization, null)) { made = listProp(props(t).roles); is = c.role; }
+    else { made = listProp(props(t).organizations).map(plural); is = c.organization; }
+    return t.name + ' is made for ' + made.join(', ') + ', not ' + article(is) + ' ' + is + ', so it was left off.';
+  }
+  function article(w) { return /^[aeiou]/i.test(w) ? 'an' : 'a'; }
 
   // usable says whether this creature can take a library ability. With no
   // organization chosen yet, anything but a villain action is open to it.
@@ -934,6 +944,9 @@ var DrawSteelCreatureEditor = (function () {
     if (r && r.sourced && r.value !== null) {
       return '<span class="sbe-chip is-pub" title="' + esc(r.source || '') + '"><i class="fa-solid fa-check" aria-hidden="true"></i> Published formula</span>';
     }
+    var c = st.c, ask = !c.organization ? 'an organization'
+      : (!noRole(c.organization) && !c.role && (key === 'stamina' || key === 'winded')) ? 'a role' : '';
+    if (ask) return '<span class="sbe-chip is-wait">Pick ' + ask + ' and the formula fills this in.</span>';
     return '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published ' + esc(what) + ' for this creature. Set it yourself.</span>';
   }
 
@@ -2277,6 +2290,7 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-chip.is-own,.sbe-chip.is-none{background:var(--sbe-own-soft);color:var(--sbe-own)}',
     // The provenance chip's light-mode amber is a deeper shade so its small text holds 4.5:1 on the tint.
     '.sbe-chip.is-none{color:#92400e}.dark .sbe-chip.is-none{color:var(--sbe-own)}',
+    '.sbe-chip.is-wait{background:transparent;color:var(--color-text-secondary,#6b7280);padding-left:0}',
     '.sbe-chip.is-ai{background:var(--sbe-ai-soft);color:var(--sbe-ai)}',
     '.sbe-link{font:inherit;background:none;border:0;padding:0;color:var(--color-accent-link,var(--color-accent,#6366f1));text-decoration:underline;cursor:pointer}',
     '.sbe-abs{display:flex;flex-direction:column;gap:8px}',

@@ -206,3 +206,44 @@ test('a party suggestion applies level, organization and role, then the formulas
   assert.ok(note.length > 0, 'the reasons are shown');
   assert.ok(!/balanced/i.test(note));
 });
+
+// ── Wording: what is missing, and notes that read right ─────────────────────
+
+const bodyOf = (st) => Ed.editorHtml(st, ui({ party: null }));
+
+test('a blank creature asks for an organization instead of saying no formula covers it', () => {
+  const html = bodyOf(state({}));
+  assert.ok(!/No published (encounter value|Stamina|free strike)/.test(html));
+  assert.equal((html.match(/Pick an organization and the formula fills this in\./g) || []).length, 4);
+});
+
+test('a creature with an organization but no role asks for a role on Stamina and Winded only', () => {
+  const html = bodyOf(state({ organization: 'elite' }));
+  assert.equal((html.match(/Pick a role and the formula fills this in\./g) || []).length, 2);
+  assert.ok(!/Pick an organization/.test(html));
+});
+
+test('a swarm still says no published figure covers it', () => {
+  const html = bodyOf(state({ organization: 'swarm' }));
+  assert.match(html, /No published encounter value/);
+});
+
+test('a refused book ability says "an elite", and a role refusal names roles', () => {
+  const lib = [
+    { slug: 'h', name: 'Chilling Gravetouch', properties: { type: 'action', organizations: ['horde'], roles: [] } },
+    { slug: 'm', name: 'Mind Lash', properties: { type: 'action', organizations: ['minion', 'horde', 'platoon', 'elite'], roles: ['controller', 'artillery'] } },
+  ];
+  const a = state({ level: 3, organization: 'elite', role: 'brute' });
+  const notes = [];
+  Ed.bookPicks(a, ['h', 'm'], lib, notes);
+  assert.ok(notes.some((n) => /^Chilling Gravetouch is made for hordes, not an elite, so it was left off\.$/.test(n)), notes.join('|'));
+  assert.ok(notes.some((n) => /^Mind Lash is made for controller, artillery, not a brute, so it was left off\.$/.test(n)), notes.join('|'));
+  assert.ok(!notes.some((n) => /elites?, .*not a (platoon|elite)/.test(n)));
+});
+
+test('the From the AI note ends cleanly', () => {
+  const st = state({});
+  Ed.fromAI(st, { name: 'X', level: 2, organization: 'horde', role: 'brute' }, Ed.vocabulary(REFS, { creatureKeywords: [], abilityKeywords: [], glossary: [] }), []);
+  assert.ok(!/formulas’/.test(st.origin || ''), st.origin);
+  assert.match(st.origin || '', /are the published formulas\.$/);
+});

@@ -958,8 +958,10 @@ var DrawSteelStatblock = (function () {
   // Templates are package data, served only at /campaigns/:id/systems/drawsteel/
   // data/<file> (Chronicle's SystemDataAPI). Cached per campaign for the page.
   var refCache = {};
-  function loadRefs(campaignId) {
-    if (!campaignId) return Promise.resolve({ orgs: [], roles: [] });
+  // Both files are director-only: Chronicle answers a player 404, so a player
+  // gets none and the stat block draws without provenance marks.
+  function loadRefs(campaignId, isGm) {
+    if (!campaignId || isGm === false) return Promise.resolve({ orgs: [], roles: [] });
     var key = String(campaignId);
     if (!refCache[key]) {
       var base = '/campaigns/' + encodeURIComponent(key) + '/systems/drawsteel/data/';
@@ -1669,7 +1671,7 @@ StatblockPanel.prototype.start = function () {
     // to build one; a player sees the panel only once there is a stat block.
     if (!entity || (!isCreature && !self.isGM)) { self.el.hidden = true; return null; }
     self.entity = entity;
-    return Promise.all([S.loadRefs(self.cid), self.ref ? self.ref.load() : null]).then(function (x) {
+    return Promise.all([S.loadRefs(self.cid, self.isGM), self.ref ? self.ref.load() : null]).then(function (x) {
       self.refs = x[0];
       if (self.ref && self.ref.injectStyles) self.ref.injectStyles();
       self.render();
