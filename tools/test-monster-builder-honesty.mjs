@@ -515,3 +515,19 @@ test('a form is measured per copy in bytes (#209)', () => {
   const plain = { id: 'a', name: 'x', changes: { faction: 'a'.repeat(9000) }, lists: {} };
   assert.ok(!F2.tooBig(plain), '9,000 characters is far under the 16 KiB per copy Chronicle allows');
 });
+
+test('a figure that followed its formula empties when the creature becomes a swarm', () => {
+  const st = state({ level: 3, organization: 'minion', role: 'brute' });
+  Ed.derive(st);
+  assert.notEqual(st.c.ev, null);
+  st.c.organization = 'swarm'; Ed.derive(st);
+  assert.equal(st.c.ev, null);
+  assert.equal(st.c.stamina, null);
+  assert.equal(st.c.winded, null);
+  assert.doesNotMatch(Ed.editorHtml(st, {}), /Changed by you/);
+  // A number the director typed stays.
+  const typed = state({ level: 3, organization: 'minion', role: 'brute' });
+  Ed.setFigure(typed, 'stamina', '12');
+  typed.c.organization = 'swarm'; Ed.derive(typed);
+  assert.equal(typed.c.stamina, 12);
+});

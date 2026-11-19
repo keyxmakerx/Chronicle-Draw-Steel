@@ -148,9 +148,13 @@ var DrawSteelCreatureEditor = (function () {
       hc: Fm ? Fm.highestCharacteristic(c.level, org) : none(why),
       formulasLoaded: !!Fm
     };
-    if (!st.own.ev && pr.ev.value !== null) c.ev = pr.ev.value;
-    if (!st.own.stamina && pr.stamina.value !== null) c.stamina = pr.stamina.value;
+    // A figure that followed its formula empties when the formulas stop
+    // covering the creature (made a swarm, say), rather than keep a number
+    // that would then read as the director's.
+    if (!st.own.ev && (pr.ev.value !== null || Fm)) c.ev = pr.ev.value;
+    if (!st.own.stamina && (pr.stamina.value !== null || Fm)) c.stamina = pr.stamina.value;
     if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = freeStrikeText(c.free_strike, pr.free_strike.value);
+    else if (!st.own.free_strike && Fm) c.free_strike = null;
     if (!st.own.winded) c.winded = c.stamina === null ? null : Math.floor(c.stamina / 2);
     st.pr = pr;
     var sp = st.spread && spreadOf(pr);
