@@ -149,6 +149,7 @@ test('paper identity is one line and keeps the origin picker hooks', () => {
   const line = rw.match(/<p class="sh-idline">([^]*?)<\/p>/)[1];
   assert.ok(/Human/.test(line) && /Tactician 2/.test(line) && /data-cs-pick="kit"/.test(line), 'ancestry, class and level, kit on the line');
   assert.ok(!/data-cs-pick="(culture|career)"/.test(line), 'culture and career are one fold away');
+  assert.ok(!/class="sh-dot"/.test(line), "Chronicle's share page owns .sh-dot and draws a disc on it");
   const ro = cs.pIdentity(Object.assign({}, PAPER, { canEditIdentity: false, canChangeImage: false }));
   assert.ok(!/data-cs-pick=/.test(ro) && !/data-cs-change-image/.test(ro));
   assert.ok(/data-v="origin-ancestry"/.test(ro), 'value is still a changing number');

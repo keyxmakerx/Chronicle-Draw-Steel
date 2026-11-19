@@ -2172,7 +2172,7 @@
       subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
       pOrigin(data, bySlot.kit, canPick),
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
-    ].filter(Boolean).join('<span class="sh-dot" aria-hidden="true"> · </span>');
+    ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> · </span>');
 
     var more = foldHtml('sh-origins', 'Culture and career',
       '<div class="sh-origin-row"><span class="sh-k">Culture</span>' + pOrigin(data, bySlot.culture, canPick) + '</div>' +
@@ -4404,7 +4404,7 @@
       '[data-sheet] .sh-id { display:block;padding:0; }',
       '[data-sheet] .sh-idline { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;min-width:0;font:700 calc(15px * var(--ts))/1.45 var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idval { min-width:0; }',
-      '[data-sheet] .sh-dot { margin:0 .45em;color:var(--paper-mute); }',
+      '[data-sheet] .sh-idsep { margin:0 .45em;color:var(--paper-mute); }',
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '[data-sheet] .sh-idmore { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px; }',
