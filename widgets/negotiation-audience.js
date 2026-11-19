@@ -235,6 +235,12 @@
       '.nga-card b{display:block;font:900 24px/.95 ' + D + ';text-transform:uppercase;margin:4px 0 6px;color:#f4f1ea}',
       '.nga-card span{font-size:14px;color:#cfd3dc}',
       '.nga-card i{display:block;margin-top:8px;font:700 12px/1 ' + U + ';letter-spacing:.12em;text-transform:uppercase;color:#e1a32c;font-style:normal}',
+      // The Handbook's open mark: the card that opens the book breathes gently,
+      // as the How to Play page's read and play marks do, and rests once reached.
+      '.nga-mark{display:inline-block;margin-left:4px;white-space:nowrap;font-style:normal;animation:nga-breathe 2.6s ease-in-out infinite}',
+      '.nga-card:hover .nga-mark,.nga-card:focus-visible .nga-mark,.nga-card:disabled .nga-mark{animation:none}',
+      '@keyframes nga-breathe{0%,100%{transform:none;opacity:.7}50%{transform:scale(1.1);opacity:1}}',
+      '@media (prefers-reduced-motion:reduce){.nga-mark{animation:none}}',
       '.nga-mini{width:84px;aspect-ratio:3/4;border-radius:2px 5px 5px 2px;background:linear-gradient(135deg,#8e1f2b,#5c1220);' +
         'box-shadow:inset 5px 0 0 #3d0b15,0 6px 10px rgba(0,0,0,.4);display:grid;place-items:center;position:relative}',
       '.nga-mini::after{content:"";position:absolute;inset:6px 6px 6px 10px;border:1.5px solid #e9b84a;border-radius:2px}',
@@ -531,7 +537,7 @@
     this.el.innerHTML = '<button class="nga-card" type="button" aria-haspopup="dialog" disabled>' +
       '<span class="nga-mini" aria-hidden="true">' + CROWN + '</span>' +
       '<span><small>Pop-up book</small><b>An audience with the King</b>' +
-      '<span>Pick what your heroes say, roll, and watch King Aldric decide.</span><i>Open the book →</i></span></button>';
+      '<span>Pick what your heroes say, roll, and watch King Aldric decide.</span><i>Open the book <em class="nga-mark" aria-hidden="true">⤪ play</em></i></span></button>';
     this.card = this.el.querySelector('.nga-card');
     this.card.addEventListener('click', function () { self.open(); });
     var url = '/campaigns/' + encodeURIComponent(this.cid) + '/systems/drawsteel/data/negotiation.json';
