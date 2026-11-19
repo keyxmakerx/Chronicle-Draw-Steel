@@ -805,10 +805,11 @@
   }
 
   // The sheet's face lists abilities by when they are used. Foundry's
-  // system.type names it (action, maneuver, move, triggered, freeTriggered) and
-  // a free strike is told apart by its category. A type the sheet does not know
-  // falls back to what the ability is: signature, heroic or rolled abilities are
-  // main actions, the rest maneuvers. Moves share the Maneuver heading.
+  // system.type names it (main, maneuver, freeManeuver, move, triggered,
+  // freeTriggered; "action" is Chronicle's own word for main) and a free strike
+  // is told apart by its category. A type the sheet does not know falls back to
+  // what the ability is: signature, heroic or rolled abilities are main actions,
+  // the rest maneuvers. Moves share the Maneuver heading.
   var ACTION_ORDER = ['main', 'maneuver', 'triggered', 'free'];
   var ACTION_LABELS = { main: 'Main action', maneuver: 'Maneuver', triggered: 'Triggered', free: 'Free strike' };
 
@@ -817,10 +818,23 @@
     var t = String((a && a.type) || '').toLowerCase();
     if (cat === 'freestrike') return 'free';
     if (t.indexOf('trigger') !== -1) return 'triggered';
-    if (t === 'action') return 'main';
-    if (t === 'maneuver' || t === 'move' || t === 'free') return 'maneuver';
+    if (t === 'main' || t === 'action') return 'main';
+    if (t === 'maneuver' || t === 'freemaneuver' || t === 'move' || t === 'free') return 'maneuver';
     var g = groupOf(a);
     return (g === 'signature' || g === 'heroic' || (Array.isArray(a && a.powerRollChars) && a.powerRollChars.length)) ? 'main' : 'maneuver';
+  }
+
+  // What every hero can do, by name, from the Heroes book's common abilities
+  // (data/abilities.json, category "common"). The face lists a hero's own
+  // abilities first and keeps these together after them.
+  var COMMON_ABILITIES = ['advance', 'aid attack', 'catch breath', 'charge', 'defend', 'disengage', 'escape grab',
+    'grab', 'heal', 'hide', 'knockback', 'make or assist a test', 'ride', 'search for hidden creatures', 'stand up',
+    'use consumable'];
+  function isCommonAbility(a) {
+    if (!a || Number(a.cost) > 0) return false;
+    var c = String(a.category || '').toLowerCase();
+    if (c === 'signature' || c === 'heroic' || c === 'freestrike') return false;
+    return COMMON_ABILITIES.indexOf(String(a.name || '').trim().toLowerCase()) !== -1;
   }
 
   function charLabel(k) {
@@ -1789,9 +1803,9 @@
       // first fold before opening the next.
       var reopen = openPick && openPick !== key;
       if (openPick) {
-        var prev = el.querySelector('[data-cs-pick="' + openPick + '"]');
+        var prev = el.querySelectorAll('[data-cs-pick="' + openPick + '"]');
         Chronicle.pickChoice({ campaignId: data.campaignId, fieldKey: openPick, anchorEl: fold });
-        if (prev) prev.setAttribute('aria-expanded', 'false');
+        [].forEach.call(prev, function (n) { n.setAttribute('aria-expanded', 'false'); });
         openPick = null;
         if (!reopen) return;
       }
@@ -1816,6 +1830,20 @@
           return;
         }
         data.fields[key] = res.value;
+        // On paper the identity is drawn again: a first choice leaves the
+        // "Still to choose" line and takes its place among the values.
+        var idin = inst._paper ? el.querySelector('[data-cs-idin]') : null;
+        if (idin) {
+          var was = btn.querySelector('[data-cs-val]');
+          var old = was ? was.textContent : undefined;
+          idin.innerHTML = pIdentityInner(data);
+          var shown = [].filter.call(idin.querySelectorAll('[data-cs-pick="' + key + '"]'), function (n) { return n.offsetParent !== null; })[0];
+          if (shown) {
+            Chronicle.sheetMotion.land(shown.querySelector('[data-cs-val]') || shown, old);
+            if (shown.focus) shown.focus();
+          }
+          return;
+        }
         var out = btn.querySelector('[data-cs-val]');
         if (out) {
           var before = out.textContent;
@@ -2141,47 +2169,76 @@
     return '<header class="sh-head paper-title"><div class="paper-kind">Hero · Draw Steel</div>' + layerChips(data) + '</header>';
   }
 
-  // The identity is one line: ancestry, class and level, subclass, kit. The
-  // origin values are pickers only when the host allows editing and Chronicle
-  // can open its picker; the picker itself stays Chronicle's. Culture and
-  // career sit one fold away and keep their pickers.
+  // Who the hero is. The paper styles print one line (ancestry, class and
+  // level, subclass, kit) with culture and career one fold away; the quiet look
+  // prints the class as a heading and every choice made as a labelled value.
+  // Both are emitted and the style shows one. A choice not made yet is in
+  // neither: it is named on the "Still to choose" line, so a missing one can be
+  // seen without opening anything. The values are pickers only when the host
+  // allows editing and Chronicle can open its picker.
   function pOrigin(data, s, canPick) {
     var v = f(data, s.key, '');
-    var text = wasHtml(data, s.key) + (v ? esc(v) : '<span class="sh-unset">Not set</span>');
+    var text = wasHtml(data, s.key) + esc(v);
     return canPick
       ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
-          ' aria-label="' + escAttr(s.label + ': ' + (v ? v : 'Not set') + '. Change') + '">' +
+          ' aria-label="' + escAttr(s.label + ': ' + v + '. Change') + '">' +
           '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span></button>'
       : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + text + '</span>';
   }
 
-  function pIdentity(data) {
-    var name = data.name || 'Unnamed Hero';
+  function pIdentityTodo(data, canPick) {
+    var left = ORIGIN_SLOTS.filter(function (s) { return !f(data, s.key, ''); });
+    if (!left.length) return '';
+    return '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
+      return canPick
+        ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+            ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
+        : '<span>' + s.label + '</span>';
+    }).join('') + '</p>';
+  }
+
+  function pIdentityInner(data) {
     var canPick = !!data.canEditIdentity && typeof Chronicle.pickChoice === 'function';
-    var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
+    var has = function (k) { return !!f(data, k, ''); };
     var bySlot = {};
     ORIGIN_SLOTS.forEach(function (s) { bySlot[s.key] = s; });
-
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
     var level = num(data, 'level', 1);
+    var hint = fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.';
+
     var line = [
-      pOrigin(data, bySlot.ancestry, canPick),
+      has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
       '<span class="sh-idval">' + (className ? esc(className) : '&ndash;') + ' ' + level + '</span>',
       subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
-      pOrigin(data, bySlot.kit, canPick),
+      has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
     ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> · </span>');
+    var folded = [bySlot.culture, bySlot.career].filter(function (s) { return has(s.key); });
+    var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : 'Culture and career',
+      folded.map(function (s) {
+        return '<div class="sh-origin-row"><span class="sh-k">' + s.label + '</span>' + pOrigin(data, s, canPick) + '</div>';
+      }).join('') + '<p class="sh-sub">' + hint + '</p>', false) : '';
 
-    var more = foldHtml('sh-origins', 'Culture and career',
-      '<div class="sh-origin-row"><span class="sh-k">Culture</span>' + pOrigin(data, bySlot.culture, canPick) + '</div>' +
-      '<div class="sh-origin-row"><span class="sh-k">Career</span>' + pOrigin(data, bySlot.career, canPick) + '</div>' +
-      '<p class="sh-sub">' + fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.</p>', false);
+    var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + (className ? esc(className) : 'No class') +
+      ' <span class="sh-idlv">level ' + level + '</span></span>' +
+      (subclass ? '<span class="sh-idsub">' + esc(subclass) + '</span>' : '') +
+      (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
+    var made = ORIGIN_SLOTS.filter(function (s) { return has(s.key); });
+    var set = made.length ? '<dl class="sh-idset sh-id-q">' + made.map(function (s) {
+      return '<div><dt>' + s.label + '</dt><dd>' + pOrigin(data, s, canPick) + '</dd></div>';
+    }).join('') + '</dl>' : '';
 
+    var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
+    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) +
+      '<div class="sh-idmore">' + more + chip + '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span></div>';
+  }
+
+  function pIdentity(data) {
+    var name = data.name || 'Unnamed Hero';
     return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
-      '<p class="sh-idline">' + line + '</p>' +
-      '<div class="sh-idmore">' + more + chip + '</div>' +
+      '<div class="sh-idin" data-cs-idin>' + pIdentityInner(data) + '</div>' +
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
   }
 
@@ -2370,6 +2427,17 @@
     return foldHtml('sx-line', head, body, false);
   }
 
+  // Every hero's own abilities come first; the common ones follow as one fold.
+  // It starts open, so a style that hides its heading simply lists them; the
+  // quiet look shuts it when the sheet mounts.
+  var COMMON_HEADS = { main: 'Every hero\u2019s main actions', maneuver: 'Every hero\u2019s maneuvers and moves', triggered: 'Every hero\u2019s triggered actions' };
+  function commonFold(kind, list, data) {
+    var head = '<span class="sx-std-n">' + esc(COMMON_HEADS[kind] || 'Every hero\u2019s actions') + '</span>' +
+      '<span class="sx-std-c num">' + list.length + '</span>';
+    return foldHtml('sx-std', head, list.map(function (a) { return abilityLine(a, data); }).join(''), true)
+      .replace('<details ', '<details data-cs-common="' + kind + '" ');
+  }
+
   function pAbilities(data) {
     var abilities = parseAbilities(data);
     var groups = { main: [], maneuver: [], triggered: [], free: [] };
@@ -2381,7 +2449,10 @@
       return (sx - sy) || ((Number(x.cost) || 0) - (Number(y.cost) || 0));
     });
     var html = ACTION_ORDER.map(function (k) {
-      var lines = groups[k].map(function (a) { return abilityLine(a, data); }).join('');
+      var own = groups[k].filter(function (a) { return !isCommonAbility(a); });
+      var common = groups[k].filter(isCommonAbility);
+      var lines = own.map(function (a) { return abilityLine(a, data); }).join('');
+      if (common.length) lines += commonFold(k, common, data);
       if (k === 'free' && !lines) lines = freeStrikeLine(data);
       if (!lines) return '';
       var rolled = groups[k].some(function (a) { return heroBest(a, data) != null; });
@@ -3446,15 +3517,35 @@
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_pin'].forEach(function (k) { inst[k] = null; });
   }
 
+  // The quiet look has a heading on the common-abilities fold, so it starts
+  // shut there; the paper styles have none and list them.
+  function quietLook(root) {
+    var st = root.getAttribute('data-sheet-style');
+    return !st || st === 'modern';
+  }
+  function shutCommonFolds(root, kept) {
+    [].forEach.call(root.querySelectorAll('[data-cs-common]'), function (d) {
+      var k = d.getAttribute('data-cs-common');
+      var open = kept && (k in kept) ? kept[k] : !quietLook(root);
+      if (!open) { d.removeAttribute('open'); d.classList.remove('is-in'); }
+    });
+  }
+
   function mountPaper(inst, el, data) {
     var sm = Chronicle.sheetMotion;
     if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
     inst._paper = true;
+    // A fold the reader opened or shut stays that way when the sheet is drawn again.
+    var kept = null;
+    [].forEach.call(el.querySelectorAll('[data-cs-common]'), function (d) {
+      (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
+    });
     el.innerHTML = paperSheetHtml(data);
     appendBlockSlots(el, data);
     var root = el.querySelector('[data-sheet]');
     if (typeof sm.rescan === 'function') sm.rescan();
     if (root) sm.mount(root);
+    if (root) shutCommonFolds(root, kept);
     portraitFallback(el);
     attachInteractions(inst, el, data);
     if (root) attachPaperPanels(inst, el, root);
@@ -3882,6 +3973,82 @@
 
   // ── Paper styles ─────────────────────────────────────────────────────
 
+  // The default ("modern") style is a quiet page: no frames, hairlines between
+  // the parts, the class as a heading and the lists beside the abilities. Every
+  // other style keeps the one-line identity and its own frames. Q is replaced
+  // by the selector for the quiet look, P by the one for the styles that are not.
+  function quietLookCss() {
+    var Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+    var P = '[data-sheet][data-sheet-style]:not([data-sheet-style="modern"])';
+    var hair = 'color-mix(in srgb,var(--paper-edge) 55%,transparent)';
+    return [
+      'Q .sh-id-l,P .sh-id-q { display:none; }',
+      '[data-sheet] .sh-idtodo { margin:6px 0 2px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-idtodo-k { font-weight:600;color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-idtodo .sh-idpick { font-weight:600;color:var(--paper-accent); }',
+      '[data-sheet] .sh-idhint { font-size:calc(12px * var(--ts)); }',
+      '[data-sheet] .sx-std { border-bottom:0; }',
+      'P .sx-std > summary { display:none; }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet] .sh-idtodo .sh-idpick { padding:12px 0; }',
+      '}',
+      'Q .paper.sh-sheet { border:0;background:none;box-shadow:none;padding:0;gap:18px; }',
+      'Q :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:0;border-radius:0;background:none;box-shadow:none; }',
+      'Q .sh-head { padding:0;border:0;min-height:0; }',
+      'Q .sh-head > .paper-kind,Q .sh-head:not(:has(> :not(.paper-kind))) { display:none; }',
+      'Q .sh-sheet .paper-kind { color:var(--paper-mute); }',
+      'Q .sh-id { padding:0 0 18px;border-bottom:1px solid var(--paper-edge); }',
+      'Q .sh-idwho { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;font:700 calc(24px * var(--ts))/1.2 var(--paper-font);letter-spacing:-.01em;color:var(--paper-ink);overflow-wrap:anywhere; }',
+      'Q .sh-idlv { font-weight:500;color:var(--paper-ink-soft); }',
+      'Q .sh-idsub { margin-left:14px;padding-left:14px;border-left:1px solid var(--paper-edge);font-weight:500;color:var(--paper-ink-soft); }',
+      'Q .sh-idset { display:flex;flex-wrap:wrap;gap:8px 40px;margin:12px 0 0; }',
+      'Q .sh-idset dt { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
+      'Q .sh-idset dd { margin:1px 0 0;font:600 calc(14.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
+      'Q .sh-idtodo { margin:12px 0 0; }',
+      'Q .sh-idmore { margin-top:8px; }',
+      'Q .sh-turn { padding:0 0 18px;border-bottom:1px solid var(--paper-edge);gap:12px; }',
+      'Q .sh-turn .sh-num { font-size:calc(28px * var(--ts)); }',
+      'Q .sh-pullbtn .sh-pull { margin-right:0; }',
+      'Q .sh-body { gap:16px 56px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);margin-top:4px; }',
+      '@container sheet (min-width:820px) {',
+      '  Q .sh-body { gap:26px 56px;grid-template-rows:repeat(4,auto) 1fr; }',
+      '  Q .sh-col { display:contents; }',
+      '  Q .sh-abs { grid-column:1;grid-row:1 / -1; }',
+      '  Q .sh-col > :not(.sh-abs) { grid-column:2; }',
+      '}',
+      'Q .sh-abs { padding:0; }',
+      'Q .sx-grp + .sx-grp { margin-top:20px; }',
+      'Q .sx-h { padding-bottom:6px;border-bottom:1px solid var(--paper-edge);margin-bottom:0; }',
+      'Q .sx-line,Q .sx-std { border-bottom:1px solid ' + hair + '; }',
+      'Q .sx-grp > .ft:last-child,Q .sx-std .ft:last-child { border-bottom:0; }',
+      'Q .sx-name { display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px; }',
+      'Q .sx-cost { margin-left:0; }',
+      'Q .sx-star { margin-right:-4px; }',
+      'Q .sx-std > summary { min-height:44px;box-sizing:border-box;padding:11px 2px;font:500 calc(13.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      'Q .sx-std-c { color:var(--paper-mute); }',
+      'Q .sx-std > summary::after { content:"Show";transform:none;font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent); }',
+      'Q .sx-std.is-in > summary::after { content:"Hide";transform:none; }',
+      'Q .sx-std.is-in > summary { border-bottom:1px solid ' + hair + '; }',
+      'Q .sh-o1 > .paper-kind { display:block;padding-bottom:6px;border-bottom:1px solid var(--paper-edge); }',
+      'Q .sh-chars { border-bottom:0;gap:0; }',
+      'Q .sh-chars div { align-items:flex-start;padding:8px 0 0; }',
+      'Q .sh-chars div+div { border-left:0; }',
+      'Q .sh-chars b { font-size:calc(28px * var(--ts)); }',
+      'Q .sh-sec.paper-pull { padding:0; }',
+      'Q .sh-sec.paper-pull > .sh-pullbtn { padding-bottom:6px;border-bottom:1px solid var(--paper-edge);margin-bottom:8px; }',
+      'Q .sh-ledger { border-top:1px solid var(--paper-edge); }',
+      'Q .sh-ledger .paper-pull { border-bottom:1px solid ' + hair + '; }',
+      // A part under the pointer, or with its panel open, gets a wash that reaches a little past its words instead of a raised card.
+      'Q .paper-pull[data-sheet-section].is-pulled { background:var(--paper-under);box-shadow:0 0 0 8px var(--paper-under);border-radius:6px;transform:none; }',
+      'Q .sh-ledger .paper-pull[data-sheet-section].is-pulled { box-shadow:-8px 0 0 var(--paper-under),8px 0 0 var(--paper-under);border-radius:0; }',
+      '@media (hover:hover) {',
+      '  Q .paper-pull[data-sheet-section]:hover { background:var(--paper-under);box-shadow:0 0 0 8px var(--paper-under);border-radius:6px;transform:none; }',
+      '  Q .sh-ledger .paper-pull[data-sheet-section]:hover { box-shadow:-8px 0 0 var(--paper-under),8px 0 0 var(--paper-under);border-radius:0; }',
+      '}',
+      'Q .sh-foot { margin-top:8px; }'
+    ].map(function (r) { return r.replace(/Q /g, Q + ' ').replace(/P /g, P + ' '); });
+  }
+
   function injectPaperStyles() {
     if (document.getElementById('ds-character-sheet-paper-styles')) return;
     var css = [
@@ -4270,24 +4437,9 @@
       '  [data-sheet][data-sheet-style="brass"] .sh-chars span { letter-spacing:.03em; }',
       '  [data-sheet][data-sheet-style="brass"] .sh-name h2 { font-size:calc(30px * var(--ts)); }',
       '}',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sheet { padding:28px 32px 26px;gap:18px; }',
       '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-name h2 { font-weight:700;letter-spacing:-.02em; }',
       '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-seal { border-radius:999px;padding:0 9px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-id,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-turn,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sec.paper-pull,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger { border:1px solid var(--paper-edge);border-radius:12px;background:var(--paper-cut);box-shadow:0 1px 2px rgb(var(--s-sh) / calc(.06 * var(--shk))); }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-id { padding:14px 16px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-turn { padding:14px 16px 16px;border-top:3px solid var(--paper-accent);gap:12px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-sec.paper-pull { padding:12px 16px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-band .sh-pullbtn .sh-pull { right:0; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger { overflow:hidden;border-top:1px solid var(--paper-edge); }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull { padding:0 16px;border-bottom:1px solid var(--paper-edge); }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull:last-child { border-bottom:0; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .sh-pullbtn .sh-pull { margin-right:0; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars { border-bottom:0;gap:8px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars div { border:1px solid var(--paper-edge);border-radius:10px;background:var(--paper-under);padding:8px 2px; }',
-      '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-chars div+div { border-left:1px solid var(--paper-edge); }',
-      '@media (hover:hover) {',
-      '  [data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-ledger .paper-pull:hover { transform:none;box-shadow:none;background:var(--paper-under); }',
-      '}',
+      // The quiet look has no frames: the page is the paper, and a hairline parts one section from the next.
       '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-pullbtn .sh-pull { transition:transform var(--dur-micro) var(--ease-out); }',
       '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .paper-pull:hover .sh-pull,[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .paper-pull:focus-within .sh-pull { transform:translateX(3px); }',
       '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style])) .sh-foot { border-top:1px solid var(--paper-edge); }',
@@ -4315,7 +4467,6 @@
       '[data-sheet] .sh-id > .ag-fold { grid-column: 1 / -1; min-width: 0; }',
       '[data-sheet] .sh-fold:empty { display: none; }',
       '[data-sheet] .sh-empty { margin: 0; font-style: italic; }',
-      '[data-sheet] .sh-unset { font-weight: 500; color: var(--paper-mute); }',
       '[data-sheet] .sh-on { font: 600 calc(10.5px * var(--ts)) var(--paper-ui-font); color: var(--paper-neg); }',
       '[data-sheet] .sh-cnd--warn { border-color: var(--paper-warn); color: var(--paper-warn); background: color-mix(in srgb, var(--paper-warn) 6%, transparent); }',
       '[data-sheet] .ft-flat { display: flex; align-items: center; gap: 8px; padding: 7px 2px; font: 700 calc(14.5px * var(--ts)) var(--paper-font); color: var(--paper-ink); }',
@@ -4438,7 +4589,7 @@
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
       '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
-    ].join('\n');
+    ].concat(quietLookCss()).join('\n');
     var style = document.createElement('style');
     style.id = 'ds-character-sheet-paper-styles';
     style.textContent = css;
@@ -4562,10 +4713,10 @@
       esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
-      pIdentity: pIdentity, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
+      pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
-      staminaState: staminaState, mountSheet: mountSheet,
+      staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
