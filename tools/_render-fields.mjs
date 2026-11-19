@@ -391,6 +391,61 @@ export const CATEGORIES = [
     ],
   },
   {
+    file: 'perks.json',
+    slug: 'perks',
+    name: 'Perks',
+    icon: 'fa-star',
+    // The perk's whole text is the root description.
+    columns: [['group', 'Group', 'string']],
+  },
+  {
+    file: 'titles.json',
+    slug: 'titles',
+    name: 'Titles',
+    icon: 'fa-award',
+    columns: [
+      ['echelon', 'Echelon', 'string'],
+      ['prerequisite', 'Prerequisite', 'string'],
+      ['effect', 'Effect', 'string'],
+      ['special', 'Special', 'string'],
+    ],
+  },
+  {
+    file: 'treasures.json',
+    slug: 'treasures',
+    name: 'Treasures',
+    icon: 'fa-gem',
+    // A leveled treasure has three level rows and no Effect; every other kind
+    // has an Effect and no level rows.
+    columns: [
+      ['type', 'Type', 'string'],
+      ['kind', 'Kind', 'string'],
+      ['echelon', 'Echelon', 'string'],
+      ['keywords', 'Keywords', 'string'],
+      ['item_prerequisite', 'Item Prerequisite', 'string'],
+      ['project_source', 'Project Source', 'string'],
+      ['project_roll_characteristic', 'Project Roll', 'string'],
+      ['project_goal', 'Project Goal', 'string'],
+      ['effect', 'Effect', 'string'],
+      ['level_1', '1st Level', 'string'],
+      ['level_5', '5th Level', 'string'],
+      ['level_9', '9th Level', 'string'],
+    ],
+  },
+  {
+    file: 'projects.json',
+    slug: 'projects',
+    name: 'Downtime Projects',
+    icon: 'fa-hammer',
+    columns: [
+      ['group', 'Group', 'string'],
+      ['item_prerequisite', 'Item Prerequisite', 'string'],
+      ['project_source', 'Project Source', 'string'],
+      ['project_roll_characteristic', 'Project Roll', 'string'],
+      ['project_goal', 'Project Goal', 'string'],
+    ],
+  },
+  {
     file: 'creatures.json',
     slug: 'creatures',
     name: 'Creatures',

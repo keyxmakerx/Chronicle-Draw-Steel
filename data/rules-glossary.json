@@ -582,5 +582,235 @@
       "category": "resource"
     },
     "source": "custom"
+  },
+  {
+    "slug": "big-versus-little",
+    "name": "Big Versus Little",
+    "summary": "When a larger creature force moves a smaller target with a melee weapon ability, the distance of the forced movement is increased by 1. If a smaller creature force moves a larger target with a melee weapon ability, the distance doesn't change.",
+    "description": "When a larger creature force moves a smaller target with a melee weapon ability, the distance of the forced movement is increased by 1. If a smaller creature force moves a larger target with a melee weapon ability, the distance doesn't change.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "burrow",
+    "name": "Burrow",
+    "summary": "A creature who has \"burrow\" in their speed entry, or who gains the temporary ability to burrow, can move through dirt horizontally, and either has the means to breathe while doing so or doesn't require air to live. Such creatures can't move through more solid ground, such as stone, unless their stat block or the effect that lets them burrow says otherwise. Similarly, a burrowing creature doesn't leave a tunnel unless the rules say so.",
+    "description": "A creature who has \"burrow\" in their speed entry, or who gains the temporary ability to burrow, can move through dirt horizontally, and either has the means to breathe while doing so or doesn't require air to live. Such creatures can't move through more solid ground, such as stone, unless their stat block or the effect that lets them burrow says otherwise. Similarly, a burrowing creature doesn't leave a tunnel unless the rules say so.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "burrowing-forced-movement",
+    "name": "Burrowing Forced Movement",
+    "summary": "While a creature who is completely beneath the ground while burrowing is force moved by movement that isn't vertical, they aren't moved, and they take 1 damage for each square they would have been force moved. If the forced movement is vertical, the creature is moved through the dirt as if it were air.",
+    "description": "While a creature who is completely beneath the ground while burrowing is force moved by movement that isn't vertical, they aren't moved, and they take 1 damage for each square they would have been force moved. If the forced movement is vertical, the creature is moved through the dirt as if it were air.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "climb-or-swim",
+    "name": "Climb or Swim",
+    "summary": "A creature who has \"climb\" in their speed entry, or who gains the temporary ability to automatically climb, can climb across vertical and horizontal surfaces at full speed. Likewise, a creature who has \"swim\" in their speed entry, or who gains the temporary ability to automatically swim, can swim in liquid at full speed.",
+    "description": "A creature who has \"climb\" in their speed entry, or who gains the temporary ability to automatically climb, can climb across vertical and horizontal surfaces at full speed. Likewise, a creature who has \"swim\" in their speed entry, or who gains the temporary ability to automatically swim, can swim in liquid at full speed.\n\nCreatures without those types of movement can still climb or swim when a rule allows them to move, but each square of climbing or swimming costs 2 squares of movement. If a surface is difficult to climb (for instance, a sheer cliff or ice-covered wall) or a liquid is hard to swim through (a raging river or whirlpool), the Director can call for a Might test. On a failure, a creature can't climb or swim but wastes no movement in the attempt. The Director can also impose other consequences to failure, such as being caught in the spinning current of a whirlpool.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "climbing-other-creatures",
+    "name": "Climbing Other Creatures",
+    "summary": "You can attempt to climb a creature whose size is greater than yours. If the creature is willing, you can climb them without any trouble. If the creature is unwilling, you make the following test:",
+    "description": "You can attempt to climb a creature whose size is greater than yours. If the creature is willing, you can climb them without any trouble. If the creature is unwilling, you make the following test:\n\nPower Roll + Might or Agility:\n\n- ≤11: You fail to climb the creature, and they can make a free strike against you.\n- 12-16: You fail to climb the creature.\n- 17+: You climb the creature.\n\nWhile you climb or ride a creature, you gain an edge on melee abilities used against them. The creature can use a maneuver to attempt to knock you off, forcing you to make the following test:\n\nPower Roll + Might or Agility:\n\n- ≤11: You fall off the creature into an unoccupied adjacent space of your choice, taking falling damage and landing prone as usual.\n- 12-16: You slide down the creature into an unoccupied adjacent space of your choice and don't land prone.\n- 17+: You continue to hold on to the creature.\n\nIf you are knocked prone while climbing or riding a creature, you fall and land prone in an adjacent space of your choice, taking damage as usual from the fall.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "crawl",
+    "name": "Crawl",
+    "summary": "If you are prone, you can remain prone and crawl on the ground. Doing so costs you 1 additional square of movement for every square you crawl. If you intentionally want to crawl, you can fall prone as a free maneuver. While voluntarily prone, you can choose to stand as a free maneuver.",
+    "description": "If you are prone, you can remain prone and crawl on the ground. Doing so costs you 1 additional square of movement for every square you crawl. If you intentionally want to crawl, you can fall prone as a free maneuver. While voluntarily prone, you can choose to stand as a free maneuver.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "death-effects-and-forced-movement",
+    "name": "Death Effects and Forced Movement",
+    "summary": "Some creatures have traits or abilities that trigger when they die or are reduced to 0 Stamina. If such a creature is reduced to 0 Stamina by damage from an ability or effect that also force moves them, the forced movement takes place before the triggered effect.",
+    "description": "Some creatures have traits or abilities that trigger when they die or are reduced to 0 Stamina. If such a creature is reduced to 0 Stamina by damage from an ability or effect that also force moves them, the forced movement takes place before the triggered effect.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "dig-maneuver",
+    "name": "Dig Maneuver",
+    "summary": "It takes extra effort to dig vertically through the ground as opposed to tunneling horizontally, requiring a creature to use a special maneuver. To use the Dig maneuver, a creature must have \"burrow\" in their speed entry, they must have a speed that is equal to or greater than their size, and they must be touching terrain that can be burrowed through.",
+    "description": "It takes extra effort to dig vertically through the ground as opposed to tunneling horizontally, requiring a creature to use a special maneuver. To use the Dig maneuver, a creature must have \"burrow\" in their speed entry, they must have a speed that is equal to or greater than their size, and they must be touching terrain that can be burrowed through.\n\nWhen a creature uses the Dig maneuver, they can move vertically up to a number of squares equal to their size. If a burrowing creature has a creature who is not unconscious grabbed, they can't willingly move deeper into the ground. It's too difficult to dig with a flailing enemy in your claws.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "falling-far",
+    "name": "Falling Far",
+    "summary": "When a creature first falls from a great height, they fall 100 squares in the first round. At the end of each subsequent round that they remain falling, they fall another 100 squares.",
+    "description": "When a creature first falls from a great height, they fall 100 squares in the first round. At the end of each subsequent round that they remain falling, they fall another 100 squares.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "falling-onto-another-creature",
+    "name": "Falling Onto Another Creature",
+    "summary": "A creature who falls and lands on another creature causes that creature to take the same damage from the fall. The falling creature then lands prone in the nearest unoccupied space of their choice. If the falling creature's size is greater than the Might score of the creature they land on, that creature is knocked prone.",
+    "description": "A creature who falls and lands on another creature causes that creature to take the same damage from the fall. The falling creature then lands prone in the nearest unoccupied space of their choice. If the falling creature's size is greater than the Might score of the creature they land on, that creature is knocked prone.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fly",
+    "name": "Fly",
+    "summary": "A creature who has \"fly\" in their speed entry, or who gains the temporary ability to fly, can move through the air vertically or horizontally at full speed and remain in midair. If a flying creature is knocked prone or has their speed reduced to 0, they fall.",
+    "description": "A creature who has \"fly\" in their speed entry, or who gains the temporary ability to fly, can move through the air vertically or horizontally at full speed and remain in midair. If a flying creature is knocked prone or has their speed reduced to 0, they fall.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "forced-into-a-fall",
+    "name": "Forced Into a Fall",
+    "summary": "If you can't fly and are force moved across an open space that would cause you to fall, such as being pushed over the edge of a cliff, you continue moving the total distance you were moved first. If you are still in a position to fall when the forced movement ends, you fall.",
+    "description": "If you can't fly and are force moved across an open space that would cause you to fall, such as being pushed over the edge of a cliff, you continue moving the total distance you were moved first. If you are still in a position to fall when the forced movement ends, you fall.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hover",
+    "name": "Hover",
+    "summary": "A creature who has \"hover\" in their speed entry (most commonly alongside \"fly\" or \"teleport\"), or who gains the temporary ability to hover, can remain motionless in midair. They don't fall even if they are knocked prone or their speed is reduced to 0.",
+    "description": "A creature who has \"hover\" in their speed entry (most commonly alongside \"fly\" or \"teleport\"), or who gains the temporary ability to hover, can remain motionless in midair. They don't fall even if they are knocked prone or their speed is reduced to 0.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hurling-through-objects",
+    "name": "Hurling Through Objects",
+    "summary": "When you move a creature into a mundane object, the object can break depending on how many squares of forced movement remain. The cost of being slammed into an object is tied to the damage a target takes for being hurled through it:",
+    "description": "When you move a creature into a mundane object, the object can break depending on how many squares of forced movement remain. The cost of being slammed into an object is tied to the damage a target takes for being hurled through it:\n\n- It costs 1 remaining square of forced movement to destroy 1 square of glass. The creature moved takes 3 damage.\n- It costs 3 remaining squares of forced movement to destroy 1 square of wood. The creature moved takes 5 damage.\n- It costs 6 remaining squares of forced movement to destroy 1 square of stone. The creature moved takes 8 damage.\n- It costs 9 remaining squares of forced movement to destroy 1 square of metal. The creature moved takes 11 damage.\n\nIf any forced movement remains after the object is destroyed, you can continue to move the creature who destroyed the object.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "jump",
+    "name": "Jump",
+    "summary": "Whenever an effect allows you to move (including using the Advance move action), you can automatically long jump a number of squares up to your Might or Agility score (your choice; minimum 1 square) as part of that movement. The height of your jump is automatically 1 square as part of that movement.",
+    "description": "Whenever an effect allows you to move (including using the Advance move action), you can automatically long jump a number of squares up to your Might or Agility score (your choice; minimum 1 square) as part of that movement. The height of your jump is automatically 1 square as part of that movement.\n\nIf you want to jump even longer or higher than your baseline jump allows, make a Might or Agility test:\n\nPower Roll + Might or Agility:\n\n- ≤11: You don't jump any farther than your baseline jump allows.\n- 12-16: You jump 1 square longer and higher than your baseline jump allows.\n- 17+: You jump 2 squares longer and higher than your baseline jump allows.\n\nYou can't jump farther or higher than the distance of the effect that allows you to move. You can't jump out of difficult terrain or damaging terrain.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "non-burrowing-creatures",
+    "name": "Non-Burrowing Creatures",
+    "summary": "If you are on the ground and adjacent to a creature who is beneath the ground while burrowing, you can use a maneuver to pull that creature up 1 square out of the ground, provided the creature is willing.",
+    "description": "If you are on the ground and adjacent to a creature who is beneath the ground while burrowing, you can use a maneuver to pull that creature up 1 square out of the ground, provided the creature is willing.\n\nIf a creature who can't burrow wants to dig into the ground, they can use the following ability provided their speed is 2 or more.\n\nClaw Dirt\n\nManeuver\nSelf · Self\n\nPower Roll + Might:\n\n- ≤11: You can move 1 square into, out of, or through ground you are touching that can be burrowed through, and you are slowed and weakened (EoT).\n- 12-16: You can use your main action this turn to move 1 square into, out of, or through ground you are touching that can be burrowed through, and you are slowed (EoT).\n- 17+: You can move 1 square into, out of, or through ground you are touching that can be burrowed through.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "slamming-into-objects",
+    "name": "Slamming Into Objects",
+    "summary": "When a creature force moves a target into a stationary object that is the target's size or larger and the object doesn't break, the movement ends and the target takes 2 damage plus 1 damage for each square remaining in their forced movement.",
+    "description": "When a creature force moves a target into a stationary object that is the target's size or larger and the object doesn't break, the movement ends and the target takes 2 damage plus 1 damage for each square remaining in their forced movement.\n\nIf you force move a creature downward into an object that doesn't break (including the ground), they also take falling damage as if they had fallen the distance force moved and their Agility score was 0.\n\nTracking Object Forced-Movement Damage\n\nAt the Director's discretion, mundane objects that are force moved into creatures or other objects take damage as if they were creatures. Sturdy objects can take damage as follows before they are destroyed:\n\n- Wood object: 3 damage for each square it occupies\n- Stone object: 6 damage for each square it occupies\n- Metal object: 9 damage for each square it occupies\n\nMore fragile objects are destroyed after taking any damage.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "slamming-into-creatures",
+    "name": "Slamming into Creatures",
+    "summary": "When you force move a creature into another creature, the movement ends and both creatures take 1 damage for each square remaining in the first creature's forced movement. You can also force move an object into a creature. The object's movement ends, and the creature takes 1 damage for each square remaining in the object's forced movement.",
+    "description": "When you force move a creature into another creature, the movement ends and both creatures take 1 damage for each square remaining in the first creature's forced movement. You can also force move an object into a creature. The object's movement ends, and the creature takes 1 damage for each square remaining in the object's forced movement.\n\nIt's possible to move a creature or object of a larger size into several creatures of a smaller size at the same time. When this happens, the larger creature in the collision takes damage only once, not once for each smaller creature they slam into.\n\nIf a creature is killed by damage from an ability or effect that also force moves them, a second creature they are slammed into still takes damage unless the Director deems otherwise.\n\nYou can force move another creature into yourself with a pull or a slide.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "targeting-burrowing-creatures",
+    "name": "Targeting Burrowing Creatures",
+    "summary": "If you are on the ground, you have line of effect to a burrowing creature if that creature occupies 1 or more squares of terrain that can be burrowed through and that touch the ground, and if you have line of effect to any of those squares. The burrowing creature gains the benefit of cover from you.",
+    "description": "If you are on the ground, you have line of effect to a burrowing creature if that creature occupies 1 or more squares of terrain that can be burrowed through and that touch the ground, and if you have line of effect to any of those squares. The burrowing creature gains the benefit of cover from you.\n\nIf you are completely beneath the ground while burrowing, you don't have line of effect to any creature on the surface unless a rule states otherwise.\n\nIf you are completely beneath the ground while burrowing and are adjacent to another creature who is burrowing, you have line of effect to that creature, though you both have cover from each other.\n\nYou can't gain the benefit of high ground against creatures who are completely beneath the ground while burrowing.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "teleport",
+    "name": "Teleport",
+    "summary": "When a creature teleports, they move from one space to another space instantaneously. The following rules apply to teleporting:",
+    "description": "When a creature teleports, they move from one space to another space instantaneously. The following rules apply to teleporting:\n\n- Teleporting doesn't provoke opportunity attacks or other effects that are triggered by a creature moving.\n- When a creature teleports, they bypass any obstacles between the space they leave and their destination space.\n- A creature teleporting themself must have line of effect to their destination space. A creature teleporting another creature must have line of effect from the space the teleported creature leaves and to their destination space.\n- A teleporting creature's destination space can't be occupied by another creature or object.\n- The effect that lets a creature teleport indicates how far they can teleport. That distance can be greater than the creature's speed.\n- If a creature can teleport as part of their usual movement, they can use the Advance move action to teleport a number of squares up to their usual speed, unmodified by conditions or effects.\n- If a creature teleports while prone, they can be standing when they reach their destination space provided they are able to stand. If a prone creature is teleported by another creature, it is up to that creature whether the teleported creature remains prone or stands if they are able.\n- If you teleport while affected by the grabbed or restrained conditions, those conditions end for you.\n- When a creature teleports, they must leave the space where they start and enter a new space. A creature can't teleport to and from the same space.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "vertical",
+    "name": "Vertical",
+    "summary": "If a forced movement effect has the word \"vertical\" in front of it, then the forced movement can move a target up or down in addition to horizontally. For example, if a forced movement effect says \"vertical push 5,\" then a creature targeted by the effect can be pushed up to 5 squares in any direction, as long as the forced movement is a straight line.",
+    "description": "If a forced movement effect has the word \"vertical\" in front of it, then the forced movement can move a target up or down in addition to horizontally. For example, if a forced movement effect says \"vertical push 5,\" then a creature targeted by the effect can be pushed up to 5 squares in any direction, as long as the forced movement is a straight line.\n\nIf a creature who can't fly is left in midair at the end of a vertical forced move, they fall. Forced movement made against a creature who is flying is always a vertical forced move, whether or not the effect specifies it.\n\nThough you can't freely push, pull, or slide a target up and down unless that forced movement specifies \"vertical,\" you can move them along a physical slope such as a hill or staircase. For a target to be force moved along a slope, each square of the slope can be no more than 1 square higher or lower than the previous square.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "walk",
+    "name": "Walk",
+    "summary": "Walking is the most common movement type, whether it refers to ambulating on legs, rolling, slithering, or some other default method of movement. Unless specified otherwise, all creatures can move over solid horizontal ground without any problem.",
+    "description": "Walking is the most common movement type, whether it refers to ambulating on legs, rolling, slithering, or some other default method of movement. Unless specified otherwise, all creatures can move over solid horizontal ground without any problem.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "when-a-creature-moves",
+    "name": "When a Creature Moves...",
+    "summary": "Certain abilities and effects trigger when a creature moves into a particular area. Forced movement triggers these options unless otherwise noted, including an effect stating that a creature must willingly move to trigger it.",
+    "description": "Certain abilities and effects trigger when a creature moves into a particular area. Forced movement triggers these options unless otherwise noted, including an effect stating that a creature must willingly move to trigger it.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
   }
 ]

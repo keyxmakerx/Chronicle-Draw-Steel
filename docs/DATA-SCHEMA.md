@@ -381,7 +381,7 @@ Rule definitions for the @reference tooltip system.
 | Category | Examples |
 |----------|----------|
 | `condition` | frightened, dazed, slowed, restrained, weakened, bleeding, burning, taunted, prone, charmed, grabbed, hidden |
-| `movement` | shift, push, pull |
+| `movement` | shift, push, pull, slide, walk, climb-or-swim, jump, crawl, fly, hover, burrow, teleport, vertical |
 | `duration` | eot (End of Turn), save-ends |
 | `resource` | temporary-stamina |
 | `action` | free-strike |
@@ -561,6 +561,59 @@ animal. This is the one per-creature point-buy Draw Steel actually publishes.
 
 The budget rule lives in `monster-building.json` → `animal-trait-point-buy`, not
 here, so this file stays homogeneous: every entry is a trait with a cost.
+
+## perks.json
+
+The 47 perks. A perk's whole published text is its `description`; a perk that
+grants an ability carries the ability as plain text in the same field.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group` | string | Yes | `Crafting`, `Exploration`, `Interpersonal`, `Intrigue`, `Lore`, or `Supernatural` |
+
+## titles.json
+
+The 59 titles. The root `description` is the prerequisite line; the rules are in
+`properties`.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `echelon` | string | Yes | `1st`, `2nd`, `3rd`, or `4th` |
+| `prerequisite` | string | Yes | What a hero does to earn the title |
+| `effect` | string | Yes | The benefit, or the benefits a hero chooses between |
+| `special` | string | No | The title's published "Special:" line |
+| `omissions` | array | No | Setting references dropped or reworded |
+
+## treasures.json
+
+The 98 treasures: consumables, trinkets, leveled treasures and artifacts.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | string | Yes | `Consumable`, `Trinket`, `Leveled`, or `Artifact` |
+| `kind` | string | No | A leveled treasure's kind: `Armor`, `Implement`, `Weapon`, or `Other` |
+| `echelon` | string | No | `1st` to `4th`, for consumables and trinkets |
+| `keywords` | string | No | The treasure's keywords, comma-separated |
+| `item_prerequisite` | string | No | The item the crafting project needs |
+| `project_source` | string | No | The texts or lore the crafting project needs |
+| `project_roll_characteristic` | string | No | The characteristics the project roll may use |
+| `project_goal` | string | No | The project goal, as printed |
+| `effect` | string | No | The treasure's effect; an artifact's whole rules text |
+| `level_1`, `level_5`, `level_9` | string | No | A leveled treasure's benefit at each level |
+| `omissions` | array | No | Setting references dropped or reworded |
+
+## projects.json
+
+The 16 downtime projects, with the same four project fields as a treasure.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `group` | string | Yes | `Crafting`, `Research`, or `Other` |
+| `item_prerequisite` | string | No | The item the project needs |
+| `project_source` | string | No | The texts or lore the project needs |
+| `project_roll_characteristic` | string | No | The characteristics the project roll may use |
+| `project_goal` | string | No | The project goal, as printed |
+| `omissions` | array | No | Published text left out (Imbue Treasure's enhancement lists) |
 
 ## Widget-only data files
 

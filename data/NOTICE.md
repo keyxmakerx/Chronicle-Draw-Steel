@@ -26,6 +26,10 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `animal-traits.json` | The thirty-five animal traits with their point costs, upgrades, and optional lines | *Monsters Book* ch. 2 (Monsters — Animals) |
 | `negotiation.json` | The negotiation rules: the six starting attitudes with their Interest and Patience, the twelve motivations and pitfalls, the argument outcomes, the offer at each Interest level, and the procedural rules (when to negotiate, stats, opening, uncovering motivations, making arguments, Renown and Impression, ending) | *Heroes Book* ch. 11 (Negotiation) |
 | `class-fights.json` | The class pop-up books' rules: for each of the nine classes, its Heroic Resource, the quote and gain text from its class chapter, the start-of-fight and start-of-turn gains, the triggers with how often each pays and how much, the 3 and 5 costs of its 1st-level heroic abilities, and its own rules (the conduit's prayer, the shadow's edge discount, the talent's strain, the troubadour's death and return); plus the power roll and the winded and dying thresholds the fights use | *Heroes Book* ch. 1 (The Basics), ch. 5 (Classes), ch. 10 (Combat) |
+| `perks.json` | The forty-seven perks with their full text, including the abilities a few of them grant | *Heroes Book* ch. 7 (Perks) |
+| `titles.json` | The fifty-nine titles: echelon, prerequisite, benefits and special lines | *Heroes Book* ch. 13 (Rewards) |
+| `treasures.json` | The ninety-eight treasures (consumables, trinkets, leveled treasures and artifacts): keywords, crafting-project lines, effects and the benefits at 1st, 5th and 9th level | *Heroes Book* ch. 13 (Rewards) |
+| `projects.json` | The sixteen downtime projects: prerequisite, source, roll characteristics, goal and rules text | *Heroes Book* ch. 12 (Downtime Projects) |
 
 It was compiled with reference to the community **Steel Compendium**
 (<https://steelcompendium.io>, GitHub `SteelCompendium/data-md`), which publishes
@@ -174,6 +178,18 @@ dropped and only the mechanics kept; the affected traits record this in
 `properties.omissions` (memonek Keeper of Order / Nonstop / Useful Emotion, and the
 dragon knight's Remember Your Oath, whose recited verse is omitted). The mechanics of
 every such trait are complete.
+
+The perks, titles, treasures and downtime projects were treated the same way. Each
+title's opening quotation is left out, because the quotations are spoken by named
+setting characters. Where a title or a treasure named a setting character, place or
+people inside its rules, the name was replaced with a neutral phrase and the entry
+records it in `properties.omissions` (the titles Ancient Loremaster and Marshal; the
+treasures Black Ash Dart, Elixir of Saint Elspeth, Blade of Quintessence, Thief of Joy
+and Gallios Visiting Card). A treasure keeps its own printed name. Three things are
+left out for size rather than setting: the boxed asides in those chapters, the
+Director's project-events tables, and the enhancement lists under Imbue Treasure,
+which that entry records in `properties.omissions`. The twenty-three movement terms
+added to `rules-glossary.json` are the published text from ch. 10 (Combat).
 
 The ability entries needed none of this treatment either. Ability names, flavor lines,
 and effect text are mechanics and fighting-style description; nothing in the 545 source

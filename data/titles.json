@@ -1,0 +1,724 @@
+[
+  {
+    "slug": "ancient-loremaster",
+    "name": "Ancient Loremaster",
+    "summary": "You find a trove of forgotten books.",
+    "description": "You find a trove of forgotten books.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You find a trove of forgotten books.",
+      "effect": "Choose one of the following benefits:\n\n- Leverage: You know a priceless secret. The Director chooses the type of person who would value this secret—usually a member of a particular faction, such as a noble of a particular land, or a type of person, such as a fence of stolen goods. When engaged in a negotiation with this type of person, you can offer this secret. If they accept, their interest increases by 3 (to a maximum of 5). You can share this secret only once.\n- Rare Books: You add rare, ancient books to your collection. Whenever you undertake a research project, roll 1d6 for each dead language you know and add the total to the project roll.\n- Susurrus Codex: You find a sinister book that whispers advice in a voice no one else can hear. As long as you follow the book's advice, you gain an edge on Reason tests and take a bane on Presence tests. You can stop following the book's advice at any time, but the book won't speak to you for the rest of the day.",
+      "omissions": [
+        "The example faction member names a setting people; a neutral phrase stands in."
+      ],
+      "provenance_display": "omissions — The example faction member names a setting people; a neutral phrase stands in."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "arena-fighter",
+    "name": "Arena Fighter",
+    "summary": "You are victorious in battle in an arena or some other public contest of combat.",
+    "description": "You are victorious in battle in an arena or some other public contest of combat.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You are victorious in battle in an arena or some other public contest of combat.",
+      "effect": "Choose one of the following benefits:\n\n- Dirty Fighting: While you are standing, your melee strikes gain a +3 damage bonus against prone creatures. Additionally, being prone doesn't impose a bane on your strikes.\n- Foes as Weapons: Whenever you have a creature of your size or smaller grabbed, you can use them as a weapon when you make a melee weapon free strike. Both the target and the grabbed enemy take the strike's damage.\n- Instant Celebrity: You earn 1 Renown.\n- Showstopper: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nShowstopper (5 Heroic Resource)\n\nMelee, Strike, Weapon · Main action\nMelee 1 · One creature\n\nPower Roll + Might or Agility:\n\n- ≤11: 6 damage; I < WEAK, slowed (save ends)\n- 12-16: 10 damage; I < AVERAGE, frightened (save ends)\n- 17+: 14 damage; I < STRONG, dazed (save ends)\n\nEffect: If you kill a non-minion opponent using this ability, each enemy within 3 squares of you is frightened (save ends)."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "armed-and-dangerous",
+    "name": "Armed and Dangerous",
+    "summary": "You can't use kits, and you defeat five non-minion enemies using weapon abilities that don't have the Magic or Psionic keyword.",
+    "description": "You can't use kits, and you defeat five non-minion enemies using weapon abilities that don't have the Magic or Psionic keyword.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You can't use kits, and you defeat five non-minion enemies using weapon abilities that don't have the Magic or Psionic keyword.",
+      "effect": "You can use and gain the benefits of kits."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "awakened",
+    "name": "Awakened",
+    "summary": "You defeat a leader or solo creature who has at least one ability with the Psionic keyword, such as a voiceless talker evolutionist.",
+    "description": "You defeat a leader or solo creature who has at least one ability with the Psionic keyword, such as a voiceless talker evolutionist.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You defeat a leader or solo creature who has at least one ability with the Psionic keyword, such as a voiceless talker evolutionist.",
+      "effect": "Choose one of the following benefits:\n\n- Foresight: You don't take a bane when using abilities against creatures with concealment.\n- Rogue Talent: Choose one triggered action that the talent class has access to at 1st level. You gain that ability regardless of whether your class and subclass allow you to take it. If this ability allows you to gain or spend clarity, you can't do so unless you have the Clarity class feature.\n- Telepathy: As a maneuver, you communicate telepathically with a creature within 10 squares who understands a language you know. The creature can respond telepathically as part of the same maneuver."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "back-from-the-grave",
+    "name": "Back From the Grave",
+    "summary": "You die at the hands of your greatest foe, that foe still lives, and you aren't a revenant.",
+    "description": "You die at the hands of your greatest foe, that foe still lives, and you aren't a revenant.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You die at the hands of your greatest foe, that foe still lives, and you aren't a revenant.",
+      "effect": "You are restored to life. You gain the Tough But Withered signature trait from the revenant ancestry."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "battleaxe-diplomat",
+    "name": "Battleaxe Diplomat",
+    "summary": "You gain the friendship or alliance of a creature you once battled.",
+    "description": "You gain the friendship or alliance of a creature you once battled.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You gain the friendship or alliance of a creature you once battled.",
+      "effect": "Choose one of the following benefits:\n\n- Iron Hand in Velvet Glove: The first time during a negotiation that you make a test using the Intimidate skill and don't make an argument that appeals to an NPC's motivation, you don't lower the NPC's patience or interest no matter the outcome of the roll.\n- Truce!: You have a double edge on tests made to stop combat and start a negotiation.\n- Warriors' Understanding: You gain an edge on Presence tests made to interact with creatures you have fought against in combat encounters."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "battlefield-commander",
+    "name": "Battlefield Commander",
+    "summary": "You lead an army in battle and win.",
+    "description": "You lead an army in battle and win.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You lead an army in battle and win.",
+      "effect": "Choose one of the following benefits:\n\n- Charge!: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nCharge! (9 Heroic Resource)\n\nFollow me!\n\nArea · Main action\n3 burst · Self and each ally in the area\n\nEffect: Each target can use the Charge main action.\n\n- Renowned Warrior: You earn 1 Renown.\n- Student of War: Choose a 1st-level doctrine feature from the tactician class. You gain that feature even if you don't have the Tactical Doctrine feature."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "blood-magic",
+    "name": "Blood Magic",
+    "summary": "You participate in a Discover Lore project to learn forbidden knowledge.",
+    "description": "You participate in a Discover Lore project to learn forbidden knowledge.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You participate in a Discover Lore project to learn forbidden knowledge.",
+      "effect": "Choose one of the following benefits:\n\n- Blood Mage: When you use an area ability with the Magic or Psionic keyword, you can take damage equal to your level to increase the ability's area by 1 until the end of the encounter. If the area is a line, you increase the size of one dimension, not both. This damage can't be reduced in any way. You can use this benefit only once per use of an ability.\n- Bloody Murder: When you deal rolled damage to a creature with a strike, you can take damage equal to your level to deal twice that much corruption damage to the creature. The damage you take from this title can't be reduced in any way. You can use this benefit only once per ability. If the creature is reduced to 0 Stamina by this corruption damage, the creature explodes in a shower of blood and you regain the Stamina you lost. You can't use this benefit on creatures without blood, such as constructs, elementals, or undead.\n- I Reject This Evil Power!: You gain corruption immunity equal to your level."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "brawler",
+    "name": "Brawler",
+    "summary": "You triumph in battle without killing any of your foes.",
+    "description": "You triumph in battle without killing any of your foes.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You triumph in battle without killing any of your foes.",
+      "effect": "Choose one of the following benefits:\n\n- Duck!: When an enemy strikes you while a second creature is flanking you, you can use a triggered action to redirect the strike against the second creature. Once you use this benefit, you can't use it again until you earn 1 or more Victories.\n- Furniture Fighter: When you use a weapon ability with an improvised weapon or a weapon that isn't part of your kit, the ability benefits from your kit's melee weapon damage bonus.\n- Headbutt: While you are grabbed or restrained, your free strikes don't take a bane when those conditions would impose one.\n- If I Wanted You Dead, You'd Be Dead: Whenever you defeat foes without killing any of them (including the foes you defeat to meet the prerequisite for this title), you gain an edge on tests during negotiations with those foes."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "champion-competitor",
+    "name": "Champion Competitor",
+    "summary": "You beat the best in the world at a game or sport.",
+    "description": "You beat the best in the world at a game or sport.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You beat the best in the world at a game or sport.",
+      "effect": "A characteristic used during the competition increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Best of the Best: Choose a skill you used during the competition. You gain a +4 bonus to tests made using that skill instead of a +2 bonus\n- Glory and Riches: You earn 2 Renown and 1 Wealth.\n- I'll Just Take the Prize: You gain a trinket or leveled treasure of the Director's choice."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "city-rat",
+    "name": "City Rat",
+    "summary": "You have spent at least five respites in a metropolis.",
+    "description": "You have spent at least five respites in a metropolis.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You have spent at least five respites in a metropolis.",
+      "effect": "Choose one of the following benefits:\n\n- Discerning Shopper: When looking for an item prerequisite for a crafting project, you can remember meeting someone who might have the item—or at least information about it.\n- One with the Crowd: While you're using one or more creatures as cover, you gain an edge on tests made to hide and sneak.\n- Street Smart: While in a settlement, you can't be surprised."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "corsair",
+    "name": "Corsair",
+    "summary": "You have the Ship Captain title, and you sink or capture a ship of equal or greater size than your own.",
+    "description": "You have the Ship Captain title, and you sink or capture a ship of equal or greater size than your own.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You have the Ship Captain title, and you sink or capture a ship of equal or greater size than your own.",
+      "effect": "Choose one of the following benefits:\n\n- Artillerist: You gain a +5 damage bonus when using a ship's weapons\n- Black Flag: You have a recognizable flag that strikes terror on the high seas. While your flag is flying from your ship, crewmembers of other ships who have line of effect to the flag take a bane on strikes made against your ship or its crew.\n- Fearsome Reputation: You earn 1 Renown.\n- Scoundrel Tactics: While aboard a ship, you can use the following skills to make a test to influence another ship up to 5 miles away whose crewmembers have line of effect to you, and you gain an edge when you do so. You can use Disguise to hide your ship's identity or general type, Intimidate to convince another ship's crew to flee or surrender, or Hide or Sneak to let your ship avoid notice."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "demigod",
+    "name": "Demigod",
+    "summary": "You have the Godsworn title, and hundreds of worshipful mortals complete a divine ritual in your name.",
+    "description": "You have the Godsworn title, and hundreds of worshipful mortals complete a divine ritual in your name.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You have the Godsworn title, and hundreds of worshipful mortals complete a divine ritual in your name.",
+      "effect": "You gain the following benefits:\n\n- Immortal Excellence: A characteristic of your choice increases by 1 (to a maximum of 6).\n- Longevity: Your natural lifespan doubles and you can appear to be any age.\n- Worshippers: You magically hear prayers directed to you.\n\nAdditionally, choose one of the following benefits:\n\n- Acolytes: The number of followers you can recruit increases by two\n- Divine Weapons: Whenever you use a damage-dealing weapon ability, that ability can deal corruption or holy damage instead of its usual damage type.\n- Missionaries: You earn 2 Renown."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "demon-slayer",
+    "name": "Demon Slayer",
+    "summary": "You defeat a leader or solo creature with the Demon keyword, such as a soulraker hivequeen, or you are possessed by a demon.",
+    "description": "You defeat a leader or solo creature with the Demon keyword, such as a soulraker hivequeen, or you are possessed by a demon.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You defeat a leader or solo creature with the Demon keyword, such as a soulraker hivequeen, or you are possessed by a demon.",
+      "effect": "Choose one of the following benefits:\n\nDemonic Lore: You know the Proto-Ctholl language. Additionally, when you deal damage using a magic ability, you can change the ability's damage type to holy.\n\n- Lethe: While you are winded, your strikes gain a +5 damage bonus\n- Made of Teeth: Your body can sprout teeth in unusual places. Whenever a creature makes physical contact with you or starts their turn touching you, you can deal 5 damage to them (no action required).\n- Soulsight: Any creature within 2 squares can't be hidden from you.",
+      "special": "When you make a Presence test and roll a natural 5 or lower, you are cursed to communicate in only Proto-Ctholl for 1 minute, whether you know that language or not."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "diabolist",
+    "name": "Diabolist",
+    "summary": "You defeat a leader or solo creature with the Devil keyword, such as an archdevil, or you make a deal with a devil.",
+    "description": "You defeat a leader or solo creature with the Devil keyword, such as an archdevil, or you make a deal with a devil.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You defeat a leader or solo creature with the Devil keyword, such as an archdevil, or you make a deal with a devil.",
+      "effect": "Choose one of the following benefits:\n\n- Devil Lore: You know the Anjali language, and your understanding of this language helps you create irresistible supernatural effects. The potencies of your magic or psionic abilities that target Reason, Intuition, or Presence increase by 1.\n- Infernal Legacy: You gain 3 ancestry points to spend on purchased devil ancestry traits.\n- Sly Devil: You gain the Silver Tongue signature trait from the devil ancestry.\n- Untouched by Corruption: Whenever you use a damage-dealing ability, that ability can deal holy damage instead of its usual damage type."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "doomed",
+    "name": "Doomed",
+    "summary": "You aren't a hakaan but have witnessed the death of a hakaan.",
+    "description": "You aren't a hakaan but have witnessed the death of a hakaan.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You aren't a hakaan but have witnessed the death of a hakaan.",
+      "effect": "You aren't destined for a meaningful death, but you still might achieve one. When you're reduced to 0 Stamina but remain conscious, you can become doomed. If you do, you can't regain Stamina, you automatically obtain a tier 3 outcome on tests and power rolls, and you don't die until your Stamina reaches the negative of your Stamina maximum. At the end of the encounter, you die."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "dragon-blooded",
+    "name": "Dragon Blooded",
+    "summary": "You defeat a leader or solo creature with the Dragon keyword, such as a gloom dragon.",
+    "description": "You defeat a leader or solo creature with the Dragon keyword, such as a gloom dragon.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You defeat a leader or solo creature with the Dragon keyword, such as a gloom dragon.",
+      "effect": "Choose one of the following benefits:\n\n- Dragon Scaled: Dragon scales grow on your body wherever the heart's blood of the dragon touched you. You gain the Wyrmplate signature trait from the dragon knight ancestry.\n- Dragon Touched: You gain 3 ancestry points to spend on purchased dragon knight ancestry traits."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "dwarven-legionnaire",
+    "name": "Dwarven Legionnaire",
+    "summary": "You fight alongside three or more dwarves.",
+    "description": "You fight alongside three or more dwarves.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You fight alongside three or more dwarves.",
+      "effect": "Choose one of the following benefits:\n\n- Close Formation: While adjacent to two or more allies, you gain a +2 bonus to stability.\n- Rune of Alarm: You can spend 10 uninterrupted minutes to inscribe a magic eye-shaped rune on a surface. The rune sheds light for 2 squares. The rune is dispelled 1 minute after it is activated or if you inscribe the rune elsewhere. The rune activates when an enemy comes within 2 squares of it. When the rune is activated, you wake up if you are nonmagically asleep, and you can perceive through the rune for 1 minute as if you were in its square.\n- Stonemeld: While adjacent to a stone wall, you can use a maneuver to gain concealment. This concealment lasts until you leave the square or use an ability."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "elemental-dabbler",
+    "name": "Elemental Dabbler",
+    "summary": "You defeat a creature with the Elemental keyword, such as a crux of fire.",
+    "description": "You defeat a creature with the Elemental keyword, such as a crux of fire.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You defeat a creature with the Elemental keyword, such as a crux of fire.",
+      "effect": "Choose a damage type to which the defeated creature had an immunity (such as fire). Then choose one of the following benefits:\n\n- Elemental Blaster: You have the Elementalist 1st-level Hurl Element feature, dealing the chosen damage type.\n- Elemental Immunity: You have immunity to the chosen damage type equal to your highest characteristic score.\n- Elemental Weapons: Whenever you use a damage-dealing weapon ability, that ability can deal damage of the chosen type instead of its usual damage type."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "enlightened",
+    "name": "Enlightened",
+    "summary": "You learn a cosmic truth that alters your understanding of reality.",
+    "description": "You learn a cosmic truth that alters your understanding of reality.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You learn a cosmic truth that alters your understanding of reality.",
+      "effect": "Your choice of your Reason or Intuition increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Cosmic Revelation: When you make a test with a skill from the lore skill group and obtain a tier 1 or tier 2 outcome, you can instead obtain a tier 3 outcome. Once you use this benefit, you can't use it again until you earn 1 or more Victories.\n- Mind Over Matter: Whenever you spend a Recovery, you can end one condition on yourself.\n- Rearrange the Game Pieces: You can reach behind the curtain and alter reality. At the start of combat, choose yourself or any creature within 5 squares. The chosen target must move up to their speed to a space you choose, but can't enter damaging terrain or terrain that could impose a condition on them. The target doesn't appear to move or teleport to that space—they are simply there. No one but you has any memory of the target's previous position."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "faction-member",
+    "name": "Faction Member",
+    "summary": "You join an army, guild, or similar organization.",
+    "description": "You join an army, guild, or similar organization.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You join an army, guild, or similar organization.",
+      "effect": "You gain membership in a faction. You're regarded as a promising but untested agent, and you're allowed to operate independently. You can be assigned tasks to further your faction's goals, and you can expect rewards and promotion if you succeed. When engaged in a negotiation with any member of your faction, their patience increases by 2 (to a maximum of 5).\n\nAdditionally, the Director assigns you one of the following benefits, as appropriate to the faction in question. The Director can also create a custom benefit for a type of faction not noted here. You can use this benefit only in a settlement where your faction has a presence, and once you use this benefit, you can't use it again until you complete a task for your faction.\n\n- Academic Faction: You find a sage who can make up to three Reason tests to recall lore or make project rolls for research projects on your behalf. The sage has a +5 bonus to these tests. These project rolls take 10 minutes each and don't need to be made during a respite.\n- Guild Faction: You find an expert crafter who can make up to three project rolls for crafting projects on your behalf. The crafter has a +5 bonus to these tests. These project rolls take 10 uninterrupted minutes each and don't need to be made during a respite.\n- Martial Faction: You recruit up to three minions with levels no greater than your own, of a type appropriate for the faction (such as human guards). These minions follow your orders for a day.\n- Spy Faction: You find an agent who can provide you with three pieces of information about the settlement you're in, such as the location of a hidden person, a secret entrance into a guarded area, or the negotiation motivation or pitfall of an important person.",
+      "special": "You can gain this title multiple times, once for each faction. You can be stripped of this title if you act against the faction's interests."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "faction-officer",
+    "name": "Faction Officer",
+    "summary": "You have the Faction Member title, and you greatly advance the faction's goals.",
+    "description": "You have the Faction Member title, and you greatly advance the faction's goals.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You have the Faction Member title, and you greatly advance the faction's goals.",
+      "effect": "You are given a position of great authority in your faction. Additionally, you gain the following benefits:\n\n- Requisition: When you gain this title, you gain a 1st- or 2nd-echelon magic trinket of your choice from your faction. Whenever you gain a level, you can swap the trinket out for another one.\n- You're the Boss: Lower-ranking members of your faction follow your routine orders. In nonroutine matters, you gain an edge on tests made to influence those characters' behavior."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fey-friend",
+    "name": "Fey Friend",
+    "summary": "You eat and drink with an elf monarch or archfey.",
+    "description": "You eat and drink with an elf monarch or archfey.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You eat and drink with an elf monarch or archfey.",
+      "effect": "You know the Khelt language. Additionally, choose one of the following benefits:\n\n- Gift of Charm: You have a skill of your choice from the interpersonal skill group.\n- Gift of Foresight: When resisting potencies, your Intuition score is considered to be 1 higher than usual.\n- Gift of Knowledge: You gain an edge on tests you make that use any skill from the lore skill group."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fleet-admiral",
+    "name": "Fleet Admiral",
+    "summary": "You have the Corsair title, and you lead a fleet of at least three ships.",
+    "description": "You have the Corsair title, and you lead a fleet of at least three ships.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You have the Corsair title, and you lead a fleet of at least three ships.",
+      "effect": "Choose one of the following benefits:\n\n- First Mate: You have a pirate retainer, such as a human warrior, chosen by the Director from Draw Steel: Monsters. This retainer's level increases to your level.\n- Swashbuckler: You can automatically climb at full speed while moving\n- Treasure Keeper: You earn 1 Wealth.\n- Weather Wizard: Once per day, you can spend 10 uninterrupted minutes to magically alter mundane weather in a 5-mile radius around you. The weather moves with you and persists for 6 hours or until you dismiss it as a free maneuver. Choose from one of the following weather types:\n    - Calm: Wind-powered vessels and technology cease working\n    - Fog: Visibility is reduced to 6 squares.\n    - High Winds: The speed of wind-powered vessels is doubled.\n    - Light Winds: No effects due to weather.\n    - Storm: The crew of an unsheltered wind-powered vessel must make a medium group Reason test. On a failure, the vessel needs repairs and moves at half speed until those repairs are made."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "forsaken",
+    "name": "Forsaken",
+    "summary": "Your party loses, destroys, or otherwise parts with an artifact.",
+    "description": "Your party loses, destroys, or otherwise parts with an artifact.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "Your party loses, destroys, or otherwise parts with an artifact.",
+      "effect": "A characteristic of your choice increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Brief Reunion: While you're winded, you can use a maneuver to summon the artifact to your hand. It disappears at the end of your next turn. Once you use this benefit, you can't use it again until you earn 1 or more Victories.\n- Perfect Protection: The Director chooses a damage type that is dealt by or thematically related to the artifact—for instance, holy for the Blade of a Thousand Years, psychic for the Encepter, or corruption for the Mortal Coil. You have immunity all to the chosen damage type.\n- Poor Compensation: Instead of disappearing or otherwise departing, the artifact turns into a trinket or leveled treasure of the Director's choice that has the same approximate shape as the lost item—for instance, any magic sword for the Blade of a Thousand Years, any implement for the Encepter, or a Thief of Joy or any other torque for the Mortal Coil."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "giant-slayer",
+    "name": "Giant Slayer",
+    "summary": "You defeat a leader or solo creature with the Giant keyword, such as a fire giant chief.",
+    "description": "You defeat a leader or solo creature with the Giant keyword, such as a fire giant chief.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You defeat a leader or solo creature with the Giant keyword, such as a fire giant chief.",
+      "effect": "Choose one of the following benefits:\n\n- Smallfolk Dodge: Any creature of size 2 or larger takes a bane on strikes against you.\n- The Harder They Fall: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nThe Harder They Fall (7 Heroic Resource)\n\nMelee, Strike, Weapon · Main action\nMelee 1 · One creature\n\nPower Roll + Might or Agility:\n\n- ≤11: 7 damage; M < WEAK, prone and can't stand (save ends)\n- 12-16: 11 damage; M < AVERAGE, prone and can't stand (save ends)\n- 17+: 16 damage; M < STRONG, prone and can't stand (save ends)\n\nSpecial: If the target is size 2 or larger, you gain an edge on this ability.\n\n- Up the Beanstalk: You have the Climb skill. If you already have this skill, you instead gain an edge on tests made using the Climb skill. While you're climbing a creature, the creature has a double bane on strikes against you and you have a double edge on tests made to stay on the creature."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "godsworn",
+    "name": "Godsworn",
+    "summary": "You do a favor for an agent of a god or saint, or promise to do so.",
+    "description": "You do a favor for an agent of a god or saint, or promise to do so.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You do a favor for an agent of a god or saint, or promise to do so.",
+      "effect": "Choose one of the following benefits:\n\n- Healing Gift: You can use the 1st-level Conduit feature Healing Grace as if you had spent 1 piety. Once you use this benefit, you can't use it again until you earn 1 or more Victories.\n- Last-Ditch Prayer: As a free maneuver, you recite a prayer for help, gaining a pool of 2d10 of the Heroic Resource granted by your class. This pool disappears at the end of your turn if you haven't used it. Once you use this benefit, you can't use it again until you perform another service for a god or saint, or until you gain a level.\n- Touched by the Divine: Choose a god or saint from the Deities and Domains table in Chapter 14: Gods and Religion. From that god or saint's domains, choose a Conduit 1st-level domain feature."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "heist-hero",
+    "name": "Heist Hero",
+    "summary": "You have the Troupe Leading Player title, and you have used planning and teamwork to execute a theft that went (reasonably) according to plan.",
+    "description": "You have the Troupe Leading Player title, and you have used planning and teamwork to execute a theft that went (reasonably) according to plan.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You have the Troupe Leading Player title, and you have used planning and teamwork to execute a theft that went (reasonably) according to plan.",
+      "effect": "Choose one of the following benefits:\n\n- Mother Hen: You can spend 10 uninterrupted minutes to psionically enhance up to five willing creatures within 10 squares of you who understand a language you know. For the next hour, you and each target can communicate telepathically with each other no matter the distance between you.\n- Sneakers: You gain the Sneak skill. If you already have this skill, you instead gain an edge on tests made using the Sneak skill. During group tests, you can both use the Sneak skill and assist another hero using the Sneak skill.\n- Timely Distraction: You have the following triggered action.\n\nTimely Distraction\n\nComing through with hot soup!  I better watch out for that banana peel!\n\nRanged · Triggered\nRanged 10 · One creature\n\nTrigger: An ally makes a test to lie to, pick the pocket of, hide from, or sneak by the target and doesn't like the outcome.\n\nEffect: You momentarily attract the target's notice to let your ally reroll their test. Once you use this ability, you can't use it again against the same target for 1 hour."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "knight",
+    "name": "Knight",
+    "summary": "A noble or monarch grants you knighthood or a similar rank.",
+    "description": "A noble or monarch grants you knighthood or a similar rank.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "A noble or monarch grants you knighthood or a similar rank.",
+      "effect": "Choose one of the following benefits:\n\n- Heraldic Fame: You earn 1 Renown.\n- Knightly Aegis: Your Stamina maximum increases by 6.\n- Knightly Challenge: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nKnightly Challenge (5 Heroic Resource)\n\nHave at thee!\n\nMelee, Strike, Weapon · Main action\nMelee 1 · One creature\n\nPower Roll + Might or Agility:\n\n- ≤11: 7 damage; taunted (save ends)\n- 12-16: 11 damage; taunted (save ends)\n- 17+: 16 damage; taunted (save ends)\n\nEffect: You can end the taunted condition on the target as a free maneuver.\n\nSpecial: If you take this title, you might occasionally be called upon to perform duties for the person who knighted you."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "local-hero",
+    "name": "Local Hero",
+    "summary": "You save a community from certain destruction.",
+    "description": "You save a community from certain destruction.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You save a community from certain destruction.",
+      "effect": "Choose one of the following benefits:\n\n- Easy Marks: You gain an edge on tests made using skills from the interpersonal and intrigue skill groups when influencing members of a community that you have saved.\n- Local Fame: You earn 1 Renown.\n- A New Dawn: Each time you finish a respite while in a community you have saved, the party gains a hero token. This hero token disappears at the end of your next respite if it hasn't been used."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "maestro",
+    "name": "Maestro",
+    "summary": "You visit the realms of gods, devils, or other immortal beings and hear a note of the Music of Creation.",
+    "description": "You visit the realms of gods, devils, or other immortal beings and hear a note of the Music of Creation.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You visit the realms of gods, devils, or other immortal beings and hear a note of the Music of Creation.",
+      "effect": "Choose one of the following benefits:\n\n- Angelic Chorus: You can use the lessons of musical improvisation in combat. Choose one class act triggered action from the troubadour class. You gain that ability regardless of whether your class and subclass allow you to take it. If this ability allows you to gain or spend drama, you can gain or spend the Heroic Resource of your class in place of drama.\n- Devil's Opera: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nThe Devil's Chord (9 Heroic Resource)\n\nHelloooo Orden!\n\nArea, Magic · Main action\n5 burst · Each creature in the area\n\nPower Roll + Presence:\n\n- ≤11: You take 4 sonic damage unless you have the Performance skill.\n- 12-16: 6 sonic damage; M < AVERAGE, weakened (save ends)\n- 17+: 10 sonic damage; M < STRONG, weakened and bleeding (save ends)\n\nEffect: The soul of any creature killed by this ability is dragged to Hell.\n\n- Music of the Spheres: As a main action, you sing or play a note as delicate and sharp as glass—and just as easily shattered. Until the start of your next turn, whenever a creature within 10 squares makes a strike, they take 8 sonic damage. Whenever you make a strike during that same period, you also take 8 sonic damage."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "mage-hunter",
+    "name": "Mage Hunter",
+    "summary": "You defeat three leader or solo creatures who each have at least one ability with the Magic keyword.",
+    "description": "You defeat three leader or solo creatures who each have at least one ability with the Magic keyword.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You defeat three leader or solo creatures who each have at least one ability with the Magic keyword.",
+      "effect": "Choose one of the following benefits:\n\n- Arcane Dampening: When resisting potencies from magic abilities, your characteristic scores are considered to be 1 higher than usual.\n- Oh No, You Don't!: Whenever an adjacent creature uses an ability with the Magic keyword, you can make a free strike against them as a triggered action.\n- Stink of Magic: As a maneuver, you open your senses to the residue of magic. Until the end of your next turn, you are aware of whether each creature within 5 squares is a construct, an undead, or a creature from another world, and whether they have used a magic ability in the previous hour. Additionally, you can't be surprised by constructs, undead, or creatures from another world."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "marshal",
+    "name": "Marshal",
+    "summary": "You join an organization that hunts criminals, or you are deputized to act for the local authorities.",
+    "description": "You join an organization that hunts criminals, or you are deputized to act for the local authorities.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You join an organization that hunts criminals, or you are deputized to act for the local authorities.",
+      "effect": "Choose one of the following benefits:\n\n- Guess It's the Hard Way Then: When combat begins and you aren't surprised, the first time you take damage before taking your turn, you halve that damage.\n- Heedless Pursuer: Once on each of your turns, you can use a free maneuver to deal yourself 1d6 damage that can't be reduced in any way. When you do, you ignore difficult terrain and you can increase the distance of any jump you make by 1 square, both until the end of your turn.\n- Silver Shield: You have a badge granted to you by your organization. While you wear it, you gain the My Life for Yours feature from the censor class. When you use that ability, you can't spend wrath unless you have the Wrath class feature.\n- Trained Tracker: You gain an edge on tests made to track criminals.",
+      "omissions": [
+        "The example organization is a setting group and is left out."
+      ],
+      "provenance_display": "omissions — The example organization is a setting group and is left out."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "master-crafter",
+    "name": "Master Crafter",
+    "summary": "You complete a downtime project to imbue armor, an implement, or a weapon with a 9th-level enhancement.",
+    "description": "You complete a downtime project to imbue armor, an implement, or a weapon with a 9th-level enhancement.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You complete a downtime project to imbue armor, an implement, or a weapon with a 9th-level enhancement.",
+      "effect": "Choose one of the following benefits:\n\n- Masterpiece: The armor, implement, or weapon can be imbued a fourth time, with any enhancement the item qualifies for.\n- Research Dividends: You gain the item prerequisite for an armor, implement, or weapon enhancement of your choice. Additionally, you learn the project source language for that enhancement.\n- Skilled Hands: You have a skill from the crafting skill group that would have been used during the creation of the prerequisite item. If you already have that skill, you instead gain an edge on tests made using the skill. Additionally, you gain a second skill of your choice from the crafting skill group.\n- Strong Hands Make Light Work: Whenever you make a project roll, you can use Might as the project roll characteristic."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "master-librarian",
+    "name": "Master Librarian",
+    "summary": "You have the Ancient Loremaster title, and you have completed a Discover Lore project to learn lost knowledge or forbidden knowledge.",
+    "description": "You have the Ancient Loremaster title, and you have completed a Discover Lore project to learn lost knowledge or forbidden knowledge.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You have the Ancient Loremaster title, and you have completed a Discover Lore project to learn lost knowledge or forbidden knowledge.",
+      "effect": "Choose one of the following benefits:\n\n- Arcane Improvisation: When you use a damage-dealing magic signature ability, you can change its damage type to acid, cold, corruption, fire, lightning, poison, or sonic damage.\n- I Have Just the Book: If you start a Discover Lore project in your hero's stronghold or other a permanent base of operations you immediately gain 60 project points toward the completion of that project. If the project costs 60 or fewer points, you complete it in 10 uninterrupted minutes without needing to use a respite activity.\n- Picked Up a Few Things: You know a skill from the lore skill group.\n- Polyglot: You know two languages. Additionally, the project goal for the Learn New Language project is halved for you."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "monarch",
+    "name": "Monarch",
+    "summary": "You or a member of your party becomes the monarch of a nation.",
+    "description": "You or a member of your party becomes the monarch of a nation.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You or a member of your party becomes the monarch of a nation.",
+      "effect": "You gain the following benefits:\n\n- Royal Authority: Inhabitants of your nation must obey your lawful orders or suffer the consequences.\n- Royal Majesty: Your choice of your Might or Presence increases by 1 (to a maximum of 6).\n\nAdditionally, choose one of the following benefits:\n\n- Crown Jewels: You gain one of your nation's treasures—a trinket of the Director's choice.\n- Royal Fame: You earn 2 Renown.\n- Royal Retinue: The number of followers you can recruit increases by 2\n- Royal Wealth: You earn 2 Wealth.",
+      "special": "If you take this title, you might be called upon to perform duties for your nation."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "monster-bane",
+    "name": "Monster Bane",
+    "summary": "You defeat a leader or solo creature with a Reason score of −2 or lower, such as an arixx.",
+    "description": "You defeat a leader or solo creature with a Reason score of −2 or lower, such as an arixx.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You defeat a leader or solo creature with a Reason score of −2 or lower, such as an arixx.",
+      "effect": "Choose one of the following benefits:\n\n- Beast Bane: Creatures with the Animal keyword take a bane on strikes made against you.\n- Monster Soother: You gain an edge on tests made to calm or tame nonsapient creatures.\n- Monster Trophy: You decorate your equipment with a trophy from a creature you defeated. While the trophy is visible, you gain an edge on tests made to intimidate sapient creatures."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "noble",
+    "name": "Noble",
+    "summary": "A monarch or important noble grants you a noble rank.",
+    "description": "A monarch or important noble grants you a noble rank.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "A monarch or important noble grants you a noble rank.",
+      "effect": "Choose one of the following benefits:\n\n- I Know How to Talk to These People: You gain an edge on Presence tests made to interact with royals, nobles, and their feudal followers, provided they are aware of your noble rank.\n- Noble Splendor: You earn 1 Renown and 1 Wealth.\n- Retinue: The number of followers you can recruit increases by two.",
+      "special": "If you take this title, you might occasionally be called upon to perform duties for the person who granted your noble rank."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "owed-a-favor",
+    "name": "Owed a Favor",
+    "summary": "You successfully perform a service for a powerful faction.",
+    "description": "You successfully perform a service for a powerful faction.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You successfully perform a service for a powerful faction.",
+      "effect": "The faction will perform one favor for the party, provided it doesn't interfere with the faction's goals.\n\nAdditionally, the faction is a good source of information. The Director chooses a skill from the crafting or lore skill groups appropriate to the faction, such as the Criminal Underworld skill for an outlaw gang, the Blacksmithing skill for a blacksmith's guild, or the Society skill for a noble house. While in a settlement where the faction has a presence, you gain this skill if you don't already have it. If you already have the skill, you instead gain an edge on tests made using the skill."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "peace-bringer",
+    "name": "Peace Bringer",
+    "summary": "You conduct a successful negotiation on which the fate of a nation or a world stands.",
+    "description": "You conduct a successful negotiation on which the fate of a nation or a world stands.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You conduct a successful negotiation on which the fate of a nation or a world stands.",
+      "effect": "Your choice of your Reason or Presence increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Calm Heads Prevail: When you make a test to stop combat and start a negotiation, you always obtain a tier 3 outcome.\n- Drop Your Sword: When you succeed on a test using the Intimidate skill, you can cause affected creatures to drop any items they are holding.\n- Hear Me Out: While you are present in a negotiation, an NPC's starting patience increases by 3 (to a maximum of 5).\n- Many Paths to Peace: When you make a test with a skill from the interpersonal skill group, you can use any characteristic of your choice for the test."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "planar-voyager",
+    "name": "Planar Voyager",
+    "summary": "You voyage in strange vehicles on different worlds.",
+    "description": "You voyage in strange vehicles on different worlds.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You voyage in strange vehicles on different worlds.",
+      "effect": "Choose one of the following benefits:\n\n- Prismacore Eyes: Exposure to prismacore has given your eyes a mirrorlike sheen. You have psychic immunity 10, creatures can't use magic or psionic abilities or other effects to determine your location or read your thoughts unless you allow them to, and you gain a +3 bonus to stability against magic or psionic abilities.\n- Stellar Knowledge: You gain the Mechanics skill. If you already have this skill, you instead gain an edge on tests made using the skill. Additionally, you gain the item prerequisite and project source for a psionic trinket.\n- Time Raider Training: You gain 2 ancestry points to spend on purchased time raider ancestry traits."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "presumed-dead",
+    "name": "Presumed Dead",
+    "summary": "You die in a way that prevents your body from being recovered or examined (for instance, by falling off a cliff).",
+    "description": "You die in a way that prevents your body from being recovered or examined (for instance, by falling off a cliff).",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You die in a way that prevents your body from being recovered or examined (for instance, by falling off a cliff).",
+      "effect": "While it might appear that you died, you did not. Instead, you regain 1 Stamina and can spend 1 or more Recoveries. Additionally, you gain a 1st-echelon trinket of the Director's choice.\n\nAt a dramatic moment determined by the Director, you rejoin your party with an explanation for your narrow escape, and how you found your new trinket along the way."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "ratcatcher",
+    "name": "Ratcatcher",
+    "summary": "You defeat a leader or solo creature who is size 1S or smaller, such as a goblin monarch.",
+    "description": "You defeat a leader or solo creature who is size 1S or smaller, such as a goblin monarch.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You defeat a leader or solo creature who is size 1S or smaller, such as a goblin monarch.",
+      "effect": "Choose one of the following benefits:\n\n- Come Out to Play: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nCome Out to Play (1 Heroic Resource)\n\nCome out to play—yay!\n\nArea, Magic · Maneuver\n5 burst · Each enemy in the area hidden to you\n\nEffect: Each target who has P < AVERAGE is taunted by you until the end of their next turn, and you know the location of each creature taunted in this way.\n\n- Deadly and Big: Your strikes gain a +3 damage bonus against creatures whose size is smaller than yours.\n- Everybody Move!: When you use the Knockback maneuver, you can target one additional creature of your size or two additional smaller creatures."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "reborn",
+    "name": "Reborn",
+    "summary": "You died in glorious battle while on a quest for a higher power.",
+    "description": "You died in glorious battle while on a quest for a higher power.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You died in glorious battle while on a quest for a higher power.",
+      "effect": "A god or other powerful being has determined that it is not yet your time to die. Your body fades away, but you reappear alive 24 hours later in a location of your choice. You regain all your Stamina and Recoveries, and your choice of your Intuition or Presence increases by 1 (to a maximum of 6).\n\nAdditionally, choose one of the following benefits:\n\n- Holy Weapon: You have a leveled treasure of the Director's choice.\n- Kill Me Once, Shame On You: Choose a creature keyword belonging to one of the creatures who defeated you. Any creature with that keyword takes a bane on ability rolls against you.\n- Memories of the Beyond: You have two skills of your choice.",
+      "special": "If a hakaan gains this title as a result of using their Doomsight trait, they lose that trait."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "saved-for-a-worse-fate",
+    "name": "Saved for a Worse Fate",
+    "summary": "The entire party is killed or captured by sapient foes.",
+    "description": "The entire party is killed or captured by sapient foes.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "The entire party is killed or captured by sapient foes.",
+      "effect": "After being defeated, each character awakes, alive and with full Stamina and Recoveries. You are all captives of the creatures who defeated you, and a gruesome end awaits you—unless you can escape or overcome the nefarious challenge your captors have planned.\n\nThe Director chooses one of the following benefits, based on the fate your captors have in mind for you. Each hero gains the same benefit. Additionally, you must face an encounter, montage test, or adventure related to the benefit, as the Director determines.\n\n- Gladiators: You must fight to the death for your captors' amusement. Your intended opponents wield or guard a trinket or leveled treasure, which you can earn if you are victorious.\n- Prey: Your captors plan to release you and hunt you down, but it's no fun unless you offer a challenge. Each of you is given a medicinal draught that grants a +1 bonus to speed and increases your Recoveries by 2. This benefit lasts until the end of your next respite.\n- Sacrifices: You are to be dropped in a volcano, fed to a sacred monster, abandoned in a desert, or otherwise sacrificed to a higher power. You are bedecked with holy jewelry. Each hero earns 1 Wealth.\n- Saviors: Your captors fear an even stronger foe, and they want you to defeat this enemy for them. You can even keep any treasure you find while doing so."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "scarred",
+    "name": "Scarred",
+    "summary": "An enemy leader or solo creature reduces you to 0 Stamina.",
+    "description": "An enemy leader or solo creature reduces you to 0 Stamina.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "An enemy leader or solo creature reduces you to 0 Stamina.",
+      "effect": "You gain a visible scar in a location of your choice. Additionally, your Stamina maximum increases by 20, and the creature who scarred you takes a bane on abilities against you.",
+      "special": "You can gain this title multiple times. The second and each subsequent time that you gain it, your Stamima maximum doesn't increase.."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "ship-captain",
+    "name": "Ship Captain",
+    "summary": "You acquire a ship, airship, or similar vessel.",
+    "description": "You acquire a ship, airship, or similar vessel.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You acquire a ship, airship, or similar vessel.",
+      "effect": "Choose one of the following benefits:\n\n- Deep-Sea Diver: You can automatically swim at full speed while moving.\n- Ship Speaker: You magically know the location of any ship controlled by your party even while you aren't aboard. You can telepathically communicate with anyone on board one of your ships who understands a language, and they can respond, no matter your distance from the ship.\n- Signal Flags: While aboard a ship, you can communicate with and conduct negotiations with another ship up to 5 miles away, as long as you and creatures on the other ship have line of effect to each other. You gain an edge on Presence tests made while negotiating in this way.\n- Trained Crewmember: You gain an edge on tests made to handle air or sea vessels."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "siege-breaker",
+    "name": "Siege Breaker",
+    "summary": "You have the Battlefield Commander title, and you lead the defense of a settlement or fortification.",
+    "description": "You have the Battlefield Commander title, and you lead the defense of a settlement or fortification.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You have the Battlefield Commander title, and you lead the defense of a settlement or fortification.",
+      "effect": "Choose one of the following benefits:\n\n- Death From Above: When you gain an edge on an ability due to high ground, the ability gains a +8 damage bonus.\n- Hold the Line: While you're within 5 squares of an ally, you and each ally within 5 squares of you gains a +3 bonus to stability.\n- Last Defender: Whenever an ally within 5 squares is reduced to 0 Stamina, you gain temporary Stamina equal to the ally's level (or 1 if they have no level). If you already have temporary Stamina granted by this title, you increase your temporary Stamina by the amount you would have gained."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "special-agent",
+    "name": "Special Agent",
+    "summary": "A spymaster gives you an important secret mission.",
+    "description": "A spymaster gives you an important secret mission.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "A spymaster gives you an important secret mission.",
+      "effect": "Choose one of the following benefits:\n\n- Boffin: You gain a small magic spy device called a boffin. Once per encounter, you can activate a boffin property as a maneuver.\n- Caustic Alchemy: You have your choice of the 1st-level shadow college features Coat the Blade or Smoke Bomb. When you use that feature, you can't spend insight unless you have the Insight class feature.\n- Spy Ring: You gain a piece of magic jewelry, such as a ring. As a main action while wearing the jewelry, you can take on the illusory appearance of an individual within 10 squares who you have line of effect to. This disguise lets you automatically succeed on tests made using the Disguise skill based solely on visual identification.\n\nBoffin Properties\n\nTaking the Boffin benefit lets you use the following boffin properties as a maneuver:\n\n- Make a test that uses the Disguise skill. You gain an edge on the test.\n- One mundane lock you touch is unlocked.\n- Choose a square within 10 squares, even if you don't have line of effect to it. You can observe the area around that square as if you were in it.\n- You throw the boffin up to 10 squares, where it explodes in a 5 cube. Each creature in the area takes fire damage equal to 2d10 + your level. The boffin is permanently destroyed but can be replaced by your spymaster... though they don't like doing so too often."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sworn-hunter",
+    "name": "Sworn Hunter",
+    "summary": "You have the Marshal title, and you take down an entire criminal organization.",
+    "description": "You have the Marshal title, and you take down an entire criminal organization.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You have the Marshal title, and you take down an entire criminal organization.",
+      "effect": "Choose one of the following benefits:\n\n- Hunter's Oath: As a main action, you swear a hunter's oath against a creature within 10 squares who you have line of effect to. This oath lasts until the target dies or until you swear a hunter's oath against a different creature. As long as the hunter's oath lasts, you magically know the direction to the target if they are within 50 miles of you, and your damage-dealing abilities gain a +5 damage bonus against the target.\n- Particular Set of Skills: You know a skill from the intrigue skill group.\n- We're In This Together: When you have a creature grabbed and take damage from an ability not used by that creature, the grabbed creature takes the same damage."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "teacher",
+    "name": "Teacher",
+    "summary": "You train or command at least three lower-level members of your class.",
+    "description": "You train or command at least three lower-level members of your class.",
+    "properties": {
+      "echelon": "3rd",
+      "prerequisite": "You train or command at least three lower-level members of your class.",
+      "effect": "You can travel with a student who shares your class. The student has the statistics of a 1st-level member of your class and has the same skills as you, but doesn't engage in combat. They can perform any out-of-combat tasks a 1st-level member of your class can perform. Whenever they make a test to assist you in a task, they can't obtain less than a tier 2 outcome on the test."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "theoretical-warrior",
+    "name": "Theoretical Warrior",
+    "summary": "You have the Master Librarian title, and you complete a Learn From a Master project with a project goal of 1,000.",
+    "description": "You have the Master Librarian title, and you complete a Learn From a Master project with a project goal of 1,000.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You have the Master Librarian title, and you complete a Learn From a Master project with a project goal of 1,000.",
+      "effect": "Your choice of your Reason or Intuition increases by 1 (to a maximum of 6).\n\nAdditionally, choose a heroic ability belonging to any class. You gain this heroic ability, which can be paid for using the Heroic Resource of your class. You can't use a heroic ability that requires a class feature you don't have."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "tireless",
+    "name": "Tireless",
+    "summary": "You have the Unstoppable title, and you make or assist on a test as part of a montage test that obtains a full success.",
+    "description": "You have the Unstoppable title, and you make or assist on a test as part of a montage test that obtains a full success.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You have the Unstoppable title, and you make or assist on a test as part of a montage test that obtains a full success.",
+      "effect": "Your choice of your Might or Agility increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Bounce Back Fast: Whenever you rest for 8 hours or more, you can gain the benefit of a respite. Once you use this benefit, you can't use it again until you have taken a regular respite.\n- Reserves of Strength: Your recovery value is half your Stamina\n- Undying: You can't be affected by the bleeding condition."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "troupe-leading-player",
+    "name": "Troupe Leading Player",
+    "summary": "The party has successfully performed as a troupe of actors, circus performers, or other entertainers.",
+    "description": "The party has successfully performed as a troupe of actors, circus performers, or other entertainers.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "The party has successfully performed as a troupe of actors, circus performers, or other entertainers.",
+      "effect": "Choose one of the following benefits:\n\n- Flying Circus: When you are adjacent to a willing ally on their turn, you can use a triggered action to push them up to 2 squares if their size is the same as yours, or 4 squares if they are smaller. If this push causes the ally to fall, they can use a maneuver before they fall to reduce the height of the fall by 2.\n- Spotlight: You magically cause a creature within 10 squares to shed light for 5 squares. This light lasts for 1 minute, until the creature is more than 10 squares away from you, or until you dismiss the effect (no action required). While illuminated, a creature can't sneak or hide, they take a bane on tests made to perform any action secretly, and they gain an edge on tests made using the Lead, Music, or Perform skills.\n- Supporting Player: You gain an edge on group tests using Presence and on tests made to assist another creature with a Presence test.\n- Work the Crowd: While any of your allies is playing music or performing, you gain an edge on tests made to conceal objects, hide, pick pockets, or sneak."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "unchained",
+    "name": "Unchained",
+    "summary": "You have the Heist Hero title, and you have stolen a precious object or escaped from captivity while evading guards of 8th level or higher.",
+    "description": "You have the Heist Hero title, and you have stolen a precious object or escaped from captivity while evading guards of 8th level or higher.",
+    "properties": {
+      "echelon": "4th",
+      "prerequisite": "You have the Heist Hero title, and you have stolen a precious object or escaped from captivity while evading guards of 8th level or higher.",
+      "effect": "Your choice of your Might or Agility increases by 1 (to a maximum of 6). Additionally, choose one of the following benefits:\n\n- Bye-Bye: You can use a maneuver to teleport yourself and each willing ally within 5 squares of you to new positions within 10 squares of your original starting point. Once you use this benefit, you can't use it again until you earn 1 or more Victories.\n- Laughs at Locks: Whenever you make a test to open a lock or break a restraint, you don't need any tools and you automatically obtain a tier 3 outcome.\n- Slippery: You can't be grabbed against your will."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "undead-slain",
+    "name": "Undead Slain",
+    "summary": "You are killed by an undead creature.",
+    "description": "You are killed by an undead creature.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You are killed by an undead creature.",
+      "effect": "You return to life 1 minute after being killed with Stamina equal to your winded value. You gain corruption immunity equal to your level and one of the benefits below, based on the type of creature who killed you. If you die again, you rise as an undead creature under the Director's control.\n\n- Ghoul or Vampire: When you make a melee free strike against an adjacent creature, you can bite that creature. If you do so and obtain a tier 3 outcome, you gain temporary Stamina equal to the damage dealt. If not lost beforehand, this temporary Stamina lasts until the end of your next respite.\n- Incorporeal Undead: You can move through other creatures and objects. The first time in a combat round that you pass through a creature, that creature takes corruption damage equal to half your level. You don't take damage from being force moved into objects.\n- Other Corporeal Undead: When you are reduced to 0 Stamina by damage that isn't fire or holy damage and your body isn't destroyed, you can regain half your Stamina and fall prone. Once you use this benefit, you can't use it again until you earn 10 or more Victories."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "unstoppable",
+    "name": "Unstoppable",
+    "summary": "You defeat a foe while at or below 0 Stamina.",
+    "description": "You defeat a foe while at or below 0 Stamina.",
+    "properties": {
+      "echelon": "2nd",
+      "prerequisite": "You defeat a foe while at or below 0 Stamina.",
+      "effect": "Choose one of the following benefits:\n\n- From Hell's Heart: While you are winded, your melee strikes gain a +3 damage bonus.\n- Furious Attack: Choose one signature ability from the fury class. You gain that ability regardless of whether your class and subclass allow you to take it. If this ability allows you to gain or spend ferocity, you can't do so unless you have the Ferocity class feature.\n- Furious Charge: When you use the Charge action, your strike made as part of that action gains a damage bonus equal to the number of squares you moved as part of the charge."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "wanted-dead-or-alive",
+    "name": "Wanted Dead or Alive",
+    "summary": "You are declared an outlaw by a governmental authority.",
+    "description": "You are declared an outlaw by a governmental authority.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You are declared an outlaw by a governmental authority.",
+      "effect": "Choose one of the following benefits:\n\n- Honor Among Thieves: When negotiating with criminals, your Renown score is considered to be 2 higher than usual.\n- Minion Mower: When you make a melee strike that targets a minion and at least one more minion is within distance of the strike, the strike gains a +3 damage bonus.\n- No, You're Under Arrest!: You gain an edge on the Escape Grab maneuver. Additionally, when you succeed on a test to escape bonds or manacles, as part of the same maneuver, you can transfer the bonds or manacles to an adjacent creature of the same size without them immediately noticing."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "zombie-slayer",
+    "name": "Zombie Slayer",
+    "summary": "You defeat a leader or solo creature with the Undead keyword, such as a ghost.",
+    "description": "You defeat a leader or solo creature with the Undead keyword, such as a ghost.",
+    "properties": {
+      "echelon": "1st",
+      "prerequisite": "You defeat a leader or solo creature with the Undead keyword, such as a ghost.",
+      "effect": "Choose one of the following benefits:\n\n- Blessed Weapons: Whenever you use a damage-dealing weapon ability, that ability can deal holy damage instead of its usual damage type.\n- Divine Health: You gain corruption immunity equal to your highest characteristic score. Additionally, you can't be turned into an undead creature.\n- Holy Terror: You have the following ability, which can be paid for using the Heroic Resource of your class.\n\nHoly Terror (3 Heroic Resource)\n\nReturn to your grave!\n\nArea, Magic · Maneuver\n3 burst · Each undead enemy in the area\n\nEffect: Each target takes holy damage equal to your Reason, Intuition, or Presence score (your choice). Additionally, each target who has P < STRONG is frightened (save ends)."
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  }
+]
