@@ -1015,6 +1015,12 @@
       '.ll-card b{display:block;font:900 26px/.95 ' + LL_D + ';text-transform:uppercase;margin:4px 0 6px}',
       '.ll-card span.ll-d{display:block;font-size:14px;color:#cfd3dc}',
       '.ll-card i{display:block;margin-top:8px;font:700 12px/1 ' + LL_U + ';letter-spacing:.12em;text-transform:uppercase;color:#e1a32c;font-style:normal}',
+      // The Handbook's open mark breathes gently, as the front page's read and
+      // play marks do, and rests once reached.
+      '.ll-mark{display:inline-block;margin-left:4px;white-space:nowrap;font-style:normal;animation:ll-breathe 2.6s ease-in-out infinite}',
+      '.ll-card:hover .ll-mark,.ll-card:focus-visible .ll-mark{animation:none}',
+      '@keyframes ll-breathe{0%,100%{transform:none;opacity:.7}50%{transform:scale(1.1);opacity:1}}',
+      '@media (prefers-reduced-motion:reduce){.ll-mark{animation:none}}',
       '.ll-mini{width:96px;aspect-ratio:3/4;border-radius:2px 5px 5px 2px;background:linear-gradient(135deg,#2f6b4f,#163626);' +
         'box-shadow:inset 5px 0 0 #0e2219,0 6px 10px rgba(0,0,0,.4);display:grid;place-items:center;position:relative}',
       '.ll-mini::after{content:"";position:absolute;inset:6px 6px 6px 10px;border:1.5px solid #e9b84a;border-radius:2px}',
@@ -1073,7 +1079,7 @@
   function tileHTML(scene) {
     return '<button type="button" class="ll-card" data-ll-open aria-haspopup="dialog"><span class="ll-mini" aria-hidden="true">' + SKULL + '</span>' +
       '<span><small>Pop-up book · Worked scene</small><b>' + esc(scene.name) + '</b>' +
-      '<span class="ll-d">' + esc(scene.description) + '</span><i>Open the book →</i></span></button>';
+      '<span class="ll-d">' + esc(scene.description) + '</span><i>Open the book <em class="ll-mark" aria-hidden="true">⤪ play</em></i></span></button>';
   }
 
   // boardHTML follows the example player's DOM contract: a chip per part
