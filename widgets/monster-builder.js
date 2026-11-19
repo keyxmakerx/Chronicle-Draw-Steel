@@ -35,22 +35,31 @@ var DrawSteelCreatureEditor = (function () {
   // newState builds an editor state from a creature in either stored shape. A
   // stored figure that differs from its formula, or that no formula covers, is
   // the director's own and stays put: opening the editor never rewrites it.
-  function newState(name, src, refs) {
+  function newState(name, src, refs, book) {
     var S = SB();
     var c = S.normalize(src || {});
-    if (c.level === null) c.level = 1;
-    var st = { name: name || c.name || '', aiName: false, c: c, own: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] }, base: {} };
+    c.level = c.level === null ? 1 : clampLevel(c.level);
+    var st = { name: name || c.name || '', aiName: false, c: c, own: {}, fromBook: {}, spread: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] }, base: {} };
     // Chronicle replaces a page's fields wholesale on save, so fields this
     // editor doesn't own are carried through untouched.
     if (src && typeof src === 'object' && !Array.isArray(src)) Object.keys(src).forEach(function (k) { st.base[k] = src[k]; });
-    var pr = S.provenance(c, st.refs);
+    var pr = S.provenance(c, st.refs, book || null);
     ['ev', 'stamina', 'free_strike'].forEach(function (k) {
       var stored = k === 'free_strike' ? S.freeStrikeNumber(c.free_strike) : c[k];
       if (stored !== null && pr[k] && pr[k].state !== 'formula') st.own[k] = true;
+      // A book creature's printed figure is the book's, not the director's.
+      if (pr[k] && pr[k].state === 'book') st.fromBook[k] = true;
     });
     if (c.winded !== null && c.stamina !== null && c.winded !== Math.floor(c.stamina / 2)) st.own.winded = true;
     derive(st);
+    followSpread(st);
     return st;
+  }
+
+  // The editor's levels run 1 to 20, whole numbers.
+  function clampLevel(v) {
+    var n = Math.round(Number(v));
+    return isFinite(n) ? Math.max(1, Math.min(20, n)) : 1;
   }
 
   // autoTier rewrites the leading "N damage" (or "N fire damage") of a tier's
@@ -65,6 +74,60 @@ var DrawSteelCreatureEditor = (function () {
   function isStrike(a) {
     var S = SB();
     return S.parseList(a.keywords).some(function (k) { return String(k).toLowerCase() === 'strike'; });
+  }
+
+  var DAMAGE_OPENS = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
+
+  // applyDamage writes the formula's damage into the tiers that deal damage (or
+  // are empty); a tier written as something else ("Push 2", "No effect.") stays
+  // as it was, since the formula has nothing to say about it.
+  function applyDamage(a, d, add) {
+    ['tier1', 'tier2', 'tier3'].forEach(function (k) {
+      var t = String(a[k] || '');
+      if (t.trim() === '' || DAMAGE_OPENS.test(t)) a[k] = autoTier(t, d[k] + add);
+    });
+  }
+
+  // topCharacteristic is the creature's own highest characteristic, which a
+  // strike adds to its damage and every power roll is built on; with none set
+  // it is the published highest for the level.
+  function topCharacteristic(st) {
+    var vals = SB().CHARS.map(function (k) { return st.c[k]; }).filter(function (v) { return v !== null && v !== undefined; });
+    if (vals.length) return Math.max.apply(null, vals);
+    return st.pr && st.pr.hc ? st.pr.hc.value : null;
+  }
+
+  // spreadOf is the role's published spread for the level, with the main
+  // characteristic at the published highest and none above it. Without a role
+  // spread only Might is set. Null when the level has no published highest.
+  function spreadOf(pr) {
+    var S = SB(), hc = pr.hc ? pr.hc.value : null, rt = pr.role, out = {};
+    if (hc === null || hc === undefined) return null;
+    if (rt && rt.characteristics) {
+      S.CHARS.forEach(function (k) { var v = Number(rt.characteristics[k]) || 0; out[k] = k === rt.primary_stat ? hc : Math.min(v, hc - 1); });
+    } else out.might = hc;
+    return out;
+  }
+
+  // followSpread marks each characteristic that still equals the spread as
+  // the spread's, so a level, organization or role change moves it; one the
+  // director set to anything else stays theirs.
+  function followSpread(st) {
+    var sp = spreadOf(st.pr);
+    st.spread = {};
+    if (!sp) return;
+    Object.keys(sp).forEach(function (k) { if (st.c[k] === sp[k]) st.spread[k] = true; });
+  }
+
+  // refreshRolls works every power roll the editor wrote out again from the
+  // creature's highest characteristic. A roll the director typed is theirs.
+  function refreshRolls(st) {
+    var hc = topCharacteristic(st);
+    if (hc === null || hc === undefined) return;
+    st.c.abilities.concat(st.c.villain_actions).forEach(function (a) {
+      if (a.auto_roll === false) return;
+      if (a.auto_roll === true || a.auto_damage) a.power_roll = '2d10 + ' + hc;
+    });
   }
 
   // derive recomputes every figure the director has not set by hand, and the
@@ -87,54 +150,80 @@ var DrawSteelCreatureEditor = (function () {
     };
     if (!st.own.ev && pr.ev.value !== null) c.ev = pr.ev.value;
     if (!st.own.stamina && pr.stamina.value !== null) c.stamina = pr.stamina.value;
-    if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = pr.free_strike.value + ' damage';
+    if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = freeStrikeText(c.free_strike, pr.free_strike.value);
     if (!st.own.winded) c.winded = c.stamina === null ? null : Math.floor(c.stamina / 2);
-    var hc = pr.hc.value;
+    st.pr = pr;
+    var sp = st.spread && spreadOf(pr);
+    if (sp) Object.keys(st.spread).forEach(function (k) { if (st.spread[k] && sp[k] !== undefined) c[k] = sp[k]; });
+    var hc = topCharacteristic(st);
     var d = pr.damage.value;
-    c.abilities.forEach(function (a) {
+    c.abilities.concat(c.villain_actions).forEach(function (a) {
       if (!a.auto_damage || !d) return;
-      var add = (isStrike(a) && hc !== null) ? hc : 0;
-      if (hc !== null) a.power_roll = '2d10 + ' + hc;
-      a.tier1 = autoTier(a.tier1, d.tier1 + add);
-      a.tier2 = autoTier(a.tier2, d.tier2 + add);
-      a.tier3 = autoTier(a.tier3, d.tier3 + add);
+      applyDamage(a, d, (isStrike(a) && hc !== null) ? hc : 0);
     });
+    refreshRolls(st);
     var E = Engine();
     pr.vaCount = (E && org) ? E.villainActionCount(org) : (org ? Number(org.villain_action_count) || 0 : 0);
     st.pr = pr;
     return st;
   }
 
+  // freeStrikeText puts the formula's number into a stored free strike and
+  // keeps its words ("4 fire damage", "4 damage; push 1").
+  function freeStrikeText(text, n) {
+    var t = String(text || '');
+    if (/-?\d+/.test(t)) return t.replace(/-?\d+/, String(n));
+    return n + ' damage';
+  }
+
   // setFigure records a figure the director typed. An empty box hands it back
-  // to the formula.
+  // to the formula, or leaves it empty when no formula covers it; text that
+  // is not a number is refused and changes nothing.
   function setFigure(st, key, raw) {
     var v = String(raw == null ? '' : raw).trim();
-    if (v === '') { delete st.own[key]; return derive(st); }
+    if (v === '') {
+      delete st.own[key]; delete st.fromBook[key];
+      derive(st);
+      var r = st.pr[key];
+      if (key !== 'winded' && r && r.value === null) { st.c[key] = key === 'free_strike' ? '' : null; derive(st); }
+      return st;
+    }
+    if (key === 'free_strike') {
+      if (!/\d/.test(v)) return st;
+      st.c.free_strike = /^-?\d+$/.test(v) ? v + ' damage' : v;
+    } else {
+      if (!isFinite(Number(v))) return st;
+      st.c[key] = Number(v);
+    }
     st.own[key] = true;
-    if (key === 'free_strike') st.c.free_strike = /^-?\d+$/.test(v) ? v + ' damage' : v;
-    else st.c[key] = isFinite(Number(v)) ? Number(v) : st.c[key];
+    delete st.fromBook[key];
     return derive(st);
   }
 
-  function useFormula(st, key) { delete st.own[key]; return derive(st); }
+  function useFormula(st, key) { delete st.own[key]; delete st.fromBook[key]; return derive(st); }
 
-  // startFrom copies another creature's stat block into this one. Figures and
-  // formula-shaped damage are worked out again for the level kept here, so a
-  // copy never carries the source's numbers at the wrong level.
+  // startFrom copies another creature's stat block into this one, level
+  // included (only a source with no level takes this one's). Figures and
+  // formula-shaped damage are worked out again for that level, so a copy never
+  // carries numbers that don't fit it.
   function startFrom(st, srcName, src, origin) {
     var S = SB();
     var c = S.normalize(src || {});
-    if (c.level === null) c.level = st.c.level || 1;
+    c.level = c.level === null ? (st.c.level || 1) : clampLevel(c.level);
     c.abilities.forEach(function (a) {
       if ([a.tier1, a.tier2, a.tier3].every(function (t) { return !t || /^\s*\d+\s+damage/i.test(String(t)); }) && (a.tier1 || a.tier2 || a.tier3)) a.auto_damage = true;
     });
     st.c = c;
     st.own = {};
+    st.fromBook = {};
+    st.spread = {};
     st.origin = origin || null;
     st.name = srcName ? srcName + ' (copy)' : st.name;
     st.aiName = false;
     st.editAb = null;
-    return derive(st);
+    derive(st);
+    followSpread(st);
+    return st;
   }
 
   // checks lists what the stat block still needs. Severity 'ok' and 'miss' are
@@ -147,13 +236,17 @@ var DrawSteelCreatureEditor = (function () {
     row(!!c.organization, 'Has an organization');
     if (c.organization !== 'leader' && c.organization !== 'solo') row(!!c.role, 'Has a role');
     row(c.abilities.some(function (a) { return a.type === 'signature'; }), 'Has a signature ability');
-    if (pr.vaCount) row(c.villain_actions.filter(function (v) { return v.name && String(v.name).trim(); }).length === pr.vaCount, 'Has ' + pr.vaCount + ' villain actions');
+    if (pr.vaCount) {
+      var vnamed = c.villain_actions.filter(function (v) { return v.name && String(v.name).trim(); });
+      var orders = vnamed.map(function (v) { return v.order; });
+      row(vnamed.length === pr.vaCount && VA_SLOTS.slice(0, pr.vaCount).every(function (o) { return orders.indexOf(o) >= 0; }), 'Has ' + pr.vaCount + ' villain actions, one of each order');
+    }
     row(c.ev !== null, 'Has an encounter value');
     row(c.stamina !== null, 'Has Stamina');
     row(!!String(c.free_strike || '').trim(), 'Has a free strike');
     ['ev', 'stamina'].forEach(function (k) {
       var r = pr[k];
-      if (st.own[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
+      if (st.own[k] && !st.fromBook[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
         rows.push({ severity: 'warn', message: (k === 'ev' ? 'Encounter value' : 'Stamina') + ' is ' + c[k] + '; the published formula gives ' + r.value + '.' });
       }
     });
@@ -225,6 +318,12 @@ var DrawSteelCreatureEditor = (function () {
     [/mind|psion|witch|cult/i, 'Humanoid', ['mind-lash', 'psychic-scream']]
   ];
   var VA_SLOTS = ['opener', 'crowd-control', 'ultimate'];
+  // renumberVillains gives each villain action the order its position holds,
+  // so a removal or a move never leaves two of one order. Every path that
+  // changes the list calls it.
+  function renumberVillains(list) {
+    list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+  }
   var DAMAGE_TIER = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
 
   function noRole(org) { return org === 'leader' || org === 'solo'; }
@@ -246,7 +345,7 @@ var DrawSteelCreatureEditor = (function () {
     var p = props(t);
     var a = { name: t.name, type: type || p.type || 'action', keywords: listProp(p.keywords).slice(), distance: p.distance || '', target: p.target || '',
       power_roll: '', tier1: p.tier1 || '', tier2: p.tier2 || '', tier3: p.tier3 || '', trigger: p.trigger || '', effect: p.effect || '' };
-    a.auto_damage = DAMAGE_TIER.test(a.tier1);
+    a.auto_damage = [a.tier1, a.tier2, a.tier3].some(function (t) { return DAMAGE_TIER.test(t); });
     return a;
   }
 
@@ -260,13 +359,13 @@ var DrawSteelCreatureEditor = (function () {
   // the main one at the published highest characteristic and none above it.
   // Returns the reason to show, or '' when the level has no published value.
   function setCharacteristics(st) {
-    var S = SB(), c = st.c, hc = st.pr.hc.value, rt = st.pr.role;
+    var S = SB(), c = st.c, hc = st.pr.hc.value, rt = st.pr.role, sp = spreadOf(st.pr);
     if (hc === null) return '';
+    st.spread = {};
+    Object.keys(sp).forEach(function (k) { c[k] = sp[k]; st.spread[k] = true; });
     if (rt && rt.characteristics) {
-      S.CHARS.forEach(function (k) { var v = Number(rt.characteristics[k]) || 0; c[k] = k === rt.primary_stat ? hc : Math.min(v, hc - 1); });
       return 'Characteristics: the published ' + c.role + ' spread, with ' + cap(rt.primary_stat) + ' at ' + S.signed(hc) + ', the published highest for this level.';
     }
-    c.might = hc;
     return 'Characteristics: Might at ' + S.signed(hc) + ', the published highest for this level. The rest are yours to set.';
   }
 
@@ -291,11 +390,10 @@ var DrawSteelCreatureEditor = (function () {
     var c = S.normalize({});
     c.level = level; c.organization = org; c.role = role;
     c.keywords = themes.length ? themes.map(function (t) { return t[1]; }).filter(function (k, i, a) { return a.indexOf(k) === i; }) : ['Humanoid'];
-    st.c = c; st.own = {}; st.editAb = null; st.origin = null; st.aiName = false;
+    st.c = c; st.own = {}; st.fromBook = {}; st.spread = {}; st.editAb = null; st.origin = null; st.aiName = false;
     st.name = what ? what.replace(/\b\w/g, function (x) { return x.toUpperCase(); }) : (noRole(org) ? (org === 'leader' ? 'Warband Captain' : 'Lone Terror') : cap(role) + ' ' + cap(org));
     derive(st);
 
-    var hc = st.pr.hc.value;
     var chWhy = setCharacteristics(st);
     if (chWhy) why.push(chWhy);
 
@@ -340,16 +438,10 @@ var DrawSteelCreatureEditor = (function () {
         c.villain_actions.push(a);
       });
     }
+    // Every power roll is 2d10 plus the highest characteristic, and every
+    // damage tier the formula covers follows the level, villain actions too.
+    c.abilities.concat(c.villain_actions).forEach(function (a) { if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true; });
     derive(st);
-    // Every power roll is 2d10 plus the published highest characteristic, and
-    // a villain action's damage is set once from the same formula as an
-    // ability's; derive() rescales only abilities.
-    var d = st.pr.damage.value;
-    c.abilities.concat(c.villain_actions).forEach(function (a) { if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc; });
-    c.villain_actions.forEach(function (a) {
-      if (a.auto_damage && d) ['tier1', 'tier2', 'tier3'].forEach(function (k) { a[k] = autoTier(a[k], d[k]); });
-      delete a.auto_damage;
-    });
     if (chosen.length) {
       var names = chosen.map(function (t) { return t.name; }).join(', ');
       why.push('Abilities: ' + names + (/[.!?]$/.test(names) ? '' : '.') + ' Each is made for ' + org + 's' +
@@ -596,7 +688,7 @@ var DrawSteelCreatureEditor = (function () {
         } else a[k] = extra;
       });
       a.auto_damage = !!(dealsDamage && d);
-      if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc;
+      if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true;
     }
     var sg = o.signature;
     if (sg && typeof sg === 'object' && str(sg.name)) {
@@ -822,17 +914,19 @@ var DrawSteelCreatureEditor = (function () {
   // from the published formula for its level and kind, then the chosen damage
   // type and condition.
   function shapeAbility(st, t, opt) {
-    var o = opt || {}, a = fromLibrary(t), pr = st.pr, d = pr.damage.value, hc = pr.hc.value;
-    if (a.auto_damage && d) {
-      var add = (isStrike(a) && hc !== null) ? hc : 0;
-      ['tier1', 'tier2', 'tier3'].forEach(function (k) { a[k] = autoTier(a[k], d[k] + add); });
-    }
-    if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc;
+    var o = opt || {}, a = fromLibrary(t), pr = st.pr, d = pr.damage.value, hc = topCharacteristic(st);
+    if (a.auto_damage && d) applyDamage(a, d, (isStrike(a) && hc !== null) ? hc : 0);
+    if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true;
     if (o.dtype && DTYPES.indexOf(o.dtype) >= 0 && a.auto_damage) {
       ['tier1', 'tier2', 'tier3'].forEach(function (k) { if (a[k]) a[k] = String(a[k]).replace(/^(\s*\d+)(?:\s+[a-z]+)?(\s+damage)/i, '$1 ' + o.dtype + '$2'); });
     }
     var r = RIDERS.filter(function (x) { return x[0] && x[0] === o.rider; })[0];
-    if (r && a.tier1) r[2].forEach(function (k) { a[k] = a[k] ? a[k] + '; ' + r[1] : r[1]; });
+    // A condition the tier already inflicts is not added a second time.
+    if (r && a.tier1) r[2].forEach(function (k) {
+      var cm = /\{@condition ([\w-]+)/.exec(r[1]);
+      if (a[k] && cm && new RegExp('\\b' + cm[1] + '\\b', 'i').test(String(a[k]))) return;
+      a[k] = a[k] ? a[k] + '; ' + r[1] : r[1];
+    });
     return a;
   }
 
@@ -855,10 +949,9 @@ var DrawSteelCreatureEditor = (function () {
       c.traits.push({ name: t.name, description: p.effect || t.description || '' });
       msg = 'Added the trait ' + t.name + '.';
     } else if (p.type === 'villain-action') {
-      a.order = VA_SLOTS[c.villain_actions.length];
       delete a.type;
-      delete a.auto_damage;
       c.villain_actions.push(a);
+      renumberVillains(c.villain_actions);
       msg = t.name + ' is villain action ' + c.villain_actions.length + '.';
     } else if (a.type === 'signature' && c.abilities.some(function (x) { return x.type === 'signature'; })) {
       a.type = 'action';
@@ -885,10 +978,14 @@ var DrawSteelCreatureEditor = (function () {
     var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
     if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return false;
     list.splice(to, 0, list.splice(from, 1)[0]);
-    if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+    if (kind === 'v') renumberVillains(list);
     st.editAb = null;
     return true;
   }
+
+  // Fields Foundry sends back to the page (the creature preset's
+  // foundry_pull_fields); the editor never writes them.
+  var FOUNDRY_OWNED = ['stamina_current', 'conditions_json'];
 
   // toSave is what saving writes: the entity's fields and the name.
   function toSave(st) {
@@ -896,11 +993,13 @@ var DrawSteelCreatureEditor = (function () {
     var c = clone(st.c);
     c.abilities = c.abilities.slice(0, 50);
     c.traits = (c.traits || []).filter(function (t) { return t.name || t.description; });
-    c.level = Math.max(1, Math.min(20, Number(c.level) || 1));
+    c.level = clampLevel(c.level);
     // "From the AI" marks the editor's own review state, never the page.
     c.abilities.concat(c.traits, c.villain_actions || []).forEach(function (a) { delete a.from_ai; delete a.from_book; });
     var fields = {}, own = S.toFields(c);
-    Object.keys(st.base || {}).forEach(function (k) { fields[k] = st.base[k]; });
+    // Foundry's fields are the page's to keep: the copy read when the editor
+    // opened may be older than what Foundry sent since.
+    Object.keys(st.base || {}).forEach(function (k) { if (FOUNDRY_OWNED.indexOf(k) < 0) fields[k] = st.base[k]; });
     Object.keys(own).forEach(function (k) { fields[k] = own[k]; });
     return { name: String(st.name || '').trim().slice(0, 200), fields: fields };
   }
@@ -927,6 +1026,10 @@ var DrawSteelCreatureEditor = (function () {
 
   // chip says where a figure came from, under its box.
   function chip(st, key, r, what) {
+    if (st.own[key] && st.fromBook[key]) {
+      var bk = (r && r.sourced && r.value !== null && r.value !== r.book) ? ' (the formula gives ' + r.value + ')' : '';
+      return '<span class="sbe-chip is-pub"><i class="fa-solid fa-book" aria-hidden="true"></i> From the Monsters book' + esc(bk) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
+    }
     if (st.own[key]) {
       var also = (r && r.sourced && r.value !== null) ? ' (the formula gives ' + r.value + ')' : '';
       return '<span class="sbe-chip is-own">Changed by you' + esc(also) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
@@ -1051,7 +1154,7 @@ var DrawSteelCreatureEditor = (function () {
       '<label class="sbe-f"><span class="sbe-lbl">Speed</span><input class="input sbe-num" id="sbe-speed" data-sbe-k="speed" type="number" min="0" value="' + esc(c.speed == null ? '' : c.speed) + '"></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Stability</span><input class="input sbe-num" id="sbe-stability" data-sbe-k="stability" type="number" min="0" value="' + esc(c.stability == null ? '' : c.stability) + '"></label></div>';
     h += '<p class="sbe-hint">' + (pr.hc.sourced && pr.hc.value !== null
-      ? 'At level ' + esc(c.level) + (c.organization ? ', a ' + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
+      ? 'At level ' + esc(c.level) + (c.organization ? ', ' + (/^[aeiou]/i.test(c.organization) ? 'an ' : 'a ') + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
       : 'Set a level to see the published highest characteristic.') + '</p>';
     h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add trait</button></h4>' +
       '<div class="sbe-abs">' + listHtml(st, 't', ui) + '</div>';
@@ -1176,7 +1279,9 @@ var DrawSteelCreatureEditor = (function () {
     if (k === 'organization' || k === 'role') { st.c[k] = String(v || '').toLowerCase(); return; }
     var n = String(v).trim() === '' ? null : Number(v);
     st.c[k] = (n === null || !isFinite(n)) ? null : n;
-    if (k === 'level' && (st.c.level === null || st.c.level < 1)) st.c.level = 1;
+    if (k === 'level') st.c.level = clampLevel(st.c.level === null ? 1 : st.c.level);
+    // A characteristic the director sets is theirs, not the role spread's.
+    if (SB().CHARS.indexOf(k) >= 0 && st.spread) delete st.spread[k];
   }
 
   // applyAbility writes one box of the ability being edited.
@@ -1185,9 +1290,41 @@ var DrawSteelCreatureEditor = (function () {
     if (!key) return;
     var a = listOf(st, key.charAt(0))[Number(key.slice(1))];
     if (!a) return;
+    var note = '';
     if (k === 'keywords') a.keywords = SB().parseList(v);
     else if (k === 'auto_damage') a.auto_damage = !!v;
-    else a[k] = v;
+    else {
+      // A number the director types is never rewritten: typing into a tier
+      // takes that ability off the formula, typing a power roll stops it
+      // following the highest characteristic.
+      if (a[k] !== v && (k === 'tier1' || k === 'tier2' || k === 'tier3') && a.auto_damage) {
+        a.auto_damage = false;
+        if (a.auto_roll === undefined) a.auto_roll = true;
+        note = 'Damage no longer follows the published formula for ' + (a.name || 'this ability') + ', since you typed in it. Tick the box to hand it back.';
+      }
+      if (a[k] !== v && k === 'power_roll' && (a.auto_roll === true || (a.auto_damage && a.auto_roll !== false))) {
+        a.auto_roll = false;
+        note = 'The power roll of ' + (a.name || 'this ability') + ' is yours now. It no longer follows the highest characteristic.';
+      }
+      a[k] = v;
+    }
+    return note;
+  }
+
+  // removeItem takes one ability, trait or villain action off the creature.
+  function removeItem(st, kind, i) {
+    listOf(st, kind).splice(i, 1);
+    if (kind === 'v') renumberVillains(st.c.villain_actions);
+    st.editAb = null;
+    return derive(st);
+  }
+
+  // addVillain appends a blank villain action in the next free order and opens
+  // it for editing.
+  function addVillain(st) {
+    st.c.villain_actions.push({ order: '', name: 'Villain action ' + (st.c.villain_actions.length + 1), effect: '' });
+    renumberVillains(st.c.villain_actions);
+    st.editAb = 'v' + (st.c.villain_actions.length - 1);
   }
 
   // newAbility is a signature strike when the creature has none yet, so the
@@ -1348,7 +1485,7 @@ var DrawSteelCreatureEditor = (function () {
     injectStyles(doc);
     SB().injectStyles(doc);
     var entity = o.entity || null;
-    var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
+    var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs, o.book);
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
       gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false },
       ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() },
@@ -1417,7 +1554,16 @@ var DrawSteelCreatureEditor = (function () {
         if (t.getAttribute('data-sbe-k') === 'name') drawSide();
         return;
       }
-      if (t.hasAttribute('data-sbe-ab') && t.type !== 'checkbox') { applyAbility(st, t.getAttribute('data-sbe-ab'), t.value); dirty(); }
+      if (t.hasAttribute('data-sbe-ab') && t.type !== 'checkbox') {
+        var abNote = applyAbility(st, t.getAttribute('data-sbe-ab'), t.value);
+        if (abNote) {
+          var auto = edEl.querySelector('#sbe-ab-auto'), msgEl = edEl.querySelector('.sbe-msg');
+          if (auto && /^Damage/.test(abNote)) auto.checked = false;
+          ui.msg = abNote; ui.msgKind = '';
+          if (msgEl) msgEl.textContent = abNote;
+        }
+        dirty();
+      }
     }
     function onChange(e) {
       var t = e.target;
@@ -1488,14 +1634,13 @@ var DrawSteelCreatureEditor = (function () {
         return;
       }
       var del = el.getAttribute('data-sbe-del');
-      if (del) { listOf(st, del.charAt(0)).splice(Number(del.slice(1)), 1); st.editAb = null; derive(st); dirty(); draw(); return; }
+      if (del) { removeItem(st, del.charAt(0), Number(del.slice(1))); dirty(); draw(); return; }
       var act = el.getAttribute('data-sbe-act');
       if (act === 'add-ab') { st.c.abilities.push(newAbility(st)); st.editAb = 'a' + (st.c.abilities.length - 1); derive(st); dirty(); draw('sbe-ab-name'); }
       else if (act === 'add-trait') { st.c.traits.push({ name: '', description: '' }); st.editAb = 't' + (st.c.traits.length - 1); dirty(); draw('sbe-ab-name'); }
       else if (act === 'add-va') {
-        var order = ['opener', 'crowd-control', 'ultimate'][st.c.villain_actions.length] || '';
-        st.c.villain_actions.push({ order: order, name: 'Villain action ' + (st.c.villain_actions.length + 1), effect: '' });
-        st.editAb = 'v' + (st.c.villain_actions.length - 1); dirty(); draw('sbe-ab-name');
+        addVillain(st);
+        dirty(); draw('sbe-ab-name');
       }
       else if (act === 'save') doSave();
       else if (act === 'pic-make') makeToken(el);
@@ -1923,7 +2068,7 @@ var DrawSteelCreatureEditor = (function () {
     bg.className = 'sbe-modal-bg';
     bg.innerHTML = '<div class="sbe-modal card" role="dialog" aria-modal="true" aria-labelledby="sbe-sf-t">' +
       '<div class="sbe-modal-h"><h2 id="sbe-sf-t">Start from a creature</h2><button type="button" class="btn-ghost btn-sm" data-sf-close aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
-      '<p class="sbe-small sbe-dim">Copies its stat block into this one. Encounter value, Stamina and formula damage are worked out again for the level you set.</p>' +
+      '<p class="sbe-small sbe-dim">Copies its stat block into this one, level included. Encounter value, Stamina and formula damage are worked out again for that level, and again if you change it.</p>' +
       '<div class="sbe-tabs" role="tablist"><button type="button" role="tab" data-sf-tab="bestiary" aria-selected="true">Community bestiary</button><button type="button" role="tab" data-sf-tab="campaign" aria-selected="false">This campaign</button></div>' +
       '<input class="input" id="sbe-sf-q" placeholder="Search creatures" autocomplete="off" aria-label="Search creatures"><ul class="sbe-sf-list" id="sbe-sf-list"></ul></div>';
     doc.body.appendChild(bg);
@@ -2191,7 +2336,7 @@ var DrawSteelCreatureEditor = (function () {
         last = clone({ abilities: st.c.abilities, traits: st.c.traits, villain_actions: st.c.villain_actions });
         var name = list[idx].name;
         list.splice(idx, 1);
-        if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+        if (kind === 'v') renumberVillains(list);
         st.editAb = null; derive(st); ctx.changed();
         say('Removed ' + (name || 'it') + '.', true); paint(); $('sbe-dr-q').focus();
       }
@@ -2444,7 +2589,7 @@ var DrawSteelCreatureEditor = (function () {
     startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, roundTrip: roundTrip, autoTier: autoTier, isStrike: isStrike,
     editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
     applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
-    usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,
+    usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem, removeItem: removeItem, addVillain: addVillain, applyAbility: applyAbility,
     openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS,
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,
     setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE,

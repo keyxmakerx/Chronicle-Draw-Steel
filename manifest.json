@@ -1205,6 +1205,11 @@
           "foundry_path": "statuses"
         },
         {
+          "key": "ev_note",
+          "label": "Encounter value note",
+          "type": "string"
+        },
+        {
           "key": "book_source",
           "label": "Copied from",
           "type": "string",

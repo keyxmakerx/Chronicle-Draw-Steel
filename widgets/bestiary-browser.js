@@ -534,6 +534,7 @@ var DrawSteelBestiary = (function () {
         var fields = S.toFields(row.c);
         // The copy remembers its book entry, for Compare with the book.
         if (row.src === 'book' && row.slug) fields[S.SOURCE_KEY] = row.slug;
+        if (row.src === 'book' && row.fields && row.fields.ev_note) fields.ev_note = String(row.fields.ev_note).slice(0, 80);
         return Chronicle.apiFetch(inst._entityUrl(cid), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: row.name.slice(0, 200), entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields })

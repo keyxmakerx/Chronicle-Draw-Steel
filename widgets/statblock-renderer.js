@@ -40,6 +40,13 @@ var DrawSteelStatblock = (function () {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // byteLength is a string's size as Chronicle counts it, in UTF-8 bytes.
+  function byteLength(str) {
+    var t = String(str);
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(t).length;
+    return unescape(encodeURIComponent(t)).length;
+  }
+
   function num(v) {
     if (v === null || v === undefined || v === '') return null;
     var n = Number(v);
@@ -108,6 +115,7 @@ var DrawSteelStatblock = (function () {
       weaknesses: parseList(f.weaknesses),
       movement: parseList(f.movement),
       with_captain: f.with_captain == null ? '' : String(f.with_captain),
+      ev_note: f.ev_note == null ? '' : String(f.ev_note).slice(0, 80),
       free_strike: f.free_strike == null ? '' : String(f.free_strike),
       traits: parseTraits(f.traits),
       abilities: parseObjects(f.abilities_json !== undefined ? f.abilities_json : f.abilities),
@@ -151,7 +159,9 @@ var DrawSteelStatblock = (function () {
   // With no formula module or no templates there is nothing to measure against,
   // and every state is null: the stat block then shows no marks rather than
   // implying a check that never ran.
-  function provenance(c, refs) {
+  //   state 'book'    — the page was copied from the Monsters book and the
+  //                     figure is still the book's, whatever the formula gives.
+  function provenance(c, refs, book) {
     var F = formulas();
     var r = refs || {};
     var org = findBySlug(r.orgs, c.organization);
@@ -167,6 +177,12 @@ var DrawSteelStatblock = (function () {
     out.ev = measure(F.encounterValue(c.level, org), c.ev);
     out.stamina = measure(F.stamina(c.level, org, role), c.stamina);
     out.free_strike = measure(F.freeStrike(c.level, org, role), freeStrikeNumber(c.free_strike));
+    if (book) {
+      var b = normalize(book);
+      [['ev', b.ev, c.ev], ['stamina', b.stamina, c.stamina], ['free_strike', freeStrikeNumber(b.free_strike), freeStrikeNumber(c.free_strike)]].forEach(function (x) {
+        if (x[1] !== null && x[1] === x[2] && out[x[0]].state !== 'formula') { out[x[0]].state = 'book'; out[x[0]].book = x[1]; }
+      });
+    }
     out.damage = F.damageTiers(c.level, org, role);
     out.hc = F.highestCharacteristic(c.level, org);
     return out;
@@ -319,6 +335,11 @@ var DrawSteelStatblock = (function () {
   // published formula, a pen when the director set it. Its title says which.
   function mark(p, what) {
     if (!p || !p.state) return '';
+    if (p.state === 'book') {
+      var bw = what + ' is the Monsters book’s' + (p.sourced && p.value !== null && p.value !== p.book ? ' (the published formula gives ' + p.value + ')' : '') + '.';
+      return '<span class="sbx-mark is-book" title="' + esc(bw) + '">' +
+        '<i class="fa-solid fa-book" aria-hidden="true"></i><span class="sbx-sr">' + esc(bw) + '</span></span>';
+    }
     if (p.state === 'formula') {
       return '<span class="sbx-mark is-formula" title="' + esc(what + ' matches the published formula') + '">' +
         '<i class="fa-solid fa-check" aria-hidden="true"></i><span class="sbx-sr">matches the published formula</span></span>';
@@ -437,7 +458,7 @@ var DrawSteelStatblock = (function () {
     var o = opts || {};
     var c = (src && src._normalized) ? src : normalize(src);
     var title = name || c.name || 'Unnamed creature';
-    var pr = provenance(c, o.refs);
+    var pr = provenance(c, o.refs, o.book);
     var noRole = c.organization === 'leader' || c.organization === 'solo';
     var live = !!o.live;
     // A live block's organization and role open their hover cards.
@@ -454,7 +475,7 @@ var DrawSteelStatblock = (function () {
     }
     // A minion's encounter value buys four of them, as the book prints it.
     h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
-      '<span class="sbx-ev">EV ' + figure(c.ev) + (c.organization === 'minion' && c.ev !== null ? ' <span class="sbx-ev-n">for four</span>' : '') +
+      '<span class="sbx-ev">EV ' + figure(c.ev) + (c.ev !== null && (c.ev_note || c.organization === 'minion') ? ' <span class="sbx-ev-n">' + esc(c.ev_note ? String(c.ev_note).replace(/\s*minions?$/i, '') : 'for four') + '</span>' : '') +
       mark(pr.ev, 'Encounter value') + '</span></div></header>';
     // A form's view captions each figure with where it comes from.
     function tg(k) { return o.tag ? o.tag('fig', k) : ''; }
@@ -784,6 +805,7 @@ var DrawSteelStatblock = (function () {
     '.sbx-chars{background:var(--color-bg-tertiary,#f3f4f6)}',
     '.sbx-mark{font-size:10px;color:var(--sbx-ok);cursor:help}',
     '.sbx-mark.is-own{color:var(--sbx-own)}',
+    '.sbx-mark.is-book{color:var(--sbx-ok)}',
     '.sbx-line,.sbx-eff,.sbx-empty{margin:0}',
     '.sbx-empty{color:var(--color-text-secondary,#6b7280)}',
     '.sbx-sec{margin:4px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);border-bottom:1px solid var(--color-border,#e5e7eb);padding-bottom:4px}',
@@ -993,7 +1015,7 @@ var DrawSteelStatblock = (function () {
   function toStatblock(name, c) {
     var sb = { name: String(name || c.name || '').slice(0, 200) };
     ['level', 'organization', 'role', 'ev', 'size', 'faction', 'stamina', 'winded', 'speed', 'stability',
-      'free_strike', 'keywords', 'immunities', 'weaknesses', 'traits', 'abilities', 'villain_actions'].forEach(function (k) { sb[k] = c[k]; });
+      'free_strike', 'keywords', 'immunities', 'weaknesses', 'movement', 'with_captain', 'traits', 'abilities', 'villain_actions'].forEach(function (k) { sb[k] = c[k]; });
     CHARS.forEach(function (k) { sb[k] = c[k]; });
     return sb;
   }
@@ -1014,6 +1036,7 @@ var DrawSteelStatblock = (function () {
       abilities_json: JSON.stringify((c.abilities || []).slice(0, MAX_LIST)),
       villain_actions_json: JSON.stringify((c.villain_actions || []).slice(0, MAX_LIST))
     };
+    if (c.ev_note) f.ev_note = c.ev_note;
     CHARS.forEach(function (k) { f[k] = c[k]; });
     return f;
   }
@@ -1050,6 +1073,7 @@ var DrawSteelStatblock = (function () {
     injectStyles: injectStyles,
     CHARS: CHARS,
     esc: esc,
+    byteLength: byteLength,
     num: num,
     parseList: parseList,
     parseObjects: parseObjects,
@@ -1087,6 +1111,9 @@ var DrawSteelForms = (function () {
   var ID = /^[a-z0-9]{1,24}$/;
   var MAX_FORMS = 12;
   var NAME_MAX = 80;
+  // Chronicle allows 16 KiB of system state per copy (the director's and the
+  // players'); each copy is measured on its own, in bytes.
+  var MAX_COPY_BYTES = 15 * 1024;
   // The figures a form may change: every scalar the editor writes.
   var FIGURES = ['level', 'organization', 'role', 'ev', 'size', 'keywords', 'faction', 'stamina', 'winded', 'speed',
     'stability', 'immunities', 'weaknesses', 'movement', 'with_captain', 'free_strike'].concat(S.CHARS);
@@ -1253,7 +1280,13 @@ var DrawSteelForms = (function () {
     return { order: gm ? ids(gm.order) : null, shown: ids(pub.shown), current: current, pub: pub };
   }
 
+  // tooBig says whether one saved copy of a form passes Chronicle's limit.
+  // The director's and the players' copies are the same form, so one
+  // measure covers both.
+  function tooBig(form) { return S.byteLength(JSON.stringify(form)) > MAX_COPY_BYTES; }
+
   return {
+    tooBig: tooBig, MAX_COPY_BYTES: MAX_COPY_BYTES,
     INDEX_KEY: INDEX_KEY, MAX_FORMS: MAX_FORMS, NAME_MAX: NAME_MAX, FIGURES: FIGURES, LISTS: LISTS, STAMINA: STAMINA,
     formKey: formKey, label: label, clean: clean, view: view, diff: diff, mergeList: mergeList, diffList: diffList, canon: canon,
     summary: summary, newId: newId, index: index
@@ -1456,9 +1489,14 @@ var DrawSteelVariants = (function () {
 
   // recompute has the editor work the formula figures out again. Figures the
   // director typed on the original stay typed; Ed is DrawSteelCreatureEditor.
-  function recompute(Ed, fields, refs, typed) {
+  //
+  // A variant follows its original: abilities are the original's own words
+  // and numbers unless the recipe moved the level, organization or role, the
+  // only things that change what the formulas give damage.
+  function recompute(Ed, fields, refs, typed, original) {
     var st = Ed.newState('', fields, refs);
-    Ed.startFrom(st, null, fields);
+    var a = S.normalize(fields), o = S.normalize(original || fields);
+    if (a.level !== o.level || a.organization !== o.organization || a.role !== o.role) Ed.startFrom(st, null, fields);
     st.own = {};
     Object.keys(typed || {}).forEach(function (k) { if (typed[k]) st.own[k] = true; });
     Ed.derive(st);
@@ -1475,7 +1513,7 @@ var DrawSteelVariants = (function () {
   function base(Ed, original, parts, refs) {
     var f = pick(original || {});
     (parts || []).forEach(function (p) { if (p && p.steps) f = apply(f, p.steps); });
-    return recompute(Ed, f, refs, typedOn(Ed, pick(original || {}), refs));
+    return recompute(Ed, f, refs, typedOn(Ed, pick(original || {}), refs), pick(original || {}));
   }
 
   function hash(s) {
@@ -1540,7 +1578,7 @@ var DrawSteelVariants = (function () {
     var v = F.view(b, null, { changes: mine.changes, lists: mine.lists, art: '', token: '' }).fields;
     var typed = typedOn(Ed, pick(original || {}), refs);
     FORMULA.forEach(function (k) { if (own(mine.changes, k)) typed[k] = true; });
-    var fields = recompute(Ed, pick(v), refs, typed);
+    var fields = recompute(Ed, pick(v), refs, typed, pick(original || {}));
     return { base: compact(b), full: b, fields: fields, mine: mine };
   }
 
@@ -1730,11 +1768,12 @@ StatblockPanel.prototype.render = function () {
     body = this.formNoteHtml(form, v) + S.html(name, v.fields, { ref: this.ref, refs: this.refs, picture: { art: v.art, token: v.token, page: v.art || v.token }, tag: this.tagFor(v) }) +
       this.goneHtml(v);
   } else {
-    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, picture: S.pictures(this.entity) });
+    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, book: this.bookProps(), picture: S.pictures(this.entity) });
   }
   this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.tabsHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' + body +
     (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' + this.variantsHtml() : '') + '</div>';
   this.bind();
+  if (!form) this.loadBook();
 };
 
 // sourceHtml is the director's banner on a page copied from the book, with
@@ -1748,6 +1787,27 @@ StatblockPanel.prototype.sourceHtml = function () {
     '<div class="sbx-cmp" id="sbx-cmp-' + S.esc(this.eid) + '"' + (c.open ? '' : ' hidden') + '>' + (c.open ? S.compareHtml(f, c) : '') + '</div>';
 };
 
+// bookProps are the book entry's fields for a page copied from it, once read:
+// the marks and the editor tell the book's figures from the director's.
+StatblockPanel.prototype.bookProps = function () {
+  var c = this.cmp;
+  return (this.isGM && c && c.book && c.book.properties) || null;
+};
+
+// loadBook reads the book entry once, quietly, for a page copied from the
+// book, so its stat block can say which figures are the book's.
+StatblockPanel.prototype.loadBook = function () {
+  var self = this, S = DrawSteelStatblock, c = this.cmp;
+  var slug = S.bookSource(this.fields());
+  if (!this.isGM || !slug || c.book || c.missing || c.loading || c.tried) return;
+  c.tried = true;
+  S.getJSON('/campaigns/' + encodeURIComponent(this.cid) + '/systems/drawsteel/data/monsters.json').then(function (list) {
+    c.book = S.findBySlug(S.unwrap(list), slug);
+    c.missing = !c.book;
+    if (c.book && !self.editor) self.render();
+  }).catch(function () { /* the marks stay as the formula alone gives them */ });
+};
+
 // The book is the package's monsters.json, read once per page when the
 // director first opens the comparison.
 StatblockPanel.prototype.toggleCompare = function () {
@@ -1756,6 +1816,7 @@ StatblockPanel.prototype.toggleCompare = function () {
   if (!c.open) { c.msg = ''; c.undo = null; this.render(); this.focus('[data-sbx-act="compare"]'); return; }
   if (c.book || c.missing) { this.render(); this.focus('.sbx-cmp-h h4'); return; }
   c.loading = true; c.error = false;
+  c.tried = true;
   this.render();
   var slug = S.bookSource(this.fields());
   S.getJSON('/campaigns/' + encodeURIComponent(this.cid) + '/systems/drawsteel/data/monsters.json').then(function (list) {
@@ -2119,7 +2180,7 @@ StatblockPanel.prototype.writeIndex = function (fn) {
 // writeForm saves one form; players get the same copy once it is shown.
 StatblockPanel.prototype.writeForm = function (form, shown) {
   var body = JSON.stringify({ gm: form, public: shown ? form : {} });
-  if (body.length > 15 * 1024) {
+  if (DrawSteelForms.tooBig(form)) {
     var e = new Error('This form is too big to save. Change fewer abilities in it, or make it a creature of its own.');
     e.user = true;
     return Promise.reject(e);
@@ -2229,9 +2290,16 @@ StatblockPanel.prototype.editForm = function (form) {
   var isNew = !form;
   var cur = form || { id: F.newId(), name: 'Form ' + (fm.list.length + 2), stamina: 'carry', changes: {}, lists: {}, art: '', token: '' };
   var v = F.view(this.fields(), S.pictures(this.entity), cur);
-  this.el.innerHTML = '';
   var host = this.el.ownerDocument.createElement('div');
-  this.el.appendChild(host);
+  var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
+  // The form editor opens as the same full sheet as the page's editor, not
+  // inside the page column, where its pickers are cut off.
+  function closeForm() {
+    self.editor = null;
+    self.render();
+    if (self.fold) { self.fold.close(); self.fold = null; }
+    self.focus('.sbx-tab[aria-selected="true"]');
+  }
   this.editor = Ed.mount(host, {
     campaignId: this.cid,
     entityId: this.eid,
@@ -2257,12 +2325,19 @@ StatblockPanel.prototype.editForm = function (form) {
         return next;
       });
     },
-    onClose: function () {
-      self.editor = null;
-      self.render();
-      self.focus('.sbx-tab[aria-selected="true"]');
+    onClose: closeForm
+  });
+  this.fold = DrawSteelStatblock.foldOut(this.el, host, {
+    chronicle: C,
+    label: cur.name ? 'Form ' + cur.name : 'Form',
+    isDirty: function () { return !!(self.editor && self.editor.isDirty && self.editor.isDirty()); },
+    detail: 'Your changes to this form haven’t been saved.',
+    leave: function () {
+      if (self.editor && self.editor.discard) self.editor.discard();
+      else closeForm();
     }
   });
+  if (!this.fold) { this.el.innerHTML = ''; this.el.appendChild(host); }
 };
 
 StatblockPanel.prototype.publishHtml = function () {
@@ -2412,6 +2487,7 @@ StatblockPanel.prototype.edit = function () {
     entity: this.entity,
     refs: this.refs,
     ref: this.ref,
+    book: this.bookProps(),
     onClose: finish
   });
   var name = (this.entity && this.entity.name) || '';
@@ -2461,7 +2537,7 @@ StatblockPanel.prototype.writeVariant = function (eid, change) {
     for (k in cur.gm) if (Object.prototype.hasOwnProperty.call(cur.gm, k)) gm[k] = cur.gm[k];
     change(gm);
     gm.v = 1;
-    if (JSON.stringify(gm).length > DrawSteelVariants.MAX_BYTES) throw new Error('variant too large');
+    if (S.byteLength(JSON.stringify(gm)) > DrawSteelVariants.MAX_BYTES) throw new Error('variant too large');
     return S.apiFetch(self.variantUrl(eid), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gm: gm }) })
       .then(function (res) { if (!res.ok) throw new Error('variant ' + res.status); return gm; });
   });
