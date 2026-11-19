@@ -131,7 +131,8 @@ var DrawSteelCreatureEditor = (function () {
     st.c = c;
     st.own = {};
     st.origin = origin || null;
-    st.name = srcName ? srcName + ' (copy)' : st.name;
+    // A page that already has a name keeps it; the copy's name is only for one that has none.
+    if (srcName && (!String(st.name || '').trim() || st.autoName)) { st.name = srcName + ' (copy)'; st.autoName = true; }
     st.aiName = false;
     st.editAb = null;
     return derive(st);
@@ -151,6 +152,8 @@ var DrawSteelCreatureEditor = (function () {
     row(c.ev !== null, 'Has an encounter value');
     row(c.stamina !== null, 'Has Stamina');
     row(!!String(c.free_strike || '').trim(), 'Has a free strike');
+    var blankChars = SB().CHARS.filter(function (k) { return c[k] === null || c[k] === undefined; });
+    row(!blankChars.length, blankChars.length ? 'Has all five characteristics (' + blankChars.map(cap).join(', ') + ' still blank; no published figure covers them)' : 'Has all five characteristics');
     ['ev', 'stamina'].forEach(function (k) {
       var r = pr[k];
       if (st.own[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
@@ -251,6 +254,17 @@ var DrawSteelCreatureEditor = (function () {
   }
 
   function pick(list, seed) { return list.length ? list[seed % list.length] : null; }
+  // themePick takes the ability whose words best match the creature's theme
+  // words (a ghost's own haunting before a frog plague); with no match at all
+  // it falls back to the plain pick. `seed` steps through the matches.
+  function themePick(list, seed, words) {
+    var scored = list.map(function (t, i) {
+      var h = haystack(t), sc = 0;
+      words.forEach(function (w) { if (h.indexOf(w) >= 0) sc++; });
+      return { t: t, i: i, sc: sc };
+    }).filter(function (r) { return r.sc > 0; }).sort(function (a, b) { return b.sc - a.sc || a.i - b.i; });
+    return scored.length ? scored[seed % scored.length].t : pick(list, seed);
+  }
   function bySlug(lib, s) { for (var i = 0; i < lib.length; i++) if (lib[i].slug === s) return lib[i]; return null; }
   // Abilities made only for some organizations come first: they are what
   // makes a minion read as a minion and a solo as a solo.
@@ -267,7 +281,7 @@ var DrawSteelCreatureEditor = (function () {
       return 'Characteristics: the published ' + c.role + ' spread, with ' + cap(rt.primary_stat) + ' at ' + S.signed(hc) + ', the published highest for this level.';
     }
     c.might = hc;
-    return 'Characteristics: Might at ' + S.signed(hc) + ', the published highest for this level. The rest are yours to set.';
+    return 'Characteristics: Might at ' + S.signed(hc) + ', the published highest for this level. Agility, Reason, Intuition and Presence are blank: no published spread covers a ' + (c.organization || 'creature without a role') + ', so set them yourself.';
   }
 
   // generate fills the editor with a new creature. opts: { what, kind, role,
@@ -292,7 +306,20 @@ var DrawSteelCreatureEditor = (function () {
     c.level = level; c.organization = org; c.role = role;
     c.keywords = themes.length ? themes.map(function (t) { return t[1]; }).filter(function (k, i, a) { return a.indexOf(k) === i; }) : ['Humanoid'];
     st.c = c; st.own = {}; st.editAb = null; st.origin = null; st.aiName = false;
-    st.name = what ? what.replace(/\b\w/g, function (x) { return x.toUpperCase(); }) : (noRole(org) ? (org === 'leader' ? 'Warband Captain' : 'Lone Terror') : cap(role) + ' ' + cap(org));
+    // The page's own name stays: the words only pick the theme. A creature the
+    // director has not named (or that a tool named and they have not touched)
+    // takes the words up to the first comma.
+    if (!String(st.name || '').trim() || st.autoName) {
+      var head = what.split(',')[0].trim();
+      st.name = head ? head.replace(/\b\w/g, function (x) { return x.toUpperCase(); }) : (noRole(org) ? (org === 'leader' ? 'Warband Captain' : 'Lone Terror') : cap(role) + ' ' + cap(org));
+      st.autoName = true;
+    }
+    // Speed and stability are the organization's published defaults.
+    var orgT = S.findBySlug(st.refs.orgs, org), sp = orgT ? Number(orgT.default_speed) : NaN, sb = orgT ? Number(orgT.default_stability) : NaN;
+    if (isFinite(sp) && isFinite(sb) && orgT.default_speed != null && orgT.default_stability != null) {
+      c.speed = sp; c.stability = sb;
+      why.push('Speed ' + sp + ' and stability ' + sb + ': the published defaults for a ' + org + '.');
+    } else why.push('No published speed or stability covers a ' + org + ', so set them yourself.');
     derive(st);
 
     var hc = st.pr.hc.value;
@@ -300,6 +327,7 @@ var DrawSteelCreatureEditor = (function () {
     if (chWhy) why.push(chWhy);
 
     var usable = (lib || []).filter(function (t) { return fits(t, org, role); });
+    var themeWords = shortWords(what).concat(themes.map(function (t) { return stem(t[1]); }));
     var themed = [];
     themes.forEach(function (t) { t[2].forEach(function (x) { var a = bySlug(usable, x); if (a && themed.indexOf(a) < 0) themed.push(a); }); });
     var isType = function (types) { return function (t) { return types.indexOf(props(t).type) >= 0; }; };
@@ -307,7 +335,7 @@ var DrawSteelCreatureEditor = (function () {
     var sigs = usable.filter(isType(['signature'])).filter(dealsDamage);
     var sigPool = sigs.filter(specific).concat(themed.filter(isType(['signature'])).filter(dealsDamage), sigs.filter(function (t) { return !specific(t); }))
       .filter(function (t, i, a) { return a.indexOf(t) === i; });
-    var sig = pick(sigPool, n);
+    var sig = themePick(sigPool, n, themeWords);
     var chosen = [];
     if (sig) { c.abilities.push(fromLibrary(sig, 'signature')); chosen.push(sig); }
     var extras = isType(['action', 'maneuver', 'triggered', 'trait']);
@@ -318,20 +346,20 @@ var DrawSteelCreatureEditor = (function () {
       else c.abilities.push(fromLibrary(t));
     };
     // A minion stays simple: its signature and at most one thing of its own.
-    add(pick(usable.filter(extras).filter(specific), n));
+    add(themePick(usable.filter(extras).filter(specific), n, themeWords));
     if (org !== 'minion') {
       // Abilities any role can take (a breath weapon) come only from the theme.
       var forRole = function (t) { return !specific(t) && listProp(props(t).roles).length < ROLES.length; };
       var more = themed.filter(extras).concat(usable.filter(extras).filter(forRole))
         .filter(function (t) { return chosen.indexOf(t) < 0; });
-      add(pick(more, n));
+      add(themePick(more, n, themeWords));
     }
     if (noRole(org)) {
       // The narrowest first: a solo's own villain actions before shared ones.
       var vas = usable.filter(isType(['villain-action'])).sort(function (a, b) { return listProp(props(a).organizations).length - listProp(props(b).organizations).length; });
       VA_SLOTS.forEach(function (slot, k) {
         var left = vas.filter(function (t) { return chosen.indexOf(t) < 0; });
-        var v = pick(left, n + k);
+        var v = themePick(left, n + k, themeWords);
         if (!v) return;
         chosen.push(v);
         var a = fromLibrary(v);
@@ -1144,6 +1172,8 @@ var DrawSteelCreatureEditor = (function () {
     h += '<p class="sbe-hint">' + (pr.hc.sourced && pr.hc.value !== null
       ? 'At level ' + esc(c.level) + (c.organization ? ', a ' + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
       : 'Set a level to see the published highest characteristic.') + '</p>';
+    var blank = SB().CHARS.filter(function (k) { return c[k] === null || c[k] === undefined; });
+    if (blank.length) h += '<p class="sbe-hint sbe-miss">' + esc(blank.map(cap).join(', ')) + ' ' + (blank.length > 1 ? 'are' : 'is') + ' blank. ' + (/^(leader|solo)$/.test(c.organization || '') ? 'Leaders and solos have no role, so no published spread covers them: set ' + (blank.length > 1 ? 'these' : 'this') + ' yourself.' : 'Pick a role for its published spread, or set ' + (blank.length > 1 ? 'these' : 'this') + ' yourself.') + '</p>';
     h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add trait</button></h4>' +
       '<div class="sbe-abs">' + listHtml(st, 't', ui) + '</div>';
     h += '<h4 class="sbe-h">Abilities <span class="sbe-h-acts"><button type="button" class="btn-secondary btn-sm" id="sbe-add-abs" data-sbe-act="drawer"><i class="fa-solid fa-book-open mr-1" aria-hidden="true"></i> Add abilities</button>' +
@@ -1175,13 +1205,13 @@ var DrawSteelCreatureEditor = (function () {
     var kind = g.kind || 'party';
     var org = kind === 'party' ? null : SB().findBySlug(st.refs.orgs, kind);
     var hint = kind === 'party'
-      ? (prof ? 'Picks the organization and role that suit your ' + ui.party.heroes.length + ' heroes.' : 'No hero pages were read, so this makes a platoon brute unless you pick a role.')
+      ? (prof ? 'Picks the organization and role that suit your ' + ui.party.heroes.length + ' heroes.' : ui.partyLoading ? 'Reading your heroes…' : 'No hero pages were read, so this makes a platoon brute unless you pick a role.')
       : ((org && org.description) || '') + (org && Number(org.villain_action_count) ? ' Gets ' + Number(org.villain_action_count) + ' villain actions.' : '');
     var h = '<section class="sbe-gen" aria-labelledby="sbe-gen-t"><div class="sbe-gen-h"><h4 id="sbe-gen-t">Generate a creature</h4>' +
       '<span class="sbe-small sbe-dim">No AI needed: the package’s ability library and the published formulas.</span><span class="sbe-sp"></span>' +
       '<button type="button" class="btn-ghost btn-sm" data-sbe-act="gen">Close</button></div>' +
       '<label class="sbe-f"><span class="sbe-lbl">What is it? (optional)</span><input class="input" id="sbe-g-what" data-sbe-g="what" maxlength="200" autocomplete="off" placeholder="Goblin spider rider" value="' + esc(g.what || '') + '">' +
-      '<span class="sbe-hint">Becomes the name. Words like spider, dragon, ghost or wolf also pick keywords and fitting abilities.</span></label>' +
+      '<span class="sbe-hint">Picks the theme: words like spider, dragon, ghost or wolf choose keywords and fitting abilities. It names the creature only if it has no name yet.</span></label>' +
       '<div class="sbe-f"><span class="sbe-lbl" id="sbe-g-kind-l">What kind of creature</span><div class="sbe-seg" role="radiogroup" aria-labelledby="sbe-g-kind-l">' +
       KINDS.map(function (k) {
         return '<label><input type="radio" name="sbe-g-kind" id="sbe-g-kind-' + k + '" data-sbe-g="kind" value="' + k + '"' + (k === kind ? ' checked' : '') + '><span>' + (k === 'party' ? 'Fit my party' : cap(k)) + '</span></label>';
@@ -1261,7 +1291,7 @@ var DrawSteelCreatureEditor = (function () {
   // applyField writes one identity or characteristic box into the state.
   function applyField(st, k, v) {
     var S = SB();
-    if (k === 'name') { st.name = v; return; }
+    if (k === 'name') { st.name = v; st.autoName = false; return; }
     if (k === 'keywords' || k === 'immunities') { st.c[k] = S.parseList(v); return; }
     if (k === 'faction' || k === 'size') { st.c[k] = v; return; }
     if (k === 'organization' || k === 'role') { st.c[k] = String(v || '').toLowerCase(); return; }
@@ -1957,7 +1987,7 @@ var DrawSteelCreatureEditor = (function () {
       }).catch(function () { ui.party = null; }).then(function () {
         ui.partyLoading = false;
         // The Generate panel's party hint and role list depend on the party.
-        if (!closed) { if (ui.gen.open) redraw(); else drawSide(); }
+        if (!closed) redraw();
       });
     } else {
       ui.partyLoading = false;
@@ -2028,7 +2058,12 @@ var DrawSteelCreatureEditor = (function () {
     function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
     doc.addEventListener('keydown', onKey, true);
     function rowsFor(t) {
-      if (!cache[t]) cache[t] = (t === 'bestiary' ? bestiaryRows() : campaignRows(ctx.campaignId)).catch(function () { return null; });
+      if (!cache[t]) cache[t] = (t === 'bestiary' ? bestiaryRows() : campaignRows(ctx.campaignId).then(function (rows) {
+        // The page being edited is not a creature to copy from.
+        var rest = rows.filter(function (r) { return !ctx.entityId || String(r.id) !== String(ctx.entityId); });
+        rest.unloaded = rows.unloaded;
+        return rest;
+      })).catch(function () { return null; });
       return cache[t];
     }
     function paint() {

@@ -128,7 +128,7 @@ test('Start from… recomputes a copy for the level kept, and marks formula-shap
   const st = Ed.newState('Mine', { level: 7, organization: 'platoon', role: 'brute' }, refs);
   Ed.startFrom(st, 'Ogre', { level: 7, organization: 'platoon', role: 'brute', ev: 3, stamina: 5,
     abilities: [{ name: 'Club', type: 'signature', keywords: ['Melee', 'Strike'], tier1: '2 damage', tier2: '4 damage', tier3: '6 damage; push 2' }] }, 'Started from Ogre.');
-  assert.equal(st.name, 'Ogre (copy)');
+  assert.equal(st.name, 'Mine', 'a page that already has a name keeps it');
   assert.equal(st.c.ev, Engine.Formulas.encounterValue(7, refs.orgs.find((o) => o.slug === 'platoon')).value, 'the copy’s stale EV is not kept');
   assert.equal(st.c.abilities[0].auto_damage, true);
   assert.match(st.c.abilities[0].tier3, /; push 2$/);

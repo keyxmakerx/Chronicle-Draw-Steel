@@ -299,15 +299,20 @@ Every ability opens in a small form. A signature strike is added first, with
 the formula, and any words after it ("; push 2") are kept.
 
 The row under the bar offers three ways to begin. **Generate one** folds open
-a panel: what the creature is (free text, which becomes the name; words like
-spider, dragon or ghost pick keywords and fitting abilities), what kind of
+a panel: what the creature is (free text; words like spider, dragon or ghost
+pick keywords and fitting abilities, and it names the creature only when the
+page has no name, up to the first comma), what kind of
 creature (fit my party, or an organization), its level, and its role (hidden
 for leaders and solos). It takes abilities only from `data/creature-abilities.json`
 entries whose `organizations` and `roles` fit the creature: a signature that
 deals damage, then one ability made only for that organization and, except for
 a minion, one for its role or theme; a leader or solo also gets three villain
-actions. Characteristics are the role's published spread with its main one at
-the published highest characteristic. Every figure, damage included, is the
+actions. Organization-only picks favour abilities whose words match the
+description. Speed and stability are the organization's published defaults.
+Characteristics are the role's published spread with its main one at
+the published highest characteristic; a leader or solo has no role and so no
+published spread, so only Might is set and the other four stay blank, with a
+line beside them and a miss in the completeness checks. Every figure, damage included, is the
 published formula's. The panel lists why it chose each thing, and **Try other
 abilities** picks again. **Blank** clears the stat block, asking first if
 anything changed.
@@ -319,8 +324,12 @@ hero pages, the exact JSON shape to answer in, and every option the AI may pick,
 read from the package's own files (organizations, roles, sizes, creature
 keywords, ability keywords other than helper tags, damage types, condition,
 duration and movement terms). If the browser refuses the copy, the guide is
-shown selected for a manual copy. The pasted answer is read as it arrives, up
-to its last complete value, so the editor fills in while pasting.
+shown selected for a manual copy. Each book ability in the guide says which
+organizations it is only for. The pasted answer is read as it arrives, up
+to its last complete value, so the editor fills in while pasting. Curly quotes,
+trailing commas and comments are mended, braces in the AI's chat around the JSON
+are skipped, and an answer that stops changing without closing says it looks
+cut off.
 
 The AI supplies words and picks only. Level, organization, role and size must
 be ones Draw Steel has; characteristics are the role's published spread; every
