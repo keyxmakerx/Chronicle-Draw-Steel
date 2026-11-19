@@ -1427,14 +1427,15 @@
     },
 
     // The chapter button inside Chronicle's book asks the book to turn rather
-    // than loading the page again; anywhere else the link works as it is.
+    // than loading the page again. The book cancels the ask when it turns;
+    // otherwise (an older Chronicle, or anywhere else) the link works as it is.
     _onChapterClick: function (e) {
       var a = e.target && e.target.closest ? e.target.closest('[data-rb-chapter]') : null;
       if (!a || e.defaultPrevented || e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       var inBook = a.closest('.rb-wslot') || a.closest('.rb[data-look], .rb-book');
       if (!inBook || typeof CustomEvent !== 'function') return;
-      e.preventDefault();
-      a.dispatchEvent(new CustomEvent('rulebook:goto', { bubbles: true, detail: { chapter: a.getAttribute('data-rb-chapter') } }));
+      var ask = new CustomEvent('rulebook:goto', { bubbles: true, cancelable: true, detail: { chapter: a.getAttribute('data-rb-chapter') } });
+      if (!a.dispatchEvent(ask)) e.preventDefault();
     },
 
     // _mountPlayer wires the staged example player over the built DOM when the
