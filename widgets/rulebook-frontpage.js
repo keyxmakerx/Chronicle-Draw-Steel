@@ -49,6 +49,23 @@
       '/systems/drawsteel/' + (category || 'rules-glossary');
   }
 
+  // chapterUrl is the address of a chapter in Chronicle's book for this
+  // system: the book page opened at the chapter, in the same tab. No campaign
+  // id -> no route, same reasoning as dataUrl.
+  function chapterUrl(campaignId, chapter) {
+    if (!campaignId || !chapter) return null;
+    return '/campaigns/' + encodeURIComponent(campaignId) +
+      '/systems/drawsteel#' + encodeURIComponent(chapter);
+  }
+
+  // holdBack makes a phone's Back gesture close an open sheet instead of
+  // leaving the page, when Chronicle provides the helper. Returns the release
+  // to call when the sheet closes by its own control, or null.
+  function holdBack(name, close) {
+    if (typeof Chronicle === 'undefined' || !Chronicle || typeof Chronicle.backCloses !== 'function') return null;
+    try { return Chronicle.backCloses(name, close); } catch (e) { return null; }
+  }
+
   // ── escaping / text helpers ──────────────────────────────────────────────
 
   // esc HTML-escapes & < > using Chronicle's helper when present, else a local
@@ -652,22 +669,20 @@
           ' <span class="rb-soon">soon</span></button>';
       }
     }
-    // The chapter button. There is exactly ONE reader in this page (the hero
-    // block's), so it cannot open a "Might chapter" reader that doesn't exist.
-    // Chronicle's reference browser has no per-characteristic category either
-    // (internal/systems/manifest.go — abilities/ancestries/…/rules-glossary,
-    // nothing named for a characteristic), so this links to the closest REAL
-    // category, Rules Glossary, rather than inventing a route. A mount with no
-    // campaign id has no route at all (dataUrl's own reasoning) and falls back
-    // to the same honest disabled/"soon" state as before.
-    var chapterUrl = refBrowserUrl(campaignId);
-    if (chapterUrl) {
-      ex += '<a class="rb-exbtn rb-ghost" href="' + escAttr(chapterUrl) + '" ' +
-        'target="_blank" rel="noopener">📖 ' + esc(p.chapterLabel || 'Full chapter') + '</a>';
-    } else {
+    // The chapter button turns the book to the chapter that covers the card
+    // (data: properties.chapter). Inside Chronicle's book it asks the book to
+    // turn, so the reader keeps their place and can return; elsewhere it is a
+    // plain link to the book at that chapter, in the same tab. A card with no
+    // chapter has no button. A mount with no campaign id has no route to send
+    // the reader to and shows the same disabled "soon" state as the examples.
+    var chUrl = chapterUrl(campaignId, p.chapter);
+    var chLabel = esc(p.chapterLabel || 'Read the chapter');
+    if (chUrl) {
+      ex += '<a class="rb-exbtn rb-ghost" href="' + escAttr(chUrl) + '" ' +
+        'data-rb-chapter="' + escAttr(p.chapter) + '">📖 ' + chLabel + '</a>';
+    } else if (p.chapter) {
       ex += '<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button" ' +
-        'disabled aria-disabled="true">📖 ' +
-        esc(p.chapterLabel || 'Full chapter') +
+        'disabled aria-disabled="true">📖 ' + chLabel +
         ' <span class="rb-soon">soon</span></button>';
     }
 
@@ -1206,6 +1221,7 @@
     if (!this.board) this.build();
     var self = this, first = this.lair.openOn;
     this.opener = from || document.activeElement;
+    this.release = holdBack('ds-lair', function () { self.close(); });
     this.veil.hidden = false;
     this.board.hidden = false;
     if (first) this.player.play(first, { hold: true });
@@ -1222,6 +1238,7 @@
   LairBook.prototype.close = function () {
     if (!this.board || this.board.hidden || this.shutting) return;
     var self = this;
+    if (this.release) { var r = this.release; this.release = null; r(); }
     this.shutting = true;
     var wait = calm() ? 0 : (this.player.shut() || 0);
     this.later(function () {
@@ -1240,6 +1257,7 @@
   };
 
   LairBook.prototype.destroy = function () {
+    if (this.release) { var r = this.release; this.release = null; r(); }
     this.timers.forEach(function (t) { window.clearTimeout(t); });
     this.timers = [];
     if (this.onKey) document.removeEventListener('keydown', this.onKey, true);
@@ -1266,6 +1284,8 @@
       }
       this.el = el;
       this.config = config || {};
+      this._onChapter = function (e) { self._onChapterClick(e); };
+      el.addEventListener('click', this._onChapter);
       el.classList.add('rb-root');
       this._injectStyles(el);
       this._setBody(buildLoading());
@@ -1323,6 +1343,8 @@
 
     destroy: function (el) {
       if (el && el.__ll) { el.__ll.destroy(); el.__ll = null; return; }
+      if (el && this._onChapter) { el.removeEventListener('click', this._onChapter); this._onChapter = null; }
+      if (this._release) { var r = this._release; this._release = null; r(); }
       if (this._fold && typeof this._fold.destroy === 'function') {
         try { this._fold.destroy(); } catch (e) { /* ignore */ }
       }
@@ -1351,6 +1373,7 @@
           this._fold = RulebookFoldEngine.mount(el, {
             terms: this._terms || {},
             onOpen: function (kind, id) {
+              self._holdFold(kind);
               if (kind === 'wing' && id === 't-lair' && openOn() && self._player) self._player.play(openOn(), { hold: true });
             },
             onSettle: function (kind, id) {
@@ -1361,6 +1384,7 @@
               return self._player.shut();
             },
             onClose: function (kind) {
+              self._letGoFold(kind);
               if (kind !== 'wing') return;
               if (self._player && typeof self._player.stopAll === 'function') self._player.stopAll();
               // Collapse played panels after the fold-back so reopening the wing
@@ -1374,6 +1398,43 @@
           }
         }
       }
+    },
+
+    // A wing or the reading sheet holds the phone's Back gesture while open,
+    // so Back folds it away instead of leaving the page. Switching from one
+    // to another closes then opens within a beat, so the release waits for
+    // that beat and keeps the one hold.
+    _holdFold: function (kind) {
+      var self = this;
+      if (kind !== 'wing' && kind !== 'reader') return;
+      this._folds = (this._folds || 0) + 1;
+      if (this._release) return;
+      this._release = holdBack('ds-' + kind, function () {
+        if (self._fold && typeof self._fold.closeAll === 'function') self._fold.closeAll();
+      });
+    },
+    _letGoFold: function (kind) {
+      var self = this;
+      if (kind !== 'wing' && kind !== 'reader') return;
+      this._folds = Math.max(0, (this._folds || 0) - 1);
+      if (this._folds || !this._release) return;
+      window.setTimeout(function () {
+        if (self._folds || !self._release) return;
+        var r = self._release;
+        self._release = null;
+        r();
+      }, 0);
+    },
+
+    // The chapter button inside Chronicle's book asks the book to turn rather
+    // than loading the page again; anywhere else the link works as it is.
+    _onChapterClick: function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('[data-rb-chapter]') : null;
+      if (!a || e.defaultPrevented || e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var inBook = a.closest('.rb-wslot') || a.closest('.rb[data-look], .rb-book');
+      if (!inBook || typeof CustomEvent !== 'function') return;
+      e.preventDefault();
+      a.dispatchEvent(new CustomEvent('rulebook:goto', { bubbles: true, detail: { chapter: a.getAttribute('data-rb-chapter') } }));
     },
 
     // _mountPlayer wires the staged example player over the built DOM when the
@@ -1471,7 +1532,7 @@
   // player's own test seams. Inert in a browser (no CommonJS `module`).
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      dataUrl: dataUrl, refBrowserUrl: refBrowserUrl,
+      dataUrl: dataUrl, refBrowserUrl: refBrowserUrl, chapterUrl: chapterUrl,
       buildContent: buildContent, buildLairConfig: buildLairConfig,
       buildTile: buildTile, buildLair: buildLair, buildClosedBook: buildClosedBook, buildReader: buildReader,
       richProse: richProse, esc: esc, escAttr: escAttr, css: css,

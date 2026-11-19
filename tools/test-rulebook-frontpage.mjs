@@ -44,25 +44,38 @@ test('refBrowserUrl and dataUrl agree on how a campaign id is encoded', () => {
   assert.equal(F.dataUrl('x.json', id), '/campaigns/' + encodeURIComponent(id) + '/systems/drawsteel/data/x.json');
 });
 
-// ── buildTile: the "Full chapter" control links out or degrades honestly ────
+// ── buildTile: the chapter button turns the book, links in the same tab, or degrades honestly ──
 const CHAR_ITEM = {
   slug: 'characteristic-might', name: 'Might',
   description: 'Might drives things.',
-  properties: { kind: 'characteristic', emoji: '🗡', color: 'pur', examples: [], related: [], chapterLabel: 'Full chapter' },
+  properties: { kind: 'characteristic', emoji: '🗡', color: 'pur', examples: [], related: [], chapterLabel: 'Read in The Basics', chapter: 'basics' },
 };
 
-test('buildTile: with a campaign id, "Full chapter" is a real link to the reference browser', () => {
+test('buildTile: with a campaign id the chapter button is a same-tab link to the book at that chapter', () => {
   const html = F.buildTile(CHAR_ITEM, 0, 'camp-9');
-  assert.match(html, /<a class="rb-exbtn rb-ghost" href="\/campaigns\/camp-9\/systems\/drawsteel\/rules-glossary"/);
-  assert.match(html, /target="_blank" rel="noopener"/);
-  assert.ok(!/rb-exbtn--soon/.test(html.slice(html.indexOf('Full chapter') - 400, html.indexOf('Full chapter'))),
+  assert.match(html, /<a class="rb-exbtn rb-ghost" href="\/campaigns\/camp-9\/systems\/drawsteel#basics" data-rb-chapter="basics">/);
+  assert.ok(!/target=/.test(html), 'a link into Chronicle never opens a second copy of the book');
+  assert.ok(!/rules-glossary/.test(html), 'it no longer opens the whole glossary');
+  assert.ok(!/rb-exbtn--soon/.test(html.slice(html.indexOf('Read in The Basics') - 400, html.indexOf('Read in The Basics'))),
     'the linked chapter button must not also carry the disabled "soon" styling');
 });
 
-test('buildTile: with no campaign id, "Full chapter" stays honestly disabled', () => {
+test('buildTile: with no campaign id, the chapter button stays honestly disabled', () => {
   const html = F.buildTile(CHAR_ITEM, 0, '');
   assert.match(html, /<button class="rb-exbtn rb-ghost rb-exbtn--soon" type="button"\s+disabled aria-disabled="true">/);
   assert.ok(!html.includes('<a class="rb-exbtn rb-ghost"'), 'no dead link when there is no route');
+});
+
+test('buildTile: a card with no chapter has no chapter button', () => {
+  const item = Object.assign({}, CHAR_ITEM, { properties: Object.assign({}, CHAR_ITEM.properties, { chapter: undefined }) });
+  const html = F.buildTile(item, 0, 'camp-9');
+  assert.ok(!html.includes('data-rb-chapter') && !html.includes('📖'));
+});
+
+test('chapterUrl: names the book page and the chapter, and needs both', () => {
+  assert.equal(F.chapterUrl('camp-1', 'basics'), '/campaigns/camp-1/systems/drawsteel#basics');
+  assert.equal(F.chapterUrl('', 'basics'), null);
+  assert.equal(F.chapterUrl('camp-1', ''), null);
 });
 
 // ── buildLair: parts 2-4 wired, sheet mode, teaching chips ───────────────────

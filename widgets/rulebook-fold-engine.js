@@ -1164,7 +1164,7 @@ var RulebookFoldEngine = (function () {
       state = createState();
     }
 
-    return { destroy: destroy, bindTerms: bindTerms };
+    return { destroy: destroy, bindTerms: bindTerms, closeAll: _closeAll };
   }
 
   // _closest is an ES5-safe Element.closest (some embedded webviews lack it).
