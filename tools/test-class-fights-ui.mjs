@@ -81,3 +81,29 @@ test('rules that fail to load, or come back incomplete, leave the books shut wit
   assert.match(el.innerHTML, /could not load the class rules/);
   def.destroy(el);
 });
+
+// Inside the Handbook the app theme can be dark while the book's page is
+// light, so the page part reads the book's colours first; an app token
+// alone put white text on the light page.
+test('the page part takes the book colours before the app theme', () => {
+  const src = readFileSync(new URL('../widgets/class-fights.js', import.meta.url), 'utf8');
+  const bare = src.match(/'var\(--color-[a-z-]+/g) || [];
+  assert.deepEqual(bare, [], 'an app colour token is used without the book colour in front of it');
+  assert.match(src, /var\(--rb-ink,var\(--color-text-primary/);
+  assert.match(src, /var\(--rb-box,var\(--color-card-bg/);
+});
+
+test('picking another class settles its page in; the first drawing does not move', async () => {
+  serve(DATA);
+  const el = makeEl();
+  def.init(el, { campaign_id: 'c' });
+  await settle();
+  assert.ok(!el.innerHTML.includes('clf-settle'), 'the first drawing should already be in place');
+  const v = el.__clf, next = v.list[1].id;
+  const pick = { getAttribute: (k) => (k === 'data-clf-pick' ? next : null) };
+  v.onPage({ target: { closest: () => pick } });
+  assert.ok(el.innerHTML.includes('class="clf-settle"'), 'a new pick should play Settle');
+  v.onPage({ target: { closest: () => pick } });
+  assert.ok(!el.innerHTML.includes('clf-settle'), 'picking the same class again should not move it');
+  def.destroy(el);
+});

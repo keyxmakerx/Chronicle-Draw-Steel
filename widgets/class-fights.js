@@ -326,7 +326,11 @@
   var D = 'var(--clf-display,"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif)';
   var U = 'var(--clf-ui,"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif)';
   var B = 'var(--clf-body,"Source Serif 4",Georgia,serif)';
-  var INKP = 'var(--color-text-primary,#15171d)', INK2 = 'var(--color-text-secondary,#4b5261)', RULE = 'var(--color-border,#cbd1da)';
+  // Inside the Handbook the page part reads the book's own colours (--rb-*),
+  // never the app theme's: a dark app theme puts light text on a light page.
+  // The app tokens are only the fallback for a page outside the book.
+  var INKP = 'var(--rb-ink,var(--color-text-primary,#15171d))', INK2 = 'var(--rb-ink2,var(--color-text-secondary,#4b5261))';
+  var RULE = 'var(--rb-edge,var(--color-border,#cbd1da))', CARD = 'var(--rb-box,var(--color-card-bg,#fff))';
 
   // The page part takes the book's colours; the board is a dark cut-paper
   // stage in either theme, so its colours are its own.
@@ -339,7 +343,7 @@
       '.clf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 4px}',
       '@container (max-width:420px){.clf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.clf-facts div{grid-template-columns:1fr!important;gap:2px!important}}',
       '.clf-tile{all:unset;box-sizing:border-box;cursor:pointer;display:grid;gap:2px;padding:10px 10px 9px;border-radius:3px;min-width:0;' +
-        'background:var(--color-card-bg,#fff);border:1.5px solid ' + RULE + ';border-top:5px solid var(--k);transition:transform .15s,border-color .15s;color:' + INKP + '}',
+        'background:' + CARD + ';border:1.5px solid ' + RULE + ';border-top:5px solid var(--k);transition:transform .15s,border-color .15s;color:' + INKP + '}',
       '.clf-tile:hover{transform:translateY(-2px)}',
       '.clf-tile:focus-visible,.clf-open:focus-visible{outline:3px solid #e1a32c;outline-offset:2px}',
       '.clf-tile[aria-pressed="true"]{border-color:var(--k);box-shadow:3px 3px 0 var(--k)}',
@@ -362,7 +366,10 @@
       '.clf-uniq small{display:block;font:700 11px/1 ' + U + ';letter-spacing:.2em;text-transform:uppercase;color:#e1a32c;margin-bottom:4px}',
       '.clf-open{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-top:6px;padding:12px 16px;' +
         'border-radius:3px;background:var(--k);color:#fff;font:700 14px/1.2 ' + U + ';letter-spacing:.14em;text-transform:uppercase;box-shadow:4px 4px 0 #232833}',
-      '.clf-problem{padding:10px 12px;border-radius:4px;background:var(--color-bg-tertiary,#f3efe6);color:' + INKP + ';font-size:14px}'
+      '.clf-problem{padding:10px 12px;border-radius:4px;background:var(--rb-box2,var(--color-bg-tertiary,#f3efe6));color:' + INKP + ';font-size:14px}',
+      // Settle: a newly picked class's page rises 6px into place as it fades in.
+      '.clf-settle{animation:clf-settle var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+      '@keyframes clf-settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'
     ];
   }
 
@@ -897,8 +904,9 @@
       var t = e.target.closest ? e.target.closest('[data-clf-pick],[data-clf-open]') : null;
       if (!t || !self.R) return;
       if (t.getAttribute('data-clf-open')) return self.open(t.getAttribute('data-clf-open'), t);
+      var was = self.at;
       self.at = t.getAttribute('data-clf-pick');
-      self.renderPage();
+      self.renderPage(was !== self.at);
       var again = self.el.querySelector('[data-clf-pick="' + self.at + '"]');
       if (again) again.focus();
     };
@@ -927,7 +935,9 @@
   };
 
   // renderPage draws a tile for each class and the chosen class's resource.
-  View.prototype.renderPage = function () {
+  // `settle` plays the Settle move on the class page; only a new pick moves,
+  // so a page turn or a reload draws it already in place.
+  View.prototype.renderPage = function (settle) {
     var c = this.cls(this.at) || this.list[0], lc = c.name.toLowerCase();
     var tiles = this.list.map(function (x) {
       return '<button type="button" class="clf-tile" data-clf-pick="' + attr(x.id) + '" style="--k:' + COLOR[x.id] + '" aria-pressed="' + (x.id === c.id) + '">' +
@@ -936,7 +946,7 @@
     this.el.innerHTML = '<div class="clf"><div class="clf-wrap"><div>' +
       '<div class="clf-grid" role="group" aria-label="Pick a class">' + tiles + '</div>' +
       '<p class="clf-note">Pick a class to read it. Each one opens a pop-up book with a fight to try its resource in.</p></div>' +
-      '<div style="--k:' + COLOR[c.id] + '">' +
+      '<div' + (settle ? ' class="clf-settle"' : '') + ' style="--k:' + COLOR[c.id] + '">' +
         '<div class="clf-head">' + emblem(c.id) + '<span><small>Heroic resource</small><b>' + esc(c.res) + '</b><i>The ' + esc(lc) + '</i></span></div>' +
         (c.quote ? '<p class="clf-quote">' + esc(c.quote) + '</p>' : '') +
         '<div class="clf-facts"><div><b>How you gain it</b><span>' + esc(c.gain) + '</span></div>' +
