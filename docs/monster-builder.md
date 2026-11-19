@@ -203,7 +203,10 @@ Stamina, rounded down), free strike, and each ability whose tiers open with
 damage, adding the highest characteristic to a strike. A figure no formula
 covers is left off. The director keeps the AI's figure or presses "Use the
 formula", for one or for all; the patch changes only the number in a tier's
-text, never its damage type or effect. Pinned by
+text, never its damage type or effect. Free strike is read only as a bare
+number or "N damage"; other wording is not a match and the fix replaces the
+whole value. An ability whose damage is worded another way is named in the
+note as not checked, and a level outside 1 to 10 gets no check. Pinned by
 `tools/test-creature-review-check.mjs`.
 
 ### 4.3 Default Speed/Stability by Organization

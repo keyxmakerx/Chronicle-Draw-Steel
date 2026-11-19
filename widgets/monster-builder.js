@@ -506,27 +506,77 @@ var DrawSteelCreatureEditor = (function () {
     return '- ' + [t.slug, t.name, p.type, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
   }
 
-  // readAnswer finds the JSON in a pasted answer. An answer still being
-  // pasted is read up to its last complete value, so the editor fills in as
-  // it arrives. Returns { obj, done } or { err, wait }.
-  function readAnswer(text) {
-    var s = String(text || '').replace(/```(?:json)?/gi, ''), a = s.indexOf('{');
-    if (a < 0) return { err: 'No creature in it yet. The answer should hold a { … } block.' };
-    s = s.slice(a);
-    var b = s.lastIndexOf('}');
-    if (b >= 0) { try { return { obj: JSON.parse(s.slice(0, b + 1)), done: true }; } catch (e) { /* still arriving, or broken */ } }
-    var stack = [], inS = false, bs = false, cut = -1, snap = null;
-    for (var i = 0; i < s.length; i++) {
+  // scanObject reads one { … } block starting at text[start], mending what
+  // chat apps do to JSON: curly quotes used as quotes, trailing commas and
+  // // or /* */ comments, all only outside strings. Returns the mended text,
+  // whether the block closed, and where the last comma sits (for a block
+  // still arriving).
+  var CURLY = { '“': 1, '”': 1 };
+  function scanObject(s, start) {
+    var out = '', stack = [], inS = false, open = '', bs = false, cut = -1, snap = null;
+    for (var i = start; i < s.length; i++) {
       var ch = s[i];
-      if (inS) { if (bs) bs = false; else if (ch === '\\') bs = true; else if (ch === '"') inS = false; continue; }
-      if (ch === '"') inS = true;
-      else if (ch === '{' || ch === '[') stack.push(ch);
-      else if (ch === '}' || ch === ']') stack.pop();
-      else if (ch === ',' && stack.length) { cut = i; snap = stack.slice(); }
+      if (inS) {
+        if (bs) { bs = false; out += ch; continue; }
+        if (ch === '\\') { bs = true; out += ch; continue; }
+        if (ch === '"' || (open === 'curly' && CURLY[ch])) { inS = false; out += '"'; continue; }
+        out += ch; continue;
+      }
+      if (ch === '"' || CURLY[ch]) { inS = true; open = ch === '"' ? 'straight' : 'curly'; out += '"'; continue; }
+      if (ch === '/' && s[i + 1] === '/') { while (i < s.length && s[i] !== '\n') i++; out += '\n'; continue; }
+      if (ch === '/' && s[i + 1] === '*') { var e = s.indexOf('*/', i + 2); if (e < 0) { i = s.length; break; } i = e + 1; continue; }
+      if (ch === '{' || ch === '[') { stack.push(ch); out += ch; continue; }
+      if (ch === '}' || ch === ']') {
+        out = out.replace(/,(\s*)$/, '$1');
+        stack.pop(); out += ch;
+        if (!stack.length) return { text: out, closed: true, end: i + 1 };
+        continue;
+      }
+      if (ch === ',' && stack.length) { cut = out.length; snap = stack.slice(); }
+      out += ch;
     }
-    if (cut < 0) return { err: 'Reading…', wait: true };
-    try { return { obj: JSON.parse(s.slice(0, cut) + snap.reverse().map(function (x) { return x === '{' ? '}' : ']'; }).join('')), done: false }; }
-    catch (e) { return { err: 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' }; }
+    return { text: out, closed: false, cut: cut, snap: snap, inString: inS };
+  }
+
+  var CUT_OFF = 'The answer stops before its closing brace, so it looks cut off. Ask the AI to continue or send it again, then paste all of it.';
+
+  // parseProblem says in plain words where a block that will not read goes
+  // wrong; the position comes from the parser's own message when it has one.
+  function parseProblem(mended, e) {
+    var m = /position (\d+)/.exec(String(e && e.message)), near = '';
+    if (m) near = mended.slice(Math.max(0, Number(m[1]) - 20), Number(m[1]) + 20).replace(/\s+/g, ' ').trim();
+    return 'The answer has a mistake the editor can’t mend' + (near ? ' near “' + near + '”' : '') + '. Ask the AI to fix its JSON, or to send it again as plain JSON.';
+  }
+
+  // readAnswer finds the JSON in a pasted answer: the first { that opens a
+  // block that reads as JSON, so braces in the AI's chat around it do not
+  // matter. An answer still being pasted is read up to its last complete
+  // value, so the editor fills in as it arrives. Returns { obj, done } or
+  // { err, wait }; `wait` means more may still arrive.
+  function readAnswer(text) {
+    var s = String(text || ''), from = s.indexOf('{');
+    if (from < 0) return { err: 'No creature in it yet. The answer should hold a { … } block.' };
+    var bad = '', partial = null;
+    while (from >= 0) {
+      var r = scanObject(s, from);
+      if (r.closed) {
+        try { return { obj: JSON.parse(r.text), done: true }; }
+        catch (e) {
+          if (!bad) bad = parseProblem(r.text, e);
+          // Skip the block that failed whole, so its inner braces are not mistaken for the answer.
+          from = s.indexOf('{', r.end);
+          continue;
+        }
+      }
+      if (!partial) partial = r;
+      break;
+    }
+    if (partial) {
+      if (partial.cut < 0) return { err: 'Reading…', wait: true };
+      try { return { obj: JSON.parse(partial.text.slice(0, partial.cut) + partial.snap.reverse().map(function (x) { return x === '{' ? '}' : ']'; }).join('')), done: false }; }
+      catch (e) { return { err: 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' }; }
+    }
+    return { err: bad || 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' };
   }
 
   function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max || 2000) : ''; }
@@ -542,6 +592,18 @@ var DrawSteelCreatureEditor = (function () {
       if (list.indexOf(t) >= 0) return '{@' + cat + ' ' + t + (shown || '') + '}';
       return shown ? shown.slice(1) : term;
     });
+  }
+
+  // withoutDamage takes any damage number out of a tier's text ("6 damage",
+  // "Deals 9 damage and", "5 + 2 fire damage", "2d10 damage"), leaving potency,
+  // forced movement and conditions as written. The formula's figure goes in front.
+  var DAMAGE_NUM = /(?:\b(?:deals?|takes?|taking|suffers?)\s+)?(?:\d+d\d+|\d+)(?:\s*[+\-]\s*(?:\d+d\d+|\d+))*\s+(?:[a-z]+\s+)?damage\b(?:\s+of\s+[a-z]+)?/gi;
+  function withoutDamage(text) {
+    DAMAGE_NUM.lastIndex = 0;
+    if (!DAMAGE_NUM.test(String(text || ''))) return String(text || '');
+    return String(text || '').replace(DAMAGE_NUM, ' ').replace(/\s+/g, ' ')
+      .replace(/([,;])\s*(?:[,;]\s*)+/g, '$1 ')
+      .replace(/^[\s,;.]*(?:(?:and|plus)\s+)?/i, '').replace(/[\s,;]*(?:\b(?:and|plus|deals?|takes?)\b[\s,;]*)?$/i, '').trim();
   }
 
   // fromAI fills the editor from the AI's answer and returns the notes on
@@ -580,7 +642,7 @@ var DrawSteelCreatureEditor = (function () {
     if (chWhy) notes.push(chWhy);
     derive(st);
 
-    var d = st.pr.damage.value, hc = st.pr.hc.value, droppedDamage = false;
+    var d = st.pr.damage.value, hc = st.pr.hc.value, droppedDamage = [];
     // An ability's tiers: the formula's damage (in the AI's damage type) and
     // whatever else the AI said happens on that tier, minus any number of its own.
     function tiers(a, src, dealsDamage) {
@@ -589,7 +651,8 @@ var DrawSteelCreatureEditor = (function () {
       if (dtype && DTYPES.indexOf(dtype) < 0) { notes.push('“' + src.damage_type + '” is not a Draw Steel damage type, so ' + a.name + ' deals untyped damage.'); dtype = ''; }
       ['tier1', 'tier2', 'tier3'].forEach(function (k, i) {
         var extra = keepKnownRefs(str(te[i], 500), v);
-        if (/^\s*\d+(\s+[a-z]+)?\s+damage/i.test(extra)) { droppedDamage = true; extra = extra.replace(/^\s*\d+(\s+[a-z]+)?\s+damage\s*;?\s*/i, ''); }
+        var bare = withoutDamage(extra);
+        if (bare !== extra) { droppedDamage.push(a.name + ' tier ' + (i + 1)); extra = bare; }
         if (dealsDamage && d) {
           var add = (isStrike(a) && hc !== null) ? hc : 0;
           a[k] = (d[k] + add) + (dtype ? ' ' + dtype : '') + ' damage' + (extra ? '; ' + extra : '');
@@ -610,7 +673,7 @@ var DrawSteelCreatureEditor = (function () {
       o.abilities.filter(function (x) { return x && str(x.name); }).slice(0, 20).forEach(function (x) {
         var t = /trigger/i.test(str(x.type)) ? 'triggered' : /maneuver/i.test(str(x.type)) ? 'maneuver' : 'action';
         var a = { name: str(x.name, 200), type: t, keywords: strList(x.keywords), distance: str(x.distance, 80), target: str(x.target, 120), trigger: keepKnownRefs(str(x.trigger), v), effect: keepKnownRefs(str(x.effect), v), from_ai: true };
-        tiers(a, x, x.deals_damage === true);
+        tiers(a, x, x.deals_damage === true || /^true$/i.test(String(x.deals_damage).trim()));
         c.abilities.push(a);
       });
     }
@@ -623,7 +686,7 @@ var DrawSteelCreatureEditor = (function () {
     }
     derive(st);
     bookPicks(st, o.book_abilities, lib, notes);
-    if (droppedDamage) notes.push('The AI put damage numbers in its abilities. They were dropped; the damage comes from the published formula.');
+    if (droppedDamage.length) notes.push('The AI put damage numbers in its abilities. They were dropped from ' + droppedDamage.slice(0, 8).join(', ') + (droppedDamage.length > 8 ? ' and ' + (droppedDamage.length - 8) + ' more' : '') + '; the damage comes from the published formula.');
     // Numbers the formulas own: say what the AI said and what is used instead.
     [['ev', 'Encounter value', ['ev', 'encounter_value']], ['stamina', 'Stamina', ['stamina']], ['free_strike', 'Free strike', ['free_strike']]].forEach(function (f) {
       var said = null;
@@ -1620,8 +1683,13 @@ var DrawSteelCreatureEditor = (function () {
       var text = aiBox('ans').value, stEl = aiBox('status'), notesEl = aiBox('notes');
       if (!text.trim()) { stEl.textContent = ''; stEl.className = 'sbe-small'; notesEl.innerHTML = ''; return; }
       var r = readAnswer(text);
+      clearTimeout(ui.ai.settle);
+      // An answer that stops changing yet never closes is cut off, not still arriving.
+      if (r.wait || (r.obj && !r.done)) ui.ai.settle = setTimeout(function () { if (!closed && aiBox('ans').value === text) { stEl.className = 'sbe-small sbe-ai-err'; stEl.textContent = CUT_OFF + (r.obj ? ' What was read so far is filled in.' : ''); } }, 1500);
       if (r.err) { stEl.textContent = r.err; stEl.className = 'sbe-small' + (r.wait ? '' : ' sbe-ai-err'); return; }
-      var notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}), ui.ai.lib || []);
+      var notes;
+      try { notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}), ui.ai.lib || []); }
+      catch (e) { stEl.className = 'sbe-small sbe-ai-err'; stEl.textContent = 'The editor could not use that answer. Ask the AI to send it again as plain JSON.'; return; }
       ui.gen.why = null; ui.msg = '';
       dirty(); draw();
       stEl.className = 'sbe-small' + (r.done ? ' sbe-ai-ok' : '');
@@ -1819,7 +1887,7 @@ var DrawSteelCreatureEditor = (function () {
     var closed = false;
     function unbind() {
       closed = true;
-      stopStream(); clearTimeout(ui.ai.timer);
+      stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle);
       root.removeEventListener('input', onInput);
       root.removeEventListener('change', onChange);
       root.removeEventListener('click', onClick);
@@ -2443,7 +2511,7 @@ var DrawSteelCreatureEditor = (function () {
     newState: newState, derive: derive, setFigure: setFigure, useFormula: useFormula,
     startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, roundTrip: roundTrip, autoTier: autoTier, isStrike: isStrike,
     editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
-    applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
+    applySuggestion: applySuggestion, withoutDamage: withoutDamage, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
     usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,
     openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS,
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,

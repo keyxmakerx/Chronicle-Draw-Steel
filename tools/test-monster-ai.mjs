@@ -240,3 +240,48 @@ test('the shortlist’s list and filters escape the library’s text', () => {
   const html = Ed.bookListHtml([{ t: evil, hits: ['<h>'] }], F()) + Ed.bookFiltersHtml(st, [evil], F());
   assert.ok(!/<img|<script|<b>x|<i>G|<k>|<h>/.test(html), html);
 });
+
+test('common chat-reply slips read in, or end in a plain error, never waiting forever', () => {
+  const ok = (t, name = 'X') => { const r = Ed.readAnswer(t); assert.equal(r.done, true, t); assert.equal(r.obj.name, name); };
+  ok('{"name":"X",}');
+  ok('{"name":"X", // the name\n "level": 2}');
+  ok('{"name":"X" /* c */, "level": 2}');
+  ok('{“name”: “X”}');
+  ok('{"name":"X","list":[1,2,],}');
+  ok('Here is {your} creature: {"name":"X"}');
+  ok('{"name":"X"} and then {"name":"Y"}');
+  ok('{"name":"X"} a stray } in later text');
+  // A fence inside a string value stays; a quote of the other kind inside a curly string stays.
+  ok('{"name":"a ``` b"}', 'a ``` b');
+  ok('{“name”: “The ”First””}'.replace('”First”', 'First'), 'The First');
+  // A complete block that cannot be mended is an error with a hint, not "wait".
+  const bad = Ed.readAnswer('{"name": X}');
+  assert.ok(bad.err && !bad.wait, 'unmendable is an error');
+  assert.match(bad.err, /mistake/);
+  // Cut off with no comma yet: the editor keeps waiting, and its settle timer then says so (CUT_OFF).
+  assert.equal(Ed.readAnswer('{"name":"X"').wait, true);
+  assert.equal(Ed.readAnswer('{"name":"X","level":').done, false);
+});
+
+test('any damage number the AI writes in a tier is dropped, and the note names the tiers', () => {
+  const cases = [
+    ['6 damage, {@movement pull} 1', '{@movement pull} 1'],
+    ['Deals 9 damage and the target is {@condition grabbed}', 'the target is {@condition grabbed}'],
+    ['5 + 2 fire damage; push 2', 'push 2'],
+    ['2d10 damage', ''],
+    ['push 2 and takes 3 damage', 'push 2'],
+    ['M<2 {@condition weakened} ({@duration save-ends})', 'M<2 {@condition weakened} ({@duration save-ends})'],
+    ['', '']
+  ];
+  for (const [inp, out] of cases) assert.equal(Ed.withoutDamage(inp), out, inp);
+  const { st, notes } = read({ name: 'Harrier', level: 3, organization: 'elite', role: 'harrier', signature: { name: 'Bite', damage_type: 'corruption', tier_effects: ['6 damage, {@movement pull} 1', 'Deals 9 damage and the target is {@condition grabbed}', ''] } });
+  const sig = st.c.abilities[0];
+  for (const k of ['tier1', 'tier2', 'tier3']) assert.equal((sig[k].match(/damage/g) || []).length, 1, sig[k]);
+  assert.ok(!/;\s*,/.test(sig.tier1) && !/\b9\b/.test(sig.tier2), sig.tier1 + ' | ' + sig.tier2);
+  assert.match(notes.join('\n'), /dropped from Bite tier 1, Bite tier 2;/);
+});
+
+test('deals_damage written as the text "true" still counts', () => {
+  const { st } = read({ name: 'H', level: 3, organization: 'elite', role: 'harrier', abilities: [{ name: 'Slash', type: 'action', deals_damage: 'true', tier_effects: ['', '', ''] }] });
+  assert.match(st.c.abilities[0].tier1, /damage/);
+});
