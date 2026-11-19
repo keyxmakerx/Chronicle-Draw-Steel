@@ -215,6 +215,17 @@ setting material out of both:
   `monsters.json`**, because the viewer and the formulas place every creature by
   its organization.
 
+Five stat blocks carry corrections from MCDM's core rules errata (last updated
+14 November 2025) that the Steel Compendium files do not have: Predator A and
+Predator B (Natural Weapon's tier 3 potency), Predator B (level 2), the level 5
+Rival Null (Agile Stride's tier 2 potency damage), the level 10 Rival Fury
+(Death Grip's damage) and the Crucible Dragon (Hammer and Anvil's last sentence).
+
+The nine conditions in `rules-glossary.json` are the text of
+`Rules/Conditions/*.md`, with the chapter pointers removed. Burning and charmed
+are not conditions: an ability that uses one says what it does, and their
+glossary entries are this package's own note saying so.
+
 In `monsters.json` a minion's EV is printed "for four minions"; the number is
 kept and `properties.ev_note` keeps the words. Winded is half the printed
 Stamina, rounded down. The header table's "With Captain" cell is kept as

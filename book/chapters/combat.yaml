@@ -73,31 +73,25 @@ pages:
       - type: flaps
         items:
           - title: Bleeding
-            text: Take damage at the start of each of your turns equal to the bleeding value.
-          - title: Burning
-            text: Take fire damage at the start of each of your turns equal to the burning value.
-          - title: Charmed
-            text: You cannot attack the source of the charm, and the source gains an edge on social interactions with you.
+            text: Whenever you use a main action, use a triggered action, or make a test or ability roll using Might or Agility, you lose Stamina equal to 1d6 + your level once it is resolved. Nothing can prevent the loss.
           - title: Dazed
-            text: On your turn you may do only one thing, an action, a maneuver or a move. You cannot take triggered actions.
+            text: On your turn you can do only one thing, a main action, a maneuver or a move action. You cannot use triggered actions, free triggered actions or free maneuvers.
           - title: Frightened
-            text: You take a bane on power rolls against the source of your fear and cannot willingly move closer to it.
+            text: Your ability rolls against the source of your fear take a bane, and its ability rolls against you gain an edge. You cannot willingly move closer to it if you know where it is.
           - title: Grabbed
-            text: Your speed is 0, the grabber can move you with them, and you can use an action to try to escape.
-          - title: Hidden
-            text: Others cannot see or detect you. Attacks against you take a bane and your attacks gain an edge.
-          - title: Poisoned
-            text: You take a bane on all power rolls.
+            text: Your speed is 0, only your grabber can force move you, you cannot use the Knockback maneuver, and you take a bane on abilities that do not target your grabber. Use the Escape Grab maneuver to try to get free.
           - title: Prone
-            text: Standing costs half your movement. Melee attacks against you gain an edge and ranged attacks take a bane.
+            text: Your strikes take a bane and melee abilities against you gain an edge. You must crawl, which costs 1 extra square of movement for every square. Use the Stand Up maneuver to get up.
           - title: Restrained
-            text: Your speed is 0, you cannot benefit from speed bonuses, and attacks against you gain an edge.
+            text: Your speed is 0, you cannot use the Stand Up maneuver and you cannot be force moved. You take a bane on ability rolls and on Might and Agility tests, and abilities used against you gain an edge.
           - title: Slowed
-            text: Your speed is reduced to 2, you cannot benefit from speed bonuses and you cannot shift.
+            text: Your speed is 2 unless it is already lower, and you cannot shift.
           - title: Taunted
-            text: You take a bane on attacks that do not include the source of the taunt as a target.
+            text: You have a double bane on ability rolls for any ability that does not target the creature who taunted you, as long as you have line of effect to them.
           - title: Weakened
-            text: Your power rolls and damage are halved.
+            text: You take a bane on power rolls.
+          - title: Hidden
+            text: A creature you are hidden from cannot target you with abilities that lack the Area keyword, and you gain an edge on ability rolls against them. Using an ability or losing your cover or concealment ends it.
           - title: Surprised
             text: |
               You were not ready when combat began. You cannot take triggered

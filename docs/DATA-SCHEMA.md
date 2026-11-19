@@ -380,10 +380,10 @@ Rule definitions for the @reference tooltip system.
 
 | Category | Examples |
 |----------|----------|
-| `condition` | frightened, dazed, slowed, restrained, weakened, bleeding, burning, taunted, prone, charmed, poisoned, grabbed, hidden |
+| `condition` | frightened, dazed, slowed, restrained, weakened, bleeding, burning, taunted, prone, charmed, grabbed, hidden |
 | `movement` | shift, push, pull |
 | `duration` | eot (End of Turn), save-ends |
-| `resource` | temporary-stamina, damage-resistance |
+| `resource` | temporary-stamina |
 | `action` | free-strike |
 | `combat` | forced-movement, power-roll, stability, winded |
 
