@@ -141,18 +141,44 @@ test('paper folds use the contract: details > .fold-body > .fold-in[data-move=fo
   assert.ok(/<div class="fold-body"><div class="fold-in" data-move="fold">/.test(html));
 });
 
-test('paper identity is one line and keeps the origin picker hooks', () => {
+test('paper identity: the line holds what is chosen, and every origin keeps a picker hook', () => {
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const rw = cs.pIdentity(PAPER);
   for (const k of ['ancestry', 'culture', 'career', 'kit']) assert.ok(rw.includes('data-cs-pick="' + k + '"'), k);
   assert.ok(/data-cs-pick-fold/.test(rw) && /data-cs-change-image/.test(rw));
-  const line = rw.match(/<p class="sh-idline">([^]*?)<\/p>/)[1];
-  assert.ok(/Human/.test(line) && /Tactician 2/.test(line) && /data-cs-pick="kit"/.test(line), 'ancestry, class and level, kit on the line');
-  assert.ok(!/data-cs-pick="(culture|career)"/.test(line), 'culture and career are one fold away');
+  const line = rw.match(/<p class="sh-idline[^"]*">([^]*?)<\/p>/)[1];
+  assert.ok(/Human/.test(line) && /Tactician 2/.test(line), 'ancestry, class and level on the line');
+  assert.ok(!/data-cs-pick="(culture|career|kit)"/.test(line) && !/Not set/.test(rw), 'a choice not made is not on the line');
+  assert.ok(!/class="sh-dot"/.test(line), "Chronicle's share page owns .sh-dot and draws a disc on it");
   const ro = cs.pIdentity(Object.assign({}, PAPER, { canEditIdentity: false, canChangeImage: false }));
   assert.ok(!/data-cs-pick=/.test(ro) && !/data-cs-change-image/.test(ro));
   assert.ok(/data-v="origin-ancestry"/.test(ro), 'value is still a changing number');
   assert.ok(!/<img/.test(rw), 'the page header owns the picture');
+});
+
+test('paper identity: choices not made are named on one "Still to choose" line', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const todo = (html) => (html.match(/<p class="sh-idtodo">([^]*?)<\/p>/) || [])[1];
+  const some = todo(cs.pIdentity(PAPER));
+  assert.ok(/Still to choose/.test(some));
+  assert.deepEqual([...some.matchAll(/data-cs-pick="([a-z]+)"/g)].map((m) => m[1]), ['culture', 'career', 'kit'], 'in the order the book makes them');
+  assert.ok(/aria-label="Choose culture"/.test(some));
+  const ro = todo(cs.pIdentity(Object.assign({}, PAPER, { canEditIdentity: false })));
+  assert.ok(/Culture/.test(ro) && !/<button/.test(ro), 'a reader who may not edit sees the words, not buttons');
+  const full = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { culture: 'Nomadic', career: 'Disciple', kit: 'Mountain' }) });
+  assert.equal(todo(cs.pIdentity(full)), undefined, 'the line goes when nothing is left');
+});
+
+test('paper identity: the paper styles keep culture and career one fold away; the quiet look labels every choice', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const one = cs.pIdentity(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { career: 'Disciple' }) }));
+  const fold = one.match(/<details class="ft sh-origins sh-id-l[^>]*>([^]*?)<\/details>/)[1];
+  assert.ok(/<summary>Career<\/summary>/.test(fold) && /Disciple/.test(fold) && /set in Foundry/.test(fold));
+  const none = cs.pIdentity(Object.assign({}, PAPER, { fields: { class: 'Fury', level: 1 } }));
+  assert.ok(!/sh-origins/.test(none) && /set in Foundry/.test(none), 'no empty fold; the Foundry hint is still said');
+  const set = one.match(/<dl class="sh-idset sh-id-q">([^]*?)<\/dl>/)[1];
+  assert.deepEqual([...set.matchAll(/<dt>([^<]+)<\/dt>/g)].map((m) => m[1]), ['Ancestry', 'Career']);
+  assert.ok(/<p class="sh-idwho sh-id-q">[^]*Tactician[^]*level 2/.test(one), 'the class is the heading');
 });
 
 test('paper sheet prints the hero name once, in the page header', () => {
@@ -216,13 +242,47 @@ const faceData = (abs, extra) => ({ name: 'Tyne', fields: Object.assign({ might:
 
 test('actionKind groups by when an ability is used, from the type Foundry sends', () => {
   const k = (a) => cs.actionKind(a);
-  assert.equal(k({ type: 'action' }), 'main');
-  for (const t of ['maneuver', 'move', 'free']) assert.equal(k({ type: t }), 'maneuver', t);
+  for (const t of ['main', 'action']) assert.equal(k({ type: t }), 'main', t);
+  assert.equal(k({ type: 'main', name: 'Charge' }), 'main', 'a plain main action with no roll is still a main action');
+  for (const t of ['maneuver', 'freeManeuver', 'move', 'free']) assert.equal(k({ type: t }), 'maneuver', t);
   for (const t of ['triggered', 'freeTriggered']) assert.equal(k({ type: t }), 'triggered', t);
   assert.equal(k({ type: 'none', category: 'freeStrike' }), 'free');
   assert.equal(k({ category: 'signature' }), 'main', 'unknown type: signature is a main action');
   assert.equal(k({ cost: 3 }), 'main');
   assert.equal(k({ name: 'Plain' }), 'maneuver');
+});
+
+test('common abilities are the pack\'s own list, and a hero\'s abilities come before them', () => {
+  const pack = JSON.parse(readFileSync(new URL('../data/abilities.json', import.meta.url), 'utf8'))
+    .filter((a) => a.properties && a.properties.category === 'common' && a.name !== 'Free Strike')
+    .map((a) => a.name.toLowerCase()).sort();
+  assert.deepEqual([...cs.COMMON_ABILITIES].sort(), pack, 'free strikes have their own heading');
+  assert.ok(cs.isCommonAbility({ name: 'Charge', type: 'main' }));
+  assert.ok(!cs.isCommonAbility({ name: 'Charge', category: 'signature' }) && !cs.isCommonAbility({ name: 'Heal', cost: 3 }), "a class ability that shares a name is the hero's own");
+  const html = cs.pAbilities(faceData([
+    { name: 'Defend', type: 'main' }, { name: 'Smite', type: 'main', category: 'signature' },
+    { name: 'Grab', type: 'maneuver' }, { name: 'Advance', type: 'move' }, { name: 'Bless', type: 'maneuver' }
+  ]));
+  assert.ok(html.indexOf('Smite') < html.indexOf('data-cs-common="main"'), 'own main action first');
+  assert.ok(html.indexOf('Bless') < html.indexOf('data-cs-common="maneuver"'), 'own maneuver first');
+  assert.ok(/<details data-cs-common="main" class="ft sx-std is-in" data-sheet-fold open>/.test(html), 'open as rendered: a paper style has no heading to open it with');
+  const man = html.slice(html.indexOf('data-cs-common="maneuver"'));
+  assert.ok(/Every hero’s maneuvers and moves<\/span><span class="sx-std-c num">2</.test(man) && /Grab/.test(man) && /Advance/.test(man));
+});
+
+test('the common fold starts shut only in the quiet look, and keeps what the reader chose', () => {
+  const fold = (kind) => {
+    const d = { open: true, cls: new Set(['is-in']), getAttribute: () => kind, removeAttribute: () => { d.open = false; } };
+    d.classList = { remove: (c) => d.cls.delete(c) };
+    return d;
+  };
+  const root = (style, folds) => ({ getAttribute: () => style, querySelectorAll: () => folds });
+  const run = (style, kept) => { const f = [fold('main'), fold('maneuver')]; cs.shutCommonFolds(root(style, f), kept); return f.map((d) => d.open && d.cls.has('is-in')); };
+  assert.deepEqual(run('modern', null), [false, false]);
+  assert.deepEqual(run(null, null), [false, false], 'no style named is the default look');
+  assert.deepEqual(run('ledger', null), [true, true], 'a paper style lists them');
+  assert.deepEqual(run('modern', { maneuver: true }), [false, true], 'a redraw keeps an opened fold open');
+  assert.deepEqual(run('ledger', { main: false }), [false, true]);
 });
 
 test('face: four headings in order, each ability once, empty headings left out', () => {
