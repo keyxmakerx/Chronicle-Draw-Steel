@@ -436,6 +436,10 @@ test('a minion copied from the book carries its EV note (#208)', () => {
   const c = S.normalize(m.properties);
   assert.equal(c.ev_note, 'for four minions');
   assert.equal(S.toFields(c).ev_note, 'for four minions');
+  // Made a platoon, the minion group count no longer applies.
+  const p = S.normalize(Object.assign({}, m.properties, { organization: 'platoon' }));
+  assert.equal(S.toFields(p).ev_note, undefined);
+  assert.doesNotMatch(S.html('X', Object.assign({}, m.properties, { organization: 'platoon' }), {}), /for four/);
 });
 
 test('saving keeps what Foundry sent while the editor was open (#203)', async () => {

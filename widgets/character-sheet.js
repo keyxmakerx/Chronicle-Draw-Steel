@@ -435,9 +435,10 @@
     return canPick ? 'Level and subclass are set in Foundry.' : 'Class, level and subclass are set in Foundry.';
   }
 
-  // foundryLinked says whether a Foundry module has ever connected to this
-  // campaign (any member may read it). An unreadable answer counts as no, so
-  // the Foundry line is left off rather than guessed.
+  // foundryLinked says whether a Foundry module has connected to this campaign
+  // since Chronicle last started (any member may read it; Chronicle keeps no
+  // longer record yet, TODO(keyxmakerx/Chronicle#2381)). An unreadable answer counts as no, so the
+  // Foundry line is left off rather than guessed.
   function foundryLinked(campaignId) {
     if (!campaignId || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(false);
     return Chronicle.apiFetch('/campaigns/' + encodeURIComponent(campaignId) + '/foundry-presence')

@@ -273,7 +273,9 @@ test('any damage number the AI writes in a tier is dropped, and the note names t
     ['2d10 damage', ''],
     ['push 2 and takes 3 damage', 'push 2'],
     ['M<2 {@condition weakened} ({@duration save-ends})', 'M<2 {@condition weakened} ({@duration save-ends})'],
-    ['', '']
+    ['', ''],
+    ['3 damage; the target takes 2 damage at the start of each of its turns (save ends)', 'the target takes 2 damage at the start of each of its turns (save ends)'],
+    ['bleeding; 1 damage whenever it moves', 'bleeding; 1 damage whenever it moves']
   ];
   for (const [inp, out] of cases) assert.equal(Ed.withoutDamage(inp), out, inp);
   const { st, notes } = read({ name: 'Harrier', level: 3, organization: 'elite', role: 'harrier', signature: { name: 'Bite', damage_type: 'corruption', tier_effects: ['6 damage, {@movement pull} 1', 'Deals 9 damage and the target is {@condition grabbed}', ''] } });

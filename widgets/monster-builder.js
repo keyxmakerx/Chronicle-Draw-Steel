@@ -733,14 +733,22 @@ var DrawSteelCreatureEditor = (function () {
     });
   }
 
-  // withoutDamage takes any damage number out of a tier's text ("6 damage",
+  // withoutDamage takes the tier's own damage number out of its text ("6 damage",
   // "Deals 9 damage and", "5 + 2 fire damage", "2d10 damage"), leaving potency,
   // forced movement and conditions as written. The formula's figure goes in front.
+  // Damage that happens later ("takes 2 damage at the start of each of its
+  // turns") is a separate effect no formula covers, so its words stay whole.
   var DAMAGE_NUM = /(?:\b(?:deals?|takes?|taking|suffers?)\s+)?(?:\d+d\d+|\d+)(?:\s*[+\-]\s*(?:\d+d\d+|\d+))*\s+(?:[a-z]+\s+)?damage\b(?:\s+of\s+[a-z]+)?/gi;
+  var LATER_DAMAGE = /^\s*(?:at the (?:start|end)|each|every|for each|whenever|when|while|until|per|if)\b/i;
   function withoutDamage(text) {
-    DAMAGE_NUM.lastIndex = 0;
-    if (!DAMAGE_NUM.test(String(text || ''))) return String(text || '');
-    return String(text || '').replace(DAMAGE_NUM, ' ').replace(/\s+/g, ' ')
+    var t = String(text || ''), hit = false;
+    var out = t.replace(DAMAGE_NUM, function (m, at) {
+      if (LATER_DAMAGE.test(t.slice(at + m.length))) return m;
+      hit = true;
+      return ' ';
+    });
+    if (!hit) return t;
+    return out.replace(/\s+/g, ' ')
       .replace(/([,;])\s*(?:[,;]\s*)+/g, '$1 ')
       .replace(/^[\s,;.]*(?:(?:and|plus)\s+)?/i, '').replace(/[\s,;]*(?:\b(?:and|plus|deals?|takes?)\b[\s,;]*)?$/i, '').trim();
   }

@@ -222,8 +222,9 @@ var DrawSteelStatblock = (function () {
     var f = (fields && typeof fields === 'object') ? fields : {};
     var c = normalize(f);
     var pr = provenance(c, refs);
-    // The book's levels are the whole numbers 1 to 10, as the editor allows.
-    if (!formulas() || !pr.org || c.level === null || c.level % 1 !== 0 || c.level < 1 || c.level > 10) return null;
+    // Levels are the whole numbers 1 to 20, as the editor allows; a figure the
+    // formulas don't cover at a level is left unchecked by covered() below.
+    if (!formulas() || !pr.org || c.level === null || c.level % 1 !== 0 || c.level < 1 || c.level > 20) return null;
     var wrote = {};
     (Array.isArray(written) ? written : Object.keys(f)).forEach(function (k) { wrote[String(k).toLowerCase()] = true; });
     var items = [], set = {};
@@ -489,7 +490,7 @@ var DrawSteelStatblock = (function () {
     }
     // A minion's encounter value buys four of them, as the book prints it.
     h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
-      '<span class="sbx-ev">EV ' + figure(c.ev) + (c.ev !== null && (c.ev_note || c.organization === 'minion') ? ' <span class="sbx-ev-n">' + esc(c.ev_note ? String(c.ev_note).replace(/\s*minions?$/i, '') : 'for four') + '</span>' : '') +
+      '<span class="sbx-ev">EV ' + figure(c.ev) + (c.ev !== null && c.organization === 'minion' ? ' <span class="sbx-ev-n">' + esc(c.ev_note ? String(c.ev_note).replace(/\s*minions?$/i, '') : 'for four') + '</span>' : '') +
       mark(pr.ev, 'Encounter value') + '</span></div></header>';
     // A form's view captions each figure with where it comes from.
     function tg(k) { return o.tag ? o.tag('fig', k) : ''; }
@@ -1052,7 +1053,8 @@ var DrawSteelStatblock = (function () {
       abilities_json: JSON.stringify((c.abilities || []).slice(0, MAX_LIST)),
       villain_actions_json: JSON.stringify((c.villain_actions || []).slice(0, MAX_LIST))
     };
-    if (c.ev_note) f.ev_note = c.ev_note;
+    // The book's EV note counts a group of minions; it goes with the organization.
+    if (c.ev_note && c.organization === 'minion') f.ev_note = c.ev_note;
     CHARS.forEach(function (k) { f[k] = c[k]; });
     return f;
   }

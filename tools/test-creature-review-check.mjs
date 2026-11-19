@@ -129,8 +129,9 @@ test('abilities whose damage is worded oddly are named in the note, not dropped 
   assert.match(only.note, /Corrupt Bite/);
 });
 
-test('a level outside 1 to 10, or a fraction, gets no check', () => {
-  for (const level of [11, 0, 3.5, -1]) assert.equal(S.reviewCheck(raider({ level }), REFS, ALL), null, String(level));
+test('a level outside 1 to 20, or a fraction, gets no check; 11 to 20 are checked like the editor', () => {
+  for (const level of [21, 0, 3.5, -1]) assert.equal(S.reviewCheck(raider({ level }), REFS, ALL), null, String(level));
+  assert.notEqual(S.reviewCheck(raider({ level: 12 }), REFS, ALL), null);
 });
 
 test('taking Stamina also takes Winded when the AI wrote one, so they cannot disagree', () => {
