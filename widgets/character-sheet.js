@@ -10,7 +10,8 @@
  * `drawsteel-character → character-sheet` depends on it):
  *   Chronicle.register('character-sheet', { init, destroy })
  *   init reads el.dataset.{fieldsData,entityId,campaignId,csrfToken,children,
- *   isGm,isOwner,visibility,canEditIdentity,canChangeImage,armoryItems}
+ *   isGm,isOwner,visibility,canEditIdentity,canChangeImage,foundryLinked,
+ *   armoryItems}
  *
  * When Chronicle.sheetMotion exists the sheet is laid out as paper (see the
  * "Paper sheet" section): a data-sheet root, one .paper of parts, each part
@@ -25,8 +26,9 @@
  * The Abilities box is a master-detail (rail + detail pane) wired via one
  * delegated listener, since the frame re-renders box bodies.
  *
- * Foundry is the source of truth. The write paths are the origin picker
- * (ancestry / culture / career / kit), delegated to Chronicle.pickChoice, and
+ * Foundry is the source of truth when a world is linked. The write paths are
+ * the origin picker (ancestry / culture / career / complication / kit, and
+ * class when no Foundry world is linked), delegated to Chronicle.pickChoice, and
  * the Director's Changes drawer, which puts transformation layers on and
  * takes them off through Chronicle's layer routes; neither writes the
  * Foundry-synced fields themselves.
@@ -420,8 +422,19 @@
     { key: 'ancestry', label: 'Ancestry' },
     { key: 'culture', label: 'Culture' },
     { key: 'career', label: 'Career' },
+    // The book makes the complication optional, so an empty one reads as a
+    // choice left open rather than a gap, and is never "still to choose".
+    { key: 'complication', label: 'Complication', optional: true, none: 'No complication \u2014 optional' },
     { key: 'kit', label: 'Kit' }
   ];
+
+  // Class has no slot in the origin row: Foundry owns it when a world is
+  // linked, and otherwise it is a builder choice like the origins.
+  var CLASS_SLOT = { key: 'class', label: 'Class' };
+
+  // The host says whether a Foundry world syncs this campaign. A host that
+  // does not say is treated as linked, which is the long-standing wording.
+  function foundryLinked(data) { return !data || data.foundryLinked !== false; }
 
   function rIdentity(def, data) {
     var name = data.name || 'Unnamed Hero';
@@ -437,15 +450,15 @@
     var portraitHtml = safePortrait
       ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
       : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
-    // A claimed player may edit identity but not replace the picture, so the
-    // chip follows its own flag; Chronicle has no upload for them to reach.
+    // Whoever may edit identity usually may replace the picture too, but the
+    // host decides each separately, so the chip follows its own flag.
     var chip = data.canChangeImage
       ? '<button type="button" class="cs-port-chip" data-cs-change-image><i class="fa-solid fa-camera"></i> Change</button>'
       : '';
 
     var slots = ORIGIN_SLOTS.map(function (s) {
       var v = f(data, s.key, '');
-      var text = v ? esc(v) : '<span class="cs-id-unset">Not set</span>';
+      var text = v ? esc(v) : '<span class="cs-id-unset">' + esc(s.none || 'Not set') + '</span>';
       var inner = canPick
         ? '<button type="button" class="cs-id-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false">' +
             '<span data-cs-val>' + text + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
@@ -456,13 +469,19 @@
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
+    var classPick = canPick && !foundryLinked(data);
+    var classText = className ? esc(className) : '&ndash;';
+    var classCell = classPick
+      ? '<button type="button" class="cs-id-pick" data-cs-pick="class" data-cs-label="Class" aria-expanded="false">' +
+          '<span data-cs-val>' + classText + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
+      : '<span class="cs-id-val">' + classText + '</span>';
     var fixed =
       '<div class="cs-id-fixed">' +
-        '<span class="cs-id-ro"><span class="cs-id-k">Class</span><span class="cs-id-val">' + (className ? esc(className) : '&ndash;') + '</span></span>' +
+        '<span class="cs-id-ro"><span class="cs-id-k">Class</span>' + classCell + '</span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Subclass</span><span class="cs-id-val">' + (subclass ? esc(subclass) : '&ndash;') + '</span></span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Level</span><span class="cs-id-val">' + level + '</span></span>' +
         (faction ? '<span class="cs-id-ro"><span class="cs-id-k">Faction</span><span class="cs-id-val">' + esc(faction) + '</span></span>' : '') +
-        '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> set in Foundry</span>' +
+        (foundryLinked(data) ? '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> set in Foundry</span>' : '') +
       '</div>';
 
     return '<div class="cs-id">' +
@@ -2178,16 +2197,27 @@
   // allows editing and Chronicle can open its picker.
   function pOrigin(data, s, canPick) {
     var v = f(data, s.key, '');
-    var text = wasHtml(data, s.key) + esc(v);
+    var text = v ? wasHtml(data, s.key) + esc(v) : '<span class="sh-idnone">' + esc(s.none || 'Not chosen') + '</span>';
     return canPick
       ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
-          ' aria-label="' + escAttr(s.label + ': ' + v + '. Change') + '">' +
+          ' aria-label="' + escAttr(v ? s.label + ': ' + v + '. Change' : 'Choose ' + s.label.toLowerCase()) + '">' +
           '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span></button>'
       : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + text + '</span>';
   }
 
+  // The class is a plain value while Foundry owns it, and a picker like the
+  // origins once the sheet is the only place it is chosen.
+  function pClass(data, canPick, text) {
+    if (!canPick || foundryLinked(data)) return text;
+    var v = f(data, 'class', '');
+    return '<button type="button" class="sh-idpick" data-cs-pick="class" data-cs-label="Class" aria-expanded="false"' +
+      ' aria-label="' + escAttr(v ? 'Class: ' + v + '. Change' : 'Choose class') + '"><span data-cs-val data-v="origin-class">' + text + '</span></button>';
+  }
+
   function pIdentityTodo(data, canPick) {
-    var left = ORIGIN_SLOTS.filter(function (s) { return !f(data, s.key, ''); });
+    var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
+    if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
+    var left = slots.filter(function (s) { return !f(data, s.key, ''); });
     if (!left.length) return '';
     return '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
@@ -2206,33 +2236,37 @@
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
     var level = num(data, 'level', 1);
-    var hint = fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.';
+    var linked = foundryLinked(data);
+    var hint = linked ? fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.' : '';
+    // An empty complication is offered to whoever may pick, and stays quiet
+    // for a reader who may not: it is optional, so it is not a gap to point at.
+    var shows = function (s) { return has(s.key) || (s.optional && canPick); };
 
     var line = [
       has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
-      '<span class="sh-idval">' + (className ? esc(className) : '&ndash;') + ' ' + level + '</span>',
+      '<span class="sh-idval">' + pClass(data, canPick, (className ? esc(className) : '&ndash;') + ' ' + level) + '</span>',
       subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
-    ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> · </span>');
-    var folded = [bySlot.culture, bySlot.career].filter(function (s) { return has(s.key); });
-    var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : 'Culture and career',
+    ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
+    var folded = [bySlot.culture, bySlot.career, bySlot.complication].filter(shows);
+    var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : folded.map(function (s, i) { return i ? s.label.toLowerCase() : s.label; }).join(', ').replace(/, ([^,]*)$/, ' and $1'),
       folded.map(function (s) {
         return '<div class="sh-origin-row"><span class="sh-k">' + s.label + '</span>' + pOrigin(data, s, canPick) + '</div>';
-      }).join('') + '<p class="sh-sub">' + hint + '</p>', false) : '';
+      }).join('') + (hint ? '<p class="sh-sub">' + hint + '</p>' : ''), false) : '';
 
-    var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + (className ? esc(className) : 'No class') +
+    var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + pClass(data, canPick, className ? esc(className) : 'No class') +
       ' <span class="sh-idlv">level ' + level + '</span></span>' +
       (subclass ? '<span class="sh-idsub">' + esc(subclass) + '</span>' : '') +
       (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
-    var made = ORIGIN_SLOTS.filter(function (s) { return has(s.key); });
+    var made = ORIGIN_SLOTS.filter(shows);
     var set = made.length ? '<dl class="sh-idset sh-id-q">' + made.map(function (s) {
       return '<div><dt>' + s.label + '</dt><dd>' + pOrigin(data, s, canPick) + '</dd></div>';
     }).join('') + '</dl>' : '';
 
     var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
     return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) +
-      '<div class="sh-idmore">' + more + chip + '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span></div>';
+      '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
 
   function pIdentity(data) {
@@ -3987,6 +4021,7 @@
       '[data-sheet] .sh-idtodo-k { font-weight:600;color:var(--paper-ink-soft); }',
       '[data-sheet] .sh-idtodo .sh-idpick { font-weight:600;color:var(--paper-accent); }',
       '[data-sheet] .sh-idhint { font-size:calc(12px * var(--ts)); }',
+      '[data-sheet] .sh-idnone { color:var(--paper-mute,var(--color-text-muted,#6b7280)); }',
       '[data-sheet] .sx-std { border-bottom:0; }',
       'P .sx-std > summary { display:none; }',
       '@container sheet (max-width:600px) {',
@@ -4644,6 +4679,9 @@
           visibility: (entity && entity.visibility) || ds.visibility || '',
           canEditIdentity: flag(ds.canEditIdentity),
           canChangeImage: flag(ds.canChangeImage),
+          // Only an explicit "false" frees the class pick and drops the
+          // Foundry wording; a host that omits it keeps the old behaviour.
+          foundryLinked: ds.foundryLinked !== 'false' && ds.foundryLinked !== '0',
           armoryItems: flag(ds.armoryItems)
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();

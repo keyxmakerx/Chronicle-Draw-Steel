@@ -173,11 +173,11 @@ test('paper identity: the paper styles keep culture and career one fold away; th
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const one = cs.pIdentity(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { career: 'Disciple' }) }));
   const fold = one.match(/<details class="ft sh-origins sh-id-l[^>]*>([^]*?)<\/details>/)[1];
-  assert.ok(/<summary>Career<\/summary>/.test(fold) && /Disciple/.test(fold) && /set in Foundry/.test(fold));
-  const none = cs.pIdentity(Object.assign({}, PAPER, { fields: { class: 'Fury', level: 1 } }));
+  assert.ok(/<summary>Career and complication<\/summary>/.test(fold) && /Disciple/.test(fold) && /set in Foundry/.test(fold));
+  const none = cs.pIdentity(Object.assign({}, PAPER, { canEditIdentity: false, fields: { class: 'Fury', level: 1 } }));
   assert.ok(!/sh-origins/.test(none) && /set in Foundry/.test(none), 'no empty fold; the Foundry hint is still said');
   const set = one.match(/<dl class="sh-idset sh-id-q">([^]*?)<\/dl>/)[1];
-  assert.deepEqual([...set.matchAll(/<dt>([^<]+)<\/dt>/g)].map((m) => m[1]), ['Ancestry', 'Career']);
+  assert.deepEqual([...set.matchAll(/<dt>([^<]+)<\/dt>/g)].map((m) => m[1]), ['Ancestry', 'Career', 'Complication']);
   assert.ok(/<p class="sh-idwho sh-id-q">[^]*Tactician[^]*level 2/.test(one), 'the class is the heading');
 });
 
@@ -326,4 +326,32 @@ test('kit is a quiet ledger line, not a part', () => {
   const html = cs.paperSheetHtml(PAPER);
   assert.ok(/data-sheet-section="kit"/.test(html) && /<span class="sh-nm">Kit<\/span>/.test(html));
   assert.ok(!/aria-label="Kit"/.test(html), 'no Kit part in the side column');
+});
+
+test('complication: shown with the origins, pickable, and an empty one reads as optional', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const empty = cs.pIdentity(PAPER);
+  assert.ok(empty.includes('data-cs-pick="complication"') && /No complication \u2014 optional/.test(empty));
+  const todo = (empty.match(/<p class="sh-idtodo">([^]*?)<\/p>/) || [])[1];
+  assert.ok(!/complication/i.test(todo), 'optional, so never "still to choose"');
+  const set = cs.pIdentity(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { complication: 'Lucky' }) }));
+  assert.ok(/data-v="origin-complication">Lucky</.test(set));
+  const ro = cs.pIdentity(Object.assign({}, PAPER, { canEditIdentity: false }));
+  assert.ok(!/complication/i.test(ro), 'a reader sees no row for a complication nobody chose');
+  const old = cs.rIdentity({}, { name: 'Bren', canEditIdentity: true, fields: {} });
+  assert.ok(old.includes('data-cs-pick="complication"') && /No complication/.test(old));
+});
+
+test('class and the Foundry line follow whether a Foundry world is linked', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const linked = cs.pIdentity(Object.assign({}, PAPER, { foundryLinked: true }));
+  assert.ok(/set in Foundry/.test(linked) && !/data-cs-pick="class"/.test(linked));
+  const free = cs.pIdentity(Object.assign({}, PAPER, { foundryLinked: false }));
+  assert.ok(!/set in Foundry/.test(free) && free.includes('data-cs-pick="class"'));
+  const ro = cs.pIdentity(Object.assign({}, PAPER, { foundryLinked: false, canEditIdentity: false }));
+  assert.ok(!/set in Foundry/.test(ro) && !/data-cs-pick=/.test(ro), 'a reader may not pick the class');
+  const noClass = cs.pIdentity(Object.assign({}, PAPER, { foundryLinked: false, fields: {} }));
+  assert.ok(/aria-label="Choose class"/.test(noClass));
+  const old = cs.rIdentity({}, { name: 'Bren', canEditIdentity: true, foundryLinked: false, fields: { class: 'Fury' } });
+  assert.ok(old.includes('data-cs-pick="class"') && !/set in Foundry/.test(old));
 });
