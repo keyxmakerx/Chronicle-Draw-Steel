@@ -191,6 +191,46 @@ test('Previous Life keeps a priced human trait and spends its points', () => {
   assert.equal(sig.cost, 0);
 });
 
+// Chronicle answers a kind's file from the campaign's reading: a rewrite
+// takes the printed object's place, under its own name, and names the
+// printed one it stands for and its old names. A hero still storing the
+// printed or an old name finds the entry the server would resolve it to.
+const human = ANCESTRIES.find((a) => a.slug === 'human');
+const campaignFile = (rewrite) => ANCESTRIES.filter((a) => a.slug !== 'human').concat([Object.assign({
+  slug: 'sea-human', name: 'Sea Human', summary: 'Ours.', source: 'Therin', origin: 'rewritten', standsFor: 'human',
+  standsForName: 'Human', properties: human.properties }, rewrite || {})]);
+const costOf = (data, file, trait) => cs.oldAncestryTraits(data, file).find((t) => t.name === trait).cost;
+
+test('a stored name finds the entry the server resolves it to', () => {
+  const cases = [
+    ['the printed name finds its rewrite', 'Human', campaignFile(), 'Sea Human'],
+    ['the rewrite by its own name', 'sea human', campaignFile(), 'Sea Human'],
+    ['an old name of the rewrite', 'Tidewalker', campaignFile({ oldNames: ['Tidewalker'] }), 'Sea Human'],
+    ['an old name wins over a package entry of that name', 'Dwarf', campaignFile({ oldNames: ['Dwarf'] }), 'Sea Human'],
+    ['the campaign\'s entry of a name beats the printed one', 'Dwarf',
+      ANCESTRIES.concat([{ slug: 'dwarf', name: 'Dwarf', origin: 'campaign', properties: {} }]), 'Dwarf/campaign'],
+    ['accents count only when nothing else answers', 'Humán', campaignFile(), 'Sea Human'],
+    ['an older Chronicle\'s file is the package', 'Human', ANCESTRIES, 'Human'],
+    ['a slug', 'polder', ANCESTRIES, 'Polder'],
+    ['nothing answers', 'Merfolk', campaignFile(), null],
+  ];
+  for (const [name, stored, file, want] of cases) {
+    const e = cs.originEntry(file, stored);
+    const got = e ? e.name + (e.origin === 'campaign' ? '/campaign' : '') : null;
+    assert.equal(got, want, name);
+  }
+});
+
+test('Previous Life prices a kept trait from the rewrite a printed name stands for', () => {
+  const data = sheet({ tf: { canEdit: true, layers: [], presets: PRESETS, ancestries: campaignFile() } });
+  assert.equal(costOf(data, campaignFile(), 'Staying Power'), costOf(sheet(), ANCESTRIES, 'Staying Power'));
+  assert.ok(costOf(data, campaignFile(), 'Staying Power') > 0, 'a kept trait is never priced at 0');
+  const st = pick('revenant', { pick: {}, keep: { 'Staying Power': true } });
+  const got = cs.presetLayer(preset('revenant'), data, st, campaignFile());
+  assert.deepEqual(got.problems, []);
+  assert.equal(got.spent, 2);
+});
+
 test('overspending holds Push back and says why', () => {
   const st = pick('revenant', { keep: { 'Staying Power': true } });
   const got = cs.presetLayer(preset('revenant'), sheet(), st, ANCESTRIES);

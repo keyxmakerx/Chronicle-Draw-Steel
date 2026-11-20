@@ -2930,6 +2930,43 @@
   }
   function isPreviousLife(t) { return /^previous life/i.test(String((t && t.name) || '')); }
 
+  // originEntry finds the entry a hero's stored origin name leads to in a
+  // kind's data file, in the order Chronicle resolves a name: the campaign's
+  // entry of that name, the rewrite a printed name stands for
+  // (standsForName), an entry's old name (oldNames), then the package's own.
+  // Names match ignoring case first; only when nothing answers are accents
+  // ignored too, as the server does. A slug is tried last, for names stored
+  // as slugs. An older Chronicle's file has no origin keys and reads as the
+  // package alone.
+  function originEntry(list, name) {
+    var all = Array.isArray(list) ? list : [];
+    var want = String(name == null ? '' : name).trim();
+    if (!want) return null;
+    function low(v) { return String(v == null ? '' : v).trim().toLowerCase(); }
+    function bare(v) {
+      var t = low(v);
+      return typeof t.normalize === 'function' ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
+    }
+    function find(same) {
+      var tests = [
+        function (a) { return a.origin && same(a.name); },
+        function (a) { return a.origin === 'rewritten' && a.standsForName && same(a.standsForName); },
+        function (a) { return a.origin && Array.isArray(a.oldNames) && a.oldNames.some(same); },
+        function (a) { return !a.origin && same(a.name); }
+      ];
+      for (var t = 0; t < tests.length; t++) {
+        for (var i = 0; i < all.length; i++) {
+          if (all[i] && tests[t](all[i])) return all[i];
+        }
+      }
+      return null;
+    }
+    var w = low(want), wb = bare(want), slug = slugify(want);
+    return find(function (v) { return low(v) === w; }) ||
+      find(function (v) { return bare(v) === wb; }) ||
+      all.filter(function (a) { return a && a.slug === slug; })[0] || null;
+  }
+
   // The traits the hero has from their own ancestry, each with its point
   // cost when it is a purchased trait of that ancestry in the Draw Steel
   // data (only those can be kept with Previous Life); 0 means it cannot be.
@@ -2938,7 +2975,7 @@
     var anc = own.ancestry;
     if (!anc) return [];
     var origins = [{ key: 'ancestry', lname: String(anc).toLowerCase(), slug: slugify(anc) }];
-    var entry = (ancestries || []).filter(function (a) { return a && (a.slug === slugify(anc) || String(a.name || '').toLowerCase() === String(anc).toLowerCase()); })[0];
+    var entry = originEntry(ancestries, anc);
     var costs = {};
     ((entry && entry.properties && entry.properties.purchased_traits) || []).forEach(function (t) { costs[String(t.name).toLowerCase()] = Number(t.cost) || 0; });
     var feats = parseJson(own.features_json, []);
@@ -4744,7 +4781,7 @@
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
-      presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
+      presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
       ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
       loadOwnPresets: loadOwnPresets
