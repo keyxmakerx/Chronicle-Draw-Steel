@@ -231,6 +231,9 @@ var DrawSteelStatblock = (function () {
   //                                  unless they press, and the tile says so.
   // `stored` is the page's fields before the change (an update only); without
   // it no stored figure is touched. All the arithmetic is DrawSteelFormulas'.
+  var FIGURE_ORDER = ['encounter value', 'Stamina', 'Winded', 'free strike'];
+  // listWords joins names as "a, b and c".
+  function listWords(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
   function wasWritten(written, key) {
     return Array.isArray(written) && written.some(function (k) { return String(k).toLowerCase() === key; });
   }
@@ -245,7 +248,7 @@ var DrawSteelStatblock = (function () {
       var blanks = [['ev', c.ev === null, 'encounter value'], ['stamina', c.stamina === null, 'Stamina'], ['winded', c.winded === null, 'Winded'],
         ['free_strike', String(c.free_strike).trim() === '', 'free strike']].filter(function (b) { return b[1] && !wasWritten(written, b[0]); });
       if (!blanks.length) return null;
-      return { note: 'Level ' + c.level, items: [{ id: 'uncovered', said: 'The published formulas stop at level 20, so this creature’s ' + blanks.map(function (b) { return b[2]; }).join(', ') + (blanks.length === 1 ? ' stays' : ' stay') + ' blank for you to set in Edit stat block.' }] };
+      return { note: 'Level ' + c.level, items: [{ id: 'uncovered', said: 'The published formulas stop at level 20, so this creature’s ' + listWords(blanks.map(function (b) { return b[2]; })) + (blanks.length === 1 ? ' stays' : ' stay') + ' blank for you to set in Edit stat block.' }] };
     }
     var before = stored && typeof stored === 'object' ? normalize(stored) : null;
     var old = before ? provenance(before, refs) : null;
@@ -353,7 +356,7 @@ var DrawSteelStatblock = (function () {
         };
       });
     }
-    var said = uncovered.length ? 'No published formula covers this creature’s ' + uncovered.join(', ') + ', so ' + (uncovered.length === 1 ? 'it stays' : 'they stay') + ' blank for you to set in Edit stat block.' : '';
+    var said = uncovered.length ? 'No published formula covers this creature’s ' + listWords(FIGURE_ORDER.filter(function (n) { return uncovered.indexOf(n) >= 0; })) + ', so ' + (uncovered.length === 1 ? 'it stays' : 'they stay') + ' blank for you to set in Edit stat block.' : '';
     if (!items.length && !unread.length && !said) return null;
     if (said) items.push({ id: 'uncovered', said: said });
 
