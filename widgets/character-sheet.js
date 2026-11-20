@@ -2049,14 +2049,17 @@
         // "Still to choose" line and takes its place among the values.
         var idin = inst._paper ? el.querySelector('[data-cs-idin]') : null;
         if (idin) {
-          var was = btn.querySelector('[data-cs-val]');
+          // The name sits beside its Change word, not inside it.
+          var visible = function (sel) {
+            return [].filter.call(idin.querySelectorAll(sel), function (n) { return n.offsetParent !== null; })[0];
+          };
+          var was = visible('[data-v="origin-' + key + '"]');
           var old = was ? was.textContent : undefined;
           idin.innerHTML = pIdentityInner(data);
-          var shown = [].filter.call(idin.querySelectorAll('[data-cs-pick="' + key + '"]'), function (n) { return n.offsetParent !== null; })[0];
-          if (shown) {
-            Chronicle.sheetMotion.land(shown.querySelector('[data-cs-val]') || shown, old);
-            if (shown.focus) shown.focus();
-          }
+          var shown = visible('[data-cs-pick="' + key + '"]');
+          var val = visible('[data-v="origin-' + key + '"]');
+          if (val || shown) Chronicle.sheetMotion.land(val || shown, old);
+          if (shown && shown.focus) shown.focus();
           return;
         }
         var out = btn.querySelector('[data-cs-val]');
@@ -2504,14 +2507,46 @@
   // neither: it is named on the "Still to choose" line, so a missing one can be
   // seen without opening anything. The values are pickers only when the host
   // allows editing and Chronicle can open its picker.
+  //
+  // The name opens the entry it names in Chronicle's peek, for this hero; a
+  // real address, so it also works as a plain link and from the keyboard.
+  // Changing it is the quiet word beside it, so the two never share a press.
   function pOrigin(data, s, canPick) {
     var v = f(data, s.key, '');
-    var text = v ? wasHtml(data, s.key) + esc(v) : '<span class="sh-idnone">' + esc(s.none || 'Not chosen') + '</span>';
-    return canPick
-      ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
-          ' aria-label="' + escAttr(v ? s.label + ': ' + v + '. Change' : 'Choose ' + s.label.toLowerCase()) + '">' +
-          '<span data-cs-val data-v="origin-' + s.key + '">' + text + '</span></button>'
-      : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + text + '</span>';
+    // An empty choice (only an optional one is drawn empty) names no entry:
+    // it is the picker itself, or quiet text for a reader.
+    if (!v) {
+      var none = '<span class="sh-idnone">' + esc(s.none || 'Not chosen') + '</span>';
+      return canPick
+        ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+            ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' +
+            '<span data-cs-val data-v="origin-' + s.key + '">' + none + '</span></button>'
+        : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + none + '</span>';
+    }
+    var href = originHref(data, s.key, v);
+    // A struck old value stays outside the link: it is not the entry's name.
+    var name = href
+      ? wasHtml(data, s.key) + '<a class="sh-idpick sh-idname" href="' + escAttr(href) + '" data-entry-peek="' + escAttr(href) + '" data-cs-val data-v="origin-' + s.key + '">' + esc(v) + '</a>'
+      : '<span data-cs-val data-v="origin-' + s.key + '">' + wasHtml(data, s.key) + esc(v) + '</span>';
+    var change = canPick
+      ? ' <button type="button" class="sh-idpick sh-idchange" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+          ' aria-label="' + escAttr('Change ' + s.label.toLowerCase()) + '">Change</button>'
+      : '';
+    return '<span class="sh-idval">' + name + change + '</span>';
+  }
+
+  // originHref is the address of the entry a hero's choice names. The sheet
+  // knows the name, not the slug, so it asks by kind and name and Chronicle
+  // answers for whoever reads: a rewritten entry, an old name or a people
+  // the campaign left out all lead where they should. '' without a
+  // campaign, where no such address exists.
+  function originHref(data, key, v) {
+    if (!data || !data.campaignId || !v) return '';
+    var name = encodeURIComponent(String(v)).replace(/[!'()*]/g, function (ch) {
+      return '%' + ch.charCodeAt(0).toString(16).toUpperCase();
+    });
+    return '/campaigns/' + encodeURIComponent(data.campaignId) + '/systems/drawsteel/named/' + key + '?name=' + name +
+      (data.entityId ? '&hero=' + encodeURIComponent(data.entityId) : '');
   }
 
   // The class is a plain value while Foundry owns it, and a picker like the
@@ -3480,6 +3515,43 @@
   }
   function isPreviousLife(t) { return /^previous life/i.test(String((t && t.name) || '')); }
 
+  // originEntry finds the entry a hero's stored origin name leads to in a
+  // kind's data file, in the order Chronicle resolves a name: the campaign's
+  // entry of that name, the rewrite a printed name stands for
+  // (standsForName), an entry's old name (oldNames), then the package's own.
+  // Names match ignoring case first; only when nothing answers are accents
+  // ignored too, as the server does. A slug is tried last, for names stored
+  // as slugs. An older Chronicle's file has no origin keys and reads as the
+  // package alone.
+  function originEntry(list, name) {
+    var all = Array.isArray(list) ? list : [];
+    var want = String(name == null ? '' : name).trim();
+    if (!want) return null;
+    function low(v) { return String(v == null ? '' : v).trim().toLowerCase(); }
+    function bare(v) {
+      var t = low(v);
+      return typeof t.normalize === 'function' ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
+    }
+    function find(same) {
+      var tests = [
+        function (a) { return a.origin && same(a.name); },
+        function (a) { return a.origin === 'rewritten' && a.standsForName && same(a.standsForName); },
+        function (a) { return a.origin && Array.isArray(a.oldNames) && a.oldNames.some(same); },
+        function (a) { return !a.origin && same(a.name); }
+      ];
+      for (var t = 0; t < tests.length; t++) {
+        for (var i = 0; i < all.length; i++) {
+          if (all[i] && tests[t](all[i])) return all[i];
+        }
+      }
+      return null;
+    }
+    var w = low(want), wb = bare(want), slug = slugify(want);
+    return find(function (v) { return low(v) === w; }) ||
+      find(function (v) { return bare(v) === wb; }) ||
+      all.filter(function (a) { return a && a.slug === slug; })[0] || null;
+  }
+
   // The traits the hero has from their own ancestry, each with its point
   // cost when it is a purchased trait of that ancestry in the Draw Steel
   // data (only those can be kept with Previous Life); 0 means it cannot be.
@@ -3488,7 +3560,7 @@
     var anc = own.ancestry;
     if (!anc) return [];
     var origins = [{ key: 'ancestry', lname: String(anc).toLowerCase(), slug: slugify(anc) }];
-    var entry = (ancestries || []).filter(function (a) { return a && (a.slug === slugify(anc) || String(a.name || '').toLowerCase() === String(anc).toLowerCase()); })[0];
+    var entry = originEntry(ancestries, anc);
     var costs = {};
     ((entry && entry.properties && entry.properties.purchased_traits) || []).forEach(function (t) { costs[String(t.name).toLowerCase()] = Number(t.cost) || 0; });
     var feats = parseJson(own.features_json, []);
@@ -4575,7 +4647,7 @@
       '[data-sheet] .sx-std { border-bottom:0; }',
       'P .sx-std > summary { display:none; }',
       '@container sheet (max-width:600px) {',
-      '  [data-sheet] .sh-idtodo .sh-idpick { padding:12px 0; }',
+      '  [data-sheet] .sh-idtodo .sh-idpick,[data-sheet] .sh-idchange { padding:12px 0; }',
       '}',
       'Q .paper.sh-sheet { border:0;background:none;box-shadow:none;padding:0;gap:18px; }',
       'Q :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:0;border-radius:0;background:none;box-shadow:none; }',
@@ -5166,7 +5238,8 @@
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '[data-sheet] .sh-idmore { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px; }',
-      '[data-sheet] .sh-idmore > .sh-idpick { font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-idmore > .sh-idpick,[data-sheet] .sh-idchange { font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] a.sh-idname { text-decoration:none; }',
       '[data-sheet] .sh-origins { border:0;min-width:0; }',
       '[data-sheet] .sh-origins > summary { padding:4px 0;font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
       '[data-sheet] .sh-origins > summary::after { display:none; }',
@@ -5332,7 +5405,7 @@
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
-      presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
+      presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
       ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
       loadOwnPresets: loadOwnPresets, choiceNotesHtml: choiceNotesHtml, fetchChoiceRules: fetchChoiceRules,

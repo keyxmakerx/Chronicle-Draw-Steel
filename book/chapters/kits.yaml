@@ -21,30 +21,36 @@ pages:
       - type: cards
         items:
           - title: Arcane Archer
+            entry: kits/arcane-archer
             summary: Bow and magic. Signature, Exploding Arrow.
             text: |
               No armor, a bow. Speed +1, ranged damage +2, disengage +1,
               ranged distance +10.
           - title: Martial Artist
+            entry: kits/martial-artist
             summary: Fast unarmed fighting. Signature, Battle Grace.
             text: |
               No armor, unarmed strikes. Stamina +3, speed +3, melee damage
               +2, disengage +1.
           - title: Panther
+            entry: kits/panther
             summary: Balanced protection, speed and damage. Signature, Devastating Rush.
             text: |
               No armor, a heavy weapon. Stamina +6, speed +1, stability +1,
               melee damage +0/+0/+4.
           - title: Pugilist
+            entry: kits/pugilist
             summary: Brawler and boxer. Signature, Let's Dance.
             text: |
               No armor, unarmed strikes. Stamina +6, speed +2, stability +1,
               melee damage +1.
           - title: Sniper
+            entry: kits/sniper
             summary: Takes down enemies from afar. Signature, Patient Shot.
             text: |
               No armor, a bow. Speed +1, ranged damage +0/+0/+4, disengage +1.
           - title: Whirlwind
+            entry: kits/whirlwind
             summary: A whip for mobility and reach. Signature, Extension of My Arm.
             text: |
               No armor, a whip. Speed +3, melee damage +1, disengage +1.
@@ -53,41 +59,49 @@ pages:
       - type: cards
         items:
           - title: Battlemind
+            entry: kits/battlemind
             summary: Lightly armored and hard to move. Signature, Unmooring.
             text: |
               Light armor, a medium weapon. Stamina +3, speed +2, stability
               +1, melee damage +2.
           - title: Cloak and Dagger
+            entry: kits/cloak-and-dagger
             summary: Throwable light weapons, concealed by a cloak. Signature, Fade.
             text: |
               Light armor, a light weapon. Stamina +3, speed +2, melee and
               ranged damage +1, disengage +1.
           - title: Rapid-Fire
+            entry: kits/rapid-fire
             summary: Many arrows into nearby enemies. Signature, Two Shot.
             text: |
               Light armor, a bow. Stamina +3, speed +1, ranged damage +2,
               disengage +1.
           - title: Retiarius
+            entry: kits/retiarius
             summary: Net in one hand, trident in the other. Signature, Net and Stab.
             text: |
               Light armor, an ensnaring weapon and a polearm. Stamina +3,
               speed +1, melee damage +2, disengage +1.
           - title: Stick and Robe
+            entry: kits/stick-and-robe
             summary: A reach weapon and plenty of movement. Signature, Where I Want You.
             text: |
               Light armor, a polearm. Stamina +3, speed +2, melee damage +1,
               disengage +1.
           - title: Swashbuckler
+            entry: kits/swashbuckler
             summary: Mobile and hard-hitting in melee. Signature, Fancy Footwork.
             text: |
               Light armor, a medium weapon. Stamina +3, speed +3, melee
               damage +2, disengage +1.
           - title: Raider
+            entry: kits/raider
             summary: Light armor and a shield, full mobility. Signature, Raider's Awe.
             text: |
               Light armor and a shield, a light weapon. Stamina +6, speed +1,
               melee and ranged damage +1, disengage +1.
           - title: Spellsword
+            entry: kits/spellsword
             summary: Melee strikes with a little magic. Signature, Leaping Lightning.
             text: |
               Light armor and a shield, a medium weapon. Stamina +6, speed
@@ -97,36 +111,43 @@ pages:
       - type: cards
         items:
           - title: Dual Wielder
+            entry: kits/dual-wielder
             summary: Two weapons at once. Signature, Double Strike.
             text: |
               Medium armor, light and medium weapons. Stamina +6, speed +2,
               melee damage +2, disengage +1.
           - title: Guisarmier
+            entry: kits/guisarmier
             summary: A polearm and sturdy armor. Signature, Forward Thrust, Backward Smash.
             text: |
               Medium armor, a polearm. Stamina +6, stability +1, melee damage
               +2.
           - title: Ranger
+            entry: kits/ranger
             summary: Switch easily between melee and ranged. Signature, Hamstring Shot.
             text: |
               Medium armor, a bow and a medium weapon. Stamina +6, speed +1,
               melee and ranged damage +1, disengage +1.
           - title: Sword and Board
+            entry: kits/sword-and-board
             summary: A shield that doubles as a weapon. Signature, Shield Bash.
             text: |
               Medium armor and a shield, a medium weapon. Stamina +9,
               stability +1, melee damage +2, disengage +1.
           - title: Mountain
+            entry: kits/mountain
             summary: Heavy armor, heavy weapon, immovable. Signature, Pain for Pain.
             text: |
               Heavy armor, a heavy weapon. Stamina +9, stability +2, melee
               damage +0/+0/+4.
           - title: Shining Armor
+            entry: kits/shining-armor
             summary: The most protection a kit offers. Signature, Protective Attack.
             text: |
               Heavy armor and a shield, a medium weapon. Stamina +12,
               stability +1, melee damage +2.
           - title: Warrior Priest
+            entry: kits/warrior-priest
             summary: A weapon imbued with divine power. Signature, Weakening Brand.
             text: |
               Heavy armor, a light weapon. Stamina +9, speed +1, stability +1,
