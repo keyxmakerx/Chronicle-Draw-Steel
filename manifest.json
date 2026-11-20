@@ -1073,6 +1073,7 @@
           "key": "ev",
           "label": "EV",
           "type": "number",
+          "formula": true,
           "format": "Leave it out on a new creature: the published formulas give it from level and organization, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "min": 1,
           "foundry_path": "system.ev"
@@ -1101,6 +1102,7 @@
           "key": "stamina",
           "label": "Stamina",
           "type": "number",
+          "formula": true,
           "format": "Leave it out on a new creature: the published formulas give it from level, organization and role, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "min": 1,
           "foundry_path": "system.stamina.max"
@@ -1115,6 +1117,7 @@
           "key": "winded",
           "label": "Winded",
           "type": "number",
+          "formula": true,
           "format": "Leave it out: it is half the creature's Stamina, rounded down, and the stat block editor sets it with Stamina"
         },
         {
@@ -1186,6 +1189,7 @@
           "key": "free_strike",
           "label": "Free Strike",
           "type": "string",
+          "formula": true,
           "format": "Leave it out on a new creature: the published formulas give it from level, organization and role, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "foundry_path": "system.monster.freeStrike",
           "foundry_format": "integer"

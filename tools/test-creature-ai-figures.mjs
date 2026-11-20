@@ -123,8 +123,9 @@ test('a figure no published formula covers stays empty for the director', () => 
   assert.equal(leader.stamina, want.sourced ? want.value : null, 'a leader takes the published table’s role modifier');
 });
 
-test('the AI Import review shows no figure the AI left out, so it never implies a check of one', () => {
-  const res = S.reviewCheck(asLeft(), REFS, ['level', 'organization', 'role', 'abilities_json']);
-  const ids = res ? res.items.map((i) => i.id) : [];
-  for (const k of ['ev', 'stamina', 'winded', 'free_strike']) assert.ok(!ids.includes(k), k);
+test('the AI Import review takes the formula for a figure the AI left out, and offers nothing to overwrite', () => {
+  const res = S.reviewCheck(asLeft(), REFS, ['level', 'organization', 'role', 'abilities_json'], {});
+  const left = res.items.filter((i) => ['ev', 'stamina', 'winded', 'free_strike'].includes(i.id));
+  assert.deepEqual(left.map((i) => i.id), ['ev', 'stamina', 'winded', 'free_strike']);
+  assert.ok(left.every((i) => i.start === 'used' && i.blank === true), 'blank figures start taken');
 });

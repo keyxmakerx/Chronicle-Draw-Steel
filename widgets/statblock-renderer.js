@@ -217,28 +217,87 @@ var DrawSteelStatblock = (function () {
   // a published formula covers, beside what the formula gives, and a patch
   // that takes the formula's figure for the ones the director picks. Winded
   // is half the formula's Stamina, rounded down. Figures no formula covers
-  // are left off, and with no formulas or templates there is no check at
+  // are never offered, and with no formulas or templates there is no check at
   // all, so the review never implies one that didn't run.
-  function reviewCheck(fields, refs, written) {
+  //
+  // The AI is told to leave EV, Stamina, Winded and free strike out, so a
+  // figure it did not write gets a tile too, by whose it is:
+  //   blank                          the formula's figure starts taken, since
+  //                                  nothing is overwritten;
+  //   stored, and equal to the formula as it was under the page's old level,
+  //   organization and role          it followed the formula, so it moves
+  //                                  with the new one and starts taken;
+  //   stored, any other figure       the director's (or the book's); it stays
+  //                                  unless they press, and the tile says so.
+  // `stored` is the page's fields before the change (an update only); without
+  // it no stored figure is touched. All the arithmetic is DrawSteelFormulas'.
+  function wasWritten(written, key) {
+    return Array.isArray(written) && written.some(function (k) { return String(k).toLowerCase() === key; });
+  }
+  function reviewCheck(fields, refs, written, stored) {
     var f = (fields && typeof fields === 'object') ? fields : {};
     var c = normalize(f);
     var pr = provenance(c, refs);
-    // Levels are the whole numbers 1 to 20, as the editor allows; a figure the
-    // formulas don't cover at a level is left unchecked by covered() below.
-    if (!formulas() || !pr.org || c.level === null || c.level % 1 !== 0 || c.level < 1 || c.level > 20) return null;
+    // Levels are the whole numbers 1 to 20, as the editor allows.
+    if (!formulas() || !pr.org || c.level === null || c.level % 1 !== 0 || c.level < 1) return null;
+    if (c.level > 20) {
+      // Nothing is checked, but a figure left blank should not stay blank in silence.
+      var blanks = [['ev', c.ev === null, 'encounter value'], ['stamina', c.stamina === null, 'Stamina'], ['winded', c.winded === null, 'Winded'],
+        ['free_strike', String(c.free_strike).trim() === '', 'free strike']].filter(function (b) { return b[1] && !wasWritten(written, b[0]); });
+      if (!blanks.length) return null;
+      return { note: 'Level ' + c.level, items: [{ id: 'uncovered', said: 'The published formulas stop at level 20, so this creature’s ' + blanks.map(function (b) { return b[2]; }).join(', ') + (blanks.length === 1 ? ' stays' : ' stay') + ' blank for you to set in Edit stat block.' }] };
+    }
+    var before = stored && typeof stored === 'object' ? normalize(stored) : null;
+    var old = before ? provenance(before, refs) : null;
     var wrote = {};
     (Array.isArray(written) ? written : Object.keys(f)).forEach(function (k) { wrote[String(k).toLowerCase()] = true; });
-    var items = [], set = {};
+    var items = [], set = {}, uncovered = [];
     function covered(p) { return p && p.sourced && p.value !== null && p.value !== undefined; }
+    // oldWhere names what the figure followed: the level, or the organization
+    // or role, that changed under it.
+    function oldWhere() {
+      var parts = [];
+      if (before.level !== c.level && before.level !== null) parts.push('level ' + before.level);
+      if (before.organization !== c.organization && old.org) parts.push(String(old.org.name || cap(before.organization)));
+      if (before.role !== c.role && old.role) parts.push(String(old.role.name || cap(before.role)));
+      return parts.length ? 'as at ' + parts.join(', ') : 'as before';
+    }
+    // open adds the tile for a figure the AI did not write. isBlank: nothing
+    // is there. followed: the stored figure matched the old formula. shown is
+    // the stored figure as text; prefix words the "followed" line.
+    function open(id, key, label, isBlank, value, shown, followed, prefix, patchValue) {
+      var pv = patchValue === undefined ? value : patchValue;
+      if (isBlank) {
+        items.push({ id: id, label: label, ai: '', formula: String(value), start: 'used', blank: true });
+      } else if (!before || shown === String(value) && followed) {
+        return;
+      } else if (followed) {
+        items.push({ id: id, label: label, ai: shown, formula: String(value), start: 'used', from: 'stored', taken: prefix + ' (was ' + shown + ')' });
+      } else if (shown !== String(value)) {
+        items.push({ id: id, label: label, ai: shown, formula: String(value), from: 'stored', kept: 'Yours, kept. Formula gives ' + value });
+      } else {
+        return;
+      }
+      set[id] = function (out) { out[key] = pv; };
+    }
+    function isFollowed(oldMeasure, storedValue) { return !!oldMeasure && oldMeasure.state === 'formula' && oldMeasure.value === storedValue; }
     function figure(id, key, label, stored, value, patchValue) {
       if (!wrote[key] || stored === null) return;
       items.push({ id: id, label: label, ai: String(stored), formula: String(value), matches: stored === value });
       set[id] = function (out) { out[key] = patchValue === undefined ? value : patchValue; };
     }
-    if (covered(pr.ev)) figure('ev', 'ev', 'Encounter value', c.ev, pr.ev.value);
+    if (covered(pr.ev)) {
+      figure('ev', 'ev', 'Encounter value', c.ev, pr.ev.value);
+      if (!wrote.ev) open('ev', 'ev', 'Encounter value', c.ev === null, pr.ev.value, String(c.ev), isFollowed(old && old.ev, c.ev), 'Follows the formula, ' + (before ? oldWhere() : ''));
+    } else if (!wrote.ev && c.ev === null) uncovered.push('encounter value');
     if (covered(pr.stamina)) {
+      var half = Math.floor(pr.stamina.value / 2);
       figure('stamina', 'stamina', 'Stamina', c.stamina, pr.stamina.value);
-      figure('winded', 'winded', 'Winded', c.winded, Math.floor(pr.stamina.value / 2));
+      figure('winded', 'winded', 'Winded', c.winded, half);
+      if (!wrote.stamina) open('stamina', 'stamina', 'Stamina', c.stamina === null, pr.stamina.value, String(c.stamina), isFollowed(old && old.stamina, c.stamina), 'Follows the formula, ' + (before ? oldWhere() : ''));
+      // Winded followed if it was half the formula's old Stamina.
+      if (!wrote.winded) open('winded', 'winded', 'Winded', c.winded === null, half, String(c.winded),
+        !!old && !!old.stamina && old.stamina.state === 'formula' && c.winded === Math.floor(old.stamina.value / 2), 'Half the Stamina, as before');
       // Winded is half of Stamina, so taking one without the other would leave them disagreeing.
       if (set.stamina && wrote.winded) {
         var takeStamina = set.stamina;
@@ -253,6 +312,17 @@ var DrawSteelStatblock = (function () {
       items.push({ id: 'free_strike', label: 'Free strike', ai: plainFs ? String(freeStrikeNumber(fsRaw)) : fsRaw.slice(0, 60), formula: String(fsWant), matches: plainFs && freeStrikeNumber(fsRaw) === fsWant });
       set.free_strike = function (out) { out.free_strike = plainFs && /\s/.test(fsRaw.trim()) ? withDamage(fsRaw, fsWant) : fsWant + ' damage'; };
     }
+    if (!wrote.free_strike) {
+      var fsBlank = String(c.free_strike).trim() === '';
+      if (covered(pr.free_strike)) {
+        var fsNow = pr.free_strike.value, fsOld = before ? freeStrikeNumber(before.free_strike) : null;
+        var plain = FREE_STRIKE.test(String(c.free_strike));
+        open('free_strike', 'free_strike', 'Free strike', fsBlank, fsNow, plain ? String(freeStrikeNumber(c.free_strike)) : String(c.free_strike).slice(0, 60),
+          !fsBlank && plain && isFollowed(old && old.free_strike, fsOld), 'Follows the formula, ' + (before ? oldWhere() : ''), fsNow + ' damage');
+      } else if (fsBlank) uncovered.push('free strike');
+    }
+    if (!wrote.stamina && c.stamina === null && !covered(pr.stamina)) uncovered.push('Stamina');
+    if (!wrote.winded && c.winded === null && !covered(pr.stamina)) uncovered.push('Winded');
 
     var raw = parseJSON(f.abilities_json, null);
     var d = pr.damage && pr.damage.sourced ? pr.damage.value : null;
@@ -283,7 +353,9 @@ var DrawSteelStatblock = (function () {
         };
       });
     }
-    if (!items.length && !unread.length) return null;
+    var said = uncovered.length ? 'No published formula covers this creature’s ' + uncovered.join(', ') + ', so ' + (uncovered.length === 1 ? 'it stays' : 'they stay') + ' blank for you to set in Edit stat block.' : '';
+    if (!items.length && !unread.length && !said) return null;
+    if (said) items.push({ id: 'uncovered', said: said });
 
     var who = 'Level ' + c.level + ' ' + (pr.org.name || cap(c.organization)) + (pr.role ? ' ' + (pr.role.name || cap(c.role)) : '');
     if (unread.length) who += '. Not checked, because its damage is worded in a way the check can’t read: ' + unread.slice(0, 8).join(', ') + (unread.length > 8 ? ' and ' + (unread.length - 8) + ' more' : '');
@@ -3462,7 +3534,7 @@ if (typeof Chronicle !== 'undefined' && Chronicle) {
     check: function (fields, env) {
       var e = env || {};
       return DrawSteelStatblock.loadRefs(e.campaignId).then(function (refs) {
-        return DrawSteelStatblock.reviewCheck(fields, refs, e.written);
+        return DrawSteelStatblock.reviewCheck(fields, refs, e.written, e.stored);
       });
     }
   };
