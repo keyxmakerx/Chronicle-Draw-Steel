@@ -1057,6 +1057,7 @@
           "key": "organization",
           "label": "Organization",
           "type": "string",
+          "format": "One of minion, horde, platoon, elite, leader or solo. The published formulas read it, so a creature without one gets no formula figures",
           "foundry_path": "system.monster.organization",
           "foundry_choices": "DRAW_STEEL.monsters.organizations"
         },
@@ -1064,6 +1065,7 @@
           "key": "role",
           "label": "Role",
           "type": "string",
+          "format": "One of ambusher, artillery, brute, controller, defender, harrier, hexer, mount or support. Leave it out for a leader or solo",
           "foundry_path": "system.monster.role",
           "foundry_choices": "DRAW_STEEL.monsters.roles"
         },
@@ -1071,6 +1073,7 @@
           "key": "ev",
           "label": "EV",
           "type": "number",
+          "format": "Leave it out on a new creature: the published formulas give it from level and organization, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "min": 1,
           "foundry_path": "system.ev"
         },
@@ -1098,6 +1101,7 @@
           "key": "stamina",
           "label": "Stamina",
           "type": "number",
+          "format": "Leave it out on a new creature: the published formulas give it from level, organization and role, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "min": 1,
           "foundry_path": "system.stamina.max"
         },
@@ -1110,7 +1114,8 @@
         {
           "key": "winded",
           "label": "Winded",
-          "type": "number"
+          "type": "number",
+          "format": "Leave it out: it is half the creature's Stamina, rounded down, and the stat block editor sets it with Stamina"
         },
         {
           "key": "speed",
@@ -1181,6 +1186,7 @@
           "key": "free_strike",
           "label": "Free Strike",
           "type": "string",
+          "format": "Leave it out on a new creature: the published formulas give it from level, organization and role, and the stat block editor fills it in, marked as the formula's, when the director opens Edit stat block and saves. Never estimate it; where no published formula covers the creature it stays for the director. Write it only to set a number the director gave you",
           "foundry_path": "system.monster.freeStrike",
           "foundry_format": "integer"
         },
@@ -1196,14 +1202,14 @@
           "label": "Abilities Data",
           "type": "string",
           "json_list": true,
-          "format": "A JSON list as text, one object per ability: `name`; `type` (signature, action, maneuver, triggered or free); `keywords` (comma text, e.g. \"Melee, Strike, Weapon\"); `distance` (e.g. \"Melee 1\", \"Ranged 10\", \"3 burst\"); `target`; `power_roll` (the bonus, e.g. \"+3\"); `tier1` (11 or lower), `tier2` (12 to 16), `tier3` (17+), each the result text with potency written in it, e.g. \"6 damage; A<2 prone\"; `trigger` (triggered abilities); `effect`; `spend_vp` and `spend_effect` for a Malice spend"
+          "format": "A JSON list as text, one object per ability: `name`; `type` (signature, action, maneuver, triggered or free); `keywords` (comma text, e.g. \"Melee, Strike, Weapon\"); `distance` (e.g. \"Melee 1\", \"Ranged 10\", \"3 burst\"); `target`; `power_roll` (the bonus, e.g. \"+3\"); `tier1` (11 or lower), `tier2` (12 to 16), `tier3` (17+), each the result text with potency written in it, e.g. \"6 damage; A<2 prone\"; `trigger` (triggered abilities); `effect`; `spend_vp` and `spend_effect` for a Malice spend; `auto_damage: true` on an ability whose tiers open with damage, so the stat block editor sets that damage from the published formula and keeps the words after it"
         },
         {
           "key": "villain_actions_json",
           "label": "Villain Actions Data",
           "type": "string",
           "json_list": true,
-          "format": "A JSON list as text of up to three villain actions, leaders and solos only: `name`; `order` (opener, crowd-control or ultimate); then the ability keys `keywords`, `distance`, `target`, `power_roll`, `tier1` to `tier3` and `effect`"
+          "format": "A JSON list as text of up to three villain actions, leaders and solos only: `name`; `order` (opener, crowd-control or ultimate); then the ability keys `keywords`, `distance`, `target`, `power_roll`, `tier1` to `tier3`, `effect` and `auto_damage` as for abilities"
         },
         {
           "key": "conditions_json",

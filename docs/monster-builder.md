@@ -216,6 +216,17 @@ whole value. An ability whose damage is worded another way is named in the
 note as not checked, and a level outside 1 to 10 gets no check. Pinned by
 `tools/test-creature-review-check.mjs`.
 
+What the AI writes comes from the `format` notes on the `drawsteel-creature`
+preset's fields in `manifest.json`, which Chronicle shows the AI beside each
+field. They name the organizations and roles the formulas read, and tell the
+AI to leave EV, Stamina, Winded and free strike out of a new creature, never
+estimating them, and to mark formula damage with `auto_damage`. The AI does
+not evaluate the formulas: a figure left out gets no review tile, and the
+editor fills it from the published formula, marked as the formula's, when the
+director opens **Edit stat block** and saves. A number already on the page
+stays the director's, and a figure no formula covers stays empty. Pinned by
+`tools/test-creature-ai-figures.mjs`.
+
 ### 4.3 Default Speed/Stability by Organization
 
 | Organization | Default Speed | Default Stability |
