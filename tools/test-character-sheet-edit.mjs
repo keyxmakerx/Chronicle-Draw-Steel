@@ -152,3 +152,34 @@ test('the editors escape everything they print', () => {
   const html = cs.edSkillsHtml(hero) + cs.edPerksHtml(hero) + cs.edBackstoryHtml(hero) + cs.pTraits(hero) + cs.pNotesPanel(hero);
   assert.ok(!/<img src=x/.test(html));
 });
+
+test('rule lines: a kept pick the rules dropped and a waiting request show under the identity, escaped', () => {
+  const breaks = [{ fieldKey: 'class', value: 'Fury', kind: 'not_offered', reason: 'No <b>rage</b>' }, { fieldKey: 'culture', value: 'Nomad', kind: 'off_list' }];
+  const waiting = [{ id: 3, fieldKey: 'kit', entryName: 'Battlemind' }];
+  const hero = HERO({ ancestry: 'Human', class: 'Fury' }, { choiceBreaks: breaks, choiceWaiting: waiting });
+  const html = cs.choiceNotesHtml(hero);
+  assert.match(html, /Fury isn’t offered any more\. You keep it; a new pick must be on the list\. Your Director says: “No &lt;b&gt;rage&lt;\/b&gt;”/);
+  assert.match(html, /Nomad isn’t on the culture list any more\./);
+  assert.match(html, /Battlemind is waiting for your Director, for kit\./);
+  assert.ok(cs.pIdentityInner(hero).includes('sh-rules'), 'the paper identity carries them');
+  assert.equal(cs.choiceNotesHtml(HERO({})), '', 'nothing to say, nothing drawn');
+  const evil = cs.choiceNotesHtml(HERO({}, { choiceWaiting: [{ fieldKey: 'class', entryName: '<img src=x onerror=1>' }] }));
+  assert.ok(!/<img/.test(evil));
+});
+
+test('fetchChoiceRules reads the fields route and never errors the sheet', async () => {
+  const calls = [];
+  const was = globalThis.window.Chronicle.apiFetch;
+  const ok = (body) => () => Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+  globalThis.window.Chronicle.apiFetch = (u) => { calls.push(u); return ok({ choice_breaks: [{ fieldKey: 'class', value: 'Fury' }], choice_waiting: [{ fieldKey: 'kit', entryName: 'X' }] })(); };
+  try {
+    const got = await cs.fetchChoiceRules('c1', 'e1');
+    assert.equal(calls[0], '/campaigns/c1/entities/e1/fields');
+    assert.equal(got.breaks.length, 1);
+    assert.equal(got.waiting.length, 1);
+    globalThis.window.Chronicle.apiFetch = () => Promise.resolve({ ok: false });
+    assert.deepEqual(await cs.fetchChoiceRules('c1', 'e1'), { breaks: [], waiting: [] });
+    globalThis.window.Chronicle.apiFetch = () => Promise.reject(new Error('down'));
+    assert.deepEqual(await cs.fetchChoiceRules('c1', 'e1'), { breaks: [], waiting: [] });
+  } finally { globalThis.window.Chronicle.apiFetch = was; }
+});

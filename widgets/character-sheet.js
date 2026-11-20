@@ -449,6 +449,48 @@
     }).catch(function () { return none; });
   }
 
+  // fetchChoiceRules reads what the Director's hero-choice rules say about
+  // this hero: picks it holds that are no longer offered, and requests
+  // waiting for a Director's answer. Only the hero's player and Directors
+  // get them; anything else, or a failure, is no lines and never an error.
+  function fetchChoiceRules(cid, eid) {
+    var none = { breaks: [], waiting: [] };
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(none);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/fields';
+    return Chronicle.apiFetch(url).then(function (res) {
+      if (!res.ok) return none;
+      return res.json().then(function (b) {
+        return {
+          breaks: (b && Array.isArray(b.choice_breaks)) ? b.choice_breaks : [],
+          waiting: (b && Array.isArray(b.choice_waiting)) ? b.choice_waiting : []
+        };
+      });
+    }).catch(function () { return none; });
+  }
+
+  function stepLabel(key) {
+    var all = ORIGIN_SLOTS.concat([CLASS_SLOT]);
+    for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i].label;
+    return humanizeId(key);
+  }
+
+  // The same quiet lines Chronicle's Attributes box shows, drawn under the
+  // identity: a kept pick the rules no longer offer, and a pick waiting for
+  // the Director. Nothing is drawn when the rules have nothing to say.
+  function choiceNotesHtml(data) {
+    var lines = [];
+    (data.choiceBreaks || []).forEach(function (b) {
+      var label = stepLabel(b.fieldKey).toLowerCase();
+      lines.push((b.value || 'That') + (b.kind === 'off_list' ? ' isn\u2019t on the ' + label + ' list any more.' : ' isn\u2019t offered any more.') +
+        ' You keep it; a new pick must be on the list.' + (b.reason ? ' Your Director says: \u201c' + b.reason + '\u201d' : ''));
+    });
+    (data.choiceWaiting || []).forEach(function (w) {
+      lines.push((w.entryName || 'Your pick') + ' is waiting for your Director, for ' + stepLabel(w.fieldKey).toLowerCase() + '.');
+    });
+    if (!lines.length) return '';
+    return '<div class="sh-rules cs-rules" role="status">' + lines.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>';
+  }
+
   function sameJson(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
   // withLayers puts the layers into the seed bundle: fields become the
@@ -637,7 +679,7 @@
     return '<div class="cs-id">' +
       '<div class="cs-port">' + portraitHtml + chip + '</div>' +
       '<div class="cs-id-main"><div class="cs-id-orig">' + slots + '</div>' + fixed + '</div>' +
-    '</div>' +
+    '</div>' + choiceNotesHtml(data) +
     '<div class="cs-id-fold" data-cs-pick-fold tabindex="-1"></div>';
   }
 
@@ -2532,7 +2574,7 @@
     }).join('') + '</dl>' : '';
 
     var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
-    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) + pTraits(data) +
+    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) + choiceNotesHtml(data) + pTraits(data) +
       '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
 
@@ -4191,6 +4233,8 @@
       '.cs-id-ro { display:inline-flex; align-items:baseline; gap:7px; }',
       '.cs-id-ro .cs-id-val { padding:0; }',
       '.cs-id-hint { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--color-text-muted,#9ca3af); }',
+      '.cs-rules { display:grid; gap:4px; margin:8px 0 0; }',
+      '.cs-rules p { margin:0; font-size:11.5px; color:var(--color-text-muted,#9ca3af); }',
       '.cs-id-fold:empty { display:none; }',
       '.cs-id-fold { margin:4px 16px 14px; }',
       '@keyframes ag-land-fallback { 0% { background:rgba(var(--color-accent-rgb,168,85,247),0.28); } 100% { background:transparent; } }',
@@ -4525,6 +4569,8 @@
       '[data-sheet] .sh-idtodo-k { font-weight:600;color:var(--paper-ink-soft); }',
       '[data-sheet] .sh-idtodo .sh-idpick { font-weight:600;color:var(--paper-accent); }',
       '[data-sheet] .sh-idhint { font-size:calc(12px * var(--ts)); }',
+      '[data-sheet] .sh-rules { display:grid;gap:4px;margin:6px 0 2px; }',
+      '[data-sheet] .sh-rules p { margin:0;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
       '[data-sheet] .sh-idnone { color:var(--paper-mute,var(--color-text-muted,#6b7280)); }',
       '[data-sheet] .sx-std { border-bottom:0; }',
       'P .sx-std > summary { display:none; }',
@@ -5220,7 +5266,10 @@
           });
         });
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing]).then(function (got) {
+        var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules]).then(function (got) {
+          data.choiceBreaks = got[5].breaks;
+          data.choiceWaiting = got[5].waiting;
           if (refRenderer) refRenderer.injectStyles();
           data.tf = got[2].tf;
           var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
@@ -5286,7 +5335,7 @@
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
       ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
-      loadOwnPresets: loadOwnPresets,
+      loadOwnPresets: loadOwnPresets, choiceNotesHtml: choiceNotesHtml, fetchChoiceRules: fetchChoiceRules,
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
