@@ -237,7 +237,8 @@ test('previewing a preset strikes what it moves in the preview colour', () => {
   data.tfState = st;
   cs.withLayers(data, [], cs.tfPreview(data, st));
   const html = cs.paperSheetHtml(data);
-  assert.match(html, /<s class="sh-was sh-was-pv"[^>]*><span class="sh-sr">Was <\/span>Human<\/s> Revenant/);
+  // The new name is the entry's link when the sheet knows its campaign.
+  assert.match(html, /<s class="sh-was sh-was-pv"[^>]*><span class="sh-sr">Was <\/span>Human<\/s> (<a class="sh-idpick sh-idname" [^>]*>)?Revenant/);
   assert.match(html, /sh-layer sh-layer-pv[^>]*><span class="sh-sr">Preview: <\/span>Revenant/);
   assert.match(html, /Previewing Mirela as Revenant\. Only you see this\./);
   assert.match(html, /data-tf="push"[^>]*>Push to Mirela</);
@@ -256,7 +257,7 @@ test('previewing taking a layer off shows what comes off with it', () => {
   cs.withLayers(data, [on], cs.tfPreview(data, st));
   assert.equal(data.fields.ancestry, 'Human');
   const html = cs.paperSheetHtml(data);
-  assert.match(html, /<s class="sh-was sh-was-pv"[^>]*><span class="sh-sr">Was <\/span>Revenant<\/s> Human/);
+  assert.match(html, /<s class="sh-was sh-was-pv"[^>]*><span class="sh-sr">Was <\/span>Revenant<\/s> (<a class="sh-idpick sh-idname" [^>]*>)?Human/);
   assert.match(html, /data-tf-on="l1">/, 'the tick box is unticked');
   assert.match(html, />Take it off</);
   assert.match(cs.pFeaturesPanel(data), /Coming off with Revenant · preview[\s\S]*<s class="sh-was sh-was-pv">Former Life<\/s>/);

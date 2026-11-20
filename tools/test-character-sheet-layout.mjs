@@ -156,6 +156,28 @@ test('paper identity: the line holds what is chosen, and every origin keeps a pi
   assert.ok(!/<img/.test(rw), 'the page header owns the picture');
 });
 
+test('paper identity: the name opens its entry, and Change beside it is the picker', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const hero = Object.assign({}, PAPER, { campaignId: 'c-1', entityId: 'h-9',
+    fields: Object.assign({}, PAPER.fields, { ancestry: "Hakaan's Kin", kit: 'High Elf' }) });
+  const rw = cs.pIdentity(hero);
+  const href = '/campaigns/c-1/systems/drawsteel/named/ancestry?name=Hakaan%27s%20Kin&amp;hero=h-9';
+  const link = rw.match(/<a class="sh-idpick sh-idname" href="([^"]+)" data-entry-peek="([^"]+)"[^>]*>([^<]*)<\/a>/);
+  assert.ok(link, 'the name is a link');
+  assert.equal(link[1], href, 'a real address, by kind and name, for this hero');
+  assert.equal(link[2], href, 'the same address opens the peek');
+  assert.ok(/^Hakaan(&#39;|')s Kin$/.test(link[3]), 'the name is the link text');
+  for (const b of rw.matchAll(/<button[^>]*>([^]*?)<\/button>/g)) assert.ok(!/sh-idname/.test(b[1]), 'the link is never inside a button');
+  const change = rw.match(/<button type="button" class="sh-idpick sh-idchange" data-cs-pick="ancestry"[^>]*>([^<]*)<\/button>/);
+  assert.ok(change && change[1] === 'Change', 'Change is its own quiet word');
+  assert.ok(/aria-label="Change ancestry"/.test(rw));
+  assert.ok(/named\/kit\?name=High%20Elf&amp;hero=h-9/.test(rw), 'every origin links the same way');
+  const ro = cs.pIdentity(Object.assign({}, hero, { canEditIdentity: false }));
+  assert.ok(/sh-idname/.test(ro) && !/sh-idchange/.test(ro) && !/data-cs-pick=/.test(ro), 'a reader who may not edit gets the link and no Change');
+  const nowhere = cs.pIdentity(Object.assign({}, hero, { campaignId: '' }));
+  assert.ok(!/sh-idname/.test(nowhere) && /data-v="origin-ancestry"/.test(nowhere), 'no campaign, no address: the name stays text');
+});
+
 test('paper identity: choices not made are named on one "Still to choose" line', () => {
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const todo = (html) => (html.match(/<p class="sh-idtodo">([^]*?)<\/p>/) || [])[1];
