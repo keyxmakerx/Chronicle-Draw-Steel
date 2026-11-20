@@ -756,7 +756,7 @@ var DrawSteelBestiary = (function () {
     '.bb-row.is-open>.bb-rbody{grid-template-rows:1fr}',
     '.bb-rbody>div{overflow:hidden;min-height:0}',
     '.bb-sb{padding:10px 10px 14px 30px;display:flex;flex-direction:column;gap:8px}',
-    '.bb-sb .sbx{padding:14px 16px}',
+    '.bb-sb .sbx{padding:4px 0 2px}',
     '.bb-foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}',
     '.bb-pill{display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:' + T.alt + ';color:' + T.body + '}',
     '.bb-pill.is-ok{background:rgba(22,163,74,.12);color:#15803d}',

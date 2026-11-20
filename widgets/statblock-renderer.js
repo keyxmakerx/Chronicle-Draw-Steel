@@ -346,8 +346,9 @@ var DrawSteelStatblock = (function () {
     return ref.scanText ? ref.scanText(e) : e;
   }
 
-  // mark is the small sign beside a figure: a tick when it matches the
-  // published formula, a pen when the director set it. Its title says which.
+  // mark is the small sign after a figure's number: a tick when it matches the
+  // published formula, a pen when the director set it, a book when it is the
+  // Monsters book's. Its title says which.
   function mark(p, what) {
     if (!p || !p.state) return '';
     if (p.state === 'book') {
@@ -367,8 +368,21 @@ var DrawSteelStatblock = (function () {
   }
 
   // note is the form's caption under a figure ("Changed in this form").
-  function cell(label, value, extra, note) {
-    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + (extra || '') + '</span>' + (note || '') + '</div>';
+  function cell(label, value, note) {
+    return '<div class="sbx-cell"><span class="sbx-v">' + value + '</span><span class="sbx-l">' + label + '</span>' + (note || '') + '</div>';
+  }
+
+  // KEY is what each mark means, in the words of the key at the block's foot.
+  var KEY = [['formula', 'fa-check', 'matches the published formula'], ['own', 'fa-pen-nib', 'set by you'], ['book', 'fa-book', 'from the Monsters book']];
+
+  // keyHtml explains the marks a stat block drew, for the director only: a
+  // player's block has no marks. Its icons are not marks themselves.
+  function keyHtml(seen) {
+    var bits = KEY.filter(function (k) { return seen[k[0]]; }).map(function (k) {
+      return '<span><i class="fa-solid ' + k[1] + '" aria-hidden="true"></i>' + k[2] + '</span>';
+    });
+    if (!bits.length) return '';
+    return '<p class="sbx-key">' + bits.join('') + '<span>Players never see these marks.</span></p>';
   }
 
   function figure(v) { return v === null || v === undefined || v === '' ? '—' : esc(v); }
@@ -407,13 +421,11 @@ var DrawSteelStatblock = (function () {
     var ref = o.ref || null;
     var live = !!(o.live && key);
     var type = slug(a.type);
-    var icon = type === 'signature' ? 'fa-star' : type === 'villain' ? 'fa-crown' : type === 'trait' ? 'fa-circle-info' : 'fa-bolt';
     var kind = a.label || KIND[type] || cap(type);
     var name = esc(a.name || 'Untitled');
     if (live) name = '<span class="sbx-term" tabindex="0" data-sbx-ab="' + esc(key) + '">' + name + '</span>';
     var tag = (o.tag && key) ? o.tag('item', key) : '';
-    var h = '<section class="sbx-ab"' + (live ? ' data-sbx-key="' + esc(key) + '"' : '') + '><div class="sbx-ab-top"><h4 class="sbx-ab-name"><i class="fa-solid ' + icon + '" aria-hidden="true"></i>' +
-      name + '</h4>' + tag + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
+    var h = '<section class="sbx-ab"' + (live ? ' data-sbx-key="' + esc(key) + '"' : '') + '><div class="sbx-ab-top"><h4 class="sbx-ab-name">' + name + '</h4>' + tag + (kind ? '<span class="sbx-kind">' + esc(kind) + '</span>' : '') + '</div>';
     var kws = parseList(a.keywords).filter(function (k) { return k !== 'Attack'; });
     if (kws.length || a.distance || a.target) {
       h += '<dl class="sbx-meta">' +
@@ -468,7 +480,7 @@ var DrawSteelStatblock = (function () {
   // html draws the whole stat block. opts: { ref (glossary renderer), refs
   // ({orgs, roles} templates, for the provenance marks), compact (header, figures and the
   // signature ability's name, for a hover card), live (hover-card hooks and roll
-  // buttons, for the bestiary viewer) }.
+  // buttons, for the bestiary viewer), key (end with what the marks drawn mean) }.
   function html(name, src, opts) {
     var o = opts || {};
     var c = (src && src._normalized) ? src : normalize(src);
@@ -476,6 +488,12 @@ var DrawSteelStatblock = (function () {
     var pr = provenance(c, o.refs, o.book);
     var noRole = c.organization === 'leader' || c.organization === 'solo';
     var live = !!o.live;
+    var seen = {};
+    function mk(p, what) {
+      var m = mark(p, what);
+      if (m) seen[p.state === 'book' || p.state === 'formula' ? p.state : 'own'] = true;
+      return m;
+    }
     // A live block's organization and role open their hover cards.
     function hook(attr, v) { return live ? '<span class="sbx-term" tabindex="0" ' + attr + '="' + esc(v) + '">' + esc(cap(v)) + '</span>' : esc(cap(v)); }
     var rank = (c.level !== null ? 'Level ' + esc(c.level) : '') +
@@ -491,13 +509,13 @@ var DrawSteelStatblock = (function () {
     // A minion's encounter value buys four of them, as the book prints it.
     h += '</div><div class="sbx-rank"><span class="sbx-lvl">' + rank.trim() + '</span>' +
       '<span class="sbx-ev">EV ' + figure(c.ev) + (c.ev !== null && c.organization === 'minion' ? ' <span class="sbx-ev-n">' + esc(c.ev_note ? String(c.ev_note).replace(/\s*minions?$/i, '') : 'for four') + '</span>' : '') +
-      mark(pr.ev, 'Encounter value') + '</span></div></header>';
+      mk(pr.ev, 'Encounter value') + '</span></div></header>';
     // A form's view captions each figure with where it comes from.
     function tg(k) { return o.tag ? o.tag('fig', k) : ''; }
-    h += '<div class="sbx-strip">' + cell('Size', esc(c.size), '', tg('size')) + cell('Speed', figure(c.speed), '', tg('speed')) +
-      cell('Stamina', figure(c.stamina), mark(pr.stamina, 'Stamina'), tg('stamina')) + cell('Stability', figure(c.stability), '', tg('stability')) +
-      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike), mark(pr.free_strike, 'Free strike'), tg('free_strike')) + '</div>';
-    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k]), '', tg(k)); }).join('') + '</div>';
+    h += '<div class="sbx-strip">' + cell('Size', esc(c.size), tg('size')) + cell('Speed', figure(c.speed), tg('speed')) +
+      cell('Stamina', figure(c.stamina) + mk(pr.stamina, 'Stamina'), tg('stamina')) + cell('Stability', figure(c.stability), tg('stability')) +
+      cell('Free strike', figure(freeStrikeNumber(c.free_strike) !== null ? freeStrikeNumber(c.free_strike) : c.free_strike) + mk(pr.free_strike, 'Free strike'), tg('free_strike')) + '</div>';
+    h += '<div class="sbx-strip sbx-chars">' + CHARS.map(function (k) { return cell(cap(k), signed(c[k]), tg(k)); }).join('') + '</div>';
     if (o.compact) {
       // A hover card names the creature's signature ability; the shared card's
       // looks restyle .sbx-sig from outside, so it carries no colour here.
@@ -525,7 +543,7 @@ var DrawSteelStatblock = (function () {
     if (!c.traits.length && !c.abilities.length) {
       h += '<p class="sbx-empty">No abilities yet.</p>';
     }
-    return h + '</article>';
+    return h + (o.key ? keyHtml(seen) : '') + '</article>';
   }
 
   // foundryHtml is the director's "In Foundry" box: what Foundry sent back and
@@ -801,64 +819,75 @@ var DrawSteelStatblock = (function () {
   // CSS uses Chronicle's colour tokens, so light and dark follow the site, and
   // stays under .sbx so a hover-card style can restyle it from outside.
   var CSS = [
-    '.sbx{--sbx-accent:#DC2626;--sbx-ok:#15803d;--sbx-own:#b45309;background:var(--color-card-bg,#fff);border:1px solid var(--color-border,#e5e7eb);border-top:3px solid var(--sbx-accent);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;color:var(--color-text-body,#374151);font-size:14px;line-height:1.5}',
-    '.dark .sbx{--sbx-accent:#f87171;--sbx-ok:#4ade80;--sbx-own:#fbbf24}',
+    '.sbx{--sbx-own:#b45309;background:none;border:0;border-radius:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:12px;color:var(--color-text-body,#374151);font-size:14px;line-height:1.5}',
+    '.dark .sbx{--sbx-own:#fbbf24}',
     '.sbx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
-    '.sbx-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:flex-start}',
+    '.sbx-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;align-items:flex-start}',
     '.sbx-title{min-width:0}',
-    '.sbx-name{margin:0;font-size:22px;font-weight:700;color:var(--color-text-primary,#111827);letter-spacing:-.01em;line-height:1.2}',
-    '.sbx-kw{margin:2px 0 0;font-size:13px;color:var(--color-text-secondary,#6b7280);font-style:italic}',
+    '.sbx-name{margin:0;font-family:var(--annals-head,var(--font-heading,inherit));font-size:20px;font-weight:600;line-height:1.2;color:var(--color-text-primary,#111827);overflow-wrap:anywhere}',
+    '.sbx-kw{margin:2px 0 0;font-size:14px;font-style:italic;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-dot{font-style:normal}',
-    '.sbx-rank{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}',
-    '.sbx-lvl{font-weight:600;color:var(--color-text-primary,#111827)}',
-    '.sbx-ev{font-size:13px;font-weight:600;color:var(--sbx-accent);font-variant-numeric:tabular-nums;display:inline-flex;gap:5px;align-items:center}',
-    '.sbx-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden}',
-    '.sbx-cell{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-left:1px solid var(--color-border,#e5e7eb);min-width:0}',
-    '.sbx-cell:first-child{border-left:0}',
-    '.sbx-v{font-size:17px;font-weight:700;color:var(--color-text-primary,#111827);font-variant-numeric:tabular-nums;text-align:center;overflow-wrap:anywhere}',
-    '.sbx-l{font-size:11px;color:var(--color-text-secondary,#6b7280);text-transform:uppercase;letter-spacing:.05em;display:inline-flex;gap:4px;align-items:center;white-space:nowrap}',
-    '.sbx-chars{background:var(--color-bg-tertiary,#f3f4f6)}',
-    '.sbx-mark{font-size:10px;color:var(--sbx-ok);cursor:help}',
-    '.sbx-mark.is-own{color:var(--sbx-own)}',
-    '.sbx-mark.is-book{color:var(--sbx-ok)}',
+    '.sbx-rank{display:flex;flex-direction:column;align-items:flex-end;text-align:right;font-size:14px;font-weight:600;color:var(--color-text-primary,#111827);font-variant-numeric:tabular-nums}',
+    '.sbx-ev{display:block}',
+    '.sbx-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px 24px;padding-top:12px;border-top:var(--shape-rule,1px) solid var(--color-border,#e5e7eb)}',
+    '.sbx-strip.sbx-chars{padding-top:0;border-top:0}',
+    '.sbx-cell{display:flex;flex-direction:column;align-items:flex-start;min-width:0}',
+    '.sbx-v{font-size:18px;line-height:1.2;font-weight:700;color:var(--color-text-primary,#111827);font-variant-numeric:tabular-nums;text-align:left;overflow-wrap:anywhere}',
+    '.sbx-l{font-size:11px;line-height:1.4;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted,#646b78)}',
+    '.sbx-mark{margin-left:.3em;font-size:.72em;font-weight:400;vertical-align:.08em;color:var(--color-text-muted,#646b78);cursor:help}',
+    '.sbx-key{margin:0;display:flex;flex-wrap:wrap;gap:4px 16px;padding-top:8px;border-top:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-muted,#646b78)}',
+    '.sbx-key i{font-size:.8em;margin-right:.45em}',
     '.sbx-line,.sbx-eff,.sbx-empty{margin:0}',
-    '.sbx-empty{color:var(--color-text-secondary,#6b7280)}',
-    '.sbx-sec{margin:4px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);border-bottom:1px solid var(--color-border,#e5e7eb);padding-bottom:4px}',
-    '.sbx-ab{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--color-border-light,#f3f4f6)}',
-    '.sbx-ab-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}',
-    '.sbx-ab-name{margin:0;font-size:15px;font-weight:700;color:var(--color-text-primary,#111827);display:inline-flex;gap:7px;align-items:baseline}',
-    '.sbx-ab-name i{color:var(--sbx-accent);font-size:12px}',
-    '.sbx-kind{font-size:12px;color:var(--color-text-secondary,#6b7280)}',
-    '.sbx-meta{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:4px 16px;font-size:13px}',
-    '.sbx-meta dt{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-line b,.sbx-eff b{font-weight:600;color:var(--color-text-primary,#111827)}',
+    '.sbx-empty{color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-sec{margin:8px 0 0;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-ab{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:var(--shape-rule,1px) solid var(--color-border,#e5e7eb)}',
+    '.sbx-ab-top{display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap}',
+    '.sbx-ab-name{margin:0;font-size:16px;font-weight:600;line-height:1.3;color:var(--color-text-primary,#111827)}',
+    '.sbx-kind{margin-left:auto;font-size:12.5px;color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-meta{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px;font-size:14px}',
+    '.sbx-meta dt{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-muted,#646b78)}',
     '.sbx-meta dd{margin:0}',
     '.sbx-roll{margin:2px 0 0;font-weight:600;color:var(--color-text-primary,#111827);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}',
-    '.sbx-odds{font-size:12px;font-weight:500;color:var(--color-text-secondary,#6b7280);font-variant-numeric:tabular-nums;cursor:help}',
-    '.sbx-tiers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}',
+    '.sbx-odds{font-size:12.5px;font-weight:400;color:var(--color-text-secondary,#4b5563);font-variant-numeric:tabular-nums;cursor:help}',
+    '.sbx-tiers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
     '.sbx-tiers li{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:baseline}',
-    '.sbx-t{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--color-text-secondary,#6b7280);background:var(--color-bg-tertiary,#f3f4f6);border-radius:4px;text-align:center;padding:1px 0}',
-    '.sbx--compact{padding:12px 14px;gap:10px}',
-    '.sbx-ev-n{font-weight:500;color:var(--color-text-secondary,#6b7280)}',
-    '.sbx-term{text-decoration:underline dotted;text-underline-offset:3px;cursor:help;border-radius:3px}',
-    '.sbx-term:hover,.sbx-term:focus-visible{background:rgba(var(--color-accent-rgb,99,102,241),.12)}',
-    '.sbx-rollb{display:inline-flex;gap:4px;align-items:center;border:1px solid rgba(var(--color-accent-rgb,99,102,241),.4);background:rgba(var(--color-accent-rgb,99,102,241),.1);color:var(--color-accent-link,var(--color-accent,#6366f1));border-radius:6px;padding:1px 8px;font:600 12px/1.6 ui-monospace,Consolas,monospace;cursor:pointer}',
+    '.sbx-t{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--color-text-secondary,#4b5563);background:var(--color-bg-tertiary,#f3f4f6);border-radius:var(--shape-r-tag,4px);text-align:center;padding:1px 0}',
+    '.sbx--compact{padding:12px 14px;gap:8px}',
+    '.sbx--compact .sbx-name{font-size:17px}',
+    '.sbx--compact .sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px}',
+    '.sbx--compact .sbx-rank{flex-basis:100%;align-items:flex-start;text-align:left}',
+    '.sbx--compact .sbx-strip:not(.sbx-chars){padding-top:8px}',
+    '.sbx--compact .sbx-v{font-size:16px}',
+    '.sbx-ev-n{font-weight:400;color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-term{text-decoration:underline dotted;text-underline-offset:3px;cursor:help;border-radius:var(--shape-r-tag,4px)}',
+    '.sbx-term:hover,.sbx-term:focus-visible{background:rgb(var(--color-accent-rgb, 99 102 241) / .12)}',
+    '.sbx-rollb{display:inline-flex;gap:4px;align-items:center;border:var(--shape-edge,1px) solid rgb(var(--color-accent-rgb, 99 102 241) / .4);background:rgb(var(--color-accent-rgb, 99 102 241) / .1);color:var(--color-accent-link,var(--color-accent,#6366f1));border-radius:var(--shape-r-small,6px);padding:1px 8px;font:inherit;font-size:12px;font-weight:600;line-height:1.6;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color var(--dur-micro,120ms)}',
     '.sbx-rollb::before{content:"⚂";font-family:system-ui,sans-serif;font-size:13px}',
-    '.sbx-rollb:hover{background:rgba(var(--color-accent-rgb,99,102,241),.2)}',
+    '.sbx-rollb:hover{background:rgb(var(--color-accent-rgb, 99 102 241) / .2)}',
     '.sbx-rollb:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
     '.ds-statblock-panel{margin-top:12px}',
-    '.sbx-wrap{display:flex;flex-direction:column;gap:8px}',
+    '.sbx-wrap{display:flex;flex-direction:column;gap:12px}',
     '.sbx-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between}',
-    '.sbx-bar-l{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:inline-flex;gap:6px;align-items:center}',
-    '.sbx-bar-l i{color:#DC2626}',
+    '.sbx-bar-l{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-bar-r,.sbx-pub-acts{display:inline-flex;gap:4px;flex-wrap:wrap;margin:0}',
-    '.sbx-pub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);font-size:14px}',
-    '.sbx-msg{font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-bar-r{gap:4px 14px;align-items:center}',
+    '.sbx-word{display:inline-flex;align-items:center;min-height:32px;border:0;background:none;box-shadow:none;padding:0;font:inherit;font-size:14px;font-weight:500;color:var(--color-accent-link,var(--color-accent,#6366f1));cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color var(--dur-micro,120ms)}',
+    '.sbx-word:hover,.sbx-word:focus-visible{text-decoration-color:currentColor}',
+    '.sbx-word:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px;border-radius:var(--shape-r-tag,4px)}',
+    '@media (pointer:coarse){.sbx-word{min-height:44px}}',
+    '@keyframes sbx-arrive{from{opacity:0}to{opacity:1}}',
+    '.ds-statblock-panel.is-arriving{animation:sbx-arrive var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+    'html[data-motion="off"] .ds-statblock-panel.is-arriving,html[data-motion="calm"] .ds-statblock-panel.is-arriving,html[data-cz-reduce] .ds-statblock-panel.is-arriving,html[data-view-motion="calm"] .ds-statblock-panel.is-arriving{animation:none}',
+    '@media (prefers-reduced-motion:reduce){.ds-statblock-panel.is-arriving{animation:none}}',
+    '.sbx-pub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);background:var(--color-bg-tertiary,#f3f4f6);font-size:14px}',
+    '.sbx-msg{font-size:13px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-msg:empty{display:none}',
     // Variants are rows on the page under a tab, not a box: hairlines, quiet
     // words and the theme tokens only, so a style kit and the campaign's
     // colour restyle them like the rest of the page.
     '.sbx-var{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--color-text-body,#374151)}',
-    '.sbx-var-tab{margin:0;align-self:flex-start;font-size:12px;font-weight:600;font-variant:small-caps;letter-spacing:.06em;text-transform:lowercase;color:var(--color-text-secondary,#6b7280);padding:0 8px 2px 0;border-bottom:1px solid var(--color-border,#e5e7eb);border-right:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-var-tab{margin:0;align-self:flex-start;font-size:12px;font-weight:600;font-variant:small-caps;letter-spacing:.06em;text-transform:lowercase;color:var(--color-text-secondary,#4b5563);padding:0 8px 2px 0;border-bottom:1px solid var(--color-border,#e5e7eb);border-right:1px solid var(--color-border,#e5e7eb)}',
     '.sbx-var-line{margin:0}',
     '.sbx-var a,.sbx-quiet{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
     '.sbx-quiet{background:none;border:0;padding:0 2px;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}',
@@ -867,103 +896,103 @@ var DrawSteelStatblock = (function () {
     '.sbx-var-acts{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
     '.sbx-var-fold{border-top:1px solid var(--color-border,#e5e7eb);padding-top:8px;display:flex;flex-direction:column;gap:8px}',
     '.sbx-var-q{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}',
-    '.sbx-var-q legend{float:left;margin-right:10px;font-size:12px;font-variant:small-caps;letter-spacing:.06em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-q legend{float:left;margin-right:10px;font-size:12px;font-variant:small-caps;letter-spacing:.06em;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-var-q input[type=radio],.sbx-var-q input[type=checkbox]{accent-color:var(--color-accent,#6366f1)}',
     '.sbx-var-field{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}',
     '.sbx-var input[type=text]{font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid var(--color-border,#e5e7eb);padding:2px 0;min-width:10em}',
     '.sbx-var input[type=text]:focus{outline:none;border-bottom-color:var(--color-accent,#6366f1)}',
     '.sbx-var-row{display:grid;grid-template-columns:minmax(7em,auto) auto 1fr;gap:10px;align-items:baseline;padding:4px 0;border-top:1px solid var(--color-border,#e5e7eb)}',
     '.sbx-var-src .sbx-var-row:first-child{border-top:0}',
-    '.sbx-var-s{color:var(--color-text-secondary,#6b7280);font-size:12px;display:flex;flex-wrap:wrap;gap:4px 10px}',
+    '.sbx-var-s{color:var(--color-text-secondary,#4b5563);font-size:12px;display:flex;flex-wrap:wrap;gap:4px 10px}',
     '.sbx-var-s.is-recipe{color:var(--color-accent-link,var(--color-accent,#6366f1))}',
-    '.sbx-var-msg{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-var-msg{margin:0;font-size:13px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-var-msg:empty{display:none}',
     '.sbx-var-msg.is-error{color:var(--color-danger,#dc2626)}',
     '@media (max-width:640px){.sbx-var-row{grid-template-columns:1fr auto}.sbx-var-row .sbx-var-s{grid-column:1 / -1}}',
     '.sbx-msg.is-ok{color:#15803d}.sbx-msg.is-error{color:#b91c1c}',
     '.dark .sbx-msg.is-ok{color:#4ade80}.dark .sbx-msg.is-error{color:#f87171}',
     '.sbx-start{gap:8px}',
-    '.sbx-quiet{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-quiet{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-quiet b{color:var(--color-text-body,#374151);font-weight:600}',
-    '.sbx--compact .sbx-name{font-size:17px}',
     '.sbx-sig{margin:0;font-size:13px;font-weight:600}',
     '.sbx-sig-k{font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:11px;opacity:.75;margin-right:4px}',
-    '.sbx-fvtt{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-card-bg,#fff);font-size:14px;color:var(--color-text-body,#374151)}',
+    '.sbx-fvtt{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);background:var(--color-card-bg,#fff);font-size:14px;color:var(--color-text-body,#374151)}',
     '.sbx-fvtt .sbx-sec{margin:0}',
     '.sbx-fvtt-rows{margin:0;display:flex;flex-direction:column;gap:2px}',
-    '.sbx-fvtt-rows div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--color-border-light,#f3f4f6)}',
-    '.sbx-fvtt-rows dt{color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fvtt-rows div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--color-border,#e5e7eb)}',
+    '.sbx-fvtt-rows dt{color:var(--color-text-secondary,#4b5563)}',
     '.sbx-fvtt-rows dd{margin:0;font-weight:600;color:var(--color-text-primary,#111827);font-variant-numeric:tabular-nums;text-align:right}',
     '.sbx-fvtt-toggle{display:flex;gap:10px;align-items:flex-start;cursor:pointer}',
-    '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-fvtt-toggle input{margin-top:3px;accent-color:var(--color-accent,#6366f1)}',
     '.sbx-fvtt-toggle b{color:var(--color-text-primary,#111827);font-weight:600;display:block}',
-    '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
-    '.sbx-fvtt-match{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--color-border-light,#f3f4f6)}',
+    '.sbx-fvtt-hint{display:block;margin:0;font-size:13px;color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-fvtt-match{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
     '.sbx-fvtt-line,.sbx-fvtt-links{margin:0;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}',
     '.sbx-fvtt .sbx-chip{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}',
     '.sbx-fvtt .sbx-chip.is-ok{background:rgba(16,185,129,.15);color:var(--color-success-text,#065f46)}',
     '.sbx-fvtt .sbx-chip.is-maybe{background:rgba(245,158,11,.18);color:var(--color-warning-text,#92400e)}',
     '.dark .sbx-fvtt .sbx-chip.is-ok{color:#6ee7b7}.dark .sbx-fvtt .sbx-chip.is-maybe{color:#fcd34d}',
-    '.sbx-fvtt-use{margin:0;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}',
+    '.sbx-fvtt-use{margin:0;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);padding:8px 12px;display:flex;flex-direction:column;gap:6px}',
     '.sbx-fvtt-use legend{font-size:13px;font-weight:600;padding:0 4px;color:var(--color-text-primary,#111827)}',
     '.sbx-fvtt-use label{display:flex;gap:8px;align-items:center;cursor:pointer}',
-    '.sbx-fvtt-use input{accent-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-fvtt-use input{accent-color:var(--color-accent,#6366f1)}',
     '.sbx-fvtt-search{display:flex;flex-direction:column;gap:6px}',
-    '.sbx-fvtt-q{font:inherit;padding:6px 10px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-input-bg,var(--color-card-bg,#fff));color:var(--color-text-primary,#111827)}',
+    '.sbx-fvtt-q{font:inherit;padding:6px 10px;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);background:var(--color-input-bg,var(--color-card-bg,#fff));color:var(--color-text-primary,#111827)}',
     '.sbx-fvtt-hits{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:240px;overflow:auto}',
     '.sbx-fvtt-hit{width:100%;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:2px}',
     '.sbx-head.has-pic{flex-wrap:nowrap;align-items:center}',
     '.sbx-head.has-pic .sbx-title{flex:1}',
-    '.sbx-pic{flex:0 0 72px;width:72px;height:72px;border-radius:8px;overflow:hidden;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
+    '.sbx-pic{flex:0 0 72px;width:72px;height:72px;border-radius:var(--shape-r-panel,12px);overflow:hidden;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
     '.sbx-pic.is-round{border-radius:50%;box-shadow:none;background:none}',
     '.sbx-pic img,.sbx-pic svg{display:block;width:100%;height:100%;object-fit:cover}',
-    '.sbx-src{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(var(--color-accent-rgb,99,102,241),.08);font-size:13px}',
+    '.sbx-src{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:8px 12px;border-radius:var(--shape-r-ctl,8px);background:rgb(var(--color-accent-rgb, 99 102 241) / .08);font-size:13px}',
     '.sbx-src-t{flex:1 1 240px;min-width:0}',
-    '.sbx-cmp{border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden;background:var(--color-card-bg,#fff);font-size:13px}',
+    '.sbx-cmp{border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);overflow:hidden;background:var(--color-card-bg,#fff);font-size:13px}',
     '.sbx-cmp-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:var(--color-bg-tertiary,#f3f4f6)}',
     '.sbx-cmp-h h4{margin:0;font-size:14px;font-weight:600;color:var(--color-text-primary,#111827)}',
-    '.sbx-cmp-src{font-size:12px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-src{font-size:12px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-cmp-sp{flex:1}',
     '.sbx-cmp-w{overflow-x:auto}',
     '.sbx-cmp-t{width:100%;border-collapse:collapse}',
     '.sbx-cmp-t th,.sbx-cmp-t td{text-align:left;vertical-align:top;padding:6px 10px;border-top:1px solid var(--color-border,#e5e7eb)}',
-    '.sbx-cmp-t th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-t th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-cmp-k{font-weight:600;white-space:nowrap;color:var(--color-text-primary,#111827)}',
     '.sbx-cmp-mine{background:rgba(245,158,11,.10)}',
     '.sbx-cmp-act{text-align:right;white-space:nowrap}',
-    '.sbx-cmp-none{font-style:italic;color:var(--color-text-secondary,#6b7280)}',
-    '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-cmp-none{font-style:italic;color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-cmp-f{margin:0;padding:8px 12px;border-top:1px solid var(--color-border,#e5e7eb);font-size:12.5px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-cmp-f.is-error{color:#b91c1c}.dark .sbx-cmp-f.is-error{color:#f87171}',
-    '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#6b7280)}}',
+    '@media (max-width:640px){.sbx-cmp-t thead{display:none}.sbx-cmp-t tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--color-border,#e5e7eb)}.sbx-cmp-t td{border-top:0}.sbx-cmp-k,.sbx-cmp-act{grid-column:1/-1}.sbx-cmp-act{text-align:left}.sbx-cmp-mine::before{content:"This page";display:block;font-size:11px;color:var(--color-text-secondary,#4b5563)}.sbx-cmp-t td:nth-child(3)::before{content:"The book";display:block;font-size:11px;color:var(--color-text-secondary,#4b5563)}}',
     '.sbx-forms{display:flex;gap:2px;align-items:flex-end;border-bottom:1px solid var(--color-border,#e5e7eb);overflow-x:auto}',
-    '.sbx-tab{display:inline-flex;gap:8px;align-items:center;border:0;border-bottom:2px solid transparent;background:none;padding:8px 12px 6px;min-height:36px;font-size:13px;font-weight:600;color:var(--color-text-secondary,#6b7280);cursor:pointer;white-space:nowrap}',
+    '.sbx-tab{display:inline-flex;gap:8px;align-items:center;border:0;border-bottom:2px solid transparent;background:none;padding:8px 12px 6px;min-height:36px;font-size:13px;font-weight:600;color:var(--color-text-secondary,#4b5563);cursor:pointer;white-space:nowrap}',
     '.sbx-tab:hover{color:var(--color-text-primary,#111827)}',
-    '.sbx-tab[aria-selected="true"]{color:var(--color-text-primary,#111827);border-bottom-color:var(--sbx-accent,#DC2626)}',
+    '.sbx-tab{transition:color var(--dur-micro,120ms)}',
+    '.sbx-tab[aria-selected="true"]{color:var(--color-text-primary,#111827);border-bottom-color:var(--color-accent,#6366f1)}',
     '.sbx-tab:focus-visible,.sbx-forms-add:focus-visible,.sbx-link:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
-    '.sbx-tab-n{font:500 11px/1 ui-monospace,Consolas,monospace;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-tab-n{font-size:11px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-tab-hid{font-size:11px;opacity:.7}',
-    '.sbx-forms-add{border:1px dashed var(--color-border,#d1d5db);background:none;color:var(--color-text-secondary,#6b7280);border-radius:6px;padding:4px 10px;margin:0 0 4px 8px;min-height:32px;font-size:13px;cursor:pointer;white-space:nowrap}',
+    '.sbx-forms-add{border:1px dashed var(--color-border,#d1d5db);background:none;color:var(--color-text-secondary,#4b5563);border-radius:var(--shape-r-small,6px);padding:4px 10px;margin:0 0 4px 8px;min-height:32px;font-size:13px;cursor:pointer;white-space:nowrap}',
     '.sbx-forms-add:hover{color:var(--color-accent-link,var(--color-accent,#6366f1));border-color:var(--color-accent,#6366f1)}',
     '.sbx-formnote{display:flex;flex-direction:column;gap:6px;font-size:14px}',
-    '.sbx-formnote-h{color:var(--color-text-secondary,#6b7280);font-size:13px}',
+    '.sbx-formnote-h{color:var(--color-text-secondary,#4b5563);font-size:13px}',
     '.sbx-formnote-acts{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end}',
-    '.sbx-fstam{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-fstam{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-fstam select{min-width:200px}',
-    '.sbx-dm{margin:0;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-dm{margin:0;font-size:13px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-dm-t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b45309;margin-right:4px}',
     '.dark .sbx-dm-t{color:#fbbf24}',
-    '.sbx-from{display:block;max-width:100%;margin-top:2px;font-size:11px;color:var(--color-text-secondary,#6b7280);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-from{display:block;max-width:100%;margin-top:2px;font-size:11px;color:var(--color-text-muted,#646b78);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.sbx-from.is-changed{color:var(--sbx-own);font-weight:600;white-space:normal}',
-    '.sbx-chip{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}',
+    '.sbx-chip{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#4b5563);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}',
     '.sbx-chip.is-changed{background:rgba(245,158,11,.14);color:var(--sbx-own)}',
-    '.sbx-chip.is-new{background:rgba(var(--color-accent-rgb,99,102,241),.12);color:var(--color-accent-link,var(--color-accent,#6366f1))}',
+    '.sbx-chip.is-new{background:rgb(var(--color-accent-rgb, 99 102 241) / .12);color:var(--color-accent-link,var(--color-accent,#6366f1))}',
     '.sbx-link{border:0;background:none;padding:0;font:inherit;color:var(--color-accent-link,var(--color-accent,#6366f1));text-decoration:underline;text-underline-offset:2px;cursor:pointer}',
     '.sbx-gone{display:flex;flex-direction:column;gap:6px;font-size:14px}',
     '.sbx-gone ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
-    '.sbx-gone li{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:var(--color-text-secondary,#6b7280)}',
+    '.sbx-gone li{display:flex;justify-content:space-between;gap:8px;align-items:baseline;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-gone li>span{text-decoration:line-through;text-decoration-color:rgba(107,114,128,.5)}',
     '@media (max-width:640px){.sbx-head.has-pic{flex-wrap:wrap}.sbx-pic{flex-basis:56px;width:56px;height:56px}}',
-    '@media (max-width:640px){.sbx{padding:14px}.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-cell:nth-child(4){border-left:0}.sbx-cell:nth-child(n+4){border-top:1px solid var(--color-border,#e5e7eb)}.sbx-rank{align-items:flex-start;text-align:left}}'
+    '@media (max-width:640px){.sbx-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.sbx-rank{flex-basis:100%;align-items:flex-start;text-align:left}.sbx-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}'
   ].join('\n');
 
   // injectStyles puts the CSS in <head> once. It must never go inside a mount
@@ -1748,7 +1777,7 @@ StatblockPanel.prototype.render = function () {
   var f = this.fields();
   var name = (this.entity && this.entity.name) || '';
   this.el.hidden = false;
-  this.el.className = 'ds-statblock-panel';
+  if (!this.el.classList || !this.el.classList.contains('ds-statblock-panel')) this.el.className = 'ds-statblock-panel';
   if (this.isGM && this.vr.doc && this.vr.doc.recipe) {
     this.el.innerHTML = this.recipeHtml();
     this.bind();
@@ -1766,32 +1795,58 @@ StatblockPanel.prototype.render = function () {
     if (!this.isGM) { this.el.hidden = true; return; }
     // One quiet line, not a card: most NPCs never fight.
     this.el.innerHTML = '<p class="sbx-quiet"><b>' + esc(name) + '</b> has no stat block yet. ' +
-      '<button type="button" class="btn-ghost btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Build its stat block</button></p>';
+      '<button type="button" class="btn-ghost btn-sm" data-sbx-act="edit">Build its stat block</button></p>';
     this.bind();
     return;
   }
   var form = this.form();
-  var bar = '<div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-paw" aria-hidden="true"></i> Stat block</span>';
+  var bar = '<div class="sbx-bar"><span class="sbx-bar-l">Stat block</span>';
   if (this.isGM && form) {
-    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="form-edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit form</button></span>';
+    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="form-edit">Edit form</button></span>';
   } else if (this.isGM) {
-    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="edit"><i class="fa-solid fa-pen mr-1" aria-hidden="true"></i> Edit stat block</button>' +
-      '<button type="button" class="btn-ghost btn-sm" data-sbx-act="publish" aria-expanded="' + (this.publishOpen ? 'true' : 'false') + '"><i class="fa-solid fa-share-nodes mr-1" aria-hidden="true"></i> Publish</button></span>';
+    bar += '<span class="sbx-bar-r"><button type="button" class="btn-secondary btn-sm" data-sbx-act="edit">Edit stat block</button>' +
+      '<button type="button" class="sbx-word" data-sbx-act="publish" aria-expanded="' + (this.publishOpen ? 'true' : 'false') + '">Publish</button></span>';
   }
   bar += '</div>';
   var pub = (this.isGM && this.publishOpen && !form) ? this.publishHtml() : '';
   var body;
   if (form) {
     var v = DrawSteelForms.view(f, S.pictures(this.entity), form);
-    body = this.formNoteHtml(form, v) + S.html(name, v.fields, { ref: this.ref, refs: this.refs, picture: { art: v.art, token: v.token, page: v.art || v.token }, tag: this.tagFor(v) }) +
+    body = this.formNoteHtml(form, v) + S.html(name, v.fields, { ref: this.ref, refs: this.refs, picture: { art: v.art, token: v.token, page: v.art || v.token }, tag: this.tagFor(v), key: this.isGM }) +
       this.goneHtml(v);
   } else {
-    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, book: this.bookProps(), picture: S.pictures(this.entity) });
+    body = this.sourceHtml() + S.html(name, f, { ref: this.ref, refs: this.refs, book: this.bookProps(), picture: S.pictures(this.entity), key: this.isGM });
   }
   this.el.innerHTML = '<div class="sbx-wrap">' + bar + pub + this.tabsHtml() + '<div class="sbx-msg" role="status" aria-live="polite"></div>' + body +
     (this.isGM && !form ? '<div data-sbx-fvtt-box>' + S.foundryHtml(f, this.fvtt) + '</div>' + this.variantsHtml() : '') + '</div>';
+  this.arrive();
   this.bind();
   if (!form) this.loadBook();
+};
+
+// arrive fades the panel in the first time it shows a stat block. The class
+// goes on the mount, which outlives each redraw, so the reads that finish a
+// moment later cannot cut the fade short or start it again.
+StatblockPanel.prototype.arrive = function () {
+  var el = this.el;
+  if (this.arrived) return;
+  this.arrived = true;
+  if (!el.classList || !el.addEventListener) return;
+  el.classList.add('is-arriving');
+  var done = function (e) {
+    if (e && e.target !== el) return;
+    el.classList.remove('is-arriving');
+    el.removeEventListener('animationend', done);
+    el.removeEventListener('animationcancel', done);
+  };
+  el.addEventListener('animationend', done);
+  el.addEventListener('animationcancel', done);
+  // Under Calm, Off and a device asking for less motion nothing plays, so no
+  // end is ever heard: the class comes off now.
+  try {
+    var view = el.ownerDocument && el.ownerDocument.defaultView;
+    if (!view || view.getComputedStyle(el).animationName === 'none') done();
+  } catch (e) { done(); }
 };
 
 // sourceHtml is the director's banner on a page copied from the book, with
@@ -2165,13 +2220,26 @@ StatblockPanel.prototype.goneHtml = function (v) {
   return '<section class="sbx-gone"><p class="sbx-sec">Not in this form</p><ul>' + rows.join('') + '</ul></section>';
 };
 
-StatblockPanel.prototype.pickForm = function (id) {
+StatblockPanel.prototype.pickForm = function (id, fade) {
   if (id && !this.formById(id)) return;
   this.forms.tab = id || '';
   this.forms.msg = '';
   this.publishOpen = false;
   this.render();
   this.focus('.sbx-tab[aria-selected="true"]');
+  if (fade) this.fadeBlock();
+};
+
+// fadeBlock is a tab switch's short fade, with no rise: the form picked with
+// the pointer fades in under its tab. A form picked with the keys is there at
+// once, and Off or a device asking for less motion plays nothing.
+StatblockPanel.prototype.fadeBlock = function () {
+  var doc = this.el.ownerDocument, block = this.el.querySelector ? this.el.querySelector('.sbx') : null;
+  if (!doc || !block || !block.animate || doc.documentElement.getAttribute('data-motion') === 'off') return;
+  var view = doc.defaultView;
+  if (view && view.matchMedia && view.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var raw = foldToken(doc, '--dur-page', '90ms'), ms = /ms$/.test(raw) ? parseFloat(raw) : parseFloat(raw) * 1000;
+  block.animate([{ opacity: 0 }, { opacity: 1 }], { duration: isFinite(ms) && ms > 0 ? ms : 90, easing: foldToken(doc, '--ease-out', 'ease-out') });
 };
 
 // writeIndex reads the `forms` document fresh and saves it changed by fn, so
@@ -2396,7 +2464,7 @@ StatblockPanel.prototype.bind = function () {
       return;
     }
     var tab = e.target.closest && e.target.closest('[data-sbx-form]');
-    if (tab && self.el.contains(tab)) { self.pickForm(tab.getAttribute('data-sbx-form')); return; }
+    if (tab && self.el.contains(tab)) { self.pickForm(tab.getAttribute('data-sbx-form'), e.detail !== 0 && tab.getAttribute('aria-selected') !== 'true'); return; }
     var reset = e.target.closest && e.target.closest('[data-sbx-reset]');
     if (reset && self.el.contains(reset)) { self.resetFigure(reset.getAttribute('data-sbx-reset')); return; }
     var back = e.target.closest && e.target.closest('[data-sbx-putback]');
@@ -2908,7 +2976,7 @@ StatblockPanel.prototype.recipeHtml = function () {
   var S = DrawSteelStatblock, esc = S.esc, V = DrawSteelVariants, vr = this.vr, r = vr.doc.recipe;
   var rows = V.describe(r.steps);
   var title = r.part === 'addon' ? 'Add-on <b>' + esc(r.label) + '</b> to the recipe <b>' + esc(r.name) + '</b>' : 'The recipe <b>' + esc(r.name) + '</b>';
-  var out = '<div class="sbx-wrap"><div class="sbx-bar"><span class="sbx-bar-l"><i class="fa-solid fa-flask" aria-hidden="true"></i> Variant recipe</span></div>' +
+  var out = '<div class="sbx-wrap"><div class="sbx-bar"><span class="sbx-bar-l">Variant recipe</span></div>' +
     '<section class="sbx-var"><p class="sbx-var-line">' + title + '. Players never see a recipe. Use <b>Make a variant</b> on any creature’s page to apply it.</p>';
   out += rows.length ? '<div class="sbx-var-src">' + rows.map(function (x, i) {
     var acts = '';
