@@ -534,6 +534,7 @@ var DrawSteelBestiary = (function () {
         var fields = S.toFields(row.c);
         // The copy remembers its book entry, for Compare with the book.
         if (row.src === 'book' && row.slug) fields[S.SOURCE_KEY] = row.slug;
+        if (row.src === 'book' && row.fields && row.fields.ev_note) fields.ev_note = String(row.fields.ev_note).slice(0, 80);
         return Chronicle.apiFetch(inst._entityUrl(cid), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: row.name.slice(0, 200), entity_type_id: id, type_label: 'drawsteel-creature', fields_data: fields })
@@ -755,7 +756,7 @@ var DrawSteelBestiary = (function () {
     '.bb-row.is-open>.bb-rbody{grid-template-rows:1fr}',
     '.bb-rbody>div{overflow:hidden;min-height:0}',
     '.bb-sb{padding:10px 10px 14px 30px;display:flex;flex-direction:column;gap:8px}',
-    '.bb-sb .sbx{padding:14px 16px}',
+    '.bb-sb .sbx{padding:4px 0 2px}',
     '.bb-foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}',
     '.bb-pill{display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:' + T.alt + ';color:' + T.body + '}',
     '.bb-pill.is-ok{background:rgba(22,163,74,.12);color:#15803d}',

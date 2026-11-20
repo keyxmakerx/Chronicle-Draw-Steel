@@ -35,22 +35,31 @@ var DrawSteelCreatureEditor = (function () {
   // newState builds an editor state from a creature in either stored shape. A
   // stored figure that differs from its formula, or that no formula covers, is
   // the director's own and stays put: opening the editor never rewrites it.
-  function newState(name, src, refs) {
+  function newState(name, src, refs, book) {
     var S = SB();
     var c = S.normalize(src || {});
-    if (c.level === null) c.level = 1;
-    var st = { name: name || c.name || '', aiName: false, c: c, own: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] }, base: {} };
+    c.level = c.level === null ? 1 : clampLevel(c.level);
+    var st = { name: name || c.name || '', aiName: false, c: c, own: {}, fromBook: {}, spread: {}, origin: null, editAb: null, refs: refs || { orgs: [], roles: [] }, base: {} };
     // Chronicle replaces a page's fields wholesale on save, so fields this
     // editor doesn't own are carried through untouched.
     if (src && typeof src === 'object' && !Array.isArray(src)) Object.keys(src).forEach(function (k) { st.base[k] = src[k]; });
-    var pr = S.provenance(c, st.refs);
+    var pr = S.provenance(c, st.refs, book || null);
     ['ev', 'stamina', 'free_strike'].forEach(function (k) {
       var stored = k === 'free_strike' ? S.freeStrikeNumber(c.free_strike) : c[k];
       if (stored !== null && pr[k] && pr[k].state !== 'formula') st.own[k] = true;
+      // A book creature's printed figure is the book's, not the director's.
+      if (pr[k] && pr[k].state === 'book') st.fromBook[k] = true;
     });
     if (c.winded !== null && c.stamina !== null && c.winded !== Math.floor(c.stamina / 2)) st.own.winded = true;
     derive(st);
+    followSpread(st);
     return st;
+  }
+
+  // The editor's levels run 1 to 20, whole numbers.
+  function clampLevel(v) {
+    var n = Math.round(Number(v));
+    return isFinite(n) ? Math.max(1, Math.min(20, n)) : 1;
   }
 
   // autoTier rewrites the leading "N damage" (or "N fire damage") of a tier's
@@ -65,6 +74,60 @@ var DrawSteelCreatureEditor = (function () {
   function isStrike(a) {
     var S = SB();
     return S.parseList(a.keywords).some(function (k) { return String(k).toLowerCase() === 'strike'; });
+  }
+
+  var DAMAGE_OPENS = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
+
+  // applyDamage writes the formula's damage into the tiers that deal damage (or
+  // are empty); a tier written as something else ("Push 2", "No effect.") stays
+  // as it was, since the formula has nothing to say about it.
+  function applyDamage(a, d, add) {
+    ['tier1', 'tier2', 'tier3'].forEach(function (k) {
+      var t = String(a[k] || '');
+      if (t.trim() === '' || DAMAGE_OPENS.test(t)) a[k] = autoTier(t, d[k] + add);
+    });
+  }
+
+  // topCharacteristic is the creature's own highest characteristic, which a
+  // strike adds to its damage and every power roll is built on; with none set
+  // it is the published highest for the level.
+  function topCharacteristic(st) {
+    var vals = SB().CHARS.map(function (k) { return st.c[k]; }).filter(function (v) { return v !== null && v !== undefined; });
+    if (vals.length) return Math.max.apply(null, vals);
+    return st.pr && st.pr.hc ? st.pr.hc.value : null;
+  }
+
+  // spreadOf is the role's published spread for the level, with the main
+  // characteristic at the published highest and none above it. Without a role
+  // spread only Might is set. Null when the level has no published highest.
+  function spreadOf(pr) {
+    var S = SB(), hc = pr.hc ? pr.hc.value : null, rt = pr.role, out = {};
+    if (hc === null || hc === undefined) return null;
+    if (rt && rt.characteristics) {
+      S.CHARS.forEach(function (k) { var v = Number(rt.characteristics[k]) || 0; out[k] = k === rt.primary_stat ? hc : Math.min(v, hc - 1); });
+    } else out.might = hc;
+    return out;
+  }
+
+  // followSpread marks each characteristic that still equals the spread as
+  // the spread's, so a level, organization or role change moves it; one the
+  // director set to anything else stays theirs.
+  function followSpread(st) {
+    var sp = spreadOf(st.pr);
+    st.spread = {};
+    if (!sp) return;
+    Object.keys(sp).forEach(function (k) { if (st.c[k] === sp[k]) st.spread[k] = true; });
+  }
+
+  // refreshRolls works every power roll the editor wrote out again from the
+  // creature's highest characteristic. A roll the director typed is theirs.
+  function refreshRolls(st) {
+    var hc = topCharacteristic(st);
+    if (hc === null || hc === undefined) return;
+    st.c.abilities.concat(st.c.villain_actions).forEach(function (a) {
+      if (a.auto_roll === false) return;
+      if (a.auto_roll === true || a.auto_damage) a.power_roll = '2d10 + ' + hc;
+    });
   }
 
   // derive recomputes every figure the director has not set by hand, and the
@@ -85,56 +148,87 @@ var DrawSteelCreatureEditor = (function () {
       hc: Fm ? Fm.highestCharacteristic(c.level, org) : none(why),
       formulasLoaded: !!Fm
     };
-    if (!st.own.ev && pr.ev.value !== null) c.ev = pr.ev.value;
-    if (!st.own.stamina && pr.stamina.value !== null) c.stamina = pr.stamina.value;
-    if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = pr.free_strike.value + ' damage';
+    // A figure that followed its formula empties when the formulas stop
+    // covering the creature (made a swarm, say), rather than keep a number
+    // that would then read as the director's.
+    if (!st.own.ev && (pr.ev.value !== null || Fm)) c.ev = pr.ev.value;
+    if (!st.own.stamina && (pr.stamina.value !== null || Fm)) c.stamina = pr.stamina.value;
+    if (!st.own.free_strike && pr.free_strike.value !== null) c.free_strike = freeStrikeText(c.free_strike, pr.free_strike.value);
+    else if (!st.own.free_strike && Fm) c.free_strike = null;
     if (!st.own.winded) c.winded = c.stamina === null ? null : Math.floor(c.stamina / 2);
-    var hc = pr.hc.value;
+    st.pr = pr;
+    var sp = st.spread && spreadOf(pr);
+    if (sp) Object.keys(st.spread).forEach(function (k) { if (st.spread[k] && sp[k] !== undefined) c[k] = sp[k]; });
+    var hc = topCharacteristic(st);
     var d = pr.damage.value;
-    c.abilities.forEach(function (a) {
+    c.abilities.concat(c.villain_actions).forEach(function (a) {
       if (!a.auto_damage || !d) return;
-      var add = (isStrike(a) && hc !== null) ? hc : 0;
-      if (hc !== null) a.power_roll = '2d10 + ' + hc;
-      a.tier1 = autoTier(a.tier1, d.tier1 + add);
-      a.tier2 = autoTier(a.tier2, d.tier2 + add);
-      a.tier3 = autoTier(a.tier3, d.tier3 + add);
+      applyDamage(a, d, (isStrike(a) && hc !== null) ? hc : 0);
     });
+    refreshRolls(st);
     var E = Engine();
     pr.vaCount = (E && org) ? E.villainActionCount(org) : (org ? Number(org.villain_action_count) || 0 : 0);
     st.pr = pr;
     return st;
   }
 
+  // freeStrikeText puts the formula's number into a stored free strike and
+  // keeps its words ("4 fire damage", "4 damage; push 1").
+  function freeStrikeText(text, n) {
+    var t = String(text || '');
+    if (/-?\d+/.test(t)) return t.replace(/-?\d+/, String(n));
+    return n + ' damage';
+  }
+
   // setFigure records a figure the director typed. An empty box hands it back
-  // to the formula.
+  // to the formula, or leaves it empty when no formula covers it; text that
+  // is not a number is refused and changes nothing.
   function setFigure(st, key, raw) {
     var v = String(raw == null ? '' : raw).trim();
-    if (v === '') { delete st.own[key]; return derive(st); }
+    if (v === '') {
+      delete st.own[key]; delete st.fromBook[key];
+      derive(st);
+      var r = st.pr[key];
+      if (key !== 'winded' && r && r.value === null) { st.c[key] = key === 'free_strike' ? '' : null; derive(st); }
+      return st;
+    }
+    if (key === 'free_strike') {
+      if (!/\d/.test(v)) return st;
+      st.c.free_strike = /^-?\d+$/.test(v) ? v + ' damage' : v;
+    } else {
+      if (!isFinite(Number(v))) return st;
+      st.c[key] = Number(v);
+    }
     st.own[key] = true;
-    if (key === 'free_strike') st.c.free_strike = /^-?\d+$/.test(v) ? v + ' damage' : v;
-    else st.c[key] = isFinite(Number(v)) ? Number(v) : st.c[key];
+    delete st.fromBook[key];
     return derive(st);
   }
 
-  function useFormula(st, key) { delete st.own[key]; return derive(st); }
+  function useFormula(st, key) { delete st.own[key]; delete st.fromBook[key]; return derive(st); }
 
-  // startFrom copies another creature's stat block into this one. Figures and
-  // formula-shaped damage are worked out again for the level kept here, so a
-  // copy never carries the source's numbers at the wrong level.
+  // startFrom copies another creature's stat block into this one, level
+  // included (only a source with no level takes this one's). Figures and
+  // formula-shaped damage are worked out again for that level, so a copy never
+  // carries numbers that don't fit it.
   function startFrom(st, srcName, src, origin) {
     var S = SB();
     var c = S.normalize(src || {});
-    if (c.level === null) c.level = st.c.level || 1;
+    c.level = c.level === null ? (st.c.level || 1) : clampLevel(c.level);
     c.abilities.forEach(function (a) {
       if ([a.tier1, a.tier2, a.tier3].every(function (t) { return !t || /^\s*\d+\s+damage/i.test(String(t)); }) && (a.tier1 || a.tier2 || a.tier3)) a.auto_damage = true;
     });
     st.c = c;
     st.own = {};
+    st.fromBook = {};
+    st.spread = {};
     st.origin = origin || null;
-    st.name = srcName ? srcName + ' (copy)' : st.name;
+    // A page that already has a name keeps it; the copy's name is only for one that has none.
+    if (srcName && (!String(st.name || '').trim() || st.autoName)) { st.name = srcName + ' (copy)'; st.autoName = true; }
     st.aiName = false;
     st.editAb = null;
-    return derive(st);
+    derive(st);
+    followSpread(st);
+    return st;
   }
 
   // checks lists what the stat block still needs. Severity 'ok' and 'miss' are
@@ -147,13 +241,19 @@ var DrawSteelCreatureEditor = (function () {
     row(!!c.organization, 'Has an organization');
     if (c.organization !== 'leader' && c.organization !== 'solo') row(!!c.role, 'Has a role');
     row(c.abilities.some(function (a) { return a.type === 'signature'; }), 'Has a signature ability');
-    if (pr.vaCount) row(c.villain_actions.filter(function (v) { return v.name && String(v.name).trim(); }).length === pr.vaCount, 'Has ' + pr.vaCount + ' villain actions');
+    if (pr.vaCount) {
+      var vnamed = c.villain_actions.filter(function (v) { return v.name && String(v.name).trim(); });
+      var orders = vnamed.map(function (v) { return v.order; });
+      row(vnamed.length === pr.vaCount && VA_SLOTS.slice(0, pr.vaCount).every(function (o) { return orders.indexOf(o) >= 0; }), 'Has ' + pr.vaCount + ' villain actions, one of each order');
+    }
     row(c.ev !== null, 'Has an encounter value');
     row(c.stamina !== null, 'Has Stamina');
     row(!!String(c.free_strike || '').trim(), 'Has a free strike');
+    var blankChars = SB().CHARS.filter(function (k) { return c[k] === null || c[k] === undefined; });
+    row(!blankChars.length, blankChars.length ? 'Has all five characteristics (' + blankChars.map(cap).join(', ') + ' still blank; no published figure covers them)' : 'Has all five characteristics');
     ['ev', 'stamina'].forEach(function (k) {
       var r = pr[k];
-      if (st.own[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
+      if (st.own[k] && !st.fromBook[k] && r && r.sourced && r.value !== null && c[k] !== r.value) {
         rows.push({ severity: 'warn', message: (k === 'ev' ? 'Encounter value' : 'Stamina') + ' is ' + c[k] + '; the published formula gives ' + r.value + '.' });
       }
     });
@@ -225,6 +325,12 @@ var DrawSteelCreatureEditor = (function () {
     [/mind|psion|witch|cult/i, 'Humanoid', ['mind-lash', 'psychic-scream']]
   ];
   var VA_SLOTS = ['opener', 'crowd-control', 'ultimate'];
+  // renumberVillains gives each villain action the order its position holds,
+  // so a removal or a move never leaves two of one order. Every path that
+  // changes the list calls it.
+  function renumberVillains(list) {
+    list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+  }
   var DAMAGE_TIER = /^\s*\d+(?:\s+[a-z]+)?\s+damage/i;
 
   function noRole(org) { return org === 'leader' || org === 'solo'; }
@@ -246,11 +352,22 @@ var DrawSteelCreatureEditor = (function () {
     var p = props(t);
     var a = { name: t.name, type: type || p.type || 'action', keywords: listProp(p.keywords).slice(), distance: p.distance || '', target: p.target || '',
       power_roll: '', tier1: p.tier1 || '', tier2: p.tier2 || '', tier3: p.tier3 || '', trigger: p.trigger || '', effect: p.effect || '' };
-    a.auto_damage = DAMAGE_TIER.test(a.tier1);
+    a.auto_damage = [a.tier1, a.tier2, a.tier3].some(function (t) { return DAMAGE_TIER.test(t); });
     return a;
   }
 
   function pick(list, seed) { return list.length ? list[seed % list.length] : null; }
+  // themePick takes the ability whose words best match the creature's theme
+  // words (a ghost's own haunting before a frog plague); with no match at all
+  // it falls back to the plain pick. `seed` steps through the matches.
+  function themePick(list, seed, words) {
+    var scored = list.map(function (t, i) {
+      var h = haystack(t), sc = 0;
+      words.forEach(function (w) { if (h.indexOf(w) >= 0) sc++; });
+      return { t: t, i: i, sc: sc };
+    }).filter(function (r) { return r.sc > 0; }).sort(function (a, b) { return b.sc - a.sc || a.i - b.i; });
+    return scored.length ? scored[seed % scored.length].t : pick(list, seed);
+  }
   function bySlug(lib, s) { for (var i = 0; i < lib.length; i++) if (lib[i].slug === s) return lib[i]; return null; }
   // Abilities made only for some organizations come first: they are what
   // makes a minion read as a minion and a solo as a solo.
@@ -260,14 +377,14 @@ var DrawSteelCreatureEditor = (function () {
   // the main one at the published highest characteristic and none above it.
   // Returns the reason to show, or '' when the level has no published value.
   function setCharacteristics(st) {
-    var S = SB(), c = st.c, hc = st.pr.hc.value, rt = st.pr.role;
+    var S = SB(), c = st.c, hc = st.pr.hc.value, rt = st.pr.role, sp = spreadOf(st.pr);
     if (hc === null) return '';
+    st.spread = {};
+    Object.keys(sp).forEach(function (k) { c[k] = sp[k]; st.spread[k] = true; });
     if (rt && rt.characteristics) {
-      S.CHARS.forEach(function (k) { var v = Number(rt.characteristics[k]) || 0; c[k] = k === rt.primary_stat ? hc : Math.min(v, hc - 1); });
       return 'Characteristics: the published ' + c.role + ' spread, with ' + cap(rt.primary_stat) + ' at ' + S.signed(hc) + ', the published highest for this level.';
     }
-    c.might = hc;
-    return 'Characteristics: Might at ' + S.signed(hc) + ', the published highest for this level. The rest are yours to set.';
+    return 'Characteristics: Might at ' + S.signed(hc) + ', the published highest for this level. Agility, Reason, Intuition and Presence are blank: no published spread covers a ' + (c.organization || 'creature without a role') + ', so set them yourself.';
   }
 
   // generate fills the editor with a new creature. opts: { what, kind, role,
@@ -291,15 +408,28 @@ var DrawSteelCreatureEditor = (function () {
     var c = S.normalize({});
     c.level = level; c.organization = org; c.role = role;
     c.keywords = themes.length ? themes.map(function (t) { return t[1]; }).filter(function (k, i, a) { return a.indexOf(k) === i; }) : ['Humanoid'];
-    st.c = c; st.own = {}; st.editAb = null; st.origin = null; st.aiName = false;
-    st.name = what ? what.replace(/\b\w/g, function (x) { return x.toUpperCase(); }) : (noRole(org) ? (org === 'leader' ? 'Warband Captain' : 'Lone Terror') : cap(role) + ' ' + cap(org));
+    st.c = c; st.own = {}; st.fromBook = {}; st.spread = {}; st.editAb = null; st.origin = null; st.aiName = false;
+    // The page's own name stays: the words only pick the theme. A creature the
+    // director has not named (or that a tool named and they have not touched)
+    // takes the words up to the first comma.
+    if (!String(st.name || '').trim() || st.autoName) {
+      var head = what.split(',')[0].trim();
+      st.name = head ? head.replace(/\b\w/g, function (x) { return x.toUpperCase(); }) : (noRole(org) ? (org === 'leader' ? 'Warband Captain' : 'Lone Terror') : cap(role) + ' ' + cap(org));
+      st.autoName = true;
+    }
+    // Speed and stability are the organization's published defaults.
+    var orgT = S.findBySlug(st.refs.orgs, org), sp = orgT ? Number(orgT.default_speed) : NaN, sb = orgT ? Number(orgT.default_stability) : NaN;
+    if (isFinite(sp) && isFinite(sb) && orgT.default_speed != null && orgT.default_stability != null) {
+      c.speed = sp; c.stability = sb;
+      why.push('Speed ' + sp + ' and stability ' + sb + ': the published defaults for a ' + org + '.');
+    } else why.push('No published speed or stability covers a ' + org + ', so set them yourself.');
     derive(st);
 
-    var hc = st.pr.hc.value;
     var chWhy = setCharacteristics(st);
     if (chWhy) why.push(chWhy);
 
     var usable = (lib || []).filter(function (t) { return fits(t, org, role); });
+    var themeWords = shortWords(what).concat(themes.map(function (t) { return stem(t[1]); }));
     var themed = [];
     themes.forEach(function (t) { t[2].forEach(function (x) { var a = bySlug(usable, x); if (a && themed.indexOf(a) < 0) themed.push(a); }); });
     var isType = function (types) { return function (t) { return types.indexOf(props(t).type) >= 0; }; };
@@ -307,7 +437,7 @@ var DrawSteelCreatureEditor = (function () {
     var sigs = usable.filter(isType(['signature'])).filter(dealsDamage);
     var sigPool = sigs.filter(specific).concat(themed.filter(isType(['signature'])).filter(dealsDamage), sigs.filter(function (t) { return !specific(t); }))
       .filter(function (t, i, a) { return a.indexOf(t) === i; });
-    var sig = pick(sigPool, n);
+    var sig = themePick(sigPool, n, themeWords);
     var chosen = [];
     if (sig) { c.abilities.push(fromLibrary(sig, 'signature')); chosen.push(sig); }
     var extras = isType(['action', 'maneuver', 'triggered', 'trait']);
@@ -318,20 +448,20 @@ var DrawSteelCreatureEditor = (function () {
       else c.abilities.push(fromLibrary(t));
     };
     // A minion stays simple: its signature and at most one thing of its own.
-    add(pick(usable.filter(extras).filter(specific), n));
+    add(themePick(usable.filter(extras).filter(specific), n, themeWords));
     if (org !== 'minion') {
       // Abilities any role can take (a breath weapon) come only from the theme.
       var forRole = function (t) { return !specific(t) && listProp(props(t).roles).length < ROLES.length; };
       var more = themed.filter(extras).concat(usable.filter(extras).filter(forRole))
         .filter(function (t) { return chosen.indexOf(t) < 0; });
-      add(pick(more, n));
+      add(themePick(more, n, themeWords));
     }
     if (noRole(org)) {
       // The narrowest first: a solo's own villain actions before shared ones.
       var vas = usable.filter(isType(['villain-action'])).sort(function (a, b) { return listProp(props(a).organizations).length - listProp(props(b).organizations).length; });
       VA_SLOTS.forEach(function (slot, k) {
         var left = vas.filter(function (t) { return chosen.indexOf(t) < 0; });
-        var v = pick(left, n + k);
+        var v = themePick(left, n + k, themeWords);
         if (!v) return;
         chosen.push(v);
         var a = fromLibrary(v);
@@ -340,16 +470,10 @@ var DrawSteelCreatureEditor = (function () {
         c.villain_actions.push(a);
       });
     }
+    // Every power roll is 2d10 plus the highest characteristic, and every
+    // damage tier the formula covers follows the level, villain actions too.
+    c.abilities.concat(c.villain_actions).forEach(function (a) { if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true; });
     derive(st);
-    // Every power roll is 2d10 plus the published highest characteristic, and
-    // a villain action's damage is set once from the same formula as an
-    // ability's; derive() rescales only abilities.
-    var d = st.pr.damage.value;
-    c.abilities.concat(c.villain_actions).forEach(function (a) { if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc; });
-    c.villain_actions.forEach(function (a) {
-      if (a.auto_damage && d) ['tier1', 'tier2', 'tier3'].forEach(function (k) { a[k] = autoTier(a[k], d[k]); });
-      delete a.auto_damage;
-    });
     if (chosen.length) {
       var names = chosen.map(function (t) { return t.name; }).join(', ');
       why.push('Abilities: ' + names + (/[.!?]$/.test(names) ? '' : '.') + ' Each is made for ' + org + 's' +
@@ -370,6 +494,7 @@ var DrawSteelCreatureEditor = (function () {
 
   // vocabulary is every option the AI may pick from, read from the package's
   // own data files so the guide never drifts from them.
+  var MOVE_WORDS = ['push', 'pull', 'slide', 'shift', 'teleport', 'fly', 'jump', 'burrow', 'climb-or-swim', 'crawl', 'hover', 'walk'];
   function vocabulary(refs, files) {
     var f = files || {};
     var names = function (list, keep) { return (list || []).filter(keep || function () { return true; }).map(function (x) { return x.name; }).filter(Boolean); };
@@ -383,7 +508,10 @@ var DrawSteelCreatureEditor = (function () {
       abilityKeywords: names(f.abilityKeywords, function (k) { return props(k).group !== 'Helper'; }),
       conditions: terms('condition'),
       durations: terms('duration'),
-      movement: terms('movement'),
+      // The glossary's movement topics include rules sections ("when a creature
+      // moves"); the guide offers only the words that name a movement.
+      movement: terms('movement').filter(function (t) { return MOVE_WORDS.indexOf(t) >= 0; }),
+      movementAny: terms('movement'),
       damageTypes: DTYPES.slice()
     };
   }
@@ -425,7 +553,7 @@ var DrawSteelCreatureEditor = (function () {
     if (v.durations.length) lines.push('Mark durations as {@duration name}, one of: ' + v.durations.join(', '));
     if (v.movement.length) lines.push('Mark forced movement as {@movement name}, one of: ' + v.movement.join(', '));
     if (book && book.length) {
-      lines.push('', 'Book abilities you may use (' + book.length + '). Pick them by id in "book_abilities" and do not copy them into "abilities"; Chronicle adds them with damage from the published formulas:');
+      lines.push('', 'Book abilities you may use (' + book.length + '). Pick them by id in "book_abilities" and do not copy them into "abilities"; Chronicle adds them with damage from the published formulas. Choose the organization first: an ability marked "only for" some organizations can be used only if you chose one of them, and the rest suit any:');
       book.forEach(function (t) { lines.push(bookLine(t)); });
     }
     return lines.join('\n');
@@ -437,7 +565,7 @@ var DrawSteelCreatureEditor = (function () {
   // them with filters and the guide offers at most BOOK_LIMITS' largest.
   var BOOK_LIMITS = [10, 25, 50];
   function newBookFilter() { return { kind: '', fit: 'this', group: '', kw: '', cond: '', q: '', lim: 50, off: {} }; }
-  var SHORT_STOP = ['a', 'an', 'the', 'who', 'and', 'that', 'with', 'into', 'onto', 'from', 'their', 'them', 'they', 'this', 'his', 'her', 'its', 'for', 'of', 'to', 'on', 'in', 'at', 'by', 'or', 'as', 'is', 'are', 'be', 'leads'];
+  var SHORT_STOP = ['a', 'an', 'the', 'who', 'and', 'that', 'with', 'into', 'onto', 'from', 'their', 'them', 'they', 'this', 'his', 'her', 'its', 'for', 'of', 'to', 'on', 'in', 'at', 'by', 'or', 'as', 'is', 'are', 'be', 'leads', 'down', 'over', 'away', 'back', 'near', 'while', 'which', 'than', 'more', 'most', 'some', 'also', 'then', 'when', 'each', 'have', 'will', 'what', 'your'];
 
   // bookGroup is the Monsters book chapter an ability came from, read from its
   // source line; '' for the package's own.
@@ -450,13 +578,24 @@ var DrawSteelCreatureEditor = (function () {
     return out;
   }
 
-  function shortWords(text) {
-    return String(text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3 && SHORT_STOP.indexOf(w) < 0; })
-      .map(function (w) { return w.replace(/ies$/, 'y').replace(/s$/, ''); });
+  // stem lowers a word to a form that "drags", "dragged" and "dragging" share.
+  // Words are compared whole by their stems, so "drag" never matches "dragon".
+  function stem(w) {
+    w = String(w).toLowerCase().replace(/ies$/, 'y');
+    if (w.length > 5) w = w.replace(/(?:ing|ed)$/, '').replace(/([^aeiou])\1$/, '$1');
+    return w.replace(/s$/, '');
   }
+  function shortWords(text) {
+    return String(text || '').toLowerCase().split(/[^a-z]+/).filter(function (w) { return w.length > 3 && SHORT_STOP.indexOf(w) < 0; }).map(stem);
+  }
+  // haystack is the ability's words as stems, to match whole words against.
   function haystack(t) {
     var p = props(t);
-    return [t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' ').toLowerCase();
+    return shortWords([t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' '));
+  }
+  function rawHaystack(t) {
+    var p = props(t);
+    return [t.name, p.effect, p.tier1, p.tier3, p.trigger, listProp(p.keywords).join(' '), bookGroup(t)].join(' ').toLowerCase().split(/[^a-z0-9]+/);
   }
 
   // shortPass applies every filter but `skip`, so a chip's count says what
@@ -473,8 +612,9 @@ var DrawSteelCreatureEditor = (function () {
     if (skip !== 'kw' && f.kw && listProp(p.keywords).indexOf(f.kw) < 0) return false;
     if (skip !== 'cond' && f.cond && inflicts(t).indexOf(f.cond) < 0) return false;
     if (f.q) {
-      var h = haystack(t);
-      if (!String(f.q).toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return h.indexOf(w) >= 0; })) return false;
+      // Typed search matches the start of a word, so a half-typed word still finds things.
+      var h = rawHaystack(t);
+      if (!String(f.q).toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return h.some(function (x) { return x.indexOf(w) === 0; }); })) return false;
     }
     return true;
   }
@@ -503,30 +643,81 @@ var DrawSteelCreatureEditor = (function () {
   // bookLine is one shortlisted ability as the guide lists it.
   function bookLine(t) {
     var p = props(t), text = plainRefs(p.trigger ? 'Trigger: ' + p.trigger + '. ' + (p.effect || p.tier3 || '') : (p.effect || p.tier3 || p.tier1 || ''));
-    return '- ' + [t.slug, t.name, p.type, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
+    var orgs = listProp(p.organizations), only = specific(t) && orgs.length ? 'only for ' + orgs.join('/') : '';
+    return '- ' + [t.slug, t.name, p.type, only, listProp(p.keywords).join(', '), p.distance, text.slice(0, 160)].filter(Boolean).join(' | ');
   }
 
-  // readAnswer finds the JSON in a pasted answer. An answer still being
-  // pasted is read up to its last complete value, so the editor fills in as
-  // it arrives. Returns { obj, done } or { err, wait }.
-  function readAnswer(text) {
-    var s = String(text || '').replace(/```(?:json)?/gi, ''), a = s.indexOf('{');
-    if (a < 0) return { err: 'No creature in it yet. The answer should hold a { … } block.' };
-    s = s.slice(a);
-    var b = s.lastIndexOf('}');
-    if (b >= 0) { try { return { obj: JSON.parse(s.slice(0, b + 1)), done: true }; } catch (e) { /* still arriving, or broken */ } }
-    var stack = [], inS = false, bs = false, cut = -1, snap = null;
-    for (var i = 0; i < s.length; i++) {
+  // scanObject reads one { … } block starting at text[start], mending what
+  // chat apps do to JSON: curly quotes used as quotes, trailing commas and
+  // // or /* */ comments, all only outside strings. Returns the mended text,
+  // whether the block closed, and where the last comma sits (for a block
+  // still arriving).
+  var CURLY = { '“': 1, '”': 1 };
+  function scanObject(s, start) {
+    var out = '', stack = [], inS = false, open = '', bs = false, cut = -1, snap = null;
+    for (var i = start; i < s.length; i++) {
       var ch = s[i];
-      if (inS) { if (bs) bs = false; else if (ch === '\\') bs = true; else if (ch === '"') inS = false; continue; }
-      if (ch === '"') inS = true;
-      else if (ch === '{' || ch === '[') stack.push(ch);
-      else if (ch === '}' || ch === ']') stack.pop();
-      else if (ch === ',' && stack.length) { cut = i; snap = stack.slice(); }
+      if (inS) {
+        if (bs) { bs = false; out += ch; continue; }
+        if (ch === '\\') { bs = true; out += ch; continue; }
+        if (ch === '"' || (open === 'curly' && CURLY[ch])) { inS = false; out += '"'; continue; }
+        out += ch; continue;
+      }
+      if (ch === '"' || CURLY[ch]) { inS = true; open = ch === '"' ? 'straight' : 'curly'; out += '"'; continue; }
+      if (ch === '/' && s[i + 1] === '/') { while (i < s.length && s[i] !== '\n') i++; out += '\n'; continue; }
+      if (ch === '/' && s[i + 1] === '*') { var e = s.indexOf('*/', i + 2); if (e < 0) { i = s.length; break; } i = e + 1; continue; }
+      if (ch === '{' || ch === '[') { stack.push(ch); out += ch; continue; }
+      if (ch === '}' || ch === ']') {
+        out = out.replace(/,(\s*)$/, '$1');
+        stack.pop(); out += ch;
+        if (!stack.length) return { text: out, closed: true, end: i + 1 };
+        continue;
+      }
+      if (ch === ',' && stack.length) { cut = out.length; snap = stack.slice(); }
+      out += ch;
     }
-    if (cut < 0) return { err: 'Reading…', wait: true };
-    try { return { obj: JSON.parse(s.slice(0, cut) + snap.reverse().map(function (x) { return x === '{' ? '}' : ']'; }).join('')), done: false }; }
-    catch (e) { return { err: 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' }; }
+    return { text: out, closed: false, cut: cut, snap: snap, inString: inS };
+  }
+
+  var CUT_OFF = 'The answer stops before its closing brace, so it looks cut off. Ask the AI to continue or send it again, then paste all of it.';
+
+  // parseProblem says in plain words where a block that will not read goes
+  // wrong; the position comes from the parser's own message when it has one.
+  function parseProblem(mended, e) {
+    var m = /position (\d+)/.exec(String(e && e.message)), near = '';
+    if (m) near = mended.slice(Math.max(0, Number(m[1]) - 20), Number(m[1]) + 20).replace(/\s+/g, ' ').trim();
+    return 'The answer has a mistake the editor can’t mend' + (near ? ' near “' + near + '”' : '') + '. Ask the AI to fix its JSON, or to send it again as plain JSON.';
+  }
+
+  // readAnswer finds the JSON in a pasted answer: the first { that opens a
+  // block that reads as JSON, so braces in the AI's chat around it do not
+  // matter. An answer still being pasted is read up to its last complete
+  // value, so the editor fills in as it arrives. Returns { obj, done } or
+  // { err, wait }; `wait` means more may still arrive.
+  function readAnswer(text) {
+    var s = String(text || ''), from = s.indexOf('{');
+    if (from < 0) return { err: 'No creature in it yet. The answer should hold a { … } block.' };
+    var bad = '', partial = null;
+    while (from >= 0) {
+      var r = scanObject(s, from);
+      if (r.closed) {
+        try { return { obj: JSON.parse(r.text), done: true }; }
+        catch (e) {
+          if (!bad) bad = parseProblem(r.text, e);
+          // Skip the block that failed whole, so its inner braces are not mistaken for the answer.
+          from = s.indexOf('{', r.end);
+          continue;
+        }
+      }
+      if (!partial) partial = r;
+      break;
+    }
+    if (partial) {
+      if (partial.cut < 0) return { err: 'Reading…', wait: true };
+      try { return { obj: JSON.parse(partial.text.slice(0, partial.cut) + partial.snap.reverse().map(function (x) { return x === '{' ? '}' : ']'; }).join('')), done: false }; }
+      catch (e) { return { err: 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' }; }
+    }
+    return { err: bad || 'That isn’t a creature the editor can read. Ask the AI for only the JSON, then paste it again.' };
   }
 
   function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max || 2000) : ''; }
@@ -535,13 +726,35 @@ var DrawSteelCreatureEditor = (function () {
   // keepKnownRefs turns reference markup the glossary doesn't know into its
   // plain words, so a made-up term never becomes a broken hover card.
   function keepKnownRefs(text, v) {
-    var known = { condition: v.conditions, duration: v.durations, movement: v.movement };
+    var known = { condition: v.conditions, duration: v.durations, movement: v.movementAny || v.movement };
     return String(text || '').replace(/\{@(\w+) ([^}|]+)(\|[^}]+)?\}/g, function (m, cat, term, shown) {
       var list = known[cat], t = String(term).trim().toLowerCase().replace(/\s+/g, '-');
+      // The guide offers only conditions, durations and movement, so any other marker is plain words.
+      if (!(cat in known)) return shown ? shown.slice(1) : term;
       if (!list || !list.length) return m;
       if (list.indexOf(t) >= 0) return '{@' + cat + ' ' + t + (shown || '') + '}';
       return shown ? shown.slice(1) : term;
     });
+  }
+
+  // withoutDamage takes the tier's own damage number out of its text ("6 damage",
+  // "Deals 9 damage and", "5 + 2 fire damage", "2d10 damage"), leaving potency,
+  // forced movement and conditions as written. The formula's figure goes in front.
+  // Damage that happens later ("takes 2 damage at the start of each of its
+  // turns") is a separate effect no formula covers, so its words stay whole.
+  var DAMAGE_NUM = /(?:\b(?:deals?|takes?|taking|suffers?)\s+)?(?:\d+d\d+|\d+)(?:\s*[+\-]\s*(?:\d+d\d+|\d+))*\s+(?:[a-z]+\s+)?damage\b(?:\s+of\s+[a-z]+)?/gi;
+  var LATER_DAMAGE = /^\s*(?:at the (?:start|end)|each|every|for each|whenever|when|while|until|per|if)\b/i;
+  function withoutDamage(text) {
+    var t = String(text || ''), hit = false;
+    var out = t.replace(DAMAGE_NUM, function (m, at) {
+      if (LATER_DAMAGE.test(t.slice(at + m.length))) return m;
+      hit = true;
+      return ' ';
+    });
+    if (!hit) return t;
+    return out.replace(/\s+/g, ' ')
+      .replace(/([,;])\s*(?:[,;]\s*)+/g, '$1 ')
+      .replace(/^[\s,;.]*(?:(?:and|plus)\s+)?/i, '').replace(/[\s,;]*(?:\b(?:and|plus|deals?|takes?)\b[\s,;]*)?$/i, '').trim();
   }
 
   // fromAI fills the editor from the AI's answer and returns the notes on
@@ -569,7 +782,16 @@ var DrawSteelCreatureEditor = (function () {
       if (noRole(c.organization)) notes.push('The AI gave a ' + c.organization + ' the role “' + o.role + '”. ' + cap(c.organization) + 's have no role in the published tables, so it was left off.');
       else if (v.roles.indexOf(rl) >= 0) c.role = rl; else notes.push('“' + o.role + '” is not a Draw Steel role, so it has none yet.');
     }
-    var kws = strList(o.keywords);
+    // Keywords the guide's lists don't hold are dropped and named, as the other unknowns are.
+    function known(list, allowed, what) {
+      if (!allowed || !allowed.length) return list;
+      var lc = {}, out = [], bad = [];
+      allowed.forEach(function (k) { lc[String(k).toLowerCase()] = k; });
+      list.forEach(function (k) { var h = lc[String(k).toLowerCase()]; if (h) { if (out.indexOf(h) < 0) out.push(h); } else if (bad.length < 5) bad.push(k); });
+      if (bad.length) notes.push(what + ' keywords that are not in the lists were left off: ' + bad.join(', ') + '.');
+      return out;
+    }
+    var kws = known(strList(o.keywords), v.creatureKeywords, 'Creature');
     if (kws.length) c.keywords = kws;
     if (o.size != null) { if (v.sizes.indexOf(String(o.size)) >= 0) c.size = String(o.size); else notes.push('Size “' + o.size + '” is not one Draw Steel uses, so it stays ' + c.size + '.'); }
     if (o.speed != null && isFinite(Number(o.speed))) c.speed = Math.max(0, Math.min(20, Math.round(Number(o.speed))));
@@ -580,7 +802,7 @@ var DrawSteelCreatureEditor = (function () {
     if (chWhy) notes.push(chWhy);
     derive(st);
 
-    var d = st.pr.damage.value, hc = st.pr.hc.value, droppedDamage = false;
+    var d = st.pr.damage.value, hc = st.pr.hc.value, droppedDamage = [];
     // An ability's tiers: the formula's damage (in the AI's damage type) and
     // whatever else the AI said happens on that tier, minus any number of its own.
     function tiers(a, src, dealsDamage) {
@@ -589,19 +811,20 @@ var DrawSteelCreatureEditor = (function () {
       if (dtype && DTYPES.indexOf(dtype) < 0) { notes.push('“' + src.damage_type + '” is not a Draw Steel damage type, so ' + a.name + ' deals untyped damage.'); dtype = ''; }
       ['tier1', 'tier2', 'tier3'].forEach(function (k, i) {
         var extra = keepKnownRefs(str(te[i], 500), v);
-        if (/^\s*\d+(\s+[a-z]+)?\s+damage/i.test(extra)) { droppedDamage = true; extra = extra.replace(/^\s*\d+(\s+[a-z]+)?\s+damage\s*;?\s*/i, ''); }
+        var bare = withoutDamage(extra);
+        if (bare !== extra) { droppedDamage.push(a.name + ' tier ' + (i + 1)); extra = bare; }
         if (dealsDamage && d) {
           var add = (isStrike(a) && hc !== null) ? hc : 0;
           a[k] = (d[k] + add) + (dtype ? ' ' + dtype : '') + ' damage' + (extra ? '; ' + extra : '');
         } else a[k] = extra;
       });
       a.auto_damage = !!(dealsDamage && d);
-      if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc;
+      if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true;
     }
     var sg = o.signature;
     if (sg && typeof sg === 'object' && str(sg.name)) {
       var ranged = /ranged/i.test(str(sg.distance) + ' ' + str(sg.kind));
-      var a = { name: str(sg.name, 200), type: 'signature', keywords: strList(sg.keywords), distance: str(sg.distance, 80) || (ranged ? 'Ranged 10' : 'Melee 1'), target: str(sg.target, 120) || 'One creature or object', trigger: '', effect: keepKnownRefs(str(sg.effect), v), from_ai: true };
+      var a = { name: str(sg.name, 200), type: 'signature', keywords: known(strList(sg.keywords), v.abilityKeywords, str(sg.name, 60) + '’s ability'), distance: str(sg.distance, 80) || (ranged ? 'Ranged 10' : 'Melee 1'), target: str(sg.target, 120) || 'One creature or object', trigger: '', effect: keepKnownRefs(str(sg.effect), v), from_ai: true };
       if (!a.keywords.length) a.keywords = ranged ? ['Ranged', 'Strike', 'Weapon'] : ['Melee', 'Strike', 'Weapon'];
       tiers(a, sg, true);
       c.abilities.push(a);
@@ -609,8 +832,8 @@ var DrawSteelCreatureEditor = (function () {
     if (Array.isArray(o.abilities)) {
       o.abilities.filter(function (x) { return x && str(x.name); }).slice(0, 20).forEach(function (x) {
         var t = /trigger/i.test(str(x.type)) ? 'triggered' : /maneuver/i.test(str(x.type)) ? 'maneuver' : 'action';
-        var a = { name: str(x.name, 200), type: t, keywords: strList(x.keywords), distance: str(x.distance, 80), target: str(x.target, 120), trigger: keepKnownRefs(str(x.trigger), v), effect: keepKnownRefs(str(x.effect), v), from_ai: true };
-        tiers(a, x, x.deals_damage === true);
+        var a = { name: str(x.name, 200), type: t, keywords: known(strList(x.keywords), v.abilityKeywords, str(x.name, 60) + '’s ability'), distance: str(x.distance, 80), target: str(x.target, 120), trigger: keepKnownRefs(str(x.trigger), v), effect: keepKnownRefs(str(x.effect), v), from_ai: true };
+        tiers(a, x, x.deals_damage === true || /^true$/i.test(String(x.deals_damage).trim()));
         c.abilities.push(a);
       });
     }
@@ -623,7 +846,7 @@ var DrawSteelCreatureEditor = (function () {
     }
     derive(st);
     bookPicks(st, o.book_abilities, lib, notes);
-    if (droppedDamage) notes.push('The AI put damage numbers in its abilities. They were dropped; the damage comes from the published formula.');
+    if (droppedDamage.length) notes.push('The AI put damage numbers in its abilities. They were dropped from ' + droppedDamage.slice(0, 8).join(', ') + (droppedDamage.length > 8 ? ' and ' + (droppedDamage.length - 8) + ' more' : '') + '; the damage comes from the published formula.');
     // Numbers the formulas own: say what the AI said and what is used instead.
     [['ev', 'Encounter value', ['ev', 'encounter_value']], ['stamina', 'Stamina', ['stamina']], ['free_strike', 'Free strike', ['free_strike']]].forEach(function (f) {
       var said = null;
@@ -634,7 +857,7 @@ var DrawSteelCreatureEditor = (function () {
     });
     if (o.characteristics != null) notes.push('The AI’s characteristics were dropped; they come from the published tables above.');
     derive(st);
-    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save' + (Array.isArray(o.book_abilities) && o.book_abilities.length ? ', and the book abilities it picked say so' : '') + '. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas’.';
+    st.origin = 'From the AI: its name, keywords, traits and abilities are marked until you save' + (Array.isArray(o.book_abilities) && o.book_abilities.length ? ', and the book abilities it picked say so' : '') + '. Check them first, distances and push or shift amounts included. Encounter value, Stamina, free strike, characteristics and damage are the published formulas.';
     return notes;
   }
 
@@ -648,7 +871,7 @@ var DrawSteelCreatureEditor = (function () {
     ids.slice(0, 20).forEach(function (id) {
       var t = typeof id === 'string' ? bySlug(lib || [], id.trim()) : null;
       if (!t) { if (unknown.length < 5) unknown.push(String(id).slice(0, 60)); return; }
-      if (!usable(t, c)) { notes.push(t.name + ' is made for ' + listProp(props(t).organizations).map(plural).join(', ') + ', not a ' + c.organization + ', so it was left off.'); return; }
+      if (!usable(t, c)) { notes.push(refusal(t, c)); return; }
       var lists = [c.abilities, c.traits, c.villain_actions], before = lists.map(function (l) { return l.length; });
       var res = addFromLibrary(st, t, {});
       if (!res.undo) { notes.push(res.message); return; }
@@ -691,44 +914,50 @@ var DrawSteelCreatureEditor = (function () {
   // aiHtml is the Build with an AI panel. It is drawn once and kept across
   // redraws, so what the director typed and pasted stays put.
   function aiHtml() {
-    return '<div class="sbe-fold-in"><section class="sbe-gen" aria-labelledby="sbe-ai-t"><div class="sbe-gen-h"><h4 id="sbe-ai-t">Build with an AI</h4>' +
-      '<span class="sbe-small sbe-dim">Works with any AI chat. Nothing runs inside Chronicle.</span><span class="sbe-sp"></span>' +
-      '<button type="button" class="btn-ghost btn-sm" data-sbe-act="ai">Close</button></div>' +
+    return '<div class="sbe-gen"><p class="sbe-hint">Works with any AI chat. Nothing runs inside Chronicle.</p>' +
       '<ol class="sbe-steps"><li><label class="sbe-f"><span class="sbe-lbl">1 · Describe it</span>' +
       '<textarea class="input" rows="2" id="sbe-ai-desc" data-sbe-ai="desc" maxlength="1000" placeholder="A goblin spider rider who leads a raiding band and webs heroes to the walls"></textarea></label>' +
       '<section class="sbe-bk" aria-labelledby="sbe-ai-bk-t"><p class="sbe-lbl" id="sbe-ai-bk-t">Book abilities the AI may pick</p>' +
-      '<p class="sbe-small sbe-dim">The AI picks these by id, and the editor adds them with damage from the formulas, as Add abilities does.</p>' +
+      '<p class="sbe-hint">The AI picks these by id, and the editor adds them with damage from the formulas, as Add abilities does.</p>' +
       '<input class="input" type="search" id="sbe-ai-bkq" data-sbe-bkq placeholder="Words to match, as well as your description" aria-label="Search the book’s abilities" autocomplete="off">' +
       '<div class="sbe-chips" id="sbe-ai-bkf"></div>' +
       '<div class="sbe-bk-row"><p class="sbe-small" id="sbe-ai-bkn" role="status" aria-live="polite">Reading the ability library…</p><span class="sbe-sp"></span>' +
       '<span class="sbe-small sbe-dim">Up to</span><span class="sbe-bk-lim" role="group" aria-label="How many go in the guide">' +
-      BOOK_LIMITS.map(function (n) { return '<button type="button" data-sbe-bkl="' + n + '" aria-pressed="' + (n === 50) + '">' + n + '</button>'; }).join('') + '</span>' +
-      '<button type="button" class="sbe-link" data-sbe-bkx>Clear filters</button></div>' +
+      BOOK_LIMITS.map(function (n) { return '<button type="button" class="sbe-fchip" data-sbe-bkl="' + n + '" aria-pressed="' + (n === 50) + '">' + chipWord(n) + '</button>'; }).join('') + '</span>' +
+      '<button type="button" class="sbe-word" data-sbe-bkx>Clear filters</button></div>' +
       '<div class="sbe-bk-list" id="sbe-ai-bkl" aria-label="The shortlist"></div></section>' +
-      '<div class="sbe-gen-go"><button type="button" class="btn-primary btn-sm" id="sbe-ai-copy" data-sbe-act="ai-copy" disabled>Reading the option lists…</button>' +
+      '<div class="sbe-gen-go"><button type="button" class="btn-secondary btn-sm" id="sbe-ai-copy" data-sbe-act="ai-copy" disabled>Reading the option lists…</button>' +
       '<span class="sbe-small sbe-dim" id="sbe-ai-copied" role="status">Paste it into ChatGPT, Claude or any AI chat.</span></div>' +
-      '<details class="sbe-peek"><summary>See what the guide says</summary><textarea class="input" rows="9" id="sbe-ai-guide" readonly aria-label="The guide for the AI"></textarea></details></li>' +
+      '<details class="sbe-peek"><summary class="sbe-word">See what the guide says</summary><textarea class="input" rows="9" id="sbe-ai-guide" readonly aria-label="The guide for the AI"></textarea></details></li>' +
       '<li><label class="sbe-f"><span class="sbe-lbl">2 · Paste the AI’s answer</span>' +
       '<textarea class="input" rows="5" id="sbe-ai-ans" data-sbe-ai="ans" placeholder="Paste the whole answer. The editor fills in as it is read."></textarea></label>' +
-      '<div class="sbe-gen-go"><button type="button" class="btn-secondary btn-sm" id="sbe-ai-ex" data-sbe-act="ai-example">Try an example answer</button>' +
-      '<span class="sbe-small" id="sbe-ai-status" role="status" aria-live="polite"></span></div></li></ol>' +
-      '<div id="sbe-ai-notes"></div></section></div>';
+      '<div class="sbe-gen-go"><button type="button" class="sbe-word" id="sbe-ai-ex" data-sbe-act="ai-example">Try an example answer</button>' +
+      '<span class="sbe-small" id="sbe-ai-status" role="status" aria-live="polite"></span><span class="sbe-sp"></span>' +
+      '<button type="button" class="sbe-word" data-sbe-act="ai">Close</button></div></li></ol>' +
+      '<div id="sbe-ai-notes"></div></div>';
+  }
+
+  // chipWord is a chip's word with room kept for its chosen, heavier weight,
+  // so choosing a chip never moves the chips beside it.
+  function chipWord(text) {
+    var t = esc(String(text));
+    return '<span class="sbe-cw" data-w="' + t + '">' + t + '</span>';
   }
 
   // bookFiltersHtml draws the shortlist's filters; each choice shows how
   // many abilities picking it would leave.
   function bookFiltersHtml(st, lib, f) {
     function row(label, key, list) {
-      return '<div class="sbe-chip-row" role="group" aria-label="' + label + '"><span class="sbe-bk-k">' + label + '</span>' + list.map(function (x) {
-        return '<button type="button" class="sbe-fchip" data-sbe-bkf="' + key + '" data-sbe-bkv="' + esc(x[0]) + '" aria-pressed="' + ((f[key] || (key === 'fit' ? 'this' : '')) === x[0]) + '">' + esc(x[1]) +
+      return '<div class="sbe-chip-row" role="group" aria-label="' + label + '"><span class="sbe-bk-k">' + label + '</span><span class="sbe-chip-set">' + list.map(function (x) {
+        return '<button type="button" class="sbe-fchip" data-sbe-bkf="' + key + '" data-sbe-bkv="' + esc(x[0]) + '" aria-pressed="' + ((f[key] || (key === 'fit' ? 'this' : '')) === x[0]) + '">' + chipWord(x[1]) +
           (x[2] != null ? ' <span class="sbe-dim">' + x[2] + '</span>' : '') + '</button>';
-      }).join('') + '</div>';
+      }).join('') + '</span></div>';
     }
     var c = st.c, kc = shortCounts(st, lib, f, 'kind', function (t) { return [props(t).type]; });
     var wc = shortCounts(st, lib, f, 'kw', function (t) { return listProp(props(t).keywords); });
     var cc = shortCounts(st, lib, f, 'cond', inflicts);
     var gc = shortCounts(st, lib, f, 'group', function (t) { return [bookGroup(t)]; });
-    var me = 'This creature' + (c.organization ? ' (' + c.organization + (c.role && !noRole(c.organization) ? ' ' + c.role : '') + ')' : '');
+    var me = 'This creature' + (c.organization ? ' (' + c.organization + (c.role && !noRole(c.organization) ? ' ' + c.role : '') + ')' : ' (organization not chosen yet)');
     return row('Kind', 'kind', [['', 'Any']].concat(LIB_KINDS.map(function (k) { return [k[0], k[1], kc[k[0]] || 0]; }))) +
       row('Made for', 'fit', [['this', me], ['any', 'Any creature']].concat(ORGS.filter(function (o) { return o !== 'swarm'; }).map(function (o) { return [o, 'For ' + plural(o)]; }))) +
       '<div class="sbe-chip-row"><label class="sbe-bk-k" for="sbe-ai-bkg">Chapter</label><select class="input sbe-bk-sel" id="sbe-ai-bkg" data-sbe-bkg><option value="">Every chapter</option>' +
@@ -781,6 +1010,16 @@ var DrawSteelCreatureEditor = (function () {
   ];
 
   function plural(o) { return o + 's'; }
+  // refusal names what the ability is made for and what this creature is. A
+  // role mismatch lists roles, an organization mismatch lists organizations.
+  function refusal(t, c) {
+    var made, is;
+    if (!c.organization) return t.name + ' is a villain action, which only a leader or solo takes, so it was left off.';
+    if (c.organization !== 'swarm' && fits(t, c.organization, null)) { made = listProp(props(t).roles); is = c.role; }
+    else { made = listProp(props(t).organizations).map(plural); is = c.organization; }
+    return t.name + ' is made for ' + made.join(', ') + ', not ' + article(is) + ' ' + is + ', so it was left off.';
+  }
+  function article(w) { return /^[aeiou]/i.test(w) ? 'an' : 'a'; }
 
   // usable says whether this creature can take a library ability. With no
   // organization chosen yet, anything but a villain action is open to it.
@@ -822,17 +1061,19 @@ var DrawSteelCreatureEditor = (function () {
   // from the published formula for its level and kind, then the chosen damage
   // type and condition.
   function shapeAbility(st, t, opt) {
-    var o = opt || {}, a = fromLibrary(t), pr = st.pr, d = pr.damage.value, hc = pr.hc.value;
-    if (a.auto_damage && d) {
-      var add = (isStrike(a) && hc !== null) ? hc : 0;
-      ['tier1', 'tier2', 'tier3'].forEach(function (k) { a[k] = autoTier(a[k], d[k] + add); });
-    }
-    if ((a.tier1 || a.tier2 || a.tier3) && hc !== null) a.power_roll = '2d10 + ' + hc;
+    var o = opt || {}, a = fromLibrary(t), pr = st.pr, d = pr.damage.value, hc = topCharacteristic(st);
+    if (a.auto_damage && d) applyDamage(a, d, (isStrike(a) && hc !== null) ? hc : 0);
+    if (a.tier1 || a.tier2 || a.tier3) a.auto_roll = true;
     if (o.dtype && DTYPES.indexOf(o.dtype) >= 0 && a.auto_damage) {
       ['tier1', 'tier2', 'tier3'].forEach(function (k) { if (a[k]) a[k] = String(a[k]).replace(/^(\s*\d+)(?:\s+[a-z]+)?(\s+damage)/i, '$1 ' + o.dtype + '$2'); });
     }
     var r = RIDERS.filter(function (x) { return x[0] && x[0] === o.rider; })[0];
-    if (r && a.tier1) r[2].forEach(function (k) { a[k] = a[k] ? a[k] + '; ' + r[1] : r[1]; });
+    // A condition the tier already inflicts is not added a second time.
+    if (r && a.tier1) r[2].forEach(function (k) {
+      var cm = /\{@condition ([\w-]+)/.exec(r[1]);
+      if (a[k] && cm && new RegExp('\\b' + cm[1] + '\\b', 'i').test(String(a[k]))) return;
+      a[k] = a[k] ? a[k] + '; ' + r[1] : r[1];
+    });
     return a;
   }
 
@@ -855,10 +1096,9 @@ var DrawSteelCreatureEditor = (function () {
       c.traits.push({ name: t.name, description: p.effect || t.description || '' });
       msg = 'Added the trait ' + t.name + '.';
     } else if (p.type === 'villain-action') {
-      a.order = VA_SLOTS[c.villain_actions.length];
       delete a.type;
-      delete a.auto_damage;
       c.villain_actions.push(a);
+      renumberVillains(c.villain_actions);
       msg = t.name + ' is villain action ' + c.villain_actions.length + '.';
     } else if (a.type === 'signature' && c.abilities.some(function (x) { return x.type === 'signature'; })) {
       a.type = 'action';
@@ -885,10 +1125,14 @@ var DrawSteelCreatureEditor = (function () {
     var list = kind === 'a' ? st.c.abilities : kind === 'v' ? st.c.villain_actions : st.c.traits;
     if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return false;
     list.splice(to, 0, list.splice(from, 1)[0]);
-    if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+    if (kind === 'v') renumberVillains(list);
     st.editAb = null;
     return true;
   }
+
+  // Fields Foundry sends back to the page (the creature preset's
+  // foundry_pull_fields); the editor never writes them.
+  var FOUNDRY_OWNED = ['stamina_current', 'conditions_json'];
 
   // toSave is what saving writes: the entity's fields and the name.
   function toSave(st) {
@@ -896,11 +1140,13 @@ var DrawSteelCreatureEditor = (function () {
     var c = clone(st.c);
     c.abilities = c.abilities.slice(0, 50);
     c.traits = (c.traits || []).filter(function (t) { return t.name || t.description; });
-    c.level = Math.max(1, Math.min(20, Number(c.level) || 1));
+    c.level = clampLevel(c.level);
     // "From the AI" marks the editor's own review state, never the page.
     c.abilities.concat(c.traits, c.villain_actions || []).forEach(function (a) { delete a.from_ai; delete a.from_book; });
     var fields = {}, own = S.toFields(c);
-    Object.keys(st.base || {}).forEach(function (k) { fields[k] = st.base[k]; });
+    // Foundry's fields are the page's to keep: the copy read when the editor
+    // opened may be older than what Foundry sent since.
+    Object.keys(st.base || {}).forEach(function (k) { if (FOUNDRY_OWNED.indexOf(k) < 0) fields[k] = st.base[k]; });
     Object.keys(own).forEach(function (k) { fields[k] = own[k]; });
     return { name: String(st.name || '').trim().slice(0, 200), fields: fields };
   }
@@ -927,21 +1173,28 @@ var DrawSteelCreatureEditor = (function () {
 
   // chip says where a figure came from, under its box.
   function chip(st, key, r, what) {
+    if (st.own[key] && st.fromBook[key]) {
+      var bk = (r && r.sourced && r.value !== null && r.value !== r.book) ? ' (the formula gives ' + r.value + ')' : '';
+      return '<span class="sbe-chip is-pub" data-sbe-chip="' + key + '"><i class="fa-solid fa-book" aria-hidden="true"></i> From the Monsters book' + esc(bk) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
+    }
     if (st.own[key]) {
       var also = (r && r.sourced && r.value !== null) ? ' (the formula gives ' + r.value + ')' : '';
-      return '<span class="sbe-chip is-own">Changed by you' + esc(also) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
+      return '<span class="sbe-chip is-own" data-sbe-chip="' + key + '">Changed by you' + esc(also) + ' · <button type="button" class="sbe-link" data-sbe-reset="' + key + '">Use the formula</button></span>';
     }
     if (r && r.sourced && r.value !== null) {
-      return '<span class="sbe-chip is-pub" title="' + esc(r.source || '') + '"><i class="fa-solid fa-check" aria-hidden="true"></i> Published formula</span>';
+      return '<span class="sbe-chip is-pub" data-sbe-chip="' + key + '" title="' + esc(r.source || '') + '"><i class="fa-solid fa-check" aria-hidden="true"></i> Published formula</span>';
     }
-    return '<span class="sbe-chip is-none"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published ' + esc(what) + ' for this creature. Set it yourself.</span>';
+    var c = st.c, ask = !c.organization ? 'an organization'
+      : (!noRole(c.organization) && !c.role && (key === 'stamina' || key === 'winded')) ? 'a role' : '';
+    if (ask) return '<span class="sbe-chip is-wait" data-sbe-chip="' + key + '">Pick ' + ask + ' and the formula fills this in.</span>';
+    return '<span class="sbe-chip is-none" data-sbe-chip="' + key + '"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> No published ' + esc(what) + ' for this creature. Set it yourself.</span>';
   }
 
   function figureBox(st, key, label, r, what) {
     var v = key === 'free_strike' ? SB().freeStrikeNumber(st.c.free_strike) : st.c[key];
     if (key === 'free_strike' && v === null) v = st.c.free_strike;
     return '<label class="sbe-f"><span class="sbe-lbl">' + label + '</span>' +
-      '<input class="input sbe-num" id="sbe-fig-' + key + '" data-sbe-fig="' + key + '" inputmode="numeric" value="' + esc(v == null ? '' : v) + '" placeholder="—">' +
+      '<span class="sbe-box"><input class="input sbe-num" id="sbe-fig-' + key + '" data-sbe-fig="' + key + '" inputmode="numeric" value="' + esc(v == null ? '' : v) + '" placeholder="—"></span>' +
       chip(st, key, r, what) + '</label>';
   }
 
@@ -1010,22 +1263,56 @@ var DrawSteelCreatureEditor = (function () {
     }).join('');
   }
 
-  // The editor draws in two parts around the Build with an AI panel, which
-  // is kept across redraws (see aiHtml).
-  function editorHtml(st, ui) { return editorHead(st, ui) + editorBody(st, ui); }
+  // The editor is a bar, the row of ways to start, the panel hanging under
+  // the open way, and the form. mount draws each into its own place, because
+  // the With an AI panel is kept across redraws (see aiHtml).
+  function editorHtml(st, ui) {
+    return barHtml(st, ui) + waysHtml(ui) +
+      '<div class="sbe-hang' + (openWay(ui) ? ' is-open' : '') + '">' + panelHtml('gen', ui, genHtml(st, ui)) + panelHtml('from', ui, '') + panelHtml('blank', ui, blankHtml()) + '</div>' +
+      '<div class="sbe-part sbe-form">' + editorBody(st, ui) + '</div>';
+  }
 
-  function editorHead(st, ui) {
-    return '<div class="sbe-bar"><span class="sbe-bar-t"><i class="fa-solid fa-pen" aria-hidden="true"></i> ' + esc(ui.heading || (ui.isNew ? 'New stat block' : 'Editing stat block')) + '</span>' +
+  function barHtml(st, ui) {
+    return '<div class="sbe-bar"><span class="sbe-bar-t">' + esc(ui.heading || (ui.isNew ? 'New stat block' : 'Editing stat block')) + '</span>' +
       '<span class="sbe-sp"></span>' +
       (ui.onClose ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="cancel">Cancel</button>' : '') +
-      '<button type="button" class="btn-primary btn-sm" data-sbe-act="save"' + (ui.saving ? ' disabled' : '') + '>' + (ui.saving ? 'Saving…' : 'Save') + '</button></div>' +
-      startHtml(st, ui);
+      '<button type="button" class="btn-primary btn-sm" data-sbe-act="save"' + (ui.saving ? ' disabled' : '') + '>' + (ui.saving ? 'Saving…' : 'Save') + '</button></div>';
+  }
+
+  // The ways to start: panel name, the tab's words, its id, and the action
+  // its click sends. Blank is last because it clears.
+  var WAYS = [['gen', 'Generate', 'sbe-gen-open', 'gen'], ['ai', 'With an AI', 'sbe-ai-open', 'ai'], ['from', 'From a creature', 'sbe-from-open', 'start'], ['blank', 'Blank', 'sbe-blank-open', 'blank-open']];
+  function wayOf(key, col) { for (var i = 0; i < WAYS.length; i++) if (WAYS[i][col] === key) return WAYS[i]; return null; }
+  function openWay(ui) {
+    for (var i = 0; i < WAYS.length; i++) if (ui[WAYS[i][0]] && ui[WAYS[i][0]].open) return WAYS[i][0];
+    return '';
+  }
+
+  // waysHtml is the tab row. Tab reaches the open tab, or the first when none
+  // is open; the arrow keys reach the rest.
+  function waysHtml(ui) {
+    var open = openWay(ui);
+    return '<div class="sbe-ways" role="tablist" aria-label="Ways to start">' + WAYS.map(function (w, i) {
+      var on = w[0] === open;
+      return '<button type="button" role="tab" class="sbe-way" id="' + w[2] + '" data-sbe-act="' + w[3] + '" aria-selected="' + on + '" aria-controls="sbe-' + w[0] + '" tabindex="' + (on || (!open && !i) ? '0' : '-1') + '">' + w[1] + '</button>';
+    }).join('') + '<span class="sbe-ind" aria-hidden="true"><i class="sbe-ind-s"></i><i class="sbe-ind-u"></i></span></div>';
+  }
+
+  function panelHtml(name, ui, inner) {
+    var on = !!(ui[name] && ui[name].open);
+    return '<div class="sbe-pan" id="sbe-' + name + '" role="tabpanel" aria-labelledby="' + wayOf(name, 0)[2] + '"' + (on ? '' : ' hidden inert') + '>' + inner + '</div>';
+  }
+
+  function blankHtml() {
+    return '<div class="sbe-gen"><p class="sbe-hint">Clears the name, figures, traits and abilities below. Pictures stay. Nothing is saved until you press Save.</p>' +
+      '<div class="sbe-gen-go"><button type="button" class="btn-secondary btn-sm" id="sbe-blank-go" data-sbe-act="blank">Start blank</button><span class="sbe-sp"></span>' +
+      '<button type="button" class="sbe-word" data-sbe-act="blank-open">Close</button></div></div>';
   }
 
   function editorBody(st, ui) {
     var c = st.c, pr = st.pr;
     var noRole = c.organization === 'leader' || c.organization === 'solo';
-    var h = '<p class="sbe-msg' + (ui.msgKind ? ' is-' + ui.msgKind : '') + '" role="status" aria-live="polite">' + esc(ui.msg || '') + '</p>';
+    var h = '<p class="sbe-msg' + (ui.msgKind ? ' is-' + ui.msgKind : '') + '">' + esc(ui.msg || '') + '</p>';
     if (st.origin) h += '<p class="sbe-origin"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ' + esc(st.origin) + '</p>';
     h += '<div class="sbe-grid sbe-g4">' +
       (st.aiName
@@ -1051,60 +1338,50 @@ var DrawSteelCreatureEditor = (function () {
       '<label class="sbe-f"><span class="sbe-lbl">Speed</span><input class="input sbe-num" id="sbe-speed" data-sbe-k="speed" type="number" min="0" value="' + esc(c.speed == null ? '' : c.speed) + '"></label>' +
       '<label class="sbe-f"><span class="sbe-lbl">Stability</span><input class="input sbe-num" id="sbe-stability" data-sbe-k="stability" type="number" min="0" value="' + esc(c.stability == null ? '' : c.stability) + '"></label></div>';
     h += '<p class="sbe-hint">' + (pr.hc.sourced && pr.hc.value !== null
-      ? 'At level ' + esc(c.level) + (c.organization ? ', a ' + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
+      ? 'At level ' + esc(c.level) + (c.organization ? ', ' + (/^[aeiou]/i.test(c.organization) ? 'an ' : 'a ') + esc(c.organization) : ', this creature') + '’s highest characteristic is ' + SB().signed(pr.hc.value) + ' (published). Strikes add it to every tier, and so does its power roll.'
       : 'Set a level to see the published highest characteristic.') + '</p>';
-    h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add trait</button></h4>' +
+    var blank = SB().CHARS.filter(function (k) { return c[k] === null || c[k] === undefined; });
+    if (blank.length) h += '<p class="sbe-hint sbe-miss">' + esc(blank.map(cap).join(', ')) + ' ' + (blank.length > 1 ? 'are' : 'is') + ' blank. ' + (/^(leader|solo)$/.test(c.organization || '') ? 'Leaders and solos have no role, so no published spread covers them: set ' + (blank.length > 1 ? 'these' : 'this') + ' yourself.' : 'Pick a role for its published spread, or set ' + (blank.length > 1 ? 'these' : 'this') + ' yourself.') + '</p>';
+    h += '<h4 class="sbe-h">Traits <button type="button" class="btn-ghost btn-sm" data-sbe-act="add-trait">Add trait</button></h4>' +
       '<div class="sbe-abs">' + listHtml(st, 't', ui) + '</div>';
-    h += '<h4 class="sbe-h">Abilities <span class="sbe-h-acts"><button type="button" class="btn-secondary btn-sm" id="sbe-add-abs" data-sbe-act="drawer"><i class="fa-solid fa-book-open mr-1" aria-hidden="true"></i> Add abilities</button>' +
-      '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-ab"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Write your own</button></span></h4>' +
+    h += '<h4 class="sbe-h">Abilities <span class="sbe-h-acts"><button type="button" class="btn-secondary btn-sm" id="sbe-add-abs" data-sbe-act="drawer">Add abilities</button>' +
+      '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-ab">Write your own</button></span></h4>' +
       '<div class="sbe-abs">' + (c.abilities.length ? listHtml(st, 'a', ui) : '<p class="sbe-hint">No abilities yet. Every creature needs a signature ability.</p>') + '</div>';
     if (pr.vaCount || c.villain_actions.length) {
       h += '<h4 class="sbe-h">Villain actions <span class="sbe-hint">' + (pr.vaCount ? esc(cap(c.organization)) + 's get ' + pr.vaCount + ', used once each, in order' : 'This organization has no villain actions') + '</span>' +
-        (c.villain_actions.length < 3 ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-va"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i> Add villain action</button>' : '') + '</h4>' +
+        (c.villain_actions.length < 3 ? '<button type="button" class="btn-ghost btn-sm" data-sbe-act="add-va">Add villain action</button>' : '') + '</h4>' +
         '<div class="sbe-abs">' + listHtml(st, 'v', ui) + '</div>';
     }
     return h;
   }
 
-  // startHtml is the row of ways to begin, and the Generate panel that folds
-  // open under it. The panel's open state lives on ui.gen so a redraw keeps it.
-  function startHtml(st, ui) {
-    var g = ui.gen || {}, open = !!g.open;
-    var h = '<div class="sbe-start"><button type="button" class="btn-primary btn-sm" data-sbe-act="gen" aria-expanded="' + open + '" aria-controls="sbe-gen">' +
-      '<i class="fa-solid fa-wand-magic-sparkles mr-1" aria-hidden="true"></i> Generate one</button>' +
-      '<button type="button" class="btn-secondary btn-sm" id="sbe-ai-open" data-sbe-act="ai" aria-expanded="' + !!(ui.ai && ui.ai.open) + '" aria-controls="sbe-ai">' +
-      '<i class="fa-solid fa-comments mr-1" aria-hidden="true"></i> Build with an AI</button>' +
-      '<button type="button" class="btn-secondary btn-sm" data-sbe-act="blank">Blank</button>' +
-      '<button type="button" class="btn-secondary btn-sm" data-sbe-act="start"><i class="fa-solid fa-copy mr-1" aria-hidden="true"></i> or from a creature…</button></div>';
-    return h + '<div class="sbe-fold' + (open ? ' is-open' : '') + '" id="sbe-gen"' + (open ? '' : ' inert') + '><div class="sbe-fold-in">' + genHtml(st, ui) + '</div></div>';
-  }
-
+  // genHtml is the Generate panel. Its choices live on ui.gen so a redraw
+  // keeps them.
   function genHtml(st, ui) {
     var g = ui.gen || {}, prof = ui.party && ui.party.profile;
     var kind = g.kind || 'party';
     var org = kind === 'party' ? null : SB().findBySlug(st.refs.orgs, kind);
     var hint = kind === 'party'
-      ? (prof ? 'Picks the organization and role that suit your ' + ui.party.heroes.length + ' heroes.' : 'No hero pages were read, so this makes a platoon brute unless you pick a role.')
+      ? (prof ? 'Picks the organization and role that suit your ' + ui.party.heroes.length + ' heroes.' : ui.partyLoading ? 'Reading your heroes…' : 'No hero pages were read, so this makes a platoon brute unless you pick a role.')
       : ((org && org.description) || '') + (org && Number(org.villain_action_count) ? ' Gets ' + Number(org.villain_action_count) + ' villain actions.' : '');
-    var h = '<section class="sbe-gen" aria-labelledby="sbe-gen-t"><div class="sbe-gen-h"><h4 id="sbe-gen-t">Generate a creature</h4>' +
-      '<span class="sbe-small sbe-dim">No AI needed: the package’s ability library and the published formulas.</span><span class="sbe-sp"></span>' +
-      '<button type="button" class="btn-ghost btn-sm" data-sbe-act="gen">Close</button></div>' +
+    var h = '<div class="sbe-gen"><p class="sbe-hint">No AI needed: the package’s ability library and the published formulas.</p>' +
       '<label class="sbe-f"><span class="sbe-lbl">What is it? (optional)</span><input class="input" id="sbe-g-what" data-sbe-g="what" maxlength="200" autocomplete="off" placeholder="Goblin spider rider" value="' + esc(g.what || '') + '">' +
-      '<span class="sbe-hint">Becomes the name. Words like spider, dragon, ghost or wolf also pick keywords and fitting abilities.</span></label>' +
+      '<span class="sbe-hint">Picks the theme: words like spider, dragon, ghost or wolf choose keywords and fitting abilities. It names the creature only if it has no name yet.</span></label>' +
       '<div class="sbe-f"><span class="sbe-lbl" id="sbe-g-kind-l">What kind of creature</span><div class="sbe-seg" role="radiogroup" aria-labelledby="sbe-g-kind-l">' +
       KINDS.map(function (k) {
-        return '<label><input type="radio" name="sbe-g-kind" id="sbe-g-kind-' + k + '" data-sbe-g="kind" value="' + k + '"' + (k === kind ? ' checked' : '') + '><span>' + (k === 'party' ? 'Fit my party' : cap(k)) + '</span></label>';
+        return '<label><input type="radio" name="sbe-g-kind" id="sbe-g-kind-' + k + '" data-sbe-g="kind" value="' + k + '"' + (k === kind ? ' checked' : '') + '><span>' + chipWord(k === 'party' ? 'Fit my party' : cap(k)) + '</span></label>';
       }).join('') + '</div><span class="sbe-hint">' + esc(hint) + '</span></div>' +
       '<div class="sbe-gen-row"><label class="sbe-f"><span class="sbe-lbl">Level</span><select class="input" id="sbe-g-level" data-sbe-g="level">' +
       options([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (l) { return [String(l), String(l)]; }), g.level || 1) + '</select></label>';
     if (!noRole(kind)) {
       h += '<label class="sbe-f"><span class="sbe-lbl">Role</span><select class="input" id="sbe-g-role" data-sbe-g="role"><option value="">' + (prof ? 'Best for my party' : 'Pick one for me') + '</option>' + options(ROLES, g.role) + '</select></label>';
     }
-    h += '</div><div class="sbe-gen-go"><button type="button" class="btn-primary btn-sm" id="sbe-g-go" data-sbe-act="gen-go"' + (g.loading ? ' disabled' : '') + '>' + (g.loading ? 'Reading the ability library…' : 'Generate') + '</button>' +
+    h += '</div><div class="sbe-gen-go"><button type="button" class="btn-secondary btn-sm" id="sbe-g-go" data-sbe-act="gen-go"' + (g.loading ? ' disabled' : '') + '>' + (g.loading ? 'Reading the ability library…' : 'Generate') + '</button>' +
       (g.why ? '<button type="button" class="btn-secondary btn-sm" id="sbe-g-again" data-sbe-act="gen-again">Try other abilities</button>' : '') +
-      '<span class="sbe-small sbe-dim">It fills the editor below. Change anything, then Save.</span></div>';
+      '<span class="sbe-small sbe-dim">It fills the editor below. Change anything, then Save.</span><span class="sbe-sp"></span>' +
+      '<button type="button" class="sbe-word" data-sbe-act="gen">Close</button></div>';
     if (g.why) h += '<ul class="sbe-why">' + g.why.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>';
-    return h + '</section>';
+    return h + '</div>';
   }
 
   function partyHtml(ui) {
@@ -1170,13 +1447,15 @@ var DrawSteelCreatureEditor = (function () {
   // applyField writes one identity or characteristic box into the state.
   function applyField(st, k, v) {
     var S = SB();
-    if (k === 'name') { st.name = v; return; }
+    if (k === 'name') { st.name = v; st.autoName = false; return; }
     if (k === 'keywords' || k === 'immunities') { st.c[k] = S.parseList(v); return; }
     if (k === 'faction' || k === 'size') { st.c[k] = v; return; }
     if (k === 'organization' || k === 'role') { st.c[k] = String(v || '').toLowerCase(); return; }
     var n = String(v).trim() === '' ? null : Number(v);
     st.c[k] = (n === null || !isFinite(n)) ? null : n;
-    if (k === 'level' && (st.c.level === null || st.c.level < 1)) st.c.level = 1;
+    if (k === 'level') st.c.level = clampLevel(st.c.level === null ? 1 : st.c.level);
+    // A characteristic the director sets is theirs, not the role spread's.
+    if (SB().CHARS.indexOf(k) >= 0 && st.spread) delete st.spread[k];
   }
 
   // applyAbility writes one box of the ability being edited.
@@ -1185,9 +1464,41 @@ var DrawSteelCreatureEditor = (function () {
     if (!key) return;
     var a = listOf(st, key.charAt(0))[Number(key.slice(1))];
     if (!a) return;
+    var note = '';
     if (k === 'keywords') a.keywords = SB().parseList(v);
     else if (k === 'auto_damage') a.auto_damage = !!v;
-    else a[k] = v;
+    else {
+      // A number the director types is never rewritten: typing into a tier
+      // takes that ability off the formula, typing a power roll stops it
+      // following the highest characteristic.
+      if (a[k] !== v && (k === 'tier1' || k === 'tier2' || k === 'tier3') && a.auto_damage) {
+        a.auto_damage = false;
+        if (a.auto_roll === undefined) a.auto_roll = true;
+        note = 'Damage no longer follows the published formula for ' + (a.name || 'this ability') + ', since you typed in it. Tick the box to hand it back.';
+      }
+      if (a[k] !== v && k === 'power_roll' && (a.auto_roll === true || (a.auto_damage && a.auto_roll !== false))) {
+        a.auto_roll = false;
+        note = 'The power roll of ' + (a.name || 'this ability') + ' is yours now. It no longer follows the highest characteristic.';
+      }
+      a[k] = v;
+    }
+    return note;
+  }
+
+  // removeItem takes one ability, trait or villain action off the creature.
+  function removeItem(st, kind, i) {
+    listOf(st, kind).splice(i, 1);
+    if (kind === 'v') renumberVillains(st.c.villain_actions);
+    st.editAb = null;
+    return derive(st);
+  }
+
+  // addVillain appends a blank villain action in the next free order and opens
+  // it for editing.
+  function addVillain(st) {
+    st.c.villain_actions.push({ order: '', name: 'Villain action ' + (st.c.villain_actions.length + 1), effect: '' });
+    renumberVillains(st.c.villain_actions);
+    st.editAb = 'v' + (st.c.villain_actions.length - 1);
   }
 
   // newAbility is a signature strike when the creature has none yet, so the
@@ -1308,14 +1619,34 @@ var DrawSteelCreatureEditor = (function () {
 
   // ── Motion ────────────────────────────────────────────────────────────────
 
-  // Off and reduced motion skip every animation; Calm keeps fades only (CSS).
-  function still(doc) {
+  // motion is how much may move: 'off' (Off, a device asking for reduced
+  // motion, or no Web Animations), 'calm' (fades only) or 'full'.
+  function motion(doc) {
     var d = doc || (typeof document !== 'undefined' ? document : null);
-    if (!d || !d.documentElement) return true;
-    if (d.documentElement.getAttribute('data-motion') === 'off') return true;
-    var w = d.defaultView;
-    return !!(w && w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!d || !d.documentElement) return 'off';
+    var html = d.documentElement, w = d.defaultView;
+    if (html.getAttribute('data-motion') === 'off' || !html.animate) return 'off';
+    if (w && w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'off';
+    if (html.getAttribute('data-motion') === 'calm' || html.hasAttribute('data-cz-reduce')) return 'calm';
+    try { if (typeof Chronicle !== 'undefined' && Chronicle.reducedMotion && Chronicle.reducedMotion()) return 'calm'; } catch (e) { /* optional */ }
+    return 'full';
   }
+
+  // Script-driven moves read Chronicle's motion tokens, so the owner's Motion
+  // speed retimes them with the rest of the site.
+  function token(doc, name, fallback) {
+    try {
+      var v = doc.defaultView.getComputedStyle(doc.documentElement).getPropertyValue(name);
+      return (v && v.trim()) || fallback;
+    } catch (e) { return fallback; }
+  }
+  function tokenMs(doc, name, fallback) {
+    var raw = token(doc, name, ''), ms = /ms$/.test(raw) ? parseFloat(raw) : parseFloat(raw) * 1000;
+    return isFinite(ms) && ms > 0 ? ms : fallback;
+  }
+
+  // The standard's Glow: an accent ring that fades over about 1.2 seconds.
+  var GLOW_MS = 1200;
 
   function figureValues(st) {
     var out = {};
@@ -1323,17 +1654,34 @@ var DrawSteelCreatureEditor = (function () {
     return out;
   }
 
-  // flashChanged briefly marks the figure boxes whose value just changed, so
-  // a level or organization change shows what it moved.
-  function flashChanged(doc, edEl, before, now) {
-    if (still(doc)) return;
+  // clock is the time a move is measured from, so a redraw part way through
+  // one can carry it on from where it was instead of starting it again.
+  function clock(doc) {
+    var w = doc.defaultView, p = w && w.performance;
+    return p && p.now ? p.now() : Date.now();
+  }
+
+  // flashChanged rings the figure boxes whose value just changed, so a level
+  // or organization change shows what it moved. The ring only fades, so Calm
+  // keeps it. `rings` remembers when each began: a redraw makes new boxes, and
+  // a ring still fading is picked up on its new box at the same point.
+  function flashChanged(doc, edEl, before, now, rings) {
+    if (motion(doc) === 'off') return;
+    var t = clock(doc);
     FIGURES.forEach(function (k) {
-      if (before[k] === now[k]) return;
-      var box = edEl.querySelector('#sbe-fig-' + k);
-      var f = box && box.closest ? box.closest('.sbe-f') : null;
-      if (!f) return;
+      if (before[k] !== now[k]) rings[k] = t;
+      var age = rings[k] === undefined ? GLOW_MS : t - rings[k];
+      if (age >= GLOW_MS) return;
+      var input = edEl.querySelector('#sbe-fig-' + k);
+      var f = input && input.closest ? input.closest('.sbe-f') : null, box = input ? input.parentNode : null;
+      if (!f || !box || !box.animate) return;
       f.classList.add('is-flash');
-      setTimeout(function () { f.classList.remove('is-flash'); }, 650);
+      var done = function () { f.classList.remove('is-flash'); };
+      try {
+        var a = box.animate([{ opacity: 1 }, { opacity: 0 }], { duration: GLOW_MS, easing: token(doc, '--ease-out', 'cubic-bezier(.16,1,.3,1)'), pseudoElement: '::after' });
+        a.currentTime = age;
+        a.onfinish = done; a.oncancel = done;
+      } catch (e) { done(); }
     });
   }
 
@@ -1348,41 +1696,122 @@ var DrawSteelCreatureEditor = (function () {
     injectStyles(doc);
     SB().injectStyles(doc);
     var entity = o.entity || null;
-    var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs);
+    var st = newState(entity ? entity.name : '', entity ? (entity.fields_data || entity.custom_fields) : null, o.refs, o.book);
     var ui = { ref: o.ref || null, onClose: o.onClose || null, isNew: !o.entityId, party: null, partyLoading: true, msg: '', msgKind: '', saving: false,
       gen: { open: false, what: '', kind: 'party', role: '', level: Math.min(10, st.c.level || 1), seed: 0, why: null, loading: false },
       ai: { open: false, vocab: null, vocabP: null, timer: null, stream: null, lib: null, book: newBookFilter() },
+      from: { open: false, ctl: null }, blank: { open: false },
       pics: newPics(entity), heading: o.form ? o.form.heading : '', nameLabel: o.form ? o.form.nameLabel : '', saveAs: o.saveAs || null };
     var ctx = { campaignId: String(o.campaignId || ''), entityId: o.entityId ? String(o.entityId) : '' };
     var dirtyKey = (o.form && o.form.dirtyKey) || 'monster-builder:' + (ctx.entityId || 'new');
     var root = doc.createElement('div');
-    root.className = 'sbe-wrap' + (still(doc) ? '' : ' sbe-entering');
+    root.className = 'sbe-wrap' + (motion(doc) === 'off' ? '' : ' sbe-entering');
     root.innerHTML = '<div class="sbe card"></div><aside class="sbe-side" aria-label="Party, budget and checks"></aside>';
     host.innerHTML = '';
     host.appendChild(root);
     var edEl = root.firstChild, sideEl = root.lastChild;
-    edEl.innerHTML = '<div class="sbe-part"></div><div class="sbe-fold" id="sbe-ai" inert>' + aiHtml() + '</div><div class="sbe-part"></div>';
-    var headEl = edEl.firstChild, aiEl = edEl.childNodes[1], bodyEl = edEl.lastChild;
+    // Only the bar, the Generate panel and the form are redrawn; the tab row
+    // and the other panels stay, so their focus and typed text survive.
+    edEl.innerHTML = '<div class="sbe-part"></div>' + waysHtml(ui) +
+      '<div class="sbe-hang">' + panelHtml('gen', ui, '') + panelHtml('ai', ui, aiHtml()) + panelHtml('from', ui, '') + panelHtml('blank', ui, blankHtml()) + '</div>' +
+      '<p class="sbe-sr" role="status" aria-live="polite"></p><div class="sbe-part sbe-form"></div>';
+    var headEl = edEl.firstChild, waysEl = edEl.childNodes[1], hangEl = edEl.childNodes[2], bodyEl = edEl.lastChild;
+    function panEl(name) { return hangEl.querySelector('#sbe-' + name); }
+    var genEl = panEl('gen'), aiEl = panEl('ai'), fromEl = panEl('from');
     function aiBox(id) { return aiEl.querySelector('#sbe-ai-' + id); }
-    if (!still(doc)) setTimeout(function () { root.classList.remove('sbe-entering'); }, 700);
+    if (motion(doc) !== 'off') setTimeout(function () { root.classList.remove('sbe-entering'); }, 700);
 
     function dirty() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markDirty) Chronicle.markDirty(dirtyKey); } catch (e) { /* optional */ } ui.dirty = true; }
     function clean() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markClean) Chronicle.markClean(dirtyKey); } catch (e) { /* optional */ } ui.dirty = false; }
 
-    function drawSide() { sideEl.innerHTML = sideHtml(st, ui); }
+    // Check rows that were not there at the last draw arrive one after
+    // another; rows that stay are left alone, so typing never replays them.
+    // A redraw while they are still arriving carries each on from where it was.
+    var seenChecks = null, rings = {}, chipAt = {};
+    function drawSide() {
+      sideEl.innerHTML = sideHtml(st, ui);
+      var now = {}, n = 0, was = seenChecks, full = motion(doc) === 'full', t = clock(doc), dur = tokenMs(doc, '--dur-standard', 200);
+      [].forEach.call(sideEl.querySelectorAll('.sbe-checks li'), function (li) {
+        var k = li.className + '|' + li.textContent;
+        var born = !was ? null : was[k] || { t: t, wait: Math.min(n++, 4) * 30 };
+        now[k] = born || { t: 0, wait: 0 };
+        if (!born || !full || t - born.t >= born.wait + dur) return;
+        li.style.animationDelay = (born.wait - (t - born.t)) + 'ms';
+        li.classList.add('is-new');
+      });
+      seenChecks = now;
+    }
+
+    // A provenance chip whose words changed fades in, so the eye finds it.
+    function chipMarks() {
+      var out = {};
+      [].forEach.call(bodyEl.querySelectorAll('[data-sbe-chip]'), function (c) { out[c.getAttribute('data-sbe-chip')] = c.className + '|' + c.textContent; });
+      return out;
+    }
+    function fadeChips(was) {
+      if (motion(doc) === 'off') return;
+      var t = clock(doc), dur = tokenMs(doc, '--dur-standard', 200);
+      [].forEach.call(bodyEl.querySelectorAll('[data-sbe-chip]'), function (c) {
+        var k = c.getAttribute('data-sbe-chip'), old = was[k];
+        if (old !== undefined && old !== c.className + '|' + c.textContent) chipAt[k] = t;
+        var age = chipAt[k] === undefined ? dur : t - chipAt[k];
+        if (age >= dur) return;
+        c.style.animationDelay = -age + 'ms';
+        c.classList.add('is-new');
+        c.addEventListener('animationend', function () { c.classList.remove('is-new'); c.style.animationDelay = ''; });
+      });
+    }
+
+    // A redraw that changes the open panel's height slides the form to its
+    // new place instead of jumping it.
     function draw(focusId) {
+      if (openWay(ui) && !closed) moveForm(function () { drawNow(focusId); });
+      else drawNow(focusId);
+    }
+    // The form's message and the "Generated…" or "Started from…" line are
+    // redrawn with the form, and a screen reader only speaks a region that
+    // was already there, so one lasting region repeats them when they change.
+    var sayEl = edEl.querySelector('.sbe-sr[role="status"]'), said = '';
+    function say() {
+      var text = [ui.msg || '', st.origin || ''].join(' ').trim();
+      if (text !== said) { said = text; sayEl.textContent = text; }
+    }
+    function drawNow(focusId) {
       pending = false;
-      // The AI panel is never redrawn, so focus inside it stays where it is.
-      var active = doc.activeElement, id = focusId || (active && edEl.contains(active) && !aiEl.contains(active) ? active.id : null), pos = null;
+      // The AI and From a creature panels are never redrawn, so focus inside them stays where it is.
+      var active = doc.activeElement, id = focusId || (active && edEl.contains(active) && !aiEl.contains(active) && !fromEl.contains(active) ? active.id : null), pos = null;
       try { if (active && active.selectionStart !== undefined) pos = active.selectionStart; } catch (e) { pos = null; }
-      var figs = figureValues(st), before = ui.figs;
+      var figs = figureValues(st), before = ui.figs, chips = chipMarks();
       ui.figs = figs;
-      headEl.innerHTML = editorHead(st, ui);
+      headEl.innerHTML = barHtml(st, ui);
+      genEl.innerHTML = genHtml(st, ui);
       bodyEl.innerHTML = editorBody(st, ui);
       drawSide();
-      if (before) flashChanged(doc, edEl, before, figs);
+      say();
+      if (before) { flashChanged(doc, edEl, before, figs, rings); fadeChips(chips); }
       var back = id ? doc.getElementById(id) : null;
       if (back) { back.focus(); try { if (pos !== null && back.setSelectionRange) back.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } }
+    }
+
+    // settle brings freshly generated parts in one after another. Pressed
+    // again before they have landed, the new parts carry on from the same
+    // point instead of starting over.
+    var settleAt = -1e9;
+    function settle(els) {
+      if (motion(doc) !== 'full') return;
+      var n = 0, t = clock(doc), age = t - settleAt;
+      if (age >= tokenMs(doc, '--dur-large', 280) + 150) { settleAt = t; age = 0; }
+      [].forEach.call(els, function (el) {
+        if (el.offsetParent === null) return;
+        el.style.animationDelay = (Math.min(n++, 5) * 30 - age) + 'ms';
+        el.classList.add('is-settle');
+        el.addEventListener('animationend', function done(e) {
+          if (e.target !== el) return;
+          el.classList.remove('is-settle');
+          el.style.animationDelay = '';
+          el.removeEventListener('animationend', done);
+        });
+      });
     }
 
     // A box commits on change, which fires as the pointer goes down on a
@@ -1417,7 +1846,16 @@ var DrawSteelCreatureEditor = (function () {
         if (t.getAttribute('data-sbe-k') === 'name') drawSide();
         return;
       }
-      if (t.hasAttribute('data-sbe-ab') && t.type !== 'checkbox') { applyAbility(st, t.getAttribute('data-sbe-ab'), t.value); dirty(); }
+      if (t.hasAttribute('data-sbe-ab') && t.type !== 'checkbox') {
+        var abNote = applyAbility(st, t.getAttribute('data-sbe-ab'), t.value);
+        if (abNote) {
+          var auto = edEl.querySelector('#sbe-ab-auto'), msgEl = edEl.querySelector('.sbe-msg');
+          if (auto && /^Damage/.test(abNote)) auto.checked = false;
+          ui.msg = abNote; ui.msgKind = '';
+          if (msgEl) msgEl.textContent = abNote;
+        }
+        dirty();
+      }
     }
     function onChange(e) {
       var t = e.target;
@@ -1488,14 +1926,13 @@ var DrawSteelCreatureEditor = (function () {
         return;
       }
       var del = el.getAttribute('data-sbe-del');
-      if (del) { listOf(st, del.charAt(0)).splice(Number(del.slice(1)), 1); st.editAb = null; derive(st); dirty(); draw(); return; }
+      if (del) { removeItem(st, del.charAt(0), Number(del.slice(1))); dirty(); draw(); return; }
       var act = el.getAttribute('data-sbe-act');
       if (act === 'add-ab') { st.c.abilities.push(newAbility(st)); st.editAb = 'a' + (st.c.abilities.length - 1); derive(st); dirty(); draw('sbe-ab-name'); }
       else if (act === 'add-trait') { st.c.traits.push({ name: '', description: '' }); st.editAb = 't' + (st.c.traits.length - 1); dirty(); draw('sbe-ab-name'); }
       else if (act === 'add-va') {
-        var order = ['opener', 'crowd-control', 'ultimate'][st.c.villain_actions.length] || '';
-        st.c.villain_actions.push({ order: order, name: 'Villain action ' + (st.c.villain_actions.length + 1), effect: '' });
-        st.editAb = 'v' + (st.c.villain_actions.length - 1); dirty(); draw('sbe-ab-name');
+        addVillain(st);
+        dirty(); draw('sbe-ab-name');
       }
       else if (act === 'save') doSave();
       else if (act === 'pic-make') makeToken(el);
@@ -1503,11 +1940,8 @@ var DrawSteelCreatureEditor = (function () {
         var pk = el.getAttribute('data-sbe-pic-k');
         if (pk === 'art' || pk === 'token') { ui.pics[pk] = ''; ui.pics.msg = 'Save to remove the ' + (pk === 'art' ? 'art' : 'token') + '.'; ui.pics.msgKind = ''; dirty(); draw(); }
       }
-      else if (act === 'cancel') {
-        if (ui.dirty && typeof confirm === 'function' && !confirm('Discard your changes to this stat block?')) return;
-        clean(); close(null);
-      }
-      else if (act === 'gen' || act === 'ai') toggleFold(act);
+      else if (act === 'cancel') askDiscard();
+      else if (act && wayOf(act, 3)) toggleFold(wayOf(act, 3)[0], e.detail === 0);
       else if (act === 'ai-copy') copyGuide();
       else if (act === 'ai-example') example();
       else if (act === 'drawer') {
@@ -1518,35 +1952,183 @@ var DrawSteelCreatureEditor = (function () {
       else if (act === 'gen-go') { ui.gen.seed = 0; runGenerate(); }
       else if (act === 'gen-again') { ui.gen.seed++; runGenerate(); }
       else if (act === 'blank') {
-        if (ui.dirty && typeof confirm === 'function' && !confirm('Clear this stat block and start blank?')) return;
+        // The Blank panel already said what this clears, so it asks nothing more.
         var keep = st.base;
         var fresh = newState('', null, st.refs);
         Object.keys(fresh).forEach(function (k) { st[k] = fresh[k]; });
-        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); dirty(); draw('sbe-name');
+        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); dirty();
+        setFold('', e.detail === 0); draw('sbe-name');
       }
-      else if (act === 'start') openStartFrom(doc, ctx, function (name, src, origin) { startFrom(st, name, src, origin); dirty(); draw('sbe-level'); });
       else if (act === 'suggest') suggestForParty();
     }
 
-    // The Generate and AI panels fold open in place, one at a time: toggling
-    // a class (not a redraw) is what lets the height animate.
-    function toggleFold(name) {
-      var on = !ui[name].open, other = name === 'gen' ? 'ai' : 'gen';
-      if (on && ui[other].open) setFold(other, false);
-      setFold(name, on);
+    // Cancel with unsaved work asks on the fold-out sheet when there is one,
+    // the same question Escape asks there.
+    function askDiscard() {
+      function go() { clean(); close(null); }
+      if (!ui.dirty) { go(); return; }
+      var sheet = root.closest ? root.closest('.sbx-fold-p') : null;
+      var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
+      if (sheet && C && C.askSlip) {
+        C.askSlip(sheet, { ask: 'Discard your changes to this stat block?', detail: '', discard: 'Discard changes', onDiscard: go });
+        return;
+      }
+      if (typeof confirm === 'function' && !confirm('Discard your changes to this stat block?')) return;
+      go();
+    }
+
+    // ── The ways to start ──
+
+    // One panel hangs under its tab at a time. The form is an opaque sheet
+    // below the panel's place: opening slides the form down off the panel and
+    // closing slides it back over, so the panel itself never moves.
+    var formAnim = null, lateHide = null;
+    function formTop() { return bodyEl.getBoundingClientRect().top; }
+    function showPanel(name) {
+      WAYS.forEach(function (w) {
+        var el = panEl(w[0]), on = w[0] === name;
+        if (on) { el.removeAttribute('hidden'); el.removeAttribute('inert'); }
+        else { el.setAttribute('hidden', ''); el.setAttribute('inert', ''); }
+      });
+      hangEl.classList.toggle('is-open', !!name);
+    }
+    // tail lengthens the form's sheet for a move that lifts it `up` pixels
+    // above its resting place, by as much of the panel as the form is too
+    // short to cover. 0 takes it away.
+    function tail(up) {
+      var need = up ? Math.ceil(up - bodyEl.offsetHeight) : 0;
+      if (need > 0) bodyEl.style.setProperty('--sbe-tail', need + 'px'); else bodyEl.style.removeProperty('--sbe-tail');
+      edEl.classList.toggle('is-moving', need > 0);
+    }
+    // dropAnim ends a move where it stands; a close still waiting to hide its
+    // panel hides it now.
+    function dropAnim() {
+      if (formAnim) { formAnim.onfinish = null; formAnim.cancel(); formAnim = null; }
+      tail(0);
+      if (lateHide) { var hide = lateHide; lateHide = null; hide(); }
+    }
+    // moveForm runs `change` and slides the form from where it was to where
+    // the change put it. The top is measured live, so a move that interrupts
+    // another carries on from the form's place on screen.
+    function moveForm(change, jump) {
+      var first = formTop();
+      dropAnim();
+      change();
+      if (jump || closed || motion(doc) !== 'full') return;
+      var by = first - formTop();
+      if (Math.abs(by) < 1) return;
+      tail(-by);
+      formAnim = bodyEl.animate([{ transform: 'translateY(' + by + 'px)' }, { transform: 'none' }],
+        { duration: tokenMs(doc, '--dur-standard', 200), easing: token(doc, '--ease-out', 'cubic-bezier(.16,1,.3,1)') });
+      formAnim.onfinish = function () { formAnim = null; tail(0); };
+    }
+    // closeForm slides the form over the open panel, then hides the panel.
+    function closeForm(name) {
+      var first = formTop();
+      dropAnim();
+      var rest = formTop();
+      showPanel('');
+      var end = formTop();
+      showPanel(name);
+      panEl(name).setAttribute('inert', '');
+      lateHide = function () { showPanel(openWay(ui)); };
+      tail(rest - end);
+      formAnim = bodyEl.animate([{ transform: 'translateY(' + (first - rest) + 'px)' }, { transform: 'translateY(' + (end - rest) + 'px)' }],
+        { duration: tokenMs(doc, '--dur-micro', 120) + 40, easing: token(doc, '--ease-in', 'cubic-bezier(.4,0,1,1)'), fill: 'forwards' });
+      formAnim.onfinish = dropAnim;
+    }
+
+    // placeInd puts the mark (a hairline under the open tab and up its left
+    // side) on the selected tab, by transform only. With no tab open it fades out.
+    function placeInd(animate) {
+      var ind = waysEl.querySelector('.sbe-ind'), tab = waysEl.querySelector('.sbe-way[aria-selected="true"]');
+      if (!ind) return;
+      var wasOn = ind.classList.contains('is-on');
+      ind.classList.toggle('is-still', !animate);
+      if (tab) {
+        // Arriving from no tab, the mark is placed first and then fades in.
+        ind.classList.toggle('is-jump', !animate || !wasOn);
+        var x = tab.offsetLeft, y = tab.offsetTop, w = tab.offsetWidth, h = tab.offsetHeight;
+        waysEl.style.setProperty('--sbe-way-h', h + 'px');
+        ind.firstChild.style.transform = 'translate(' + x + 'px,' + (y + 9) + 'px)';
+        ind.lastChild.style.transform = 'translate(' + x + 'px,' + (y + h) + 'px) scaleX(' + Math.max(1, w - 4) + ')';
+        void ind.offsetWidth;
+      }
+      ind.classList.toggle('is-on', !!tab);
+      if (!animate) void ind.offsetWidth;
+      ind.classList.remove('is-still', 'is-jump');
+      waysEl.classList.add('has-ind');
+    }
+
+    // setFold opens the named panel, or closes them all with ''. `instant`
+    // is a change made from the keyboard, which never animates.
+    function setFold(name, instant) {
+      var was = openWay(ui), lvl = instant ? 'off' : motion(doc);
+      if (was === name) return;
+      WAYS.forEach(function (w) { ui[w[0]].open = w[0] === name; });
+      [].forEach.call(waysEl.querySelectorAll('.sbe-way'), function (b, i) {
+        var on = b.getAttribute('aria-controls') === 'sbe-' + name;
+        b.setAttribute('aria-selected', String(on));
+        b.setAttribute('tabindex', on || (!name && !i) ? '0' : '-1');
+      });
+      placeInd(lvl !== 'off');
+      if (!name && lvl === 'full') { closeForm(was); return; }
+      moveForm(function () { showPanel(name); }, lvl !== 'full');
+      // A panel taking another's place fades in; under Calm so does one opening.
+      var el = name ? panEl(name) : null;
+      if (el && el.animate && (lvl === 'calm' || (lvl === 'full' && was))) {
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: tokenMs(doc, '--dur-page', 90), easing: token(doc, '--ease-out', 'cubic-bezier(.16,1,.3,1)') });
+      }
+    }
+    // inView is whether the whole of `el` is on screen.
+    function inView(el) {
+      var r = el.getBoundingClientRect(), w = doc.defaultView;
+      return r.top >= 0 && r.bottom <= (w.innerHeight || doc.documentElement.clientHeight);
+    }
+    // backTo returns focus to a tab. A tab scrolled out of view (Close at the
+    // foot of a long panel) is brought back, so focus is never off screen.
+    function backTo(tab) {
+      if (!tab) return;
+      if (!inView(tab)) { tab.focus(); return; }
+      try { tab.focus({ preventScroll: true }); } catch (e) { tab.focus(); }
+    }
+    function toggleFold(name, instant) {
+      var on = openWay(ui) !== name, tab = doc.getElementById(wayOf(name, 0)[2]);
+      // With its tab out of view there is nothing for the form to slide back to, so the panel closes at once.
+      setFold(on ? name : '', instant || (!on && tab && !inView(tab)));
       if (on && name === 'ai') { aiBox('guide').value = guide(); loadVocab(); loadBook(); }
-      var to = on ? (name === 'gen' ? doc.getElementById('sbe-g-what') : aiBox('desc')) : doc.getElementById(name === 'gen' ? 'sbe-name' : 'sbe-ai-open');
+      if (on && name === 'from') {
+        if (!ui.from.ctl) {
+          ui.from.ctl = openStartFrom(doc, ctx, function (srcName, src, origin) {
+            startFrom(st, srcName, src, origin); dirty(); setFold('', false); draw('sbe-level');
+          }, { el: fromEl, move: moveForm });
+        } else ui.from.ctl.refresh();
+      }
+      if (!on) { backTo(tab); return; }
+      var to = name === 'gen' ? doc.getElementById('sbe-g-what') : name === 'ai' ? aiBox('desc')
+        : name === 'from' ? fromEl.querySelector('#sbe-sf-q') : doc.getElementById('sbe-blank-go');
       if (to) { try { to.focus({ preventScroll: true }); } catch (e) { to.focus(); } }
     }
-    function setFold(name, on) {
-      var el = doc.getElementById('sbe-' + name);
-      ui[name].open = on;
-      if (!el) { draw(); return; }
-      el.classList.add('is-moving');
-      el.classList.toggle('is-open', on);
-      if (on) el.removeAttribute('inert'); else el.setAttribute('inert', '');
-      edEl.querySelectorAll('[aria-controls="sbe-' + name + '"]').forEach(function (b) { b.setAttribute('aria-expanded', String(on)); });
-      setTimeout(function () { el.classList.remove('is-moving'); }, still(doc) ? 0 : 340);
+
+    // The tab row's keys: arrows, Home and End move focus only, because
+    // opening a tab loads data and Blank clears. Escape in the row or in the
+    // open panel closes the panel and stops there, so the question about
+    // leaving is only asked by the next Escape.
+    function onKeyDown(e) {
+      var t = e.target, k = e.key;
+      if (t && t.classList && t.classList.contains('sbe-way') && /^(ArrowLeft|ArrowRight|Home|End)$/.test(k)) {
+        var tabs = [].slice.call(waysEl.querySelectorAll('.sbe-way')), i = tabs.indexOf(t);
+        var to = k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : (i + (k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+        e.preventDefault();
+        tabs[to].focus();
+        return;
+      }
+      var open = openWay(ui);
+      if (k !== 'Escape' || e.defaultPrevented || !open || (t && t.tagName === 'SELECT')) return;
+      if (!waysEl.contains(t) && !hangEl.contains(t)) return;
+      e.preventDefault(); e.stopPropagation();
+      setFold('', true);
+      backTo(doc.getElementById(wayOf(open, 0)[2]));
     }
 
     // ── Build with an AI ──
@@ -1574,7 +2156,8 @@ var DrawSteelCreatureEditor = (function () {
         if (closed) return;
         ui.ai.lib = lib;
         if (!lib.length) { aiBox('bkn').textContent = 'The ability library could not be read, so the AI writes every ability itself.'; return; }
-        paintBook();
+        // The list arriving makes the panel taller; later repaints, from typing and chips, do not animate.
+        if (ui.ai.shown) paintBook(); else { ui.ai.shown = true; moveForm(function () { paintBook(); }); }
       });
     }
 
@@ -1620,13 +2203,18 @@ var DrawSteelCreatureEditor = (function () {
       var text = aiBox('ans').value, stEl = aiBox('status'), notesEl = aiBox('notes');
       if (!text.trim()) { stEl.textContent = ''; stEl.className = 'sbe-small'; notesEl.innerHTML = ''; return; }
       var r = readAnswer(text);
+      clearTimeout(ui.ai.settle);
+      // An answer that stops changing yet never closes is cut off, not still arriving.
+      if (r.wait || (r.obj && !r.done)) ui.ai.settle = setTimeout(function () { if (!closed && aiBox('ans').value === text) { stEl.className = 'sbe-small sbe-ai-err'; stEl.textContent = CUT_OFF + (r.obj ? ' What was read so far is filled in.' : ''); } }, 1500);
       if (r.err) { stEl.textContent = r.err; stEl.className = 'sbe-small' + (r.wait ? '' : ' sbe-ai-err'); return; }
-      var notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}), ui.ai.lib || []);
+      var notes;
+      try { notes = fromAI(st, r.obj, ui.ai.vocab || vocabulary(st.refs, {}), ui.ai.lib || []); }
+      catch (e) { stEl.className = 'sbe-small sbe-ai-err'; stEl.textContent = 'The editor could not use that answer. Ask the AI to send it again as plain JSON.'; return; }
       ui.gen.why = null; ui.msg = '';
       dirty(); draw();
       stEl.className = 'sbe-small' + (r.done ? ' sbe-ai-ok' : '');
       stEl.textContent = r.done ? 'Read in: ' + (st.name || 'a creature') + ', level ' + st.c.level + ' ' + st.c.organization + '. Check it, change anything, then Save.' : 'Reading the answer…';
-      notesEl.innerHTML = aiNotesHtml(notes);
+      moveForm(function () { notesEl.innerHTML = aiNotesHtml(notes); });
     }
 
     function stopStream() { if (ui.ai.stream) { clearInterval(ui.ai.stream); ui.ai.stream = null; } }
@@ -1636,7 +2224,7 @@ var DrawSteelCreatureEditor = (function () {
     function example() {
       stopStream();
       var box = aiBox('ans');
-      if (still(doc) || doc.documentElement.getAttribute('data-motion') === 'calm') { box.value = AI_EXAMPLE; readAI(); return; }
+      if (motion(doc) !== 'full') { box.value = AI_EXAMPLE; readAI(); return; }
       var n = 0;
       box.value = '';
       ui.ai.stream = setInterval(function () {
@@ -1660,6 +2248,7 @@ var DrawSteelCreatureEditor = (function () {
         g.why = why;
         st.origin = 'Generated. Nothing is saved until you press Save' + (ui.isNew ? '; the first save makes the Creature page.' : '.');
         dirty(); draw(g.seed ? 'sbe-g-again' : 'sbe-g-go');
+        settle(g.seed ? bodyEl.querySelectorAll('.sbe-abs') : bodyEl.children);
       }
       g.loading = true; draw();
       loadLib().then(function (lib) { if (!closed) go(lib, !lib.length); });
@@ -1819,7 +2408,10 @@ var DrawSteelCreatureEditor = (function () {
     var closed = false;
     function unbind() {
       closed = true;
-      stopStream(); clearTimeout(ui.ai.timer);
+      stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle);
+      dropAnim();
+      if (indWatch) indWatch.disconnect();
+      root.removeEventListener('keydown', onKeyDown);
       root.removeEventListener('input', onInput);
       root.removeEventListener('change', onChange);
       root.removeEventListener('click', onClick);
@@ -1847,7 +2439,12 @@ var DrawSteelCreatureEditor = (function () {
     root.addEventListener('pointerdown', onPointerDown, true);
     doc.addEventListener('pointerup', onPointerUp, true);
     doc.addEventListener('pointercancel', onPointerUp, true);
+    root.addEventListener('keydown', onKeyDown);
     draw();
+    // The mark follows its tab when the row's width changes or it wraps.
+    placeInd(false);
+    var RO = doc.defaultView && doc.defaultView.ResizeObserver, indWatch = RO ? new RO(function () { if (!closed) placeInd(false); }) : null;
+    if (indWatch) indWatch.observe(waysEl);
 
     // The party never blocks the editor: it fills in when it arrives, and any
     // failure leaves "no party" in its place.
@@ -1861,7 +2458,7 @@ var DrawSteelCreatureEditor = (function () {
       }).catch(function () { ui.party = null; }).then(function () {
         ui.partyLoading = false;
         // The Generate panel's party hint and role list depend on the party.
-        if (!closed) { if (ui.gen.open) redraw(); else drawSide(); }
+        if (!closed) redraw();
       });
     } else {
       ui.partyLoading = false;
@@ -1915,65 +2512,72 @@ var DrawSteelCreatureEditor = (function () {
     });
   }
 
-  // openStartFrom lists creatures from the community bestiary and this campaign;
-  // picking one hands its full stat block to `pick(name, statblock, origin)`.
-  function openStartFrom(doc, ctx, pick) {
-    var tab = 'bestiary', cache = {}, prevFocus = doc.activeElement;
-    var bg = doc.createElement('div');
-    bg.className = 'sbe-modal-bg';
-    bg.innerHTML = '<div class="sbe-modal card" role="dialog" aria-modal="true" aria-labelledby="sbe-sf-t">' +
-      '<div class="sbe-modal-h"><h2 id="sbe-sf-t">Start from a creature</h2><button type="button" class="btn-ghost btn-sm" data-sf-close aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>' +
-      '<p class="sbe-small sbe-dim">Copies its stat block into this one. Encounter value, Stamina and formula damage are worked out again for the level you set.</p>' +
-      '<div class="sbe-tabs" role="tablist"><button type="button" role="tab" data-sf-tab="bestiary" aria-selected="true">Community bestiary</button><button type="button" role="tab" data-sf-tab="campaign" aria-selected="false">This campaign</button></div>' +
-      '<input class="input" id="sbe-sf-q" placeholder="Search creatures" autocomplete="off" aria-label="Search creatures"><ul class="sbe-sf-list" id="sbe-sf-list"></ul></div>';
-    doc.body.appendChild(bg);
-    var list = bg.querySelector('#sbe-sf-list'), q = bg.querySelector('#sbe-sf-q');
-    function close() { bg.remove(); doc.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); }
-    function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
-    doc.addEventListener('keydown', onKey, true);
+  // openStartFrom lists creatures from the community bestiary and this
+  // campaign in the From a creature panel; picking one hands its full stat
+  // block to `pick(name, statblock, origin)`. `into` is { el, move }: the
+  // panel, and the editor's way of sliding the form when the list's height
+  // changes. Returns { refresh }, or null without a panel to draw in.
+  function openStartFrom(doc, ctx, pick, into) {
+    var host = (into && into.el) || doc.getElementById('sbe-from');
+    if (!host) return null;
+    var move = (into && into.move) || function (fn) { fn(); };
+    var tab = 'bestiary', cache = {}, loaded = {};
+    host.innerHTML = '<div class="sbe-gen"><p class="sbe-hint">Copies its stat block into this one, level included. Encounter value, Stamina and formula damage are worked out again for that level, and again if you change it.</p>' +
+      '<div class="sbe-tabs" role="tablist" aria-label="Where to look"><button type="button" role="tab" data-sf-tab="bestiary" aria-selected="true">Community bestiary</button><button type="button" role="tab" data-sf-tab="campaign" aria-selected="false">This campaign</button></div>' +
+      '<input class="input" type="search" id="sbe-sf-q" placeholder="Search creatures" autocomplete="off" aria-label="Search creatures"><ul class="sbe-sf-list" id="sbe-sf-list"></ul>' +
+      '<div class="sbe-gen-go"><span class="sbe-sp"></span><button type="button" class="sbe-word" data-sbe-act="start">Close</button></div></div>';
+    var list = host.querySelector('#sbe-sf-list'), q = host.querySelector('#sbe-sf-q');
     function rowsFor(t) {
-      if (!cache[t]) cache[t] = (t === 'bestiary' ? bestiaryRows() : campaignRows(ctx.campaignId)).catch(function () { return null; });
+      if (!cache[t]) cache[t] = (t === 'bestiary' ? bestiaryRows() : campaignRows(ctx.campaignId).then(function (rows) {
+        // The page being edited is not a creature to copy from.
+        var rest = rows.filter(function (r) { return !ctx.entityId || String(r.id) !== String(ctx.entityId); });
+        rest.unloaded = rows.unloaded;
+        return rest;
+      })).catch(function () { return null; });
       return cache[t];
     }
-    function paint() {
+    // Typing repaints at once; a list arriving slides the form to make room.
+    function paint(typed) {
       var t = tab;
-      list.innerHTML = '<li class="sbe-sf-note">Loading…</li>';
+      if (!loaded[t]) list.innerHTML = '<li class="sbe-sf-note">Loading…</li>';
       rowsFor(t).then(function (rows) {
         if (t !== tab) return;
-        if (rows === null) { list.innerHTML = '<li class="sbe-sf-note">Could not load these creatures. Try again.</li>'; return; }
-        var term = q.value.trim().toLowerCase();
-        var all = rows.filter(function (r) { return !term || String(r.name || '').toLowerCase().indexOf(term) >= 0; });
-        var hits = all.slice(0, 100);
-        // Never cut the list silently: say what isn't shown.
-        var more = (all.length - hits.length) + (rows.unloaded || 0);
-        list.innerHTML = hits.map(function (r, i) {
-          var f = t === 'bestiary' ? r : (r.fields_data || {});
-          var org = SB().cap(f.organization || ''), noRole = /^(leader|solo)$/i.test(f.organization || '');
-          var sub = (f.level !== undefined && f.level !== null && f.level !== '' ? 'Level ' + f.level + ' ' : '') + org + (noRole || !f.role ? '' : ' ' + SB().cap(f.role));
-          return '<li><button type="button" data-sf-pick="' + i + '"><span><b>' + esc(r.name || 'Unnamed') + '</b><br><span class="sbe-dim sbe-small">' + esc(sub.trim()) + '</span></span>' +
-            (t === 'bestiary' ? '<span class="sbe-dim sbe-small">' + esc(r.downloads || 0) + ' added</span>' : '') + '</button></li>';
-        }).join('') || '<li class="sbe-sf-note">No creatures match.</li>';
-        if (more) list.innerHTML += '<li class="sbe-sf-note">' + more + ' more not shown.' + (all.length > hits.length ? ' Type a name to narrow the list.' : '') + '</li>';
-        list._rows = hits;
+        loaded[t] = true;
+        move(function () {
+          if (rows === null) { list.innerHTML = '<li class="sbe-sf-note">Could not load these creatures. Try again.</li>'; return; }
+          var term = q.value.trim().toLowerCase();
+          var all = rows.filter(function (r) { return !term || String(r.name || '').toLowerCase().indexOf(term) >= 0; });
+          var hits = all.slice(0, 100);
+          // Never cut the list silently: say what isn't shown.
+          var more = (all.length - hits.length) + (rows.unloaded || 0);
+          list.innerHTML = hits.map(function (r, i) {
+            var f = t === 'bestiary' ? r : (r.fields_data || {});
+            var org = SB().cap(f.organization || ''), noRole = /^(leader|solo)$/i.test(f.organization || '');
+            var sub = (f.level !== undefined && f.level !== null && f.level !== '' ? 'Level ' + f.level + ' ' : '') + org + (noRole || !f.role ? '' : ' ' + SB().cap(f.role));
+            return '<li><button type="button" data-sf-pick="' + i + '"><span><b>' + esc(r.name || 'Unnamed') + '</b><br><span class="sbe-dim sbe-small">' + esc(sub.trim()) + '</span></span>' +
+              (t === 'bestiary' ? '<span class="sbe-dim sbe-small">' + esc(r.downloads || 0) + ' added</span>' : '') + '</button></li>';
+          }).join('') || '<li class="sbe-sf-note">No creatures match.</li>';
+          if (more) list.innerHTML += '<li class="sbe-sf-note">' + more + ' more not shown.' + (all.length > hits.length ? ' Type a name to narrow the list.' : '') + '</li>';
+          list._rows = hits;
+        }, typed === true);
       });
     }
-    bg.addEventListener('input', paint);
-    bg.addEventListener('click', function (e) {
-      if (e.target === bg || (e.target.closest && e.target.closest('[data-sf-close]'))) { close(); return; }
+    host.addEventListener('input', function () { paint(true); });
+    host.addEventListener('click', function (e) {
       var tb = e.target.closest && e.target.closest('[data-sf-tab]');
       if (tb) {
         tab = tb.getAttribute('data-sf-tab');
-        bg.querySelectorAll('[data-sf-tab]').forEach(function (b) { b.setAttribute('aria-selected', b === tb ? 'true' : 'false'); });
+        host.querySelectorAll('[data-sf-tab]').forEach(function (b) { b.setAttribute('aria-selected', b === tb ? 'true' : 'false'); });
         paint(); return;
       }
       var pk = e.target.closest && e.target.closest('[data-sf-pick]');
       if (!pk || !list._rows) return;
       var r = list._rows[Number(pk.getAttribute('data-sf-pick'))];
       if (!r) return;
-      if (tab === 'campaign') { close(); pick(r.name, r.fields_data || {}, 'Started from ' + r.name + ' in this campaign.'); return; }
+      if (tab === 'campaign') { pick(r.name, r.fields_data || {}, 'Started from ' + r.name + ' in this campaign.'); return; }
       pk.disabled = true;
       SB().getJSON('/bestiary/' + encodeURIComponent(r.slug) + '/statblock').then(function (sb) {
-        close();
+        pk.disabled = false;
         pick(r.name, sb, 'Started from ' + r.name + ' in the community bestiary.');
       }).catch(function () {
         pk.disabled = false;
@@ -1981,7 +2585,8 @@ var DrawSteelCreatureEditor = (function () {
       });
     });
     paint();
-    q.focus();
+    // Opened again, the lists are read afresh: a creature saved since belongs in them.
+    return { refresh: function () { cache = {}; paint(); } };
   }
 
   // ── The Add abilities drawer ──────────────────────────────────────────────
@@ -2058,7 +2663,7 @@ var DrawSteelCreatureEditor = (function () {
     dr.setAttribute('aria-modal', 'true');
     dr.setAttribute('aria-labelledby', 'sbe-dr-t');
     dr.innerHTML = '<div class="sbe-dr-h"><h2 id="sbe-dr-t">Add abilities</h2><span class="sbe-small sbe-dim" id="sbe-dr-for"></span><span class="sbe-sp"></span>' +
-      '<button type="button" class="sbe-switch" id="sbe-dr-all" aria-pressed="false">Show all</button>' +
+      '<button type="button" class="sbe-word" id="sbe-dr-all" aria-pressed="false">Show all</button>' +
       '<button type="button" class="btn-primary btn-sm" data-dr-close>Done</button></div>' +
       '<div class="sbe-dr-f"><input class="input" type="search" id="sbe-dr-q" placeholder="Search abilities" aria-label="Search abilities" autocomplete="off">' +
       '<div class="sbe-chips" id="sbe-dr-chips"></div></div>' +
@@ -2077,7 +2682,7 @@ var DrawSteelCreatureEditor = (function () {
       kws.sort();
       function group(label, key, list) {
         return '<div class="sbe-chip-row" role="group" aria-label="' + label + '">' + list.map(function (x) {
-          return '<button type="button" class="sbe-fchip" data-dr-f="' + key + '" data-dr-v="' + esc(x[0]) + '" aria-pressed="' + (f[key] === x[0]) + '">' + esc(x[1]) + '</button>';
+          return '<button type="button" class="sbe-fchip" data-dr-f="' + key + '" data-dr-v="' + esc(x[0]) + '" aria-pressed="' + (f[key] === x[0]) + '">' + chipWord(x[1]) + '</button>';
         }).join('') + '</div>';
       }
       $('sbe-dr-chips').innerHTML = group('Kind', 'type', LIB_KINDS) +
@@ -2093,7 +2698,7 @@ var DrawSteelCreatureEditor = (function () {
       if (key !== shownFor) { shownFor = key; limit = PAGE; }
       var left = rows.length - limit;
       $('sbe-dr-lib').innerHTML = rows.length ? rows.slice(0, limit).map(function (r) { return drawerCard(st, r, opt, lib); }).join('') +
-        (left > 0 ? '<p class="sbe-dr-more"><button type="button" class="btn-secondary btn-sm" data-dr-more>Show ' + Math.min(PAGE, left) + ' more (' + left + ' left)</button></p>' : '')
+        (left > 0 ? '<p class="sbe-dr-more"><button type="button" class="sbe-word" data-dr-more>Show ' + Math.min(PAGE, left) + ' more (' + left + ' left)</button></p>' : '')
         : '<p class="sbe-small sbe-dim">No abilities match. Clear a filter or the search' + (f.all ? '' : ', or press Show all') + '.</p>';
       $('sbe-dr-all').textContent = f.all ? 'Showing all ' + lib.length : 'Show all';
     }
@@ -2122,7 +2727,7 @@ var DrawSteelCreatureEditor = (function () {
       dr.classList.remove('is-open');
       scrim.classList.remove('is-open');
       doc.body.style.overflow = bodyOverflow;
-      setTimeout(function () { dr.remove(); scrim.remove(); }, still(doc) ? 0 : 320);
+      setTimeout(function () { dr.remove(); scrim.remove(); }, motion(doc) === 'off' ? 0 : tokenMs(doc, '--dur-standard', 200) + 40);
       // The editor redraws behind the drawer, so its opener is found again by id.
       var back = ctx.returnTo ? doc.getElementById(ctx.returnTo) : null;
       if (back) { try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); } }
@@ -2191,7 +2796,7 @@ var DrawSteelCreatureEditor = (function () {
         last = clone({ abilities: st.c.abilities, traits: st.c.traits, villain_actions: st.c.villain_actions });
         var name = list[idx].name;
         list.splice(idx, 1);
-        if (kind === 'v') list.forEach(function (v, i) { v.order = VA_SLOTS[i] || v.order; });
+        if (kind === 'v') renumberVillains(list);
         st.editAb = null; derive(st); ctx.changed();
         say('Removed ' + (name || 'it') + '.', true); paint(); $('sbe-dr-q').focus();
       }
@@ -2235,197 +2840,223 @@ var DrawSteelCreatureEditor = (function () {
 
   // ── Styles ────────────────────────────────────────────────────────────────
 
-  // Chronicle's colour tokens carry light and dark; the three status colours
-  // switch under Chronicle's .dark root class. Injected into <head>, never the
-  // mount element, so a redraw cannot wipe them.
+  // Every colour, corner, duration and easing is one of Chronicle's tokens,
+  // which carry light and dark; the two state colours (matches the formula,
+  // set by the director) switch under Chronicle's .dark root class. Injected
+  // into <head>, never the mount element, so a redraw cannot wipe them.
   var CSS = [
-    '.sbe-wrap{--sbe-accent:#DC2626;--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);--sbe-ai:#6d28d9;--sbe-ai-soft:rgba(124,58,237,.12);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
-    '.sbe-drawer{--sbe-accent:#DC2626;--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);--sbe-ai:#6d28d9;--sbe-ai-soft:rgba(124,58,237,.12)}',
-    '.dark .sbe-wrap,.dark .sbe-drawer{--sbe-accent:#f87171;--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14);--sbe-ai:#c4b5fd;--sbe-ai-soft:rgba(167,139,250,.16)}',
-    '.sbe{padding:16px 18px;display:flex;flex-direction:column;gap:12px;border-top:3px solid var(--sbe-accent);color:var(--color-text-body,#374151);font-size:14px}',
+    '.sbe-wrap{--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
+    '.sbe-drawer{--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14)}',
+    '.dark .sbe-wrap,.dark .sbe-drawer{--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14)}',
+    '.sbe{padding:16px 18px;display:flex;flex-direction:column;gap:12px;color:var(--color-text-body,#374151);font-size:14px;min-width:0}',
     '.sbe-part{display:contents}',
     '.sbe-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
-    '.sbe-bar-t{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:inline-flex;gap:6px;align-items:center;margin-right:4px}',
-    '.sbe-bar-t i{color:var(--sbe-accent)}',
+    '.sbe-bar-t{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563);margin-right:4px}',
     '.sbe-sp{flex:1}',
-    '.sbe-msg{margin:0;font-size:13px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:#b91c1c}.dark .sbe-msg.is-error{color:#f87171}',
-    '.sbe-origin{margin:0;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--color-bg-tertiary,#f3f4f6);display:flex;gap:8px;align-items:baseline}',
+    '.sbe-msg{margin:0;font-size:14px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:#b91c1c}.dark .sbe-msg.is-error{color:#f87171}',
+    '.sbe-origin{margin:0;font-size:14px;padding:8px 12px;border-radius:var(--shape-r-ctl,8px);background:var(--color-bg-tertiary,#f3f4f6);display:flex;gap:8px;align-items:baseline}',
+    '.sbe-origin i{color:var(--color-text-muted,#646b78)}',
     '.sbe-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
+    // The ways to start: index tabs, the open one marked by a hairline under it and up its left side.
+    '.sbe-ways{position:relative;display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 4px;border-bottom:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);min-width:0}',
+    '.sbe-way{position:relative;font:inherit;font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:var(--color-text-secondary,#4b5563);background:none;border:0;padding:13px 10px 10px 12px;min-height:36px;cursor:pointer;scroll-margin-top:72px;transition:color var(--dur-micro,120ms)}',
+    '.sbe-way:hover,.sbe-way[aria-selected="true"]{color:var(--color-text-primary,#111827)}',
+    '.sbe-way:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:-2px;border-radius:var(--shape-r-small,6px)}',
+    '.sbe-ind{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;opacity:0;transition:opacity var(--dur-micro,120ms)}',
+    '.sbe-ind.is-on{opacity:.55}',
+    '.sbe-ind i{position:absolute;left:0;top:0;width:1px;background:var(--color-text-primary,#111827);transform-origin:0 0;transition:transform var(--dur-micro,120ms) var(--ease-in-out,cubic-bezier(.4,0,.2,1))}',
+    '.sbe-ind-s{height:calc(var(--sbe-way-h,36px) - 8px)}.sbe-ind-u{height:1px}',
+    '.sbe-ind.is-still,.sbe-ind.is-still i,.sbe-ind.is-jump i{transition:none}',
+    // Before the script has placed the mark, the open tab draws the same shape itself.
+    '.sbe-ways:not(.has-ind) .sbe-way[aria-selected="true"]::before{content:"";position:absolute;left:0;top:9px;bottom:-1px;width:1px;background:var(--color-text-primary,#111827);opacity:.55}',
+    '.sbe-ways:not(.has-ind) .sbe-way[aria-selected="true"]::after{content:"";position:absolute;left:0;right:4px;bottom:-1px;height:1px;background:var(--color-text-primary,#111827);opacity:.55}',
+    // The open panel hangs from the tab row with no frame of its own; the form below is an opaque sheet that slides off it.
+    '.sbe-hang{display:none;margin-top:-12px;padding:12px 0 14px;border-bottom:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);min-width:0}',
+    '.sbe-hang.is-open{display:block}',
+    '.sbe-pan[hidden]{display:none}',
+    '.sbe-form{display:flex;flex-direction:column;gap:12px;position:relative;z-index:1;min-width:0;background:var(--color-card-bg,#fff)}',
+    // A form shorter than the open panel carries a tail of the same sheet while it slides, so the panel's foot never shows below it; the card clips the tail at its own edge.
+    '.sbe-form::after{content:"";position:absolute;left:0;right:0;top:100%;height:var(--sbe-tail,0px);background:inherit;pointer-events:none}',
+    '.sbe.is-moving{overflow:clip}',
+    '.sbe-gen{display:flex;flex-direction:column;gap:12px}',
+    '.sbe-gen-row{display:flex;flex-wrap:wrap;gap:12px 16px}.sbe-gen-row>.sbe-f{flex:0 1 180px}',
+    '.sbe-gen-go{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}',
+    '.sbe-sp+.sbe-word{margin-left:auto}',
+    '.sbe-steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px}.sbe-steps>li{display:flex;flex-direction:column;gap:8px}',
+    '.sbe-why{margin:0;padding-left:18px;list-style:disc;font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:2px}',
+    // A quiet word: the lightest control, for showing more and for closing.
+    '.sbe-word{font:inherit;font-size:14px;font-weight:500;display:inline-flex;align-items:center;min-height:32px;padding:0;border:0;background:none;cursor:pointer;white-space:nowrap;color:var(--color-accent-link,var(--color-accent,#6366f1));text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color var(--dur-micro,120ms)}',
+    '.sbe-word:hover,.sbe-word:focus-visible{text-decoration-color:currentColor;outline:none}',
+    '.sbe-word:disabled{opacity:.5;cursor:default}',
+    '.sbe-peek summary{list-style:none;width:fit-content}.sbe-peek summary::-webkit-details-marker{display:none}',
+    '.sbe-peek textarea{width:100%;margin-top:6px;font-size:12.5px}',
+    '.sbe-ai-ok{color:var(--sbe-ok)}.sbe-ai-err{color:var(--sbe-own)}',
+    // Chips to pick from. The chosen one takes the accent as an edge and as text, never as a fill.
+    '.sbe-seg{display:flex;flex-wrap:wrap;gap:6px}',
+    '.sbe-seg label{position:relative;display:inline-flex}',
+    '.sbe-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}',
+    '.sbe-seg label>span,.sbe-fchip{font:inherit;font-size:12.5px;line-height:1.2;display:inline-flex;align-items:center;gap:4px;min-height:28px;padding:0 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);white-space:nowrap;cursor:pointer;transition:background-color var(--dur-micro,120ms),border-color var(--dur-micro,120ms),color var(--dur-micro,120ms)}',
+    '.sbe-seg label:hover>span,.sbe-fchip:hover{background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-seg input:checked+span,.sbe-fchip[aria-pressed="true"]{border-color:var(--color-accent,#6366f1);box-shadow:inset 0 0 0 1px var(--color-accent,#6366f1);color:var(--color-accent-link,var(--color-accent,#6366f1));font-weight:600}',
+    '.sbe-seg input:focus-visible+span,.sbe-fchip:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
+    '.sbe-cw{display:inline-flex;flex-direction:column;align-items:center}',
+    '.sbe-cw::after{content:attr(data-w);height:0;overflow:hidden;visibility:hidden;font-weight:600;pointer-events:none;user-select:none}',
+    '.sbe-fchip .sbe-dim{font-weight:400;color:var(--color-text-muted,#646b78)}',
+    '.sbe-chips{display:flex;flex-direction:column;gap:8px}',
+    '.sbe-chip-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}',
+    '.sbe-chip-set{display:flex;flex-wrap:wrap;gap:6px;min-width:0;flex:1 1 0}',
+    // The book shortlist inside With an AI: rows under hairlines, no box of its own.
+    '.sbe-bk{display:flex;flex-direction:column;gap:10px}',
+    '.sbe-pan,.sbe-gen,.sbe-steps,.sbe-steps>li,.sbe-bk,.sbe-bk>*,.sbe-bk .sbe-chips,.sbe-bk .sbe-chip-row{min-width:0;max-width:100%}',
+    '.sbe-bk .sbe-chip-row{align-items:flex-start;flex-wrap:nowrap}',
+    '.sbe-bk-k{flex:none;width:80px;padding-top:7px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted,#646b78)}',
+    '.sbe-bk-sel{width:auto;max-width:260px}',
+    '.sbe-bk-row{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}',
+    '.sbe-bk-lim{display:inline-flex;gap:6px}',
+    '.sbe-bk-list{display:flex;flex-direction:column;max-height:360px;overflow:auto;overscroll-behavior:contain}',
+    '.sbe-bk-it{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:8px 4px;border-top:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);cursor:pointer;transition:background-color var(--dur-micro,120ms)}',
+    '.sbe-bk-it:hover{background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-bk-it.is-off{opacity:.5}',
+    '.sbe-bk-it input{margin-top:3px}',
+    '.sbe-bk-it b{color:var(--color-text-primary,#111827);font-weight:600}',
+    '.sbe-bk-x{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+    // From a creature: where to look, a search and the list.
+    '.sbe-tabs{display:flex;gap:4px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
+    '.sbe-tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:6px 10px;color:var(--color-text-secondary,#4b5563);cursor:pointer;transition:color var(--dur-micro,120ms)}',
+    '.sbe-tabs button[aria-selected="true"]{color:var(--color-accent-link,var(--color-accent,#6366f1));border-bottom-color:var(--color-accent,#6366f1)}',
+    '.sbe-tabs button:hover{color:var(--color-text-primary,#111827)}',
+    '.sbe-tabs button:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:-2px;border-radius:var(--shape-r-small,6px)}',
+    '.sbe-sf-list{list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto;overscroll-behavior:contain}',
+    '.sbe-sf-list li+li{border-top:var(--shape-rule,1px) solid var(--color-border,#e5e7eb)}',
+    '.sbe-sf-list button{font:inherit;width:100%;text-align:left;background:none;border:0;padding:8px 4px;min-height:44px;display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;color:var(--color-text-body,#374151);transition:background-color var(--dur-micro,120ms)}',
+    '.sbe-sf-list button:hover,.sbe-sf-list button:focus-visible{background:var(--color-bg-tertiary,#f3f4f6)}',
+    '.sbe-sf-list button:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:-2px}',
+    '.sbe-sf-list b{color:var(--color-text-primary,#111827);font-weight:600}',
+    '.sbe-sf-note{padding:12px 4px;font-size:12.5px;color:var(--color-text-secondary,#4b5563)}',
+    // The form.
     '.sbe-pics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}',
-    '.sbe-pic-slot{display:grid;gap:6px;justify-items:start;align-content:start;min-width:0;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:8px}',
-    '.sbe-pic-prev{width:88px;height:88px;border-radius:8px;overflow:hidden;display:grid;place-items:center;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
+    '.sbe-pic-slot{display:grid;gap:6px;justify-items:start;align-content:start;min-width:0;padding:10px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px)}',
+    '.sbe-pic-prev{width:88px;height:88px;border-radius:var(--shape-r-ctl,8px);overflow:hidden;display:grid;place-items:center;background:var(--color-bg-tertiary,#f3f4f6);box-shadow:0 0 0 1px var(--color-border,#e5e7eb)}',
     '.sbe-pic-prev.is-round{border-radius:50%}',
     '.sbe-pic-prev.is-generic{opacity:.6;box-shadow:none;background:none}',
     '.sbe-pic-prev img,.sbe-pic-prev svg{width:100%;height:100%;object-fit:cover;display:block}',
-    '.sbe-pic-none{font-size:12px;color:var(--color-text-secondary,#6b7280);text-align:center;padding:4px}',
+    '.sbe-pic-none{font-size:12.5px;color:var(--color-text-secondary,#4b5563);text-align:center;padding:4px}',
     '.sbe-pic-acts{display:flex;gap:4px;flex-wrap:wrap}',
     '.sbe-pic-up{position:relative;cursor:pointer}',
     '.sbe-pic-up:focus-within{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px}',
-    '@media (max-width:640px){.sbe-pics{grid-template-columns:1fr}}',
-    '.sbe-h{margin:6px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}',
+    '.sbe-h{margin:8px 0 0;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}',
     '.sbe-h .sbe-hint{text-transform:none;letter-spacing:0;font-weight:400;margin-right:auto}',
-    '.sbe-grid{display:grid;gap:10px 12px}',
+    '.sbe-h button{text-transform:none;letter-spacing:0}',
+    '.sbe-h-acts{display:inline-flex;gap:8px;flex-wrap:wrap}',
+    '.sbe-grid{display:grid;gap:12px}',
     '.sbe-g3{grid-template-columns:repeat(3,minmax(0,1fr))}.sbe-g4{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(7,minmax(0,1fr))}',
     '.sbe-f{display:flex;flex-direction:column;gap:4px;min-width:0}.sbe-wide{grid-column:span 2}.sbe-full{grid-column:1/-1}',
-    '.sbe-lbl{font-size:12px;font-weight:500}',
+    '.sbe-lbl{font-size:12.5px;font-weight:600;color:var(--color-text-secondary,#4b5563);margin:0}',
     '.sbe-num{font-variant-numeric:tabular-nums}',
     '.sbe .input{width:100%;font-size:14px}',
-    '.sbe-hint{font-size:12px;color:var(--color-text-secondary,#6b7280);margin:0}',
-    '.sbe-check{display:flex;gap:8px;align-items:center;font-size:13px}',
-    '.sbe-chip{font-size:11.5px;line-height:1.3;border-radius:6px;padding:3px 6px;display:inline-flex;gap:4px;align-items:baseline;flex-wrap:wrap;align-self:flex-start}',
+    '.sbe-hint{font-size:12.5px;line-height:1.45;color:var(--color-text-secondary,#4b5563);margin:0}',
+    '.sbe-check{display:flex;gap:8px;align-items:center;font-size:14px}',
+    '.sbe-chip{font-size:11.5px;line-height:1.3;border-radius:var(--shape-r-tag,4px);padding:3px 6px;display:inline-flex;gap:4px;align-items:baseline;flex-wrap:wrap;align-self:flex-start}',
     '.sbe-chip.is-pub{background:var(--sbe-ok-soft);color:var(--sbe-ok)}',
     '.sbe-chip.is-own,.sbe-chip.is-none{background:var(--sbe-own-soft);color:var(--sbe-own)}',
     // The provenance chip's light-mode amber is a deeper shade so its small text holds 4.5:1 on the tint.
     '.sbe-chip.is-none{color:#92400e}.dark .sbe-chip.is-none{color:var(--sbe-own)}',
-    '.sbe-chip.is-ai{background:var(--sbe-ai-soft);color:var(--sbe-ai)}',
-    '.sbe-link{font:inherit;background:none;border:0;padding:0;color:var(--color-accent-link,var(--color-accent,#6366f1));text-decoration:underline;cursor:pointer}',
+    '.sbe-chip.is-wait{background:transparent;color:var(--color-text-secondary,#4b5563);padding-left:0}',
+    '.sbe-chip.is-ai{background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#4b5563)}',
+    '.sbe-link{font:inherit;background:none;border:0;padding:0;color:var(--color-accent-link,var(--color-accent,#6366f1));text-decoration:underline;text-underline-offset:2px;cursor:pointer}',
+    // A figure that just changed is ringed in the accent, and the ring fades.
+    '.sbe-box{position:relative;display:block}',
+    '.sbe-f.is-flash .sbe-box::after{content:"";position:absolute;inset:-2px;border-radius:calc(var(--shape-r-ctl,8px) + 2px);box-shadow:0 0 0 2px rgb(var(--color-accent-rgb, 99 102 241) / .45);pointer-events:none;opacity:0}',
     '.sbe-abs{display:flex;flex-direction:column;gap:8px}',
-    '.sbe-ab{border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:0 12px 10px}',
+    '.sbe-ab{border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);padding:0 12px 10px}',
     '.sbe-ab .sbx-ab{border-top:0}',
     '.sbe-ab-edit{padding-top:12px;display:flex;flex-direction:column;gap:10px;background:var(--color-bg-tertiary,#f3f4f6)}',
-    '.sbe-ab-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:13px}',
-    '.sbe-ab-acts{display:inline-flex;gap:12px;margin-left:auto}',
-    '.sbe-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px}',
-    '.sbe-side-card{background:var(--color-card-bg,#fff);border:1px solid var(--color-border,#e5e7eb);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}',
-    '.sbe-side-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280)}',
-    '.sbe-small{font-size:13px;line-height:1.5;margin:0}.sbe-dim{color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-ab-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:14px}',
+    '.sbe-ab-acts{display:inline-flex;gap:12px;margin-left:auto;align-items:center}',
+    '.sbe-icon{font:inherit;font-size:13px;line-height:1;width:28px;height:28px;border-radius:var(--shape-r-small,6px);border:0;background:none;color:var(--color-text-secondary,#4b5563);cursor:pointer;transition:background-color var(--dur-micro,120ms),color var(--dur-micro,120ms)}',
+    '.sbe-icon:hover:not(:disabled){background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-primary,#111827)}',
+    '.sbe-icon:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:1px}',
+    '.sbe-icon:disabled{opacity:.35;cursor:default}',
+    '.sbe-grip{color:var(--color-text-muted,#646b78);cursor:grab;user-select:none}',
+    '.sbe-ab[draggable="true"]{cursor:grab}.sbe-ab.is-dragging{opacity:.45}',
+    // Beside the form: the party, the budget and the checks.
+    '.sbe-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px;min-width:0}',
+    '.sbe-side-card{background:var(--color-card-bg,#fff);border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}',
+    '.sbe-side-h{margin:0;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563)}',
+    '.sbe-small{font-size:12.5px;line-height:1.5;margin:0}.sbe-dim{color:var(--color-text-secondary,#4b5563)}',
+    '.sbe-small b{color:var(--color-text-primary,#111827);font-weight:600}',
     '.sbe-heroes{list-style:none;margin:0;padding:0;display:grid;gap:8px}',
     '.sbe-heroes li{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--color-text-primary,#111827)}',
-    '.sbe-av{width:30px;height:30px;border-radius:50%;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280);display:grid;place-items:center;font-weight:600;font-size:13px;flex-shrink:0}',
-    '.sbe-meter{position:relative;height:14px;border-radius:7px;background:var(--color-bg-tertiary,#f3f4f6);overflow:hidden}',
-    '.sbe-band{position:absolute;top:0;bottom:0}.sbe-band.is-easy{background:rgba(99,102,241,.10)}.sbe-band.is-std{background:rgba(22,163,74,.28)}.sbe-band.is-hard{background:rgba(217,119,6,.22)}',
-    '.sbe-fill{position:absolute;left:0;top:4px;bottom:4px;background:var(--sbe-accent);border-radius:3px}',
+    '.sbe-av{width:28px;height:28px;border-radius:50%;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#4b5563);display:grid;place-items:center;font-weight:600;font-size:12.5px;flex-shrink:0}',
+    '.sbe-meter{position:relative;height:12px;border-radius:6px;background:var(--color-bg-tertiary,#f3f4f6);overflow:hidden}',
+    '.sbe-band{position:absolute;top:0;bottom:0}.sbe-band.is-easy{background:rgb(var(--color-ok-rgb, 22 163 74) / .12)}.sbe-band.is-std{background:rgb(var(--color-ok-rgb, 22 163 74) / .32)}.sbe-band.is-hard{background:rgb(var(--color-warn-rgb, 217 119 6) / .28)}',
+    '.sbe-fill{position:absolute;left:0;top:4px;bottom:4px;background:var(--color-accent,#6366f1);border-radius:2px}',
     '.sbe-meter-k{display:flex;justify-content:space-between}',
     '.sbe-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}',
-    '.sbe-checks li{display:flex;gap:8px;align-items:baseline}',
-    '.sbe-checks .is-ok i{color:var(--sbe-ok)}.sbe-checks .is-miss i,.sbe-checks .is-warn i{color:var(--sbe-own)}.sbe-checks .is-provenance i{color:var(--color-text-secondary,#6b7280)}',
-    '.sbe-modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}',
-    '.sbe-modal{width:min(560px,100%);max-height:80vh;display:flex;flex-direction:column;gap:10px;padding:18px}',
-    '.sbe-modal-h{display:flex;justify-content:space-between;align-items:center}',
-    '.sbe-modal-h h2{margin:0;font-size:18px;font-weight:700;color:var(--color-text-primary,#111827)}',
-    '.sbe-tabs{display:flex;gap:4px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
-    '.sbe-tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;padding:6px 10px;color:var(--color-text-secondary,#6b7280);cursor:pointer}',
-    '.sbe-tabs button[aria-selected="true"]{color:var(--color-accent-link,var(--color-accent,#6366f1));border-bottom-color:var(--color-accent,#6366f1)}',
-    '.sbe-sf-list{list-style:none;margin:0;padding:0;overflow-y:auto;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;min-height:0}',
-    '.sbe-sf-list li+li{border-top:1px solid var(--color-border-light,#f3f4f6)}',
-    '.sbe-sf-list button{font:inherit;width:100%;text-align:left;background:none;border:0;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;color:var(--color-text-body,#374151)}',
-    '.sbe-sf-list button:hover,.sbe-sf-list button:focus-visible{background:var(--color-bg-tertiary,#f3f4f6)}',
-    '.sbe-sf-list b{color:var(--color-text-primary,#111827)}',
-    '.sbe-sf-note{padding:12px;font-size:13px;color:var(--color-text-secondary,#6b7280)}',
-    '.sbe-start{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
-    '.sbe-fold{display:grid;grid-template-rows:0fr;opacity:0;margin-top:-12px;transition:grid-template-rows 320ms cubic-bezier(.2,.8,.2,1),opacity 200ms linear,margin-top 320ms cubic-bezier(.2,.8,.2,1)}',
-    '.sbe-fold.is-open{grid-template-rows:1fr;opacity:1;margin-top:0}',
-    '.sbe-fold-in{overflow:hidden;min-height:0}.sbe-fold.is-open>.sbe-fold-in{overflow:visible}.sbe-fold.is-open.is-moving>.sbe-fold-in{overflow:hidden}',
-    '.sbe-gen{border:1px solid color-mix(in srgb,var(--sbe-accent) 40%,var(--color-border,#e5e7eb));border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;background:var(--color-bg-tertiary,#f9fafb)}',
-    '.sbe-gen-h{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}',
-    '.sbe-gen-h h4{margin:0;font-size:15px;font-weight:600;color:var(--color-text-primary,#111827)}',
-    '.sbe-seg{display:flex;flex-wrap:wrap;gap:6px}',
-    // The book shortlist inside Build with an AI.
-    '.sbe-bk{border:1px dashed color-mix(in srgb,var(--sbe-ai) 55%,transparent);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--sbe-ai-soft)}',
-    '.sbe-bk>.sbe-lbl{color:var(--sbe-ai)}',
-    // Each chip row scrolls sideways on a phone, so nothing here may widen the panel.
-    '.sbe-fold-in,.sbe-gen,.sbe-steps,.sbe-steps>li,.sbe-bk,.sbe-bk>*,.sbe-bk .sbe-chips,.sbe-bk .sbe-chip-row{min-width:0;max-width:100%}',
-    '.sbe-bk-k{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-secondary,#6b7280);min-width:80px;align-self:center}',
-    '.sbe-bk-sel{width:auto;max-width:260px}',
-    '.sbe-bk-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
-    '.sbe-bk-lim{display:inline-flex;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;overflow:hidden}',
-    '.sbe-bk-lim button{font:inherit;font-size:13px;border:0;border-right:1px solid var(--color-border,#e5e7eb);background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);padding:3px 10px;cursor:pointer}',
-    '.sbe-bk-lim button:last-child{border-right:0}',
-    '.sbe-bk-lim button[aria-pressed="true"]{background:var(--sbe-ai);color:var(--color-card-bg,#fff)}',
-    '.sbe-bk-list{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;background:var(--color-card-bg,#fff);padding:4px}',
-    '.sbe-bk-it{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start;padding:5px 8px;border-radius:6px;cursor:pointer}',
-    '.sbe-bk-it:hover{background:var(--color-bg-tertiary,#f3f4f6)}',
-    '.sbe-bk-it.is-off{opacity:.5}',
-    '.sbe-bk-it input{margin-top:3px}',
-    '.sbe-bk-x{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
-    '@media (max-width:640px){.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}}',
-    '.sbe-seg label{position:relative;display:inline-flex}',
-    '.sbe-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}',
-    '.sbe-seg span{padding:5px 12px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;font-size:13px;background:var(--color-card-bg,#fff);transition:background-color 160ms linear,border-color 160ms linear,color 160ms linear}',
-    '.sbe-seg input:checked+span{background:var(--sbe-accent);border-color:var(--sbe-accent);color:#fff}',
-    '.sbe-seg input:focus-visible+span{outline:2px solid var(--sbe-accent);outline-offset:2px}',
-    '.sbe-gen-row{display:flex;flex-wrap:wrap;gap:12px 16px}.sbe-gen-row>.sbe-f{flex:0 1 180px}',
-    '.sbe-gen-go{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
-    '.sbe-steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}.sbe-steps>li{display:flex;flex-direction:column;gap:8px}',
-    '.sbe-peek summary{cursor:pointer;font-size:13px;color:var(--sbe-accent);width:fit-content}',
-    '.sbe-peek textarea{width:100%;margin-top:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}',
-    '.sbe-ai-ok{color:var(--sbe-ok)}.sbe-ai-err{color:var(--sbe-own)}',
-    '.sbe-why{margin:0;padding-left:18px;font-size:13px;line-height:1.5;display:flex;flex-direction:column;gap:2px}',
-    '.sbe-f .sbe-num{transition:background-color 450ms linear}.sbe-f.is-flash .sbe-num{background:var(--sbe-ok-soft);transition:none}',
-    // Opening the editor: the bar slides down, then the panels rise in turn.
-    '@keyframes sbe-barin{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}',
-    '@keyframes sbe-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}',
+    '.sbe-checks li{display:flex;gap:8px;align-items:baseline;color:var(--color-text-primary,#111827)}',
+    '.sbe-checks .is-ok i{color:var(--sbe-ok)}.sbe-checks .is-miss i,.sbe-checks .is-warn i{color:var(--sbe-own)}.sbe-checks .is-provenance i{color:var(--color-text-muted,#646b78)}',
+    // Motion. Arrivals fade (and rise a few pixels where a list fills in); nothing overshoots.
     '@keyframes sbe-fade{from{opacity:0}to{opacity:1}}',
-    '.sbe-entering .sbe{animation:sbe-rise 320ms cubic-bezier(.2,.8,.2,1) both}',
-    '.sbe-entering .sbe-bar{animation:sbe-barin 280ms cubic-bezier(.2,.8,.2,1) 80ms both}',
-    '.sbe-entering .sbe-side{animation:sbe-rise 320ms cubic-bezier(.2,.8,.2,1) 160ms both}',
-    'html[data-motion="calm"] .sbe-entering .sbe,html[data-motion="calm"] .sbe-entering .sbe-bar,html[data-motion="calm"] .sbe-entering .sbe-side{animation:sbe-fade 180ms linear both}',
-    'html[data-motion="calm"] .sbe-fold{transition:opacity 180ms linear}',
-    'html[data-motion="off"] .sbe-entering *,html[data-motion="off"] .sbe-entering{animation:none}',
-    'html[data-motion="off"] .sbe-fold,html[data-motion="off"] .sbe-seg span,html[data-motion="off"] .sbe-f .sbe-num{transition:none}',
-    '@media (prefers-reduced-motion:reduce){.sbe-entering,.sbe-entering *{animation:none}.sbe-fold,.sbe-seg span,.sbe-f .sbe-num{transition:none}}',
-    '.sbe-h-acts{display:inline-flex;gap:6px;flex-wrap:wrap}',
-    '.sbe-icon{font:inherit;font-size:13px;line-height:1;width:26px;height:26px;border-radius:6px;border:1px solid var(--color-border,#e5e7eb);background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
-    '.sbe-icon:disabled{opacity:.35;cursor:default}',
-    '.sbe-ab-acts{align-items:center}',
-    '.sbe-grip{color:var(--color-text-secondary,#6b7280);cursor:grab;user-select:none}',
-    '.sbe-ab[draggable="true"]{cursor:grab}.sbe-ab.is-dragging{opacity:.45}',
-    // Add abilities: the drawer slides down from the top and the page dims.
-    '.sbe-scrim{position:fixed;inset:0;z-index:80;background:rgba(8,10,20,.55);opacity:0;transition:opacity 260ms linear}',
-    '.sbe-scrim.is-open{opacity:1}',
-    '.sbe-drawer{position:fixed;z-index:81;top:calc(12px + env(safe-area-inset-top,0px));left:50%;width:min(1180px,calc(100vw - 32px));max-height:calc(100% - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);border:1px solid var(--color-border,#e5e7eb);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;font-size:14px;transform:translate(-50%,calc(-100% - 24px));transition:transform 320ms cubic-bezier(.2,.8,.2,1)}',
-    '.sbe-drawer.is-open{transform:translate(-50%,0)}',
-    '.sbe-dr-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
-    '.sbe-dr-h h2{margin:0;font-size:16px;font-weight:700;color:var(--color-text-primary,#111827)}',
-    '.sbe-switch{font:inherit;font-size:13px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;padding:4px 12px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
-    '.sbe-switch[aria-pressed="true"]{background:var(--sbe-accent,#DC2626);border-color:var(--sbe-accent,#DC2626);color:#fff}',
-    '.sbe-dr-f{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-bottom:1px solid var(--color-border,#e5e7eb);background:var(--color-bg-tertiary,#f9fafb)}',
+    '@keyframes sbe-row{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}',
+    '@keyframes sbe-settle{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}',
+    '@keyframes sbe-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}',
+    '.sbe-entering{animation:sbe-fade var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+    '.sbe-chip.is-new{animation:sbe-fade var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+    '.sbe-checks li.is-new{animation:sbe-row var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+    '.sbe-form>.is-settle,.sbe-abs.is-settle{animation:sbe-settle var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
+    // Add abilities: the drawer slides down from the top and the page dims; leaving is quicker.
+    '.sbe-scrim{position:fixed;inset:0;z-index:80;background:rgba(8,10,20,.55);opacity:0;transition:opacity var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
+    '.sbe-scrim.is-open{opacity:1;transition:opacity var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.sbe-drawer{position:fixed;z-index:81;top:calc(12px + env(safe-area-inset-top,0px));left:50%;width:min(1180px,calc(100vw - 32px));max-height:calc(100% - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px);box-shadow:var(--elev-dragged,0 16px 36px -8px rgb(0 0 0 / .22));overflow:hidden;font-size:14px;transform:translate(-50%,calc(-100% - 24px));transition:transform var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
+    '.sbe-drawer.is-open{transform:translate(-50%,0);transition:transform var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.sbe-dr-h{display:flex;gap:4px 12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
+    '.sbe-dr-h h2{margin:0;font-size:16px;font-weight:600;color:var(--color-text-primary,#111827)}',
+    '.sbe-dr-f{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
     '.sbe-dr-f input{width:100%;font-size:14px}',
-    '.sbe-chips{display:flex;flex-direction:column;gap:6px}',
-    '.sbe-chip-row{display:flex;flex-wrap:wrap;gap:6px}',
-    '.sbe-fchip{font:inherit;font-size:12.5px;border:1px solid var(--color-border,#e5e7eb);border-radius:999px;padding:3px 10px;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);cursor:pointer}',
-    '.sbe-fchip[aria-pressed="true"]{background:var(--sbe-accent,#DC2626);border-color:var(--sbe-accent,#DC2626);color:#fff}',
-    '.sbe-dr-b{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;padding:14px 16px;overflow:auto;min-height:0;flex:1}',
+    '.sbe-dr-b{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;padding:16px;overflow:auto;min-height:0;flex:1}',
     '.sbe-dr-more{grid-column:1/-1;margin:4px 0 0;text-align:center}',
-    '.sbe-dr-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-content:start;min-width:0}',
-    '.sbe-abc{display:flex;flex-direction:column;gap:6px;border:1px solid var(--color-border,#e5e7eb);border-radius:10px;padding:10px 12px;background:var(--color-card-bg,#fff);font-size:13px;min-width:0}',
-    '.sbe-abc[draggable="true"]{cursor:grab}.sbe-abc[draggable="true"]:hover{border-color:color-mix(in srgb,var(--sbe-accent,#DC2626) 50%,var(--color-border,#e5e7eb))}',
+    '.sbe-dr-lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;align-content:start;min-width:0}',
+    '.sbe-abc{display:flex;flex-direction:column;gap:6px;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);padding:10px 12px;background:var(--color-card-bg,#fff);font-size:12.5px;min-width:0;transition:border-color var(--dur-micro,120ms)}',
+    '.sbe-abc[draggable="true"]{cursor:grab}.sbe-abc[draggable="true"]:hover{border-color:var(--color-input-border,#d1d5db)}',
     '.sbe-abc.is-dragging{opacity:.45}.sbe-abc.is-off{opacity:.6}',
     '.sbe-abc header,.sbe-abc footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}',
-    '.sbe-abc header b{color:var(--color-text-primary,#111827);font-size:14px}',
+    '.sbe-abc header b{color:var(--color-text-primary,#111827);font-size:14px;font-weight:600}',
     '.sbe-abc p{margin:0}',
-    '.sbe-tag{font-size:11px;border-radius:999px;padding:1px 8px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#6b7280)}',
-    '.sbe-tag.is-sig{background:var(--sbe-accent,#DC2626);color:#fff}',
+    '.sbe-tag{font-size:11px;border-radius:var(--shape-r-tag,4px);padding:1px 6px;background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-secondary,#4b5563);white-space:nowrap}',
+    '.sbe-tag.is-sig{color:var(--color-text-primary,#111827);font-weight:600}',
     '.sbe-abc-t{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;font-size:12.5px}',
-    '.sbe-abc-k{font-variant-numeric:tabular-nums;font-size:11px;color:var(--color-text-secondary,#6b7280)}',
+    '.sbe-abc-k{font-variant-numeric:tabular-nums;font-size:11px;color:var(--color-text-secondary,#4b5563)}',
     '.sbe-ok{color:var(--sbe-ok,#15803d)}',
     '.sbe-abc-o{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}',
     '.sbe-abc-o label{display:flex;flex-direction:column;gap:2px;min-width:0}.sbe-abc-o select{width:100%;font-size:12.5px}',
-    '.sbe-dr-drop{position:sticky;top:0;align-self:start;display:flex;flex-direction:column;gap:6px;border:2px dashed var(--color-border,#e5e7eb);border-radius:12px;padding:12px;transition:border-color 160ms linear,background-color 160ms linear}',
-    '.sbe-dr-drop.is-ready{border-color:var(--sbe-accent,#DC2626)}',
-    '.sbe-dr-drop.is-over{border-color:var(--sbe-accent,#DC2626);background:var(--sbe-ok-soft,rgba(22,163,74,.12))}',
+    // A dashed edge is a place to put something: the drop target, and an empty slot in the creature's list.
+    '.sbe-dr-drop{position:sticky;top:0;align-self:start;display:flex;flex-direction:column;gap:6px;border:1px dashed var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px);padding:12px;transition:border-color var(--dur-micro,120ms),background-color var(--dur-micro,120ms)}',
+    '.sbe-dr-drop.is-ready{border-color:var(--color-accent,#6366f1)}',
+    '.sbe-dr-drop.is-over{border-color:var(--color-accent,#6366f1);background:rgb(var(--color-accent-rgb, 99 102 241) / .12)}',
     '.sbe-dr-drop p{margin:0}.sbe-dr-drop .sbe-lbl{margin-top:6px}',
     '.sbe-dr-drop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}',
-    '.sbe-mine-i{display:flex;gap:6px;align-items:center;justify-content:space-between;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;padding:5px 8px;font-size:13px;color:var(--color-text-primary,#111827)}',
-    '.sbe-mine-i.is-sig{border-color:var(--sbe-accent,#DC2626)}',
-    '.sbe-mine-i.is-empty{color:var(--color-text-secondary,#6b7280);border-style:dashed}',
-    '.sbe-mine-i button{font:inherit;border:0;background:none;color:var(--color-text-secondary,#6b7280);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}',
-    '@keyframes sbe-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}',
-    '.sbe-mine-i.is-new{animation:sbe-in 260ms cubic-bezier(.2,.8,.2,1)}',
-    '.sbe-dr-status{margin:0;padding:8px 16px;border-top:1px solid var(--color-border,#e5e7eb);font-size:13px}.sbe-dr-status:empty{display:none}',
-    'html[data-motion="calm"] .sbe-drawer{transform:translate(-50%,0);opacity:0;transition:opacity 180ms linear}',
-    'html[data-motion="calm"] .sbe-drawer.is-open{opacity:1}',
-    'html[data-motion="calm"] .sbe-mine-i.is-new{animation:sbe-fade 180ms linear}',
+    '.sbe-mine-i{display:flex;gap:6px;align-items:center;justify-content:space-between;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);padding:5px 8px;font-size:12.5px;color:var(--color-text-primary,#111827)}',
+    '.sbe-mine-i.is-sig{font-weight:600}',
+    '.sbe-mine-i.is-empty{color:var(--color-text-secondary,#4b5563);border-style:dashed}',
+    '.sbe-mine-i button{font:inherit;border:0;background:none;color:var(--color-text-secondary,#4b5563);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}',
+    '.sbe-mine-i.is-new{animation:sbe-in var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.sbe-dr-status{margin:0;padding:8px 16px;border-top:1px solid var(--color-border,#e5e7eb);font-size:14px}.sbe-dr-status:empty{display:none}',
+    // Calm keeps fades and drops travel; Off and a device asking for reduced motion show the end state.
+    'html[data-motion="calm"] .sbe-drawer,html[data-cz-reduce] .sbe-drawer{transform:translate(-50%,0);opacity:0;transition:opacity var(--dur-standard,200ms) linear}',
+    'html[data-motion="calm"] .sbe-drawer.is-open,html[data-cz-reduce] .sbe-drawer.is-open{opacity:1}',
+    'html[data-motion="calm"] .sbe-ind i,html[data-cz-reduce] .sbe-ind i{transition:none}',
+    'html[data-motion="calm"] :is(.sbe-checks li.is-new,.sbe-form>.is-settle,.sbe-abs.is-settle,.sbe-mine-i.is-new),html[data-cz-reduce] :is(.sbe-checks li.is-new,.sbe-form>.is-settle,.sbe-abs.is-settle,.sbe-mine-i.is-new){animation:none}',
     'html[data-motion="off"] .sbe-drawer{transform:translate(-50%,0);transition:none}',
-    'html[data-motion="off"] .sbe-scrim,html[data-motion="off"] .sbe-dr-drop{transition:none}',
-    'html[data-motion="off"] .sbe-mine-i.is-new{animation:none}',
-    '@media (prefers-reduced-motion:reduce){.sbe-drawer{transform:translate(-50%,0);transition:none}.sbe-scrim,.sbe-dr-drop{transition:none}.sbe-mine-i.is-new{animation:none}}',
-    // On a phone the creature's list sits above the library, and the filters scroll sideways.
-    '@media (max-width:760px){.sbe-dr-b{grid-template-columns:minmax(0,1fr)}.sbe-dr-drop{order:-1;position:static}.sbe-dr-lib{grid-template-columns:minmax(0,1fr)}.sbe-chip-row{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.sbe-fchip{flex:none}.sbe-dr-drop ul{flex-direction:row;flex-wrap:wrap}}',
+    'html[data-motion="off"] :is(.sbe-wrap,.sbe-wrap *,.sbe-drawer *,.sbe-scrim){animation:none;transition:none}',
+    '@media (prefers-reduced-motion:reduce){.sbe-drawer{transform:translate(-50%,0);transition:none}.sbe-wrap,.sbe-wrap *,.sbe-drawer *,.sbe-scrim{animation:none;transition:none}}',
+    // Touch: a tab, a quiet word and a chip are tall enough for a thumb.
+    '@media (pointer:coarse){.sbe-way,.sbe-word{min-height:44px}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-icon{width:44px;height:44px}}',
+    // On a phone the creature's list sits above the library, and the drawer's filters scroll sideways. The panels never do: their chips wrap, each label above its own.
+    '@media (max-width:760px){.sbe-dr-b{grid-template-columns:minmax(0,1fr)}.sbe-dr-drop{order:-1;position:static}.sbe-dr-lib{grid-template-columns:minmax(0,1fr)}.sbe-drawer .sbe-chip-row{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.sbe-drawer .sbe-fchip{flex:none}.sbe-dr-drop ul{flex-direction:row;flex-wrap:wrap}}',
     // On wide screens the bar with Save stays in view while the form scrolls.
-    '@media (min-width:901px){.sbe-bar{position:sticky;top:0;z-index:5;margin:-16px -18px 0;padding:12px 18px;background:var(--color-card-bg,#fff);border-bottom:1px solid var(--color-border-light,#f3f4f6)}}',
+    '@media (min-width:901px){.sbe-bar{position:sticky;top:0;z-index:5;margin:-16px -18px 0;padding:12px 18px;background:var(--color-card-bg,#fff);border-bottom:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px) var(--shape-r-panel,12px) 0 0}}',
     '@media (max-width:900px){.sbe-wrap{grid-template-columns:minmax(0,1fr)}.sbe-side{position:static}}',
-    '@media (max-width:640px){.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}}'
+    '@media (max-width:640px){.sbe{padding:14px 16px}.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-pics{grid-template-columns:1fr}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-bk .sbe-chip-row{flex-direction:column;align-items:stretch;gap:4px}.sbe-bk-k{width:auto;padding-top:0}.sbe-bk-row>p{flex:1 1 100%}.sbe-bk-row>.sbe-sp{display:none}.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}}'
   ].join('\n');
 
   function injectStyles(doc) {
@@ -2443,8 +3074,8 @@ var DrawSteelCreatureEditor = (function () {
     newState: newState, derive: derive, setFigure: setFigure, useFormula: useFormula,
     startFrom: startFrom, checks: checks, budget: budget, toSave: toSave, roundTrip: roundTrip, autoTier: autoTier, isStrike: isStrike,
     editorHtml: editorHtml, sideHtml: sideHtml, applyField: applyField, newAbility: newAbility, save: save,
-    applySuggestion: applySuggestion, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
-    usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem,
+    applySuggestion: applySuggestion, withoutDamage: withoutDamage, generate: generate, fits: fits, fromLibrary: fromLibrary, KINDS: KINDS, mount: mount,
+    usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem, removeItem: removeItem, addVillain: addVillain, applyAbility: applyAbility,
     openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS,
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,
     setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE,

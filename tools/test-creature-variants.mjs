@@ -444,3 +444,29 @@ test('a rise that cannot run says why in plain words', async () => {
   workshop(w, { recipe: 'rem', marked: ['hound'] }, { conflicts: 5 });
   await assert.rejects(S.Rise.run(died('hound')), (e) => /^made Remnant of Ashen Hound, but could not note the variant on the mark\.$/.test(e.message));
 });
+
+// A variant follows its original: a recipe that changes nothing leaves every
+// ability as the book printed it, and the page is not out of date.
+test('a variant with no steps equals its original, for every Monsters book creature', () => {
+  const book = load('monsters.json');
+  const bad = [];
+  for (const m of book) {
+    const orig = Ed.roundTrip(m.name, m.properties, refs);
+    const b = V.materialize(Ed, orig, [], orig, null, refs);
+    for (const k of ['abilities_json', 'villain_actions_json', 'traits']) {
+      const a = JSON.stringify(S.normalize({ [k]: orig[k] })[k === 'abilities_json' ? 'abilities' : k === 'villain_actions_json' ? 'villain_actions' : 'traits']);
+      const v = JSON.stringify(S.normalize(b.fields)[k === 'abilities_json' ? 'abilities' : k === 'villain_actions_json' ? 'villain_actions' : 'traits']);
+      if (a !== v) bad.push(m.slug + ' ' + k);
+    }
+    if (V.stale(orig, b.fields)) bad.push(m.slug + ' stale');
+  }
+  assert.deepEqual(bad.slice(0, 5), [], bad.length + ' creatures differ');
+});
+
+test('a recipe that moves the level still reworks formula damage', () => {
+  const shield = load('monsters.json').find((m) => m.slug === 'dwarf-shieldwall');
+  const orig = Ed.roundTrip(shield.name, shield.properties, refs);
+  const up = V.materialize(Ed, orig, [{ steps: V.cleanSteps({ changes: { level: { mode: 'by', by: 2 } } }) }], orig, null, refs);
+  assert.equal(S.normalize(up.fields).level, S.normalize(orig).level + 2);
+  assert.notEqual(JSON.stringify(S.normalize(up.fields).abilities), JSON.stringify(S.normalize(orig).abilities));
+});

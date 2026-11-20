@@ -127,6 +127,15 @@ var MonsterEngine = (function () {
     return { spent: safeEv, budget: safeB, copies: Math.max(1, Math.round(safeB / safeEv)), ratio: safeEv / safeB };
   }
 
+  // difficultyPhrase says which published band a spend lands in, so the
+  // reason never calls an easy fight standard; the band is measured, not assumed.
+  function difficultyPhrase(spent, partySize, level) {
+    var F = formulas(), eb = encounterBands(partySize, level);
+    var d = (F && eb) ? F.difficultyOf(spent, eb.partyEs, eb.perHeroEs) : null;
+    if (!d || d.value === null) return 'a spend whose published difficulty band could not be worked out.';
+    return (d.value === 'easy' || d.value === 'extreme' ? 'an ' : 'a ') + d.value + '-difficulty encounter.';
+  }
+
   // ── The suggestion engine ─────────────────────────────────────────────────
   //
   // suggest(partyProfile, intent, data) turns the derived PartyProfile into a
@@ -313,7 +322,8 @@ var MonsterEngine = (function () {
       } else {
         orgRationale = titleCase(orgPick.org.name) + ' — the largest single creature that fits the party’s published encounter strength of ' + budget +
           ' (hero ratio ' + (orgPick.org.hero_ratio || '?') + (va > 0 ? ', ' + va + ' villain actions' : '') + '); ' + copies +
-          ' of them spend it, which is a standard-difficulty encounter. Creature-count and star-of-the-show limits are not checked here.';
+          ' of them spend ' + (orgPick.ev * copies) + ', which is ' + difficultyPhrase(orgPick.ev * copies, partyProfile.size, level) +
+          ' Creature-count and star-of-the-show limits are not checked here.';
       }
     } else {
       orgRationale = 'No organization could be fit to the party’s encounter strength — choose one manually.';
@@ -608,6 +618,11 @@ var DrawSteelFormulas = (function () {
     if (dm.value === null) {
       return { value: null, sourced: false, source: null, notes: dm.notes };
     }
+    // An organization the published rules never defined (swarm) has no way to
+    // know whether horde and minion halving applies, so no damage is sourced.
+    if (org && typeof org === 'object' && org.organization_modifier === null) {
+      return { value: null, sourced: false, source: null, notes: dm.notes.concat(['“' + (org.name || slugOf(org)) + '” is not a published Draw Steel organization, so no published damage covers it. Set the damage yourself.']) };
+    }
     var base = 4 + lvl + dm.value;
     var oslug = slugOf(org);
     var halve = !!HALF_DAMAGE_ORGS[oslug];
@@ -623,13 +638,6 @@ var DrawSteelFormulas = (function () {
     }
     var notes = dm.notes.slice();
     if (halve) notes.push('Halved: the published rules divide horde and minion ability damage by 2.');
-    // The damage formula itself needs only a level and a damage modifier, so it
-    // evaluates for an organization the published rules never defined — but the
-    // horde/minion halving cannot be judged for such an organization, and the
-    // director should know the creature it is attached to is not published.
-    if (org && typeof org === 'object' && org.organization_modifier === null) {
-      notes.push('“' + (org.name || slugOf(org)) + '” is not a published Draw Steel organization — this package invented it, so the halving rule that applies to horde and minion cannot be judged for it. Treat the figure as unsourced at the organization level.');
-    }
     notes.push('If this ability is a strike, add the creature’s highest characteristic to every tier.');
     notes.push('Adjust for target count if the ability does not hit the expected number of targets (x0.8 for one more, x0.5 for two or more, x1.2 for one fewer).');
     return { value: tiers, sourced: true, source: SOURCE, notes: notes };

@@ -60,9 +60,11 @@ for (const c of CREATURES) {
     assert.equal(abilities[0].type, 'signature', 'the first ability is the signature');
     const d = F.damageTiers(p.level, org, role).value;
     const hc = F.highestCharacteristic(p.level, org).value;
+    // No published damage covers a swarm, so its damage is the director's.
+    if (d === null) assert.equal(String(p.organization).toLowerCase(), 'swarm');
     abilities.forEach((a) => {
       assert.ok(a.distance && a.target, a.name + ' has distance and target');
-      if (!a.auto_damage) return;
+      if (!a.auto_damage || d === null) return;
       const add = a.keywords.includes('Strike') ? hc : 0;
       ['tier1', 'tier2', 'tier3'].forEach((k) => {
         assert.equal(parseInt(a[k], 10), d[k] + add, a.name + ' ' + k);
