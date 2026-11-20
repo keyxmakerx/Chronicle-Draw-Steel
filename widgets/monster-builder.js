@@ -2845,15 +2845,14 @@ var DrawSteelCreatureEditor = (function () {
   // set by the director) switch under Chronicle's .dark root class. Injected
   // into <head>, never the mount element, so a redraw cannot wipe them.
   var CSS = [
-    '.sbe-wrap{--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
-    '.sbe-drawer{--sbe-ok:#15803d;--sbe-ok-soft:rgba(22,163,74,.12);--sbe-own:#b45309;--sbe-own-soft:rgba(217,119,6,.14)}',
-    '.dark .sbe-wrap,.dark .sbe-drawer{--sbe-ok:#4ade80;--sbe-ok-soft:rgba(74,222,128,.14);--sbe-own:#fbbf24;--sbe-own-soft:rgba(251,191,36,.14)}',
+    '.sbe-wrap{--sbe-ok:color-mix(in srgb,rgb(var(--color-ok-rgb,22 163 74)) 72%,var(--color-text-primary,#111827));--sbe-ok-soft:rgb(var(--color-ok-rgb,22 163 74) / .12);--sbe-own:color-mix(in srgb,rgb(var(--color-warn-rgb,217 119 6)) 72%,var(--color-text-primary,#111827));--sbe-own-soft:rgb(var(--color-warn-rgb,217 119 6) / .14);display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:12px}',
+    '.sbe-drawer{--sbe-ok:color-mix(in srgb,rgb(var(--color-ok-rgb,22 163 74)) 72%,var(--color-text-primary,#111827));--sbe-ok-soft:rgb(var(--color-ok-rgb,22 163 74) / .12);--sbe-own:color-mix(in srgb,rgb(var(--color-warn-rgb,217 119 6)) 72%,var(--color-text-primary,#111827));--sbe-own-soft:rgb(var(--color-warn-rgb,217 119 6) / .14)}',
     '.sbe{padding:16px 18px;display:flex;flex-direction:column;gap:12px;color:var(--color-text-body,#374151);font-size:14px;min-width:0}',
     '.sbe-part{display:contents}',
     '.sbe-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}',
     '.sbe-bar-t{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563);margin-right:4px}',
     '.sbe-sp{flex:1}',
-    '.sbe-msg{margin:0;font-size:14px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:#b91c1c}.dark .sbe-msg.is-error{color:#f87171}',
+    '.sbe-msg{margin:0;font-size:14px}.sbe-msg:empty{display:none}.sbe-msg.is-ok{color:var(--sbe-ok)}.sbe-msg.is-error{color:color-mix(in srgb,rgb(var(--color-bad-rgb,220 38 38)) 80%,var(--color-text-primary,#111827))}',
     '.sbe-origin{margin:0;font-size:14px;padding:8px 12px;border-radius:var(--shape-r-ctl,8px);background:var(--color-bg-tertiary,#f3f4f6);display:flex;gap:8px;align-items:baseline}',
     '.sbe-origin i{color:var(--color-text-muted,#646b78)}',
     '.sbe-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
@@ -2973,7 +2972,7 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-ab-edit{padding-top:12px;display:flex;flex-direction:column;gap:10px;background:var(--color-bg-tertiary,#f3f4f6)}',
     '.sbe-ab-foot{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;font-size:14px}',
     '.sbe-ab-acts{display:inline-flex;gap:12px;margin-left:auto;align-items:center}',
-    '.sbe-icon{font:inherit;font-size:13px;line-height:1;width:28px;height:28px;border-radius:var(--shape-r-small,6px);border:0;background:none;color:var(--color-text-secondary,#4b5563);cursor:pointer;transition:background-color var(--dur-micro,120ms),color var(--dur-micro,120ms)}',
+    '.sbe-icon{font:inherit;font-size:13px;line-height:1;width:32px;height:32px;border-radius:var(--shape-r-small,6px);border:0;background:none;color:var(--color-text-secondary,#4b5563);cursor:pointer;transition:background-color var(--dur-micro,120ms),color var(--dur-micro,120ms)}',
     '.sbe-icon:hover:not(:disabled){background:var(--color-bg-tertiary,#f3f4f6);color:var(--color-text-primary,#111827)}',
     '.sbe-icon:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:1px}',
     '.sbe-icon:disabled{opacity:.35;cursor:default}',
@@ -3005,9 +3004,9 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-checks li.is-new{animation:sbe-row var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
     '.sbe-form>.is-settle,.sbe-abs.is-settle{animation:sbe-settle var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both}',
     // Add abilities: the drawer slides down from the top and the page dims; leaving is quicker.
-    '.sbe-scrim{position:fixed;inset:0;z-index:80;background:rgba(8,10,20,.55);opacity:0;transition:opacity var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
+    '.sbe-scrim{position:fixed;inset:0;z-index:calc(var(--z-modal,9999) - 1);background:rgba(8,10,20,.55);opacity:0;transition:opacity var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
     '.sbe-scrim.is-open{opacity:1;transition:opacity var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
-    '.sbe-drawer{position:fixed;z-index:81;top:calc(12px + env(safe-area-inset-top,0px));left:50%;width:min(1180px,calc(100vw - 32px));max-height:calc(100% - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px);box-shadow:var(--elev-dragged,0 16px 36px -8px rgb(0 0 0 / .22));overflow:hidden;font-size:14px;transform:translate(-50%,calc(-100% - 24px));transition:transform var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
+    '.sbe-drawer{position:fixed;z-index:var(--z-modal,9999);top:calc(12px + env(safe-area-inset-top,0px));left:50%;width:min(1180px,calc(100vw - 32px));max-height:calc(100% - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;background:var(--color-card-bg,#fff);color:var(--color-text-body,#374151);border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px);box-shadow:var(--elev-dragged,0 16px 36px -8px rgb(0 0 0 / .22));overflow:hidden;font-size:14px;transform:translate(-50%,calc(-100% - 24px));transition:transform var(--dur-standard,200ms) var(--ease-in,cubic-bezier(.4,0,1,1))}',
     '.sbe-drawer.is-open{transform:translate(-50%,0);transition:transform var(--dur-large,280ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
     '.sbe-dr-h{display:flex;gap:4px 12px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--color-border,#e5e7eb)}',
     '.sbe-dr-h h2{margin:0;font-size:16px;font-weight:600;color:var(--color-text-primary,#111827)}',
@@ -3038,7 +3037,7 @@ var DrawSteelCreatureEditor = (function () {
     '.sbe-mine-i{display:flex;gap:6px;align-items:center;justify-content:space-between;border:1px solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-ctl,8px);padding:5px 8px;font-size:12.5px;color:var(--color-text-primary,#111827)}',
     '.sbe-mine-i.is-sig{font-weight:600}',
     '.sbe-mine-i.is-empty{color:var(--color-text-secondary,#4b5563);border-style:dashed}',
-    '.sbe-mine-i button{font:inherit;border:0;background:none;color:var(--color-text-secondary,#4b5563);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}',
+    '.sbe-mine-i button{font:inherit;border:0;background:none;color:var(--color-text-secondary,#4b5563);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}',
     '.sbe-mine-i.is-new{animation:sbe-in var(--dur-standard,200ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
     '.sbe-dr-status{margin:0;padding:8px 16px;border-top:1px solid var(--color-border,#e5e7eb);font-size:14px}.sbe-dr-status:empty{display:none}',
     // Calm keeps fades and drops travel; Off and a device asking for reduced motion show the end state.
@@ -3050,7 +3049,7 @@ var DrawSteelCreatureEditor = (function () {
     'html[data-motion="off"] :is(.sbe-wrap,.sbe-wrap *,.sbe-drawer *,.sbe-scrim){animation:none;transition:none}',
     '@media (prefers-reduced-motion:reduce){.sbe-drawer{transform:translate(-50%,0);transition:none}.sbe-wrap,.sbe-wrap *,.sbe-drawer *,.sbe-scrim{animation:none;transition:none}}',
     // Touch: a tab, a quiet word and a chip are tall enough for a thumb.
-    '@media (pointer:coarse){.sbe-way,.sbe-word{min-height:44px}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-icon{width:44px;height:44px}}',
+    '@media (pointer:coarse){.sbe-way,.sbe-word,.sbe-tabs button{min-height:44px}.sbe-mine-i button{min-width:44px;min-height:44px}.sbe-seg label>span,.sbe-fchip{min-height:44px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-icon{width:44px;height:44px}}',
     // On a phone the creature's list sits above the library, and the drawer's filters scroll sideways. The panels never do: their chips wrap, each label above its own.
     '@media (max-width:760px){.sbe-dr-b{grid-template-columns:minmax(0,1fr)}.sbe-dr-drop{order:-1;position:static}.sbe-dr-lib{grid-template-columns:minmax(0,1fr)}.sbe-drawer .sbe-chip-row{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.sbe-drawer .sbe-fchip{flex:none}.sbe-dr-drop ul{flex-direction:row;flex-wrap:wrap}}',
     // On wide screens the bar with Save stays in view while the form scrolls.
