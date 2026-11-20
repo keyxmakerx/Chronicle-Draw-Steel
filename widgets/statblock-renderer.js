@@ -14,8 +14,9 @@
  *   'statblock-renderer' — the panel Chronicle mounts under the title of every
  *   Creature and NPC page (manifest entity_panels). Players see it once the page
  *   has a stat block. The director also gets a quiet "Build its stat block" on a
- *   page without one, plus Edit stat block and Publish; the editor grows out of
- *   the panel into a full-screen sheet on the page and shrinks back into it.
+ *   page without one, plus Edit stat block and Publish. On a computer the
+ *   editor docks beside the page and the stat block follows each change; on a
+ *   phone it grows out of the panel into a full-screen sheet.
  */
 var DrawSteelStatblock = (function () {
   'use strict';
@@ -872,6 +873,10 @@ var DrawSteelStatblock = (function () {
     '.sbx-bar-l{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-bar-r,.sbx-pub-acts{display:inline-flex;gap:4px;flex-wrap:wrap;margin:0}',
     '.sbx-bar-r{gap:4px 14px;align-items:center}',
+    // While the docked editor is open, the bar says the stat block is being edited.
+    '.sbx-live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-secondary,#4b5563)}',
+    '.sbx-live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-accent,#6366f1)}',
+    '.sbx-soon{margin-top:8px;font-size:14px;color:var(--color-text-secondary,#4b5563)}',
     '.sbx-word{display:inline-flex;align-items:center;min-height:32px;border:0;background:none;box-shadow:none;padding:0;font:inherit;font-size:14px;font-weight:500;color:var(--color-accent-link,var(--color-accent,#6366f1));cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:text-decoration-color var(--dur-micro,120ms)}',
     '.sbx-word:hover,.sbx-word:focus-visible{text-decoration-color:currentColor}',
     '.sbx-word:focus-visible{outline:2px solid var(--color-accent,#6366f1);outline-offset:2px;border-radius:var(--shape-r-tag,4px)}',
@@ -2378,8 +2383,10 @@ StatblockPanel.prototype.editForm = function (form) {
   var v = F.view(this.fields(), S.pictures(this.entity), cur);
   var host = this.el.ownerDocument.createElement('div');
   var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
-  // The form editor opens as the same full sheet as the page's editor, not
-  // inside the page column, where its pickers are cut off.
+  // The form editor opens the same way as the page's editor (docked, or a
+  // full sheet on a phone), never inside the page column, where its pickers
+  // are cut off. Docked, the form's stat block follows each change.
+  var pic = { art: v.art, token: v.token, page: v.art || v.token }, title = (this.entity && this.entity.name) || '';
   function closeForm() {
     self.editor = null;
     self.render();
@@ -2411,7 +2418,10 @@ StatblockPanel.prototype.editForm = function (form) {
         return next;
       });
     },
-    onClose: closeForm
+    onClose: closeForm,
+    onDraft: function (out) {
+      if (self.fold && self.fold.docked) self.drawDraft(title, out.fields, pic, null);
+    }
   });
   this.fold = DrawSteelStatblock.foldOut(this.el, host, {
     chronicle: C,
@@ -2424,6 +2434,7 @@ StatblockPanel.prototype.editForm = function (form) {
     }
   });
   if (!this.fold) { this.el.innerHTML = ''; this.el.appendChild(host); }
+  else if (this.fold.docked) this.drawDraft(title, v.fields, pic, null);
 };
 
 StatblockPanel.prototype.publishHtml = function () {
@@ -2546,26 +2557,29 @@ StatblockPanel.prototype.publish = function (visibility) {
     });
 };
 
-// edit opens the builder: the panel grows into a full-screen editor on the
-// page and shrinks back when it closes; without a document to lay it over, the
-// editor takes the panel's place. The builder lives in monster-builder.js and
-// is looked up now, not at load: widget scripts load in manifest order and
-// this one may run first.
+// edit opens the builder from the stat block (foldOut): docked beside the page
+// on a computer, where the stat block follows each change, or as a full sheet
+// on a phone; without a document to lay it over, the editor takes the panel's
+// place. The builder lives in monster-builder.js and is looked up now, not at
+// load: widget scripts load in manifest order and this one may run first.
 StatblockPanel.prototype.edit = function () {
-  var self = this, doc = this.el.ownerDocument;
+  var self = this, doc = this.el.ownerDocument, S = DrawSteelStatblock;
   var Ed = (typeof DrawSteelCreatureEditor !== 'undefined') ? DrawSteelCreatureEditor : null;
   if (!Ed) { this.say('The stat block editor did not load. Reload the page to try again.', 'error'); return; }
   var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
   var host = doc.createElement('div');
   // The panel is redrawn before the editor shrinks, so it shrinks into the
-  // stat block as it now stands.
+  // stat block as it now stands, and focus goes to the redrawn Edit stat
+  // block button: the one that opened the editor is gone.
   function finish(saved) {
     self.editor = null;
     if (saved) self.entity = saved;
     self.render();
     if (self.fold) { self.fold.close(); self.fold = null; }
+    self.focus('[data-sbx-act="edit"]');
     if (saved && self.isGM) self.refreshKids();
   }
+  var name = (this.entity && this.entity.name) || '';
   // The editor is built before it opens so the grow starts from its real size.
   this.editor = Ed.mount(host, {
     campaignId: this.cid,
@@ -2574,10 +2588,12 @@ StatblockPanel.prototype.edit = function () {
     refs: this.refs,
     ref: this.ref,
     book: this.bookProps(),
-    onClose: finish
+    onClose: finish,
+    onDraft: function (out) {
+      if (self.fold && self.fold.docked) self.drawDraft(out.name || name, out.fields, S.pictures(self.entity), self.bookProps());
+    }
   });
-  var name = (this.entity && this.entity.name) || '';
-  this.fold = DrawSteelStatblock.foldOut(this.el, host, {
+  this.fold = S.foldOut(this.el, host, {
     chronicle: C,
     label: name ? 'Stat block for ' + name : 'Stat block',
     isDirty: function () { return !!(self.editor && self.editor.isDirty && self.editor.isDirty()); },
@@ -2588,6 +2604,20 @@ StatblockPanel.prototype.edit = function () {
     }
   });
   if (!this.fold) { this.el.innerHTML = ''; this.el.appendChild(host); }
+  else if (this.fold.docked) this.drawDraft(name, this.fields(), S.pictures(this.entity), this.bookProps());
+};
+
+// drawDraft shows the stat block as the docked editor has it, in the panel's
+// place on the page, so the director watches it change. The bar says it is
+// being edited; its buttons come back when the editor closes.
+StatblockPanel.prototype.drawDraft = function (name, fields, picture, book) {
+  var S = DrawSteelStatblock, esc = S.esc, f = fields || {};
+  var body = S.hasStatblock(f)
+    ? S.html(name, f, { ref: this.ref, refs: this.refs, book: book, picture: picture, key: this.isGM })
+    : '<p class="sbx-line sbx-soon"><b>' + esc(name || 'This creature') + '</b>’s stat block appears here as you fill it in.</p>';
+  this.el.hidden = false;
+  this.el.innerHTML = '<div class="sbx-wrap sbx-drafting"><div class="sbx-bar"><span class="sbx-bar-l">Stat block</span>' +
+    '<span class="sbx-bar-r"><span class="sbx-live">Editing · updates as you type</span></span></div>' + body + '</div>';
 };
 
 // ── Variants on the page (directors only) ───────────────────────────────────
@@ -3028,19 +3058,25 @@ DrawSteelStatblock.Panel = StatblockPanel;
 
 // ── The fold-out ────────────────────────────────────────────────────────────
 
-// foldOut grows `content` out of `fromEl` into a full-screen sheet over the
-// page and returns { leave, close }; close shrinks it back into fromEl. It sits
-// at z-index 70: over Chronicle's page chrome, under the editor's own drawers
-// (80) and Chronicle's token maker (92), which it opens on top of itself.
-// Clicking off or Escape leaves through o.leave; with unsaved work it asks
-// first with Chronicle's ask-in-place slip, because a box holding unsaved work
-// never closes behind the person's back. Returns null without a document.
+// foldOut opens `content`, the editor, from `fromEl`, the stat block it edits,
+// and returns { leave, close, docked }. An editor never covers what it edits,
+// so on a computer with room it docks beside the page (dockOut) and the stat
+// block stays in view. Otherwise, on a phone or a narrow window, it grows out
+// of fromEl into a full-screen sheet over the page, and close shrinks it back.
+// The sheet sits at z-index 70: over Chronicle's page chrome, under the
+// editor's own drawers (80) and Chronicle's token maker (92), which it opens
+// on top of itself. Clicking off or Escape leaves through o.leave; with
+// unsaved work it asks first with Chronicle's ask-in-place slip, because a box
+// holding unsaved work never closes behind the person's back. Returns null
+// without a document.
 DrawSteelStatblock.foldOut = function (fromEl, content, o) {
   o = o || {};
   var C = o.chronicle || null;
   var doc = fromEl && fromEl.ownerDocument;
   if (!doc || !doc.body || !fromEl.getBoundingClientRect) return null;
   injectFoldStyles(doc);
+  var room = dockRoom(doc, fromEl);
+  if (room) return dockOut(doc, C, fromEl, content, o, room);
   var layer = doc.createElement('div'), bg = doc.createElement('div'), panel = doc.createElement('div');
   layer.className = 'sbx-fold';
   bg.className = 'sbx-fold-bg';
@@ -3089,6 +3125,7 @@ DrawSteelStatblock.foldOut = function (fromEl, content, o) {
 
   return {
     leave: leave,
+    docked: false,
     close: function () {
       if (!open) return;
       open = false;
@@ -3112,9 +3149,151 @@ DrawSteelStatblock.foldOut = function (fromEl, content, o) {
   };
 };
 
+// The docked editor's sizes, in CSS pixels: its narrowest and widest, and the
+// least the page keeps beside it. The page's own layout follows the window's
+// width, not its column's, so it keeps the 740 pixels Chronicle gives every
+// page shown beside another; with less room the editor is a sheet.
+var DOCK_MIN = 420, DOCK_MAX = 600, DOCK_PAGE = 740;
+
+// dockRoom says where the docked editor goes, or null when the editor should
+// be the full sheet: in a narrow window, outside Chronicle's page column
+// (#main-content), or with pages already open beside this one, whose row the
+// panel would cover. base is the room something else docked on the right,
+// such as the notes, already takes from the page.
+function dockRoom(doc, fromEl) {
+  var win = doc.defaultView;
+  var main = doc.getElementById ? doc.getElementById('main-content') : null;
+  if (!win || !win.getComputedStyle || !main || !main.parentElement || !main.contains || !main.contains(fromEl)) return null;
+  var row = main.parentElement.getBoundingClientRect(), m = main.getBoundingClientRect();
+  var base = parseFloat(win.getComputedStyle(main).marginRight) || 0;
+  if (row.right - m.right - base > 2) return null;
+  var w = Math.floor(Math.min(DOCK_MAX, m.width - DOCK_PAGE));
+  if (w < DOCK_MIN) return null;
+  return { main: main, w: w, base: base };
+}
+
+// dockOut stands the editor beside the page: the page column narrows and the
+// panel slides out from behind its edge, so the stat block it edits stays in
+// view. Nothing dims and the page still works; Escape from the panel leaves,
+// asking first over unsaved work. A page change that takes the stat block
+// away (a boosted link, Back) leaves at once: Chronicle asked before it went.
+function dockOut(doc, C, fromEl, content, o, room) {
+  var win = doc.defaultView, main = room.main;
+  var panel = doc.createElement('div');
+  panel.className = 'sbx-dock';
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('tabindex', '-1');
+  if (o.label) panel.setAttribute('aria-label', o.label);
+  panel.appendChild(content);
+  var was = { margin: main.style.marginRight || '', transition: main.style.transition || '' };
+  // The panel takes the page column's right-hand edge, from its top (under
+  // Chronicle's bar and banners) to its foot.
+  function place() {
+    var row = main.parentElement.getBoundingClientRect(), m = main.getBoundingClientRect();
+    var top = Math.max(0, m.top), s = panel.style;
+    s.left = (row.right - room.base - room.w) + 'px';
+    s.top = top + 'px';
+    s.width = room.w + 'px';
+    s.height = Math.max(0, m.bottom - top) + 'px';
+  }
+  place();
+  var prevFocus = doc.activeElement;
+  doc.body.appendChild(panel);
+  var ms = foldMs(doc, '--dur-standard', 200), ease = foldToken(doc, '--ease-out', 'ease-out');
+  dockMove(doc, C, panel, main, (room.base + room.w) + 'px', ms, ease, false);
+  var open = true;
+  try { panel.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
+  // The narrower page grows taller; if that carries the stat block out of
+  // view, bring it back.
+  win.setTimeout(function () {
+    if (!open || !fromEl.scrollIntoView) return;
+    var r = fromEl.getBoundingClientRect(), m = main.getBoundingClientRect();
+    if (r.bottom < m.top + 40 || r.top > m.bottom - 80) fromEl.scrollIntoView({ block: 'start' });
+  }, ms + 20);
+
+  function leave() {
+    if (!open) return;
+    if (o.isDirty && o.isDirty() && C && C.askSlip) {
+      C.askSlip(panel, {
+        ask: 'Discard your changes to this stat block?',
+        detail: o.detail || '',
+        discard: 'Discard changes',
+        onDiscard: function () { if (o.leave) o.leave(); }
+      });
+      return;
+    }
+    if (o.leave) o.leave();
+  }
+  // Escape leaves from inside the panel, or from nowhere in particular; an
+  // Escape meant for something else on the page is left alone.
+  function onKey(e) {
+    if (!open || e.defaultPrevented || e.key !== 'Escape') return;
+    var t = e.target;
+    if (t && t !== doc.body && t !== doc.documentElement && !panel.contains(t)) return;
+    e.preventDefault();
+    leave();
+  }
+  function onSwap() {
+    if (open && fromEl.isConnected === false) { if (o.leave) o.leave(); else api.close(); }
+  }
+  doc.addEventListener('keydown', onKey);
+  doc.addEventListener('htmx:afterSwap', onSwap);
+  doc.addEventListener('htmx:historyRestore', onSwap);
+  win.addEventListener('resize', place);
+
+  var api = {
+    leave: leave,
+    docked: true,
+    close: function () {
+      if (!open) return;
+      open = false;
+      doc.removeEventListener('keydown', onKey);
+      doc.removeEventListener('htmx:afterSwap', onSwap);
+      doc.removeEventListener('htmx:historyRestore', onSwap);
+      win.removeEventListener('resize', place);
+      if (C && C.askSlip && C.askSlip.close) C.askSlip.close(panel);
+      var anim = dockMove(doc, C, panel, main, was.margin, ms, ease, true, fromEl.isConnected === false);
+      var gone = false;
+      function remove() {
+        if (gone) return;
+        gone = true;
+        main.style.transition = was.transition;
+        if (panel.parentNode) panel.parentNode.removeChild(panel);
+        if (prevFocus && prevFocus.isConnected !== false && prevFocus.focus) {
+          try { prevFocus.focus({ preventScroll: true }); } catch (e) { /* element may be gone */ }
+        }
+      }
+      if (anim && anim.finished && anim.finished.then) anim.finished.then(remove, remove);
+      else remove();
+    }
+  };
+  return api;
+}
+
+// dockMove narrows the page to `margin` (or gives the room back) while the
+// panel slides out from behind its edge, or slides back. Under Calm the panel
+// fades and the page changes width at once; under Off, or when the page has
+// already gone, both simply change. Returns the panel's animation, or null.
+function dockMove(doc, C, panel, main, margin, ms, ease, back, now) {
+  var how = now ? 'none' : foldMotion(doc, C, panel);
+  main.style.transition = how === 'grow' ? 'margin-right ' + ms + 'ms ' + ease : 'none';
+  main.style.marginRight = margin;
+  if (how === 'none') return null;
+  var shut = how === 'grow' ? { opacity: 0, transform: 'translateX(24px)' } : { opacity: 0 };
+  var still = how === 'grow' ? { opacity: 1, transform: 'none' } : { opacity: 1 };
+  return panel.animate(back ? [still, shut] : [shut, still], { duration: ms, easing: ease, fill: 'both' });
+}
+
+// foldMs reads a motion token as milliseconds.
+function foldMs(doc, name, fallback) {
+  var raw = foldToken(doc, name, fallback + 'ms');
+  var ms = /ms$/.test(raw) ? parseFloat(raw) : parseFloat(raw) * 1000;
+  return isFinite(ms) && ms > 0 ? ms : fallback;
+}
+
 // foldMotion is how the fold-out moves: 'grow' (the sheet grows out of its
-// spot and shrinks back), 'fade' under Calm or the device's reduce-motion
-// setting, 'none' under Off or without Web Animations.
+// spot and shrinks back; the docked panel slides), 'fade' under Calm or the
+// device's reduce-motion setting, 'none' under Off or without Web Animations.
 function foldMotion(doc, C, panel) {
   var html = doc.documentElement;
   var setting = html && html.getAttribute ? html.getAttribute('data-motion') : '';
@@ -3167,6 +3346,11 @@ function injectFoldStyles(doc) {
     '.sbx-fold-bg{position:absolute;inset:0;background:rgba(6,7,11,.55)}',
     '.sbx-fold-p{position:relative;width:min(1180px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--color-bg-primary,#f9fafb);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.28)}',
     '.sbx-fold-p:focus{outline:none}',
+    // Docked: beside the page, full height of its column, only the inner edge
+    // drawn. The editor inside reads its width, not the window's.
+    '.sbx-dock{position:fixed;z-index:var(--z-sheet,60);display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;container:sbe-host/inline-size;background:var(--color-bg-primary,#f9fafb);border-left:var(--shape-edge,1px) solid var(--color-border,#e5e7eb);box-shadow:var(--elev-resting,-8px 0 24px rgb(0 0 0 / .08))}',
+    '.sbx-dock:focus{outline:none}',
+    '.sbx-dock>:first-child{padding:0 16px 16px}',
     '@media (max-width:640px){.sbx-fold{padding:0}.sbx-fold-p{max-height:100dvh;height:100dvh;border-radius:0}}'
   ].join('\n');
   (doc.head || doc.body).appendChild(st);
