@@ -116,10 +116,11 @@ NPC pages (`entity_panels` in `manifest.json`). It shows header and EV, the Size
 weaknesses, traits, abilities with tier odds, and villain actions. EV, Stamina
 and free strike carry a tick when they match the published formula and a pen
 when the director changed them. The director also gets **Edit stat block** and
-**Publish** (to the Community Bestiary); the editor grows out of the stat block
-into a full-screen sheet on the page. On a page with no stat block yet, a
-player sees nothing and the director sees one quiet **Build its stat block**
-line.
+**Publish** (to the Community Bestiary). On a computer the editor docks beside
+the page and the stat block shows each change as it is typed; on a phone or a
+narrow window it grows out of the stat block into a full-screen sheet. On a
+page with no stat block yet, a player sees nothing and the director sees one
+quiet **Build its stat block** line.
 
 On a page copied from the Monsters book, the director sees "Copied from the
 Draw Steel book" with **Compare with the book**. It folds open a table of each

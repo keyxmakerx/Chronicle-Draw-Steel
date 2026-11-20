@@ -1686,7 +1686,9 @@ var DrawSteelCreatureEditor = (function () {
   }
 
   // mount opens the editor in `host`. opts: { campaignId, entityId, entity,
-  // refs, ref, onClose(savedEntity|null) }. Returns { state, isDirty, discard,
+  // refs, ref, onClose(savedEntity|null), onDraft(out) }. onDraft hears what
+  // Save would write ({ name, fields }) after each change, so a stat block
+  // beside the editor can follow it. Returns { state, isDirty, discard,
   // destroy }. A creature's other form opens with opts.form ({ heading,
   // nameLabel, dirtyKey }) and opts.saveAs(out, pictures), which saves it in
   // place of the page.
@@ -1721,7 +1723,14 @@ var DrawSteelCreatureEditor = (function () {
     function aiBox(id) { return aiEl.querySelector('#sbe-ai-' + id); }
     if (motion(doc) !== 'off') setTimeout(function () { root.classList.remove('sbe-entering'); }, 700);
 
-    function dirty() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markDirty) Chronicle.markDirty(dirtyKey); } catch (e) { /* optional */ } ui.dirty = true; }
+    function dirty() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markDirty) Chronicle.markDirty(dirtyKey); } catch (e) { /* optional */ } ui.dirty = true; draft(); }
+    // A burst of typing reaches onDraft once, a moment after it pauses.
+    var draftTimer = null;
+    function draft() {
+      if (!o.onDraft) return;
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(function () { if (!closed) o.onDraft(toSave(st)); }, 120);
+    }
     function clean() { try { if (typeof Chronicle !== 'undefined' && Chronicle.markClean) Chronicle.markClean(dirtyKey); } catch (e) { /* optional */ } ui.dirty = false; }
 
     // Check rows that were not there at the last draw arrive one after
@@ -1962,12 +1971,12 @@ var DrawSteelCreatureEditor = (function () {
       else if (act === 'suggest') suggestForParty();
     }
 
-    // Cancel with unsaved work asks on the fold-out sheet when there is one,
-    // the same question Escape asks there.
+    // Cancel with unsaved work asks on the fold-out sheet or docked panel when
+    // there is one, the same question Escape asks there.
     function askDiscard() {
       function go() { clean(); close(null); }
       if (!ui.dirty) { go(); return; }
-      var sheet = root.closest ? root.closest('.sbx-fold-p') : null;
+      var sheet = root.closest ? root.closest('.sbx-fold-p, .sbx-dock') : null;
       var C = (typeof Chronicle !== 'undefined') ? Chronicle : null;
       if (sheet && C && C.askSlip) {
         C.askSlip(sheet, { ask: 'Discard your changes to this stat block?', detail: '', discard: 'Discard changes', onDiscard: go });
@@ -2408,7 +2417,7 @@ var DrawSteelCreatureEditor = (function () {
     var closed = false;
     function unbind() {
       closed = true;
-      stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle);
+      stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle); clearTimeout(draftTimer);
       dropAnim();
       if (indWatch) indWatch.disconnect();
       root.removeEventListener('keydown', onKeyDown);
@@ -3055,7 +3064,10 @@ var DrawSteelCreatureEditor = (function () {
     // On wide screens the bar with Save stays in view while the form scrolls.
     '@media (min-width:901px){.sbe-bar{position:sticky;top:0;z-index:5;margin:-16px -18px 0;padding:12px 18px;background:var(--color-card-bg,#fff);border-bottom:var(--shape-rule,1px) solid var(--color-border,#e5e7eb);border-radius:var(--shape-r-panel,12px) var(--shape-r-panel,12px) 0 0}}',
     '@media (max-width:900px){.sbe-wrap{grid-template-columns:minmax(0,1fr)}.sbe-side{position:static}}',
-    '@media (max-width:640px){.sbe{padding:14px 16px}.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-pics{grid-template-columns:1fr}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-bk .sbe-chip-row{flex-direction:column;align-items:stretch;gap:4px}.sbe-bk-k{width:auto;padding-top:0}.sbe-bk-row>p{flex:1 1 100%}.sbe-bk-row>.sbe-sp{display:none}.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}}'
+    '@media (max-width:640px){.sbe{padding:14px 16px}.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-pics{grid-template-columns:1fr}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-bk .sbe-chip-row{flex-direction:column;align-items:stretch;gap:4px}.sbe-bk-k{width:auto;padding-top:0}.sbe-bk-row>p{flex:1 1 100%}.sbe-bk-row>.sbe-sp{display:none}.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}}',
+    // Docked beside the page, the editor follows its panel's width rather than the window's.
+    '@container sbe-host (max-width:900px){.sbe-wrap{grid-template-columns:minmax(0,1fr)}.sbe-side{position:static}}',
+    '@container sbe-host (max-width:640px){.sbe{padding:14px 16px}.sbe-g4,.sbe-g3{grid-template-columns:repeat(2,minmax(0,1fr))}.sbe-g7{grid-template-columns:repeat(4,minmax(0,1fr))}.sbe-pics{grid-template-columns:1fr}.sbe-seg label>span,.sbe-fchip{min-height:36px}.sbe-seg,.sbe-chip-row,.sbe-chip-set,.sbe-bk-lim{gap:8px}.sbe-bk .sbe-chip-row{flex-direction:column;align-items:stretch;gap:4px}.sbe-bk-k{width:auto;padding-top:0}.sbe-bk-row>p{flex:1 1 100%}.sbe-bk-row>.sbe-sp{display:none}.sbe-bk-it{grid-template-columns:20px minmax(0,1fr)}.sbe-bk-it>.sbe-tag:last-child{display:none}.sbe-bar{margin:-14px -16px 0;padding:12px 16px}}'
   ].join('\n');
 
   function injectStyles(doc) {

@@ -11,12 +11,19 @@ A Draw Steel creature lives on a Creature page. The package gives the page:
 - **The stat block** (`widgets/statblock-renderer.js`), mounted under the page
   title as a game-system panel. Everyone who can see the page sees it; the
   director also gets **Edit stat block** and **Publish**.
-- **The editor** (`widgets/monster-builder.js`), which grows out of the stat
-  block into a full-screen sheet and shrinks back when closed: the creature's
-  boxes on the left, the party, encounter budget and completeness checks on the
-  right. Clicking off it or pressing Escape closes it; with unsaved changes,
-  Chronicle's ask-in-place slip asks first. Under Calm it fades; under Off it
-  appears.
+- **The editor** (`widgets/monster-builder.js`). An editor never covers what
+  it edits, so on a computer it docks beside the page: the page narrows, the
+  editor stands on its right with the party, encounter budget and completeness
+  checks at its foot, and the stat block on the page shows each change as it
+  is typed ("Editing · updates as you type"). The page keeps the 740 pixels
+  Chronicle gives every page shown beside another; with less room (a phone, a
+  narrow window, pages already open beside it) the editor grows out of the
+  stat block into a full-screen sheet instead, the party, budget and checks on
+  the right where it is wide enough, and shrinks back when closed. Escape
+  closes either, and clicking off closes the sheet; with unsaved changes,
+  Chronicle's ask-in-place slip asks first. A page change closes the docked
+  editor at once, after Chronicle's own question about unsaved work. Under
+  Calm it fades; under Off it appears.
 
 EV, Stamina, free strike and formula damage follow the published formulas as
 level, organization or role change, and each figure says where it came from. A
@@ -291,8 +298,11 @@ bestiary `statblock_json` (`normalize`), and writes either shape back
 ### 6.2 Editor
 
 `widgets/monster-builder.js` defines `DrawSteelCreatureEditor`. The panel's
-**Edit stat block** mounts it in place; Save writes the page's fields and
-redraws the stat block. Cancel asks before dropping changes.
+**Edit stat block** opens it through `DrawSteelStatblock.foldOut` (docked or
+the sheet, above); docked, the editor's `onDraft` hands each change to the
+panel, which draws the stat block as the editor has it. Save writes the page's
+fields and redraws the stat block. Cancel asks before dropping changes. A
+creature form's editor opens the same way.
 
 Every ability opens in a small form. A signature strike is added first, with
 **Damage follows the published formula** on: its tiers' leading number tracks
