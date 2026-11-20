@@ -252,3 +252,14 @@ test('form names and changes are escaped everywhere they are drawn', async () =>
     assert.ok(el.innerHTML.includes('&lt;img'), 'the name is drawn, escaped');
   }
 });
+
+test('a form is measured per copy, in bytes', () => {
+  assert.ok(F.tooBig({ id: 'a', name: 'x', changes: { faction: 'é'.repeat(8000) }, lists: {} }));
+  assert.ok(!F.tooBig({ id: 'a', name: 'x', changes: { faction: 'a'.repeat(9000) }, lists: {} }));
+});
+
+test('the form editor opens as the full sheet, not inside the page column', () => {
+  const src = readFileSync(new URL('../widgets/statblock-renderer.js', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('StatblockPanel.prototype.editForm'), src.indexOf('StatblockPanel.prototype.publishHtml'));
+  assert.match(body, /DrawSteelStatblock\.foldOut\(this\.el, host/);
+});

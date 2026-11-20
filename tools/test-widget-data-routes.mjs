@@ -216,3 +216,17 @@ test('with neither a campaign id nor a base path the renderer degrades, it does 
   assert.equal(fetched, false, 'it must not fetch a URL it cannot construct');
   assert.deepEqual(ref.getEntry('anything'), null);
 });
+
+test('a player never fetches the director-only templates', async () => {
+  const seen = [];
+  const sandbox = {
+    console,
+    Chronicle: { register: () => {}, apiFetch: (url) => { seen.push(url); return Promise.resolve({ ok: false, status: 404 }); } },
+  };
+  vm.runInNewContext(readFileSync(W('statblock-renderer.js'), 'utf8') + '\n;globalThis.__S = DrawSteelStatblock;', sandbox);
+  const refs = await sandbox.__S.loadRefs('camp-1', false);
+  assert.deepEqual(seen, []);
+  assert.deepEqual(JSON.parse(JSON.stringify(refs)), { orgs: [], roles: [] });
+  await sandbox.__S.loadRefs('camp-2', true);
+  assert.equal(seen.length, 2);
+});

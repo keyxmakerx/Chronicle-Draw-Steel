@@ -46,7 +46,9 @@ test('the guide offers every option from the package’s own files', () => {
     assert.ok(g.includes(k.name), `ability keyword ${k.name}`);
   }
   for (const t of FILES.glossary) {
-    if (['condition', 'duration', 'movement'].includes((t.properties || {}).category)) assert.ok(g.includes(t.slug), `term ${t.slug}`);
+    const cat = (t.properties || {}).category;
+    if (['condition', 'duration'].includes(cat)) assert.ok(g.includes(t.slug), `term ${t.slug}`);
+    if (cat === 'movement' && ['push', 'pull', 'slide', 'shift', 'teleport'].includes(t.slug)) assert.ok(g.includes(t.slug), `term ${t.slug}`);
   }
   for (const d of Ed.DTYPES) assert.ok(g.includes(d), `damage type ${d}`);
   for (const [z] of Ed.SIZES) assert.ok(g.includes(`"${z}"`), `size ${z}`);
@@ -239,4 +241,92 @@ test('the shortlist’s list and filters escape the library’s text', () => {
   const evil = { slug: 'x"><img src=x onerror=alert(1)>', name: '<b>x</b>', source: 'Draw Steel Monsters Book, ch. 2 (Monsters — <i>G</i>) (x)', properties: { type: 'action', organizations: ['leader'], roles: [], keywords: ['<k>'], effect: '<script>' } };
   const html = Ed.bookListHtml([{ t: evil, hits: ['<h>'] }], F()) + Ed.bookFiltersHtml(st, [evil], F());
   assert.ok(!/<img|<script|<b>x|<i>G|<k>|<h>/.test(html), html);
+});
+
+test('common chat-reply slips read in, or end in a plain error, never waiting forever', () => {
+  const ok = (t, name = 'X') => { const r = Ed.readAnswer(t); assert.equal(r.done, true, t); assert.equal(r.obj.name, name); };
+  ok('{"name":"X",}');
+  ok('{"name":"X", // the name\n "level": 2}');
+  ok('{"name":"X" /* c */, "level": 2}');
+  ok('{“name”: “X”}');
+  ok('{"name":"X","list":[1,2,],}');
+  ok('Here is {your} creature: {"name":"X"}');
+  ok('{"name":"X"} and then {"name":"Y"}');
+  ok('{"name":"X"} a stray } in later text');
+  // A fence inside a string value stays; a quote of the other kind inside a curly string stays.
+  ok('{"name":"a ``` b"}', 'a ``` b');
+  ok('{“name”: “The ”First””}'.replace('”First”', 'First'), 'The First');
+  // A complete block that cannot be mended is an error with a hint, not "wait".
+  const bad = Ed.readAnswer('{"name": X}');
+  assert.ok(bad.err && !bad.wait, 'unmendable is an error');
+  assert.match(bad.err, /mistake/);
+  // Cut off with no comma yet: the editor keeps waiting, and its settle timer then says so (CUT_OFF).
+  assert.equal(Ed.readAnswer('{"name":"X"').wait, true);
+  assert.equal(Ed.readAnswer('{"name":"X","level":').done, false);
+});
+
+test('any damage number the AI writes in a tier is dropped, and the note names the tiers', () => {
+  const cases = [
+    ['6 damage, {@movement pull} 1', '{@movement pull} 1'],
+    ['Deals 9 damage and the target is {@condition grabbed}', 'the target is {@condition grabbed}'],
+    ['5 + 2 fire damage; push 2', 'push 2'],
+    ['2d10 damage', ''],
+    ['push 2 and takes 3 damage', 'push 2'],
+    ['M<2 {@condition weakened} ({@duration save-ends})', 'M<2 {@condition weakened} ({@duration save-ends})'],
+    ['', ''],
+    ['3 damage; the target takes 2 damage at the start of each of its turns (save ends)', 'the target takes 2 damage at the start of each of its turns (save ends)'],
+    ['bleeding; 1 damage whenever it moves', 'bleeding; 1 damage whenever it moves']
+  ];
+  for (const [inp, out] of cases) assert.equal(Ed.withoutDamage(inp), out, inp);
+  const { st, notes } = read({ name: 'Harrier', level: 3, organization: 'elite', role: 'harrier', signature: { name: 'Bite', damage_type: 'corruption', tier_effects: ['6 damage, {@movement pull} 1', 'Deals 9 damage and the target is {@condition grabbed}', ''] } });
+  const sig = st.c.abilities[0];
+  for (const k of ['tier1', 'tier2', 'tier3']) assert.equal((sig[k].match(/damage/g) || []).length, 1, sig[k]);
+  assert.ok(!/;\s*,/.test(sig.tier1) && !/\b9\b/.test(sig.tier2), sig.tier1 + ' | ' + sig.tier2);
+  assert.match(notes.join('\n'), /dropped from Bite tier 1, Bite tier 2;/);
+});
+
+test('deals_damage written as the text "true" still counts', () => {
+  const { st } = read({ name: 'H', level: 3, organization: 'elite', role: 'harrier', abilities: [{ name: 'Slash', type: 'action', deals_damage: 'true', tier_effects: ['', '', ''] }] });
+  assert.match(st.c.abilities[0].tier1, /damage/);
+});
+
+const ref = (slug) => ({ slug, name: slug, properties: {} });
+const book = (slug, name, extra) => ({ slug, name, properties: Object.assign({ type: 'action', organizations: ['horde', 'minion', 'platoon', 'elite', 'leader', 'solo'], roles: [], effect: '' }, extra) , source: 'Draw Steel (Monsters — Animals)' });
+
+test('the book shortlist matches whole words, not word fragments', () => {
+  const lib = [
+    book('dragon-claws', 'Crescent Claws', { effect: 'The dragon rakes a dragonsealed target.' }),
+    book('drag-down', 'Drag Under', { effect: 'The target is dragged beneath the surface.' }),
+    book('hound-cannon', 'Houndcannon', { effect: 'Fires a houndcannon.' }),
+    book('scent-hunt', 'Scent Hunt', { effect: 'The hound hunts by scent.' })
+  ];
+  const st = Ed.newState('', null, REFS);
+  const hits = (desc) => Ed.shortlist(st, lib, { fit: 'any', lim: 50, off: {} }, desc).filter((r) => r.hits.length).map((r) => r.t.slug);
+  assert.deepEqual(hits('an undead mastiff that drags them down'), ['drag-down']);
+  assert.deepEqual(hits('a grave hound that hunts by scent').sort(), ['scent-hunt']);
+  // Typed search still finds by the start of a word.
+  const q = Ed.shortlist(st, lib, { fit: 'any', q: 'drag', lim: 50, off: {} }, '').map((r) => r.t.slug).sort();
+  assert.deepEqual(q, ['drag-down', 'dragon-claws']);
+});
+
+test('the guide lists who each book ability is made for, and asks the AI to choose the organization first', () => {
+  const g = Ed.guideFor('x', '', V, [book('a', 'Horde Bite', { organizations: ['horde'] }), book('b', 'Any Bite', {})]);
+  assert.match(g, /a \| Horde Bite \| action \| only for horde/);
+  assert.doesNotMatch(g, /b \| Any Bite \| action \| only for/);
+  assert.match(g, /Choose the organization first/);
+});
+
+test('the guide offers only words that name a movement', () => {
+  for (const bad of ['big-versus-little', 'death-effects-and-forced-movement', 'falling-onto-another-creature', 'when-a-creature-moves']) assert.ok(!V.movement.includes(bad), bad);
+  for (const good of ['push', 'pull', 'slide', 'shift']) assert.ok(V.movement.includes(good), good);
+});
+
+test('keywords and reference markers off the guide’s lists are dropped and named', () => {
+  const { st, notes } = read({ name: 'H', level: 3, organization: 'elite', role: 'harrier', keywords: ['Undead', 'Spaceship'],
+    signature: { name: 'Bite', keywords: ['Melee', 'Strike', 'Zap'], effect: 'The target is {@action charge} and {@foo bar|baz} {@condition grabbed}.', tier_effects: ['', '', ''] } });
+  assert.deepEqual(st.c.keywords, ['Undead']);
+  assert.deepEqual(st.c.abilities[0].keywords, ['Melee', 'Strike']);
+  assert.equal(st.c.abilities[0].effect, 'The target is charge and baz {@condition grabbed}.');
+  assert.match(notes.join('\n'), /Spaceship/);
+  assert.match(notes.join('\n'), /Zap/);
 });

@@ -420,8 +420,32 @@
     { key: 'ancestry', label: 'Ancestry' },
     { key: 'culture', label: 'Culture' },
     { key: 'career', label: 'Career' },
+    { key: 'complication', label: 'Complication', optional: true },
     { key: 'kit', label: 'Kit' }
   ];
+
+  // Class is a builder choice like the origins: a viewer who may edit the
+  // hero can change it, so it takes the same picker.
+  var CLASS_SLOT = { key: 'class', label: 'Class' };
+
+  // foundryHint is said only for a campaign that has a Foundry world linked,
+  // and names class only when the viewer cannot pick it here.
+  function foundryHint(data, canPick) {
+    if (!data.foundryLinked) return '';
+    return canPick ? 'Level and subclass are set in Foundry.' : 'Class, level and subclass are set in Foundry.';
+  }
+
+  // foundryLinked says whether a Foundry module has connected to this campaign
+  // since Chronicle last started (any member may read it; Chronicle keeps no
+  // longer record yet, TODO(keyxmakerx/Chronicle#2381)). An unreadable answer counts as no, so the
+  // Foundry line is left off rather than guessed.
+  function foundryLinked(campaignId) {
+    if (!campaignId || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(false);
+    return Chronicle.apiFetch('/campaigns/' + encodeURIComponent(campaignId) + '/foundry-presence')
+      .then(function (r) { return r && r.ok ? r.json() : null; })
+      .then(function (d) { return !!d && d.never_seen === false; })
+      .catch(function () { return false; });
+  }
 
   function rIdentity(def, data) {
     var name = data.name || 'Unnamed Hero';
@@ -445,7 +469,7 @@
 
     var slots = ORIGIN_SLOTS.map(function (s) {
       var v = f(data, s.key, '');
-      var text = v ? esc(v) : '<span class="cs-id-unset">Not set</span>';
+      var text = v ? esc(v) : '<span class="cs-id-unset">' + (s.optional ? 'None (optional)' : 'Not set') + '</span>';
       var inner = canPick
         ? '<button type="button" class="cs-id-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false">' +
             '<span data-cs-val>' + text + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
@@ -456,13 +480,19 @@
     var className = f(data, 'class', '');
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
+    var classVal = className ? esc(className) : '&ndash;';
+    var classInner = canPick
+      ? '<button type="button" class="cs-id-pick" data-cs-pick="class" data-cs-label="Class" aria-expanded="false">' +
+          '<span data-cs-val>' + classVal + '</span><span class="cs-id-chev" aria-hidden="true"></span></button>'
+      : '<span class="cs-id-val">' + classVal + '</span>';
+    var hintText = foundryHint(data, canPick);
     var fixed =
       '<div class="cs-id-fixed">' +
-        '<span class="cs-id-ro"><span class="cs-id-k">Class</span><span class="cs-id-val">' + (className ? esc(className) : '&ndash;') + '</span></span>' +
+        '<span class="cs-id-ro"><span class="cs-id-k">Class</span>' + classInner + '</span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Subclass</span><span class="cs-id-val">' + (subclass ? esc(subclass) : '&ndash;') + '</span></span>' +
         '<span class="cs-id-ro"><span class="cs-id-k">Level</span><span class="cs-id-val">' + level + '</span></span>' +
         (faction ? '<span class="cs-id-ro"><span class="cs-id-k">Faction</span><span class="cs-id-val">' + esc(faction) + '</span></span>' : '') +
-        '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> set in Foundry</span>' +
+        (hintText ? '<span class="cs-id-hint"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> ' + esc(hintText) + '</span>' : '') +
       '</div>';
 
     return '<div class="cs-id">' +
@@ -2187,14 +2217,21 @@
   }
 
   function pIdentityTodo(data, canPick) {
-    var left = ORIGIN_SLOTS.filter(function (s) { return !f(data, s.key, ''); });
-    if (!left.length) return '';
-    return '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
-      return canPick
-        ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
-            ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
-        : '<span>' + s.label + '</span>';
-    }).join('') + '</p>';
+    var unset = function (s) { return !f(data, s.key, ''); };
+    var left = [CLASS_SLOT].concat(ORIGIN_SLOTS).filter(function (s) { return !s.optional && unset(s); });
+    var opt = ORIGIN_SLOTS.filter(function (s) { return s.optional && unset(s); });
+    var chips = function (list, verb) {
+      return list.map(function (s) {
+        return canPick
+          ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+              ' aria-label="' + escAttr(verb + ' ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
+          : '<span>' + s.label + '</span>';
+      }).join('');
+    };
+    // An empty optional choice (the complication) is offered, never listed as
+    // missing, and only to someone who can make it.
+    return (left.length ? '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + chips(left, 'Choose') + '</p>' : '') +
+      (opt.length && canPick ? '<p class="sh-idtodo sh-idopt"><span class="sh-idtodo-k">Optional</span>' + chips(opt, 'Choose') + '</p>' : '');
   }
 
   function pIdentityInner(data) {
@@ -2206,22 +2243,24 @@
     var subclass = f(data, 'subclass', '');
     var faction = f(data, 'faction', '');
     var level = num(data, 'level', 1);
-    var hint = fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.';
+    var hintText = foundryHint(data, canPick);
+    var hint = hintText ? fa('arrows-rotate') + ' ' + hintText : '';
 
     var line = [
       has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
-      '<span class="sh-idval">' + (className ? esc(className) : '&ndash;') + ' ' + level + '</span>',
+      (canPick && className ? pOrigin(data, CLASS_SLOT, true) + '<span class="sh-idval"> ' + level + '</span>'
+        : '<span class="sh-idval">' + (className ? esc(className) : '&ndash;') + ' ' + level + '</span>'),
       subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
     ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> · </span>');
-    var folded = [bySlot.culture, bySlot.career].filter(function (s) { return has(s.key); });
-    var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : 'Culture and career',
+    var folded = [bySlot.culture, bySlot.career, bySlot.complication].filter(function (s) { return has(s.key); });
+    var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : folded.map(function (s) { return s.label; }).join(', ').replace(/, ([^,]*)$/, ' and $1'),
       folded.map(function (s) {
         return '<div class="sh-origin-row"><span class="sh-k">' + s.label + '</span>' + pOrigin(data, s, canPick) + '</div>';
-      }).join('') + '<p class="sh-sub">' + hint + '</p>', false) : '';
+      }).join('') + (hint ? '<p class="sh-sub">' + hint + '</p>' : ''), false) : '';
 
-    var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + (className ? esc(className) : 'No class') +
+    var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + (canPick && className ? pOrigin(data, CLASS_SLOT, true) : (className ? esc(className) : 'No class')) +
       ' <span class="sh-idlv">level ' + level + '</span></span>' +
       (subclass ? '<span class="sh-idsub">' + esc(subclass) + '</span>' : '') +
       (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
@@ -2232,7 +2271,7 @@
 
     var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
     return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) +
-      '<div class="sh-idmore">' + more + chip + '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span></div>';
+      '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
 
   function pIdentity(data) {
@@ -4644,7 +4683,8 @@
           visibility: (entity && entity.visibility) || ds.visibility || '',
           canEditIdentity: flag(ds.canEditIdentity),
           canChangeImage: flag(ds.canChangeImage),
-          armoryItems: flag(ds.armoryItems)
+          armoryItems: flag(ds.armoryItems),
+          foundryLinked: false
         };
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
         // The drawer's presets load only for a Director Chronicle lets
@@ -4655,8 +4695,9 @@
             return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries, canSave: d.canSave } };
           });
         });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered]).then(function (got) {
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, foundryLinked(campaignId)]).then(function (got) {
           if (refRenderer) refRenderer.injectStyles();
+          data.foundryLinked = got[3];
           data.tf = got[2].tf;
           var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
           if (st) { self._tf = st; data.tfState = st; }

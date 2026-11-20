@@ -77,7 +77,10 @@ test('leaders and solos take no role and get three villain actions, none twice',
     assert.equal(st.c.villain_actions.length, 3);
     assert.deepEqual(st.c.villain_actions.map((v) => v.order), ['opener', 'crowd-control', 'ultimate']);
     assert.equal(new Set(st.c.villain_actions.map((v) => v.name)).size, 3);
-    assert.ok(Ed.checks(st).every((r) => r.severity !== 'miss'), kind + ' passes the completeness checks');
+    // No published spread covers a leader or solo's other characteristics, so the checks say they are the director's.
+    const missing = Ed.checks(st).filter((r) => r.severity === 'miss');
+    assert.equal(missing.length, 1, kind + ' misses only the characteristics');
+    assert.match(missing[0].message, /five characteristics/);
   }
 });
 
@@ -219,4 +222,72 @@ test('reordering moves one item and ignores moves past either end', () => {
   assert.deepEqual(st.c.abilities.map((a) => a.name), ['Intercept', 'Shield Bash', 'Shield Wall']);
   assert.equal(Ed.moveItem(st, 'a', 0, -1), false);
   assert.equal(Ed.moveItem(st, 'a', 2, 3), false);
+});
+
+test('a generated leader or solo gets the organization’s published speed and stability, and says what is left blank', () => {
+  for (const kind of KINDS) {
+    const t = REFS.orgs.find((o) => o.slug === kind);
+    const { st, why } = make({ kind, role: noRole(kind) ? '' : 'brute' });
+    assert.equal(st.c.speed, t.default_speed, kind);
+    assert.equal(st.c.stability, t.default_stability, kind);
+    assert.ok(why.some((w) => /published defaults/.test(w)), kind);
+  }
+  const { st, why } = make({ kind: 'leader' });
+  assert.equal(st.c.might, st.pr.hc.value);
+  for (const k of ['agility', 'reason', 'intuition', 'presence']) assert.equal(st.c[k], null, k + ' is not invented');
+  assert.ok(why.some((w) => /Agility, Reason, Intuition and Presence are blank/.test(w) && /set them yourself/.test(w)));
+  const html = Ed.editorHtml(st, { ref: null });
+  assert.match(html, /Agility, Reason, Intuition, Presence are blank/);
+});
+
+test('theme words steer the organization-only picks: a ghost gets haunting, not a frog plague', () => {
+  for (const kind of ['leader', 'solo', 'elite']) {
+    for (let seed = 0; seed < 3; seed++) {
+      const { st } = make({ kind, role: noRole(kind) ? '' : 'harrier', what: 'barrow wight, a ghost that drains life' }, seed);
+      const text = JSON.stringify(all(st)).toLowerCase();
+      assert.ok(!/frog|fountain|captain/.test(text), kind + ' ' + seed + ': ' + all(st).map((a) => a.name).join(', '));
+    }
+  }
+  const { st } = make({ kind: 'leader', what: 'a ghost' });
+  assert.ok(all(st).some((a) => /ghost|haunt|spirit|undead|shriek|phantom/i.test(JSON.stringify(a))), all(st).map((a) => a.name).join(', '));
+});
+
+test('Generate keeps the page’s own name and uses the words only up to the first comma on an unnamed creature', () => {
+  const named = Ed.newState('Barrow Wight', null, REFS);
+  Ed.generate(named, { level: 3, kind: 'leader', what: 'barrow wight, a ghost that drains life' }, LIB, 0);
+  assert.equal(named.name, 'Barrow Wight');
+  const other = Ed.newState('Grave Thing', null, REFS);
+  Ed.generate(other, { level: 3, kind: 'leader', what: 'a ghost that drains life' }, LIB, 0);
+  assert.equal(other.name, 'Grave Thing');
+  const blank = Ed.newState('', null, REFS);
+  Ed.generate(blank, { level: 3, kind: 'leader', what: 'barrow wight, a ghost that drains life' }, LIB, 0);
+  assert.equal(blank.name, 'Barrow Wight');
+  // Trying again on a tool-named creature may rename it; one the director typed over may not.
+  Ed.generate(blank, { level: 3, kind: 'leader', what: 'grave hound, an undead mastiff' }, LIB, 1);
+  assert.equal(blank.name, 'Grave Hound');
+  blank.autoName = false; blank.name = 'Typed';
+  Ed.generate(blank, { level: 3, kind: 'leader', what: 'lich, a king' }, LIB, 2);
+  assert.equal(blank.name, 'Typed');
+});
+
+test('Start from a creature keeps a name the page already has', () => {
+  const st = Ed.newState('Copy Target', { level: 3, organization: 'platoon', role: 'brute' }, REFS);
+  Ed.startFrom(st, 'Grave Hound', { level: 3, organization: 'platoon', role: 'brute' }, 'x');
+  assert.equal(st.name, 'Copy Target');
+  const blank = Ed.newState('', null, REFS);
+  Ed.startFrom(blank, 'Grave Hound', { level: 3, organization: 'platoon', role: 'brute' }, 'x');
+  assert.equal(blank.name, 'Grave Hound (copy)');
+});
+
+test('the Generate panel’s party line follows the party: loading, read, or none', () => {
+  const st = Ed.newState('', null, REFS);
+  const base = { ref: null, gen: { open: true, kind: 'party', level: 3 } };
+  const loading = Ed.editorHtml(st, Object.assign({}, base, { partyLoading: true, party: null }));
+  assert.match(loading, /Reading your heroes/);
+  assert.doesNotMatch(loading, /No hero pages were read/);
+  const none = Ed.editorHtml(st, Object.assign({}, base, { partyLoading: false, party: null }));
+  assert.match(none, /No hero pages were read/);
+  const heroes = [{ name: 'Bram', fields_data: { level: 3 } }, { name: 'Ilsa', fields_data: { level: 4 } }];
+  const read = Ed.editorHtml(st, Object.assign({}, base, { partyLoading: false, party: { heroes, profile: { levelAvg: 3.5, coverage: { level: 2 } }, levels: [3, 4] } }));
+  assert.match(read, /Picks the organization and role that suit your 2 heroes/);
 });
