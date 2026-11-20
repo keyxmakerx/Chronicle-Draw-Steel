@@ -4738,7 +4738,7 @@
       '[data-sheet] .sh-ed-total { margin:0;font-weight:600; }',
       '[data-sheet] .sh-grants,[data-sheet] .sh-trl { list-style:none;margin:0;padding:0;display:grid;gap:4px; }',
       '[data-sheet] .sh-traits { margin-top:8px; }',
-      '@media (pointer:coarse) { [data-sheet] .sh-opt label,[data-sheet] .sh-edopen,[data-sheet] .sh-ed .sh-link { padding:10px 0; } }',
+      '@media (pointer:coarse) { [data-sheet] .sh-opt label,[data-sheet] .sh-edopen,[data-sheet] .sh-ed .sh-link { padding:10px 0; } [data-sheet] .sh-edsave { min-height:44px; } }',
       '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
       '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
       // A layer's struck old value, and the names of the layers on the hero.
