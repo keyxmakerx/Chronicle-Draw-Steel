@@ -74,3 +74,15 @@ test('a term named like an Object method finds no glossary entry', async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test('rule terms share the accent link shade; no per-category hue, and no fixed red', () => {
+  let css = '';
+  const prev = globalThis.document;
+  globalThis.document = { createElement: () => ({ setAttribute() {}, set textContent(v) { css = v; } }), head: { appendChild() {} } };
+  try { makeRenderer([]).injectStyles(); } finally { globalThis.document = prev; }
+  assert.ok(css.includes('.ds-ref { color: var(--color-accent-link,'), css);
+  for (const cat of ['condition', 'movement', 'duration', 'resource', 'action', 'combat']) {
+    assert.ok(!css.includes('.ds-ref--' + cat), cat + ' has its own colour');
+  }
+  assert.ok(!/color: #/.test(css.replace(/background[^;]*;|\.ds-ref:hover::after[\s\S]*/, '')), 'a fixed hex text colour outside the tooltip');
+});
