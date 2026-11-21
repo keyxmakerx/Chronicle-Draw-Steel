@@ -209,12 +209,36 @@ give (`DrawSteelStatblock.reviewCheck`, registered as
 Stamina, rounded down), free strike, and each ability whose tiers open with
 damage, adding the highest characteristic to a strike. A figure no formula
 covers is left off. The director keeps the AI's figure or presses "Use the
-formula", for one or for all; the patch changes only the number in a tier's
-text, never its damage type or effect. Free strike is read only as a bare
-number or "N damage"; other wording is not a match and the fix replaces the
-whole value. An ability whose damage is worded another way is named in the
-note as not checked, and a level outside 1 to 10 gets no check. Pinned by
-`tools/test-creature-review-check.mjs`.
+formula", for one or for all, and the AI's own figure starts kept; the patch
+changes only the number in a tier's text, never its damage type or effect.
+Free strike is read only as a bare number or "N damage"; other wording is not
+a match and the fix replaces the whole value. An ability whose damage is
+worded another way is named in the note as not checked, and a level outside 1
+to 20 gets no check.
+
+A figure the AI left out gets a tile too, because the AI is told to leave
+them out. A blank figure starts with the formula's figure taken (nothing is
+overwritten; a press leaves it blank). On an update, Chronicle also passes the
+page's fields from before the change, and `provenance` measures them: a
+figure equal to the formula under the old level, organization and role
+followed it, so it moves with the new one and starts taken ("Follows the
+formula, as at level 1 (was 6)"; Winded follows if it was half that Stamina).
+Any other stored figure is the director's, stays, and says "Yours, kept.
+Formula gives N". A figure no formula covers, or a level past 20, is a line
+saying it stays blank for Edit stat block. The four figures carry
+`"formula": true` in the manifest, which is how Chronicle knows the review may
+add them. Pinned by `tools/test-creature-review-check.mjs`.
+
+What the AI writes comes from the `format` notes on the `drawsteel-creature`
+preset's fields in `manifest.json`, which Chronicle shows the AI beside each
+field. They name the organizations and roles the formulas read, and tell the
+AI to leave EV, Stamina, Winded and free strike out of a new creature, never
+estimating them, and to mark formula damage with `auto_damage`. The AI does
+not evaluate the formulas: a figure left out gets a review tile (above), and
+the editor also fills a blank from the published formula, marked as the
+formula's, when the director opens **Edit stat block** and saves. A number already on the page
+stays the director's, and a figure no formula covers stays empty. Pinned by
+`tools/test-creature-ai-figures.mjs`.
 
 ### 4.3 Default Speed/Stability by Organization
 

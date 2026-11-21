@@ -141,3 +141,117 @@ test('taking Stamina also takes Winded when the AI wrote one, so they cannot dis
   assert.equal(p.winded, Math.floor(stamina / 2));
   assert.ok(!('winded' in S.reviewCheck(raider(), REFS, ['stamina']).patch(['stamina'])), 'no Winded written, none added');
 });
+
+// ── Figures the AI left out ──────────────────────────────────────────────
+// A blank figure starts taken; on an update a figure that matched the formula
+// under the old level moves with the new one; any other figure is the
+// director's and stays unless they press. Every figure comes from
+// DrawSteelFormulas.
+
+const fig = (lvl, o, r) => ({
+  ev: F.encounterValue(lvl, org(o)).value,
+  stamina: F.stamina(lvl, org(o), role(r)).value,
+  free_strike: F.freeStrike(lvl, org(o), role(r)).value,
+});
+const bare = (extra) => Object.assign({ level: 2, organization: 'Horde', role: 'Harrier', speed: 6 }, extra || {});
+const BARE_WRITTEN = ['level', 'organization', 'role', 'speed'];
+const byId = (r) => Object.fromEntries(r.items.map((i) => [i.id, i]));
+
+test('a new creature with no figures starts with every figure taken', () => {
+  const g = fig(2, 'horde', 'harrier');
+  const r = S.reviewCheck(bare(), REFS, BARE_WRITTEN, {});
+  const it = byId(r);
+  assert.deepEqual(r.items.map((i) => i.id), ['ev', 'stamina', 'winded', 'free_strike']);
+  for (const id of ['ev', 'stamina', 'winded', 'free_strike']) {
+    assert.equal(it[id].start, 'used', id);
+    assert.equal(it[id].blank, true, id);
+    assert.equal(it[id].matches, undefined, id);
+  }
+  assert.equal(it.ev.formula, String(g.ev));
+  assert.equal(it.stamina.formula, String(g.stamina));
+  assert.equal(it.winded.formula, String(Math.floor(g.stamina / 2)));
+  assert.equal(it.free_strike.formula, String(g.free_strike));
+  assert.deepEqual(r.patch(['ev', 'stamina', 'winded', 'free_strike']), {
+    ev: g.ev, stamina: g.stamina, winded: Math.floor(g.stamina / 2), free_strike: g.free_strike + ' damage' });
+  assert.deepEqual(r.patch([]), {}, 'a figure left untaken is not written');
+});
+
+test('without the stored fields, a figure already on the page is not touched', () => {
+  const r = S.reviewCheck(bare({ ev: 99, stamina: 77 }), REFS, BARE_WRITTEN);
+  assert.deepEqual(r.items.map((i) => i.id), ['winded', 'free_strike']);
+});
+
+// A level 1 platoon ambusher, every figure the formula's, moved to level 3.
+const stored1 = () => { const g = fig(1, 'platoon', 'ambusher'); return { level: 1, organization: 'Platoon', role: 'Ambusher', speed: 6,
+  ev: g.ev, stamina: g.stamina, winded: Math.floor(g.stamina / 2), free_strike: g.free_strike + ' damage' }; };
+const moved = (st, extra) => Object.assign({}, st, { level: 3 }, extra || {});
+
+test('on an update, a figure that followed the old level moves with the new one', () => {
+  const g1 = fig(1, 'platoon', 'ambusher'), g3 = fig(3, 'platoon', 'ambusher');
+  assert.notEqual(g1.ev, g3.ev, 'the fixture must move');
+  const st = stored1();
+  const r = S.reviewCheck(moved(st), REFS, ['level'], st);
+  const it = byId(r);
+  for (const id of ['ev', 'stamina', 'winded', 'free_strike']) assert.equal(it[id].start, 'used', id);
+  assert.equal(it.ev.ai, String(g1.ev));
+  assert.equal(it.ev.formula, String(g3.ev));
+  assert.equal(it.ev.taken, 'Follows the formula, as at level 1 (was ' + g1.ev + ')');
+  assert.equal(it.winded.taken, 'Half the Stamina, as before (was ' + Math.floor(g1.stamina / 2) + ')');
+  assert.equal(it.winded.formula, String(Math.floor(g3.stamina / 2)));
+  assert.equal(r.patch(['ev']).ev, g3.ev);
+});
+
+test('on an update, a figure that did not match the old formula is the director’s and starts off', () => {
+  const g3 = fig(3, 'platoon', 'ambusher');
+  const st = stored1();
+  st.free_strike = String(stored1().free_strike === '99 damage' ? 98 : 99) + ' damage';
+  const r = S.reviewCheck(moved(st), REFS, ['level'], st);
+  const fs = byId(r).free_strike;
+  assert.equal(fs.start, undefined);
+  assert.equal(fs.from, 'stored');
+  assert.equal(fs.kept, 'Yours, kept. Formula gives ' + g3.free_strike);
+  assert.equal(fs.ai, '99');
+  assert.deepEqual(r.items.filter((i) => i.start === 'used').map((i) => i.id), ['ev', 'stamina', 'winded']);
+});
+
+test('a typed Stamina keeps its Winded too, and a figure already at the new formula is not offered', () => {
+  const g3 = fig(3, 'platoon', 'ambusher');
+  const st = stored1();
+  st.stamina = 31; st.winded = 15; // not the formula's at level 1
+  const r = S.reviewCheck(moved(st), REFS, ['level'], st);
+  const it = byId(r);
+  assert.equal(it.stamina.start, undefined);
+  assert.equal(it.winded.start, undefined, 'Winded followed a Stamina nobody computed');
+  const same = Object.assign(stored1(), { ev: g3.ev });
+  assert.ok(!byId(S.reviewCheck(moved(same), REFS, ['level'], same)).ev, 'already what the formula gives');
+});
+
+test('a figure the AI did write is still its own tile and is not duplicated', () => {
+  const st = stored1();
+  const r = S.reviewCheck(moved(st, { stamina: 41 }), REFS, ['level', 'stamina'], st);
+  assert.equal(r.items.filter((i) => i.id === 'stamina').length, 1);
+  assert.equal(byId(r).stamina.start, undefined, 'the AI’s own number starts off');
+  assert.equal(byId(r).stamina.ai, '41');
+});
+
+test('a creature a formula does not cover is left for the director, with a line saying so', () => {
+  const swarm = S.reviewCheck(bare({ organization: 'Swarm' }), REFS, BARE_WRITTEN, {});
+  assert.deepEqual(swarm.items.map((i) => i.id), ['uncovered']);
+  assert.match(swarm.items[0].said, /No published formula covers this creature’s .*Stamina.*Edit stat block/);
+  const noRole = S.reviewCheck(bare({ role: '' }), REFS, ['level', 'organization', 'speed'], {});
+  const covered = F.stamina(2, org('horde'), null);
+  assert.equal(covered.sourced, false, 'the fixture needs a role-less Stamina with no formula');
+  assert.ok(byId(noRole).ev.start === 'used' && !byId(noRole).stamina, 'EV is taken; Stamina is not offered');
+  assert.match(byId(noRole).uncovered.said, /Stamina/);
+  const high = S.reviewCheck(bare({ level: 21 }), REFS, BARE_WRITTEN, {});
+  assert.deepEqual(high.items.map((i) => i.id), ['uncovered']);
+  assert.match(high.items[0].said, /stop at level 20/);
+  assert.equal(S.reviewCheck(raider({ level: 21 }), REFS, ALL, {}), null, 'nothing blank, nothing to say');
+});
+
+test('the Chronicle entry passes the stored fields to the check', async () => {
+  Chronicle.apiFetch = (url) => Promise.resolve({ ok: true, json: () => Promise.resolve(url.endsWith('organization-templates.json') ? REFS.orgs : REFS.roles) });
+  const st = stored1();
+  const r = await Chronicle.sheetChecks.creature.check(moved(st), { campaignId: 'camp-9', written: ['level'], stored: st });
+  assert.equal(byId(r).ev.start, 'used');
+});
