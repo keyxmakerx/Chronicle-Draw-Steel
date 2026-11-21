@@ -199,3 +199,12 @@ test('a swarm’s damage is unsourced, so the stat block has no published damage
   assert.equal(sw.sourced, false);
   assert.equal(sw.value, null);
 });
+
+test('a form caption wraps instead of clipping, and the form tab row wraps on a phone', () => {
+  const rule = (sel) => (S.CSS.split('\n').find((l) => l.trim().startsWith("'" + sel + '{') || l.startsWith(sel + '{')) || '');
+  const from = rule('.sbx-from');
+  assert.ok(from, 'caption rule found');
+  assert.ok(!/nowrap|text-overflow|overflow:hidden/.test(from), from);
+  const forms = rule('.sbx-forms');
+  assert.ok(/flex-wrap:wrap/.test(forms) && !/overflow-x/.test(forms), forms);
+});
