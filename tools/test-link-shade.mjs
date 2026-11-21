@@ -37,3 +37,13 @@ test('the provenance chip is a deeper amber in light mode and keeps the dark-mod
   const mb = read('monster-builder.js');
   assert.match(mb, /\.sbe-chip\.is-none\{color:#92400e\}\.dark \.sbe-chip\.is-none\{color:var\(--sbe-own\)\}/);
 });
+
+test('a bare .sbx-quiet button keeps the link shade; only the paragraph form is grey', () => {
+  const lines = read('statblock-renderer.js').split('\n');
+  const colour = lines.filter((l) => {
+    const m = l.match(/^\s*'([^{]*)\{([^}]*)\}/);
+    return m && m[1].split(',').some((s) => s.trim() === '.sbx-quiet') && /(^|;)color:/.test(m[2]);
+  });
+  assert.equal(colour.length, 1, colour.join('\n'));
+  assert.match(colour[0], /color:var\(--color-accent-link,/);
+});
