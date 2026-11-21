@@ -160,6 +160,14 @@ test('taking Stamina also takes Winded when the AI wrote one, so they cannot dis
   assert.ok(!('winded' in S.reviewCheck(raider(), REFS, ['stamina']).patch(['stamina'])), 'no Winded written, none added');
 });
 
+test('leaving a blank Stamina untaken leaves Winded blank too, whichever tiles are pressed', () => {
+  const r = S.reviewCheck(bare(), REFS, BARE_WRITTEN, {});
+  const g = fig(2, 'horde', 'harrier');
+  assert.deepEqual(r.patch(['winded']), {}, 'Winded alone would be half of nothing');
+  assert.deepEqual(r.patch(['ev', 'winded']), { ev: g.ev });
+  assert.equal(r.patch(['stamina', 'winded']).winded, Math.floor(g.stamina / 2), 'both taken: unchanged');
+});
+
 // ── Figures the AI left out ──────────────────────────────────────────────
 // A blank figure starts taken; on an update a figure that matched the formula
 // under the old level moves with the new one; any other figure is the
