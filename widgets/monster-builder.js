@@ -1965,7 +1965,8 @@ var DrawSteelCreatureEditor = (function () {
         var keep = st.base;
         var fresh = newState('', null, st.refs);
         Object.keys(fresh).forEach(function (k) { st[k] = fresh[k]; });
-        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); dirty();
+        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle);
+        aiBox('notes').innerHTML = ''; aiBox('status').textContent = ''; aiBox('status').className = 'sbe-small'; dirty();
         setFold('', e.detail === 0); draw('sbe-name');
       }
       else if (act === 'suggest') suggestForParty();
