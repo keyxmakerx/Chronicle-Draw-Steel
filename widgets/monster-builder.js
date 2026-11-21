@@ -988,6 +988,16 @@ var DrawSteelCreatureEditor = (function () {
     return t;
   }
 
+  // tabTarget is the box Tab moves to from `el` within `scope`, in the
+  // redrawn form: the browser's own move lands on a node the redraw replaced.
+  function tabTarget(scope, el, back) {
+    var stops = [].filter.call(scope.querySelectorAll('input,select,textarea,button,a[href],[tabindex]'), function (x) {
+      return !x.disabled && x.getAttribute('tabindex') !== '-1' && x.type !== 'hidden' && x.offsetParent !== null;
+    });
+    var i = stops.indexOf(el);
+    return i < 0 ? null : (stops[i + (back ? -1 : 1)] || null);
+  }
+
   // aiNotesHtml lists what the reading changed from the AI's answer.
   function aiNotesHtml(notes) {
     if (!notes || !notes.length) return '';
@@ -1799,6 +1809,8 @@ var DrawSteelCreatureEditor = (function () {
       say();
       if (before) { flashChanged(doc, edEl, before, figs, rings); fadeChips(chips); }
       var back = id ? doc.getElementById(id) : null;
+      // A change committed by Tab moves on to the next box instead of returning to this one.
+      if (back && tabbed && tabbed.id === id) { var nx = tabTarget(edEl, back, tabbed.back); tabbed = null; if (nx) { nx.focus(); return; } }
       if (back) { back.focus(); try { if (pos !== null && back.setSelectionRange) back.setSelectionRange(pos, pos); } catch (e) { /* not a text box */ } }
     }
 
@@ -1965,7 +1977,8 @@ var DrawSteelCreatureEditor = (function () {
         var keep = st.base;
         var fresh = newState('', null, st.refs);
         Object.keys(fresh).forEach(function (k) { st[k] = fresh[k]; });
-        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); dirty();
+        st.base = keep; ui.gen.why = null; ui.msg = ''; stopStream(); clearTimeout(ui.ai.timer); clearTimeout(ui.ai.settle);
+        aiBox('notes').innerHTML = ''; aiBox('status').textContent = ''; aiBox('status').className = 'sbe-small'; dirty();
         setFold('', e.detail === 0); draw('sbe-name');
       }
       else if (act === 'suggest') suggestForParty();
@@ -2123,8 +2136,11 @@ var DrawSteelCreatureEditor = (function () {
     // opening a tab loads data and Blank clears. Escape in the row or in the
     // open panel closes the panel and stops there, so the question about
     // leaving is only asked by the next Escape.
+    // The box Tab left, for the one change that Tab itself commits.
+    var tabbed = null;
     function onKeyDown(e) {
       var t = e.target, k = e.key;
+      if (k === 'Tab' && !e.defaultPrevented && t && t.id) { tabbed = { id: t.id, back: !!e.shiftKey }; setTimeout(function () { tabbed = null; }, 0); }
       if (t && t.classList && t.classList.contains('sbe-way') && /^(ArrowLeft|ArrowRight|Home|End)$/.test(k)) {
         var tabs = [].slice.call(waysEl.querySelectorAll('.sbe-way')), i = tabs.indexOf(t);
         var to = k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : (i + (k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
@@ -3089,7 +3105,7 @@ var DrawSteelCreatureEditor = (function () {
     usable: usable, libraryRows: libraryRows, shapeAbility: shapeAbility, addFromLibrary: addFromLibrary, restore: restore, moveItem: moveItem, removeItem: removeItem, addVillain: addVillain, applyAbility: applyAbility,
     openAbilityDrawer: openAbilityDrawer, drawerCard: drawerCard, drawerMine: drawerMine, DTYPES: DTYPES, RIDERS: RIDERS, openStartFrom: openStartFrom, injectStyles: injectStyles, CSS: CSS,
     vocabulary: vocabulary, guideFor: guideFor, readAnswer: readAnswer, fromAI: fromAI, keepKnownRefs: keepKnownRefs, clearAIMarks: clearAIMarks,
-    setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, AI_EXAMPLE: AI_EXAMPLE,
+    setCharacteristics: setCharacteristics, partyLine: partyLine, aiHtml: aiHtml, aiNotesHtml: aiNotesHtml, tabTarget: tabTarget, AI_EXAMPLE: AI_EXAMPLE,
     BOOK_LIMITS: BOOK_LIMITS, newBookFilter: newBookFilter, bookGroup: bookGroup, inflicts: inflicts, shortlist: shortlist, shortCounts: shortCounts, bookLine: bookLine,
     bookPicks: bookPicks, bookFiltersHtml: bookFiltersHtml, bookListHtml: bookListHtml, bookCountText: bookCountText,
     picProblem: picProblem, newPics: newPics, picsHtml: picsHtml

@@ -168,13 +168,11 @@ var DrawSteelRefRenderer = (function () {
       '  position: relative;' +
       '  font-weight: 600;' +
       '}' +
-      '.ds-ref--condition { color: #b91c1c; }' +
-      '.ds-ref--movement { color: #0369a1; }' +
-      '.ds-ref--duration { color: #6d28d9; }' +
-      '.ds-ref--resource { color: #047857; }' +
-      '.ds-ref--action { color: #c2410c; }' +
-      '.ds-ref--combat { color: #4338ca; }' +
-      '.ds-ref--unknown { color: #71717a; font-style: italic; }' +
+      // One accent for every rule term: per-category hues went dim on dark
+      // cards, and red reads as an error. The link shade is contrast-checked
+      // for both themes.
+      '.ds-ref { color: var(--color-accent-link, var(--color-accent, #6366f1)); }' +
+      '.ds-ref--unknown { color: var(--color-text-secondary, #4b5563); font-style: italic; }' +
       '.ds-ref:hover::after {' +
       '  content: attr(data-ref-tip);' +
       '  position: absolute;' +
