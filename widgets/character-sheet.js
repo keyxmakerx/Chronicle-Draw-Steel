@@ -2177,7 +2177,6 @@
       var html = def[1](data);
       var tpl = el.querySelector('template[data-sheet-panel="' + def[0] + '"]');
       if (tpl) tpl.innerHTML = html;
-      if (kind === 'backstory') inst._pin = null;
       if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === def[0]) {
         inst._panelBody.innerHTML = html;
         var again = inst._panelBody.querySelector('[data-cs-ed-open="' + kind + '"]');
@@ -2252,14 +2251,28 @@
       if (edCancel) { e.preventDefault(); inst._closeEditor(edScope(edCancel), true); return; }
       var edQuick = t.closest('[data-cs-ed-quick]');
       if (edQuick) { e.preventDefault(); useSuggested(edQuick); return; }
-      var unp = t.closest('[data-unpin]');
-      if (unp) { e.preventDefault(); unpin(inst, true); return; }
+      var less = t.closest('[data-cs-story-less]');
+      if (less) {
+        e.preventDefault();
+        var more = less.closest('details');
+        var sum = more && more.querySelector('summary');
+        if (sum) { sum.click(); if (sum.focus) sum.focus({ preventScroll: true }); }
+        return;
+      }
+      var jmp = t.closest('[data-cs-jump]');
+      if (jmp) {
+        e.preventDefault();
+        var scope = jmp.closest('.paper-dbody') || el;
+        var tgt = scope.querySelector('[data-cs-anchor="' + jmp.getAttribute('data-cs-jump') + '"]');
+        if (tgt && tgt.scrollIntoView) tgt.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
+        return;
+      }
+      var goItems = t.closest('[data-cs-go-items]');
+      if (goItems) { e.preventDefault(); goToItemsTab(); return; }
       var rs = t.closest('[data-cs-read-story]');
       if (rs) {
         e.preventDefault();
-        // On paper the story is pinned onto the open Notes panel.
-        if (inst._paper) openStoryPin(inst, rs, data);
-        else openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', ''));
+        openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', ''));
         return;
       }
       // Clicking anywhere on the big card returns to the small card (symmetric
@@ -2917,7 +2930,7 @@
   }
 
   // The ledger lines for the panels that exist. Items is absent when the
-  // host shows its own item list; Notes is a permission gate, as before.
+  // host shows its own item list; Story is a permission gate, as before.
   function paperLedger(data) {
     var lines = [];
     if (!data.armoryItems) {
@@ -2929,8 +2942,16 @@
     lines.push(['skills', 'Skills', skillsLine(data)]);
     var kit = kitFacts(data);
     lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : 'No kit equipped']);
-    if (data.isGm || data.isOwner) lines.push(['notes', 'Notes', 'Background' + (data.isGm ? ', GM lore' : '')]);
+    // With the Armory on, the hero's items live in the page's Items tab; this
+    // row points there and stays hidden until that tab is on the page.
+    if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
+    if (data.isGm || data.isOwner) lines.push(['notes', 'Story', 'Background' + (data.isGm ? ', GM lore' : '')]);
     return '<section class="sh-ledger sh-o3">' + lines.map(function (l) {
+      if (l[0] === 'items-go') {
+        return '<div class="paper-pull sh-golink" data-cs-items-row hidden><button type="button" class="sh-pullbtn" data-cs-go-items>' +
+          '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds">' + l[2] + '</span>' +
+          '<span class="sh-pull">Go to items ' + fa('arrow-down') + '</span></button></div>';
+      }
       return '<div class="paper-pull" data-sheet-section="' + l[0] + '">' +
         pullBtn(l[0], '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds" data-ds="' + l[0] + '">' + l[2] + '</span>') + '</div>';
     }).join('') + '</section>';
@@ -3191,19 +3212,55 @@
       (canEditLists(data) ? '<div class="lf-grp">' + edOpen('skills', 'Choose skills and languages') + '</div>' : '');
   }
 
+  // The story is read in place: the first lines show and "Keep reading"
+  // unfolds the rest below them, so the panel stays the one scroll box.
+  // Paragraph breaks survive through pre-line; a lead cut mid-paragraph
+  // ends on a sentence.
+  function storySplit(prose) {
+    var paras = String(prose).split(/\n{2,}/).map(function (p) { return p.trim(); }).filter(Boolean);
+    var lead = [], len = 0, i = 0;
+    while (i < paras.length && (i === 0 || len < 280)) { lead.push(paras[i]); len += paras[i].length; i++; }
+    var rest = paras.slice(i);
+    if (!rest.length && lead.length === 1 && lead[0].length > 420) {
+      var one = lead[0], cut = one.slice(0, 320).search(/[.!?…]["'”’)]*\s[^.!?]*$/);
+      var at = cut > 120 ? one.indexOf(' ', cut) : one.indexOf(' ', 320);
+      if (at > 0 && at < one.length - 40) { lead = [one.slice(0, at)]; rest = [one.slice(at + 1)]; }
+    }
+    return { lead: lead, rest: rest };
+  }
+
+  function storyParas(list) {
+    return list.map(function (p) { return '<p class="sn-p">' + refSynced(p) + '</p>'; }).join('');
+  }
+
+  function storyHtml(prose) {
+    var sp = storySplit(prose);
+    var out = storyParas(sp.lead);
+    if (sp.rest.length) {
+      out += '<details class="sn-more" data-sheet-fold><summary class="sh-link">Keep reading</summary>' +
+        '<div class="fold-body"><div class="fold-in" data-move="fold">' + storyParas(sp.rest) +
+        '<button type="button" class="sh-link sn-less" data-cs-story-less>Show less</button></div></div></details>';
+    }
+    return out;
+  }
+
   function pNotesPanel(data) {
     var notes = f(data, 'backstory', '') || f(data, 'notes', '');
     var edit = data.canEditIdentity && data.campaignId
       ? edOpen('backstory', notes ? 'Edit' : 'Write your backstory') : '';
-    var out = '<div class="lf-grp"><span class="sh-k">Background</span> ' + edit + (notes
-      ? '<p class="lf-text">' + esc(teaser(cleanFoundryText(notes), 180)) + '</p>' +
-        '<button type="button" class="sh-link" data-cs-read-story aria-expanded="false">Read full story</button>'
+    var jump = data.isGm
+      ? '<p class="sn-jump"><button type="button" class="sh-link" data-cs-jump="story-bg">Background</button>' +
+        '<span aria-hidden="true"> · </span><button type="button" class="sh-link" data-cs-jump="story-gm">GM lore</button></p>'
+      : '';
+    var out = jump + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
+      ? storyHtml(cleanFoundryProse(notes))
       : pEmpty('No backstory yet.')) + '</div>';
     if (data.isGm) {
       // GM notes arrive as Foundry/editor HTML, so they get the same cleaning
       // as the backstory; the line breaks survive through pre-line.
       var gm = cleanFoundryProse(f(data, 'gm_notes', ''));
-      out += foldHtml('lf-grp', 'GM lore <span class="sh-seal">GM only</span>', gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.'), false);
+      out += '<div class="lf-grp" data-cs-anchor="story-gm"><span class="sh-k">GM lore <span class="sh-seal">GM only</span></span>' +
+        (gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.')) + '</div>';
     }
     return out;
   }
@@ -3298,7 +3355,7 @@
     if (!data.armoryItems) list.push({ id: 'items', title: 'Items', kind: name, html: pItemsPanel(data) });
     list.push({ id: 'features', title: 'Features', kind: name, html: pFeaturesPanel(data) });
     list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
-    if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Notes', kind: name, html: pNotesPanel(data) });
+    if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Story', kind: name, size: 'tall', html: pNotesPanel(data) });
     return list;
   }
 
@@ -4071,10 +4128,35 @@
     }).catch(function () { return { presets: [], canSave: false }; });
   }
 
+  // The page's tab bar is outside the widget; the sheet only presses the
+  // tab's own button, and does nothing when the page has no Items tab.
+  function itemsTabButton() {
+    var b = document.querySelector('[data-widget="page-tabs"] [data-pt-tab="items"]');
+    return b && !b.hidden ? b : null;
+  }
+  function goToItemsTab() {
+    var b = itemsTabButton();
+    if (!b) return;
+    b.click();
+    var pane = document.getElementById('pt-pane-items');
+    if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
+  }
+  // The row appears once the tab does; the tab bar settles after the sheet.
+  function showItemsRow(el) {
+    var row = el.querySelector('[data-cs-items-row]');
+    if (!row) return;
+    var tries = 0;
+    (function look() {
+      if (!el.isConnected || !row.isConnected) return;
+      if (itemsTabButton()) { row.hidden = false; return; }
+      if (++tries < 10) setTimeout(look, 400);
+    })();
+  }
+
   function paperSheetHtml(data) {
     var name = data.name || 'Unnamed Hero';
     var templates = paperPanels(data).map(function (p) {
-      return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '">' + p.html + '</template>';
+      return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '"' + (p.size ? ' data-size="' + escAttr(p.size) + '"' : '') + '>' + p.html + '</template>';
     }).join('');
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
       pHead(data) + pIdentity(data) + pChanges(data) + pTurn(data) +
@@ -4087,73 +4169,16 @@
 
   // ── Paper interactions ─────────────────────────────────────────────────────
 
-  // The longest transition on an element, so a pin is removed only after its
-  // own move has played (Calm and Off already shorten or remove it in CSS).
-  function transitionMs(node) {
-    var cs = getComputedStyle(node), d = cs.transitionDuration.split(','), l = cs.transitionDelay.split(','), m = 0;
-    function ms(x) { x = String(x).trim(); return (parseFloat(x) || 0) * (/ms$/.test(x) ? 1 : 1000); }
-    d.forEach(function (x, i) { m = Math.max(m, ms(x) + ms(l[i % l.length])); });
-    return m;
-  }
-
-  // A pin is a slip tacked onto the open panel. Chronicle styles it
-  // (.paper-pin) and moves it by toggling .is-pinned; the engine has no
-  // call for it, so the widget places and removes it.
-  function unpin(inst, focus) {
-    var p = inst._pin;
-    if (!p) return;
-    inst._pin = null;
-    p.el.classList.remove('is-pinned');
-    p.trigger.setAttribute('aria-expanded', 'false');
-    if (focus && p.trigger.isConnected && p.trigger.focus) p.trigger.focus({ preventScroll: true });
-    setTimeout(function () { if (p.el.parentNode) p.el.parentNode.removeChild(p.el); }, transitionMs(p.el) + 20);
-  }
-
-  function storyPinHtml(data) {
-    var title = (data.name || 'Background') + '’s story';
-    var prose = cleanFoundryProse(f(data, 'backstory', '') || f(data, 'notes', ''));
-    var paras = prose.split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p>' + refSynced(p) + '</p>'; }).join('');
-    return '<span class="pin" aria-hidden="true"></span><div class="slip-in"><div class="slip-head"><h3 tabindex="-1">' + esc(title) + '</h3>' +
-      '<button type="button" class="unpin" data-unpin aria-label="' + escAttr('Unpin ' + title) + '">' + fa('xmark') + ' Unpin</button></div>' + paras + '</div>';
-  }
-
-  function openStoryPin(inst, trigger, data) {
-    var body = trigger.closest ? trigger.closest('.paper-dbody') : null;
-    if (!body) return;
-    if (inst._pin && inst._pin.trigger === trigger) { unpin(inst, true); return; }
-    unpin(inst, false);
-    var el = document.createElement('div');
-    el.className = 'paper-pin' + ((inst._pinFlip = (inst._pinFlip || 0) + 1) % 2 ? '' : ' alt');
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', (data.name || 'Background') + '’s story');
-    el.innerHTML = storyPinHtml(data);
-    var br = body.getBoundingClientRect(), tr = trigger.getBoundingClientRect();
-    el.style.top = (tr.bottom - br.top + body.scrollTop + 8) + 'px';
-    body.appendChild(el);
-    el.style.setProperty('--ox', Math.round(tr.left + tr.width / 2 - el.getBoundingClientRect().left) + 'px');
-    el.style.setProperty('--oy', '0px');
-    void el.offsetWidth;
-    el.classList.add('is-pinned');
-    trigger.setAttribute('aria-expanded', 'true');
-    inst._pin = { el: el, trigger: trigger };
-    setTimeout(function () {
-      var h = el.querySelector('h3');
-      if (h) h.focus({ preventScroll: true });
-      if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
-    }, 40);
-  }
-
   // The panel body is a fresh clone each time a panel opens, so anything
   // interactive inside it is wired from sheet:panel-ready, never at mount.
   function attachPaperPanels(inst, el, root) {
     inst._onPanelReady = function (e) {
       var d = e.detail || {};
-      inst._pin = null;
       inst._panelBody = d.body || null;
       inst._panelId = d.id || null;
       if (d.id === 'abilities' && inst._selectFirst) inst._selectFirst();
     };
-    inst._onPanelClose = function () { inst._pin = null; inst._panelBody = null; inst._panelId = null; };
+    inst._onPanelClose = function () { inst._panelBody = null; inst._panelId = null; };
     root.addEventListener('sheet:panel-ready', inst._onPanelReady);
     root.addEventListener('sheet:close', inst._onPanelClose);
 
@@ -4167,7 +4192,6 @@
       // other key is left alone so typing in a box is never taken over.
       var ed = e.target && e.target.closest ? e.target.closest('[data-cs-ed-scope]') : null;
       if (ed && inst._closeEditor) { e.preventDefault(); e.stopPropagation(); inst._closeEditor(ed, true); return; }
-      if (inst._pin) { e.preventDefault(); e.stopPropagation(); unpin(inst, true); return; }
       var big = inst._panelBody && inst._panelBody.querySelector ? inst._panelBody.querySelector('[data-ds-collapse]') : null;
       if (big && inst._collapse) { e.preventDefault(); e.stopPropagation(); inst._collapse(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
     };
@@ -4216,7 +4240,7 @@
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_pin', '_closeEditor'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -4253,6 +4277,7 @@
     if (root) attachPaperPanels(inst, el, root);
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
+    showItemsRow(el);
   }
 
 
@@ -4924,12 +4949,6 @@
       '[data-sheet] .sh-ledger .sh-nm { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink);min-width:calc(78px * var(--ts) * 1.12); }',
       '[data-sheet] .sh-ledger .sh-ds { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);min-width:0; }',
       '[data-sheet] .sh-foot { border-top:1px dashed var(--paper-edge);padding-top:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
-      '[data-sheet] .slip-in { padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px; }',
-      '[data-sheet] .slip-head { display:flex;align-items:center;gap:8px; }',
-      '[data-sheet] .slip-head h4,[data-sheet] .slip-head h3 { margin:0;font:700 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink);outline:none; }',
-      '[data-sheet] .paper-pin .slip-in { padding:14px 14px 12px; }',
-      '[data-sheet] .paper-pin .unpin { border:0;background:none;color:var(--paper-ink-soft);font:600 calc(11.5px * var(--ts)) var(--paper-ui-font);padding:2px 4px;margin-left:auto;display:inline-flex;gap:4px;align-items:center; }',
-      '[data-sheet] .paper-pin .unpin:hover { color:var(--paper-neg); }',
       '[data-sheet] .ab { position:relative;padding:8px 0 9px;border-bottom:1px dashed var(--paper-edge); }',
       '[data-sheet] .ab-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .ab .sh-link { font-size:calc(12px * var(--ts));margin-top:3px; }',
@@ -5204,8 +5223,13 @@
       '[data-sheet] .sh-on { font: 600 calc(10.5px * var(--ts)) var(--paper-ui-font); color: var(--paper-neg); }',
       '[data-sheet] .sh-cnd--warn { border-color: var(--paper-warn); color: var(--paper-warn); background: color-mix(in srgb, var(--paper-warn) 6%, transparent); }',
       '[data-sheet] .ft-flat { display: flex; align-items: center; gap: 8px; padding: 7px 2px; font: 700 calc(14.5px * var(--ts)) var(--paper-font); color: var(--paper-ink); }',
-      '[data-sheet] .paper-pin .slip-in { max-height: min(60vh, 420px); overflow: auto; }',
-      '[data-sheet] .paper-pin p { margin: 0 0 8px; white-space: pre-line; overflow-wrap: anywhere; }',
+      '[data-sheet] .sn-jump { margin:0 0 10px;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sn-p { margin:0 0 8px;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--paper-ink-soft);white-space:pre-line;overflow-wrap:anywhere; }',
+      '[data-sheet] .sn-more > summary { list-style:none;cursor:pointer;display:inline-block;margin-top:2px; }',
+      '[data-sheet] .sn-more > summary::-webkit-details-marker { display:none; }',
+      '[data-sheet] .sn-more.is-in > summary { display:none; }',
+      '[data-sheet] .sn-less { display:block;margin-top:2px; }',
+      '[data-sheet] .sh-golink .sh-pullbtn { width:100%;text-align:left; }',
       '[data-sheet] .ft-desc { white-space: pre-line; overflow-wrap: anywhere; }',
       '[data-sheet] [data-tip] { cursor: help; }',
       '[data-sheet] .ds-ref:hover::after, [data-sheet] .ds-ref:focus-visible::after { content: none; }',
@@ -5459,7 +5483,7 @@
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
-      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
+      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,

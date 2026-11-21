@@ -100,8 +100,8 @@ test('paper: the identity line carries no picture, so portrait_url never reaches
 test('paper: panel title and kind attributes cannot break out', () => {
   const html = cs.paperSheetHtml(PX({}, { name: BREAKOUT }));
   const tags = html.match(/<template\b[^>]*>/g) || [];
-  assert.ok(tags.every((t) => /^<template data-sheet-panel="[^"]*" data-title="[^"]*" data-kind="[^"]*">$/.test(t)), 'no template tag gains an extra attribute');
-  const attrs = [...html.matchAll(/<template data-sheet-panel="[^"]*" data-title="([^"]*)" data-kind="([^"]*)">/g)];
+  assert.ok(tags.every((t) => /^<template data-sheet-panel="[^"]*" data-title="[^"]*" data-kind="[^"]*"( data-size="[a-z]+")?>$/.test(t)), 'no template tag gains an extra attribute');
+  const attrs = [...html.matchAll(/<template data-sheet-panel="[^"]*" data-title="([^"]*)" data-kind="([^"]*)"[^>]*>/g)];
   assert.ok(attrs.length >= 5, 'panel templates carry both attributes');
   assert.ok(attrs.some((m) => /&quot;/.test(m[1] + m[2])), 'the hero name reaches an attribute escaped');
 });
@@ -124,9 +124,9 @@ test('paper: kit, features, skills, items, notes, damage and conditions are esca
   for (const p of cs.paperPanels(d)) assertNoInjection(assert, p.html, 'paper panel ' + p.id);
 });
 
-test('paper: the story pin and children items escape their text', () => {
-  const pin = cs.storyPinHtml(PX({ backstory: XSS }));
-  assertNoInjection(assert, pin, 'paper story pin');
+test('paper: the story and children items escape their text', () => {
+  const story = cs.pNotesPanel(PX({ backstory: XSS + '\n\n' + XSS + '\n\n' + XSS + '\n\n' + XSS }));
+  assertNoInjection(assert, story, 'paper story');
   const items = cs.pItemsPanel(PX({}, { campaignId: XSS, children: [
     { relation: { slug: 'has-item' }, entity: { id: XSS, name: XSS }, metadata: { quantity: 1 } }
   ] }));
