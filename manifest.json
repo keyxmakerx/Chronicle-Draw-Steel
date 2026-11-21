@@ -47,6 +47,18 @@
       "source": "Project source"
     }
   },
+  "goods": [
+    {
+      "category": "treasures",
+      "kind_key": "type",
+      "kinds": [
+        "Consumable",
+        "Trinket"
+      ],
+      "rarity_key": "echelon",
+      "rarity_label": "echelon"
+    }
+  ],
   "categories": [
     {
       "slug": "abilities",
