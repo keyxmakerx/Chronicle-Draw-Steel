@@ -776,7 +776,7 @@
     if (isNum(data, 'save_threshold')) {
       var sb = f(data, 'save_bonus', '');
       var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
       chipList += '<div class="cs-chip"><span class="cs-chip-label">Save</span>' +
         '<span class="cs-chip-value">' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</span></div>';
     }
@@ -1321,7 +1321,7 @@
   // rGmLore renders GM-only notes. Scheduled ONLY when data.isGm (the buildSchema
   // gate), so it never reaches a player; rendered inline (not the reading overlay).
   function rGmLore(def, data) {
-    var notes = f(data, 'gm_notes', '');
+    var notes = cleanFoundryProse(f(data, 'gm_notes', ''));
     if (!notes) return ph('No GM notes.');
     return '<div class="cs-gmlore">' + refText(notes) + '</div>';
   }
@@ -1387,11 +1387,21 @@
   // is then re-escaped + {@…}-resolved by refText, so it's render-safe.
   function htmlToText(h) {
     if (!h) return '';
-    return String(h)
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
-      .replace(/\s+/g, ' ').trim();
+    return decodeEntities(String(h).replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+  }
+
+  // decodeEntities turns the entities editors and Foundry write (numeric, and the
+  // named quotes and dashes) back into characters, so the later escape shows
+  // "can't" rather than "can&rsquo;t". &amp; goes last so "&amp;lt;" stays "&lt;".
+  var NAMED_ENTITIES = { nbsp: ' ', lt: '<', gt: '>', quot: '"', apos: "'", lsquo: '\u2018', rsquo: '\u2019',
+    ldquo: '\u201C', rdquo: '\u201D', ndash: '\u2013', mdash: '\u2014', hellip: '\u2026', times: '\u00D7',
+    minus: '\u2212', frac12: '\u00BD', deg: '\u00B0', middot: '\u00B7', bull: '\u2022', copy: '\u00A9' };
+  function decodeEntities(s) {
+    return String(s)
+      .replace(/&#(\d{1,7});/g, function (m, n) { var c = +n; return c > 0 && c < 0x110000 ? String.fromCodePoint(c) : m; })
+      .replace(/&#x([0-9a-f]{1,6});/gi, function (m, n) { var c = parseInt(n, 16); return c > 0 && c < 0x110000 ? String.fromCodePoint(c) : m; })
+      .replace(/&([a-z][a-z0-9]*);/gi, function (m, n) { return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, n) ? NAMED_ENTITIES[n] : m; })
+      .replace(/&amp;/g, '&');
   }
 
   // stripEnrichers removes Foundry rich-text enrichers that arrive raw in synced
@@ -1403,13 +1413,13 @@
   // (drop a leading "/", the "lookup" keyword, and @path tokens).
   function stripEnrichers(s) {
     return String(s == null ? '' : s)
-      .replace(/@UUID\[[^\]]*\]\{([^}]*)\}/g, '$1')
+      .replace(/@[A-Za-z]+\[[^\]]*\]\{([^}]*)\}/g, '$1')
       .replace(/\[\[[^\]]*\]\]\{([^}]*)\}/g, '$1')
       .replace(/\[\[([^\]]*)\]\]/g, function (_m, inner) {
         return String(inner).replace(/^\s*\//, '').replace(/\blookup\b/g, '')
           .replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim();
       })
-      .replace(/@UUID\[[^\]]*\]/g, '');
+      .replace(/@(?:UUID|Compendium|Embed|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]/g, '');
   }
 
   // cleanFoundryText — inline-safe plain text from a synced rich field: strip
@@ -1425,12 +1435,11 @@
   function cleanFoundryProse(h) {
     if (!h) return '';
     var s = String(h)
-      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n\n')
+      .replace(/<\/(p|div|h[1-6]|ul|ol)>/gi, '\n\n').replace(/<\/li>/gi, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'");
-    return stripEnrichers(s).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+      .replace(/<li[^>]*>/gi, '\u2022 ')
+      .replace(/<[^>]+>/g, '');
+    return stripEnrichers(decodeEntities(s)).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
   }
 
   function powerRollChars(a) {
@@ -1450,6 +1459,13 @@
     var d = (a.distance != null && a.distance !== '') ? a.distance : '';
     if (!t && d === '') return '';
     if (t === 'self') return 'Self';
+    var d2 = a.distanceSecondary, d3 = a.distanceTertiary;
+    // Area and two-range shapes read the way the rules print them.
+    if (t === 'meleeranged') return ('Melee ' + d + (d2 ? ' or ranged ' + d2 : '')).trim();
+    if (t === 'cube' && d !== '') return d + ' cube' + (d2 ? ' within ' + d2 : '');
+    if (t === 'wall' && d !== '') return d + ' wall' + (d2 ? ' within ' + d2 : '');
+    if (t === 'line' && d !== '') return d + (d2 ? ' \u00D7 ' + d2 : '') + ' line' + (d3 ? ' within ' + d3 : '');
+    if (t === 'burst' && d !== '') return d + ' burst';
     var label = t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
     if (d !== '') label += (label ? ' ' : '') + d;
     if (a.distanceSecondary) label += ' × ' + a.distanceSecondary;
@@ -1592,6 +1608,34 @@
     return ev != null ? String(ev) : s.replace(/@chr/gi, String(subVal));
   }
 
+  // fillTierDisplay fills the {{potency}} and {{forced}} placeholders Foundry
+  // leaves in a tier's display text, the way the rules print them ("M < WEAK
+  // push 2"); an unknown placeholder is dropped rather than shown raw.
+  var POTENCY_LETTERS = { might: 'M', agility: 'A', reason: 'R', intuition: 'I', presence: 'P' };
+  function potencyPhrase(pt) {
+    if (!pt || typeof pt !== 'object') return '';
+    var letter = POTENCY_LETTERS[String(pt.characteristic || '').toLowerCase()];
+    if (!letter) return '';
+    var v = String(pt.value == null ? '' : pt.value).trim();
+    var m = v.match(/^@potency\.(weak|average|strong)$/i);
+    if (m) v = m[1].toUpperCase();
+    return v ? letter + ' < ' + v : '';
+  }
+  function fillTierDisplay(disp, tt) {
+    if (!disp) return '';
+    var forced = '';
+    if (tt.movement) {
+      var mv = (Array.isArray(tt.movement) ? tt.movement : [tt.movement]).filter(Boolean).join(' or ');
+      var vert = Array.isArray(tt.properties) && tt.properties.indexOf('vertical') !== -1;
+      forced = ((vert ? 'vertical ' : '') + mv + (tt.distance != null && tt.distance !== '' ? ' ' + tt.distance : '')).trim();
+    }
+    return String(disp)
+      .replace(/\{\{\s*potency\s*\}\}/gi, potencyPhrase(tt.potency))
+      .replace(/\{\{\s*forced\s*\}\}/gi, forced)
+      .replace(/\{\{[^}]*\}\}/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+
   // tierFragments builds the outcome text for one tier (1..3) from the ability's
   // power-roll effects (system.power.effects, normalized to an array). Handles
   // the damage-effect shape well; degrades to '' for effect types we don't model
@@ -1613,10 +1657,12 @@
         frags.push(val + (types.length ? ' ' + types.join('/') : '') + ' damage');
         return;
       }
-      // generic per-tier text shapes (applied/other effects): a display/text/value
-      var tt = eff[key];
+      // Applied, forced and other effects keep their tiers under their own type
+      // ({ type: 'applied', applied: { tier1: { display, potency } } }); a flat
+      // { tier1: … } is still read for older data.
+      var tt = eff[key] || (eff.type && eff[eff.type] && typeof eff[eff.type] === 'object' ? eff[eff.type][key] : null);
       if (tt && typeof tt === 'object') {
-        var disp = tt.display || tt.text || tt.description;
+        var disp = fillTierDisplay(tt.display || tt.text || tt.description, tt);
         if (disp) frags.push(cleanFoundryText(disp));
       } else if (typeof tt === 'string' && tt) {
         frags.push(cleanFoundryText(tt));
@@ -1961,7 +2007,8 @@
         else grp.classList.remove('ds-ab-grp--empty');
         if (q) grp.classList.add('ds-ab-grp--filtering');
         else grp.classList.remove('ds-ab-grp--filtering');
-        if (shown && !grp.classList.contains('ds-ab-grp--off')) anyShown = true;
+        // A typed name searches every tab: a group off-tab still shows its matches.
+        if (shown && (q || !grp.classList.contains('ds-ab-grp--off'))) anyShown = true;
       });
       var none = rail.querySelector('[data-ds-no-match]');
       if (none) none.hidden = anyShown;
@@ -2663,7 +2710,7 @@
     if (isNum(data, 'save_threshold')) {
       var sb = f(data, 'save_bonus', '');
       var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
       out += '<span>Save<b>' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</b></span>';
     }
     var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
@@ -2680,7 +2727,7 @@
     var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var pips = '';
-    for (var i = 0; i < Math.min(recMax, 12); i++) pips += i < rec ? '●' : '○';
+    for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
     var top = pStamina(cur, max, winded) +
       '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
@@ -2959,9 +3006,10 @@
       pullBtn('progression', '<span class="paper-kind">Progression</span>') + '<div class="sh-dl">' + cells + '</div></section>';
   }
 
-  function pFoot() {
+  function pFoot(data) {
     return '<footer class="sh-foot"><span><span class="only-paper">Tap any section to pull out the paper behind it.</span>' +
-      '<span class="only-modern">Select any section to open its panel.</span></span><span>Synced with Foundry</span></footer>';
+      '<span class="only-modern">Select any section to open its panel.</span></span>' +
+      (foundryLinked(data) ? '<span>Synced with Foundry</span>' : '') + '</footer>';
   }
 
   // ── Panels (the papers pulled out from behind a part) ──────────────────────
@@ -3059,9 +3107,9 @@
     ft = featureOf(ft);
     var name = esc((ft && ft.name) || 'Feature') + layerTag(data, layerOf(data, ft));
     var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
-    var desc = cleanFoundryText(ft && ft.description);
+    var desc = cleanFoundryProse(ft && ft.description);
     if (!desc) return '<div class="ft ft-flat">' + name + lvl + '</div>';
-    return foldHtml('', name + lvl, '<p>' + refSynced(desc) + '</p>', false);
+    return foldHtml('', name + lvl, '<p class="ft-desc">' + refSynced(desc) + '</p>', false);
   }
   function pFeatureGroup(label, list, data) {
     if (!list || !list.length) return '';
@@ -3152,7 +3200,9 @@
         '<button type="button" class="sh-link" data-cs-read-story aria-expanded="false">Read full story</button>'
       : pEmpty('No backstory yet.')) + '</div>';
     if (data.isGm) {
-      var gm = f(data, 'gm_notes', '');
+      // GM notes arrive as Foundry/editor HTML, so they get the same cleaning
+      // as the backstory; the line breaks survive through pre-line.
+      var gm = cleanFoundryProse(f(data, 'gm_notes', ''));
       out += foldHtml('lf-grp', 'GM lore <span class="sh-seal">GM only</span>', gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.'), false);
     }
     return out;
@@ -4029,7 +4079,7 @@
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
       pHead(data) + pIdentity(data) + pChanges(data) + pTurn(data) +
       '<div class="sh-body"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
       templates + '</div>';
@@ -4397,6 +4447,7 @@
       '.ds-ab-grp--filtering .ds-ab-grp__rows { display:block; }',
       '.ds-li--hidden { display:none; }',
       '.ds-ab-grp--empty { display:none; }',
+      '.ds-ab-grp--off.ds-ab-grp--filtering:not(.ds-ab-grp--empty) { display:block; }',
       '.ds-li { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 13px; background:none; border:0; border-top:1px solid var(--color-border-light,#f3f4f6); font:inherit; font-size:13px; color:var(--color-text-secondary,#6b7280); cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
       '.ds-li:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); color:var(--color-text-primary,#111827); }',
       '.ds-li:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
@@ -4517,7 +4568,7 @@
       '.cs-reading-dark .cs-reading__eyebrow { color:#cdb06b; }',
       '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:32px; font-weight:700; text-align:center; margin:4px 0 24px; color:#211c14; }',
       '.cs-reading-dark .cs-reading__title { color:#f7f1e3; }',
-      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; }',
+      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; overflow-wrap:anywhere; }',
       '.cs-reading__body::first-letter { float:left; font-family:Georgia,serif; font-weight:700; font-size:52px; line-height:0.72; padding:7px 10px 0 0; color:#7c3aed; }',
       '.cs-reading-dark .cs-reading__body::first-letter { color:#bda6f4; }',
       // ── Reserved Option-C block slots — hidden until Chronicle hydrates ──
@@ -4581,7 +4632,7 @@
       '.cs-kit-tiers span, .cs-kit-tierhead span { display:inline-block; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }',
       '.cs-kit-tiers span { font-weight:700; color:var(--color-text-primary,#111827); }',
       // ── v3 GM Lore ──
-      '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
+      '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; white-space:pre-line; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
@@ -4745,7 +4796,7 @@
       '[data-sheet] .sh-was { color:var(--paper-mute);font-weight:400;text-decoration-thickness:1px;margin-right:2px; }',
       '[data-sheet] .sh-sr { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }',
       '[data-sheet] .sh-layers { display:inline-flex;gap:6px;flex-wrap:wrap; }',
-      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);white-space:nowrap; }',
+      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);max-width:100%;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-layer-sm { font-size:calc(10px * var(--ts));line-height:16px;padding:0 6px;vertical-align:1px; }',
       // The Director's preview is drawn in the sheet's warning colour, which
       // the player never sees on a layer; a pushed layer keeps the accent.
@@ -4900,14 +4951,18 @@
       '[data-sheet] .sh-lvl { font:600 calc(10px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);border:1px solid var(--paper-edge);border-radius:3px;padding:0 4px; }',
       '[data-sheet] .skills { display:flex;flex-wrap:wrap;gap:5px; }',
       '[data-sheet] .lf-text { margin:0 0 6px;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--paper-ink-soft); }',
-      '[data-sheet] .lore { border-left:2px solid var(--paper-accent);padding:2px 0 2px 10px;font-style:italic; }',
+      '[data-sheet] .lore { border-left:2px solid var(--paper-accent);padding:2px 0 2px 10px;font-style:italic;white-space:pre-line; }',
       '[data-sheet] .rule { margin:0 0 10px; }',
       '[data-sheet] .rule b { display:block;font:700 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
-      '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts)); }',
+      '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts));white-space:pre-line; }',
       '@container sheet (max-width:819px) {',
       '  [data-sheet] .sh-sheet { padding:22px 26px 24px;gap:14px; }',
       '  [data-sheet] .sh-body { display:flex;flex-direction:column;align-items:stretch;gap:14px; }',
       '  [data-sheet] .sh-col { display:contents; }',
+      // The tilted sheet peeking from behind sits past the right edge; on a narrow
+      // page that edge would scroll the page sideways. Only the stack clips, so a
+      // panel beside the sheet (in the folio) is untouched.
+      '  [data-sheet] .sh-stack { overflow-x:clip; }',
       '}',
       '@container sheet (max-width:600px) {',
       '  [data-sheet] .sh-sheet { padding:18px 15px 20px; }',
@@ -4996,7 +5051,7 @@
       '[data-sheet][data-sheet-style="pencil"] .sh-num small,[data-sheet][data-sheet-style="pencil"] .sh-big small { text-shadow:none; }',
       '@container sheet (max-width:600px) {',
       '  [data-sheet][data-sheet-style="pencil"] .sh-chars b { font-size:calc(28px * var(--ts)); }',
-      '  [data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(10px * var(--ts));letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(9.5px * var(--ts));letter-spacing:0; }',
       '  [data-sheet][data-sheet-style="pencil"] .sh-name h2 { font-size:calc(38px * var(--ts)); }',
       '}',
       '[data-sheet][data-sheet-style="starship"] .sh-id,[data-sheet][data-sheet-style="starship"] .sh-turn,[data-sheet][data-sheet-style="starship"] .sh-band,[data-sheet][data-sheet-style="starship"] .sh-sec.paper-pull,[data-sheet][data-sheet-style="starship"] .sh-ledger { border:1px solid var(--hud-dim);border-radius:2px;background:linear-gradient(rgb(95 215 245 / .06),rgb(95 215 245 / .015)); }',
@@ -5088,7 +5143,7 @@
       '[data-sheet][data-sheet-style="runes"] .sh-chars b.sh-neg { color:var(--paper-neg); }',
       '@container sheet (max-width:600px) {',
       '  [data-sheet][data-sheet-style="runes"] .sh-chars b { font-size:calc(19px * var(--ts)); }',
-      '  [data-sheet][data-sheet-style="runes"] .sh-chars span { letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="runes"] .sh-chars span { letter-spacing:0; }',
       '  [data-sheet][data-sheet-style="runes"] .sh-name h2 { font-size:calc(24px * var(--ts)); }',
       '}',
       '[data-sheet][data-sheet-style="brass"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:1px solid var(--bs-line,rgb(184 138 53 / .55));border-radius:3px;background:linear-gradient(rgb(0 0 0 / .3),rgb(0 0 0 / .14));box-shadow:inset 0 1px 4px rgb(0 0 0 / .6),0 1px 0 rgb(255 220 150 / .12); }',
@@ -5150,7 +5205,8 @@
       '[data-sheet] .sh-cnd--warn { border-color: var(--paper-warn); color: var(--paper-warn); background: color-mix(in srgb, var(--paper-warn) 6%, transparent); }',
       '[data-sheet] .ft-flat { display: flex; align-items: center; gap: 8px; padding: 7px 2px; font: 700 calc(14.5px * var(--ts)) var(--paper-font); color: var(--paper-ink); }',
       '[data-sheet] .paper-pin .slip-in { max-height: min(60vh, 420px); overflow: auto; }',
-      '[data-sheet] .paper-pin p { margin: 0 0 8px; white-space: pre-line; }',
+      '[data-sheet] .paper-pin p { margin: 0 0 8px; white-space: pre-line; overflow-wrap: anywhere; }',
+      '[data-sheet] .ft-desc { white-space: pre-line; overflow-wrap: anywhere; }',
       '[data-sheet] [data-tip] { cursor: help; }',
       '[data-sheet] .ds-ref:hover::after, [data-sheet] .ds-ref:focus-visible::after { content: none; }',
       // The abilities panel is a master-detail; a panel is 390px wide, so the rail sits above the card instead of beside it.
@@ -5160,6 +5216,7 @@
       '[data-sheet] .ds-tab em { font-style: normal; font-size: calc(11px * var(--ts)); color: var(--paper-mute); font-variant-numeric: tabular-nums; }',
       '[data-sheet] .ds-ab-grp--off, [data-sheet] .ds-ab-grp--empty, [data-sheet] .ds-li--hidden { display: none; }',
       '[data-sheet] .ds-ab-grp--filtering .ds-ab-grp__rows { display: block; }',
+      '[data-sheet] .ds-ab-grp--off.ds-ab-grp--filtering:not(.ds-ab-grp--empty) { display: block; }',
       '[data-sheet] .ds-md { display: flex; flex-direction: column; gap: 10px; }',
       '[data-sheet] .ds-rail { border: 1px solid var(--paper-edge); border-radius: 4px; max-height: 210px; overflow: hidden auto; overscroll-behavior: contain; }',
       '[data-sheet] .ds-rail__tools { position: sticky; top: 0; z-index: 2; padding: 6px; background: var(--paper-cut); border-bottom: 1px solid var(--paper-edge); }',

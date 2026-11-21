@@ -135,6 +135,13 @@ test('paperPanels: items, notes and GM lore follow the same gates as the box sch
   assert.ok(!/data-sheet-section="notes"/.test(html) && !/data-sheet-section="items"[^]*armory/.test(html));
 });
 
+test('GM lore written as HTML reads as text, with its paragraphs kept', () => {
+  const gm = '<p>Moved from the backstory &amp; hidden.</p><p>Ended up thrown out.</p>';
+  const html = cs.paperPanels({ isGm: true, fields: { gm_notes: gm } }).find((p) => p.id === 'notes').html;
+  assert.ok(!/&lt;p&gt;|&lt;\/p&gt;/.test(html), 'no tag text shown');
+  assert.ok(/Moved from the backstory &amp; hidden\.\n\nEnded up thrown out\./.test(html), 'paragraphs survive as line breaks');
+});
+
 test('paper folds use the contract: details > .fold-body > .fold-in[data-move=fold]', () => {
   const html = cs.paperPanels(PAPER).map((p) => p.html).join('');
   assert.ok(/<details[^>]*data-sheet-fold/.test(html), 'a fold is present');
