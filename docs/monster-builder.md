@@ -214,7 +214,9 @@ changes only the number in a tier's text, never its damage type or effect.
 Free strike is read only as a bare number or "N damage"; other wording is not
 a match and the fix replaces the whole value. An ability whose damage is
 worded another way is named in the note as not checked, and a level outside 1
-to 20 gets no check.
+to 20 gets no check. The published formulas state no level range (they are
+plain arithmetic on the level), so 20 is the editor's own limit, and the review
+checks every level the editor accepts.
 
 A figure the AI left out gets a tile too, because the AI is told to leave
 them out. A blank figure starts with the formula's figure taken (nothing is

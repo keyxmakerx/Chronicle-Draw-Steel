@@ -134,6 +134,24 @@ test('a level outside 1 to 20, or a fraction, gets no check; 11 to 20 are checke
   assert.notEqual(S.reviewCheck(raider({ level: 12 }), REFS, ALL), null);
 });
 
+test('the review checks exactly the levels the editor accepts, and the docs and the published data say the same', () => {
+  for (let level = 1; level <= 20; level++) {
+    const r = S.reviewCheck(raider({ level }), REFS, ALL);
+    assert.notEqual(r, null, 'level ' + level);
+    assert.equal(F.stamina(level, org('platoon'), role('harrier')).sourced, true, 'the formula covers level ' + level);
+  }
+  const doc = readFileSync(new URL('../docs/monster-builder.md', import.meta.url), 'utf8').replace(/\s+/g, ' ');
+  assert.match(doc, /a level outside 1 to 20 gets no check/);
+  assert.doesNotMatch(doc, /outside 1 to 10 gets no check/);
+  // Neither formula entry names a level range, so nothing narrower than the editor's is published.
+  const published = JSON.parse(readFileSync(new URL('../data/monster-building.json', import.meta.url), 'utf8'));
+  for (const slug of ['encounter-value-formula', 'stamina-formula']) {
+    const e = published.find((x) => x.slug === slug);
+    assert.ok(!/level (range|cap|maximum)|levels? \d+ (to|-|through) \d+/i.test(JSON.stringify(e)), slug);
+    assert.deepEqual(Object.keys(e.properties).filter((k) => /^(min|max)_?level/.test(k)), [], slug);
+  }
+});
+
 test('taking Stamina also takes Winded when the AI wrote one, so they cannot disagree', () => {
   const r = S.reviewCheck(raider(), REFS, ALL);
   const p = r.patch(['stamina']);
