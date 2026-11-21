@@ -214,7 +214,9 @@ changes only the number in a tier's text, never its damage type or effect.
 Free strike is read only as a bare number or "N damage"; other wording is not
 a match and the fix replaces the whole value. An ability whose damage is
 worded another way is named in the note as not checked, and a level outside 1
-to 20 gets no check.
+to 20 gets no check. The published formulas state no level range (they are
+plain arithmetic on the level), so 20 is the editor's own limit, and the review
+checks every level the editor accepts.
 
 A figure the AI left out gets a tile too, because the AI is told to leave
 them out. A blank figure starts with the formula's figure taken (nothing is
@@ -225,7 +227,8 @@ followed it, so it moves with the new one and starts taken ("Follows the
 formula, as at level 1 (was 6)"; Winded follows if it was half that Stamina).
 Any other stored figure is the director's, stays, and says "Yours, kept.
 Formula gives N". A figure no formula covers, or a level past 20, is a line
-saying it stays blank for Edit stat block. The four figures carry
+saying it stays blank for Edit stat block. Winded is half of Stamina, so a
+blank Stamina left untaken keeps Winded blank too, whichever tiles are pressed. The four figures carry
 `"formula": true` in the manifest, which is how Chronicle knows the review may
 add them. Pinned by `tools/test-creature-review-check.mjs`.
 

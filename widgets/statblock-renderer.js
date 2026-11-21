@@ -375,6 +375,9 @@ var DrawSteelStatblock = (function () {
           }
         });
         if (list) out.abilities_json = JSON.stringify(list);
+        // Winded is half the Stamina, so with Stamina left blank it would be
+        // saved as half of a figure that isn't there.
+        if ('winded' in out && c.stamina === null && (ids || []).indexOf('stamina') < 0) delete out.winded;
         return out;
       }
     };

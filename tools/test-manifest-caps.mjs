@@ -110,3 +110,37 @@ test('the crafting block is a project roll Chronicle accepts', () => {
     assert.ok(label(s.label), `label "${s.label}"`);
   }
 });
+
+// Chronicle's shop Fill the shelves reads the goods list
+// (internal/systems/shop_goods.go, validateGoods) and rejects the whole
+// manifest for one it cannot read. Draw Steel gives treasures no price in
+// coin, so there is no price_key: every good is left for the Director to
+// price, and this package invents no number.
+test('the goods list names treasures a shop may stock, with no invented price', () => {
+  const goods = manifest.goods;
+  assert.ok(Array.isArray(goods) && goods.length >= 1 && goods.length <= 8, 'goods is missing or over its cap of 8');
+  const cats = new Set((manifest.categories || []).map((c) => c.slug));
+  const seen = new Set();
+  const key = /^[a-z0-9][a-z0-9_-]*$/;
+  for (const g of goods) {
+    assert.ok(cats.has(g.category), `goods category "${g.category}" is not a category of this manifest`);
+    assert.ok(!seen.has(g.category), `goods category "${g.category}" is listed twice`);
+    seen.add(g.category);
+    for (const k of ['kind_key', 'rarity_key', 'price_key']) if (k in g) assert.match(g[k], key, k);
+    if (g.kinds) assert.ok(g.kind_key, 'kinds needs a kind_key');
+    if (g.rarity_label) assert.ok([...g.rarity_label].length <= 24);
+    assert.ok(!('price_key' in g), 'Draw Steel prices treasures in no coin; leave price_key out');
+  }
+  // Each key names a real field of the category and each kind a real value
+  // in its data, so a rename in data/ cannot quietly empty the shelves.
+  const g = goods.find((x) => x.category === 'treasures');
+  assert.ok(g, 'treasures are not offered as goods');
+  const fields = new Set(manifest.categories.find((c) => c.slug === 'treasures').fields.map((f) => f.key));
+  assert.ok(fields.has(g.kind_key) && fields.has(g.rarity_key));
+  const items = JSON.parse(readFileSync(join(root, 'data', 'treasures.json'), 'utf8'));
+  const kinds = new Set(items.map((i) => i.properties[g.kind_key]));
+  for (const k of g.kinds) assert.ok(kinds.has(k), `no treasure is of kind "${k}"`);
+  const stocked = items.filter((i) => g.kinds.includes(i.properties[g.kind_key]));
+  assert.ok(stocked.length > 0);
+  for (const i of stocked) assert.match(String(i.properties[g.rarity_key]), /^\d/, `${i.slug} has no echelon to rate it by`);
+});
