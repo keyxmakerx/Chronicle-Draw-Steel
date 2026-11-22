@@ -418,3 +418,13 @@ test('the Items row shows only when the items live in the Armory', () => {
   const off = cs.paperSheetHtml(Object.assign({}, PAPER, { armoryItems: false }));
   assert.ok(!/data-cs-go-items/.test(off) && /data-sheet-open="items"/.test(off), 'the sheet keeps its own Items panel');
 });
+
+test('a Story jump word scrolls only the panel body, and not when it has nothing to scroll', () => {
+  assert.equal(cs.jumpTop(120, 520, 0, 2000, 700), 400, 'anchor brought to the top of the body');
+  assert.equal(cs.jumpTop(120, 300, 400, 2000, 700), 580, 'measured from where the body already is');
+  assert.equal(cs.jumpTop(120, 5000, 0, 2000, 700), 1300, 'never past the end');
+  assert.equal(cs.jumpTop(120, 520, 0, 700, 700), null, 'a body that fits does not move');
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  const branch = src.slice(src.indexOf("closest('[data-cs-jump]')"), src.indexOf("closest('[data-cs-go-items]')"));
+  assert.ok(!/scrollIntoView/.test(branch), 'scrollIntoView scrolls the page as well as the panel');
+});

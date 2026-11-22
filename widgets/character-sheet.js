@@ -2262,9 +2262,17 @@
       var jmp = t.closest('[data-cs-jump]');
       if (jmp) {
         e.preventDefault();
-        var scope = jmp.closest('.paper-dbody') || el;
-        var tgt = scope.querySelector('[data-cs-anchor="' + jmp.getAttribute('data-cs-jump') + '"]');
-        if (tgt && tgt.scrollIntoView) tgt.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
+        // Only the panel's own body scrolls: scrolling the anchor into view would also scroll the page under the panel and carry the
+        // panel out of the window.
+        var box = jmp.closest('.paper-dbody');
+        var tgt = box && box.querySelector('[data-cs-anchor="' + jmp.getAttribute('data-cs-jump') + '"]');
+        if (tgt) {
+          var top = jumpTop(box.getBoundingClientRect().top, tgt.getBoundingClientRect().top, box.scrollTop, box.scrollHeight, box.clientHeight);
+          if (top !== null) {
+            if (box.scrollTo) box.scrollTo({ top: top, behavior: reduced() ? 'auto' : 'smooth' });
+            else box.scrollTop = top;
+          }
+        }
         return;
       }
       var goItems = t.closest('[data-cs-go-items]');
@@ -3216,6 +3224,14 @@
   // unfolds the rest below them, so the panel stays the one scroll box.
   // Paragraph breaks survive through pre-line; a lead cut mid-paragraph
   // ends on a sentence.
+  // Where a panel body scrolls to so a jump word's anchor sits at its top: null when the body has nothing to scroll,
+  // and never past the body's end.
+  function jumpTop(boxTop, anchorTop, scrollTop, scrollHeight, clientHeight) {
+    var room = scrollHeight - clientHeight;
+    if (!(room > 0)) return null;
+    return Math.max(0, Math.min(room, Math.round(anchorTop - boxTop + scrollTop)));
+  }
+
   function storySplit(prose) {
     var paras = String(prose).split(/\n{2,}/).map(function (p) { return p.trim(); }).filter(Boolean);
     var lead = [], len = 0, i = 0;
@@ -5471,7 +5487,7 @@
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
+      jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
       targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
       substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
