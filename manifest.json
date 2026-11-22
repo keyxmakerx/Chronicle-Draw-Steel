@@ -947,6 +947,68 @@
           "type": "markdown"
         },
         {
+          "key": "age",
+          "label": "Age",
+          "type": "string",
+          "foundry_path": "system.biography.age"
+        },
+        {
+          "key": "height",
+          "label": "Height",
+          "type": "number",
+          "foundry_path": "system.biography.height.value"
+        },
+        {
+          "key": "height_units",
+          "label": "Height units",
+          "type": "string",
+          "foundry_path": "system.biography.height.units"
+        },
+        {
+          "key": "weight",
+          "label": "Weight",
+          "type": "number",
+          "foundry_path": "system.biography.weight.value"
+        },
+        {
+          "key": "weight_units",
+          "label": "Weight units",
+          "type": "string",
+          "foundry_path": "system.biography.weight.units"
+        },
+        {
+          "key": "epic_resource_current",
+          "label": "Epic Resource (current)",
+          "type": "number",
+          "foundry_path": "system.hero.epic.value"
+        },
+        {
+          "key": "size_letter",
+          "label": "Size letter",
+          "type": "string",
+          "foundry_path": "system.combat.size.letter",
+          "foundry_writable": false
+        },
+        {
+          "key": "projects_json",
+          "label": "Projects Data",
+          "type": "string",
+          "foundry_collection": "items",
+          "foundry_item_type": [
+            "project"
+          ],
+          "foundry_item_fields": {
+            "name": "name",
+            "type": "system.type",
+            "goal": "system.goal",
+            "points": "system.points",
+            "rollCharacteristic": "system.rollCharacteristic",
+            "projectSource": "system.projectSource",
+            "prerequisites": "system.prerequisites",
+            "description": "system.description.value"
+          }
+        },
+        {
           "key": "backstory",
           "label": "Backstory",
           "type": "markdown",

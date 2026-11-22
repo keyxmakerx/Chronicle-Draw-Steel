@@ -39,6 +39,10 @@ Direct `foundry_path` reads off the `hero` actor. The key is the Chronicle field
 | Heroic resource, current (`heroic_resource_current`) | `system.hero.primary.value` | two-way |
 | Surges (`surges`) | `system.hero.surges` | two-way |
 | Victories, Renown, XP, Wealth (`victories`, `renown`, `xp`, `wealth`) | `system.hero.<name>` | two-way |
+| Epic resource, current (`epic_resource_current`) | `system.hero.epic.value` | two-way |
+| Age (`age`) | `system.biography.age` | two-way |
+| Height, Weight (`height`, `weight`) and their units (`height_units`, `weight_units`) | `system.biography.height.value` / `.units`, `system.biography.weight.value` / `.units` | two-way |
+| Size letter (`size_letter`) | `system.combat.size.letter` | pull-only |
 | Speed (`speed`) | `system.movement.value` | pull-only |
 | Disengage (`disengage`) | `system.movement.disengage` | pull-only |
 | Movement modes (`movement_types`) | `system.movement.types` | pull-only |
@@ -57,7 +61,7 @@ Direct `foundry_path` reads off the `hero` actor. The key is the Chronicle field
 | Biography / backstory (`backstory`) | `system.biography.value` | two-way, `owner_only` |
 | GM / Director notes (`gm_notes`) | `system.biography.director` | two-way, `gm_only` |
 
-Chronicle-only fields with no Foundry path: `faction`, `initiative`, `in_combat`,
+Chronicle-only fields with no Foundry path: `pronouns`, `gender`, `appearance` (Draw Steel's biography has no field for them), `faction`, `initiative`, `in_combat`,
 `combat_round`. The sheet widget does not show the three combat-state fields; Draw
 Steel uses alternating activation, so there is no initiative to display.
 
@@ -131,6 +135,7 @@ Other item collections are projected the same way:
 | Features (`features_json`) | `feature` | `name`, `description` (`system.description.value`), `level` (`system.prerequisites.level`), `dsid` (`system._dsid`), `sourceBook` (`system.source.book`) |
 | Perks (`perks_json`) | `perk` | `name`, `perkType` (`system.perkType`), `description`, `dsid` |
 | Titles (`titles_json`) | `title` | `name`, `echelon` (`system.echelon`), `description`, `story` (`system.story`), `dsid` |
+| Projects (`projects_json`) | `project` | `name`, `type`, `goal`, `points`, `rollCharacteristic`, `projectSource`, `prerequisites`, `description` |
 | Treasures (`treasures_json`) | `treasure` | `name`, `category` (`system.category`), `kind` (`system.kind`), `echelon`, `keywords`, `quantity` (`system.quantity`), `description` |
 
 ---
