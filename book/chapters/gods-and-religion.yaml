@@ -123,71 +123,73 @@ pages:
           four domains, or invent a saint or herald by picking two domains
           from a god's list.
       - text: |
-          Tap a domain for what a censor gets from it and what a conduit
-          prays for. A conduit's prayer effects use the Intuition score.
+          Tap a domain for its 1st-level feature and skill group, which a
+          censor and a conduit both gain from the domain they pick (a conduit
+          picks one of their two), and for what a conduit prays for. A
+          conduit's prayer effects use the Intuition score.
       - type: flaps
         items:
           - title: Creation
             text: |
-              - **Censor:** Hands of the Maker, with a skill from the
+              - **Feature (censor and conduit):** Hands of the Maker, with a skill from the
                 crafting group.
               - **Conduit prayer:** a wall of stone within 10 squares.
           - title: Death
             text: |
-              - **Censor:** Grave Speech, with a lore skill.
+              - **Feature (censor and conduit):** Grave Speech, with a lore skill.
               - **Conduit prayer:** a deadly curse on up to two enemies
                 within 10 squares, dealing corruption damage.
           - title: Fate
             text: |
-              - **Censor:** Oracular Visions, with a lore skill.
+              - **Feature (censor and conduit):** Oracular Visions, with a lore skill.
               - **Conduit prayer:** a creature within 10 squares
                 automatically gets a tier 1 or tier 3 outcome (your choice)
                 on its next power roll this encounter.
           - title: Knowledge
             text: |
-              - **Censor:** Blessing of Comprehension, with a lore skill.
+              - **Feature (censor and conduit):** Blessing of Comprehension, with a lore skill.
               - **Conduit prayer:** up to five allies within 10 squares gain
                 1 surge each.
           - title: Life
             text: |
-              - **Censor:** Revitalizing Ritual, with an exploration skill.
+              - **Feature (censor and conduit):** Revitalizing Ritual, with an exploration skill.
               - **Conduit prayer:** you or an ally within 10 squares spends a
                 Recovery, ends an effect, or stands up; or gains temporary
                 Stamina.
           - title: Love
             text: |
-              - **Censor:** Blessing of Compassion, with an interpersonal
+              - **Feature (censor and conduit):** Blessing of Compassion, with an interpersonal
                 skill.
               - **Conduit prayer:** each ally within 10 squares gains
                 temporary Stamina.
           - title: Nature
             text: |
-              - **Censor:** Faithful Friend, with an exploration skill.
+              - **Feature (censor and conduit):** Faithful Friend, with an exploration skill.
               - **Conduit prayer:** vines grab creatures within 10 squares
                 and you slide them.
           - title: Protection
             text: |
-              - **Censor:** Protective Circle, with an exploration skill.
+              - **Feature (censor and conduit):** Protective Circle, with an exploration skill.
               - **Conduit prayer:** one ally within 10 squares gains
                 temporary Stamina.
           - title: Storm
             text: |
-              - **Censor:** Blessing of Fortunate Weather, with an
+              - **Feature (censor and conduit):** Blessing of Fortunate Weather, with an
                 exploration skill.
               - **Conduit prayer:** lightning damage to each enemy in a
                 3 cube within 10 squares.
           - title: Sun
             text: |
-              - **Censor:** Inner Light, with a lore skill.
+              - **Feature (censor and conduit):** Inner Light, with a lore skill.
               - **Conduit prayer:** fire damage to one enemy within 10
                 squares.
           - title: Trickery
             text: |
-              - **Censor:** Inspired Deception, with an intrigue skill.
+              - **Feature (censor and conduit):** Inspired Deception, with an intrigue skill.
               - **Conduit prayer:** you slide a creature within 10 squares.
           - title: War
             text: |
-              - **Censor:** Sanctified Weapon, with an exploration skill.
+              - **Feature (censor and conduit):** Sanctified Weapon, with an exploration skill.
               - **Conduit prayer:** up to three allies within 10 squares
                 gain 2 surges each.
   - title: The pantheons

@@ -60,13 +60,19 @@
       "subclass_type": "Censor order",
       "subclasses": [
         {
-          "name": "Exorcist"
+          "name": "Exorcist",
+          "summary": "An order of censors who hunt their order's hidden enemies.",
+          "description": "You have the Read Person skill. The order also shapes the censor features you gain at higher levels."
         },
         {
-          "name": "Oracle"
+          "name": "Oracle",
+          "summary": "An order of censors who uncover clandestine threats to their order.",
+          "description": "You have the Magic skill. The order also shapes the censor features you gain at higher levels."
         },
         {
-          "name": "Paragon"
+          "name": "Paragon",
+          "summary": "An order of censors who set the example for their order.",
+          "description": "You have the Lead skill. The order also shapes the censor features you gain at higher levels."
         }
       ],
       "kits": 1,
@@ -104,40 +110,64 @@
       "subclass_type": "Domains (pick two)",
       "subclasses": [
         {
-          "name": "Creation"
+          "name": "Creation",
+          "summary": "The domain of making things, with stone walls and objects conjured from thought.",
+          "description": "1st-level domain feature: Hands of the Maker (a maneuver that creates a mundane object of size 1S or smaller, up to your Intuition score of them at once). Skill group: Crafting. Piety: You gain 2 piety the first time in an encounter that a creature within 10 squares uses an area ability. Prayer effect: a wall of stone within 10 squares, size 5 + your Intuition score, lasting to the end of the encounter."
         },
         {
-          "name": "Death"
+          "name": "Death",
+          "summary": "The domain of the dead and of curses.",
+          "description": "1st-level domain feature: Grave Speech (a maneuver to speak with a creature that died in the last 24 hours, once per creature). Skill group: Lore. Piety: You gain 2 piety the first time in an encounter that a non-minion creature within 10 squares is reduced to 0 Stamina, or a solo creature within 10 squares becomes winded. Prayer effect: curse up to two enemies within 10 squares, each taking corruption damage equal to twice your Intuition score."
         },
         {
-          "name": "Fate"
+          "name": "Fate",
+          "summary": "The domain of omens and of nudging how things turn out.",
+          "description": "1st-level domain feature: Oracular Visions (you earn fate points equal to the Victories you earn and spend one to grant a creature within 10 squares an edge on a test). Skill group: Lore. Piety: You gain 2 piety the first time in an encounter that an ally within 10 squares obtains a tier 3 outcome on a power roll, or an enemy within 10 squares obtains a tier 1 outcome. Prayer effect: a creature within 10 squares automatically gets a tier 1 or tier 3 outcome (your choice) on its next power roll this encounter."
         },
         {
-          "name": "Knowledge"
+          "name": "Knowledge",
+          "summary": "The domain of learning, lore and comprehension.",
+          "description": "1st-level domain feature: Blessing of Comprehension (you count as fluent in all languages for understanding a crafting or research project source). Skill group: Lore. Piety: You gain 2 piety the first time in an encounter that the Director spends Malice. Prayer effect: up to five allies within 10 squares, or yourself in place of one ally, each gain 1 surge."
         },
         {
-          "name": "Life"
+          "name": "Life",
+          "summary": "The domain of healing and recovery.",
+          "description": "1st-level domain feature: Revitalizing Ritual (at each respite you give yourself or one ally a bonus to recovery value equal to your level until your next respite). Skill group: Exploration. Piety: You gain 2 piety the first time in an encounter that a creature within 10 squares regains Stamina. Prayer effect: yourself or one ally within 10 squares spends a Recovery, ends an effect, or stands up; or you or an ally gains temporary Stamina equal to twice your Intuition score."
         },
         {
-          "name": "Love"
+          "name": "Love",
+          "summary": "The domain of compassion and of helping others.",
+          "description": "1st-level domain feature: Blessing of Compassion (you gain an edge on tests to assist another creature, and at the start of a negotiation one NPC gains 1 patience (max 5) and the first test to influence them gains an edge). Skill group: Interpersonal. Piety: You gain 2 piety the first time in an encounter that you or an ally within 10 squares uses the Aid Attack maneuver or an ability that targets an ally. Prayer effect: each ally within 10 squares gains temporary Stamina equal to twice your Intuition score."
         },
         {
-          "name": "Nature"
+          "name": "Nature",
+          "summary": "The domain of beasts, plants and the elements of the wild.",
+          "description": "1st-level domain feature: Faithful Friend (a main action ability that conjures an incorporeal animal spirit whose senses you share). Skill group: Exploration. Piety: You gain 2 piety the first time in an encounter that you or a creature within 10 squares takes acid, cold, fire, lightning, poison or sonic damage. Prayer effect: vines wrap a number of creatures equal to your Intuition score within 10 squares, and you can slide each up to your Intuition score in squares."
         },
         {
-          "name": "Protection"
+          "name": "Protection",
+          "summary": "The domain of wards and of shielding allies.",
+          "description": "1st-level domain feature: Protective Circle (10 minutes of work makes a circle that lasts 24 hours, and a creature inside it can't be targeted by strikes). Skill group: Exploration. Piety: You gain 2 piety the first time in an encounter that you or an ally within 10 squares gains temporary Stamina, or uses a triggered action to reduce incoming damage or impose a bane or double bane on an enemy's power roll. Prayer effect: one ally within 10 squares gains temporary Stamina equal to four times your Intuition score."
         },
         {
-          "name": "Storm"
+          "name": "Storm",
+          "summary": "The domain of weather and lightning.",
+          "description": "1st-level domain feature: Blessing of Fortunate Weather (at each respite you choose the weather within 100 squares (clear, foggy, overcast or precipitation), each giving you and your allies an edge on certain tests). Skill group: Exploration. Piety: You gain 2 piety the first time in an encounter that an enemy within 10 squares is force moved. Prayer effect: each enemy in a 3 cube within 10 squares takes lightning damage equal to twice your Intuition score."
         },
         {
-          "name": "Sun"
+          "name": "Sun",
+          "summary": "The domain of light and fire.",
+          "description": "1st-level domain feature: Inner Light (at each respite you give yourself or one ally a +1 bonus to saving throws until your next respite). Skill group: Lore. Piety: You gain 2 piety the first time in an encounter that an enemy within 10 squares takes fire or holy damage. Prayer effect: one enemy within 10 squares takes fire damage equal to three times your Intuition score."
         },
         {
-          "name": "Trickery"
+          "name": "Trickery",
+          "summary": "The domain of deceit and thievery.",
+          "description": "1st-level domain feature: Inspired Deception (when you test with an intrigue skill you have, you can use Intuition instead of another characteristic). Skill group: Intrigue. Piety: You gain 2 piety the first time in an encounter that you or a creature within 10 squares takes the Aid Attack or Hide maneuver. Prayer effect: you slide one creature within 10 squares up to 5 + your conduit level squares."
         },
         {
-          "name": "War"
+          "name": "War",
+          "summary": "The domain of battle and bloodshed.",
+          "description": "1st-level domain feature: Sanctified Weapon (as a respite activity you bless a weapon, giving its wielder +1 rolled damage with its abilities until your next respite). Skill group: Exploration. Piety: You gain 2 piety the first time in an encounter that you or a creature within 10 squares takes damage greater than 10 + your level in a single turn. Prayer effect: up to three allies within 10 squares, or yourself in place of one ally, each gain 2 surges."
         }
       ],
       "kits": 0,
@@ -176,16 +206,24 @@
       "subclass_type": "Elemental specialization",
       "subclasses": [
         {
-          "name": "Earth"
+          "name": "Earth",
+          "summary": "Earth elementalists become harder to move and shape the ground itself.",
+          "description": "Specialization benefit, Acolyte of Earth: when you use an ability with the Earth and Magic keywords, your stability increases by 1 until the start of your next turn, cumulatively. 1st-level feature Motivate Earth: a main action to raise a 5 wall of mundane dirt, stone or metal, or to open or seal a 1-square opening in a structure. Triggered action: Skin Like Castle Walls."
         },
         {
-          "name": "Fire"
+          "name": "Fire",
+          "summary": "Fire elementalists specialize in destructive flames.",
+          "description": "Specialization benefit, Acolyte of Fire: abilities with the Fire and Magic keywords gain +1 to rolled damage, and so does Hurl Element when it deals fire damage. 1st-level feature Return to Formlessness: a main action to melt or burn one square of a mundane object. Triggered action: Explosive Assistance."
         },
         {
-          "name": "Green"
+          "name": "Green",
+          "summary": "Green elementalists use growth and life magic to bolster themselves and their allies.",
+          "description": "Specialization benefit, Acolyte of the Green: when a Green and Magic ability that costs essence damages creatures, you or one creature within 10 squares gains temporary Stamina equal to your Reason score. 1st-level feature It Is the Soul Which Hears: you can speak with and understand animals, beasts and plant creatures, using Reason instead of Presence to influence them, and talk telepathically to a living plant. Triggered action: Breath of Dawn Remembered."
         },
         {
-          "name": "Void"
+          "name": "Void",
+          "summary": "Void elementalists work the mystery of the void to see further and reach further.",
+          "description": "Specialization benefit, Acolyte of the Mystery: the distance of your Magic, Ranged, Void abilities increases by 2 squares. 1st-level feature A Beyonding of Vision: you see through illusions and invisibility, can't be concealed from by supernatural effects, and know if something is magical and what it does; you also gain the Shared Void Sense ability. Triggered action: Subtle Relocation."
         }
       ],
       "kits": 0,
@@ -224,13 +262,19 @@
       "subclass_type": "Primordial aspect",
       "subclasses": [
         {
-          "name": "Berserker"
+          "name": "Berserker",
+          "summary": "Berserkers turn ferocity into physical might.",
+          "description": "You have the Lift skill. 1st-level features: a kit, and Primordial Strength, which adds your Might score to damage when a weapon strike hits an object or you push a creature into one. Growing Ferocity gives Might-based benefits as your ferocity rises. Triggered action: Lines of Force."
         },
         {
-          "name": "Reaver"
+          "name": "Reaver",
+          "summary": "Reavers turn ferocity into instinct and cunning.",
+          "description": "You have the Hide skill. 1st-level features: a kit, and Primordial Cunning, which means you are never surprised and can slide a target instead of pushing it. Growing Ferocity gives Agility-based benefits as your ferocity rises. Triggered action: Unearthly Reflexes."
         },
         {
           "name": "Stormwight",
+          "summary": "Stormwights turn ferocity into primordial storms and take animal or hybrid form.",
+          "description": "You have the Track skill. 1st-level features: Beast Shape, which lets you use a stormwight kit, and Relentless Hunter, which gives you an edge on Track tests. Triggered action: Furious Change.",
           "kits": 0,
           "kit_note": "Stormwight furies use a stormwight kit (Boren, Corven, Raden or Vuken) instead of these kits. Chronicle doesn't list the stormwight kits yet."
         }
@@ -271,13 +315,19 @@
       "subclass_type": "Null tradition",
       "subclasses": [
         {
-          "name": "Chronokinetic"
+          "name": "Chronokinetic",
+          "summary": "Chronokinetic nulls move through the flow of time as another dimension.",
+          "description": "You gain one skill from the lore group."
         },
         {
-          "name": "Cryokinetic"
+          "name": "Cryokinetic",
+          "summary": "Cryokinetic nulls tap absolute cold and manifest it in their bodies.",
+          "description": "You gain one skill from the crafting group."
         },
         {
-          "name": "Metakinetic"
+          "name": "Metakinetic",
+          "summary": "Metakinetic nulls see through the universe's illusions to understand their bodies and psionic potential.",
+          "description": "You gain one skill from the exploration group."
         }
       ],
       "kits": 0,
@@ -316,13 +366,19 @@
       "subclass_type": "Shadow college",
       "subclasses": [
         {
-          "name": "College of Black Ash"
+          "name": "College of Black Ash",
+          "summary": "The college that founded the shadow art, known for teleportation, shadows and darkness.",
+          "description": "You have the Magic skill. 1st-level feature Black Ash Teleport: a maneuver to teleport up to 5 squares, with a free Hide and 1 surge if it ends in cover or concealment, and 1 more square per insight spent. Triggered action: In All This Confusion."
         },
         {
-          "name": "College of Caustic Alchemy"
+          "name": "College of Caustic Alchemy",
+          "summary": "The college of acids, bombs and poisons for exceptional assassins.",
+          "description": "You have the Alchemy skill. 1st-level features: Coat the Blade, a maneuver that gives you 2 surges which can deal poison damage, and Smoke Bomb, which lets you Hide while observed and shift your Agility score in squares first. Triggered action: Defensive Roll."
         },
         {
-          "name": "College of the Harlequin Mask"
+          "name": "College of the Harlequin Mask",
+          "summary": "The college of illusion magic for infiltration and orchestrated chaos.",
+          "description": "You have the Lie skill. 1st-level feature I'm No Threat: a maneuver that makes you look harmless, giving your strikes an edge and +1 shift distance on Disengage until you harm or touch a creature. Triggered action: Clever Trick."
         }
       ],
       "omissions": [
@@ -412,13 +468,19 @@
       "subclass_type": "Tactical doctrine",
       "subclasses": [
         {
-          "name": "Insurgent"
+          "name": "Insurgent",
+          "summary": "Insurgents do whatever it takes to keep their allies alive, fair play or not.",
+          "description": "You gain a skill from the intrigue group. 1st-level feature Covert Operations: you and allies in your presence gain an edge on intrigue tests, and you can use Lead to assist intrigue tests. Triggered action: Advanced Tactics."
         },
         {
-          "name": "Mastermind"
+          "name": "Mastermind",
+          "summary": "Masterminds treat the battlefield as a game board and think steps ahead.",
+          "description": "You gain a skill from the lore group. 1st-level feature Studied Commander: heroes with you treat war or battle Discover Lore projects as one category cheaper, and you can test Reason as a respite activity to learn about an upcoming encounter or negotiation. Triggered action: Overwatch."
         },
         {
-          "name": "Vanguard"
+          "name": "Vanguard",
+          "summary": "Vanguards lead from the front lines by force of will and personality.",
+          "description": "You gain a skill from the interpersonal group. 1st-level feature Commanding Presence: heroes with you treat their Renown as 2 higher in negotiations and have a double edge on tests to stop combat and start a negotiation. Triggered action: Parry."
         }
       ],
       "kits": 2,
@@ -457,13 +519,19 @@
       "subclass_type": "Talent tradition",
       "subclasses": [
         {
-          "name": "Chronopathy"
+          "name": "Chronopathy",
+          "summary": "Chronopathy lets a talent view past and future events and manipulate time.",
+          "description": "1st-level features: Accelerate, a maneuver that shifts the target your Reason score in squares (2 clarity also lets the target use a maneuver), and Again, a triggered ability that makes a target reroll an ability roll."
         },
         {
-          "name": "Telekinesis"
+          "name": "Telekinesis",
+          "summary": "Telekinesis lets a talent physically move creatures and objects with the mind.",
+          "description": "1st-level features: Minor Telekinesis, a maneuver that slides a target your Reason score in squares, and Repel, a triggered ability that halves damage or reduces forced movement for you or an ally."
         },
         {
-          "name": "Telepathy"
+          "name": "Telepathy",
+          "summary": "Telepathy lets a talent communicate with, read and influence minds.",
+          "description": "1st-level features: Feedback Loop, a triggered ability that deals the attacker psychic damage equal to half the damage it dealt an ally, and Remote Assistance, a maneuver that gives an ally's next ability roll against a target an edge."
         }
       ],
       "kits": 0,
@@ -502,13 +570,19 @@
       "subclass_type": "Troubadour class act",
       "subclasses": [
         {
-          "name": "Auteur"
+          "name": "Auteur",
+          "summary": "Auteurs find drama in story and use magic to manipulate events.",
+          "description": "You have the Brag skill. 1st-level features: Blocking, a performance that teleports creatures in a 2 aura, and Dramatic Monologue, a maneuver granting an ally an edge or a surge, or giving an enemy a bane."
         },
         {
-          "name": "Duelist"
+          "name": "Duelist",
+          "summary": "Duelists find drama in movement done in tandem with another.",
+          "description": "You have the Gymnastics skill. 1st-level features: Acrobatics, a 5 aura performance that lets you and allies get a tier 3 outcome on one jump, tumble or climb test, and Star Power, a maneuver giving +2 speed and a minimum tier 2 on your next power roll."
         },
         {
-          "name": "Virtuoso"
+          "name": "Virtuoso",
+          "summary": "Virtuosos find drama in music and song.",
+          "description": "You have the Music skill and can play an instrument. 1st-level features: Power Chord, a 2 burst maneuver that pushes enemies, and Virtuoso Performances, the performances Thunder Mother and Ballad of the Beast."
         }
       ],
       "omissions": [

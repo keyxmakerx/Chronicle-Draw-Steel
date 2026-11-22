@@ -47,6 +47,20 @@ test('subclasses are named objects under their class, with a text twin', () => {
   assert.equal(byName.Conduit.subclasses.length, 12, 'the twelve domains');
 });
 
+test('every sourced subclass has a summary and a description for the creator card', () => {
+  // Summoner's circles have no source text in the package yet, so they stay name-only.
+  const unsourced = new Set(['Summoner']);
+  for (const c of classes) {
+    for (const s of c.properties.subclasses || []) {
+      if (unsourced.has(c.name)) continue;
+      for (const k of ['summary', 'description']) {
+        assert.ok(typeof s[k] === 'string' && s[k].trim().length > 0, c.name + ' ' + s.name + ' ' + k);
+        assert.ok(!/\{@/.test(s[k]), c.name + ' ' + s.name + ' ' + k + ' stays plain text');
+      }
+    }
+  }
+});
+
 test('a culture pick is a whole culture with three skill options and a language', () => {
   assert.equal(cultures.length, 27);
   for (const c of cultures) {
