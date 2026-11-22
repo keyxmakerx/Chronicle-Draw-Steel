@@ -6744,10 +6744,90 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
+  // ── refreshing in place ────────────────────────────────────────────
+
+  // Chronicle's mount carries everything it says about the hero in data-*
+  // attributes; nothing in the page or this widget writes data-* onto it.
+  function mountAttrs(node) {
+    var out = {};
+    [].forEach.call(node.attributes || [], function (a) {
+      if (a.name.indexOf('data-') === 0) out[a.name] = a.value;
+    });
+    return out;
+  }
+  function sameMount(a, b) {
+    var x = mountAttrs(a), y = mountAttrs(b), k;
+    for (k in x) if (x[k] !== y[k]) return false;
+    for (k in y) if (!(k in x)) return false;
+    return true;
+  }
+  function takeMount(el, fresh) {
+    var want = mountAttrs(fresh), have = mountAttrs(el), k;
+    for (k in have) if (!(k in want)) el.removeAttribute(k);
+    for (k in want) if (have[k] !== want[k]) el.setAttribute(k, want[k]);
+  }
+
+  // What the sheet fetched for itself beside its mount: the layers, the
+  // choice-rule lines and, for a mount without the hero's fields, the hero.
+  // These can change while the mount reads the same.
+  function seenKey(lv, rules, entity) {
+    return JSON.stringify([lv.layers, lv.canEdit, rules.breaks, rules.waiting,
+      entity ? [entity.name, entity.visibility, entity.fields_data || entity.custom_fields] : null]);
+  }
+
+  // A redraw would wipe what the reader is in the middle of: an open field
+  // editor or origin pick, an unpushed or pushing transformation preview, or
+  // a pulled-out panel.
+  function holdsWork(inst, el) {
+    var st = inst._tf;
+    if (st && (st.busy || st.saving || st.add || st.remove || inst._tfAdjDirty)) return true;
+    if (inst._panelBody && inst._panelBody.isConnected) return true;
+    return [].some.call(el.querySelectorAll('[data-cs-ed-host],[data-cs-pick-fold]'), function (n) { return !!n.firstChild; });
+  }
+
+  // A refresh draws at once when the reader holds nothing. Otherwise it
+  // waits until they put it away, then loads again rather than drawing what
+  // it has, which predates anything they saved meanwhile.
+  var WAIT_MS = 1000;
+  function drawWhenFree(inst, el, draw) {
+    var live = el._csLive;
+    clearTimeout(el._csWait);
+    el._csWait = null;
+    if (!holdsWork(inst, el)) { draw(); return; }
+    (function wait() {
+      el._csWait = setTimeout(function () {
+        el._csWait = null;
+        if (el._csLive !== live) return;
+        if (holdsWork(inst, el)) wait(); else inst.init(el, {}, true);
+      }, WAIT_MS);
+    })();
+  }
+
+  // With the mount unchanged the hero's fields are as drawn; only what the
+  // sheet fetched itself is asked for again, and the sheet loads afresh only
+  // when that differs. A failed check changes nothing.
+  function recheck(inst, el) {
+    var live = el._csLive, seen = el._csSeen, ds = el.dataset || {};
+    if (!live || !seen) return;
+    var cid = ds.campaignId || '', eid = ds.entityId || '';
+    var seed = parseJsonAttr(ds.fieldsData, null);
+    var seeded = !!(seed && (seed.fields_data || seed.custom_fields));
+    Promise.all([
+      fetchLayers(cid, eid),
+      (flag(ds.isOwner) || flag(ds.isGm)) ? fetchChoiceRules(cid, eid) : Promise.resolve({ breaks: [], waiting: [] }),
+      seeded || !cid || !eid ? Promise.resolve(null) : fetchEntity(cid, eid)
+    ]).then(function (got) {
+      if (el._csLive !== live || seenKey(got[0], got[1], got[2]) === seen) return;
+      inst.init(el, {}, true);
+    }, function () {});
+  }
+
   // ── widget ─────────────────────────────────────────────────────────
 
   if (Chronicle) Chronicle.register('character-sheet', {
-    init: function (el, config) {
+    // refresh is set only by update: a sheet is already drawn on el, and it
+    // stays up until the new drawing replaces it.
+    init: function (el, config, refresh) {
       config = config || {};
       var ds = el.dataset || {};
       var entityId = config.entity_id || config.entityId || ds.entityId || '';
@@ -6761,20 +6841,23 @@
       // The renderer owns the real glossary route and degrades to an empty
       // glossary when there is no campaign id; the basePath argument has no
       // route behind it, so passing '' makes the degradation explicit.
-      refRenderer = (typeof DrawSteelRefRenderer !== 'undefined')
-        ? new DrawSteelRefRenderer('', campaignId)
-        : null;
+      if (!refresh || !refRenderer) {
+        refRenderer = (typeof DrawSteelRefRenderer !== 'undefined')
+          ? new DrawSteelRefRenderer('', campaignId)
+          : null;
+      }
 
       if (paperAvailable()) injectPaperStyles(); else injectStyles();
       el.classList.add('ds-sheet');
       el._csKey = campaignId && entityId ? campaignId + '/' + entityId : '';
-      holdKeptHeight(el);
+      if (!refresh) holdKeptHeight(el);
       // A sheet the page swapped out while its data was loading must not draw
       // later, or it would take the view kept for the sheet that replaced it.
       var live = el._csLive = {};
       function gone() { return el._csLive !== live; }
 
       var self = this;
+      var seeded = !!(entityObj && (entityObj.fields_data || entityObj.custom_fields));
       function finish(entity) {
         var data = {
           // Chronicle serializes the field bundle as `fields_data` (the platform-wide
@@ -6817,17 +6900,22 @@
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
         Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
           if (gone()) return;
+          el._csSeen = seenKey(got[2].lv, got[5], seeded ? null : entity);
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
           if (refRenderer) refRenderer.injectStyles();
           data.tf = got[2].tf;
-          var st = data.tf ? tfFromAddress(data, typeof location !== 'undefined' ? location.search : '') : null;
+          // The address's preview is a one-time hand-over from the Workshop;
+          // a refresh keeps the drawer as the Director left it.
+          var st = !data.tf ? null : refresh ? self._tf : tfFromAddress(data, typeof location !== 'undefined' ? location.search : '');
           if (st) { self._tf = st; data.tfState = st; }
-          mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null));
+          var draw = function () { mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null)); };
+          if (!refresh) { draw(); return; }
+          drawWhenFree(self, el, function () { detachListeners(self, el); draw(); });
         });
       }
 
-      if (entityObj && (entityObj.fields_data || entityObj.custom_fields)) {
+      if (seeded) {
         finish(entityObj);
       } else if (entityId && campaignId) {
         fetchEntity(campaignId, entityId).then(finish).catch(function (err) {
@@ -6835,16 +6923,30 @@
           // safe string reaches the user; the real error stays in the
           // console for diagnostics.
           if (typeof console !== 'undefined') console.warn('Character Sheet: entity load failed', err);
-          if (!gone()) renderError(el, 'Failed to load character.');
+          // A refresh that cannot load leaves the last drawing up.
+          if (!gone() && !(refresh && el._csSeen)) renderError(el, 'Failed to load character.');
         });
       } else {
         renderError(el, 'No entity context available.');
       }
     },
 
+    // A page refresh hands over the fresh mount. Unchanged, the drawing is
+    // left exactly as it is (tabs, panels, editors, scroll, focus). Changed,
+    // the sheet takes the new attributes and loads again over the old
+    // drawing; mountPaper carries the reader's dashboard view across.
+    update: function (el, fresh) {
+      if (!fresh || !fresh.attributes) return;
+      if (sameMount(el, fresh)) { recheck(this, el); return; }
+      takeMount(el, fresh);
+      this.init(el, {}, true);
+    },
+
     destroy: function (el) {
       keepDashView(el);
       el._csLive = null;
+      clearTimeout(el._csWait);
+      el._csWait = null;
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       detachListeners(this, el);
       this._tf = null;
