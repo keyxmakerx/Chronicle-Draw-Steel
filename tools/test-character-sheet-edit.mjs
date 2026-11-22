@@ -35,6 +35,8 @@ const form = (opts) => ({
   querySelector: (sel) => {
     if (/data-cs-ed-ta/.test(sel)) return { value: opts.text || '' };
     if (/data-cs-ed-lang/.test(sel)) return { value: opts.lang || '' };
+    const about = (sel.match(/data-cs-ed-about="(\w+)"/) || [])[1];
+    if (about) return opts.about && about in opts.about ? { value: opts.about[about] } : { value: '' };
     return null;
   }
 });
@@ -87,6 +89,24 @@ test('backstory: a quiet control for an editor, plain text saved as `backstory`'
   assert.ok(!/<b>here/.test(ed), 'prefill never injects markup');
   assert.deepEqual(cs.collectEditor('backstory', form({ text: 'New story' }), HERO({})).patch, { backstory: 'New story' });
   assert.ok(cs.collectEditor('backstory', form({ text: 'x'.repeat(20001) }), HERO({})).problem);
+});
+
+test('about: pronouns, gender and looks are optional, shown in the Story panel, and editable any time', () => {
+  const none = cs.pNotesPanel(HERO({}));
+  assert.match(none, /data-cs-ed-open="about"/);
+  assert.match(none, /Add pronouns, gender and looks/);
+  const some = cs.pNotesPanel(HERO({ pronouns: 'she/her', gender: '', appearance: 'Tall <b>braid</b>' }));
+  assert.match(some, /she\/her/);
+  assert.ok(!/ · /.test(some.split('About')[1].split('</p>')[0]), 'an empty gender adds no separator');
+  assert.ok(!/<b>braid/.test(some), 'looks are shown as text, never markup');
+  assert.match(some, />Edit</);
+  assert.equal(cs.pAbout(HERO({}, { canEditIdentity: false })), '', 'nothing to show and nothing to edit: no group');
+  assert.ok(!/data-cs-ed-open="about"/.test(cs.pAbout(HERO({ pronouns: 'they/them' }, { canEditIdentity: false }))));
+  const ed = cs.edAboutHtml(HERO({ pronouns: 'he/him', gender: '"x"' }));
+  assert.ok(/value="he\/him"/.test(ed) && /value="&quot;x&quot;"/.test(ed));
+  assert.deepEqual(cs.collectEditor('about', form({ about: { pronouns: ' they/them ', gender: '', appearance: 'Short.' } }), HERO({})).patch,
+    { pronouns: 'they/them', gender: '', appearance: 'Short.' });
+  assert.ok(cs.collectEditor('about', form({ about: { pronouns: 'x'.repeat(61) } }), HERO({})).problem);
 });
 
 test('skills and languages: stored as JSON arrays of strings, skills by id', () => {

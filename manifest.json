@@ -922,6 +922,21 @@
           }
         },
         {
+          "key": "pronouns",
+          "label": "Pronouns",
+          "type": "string"
+        },
+        {
+          "key": "gender",
+          "label": "Gender",
+          "type": "string"
+        },
+        {
+          "key": "appearance",
+          "label": "What they look like",
+          "type": "markdown"
+        },
+        {
           "key": "backstory",
           "label": "Backstory",
           "type": "markdown",

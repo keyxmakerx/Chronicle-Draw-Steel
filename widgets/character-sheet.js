@@ -2150,7 +2150,7 @@
       var kind = btn.getAttribute('data-cs-ed-open');
       var scope = edScope(btn);
       var host = scope ? scope.querySelector('[data-cs-ed-host]') : null;
-      var build = { backstory: edBackstoryHtml, traits: edTraitsHtml, skills: edSkillsHtml, perks: edPerksHtml }[kind];
+      var build = { backstory: edBackstoryHtml, about: edAboutHtml, traits: edTraitsHtml, skills: edSkillsHtml, perks: edPerksHtml }[kind];
       if (!host || !build) return;
       if (host.firstChild) { inst._closeEditor(scope, true); return; }
       btn.setAttribute('aria-expanded', 'true');
@@ -2165,7 +2165,7 @@
 
     // After a save the part of the sheet that shows the field is drawn
     // again, in the panel on screen and in the template it opens from.
-    var EDIT_PANEL = { backstory: ['notes', pNotesPanel], skills: ['skills', pSkillsPanel], perks: ['features', pFeaturesPanel] };
+    var EDIT_PANEL = { backstory: ['notes', pNotesPanel], about: ['notes', pNotesPanel], skills: ['skills', pSkillsPanel], perks: ['features', pFeaturesPanel] };
     function redrawAfterSave(kind) {
       if (kind === 'traits') {
         var idin = el.querySelector('[data-cs-idin]');
@@ -3220,6 +3220,35 @@
       (canEditLists(data) ? '<div class="lf-grp">' + edOpen('skills', 'Choose skills and languages') + '</div>' : '');
   }
 
+  // About is who the hero is in a line: pronouns, gender and what they look
+  // like, all optional, written in the hero creator or here, any time.
+  function pAbout(data) {
+    var who = [f(data, 'pronouns', ''), f(data, 'gender', '')].map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+    var looks = String(f(data, 'appearance', '') || '').trim();
+    var edit = data.canEditIdentity && data.campaignId
+      ? edOpen('about', who.length || looks ? 'Edit' : 'Add pronouns, gender and looks') : '';
+    if (!who.length && !looks && !edit) return '';
+    return '<div class="lf-grp"><span class="sh-k">About</span> ' + edit +
+      (who.length ? '<p class="lf-text">' + esc(who.join(' · ')) + '</p>' : '') +
+      (looks ? '<p class="lf-text">' + esc(cleanFoundryText(looks)) + '</p>' : '') +
+      (!who.length && !looks ? pEmpty('Nothing about them yet.') : '') + '</div>';
+  }
+
+  var ABOUT_SHORT_MAX = 60;
+  var ABOUT_LOOKS_MAX = 2000;
+
+  function edAboutHtml(data) {
+    var v = function (k) { return escAttr(String(f(data, k, '') || '')); };
+    return '<div class="sh-ed" data-cs-ed-form="about">' +
+      '<label class="sh-k" for="cs-ed-pronouns">Pronouns</label>' +
+      '<input type="text" id="cs-ed-pronouns" class="sh-edin" data-cs-ed-about="pronouns" maxlength="' + ABOUT_SHORT_MAX + '" value="' + v('pronouns') + '" placeholder="she/her, he/him, they/them…" autocomplete="off">' +
+      '<label class="sh-k" for="cs-ed-gender">Gender</label>' +
+      '<input type="text" id="cs-ed-gender" class="sh-edin" data-cs-ed-about="gender" maxlength="' + ABOUT_SHORT_MAX + '" value="' + v('gender') + '" autocomplete="off">' +
+      '<label class="sh-k" for="cs-ed-appearance">What they look like</label>' +
+      '<textarea id="cs-ed-appearance" class="sh-edta" data-cs-ed-about="appearance" rows="3" maxlength="' + ABOUT_LOOKS_MAX + '">' + esc(String(f(data, 'appearance', '') || '')) + '</textarea>' +
+      edBar('Save') + '</div>';
+  }
+
   // The story is read in place: the first lines show and "Keep reading"
   // unfolds the rest below them, so the panel stays the one scroll box.
   // Paragraph breaks survive through pre-line; a lead cut mid-paragraph
@@ -3268,7 +3297,7 @@
       ? '<p class="sn-jump"><button type="button" class="sh-link" data-cs-jump="story-bg">Background</button>' +
         '<span aria-hidden="true"> · </span><button type="button" class="sh-link" data-cs-jump="story-gm">GM lore</button></p>'
       : '';
-    var out = jump + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
+    var out = jump + pAbout(data) + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
       ? storyHtml(cleanFoundryProse(notes))
       : pEmpty('No backstory yet.')) + '</div>';
     if (data.isGm) {
@@ -3560,6 +3589,17 @@
   function collectEditor(kind, root, data) {
     function checked(name) {
       return [].map.call(root.querySelectorAll('input[data-cs-opt="' + name + '"]'), function (n) { return n.checked ? n.value : null; }).filter(Boolean);
+    }
+    if (kind === 'about') {
+      var patch = {}, problem = '';
+      ['pronouns', 'gender', 'appearance'].forEach(function (k) {
+        var n = root.querySelector('[data-cs-ed-about="' + k + '"]');
+        var val = n ? String(n.value || '').trim() : '';
+        var max = k === 'appearance' ? ABOUT_LOOKS_MAX : ABOUT_SHORT_MAX;
+        if (val.length > max) problem = problem || 'That can be at most ' + max + ' characters.';
+        patch[k] = val;
+      });
+      return problem ? { problem: problem } : { patch: patch };
     }
     if (kind === 'backstory') {
       var ta = root.querySelector('[data-cs-ed-ta]');
@@ -5507,7 +5547,7 @@
       ownPreset: ownPreset, presetRecipe: presetRecipe, tfFromAddress: tfFromAddress, putOnFromRule: putOnFromRule,
       loadOwnPresets: loadOwnPresets, choiceNotesHtml: choiceNotesHtml, fetchChoiceRules: fetchChoiceRules,
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
-      listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edTraitsHtml: edTraitsHtml,
+      listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
