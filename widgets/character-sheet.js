@@ -5560,6 +5560,7 @@
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
+      setRefRenderer: function (r) { refRenderer = r; }, abilityRulesHtml: abilityRulesHtml,
       loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey,
       jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
