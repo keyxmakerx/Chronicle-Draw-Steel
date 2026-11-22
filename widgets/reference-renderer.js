@@ -74,11 +74,14 @@ var DrawSteelRefRenderer = (function () {
     return this._glossary[String(termId).toLowerCase().trim()] || null;
   };
 
-  // Wraps bare condition terms found in already-escaped plain text (for synced
-  // Foundry prose with no {@…} markup) — conditions only, whole-word, first
-  // occurrence of each. Caller must guarantee no existing ds-ref spans in the
-  // input, or a match could land inside a tooltip attribute. Keywords are
-  // handled separately via badges and are not scanned here.
+  // Splits escaped HTML into tags and text. A tag may hold ">" inside a quoted
+  // attribute (a tooltip), so quoted values are skipped as a unit.
+  var TAG_RE = /(<[^>"]*(?:"[^"]*"[^>"]*)*>)/;
+
+  // Wraps bare condition terms in the text between tags, whole-word, first
+  // occurrence of each. Text inside an existing ds-ref span (its label) is left
+  // alone, and attributes are never touched, so output of renderText can be
+  // scanned safely. Keywords are handled separately via badges.
   RefRenderer.prototype.scanText = function (escapedHtml) {
     if (!this._loaded || !escapedHtml || !this._glossary) return escapedHtml || '';
     if (!this._scanList) {
@@ -95,14 +98,26 @@ var DrawSteelRefRenderer = (function () {
     var html = escapedHtml;
     this._scanList.forEach(function (t) {
       var re = new RegExp('\\b(' + t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')\\b', 'i');
-      if (re.test(html)) {
-        // Function replacer so a `$`-sequence in t.def or the matched term is
-        // literal, not a String.replace pattern ($1, $&, $`, $').
-        html = html.replace(re, function (m, g1) {
-          return '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
-            ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">' + g1 + '</span>';
-        });
+      // A term the marker pass already rendered is not wrapped a second time.
+      if (html.indexOf('data-ref-id="' + t.slug + '"') !== -1) return;
+      var parts = html.split(TAG_RE), depth = 0, done = false;
+      for (var i = 0; i < parts.length && !done; i++) {
+        var part = parts[i];
+        if (i % 2 === 1) {
+          if (/^<span\b[^>]*\bds-ref\b/i.test(part) && depth === 0) depth = 1;
+          else if (depth > 0 && /^<span\b/i.test(part)) depth++;
+          else if (depth > 0 && /^<\/span\s*>/i.test(part)) depth--;
+        } else if (depth === 0 && re.test(part)) {
+          // Function replacer so a `$` in the definition or the matched term
+          // is literal, not a String.replace pattern.
+          parts[i] = part.replace(re, function (m, g1) {
+            return '<span class="ds-ref ds-ref--' + _safeClass(t.cat) + '"' +
+              ' data-ref-tip="' + String(t.def).replace(/"/g, '&quot;') + '">' + g1 + '</span>';
+          });
+          done = true;
+        }
       }
+      html = parts.join('');
     });
     return html;
   };

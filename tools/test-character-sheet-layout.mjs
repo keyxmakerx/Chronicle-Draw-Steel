@@ -441,3 +441,56 @@ test('a Story jump word scrolls only the panel body, and not when it has nothing
   const branch = src.slice(src.indexOf("closest('[data-cs-jump]')"), src.indexOf("closest('[data-cs-go-items]')"));
   assert.ok(!/scrollIntoView/.test(branch), 'scrollIntoView scrolls the page as well as the panel');
 });
+
+test('a synced ability with no effect text takes it from the package, and Foundry text still wins', async () => {
+  const pack = JSON.parse(readFileSync(new URL('../data/abilities.json', import.meta.url), 'utf8'));
+  globalThis.window.Chronicle.apiFetch = async () => ({ ok: true, json: async () => pack });
+  await cs.loadAbilityDefs('c1');
+  assert.equal(cs.abilityKey('Hesitation is Weakness'), cs.abilityKey('Hesitation Is Weakness (1 Insight)'));
+  const bare = cs.fillFromPackage({ name: 'Hesitation is Weakness', type: 'freeTriggered', trigger: '' });
+  assert.match(bare.effectAfter, /You take your turn after the triggering hero/);
+  assert.match(bare.trigger, /Another hero ends their turn/);
+  const defend = cs.fillFromPackage({ name: 'Defend', type: 'main' });
+  assert.match(defend.effectAfter, /double/, 'a common action gets its rules text');
+  const own = cs.fillFromPackage({ name: 'Coat the Blade', effectAfter: '<p>Mine.</p>', trigger: 'Mine too' });
+  assert.equal(own.effectAfter, '<p>Mine.</p>');
+  assert.equal(own.trigger, 'Mine too');
+  assert.equal(cs.fillFromPackage({ name: 'Ability', type: 'triggered' }).effectAfter, undefined, 'no match, nothing invented');
+});
+
+test('the full card and the glossary pass leave no markup in the visible text for package text', async () => {
+  const RefRenderer = require('../widgets/reference-renderer.js');
+  const read = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.url), 'utf8'));
+  const pack = read('abilities.json');
+  const r = new RefRenderer('', '');
+  r._glossary = Object.fromEntries(read('rules-glossary.json').map((e) => [e.slug, e]));
+  r._loaded = true;
+  cs.setRefRenderer(r);
+  globalThis.window.Chronicle.apiFetch = async () => ({ ok: true, json: async () => pack });
+  await cs.loadAbilityDefs('c2');
+  // Text between tags, reading quoted attribute values as part of their tag.
+  const visible = (html) => html.replace(/<[^>"]*(?:"[^"]*"[^>"]*)*>/g, '');
+  const spans = (html) => (html.match(/<span class="ds-ref (?:ds-ref--unknown|[^"]*"[^>]*data-ref-id=)/g) || []).length;
+  const check = (html, source, label) => {
+    assert.ok(!/data-ref-id="(?![\w-]+")/.test(html), label + ': a ref id attribute holds markup');
+    assert.equal((html.match(/<span\b/g) || []).length, (html.match(/<\/span>/g) || []).length, label + ': spans balance');
+    const v = visible(html);
+    assert.ok(!/data-ref|&gt;|&quot;/.test(v), label + ': markup leaked into the text: ' + v.slice(0, 160));
+    assert.equal(spans(html), (source.match(/\{@/g) || []).length, label + ': one span per marker');
+  };
+  for (const name of ['Stand Up', 'Black Ash Teleport', 'Coat the Blade']) {
+    const a = cs.fillFromPackage({ name, type: 'maneuver' });
+    const src = (a.effectAfter || '') + ' ' + (a.trigger || '');
+    assert.ok(/\{@/.test(src), name + ' carries a marker');
+    check(cs.abilityRulesHtml(a), src, name);
+  }
+  // The feature and perk paths read package text through the same two calls.
+  for (const f of ['perks.json', 'abilities.json', 'kits.json', 'rules-glossary.json']) {
+    for (const e of read(f)) {
+      const src = String(e.description || '').replace(/\s+/g, ' ');
+      if (!/\{@/.test(src)) continue;
+      const html = r.scanText(r.renderText(src.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')));
+      check(html, src, f + ' ' + e.slug);
+    }
+  }
+});

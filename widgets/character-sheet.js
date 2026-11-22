@@ -105,6 +105,39 @@
     });
   }
 
+  // The package's own ability list, by name, for the text Foundry leaves
+  // out of a synced hero's abilities (it sends the roll and tiers, not the
+  // effect). Names drop a trailing "(5 Insight)" cost and apostrophes so
+  // "Hesitation is Weakness" finds "Hesitation Is Weakness (1 Insight)".
+  var abilityDefs = null;
+  function abilityKey(name) {
+    return String(name == null ? '' : name).toLowerCase().replace(/\s*\([^)]*\)\s*$/, '')
+      .replace(/[\u2018\u2019']/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function loadAbilityDefs(campaignId) {
+    if (abilityDefs) return Promise.resolve();
+    return loadRefFile(campaignId, 'abilities.json').then(function (arr) {
+      var m = {};
+      arr.forEach(function (e) { if (e && e.name && !m[abilityKey(e.name)]) m[abilityKey(e.name)] = e; });
+      abilityDefs = m;
+    });
+  }
+
+  // fillFromPackage fills only what the synced ability leaves empty, so
+  // Foundry's own text always wins. The common actions have no effect line
+  // in the package, only their rules text, which stands in for it.
+  function fillFromPackage(a) {
+    var e = abilityDefs && a && abilityDefs[abilityKey(a.name)];
+    if (!e || !e.properties) return a;
+    var p = e.properties;
+    if (!cleanFoundryText(a.effectAfter) && !cleanFoundryText(a.effectBefore)) {
+      var eff = p.effect || (p.category === 'common' ? e.description : '');
+      if (eff) a.effectAfter = eff;
+    }
+    if (!cleanFoundryText(a.trigger) && p.trigger) a.trigger = p.trigger;
+    return a;
+  }
+
   // featureOf lets a perk be a bare name (what the sheet's own editor writes)
   // as well as the object Foundry writes, looking the rules up by name.
   function featureOf(ft) {
@@ -597,7 +630,7 @@
   // in-box cards' data-ds-ability and the overlay handler MUST agree).
   function parseAbilities(data) {
     var arr = parseJson(f(data, 'abilities_json', ''), []);
-    return Array.isArray(arr) ? arr : [];
+    return Array.isArray(arr) ? arr.map(function (a) { return a && typeof a === 'object' ? fillFromPackage(a) : a; }) : [];
   }
 
   // flag reads a boolean mount attribute defensively: absent means false.
@@ -5516,7 +5549,7 @@
         });
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules]).then(function (got) {
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId)]).then(function (got) {
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
           if (refRenderer) refRenderer.injectStyles();
@@ -5566,6 +5599,8 @@
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
+      setRefRenderer: function (r) { refRenderer = r; }, abilityRulesHtml: abilityRulesHtml,
+      loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey,
       jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
       targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,

@@ -86,3 +86,23 @@ test('rule terms share the accent link shade; no per-category hue, and no fixed 
   }
   assert.ok(!/color: #/.test(css.replace(/background[^;]*;|\.ds-ref:hover::after[\s\S]*/, '')), 'a fixed hex text colour outside the tooltip');
 });
+
+// ── scanText works on text between tags only ──────────────────────────────
+test('scanText never lands inside a ds-ref span or its tooltip attribute', () => {
+  const r = makeRenderer({
+    prone: { slug: 'prone', name: 'Prone', description: 'A prone creature is flat. Also taunted > bane.', properties: { category: 'condition' } },
+    taunted: { slug: 'taunted', name: 'Taunted', description: 'd', properties: { category: 'condition' } }
+  });
+  const marked = r.renderText('if they are {@condition prone} and taunted, stand up');
+  const out = r.scanText(marked);
+  assert.equal((out.match(/data-ref-id="prone"/g) || []).length, 1, 'the marker stays one span');
+  assert.equal((out.match(/<span class="ds-ref/g) || []).length, 2, 'only the bare taunted word gains a span');
+  assert.ok(/data-ref-tip="A prone creature is flat\. Also taunted > bane\."/.test(out), 'tooltip text is untouched');
+  assert.equal(r.scanText(out), out, 'scanning twice changes nothing');
+});
+
+test('scanText skips a term the marker pass already rendered', () => {
+  const r = makeRenderer({ prone: { slug: 'prone', name: 'Prone', description: 'd', properties: { category: 'condition' } } });
+  const out = r.scanText(r.renderText('{@condition prone} then prone again'));
+  assert.equal((out.match(/<span class="ds-ref/g) || []).length, 1);
+});
