@@ -593,3 +593,21 @@ test('dashboard: setDashTab opens a tab the sheet has and ignores one it does no
   assert.equal(cs.setDashTab(el, 'equipment'), null);
   assert.equal(main.attrs['data-dtab'], 'features', 'a missing tab leaves the open one open');
 });
+
+test('dashboard: the open tab survives the page refreshing itself after a save', () => {
+  // Chronicle reloads the page's markup after a save, which destroys this
+  // sheet and mounts a new one on a fresh, empty element.
+  const main = { getAttribute: (k) => (k === 'data-dtab' ? 'story' : null) };
+  const old = { _csKey: 'c1/e1', innerHTML: '<div>sheet</div>', classList: { remove() {} }, removeEventListener() {},
+    querySelector: (sel) => (sel === '[data-cs-dmain]' ? main : null) };
+  globalThis.window.Chronicle.registry['character-sheet'].destroy(old);
+  assert.equal(old.innerHTML, '', 'destroy still empties the element');
+  const fresh = { _csKey: 'c1/e1', querySelector: () => null };
+  assert.equal(cs.dashTabToKeep(fresh), 'story', 'the new sheet opens on the tab the reader had');
+  assert.equal(cs.dashTabToKeep(fresh), null, 'kept once: a later visit starts on Abilities');
+  const other = { _csKey: 'c1/e2', querySelector: () => null };
+  cs.keepDashTab(old);
+  assert.equal(cs.dashTabToKeep(other), null, 'another hero\'s page does not take it');
+  const inPlace = { _csKey: 'c1/e1', querySelector: (sel) => (sel === '[data-cs-dmain]' ? { getAttribute: () => 'features' } : null) };
+  assert.equal(cs.dashTabToKeep(inPlace), 'features', 'a redraw in place keeps what is on screen');
+});
