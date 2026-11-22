@@ -3267,7 +3267,10 @@
   var KEEP_VIEW_MS = 15000;
   function keepDashView(el) {
     var v = el && el._csKey && el.querySelector ? dashViewOf(el) : null;
-    if (v && v.tab) { v.at = Date.now(); v.h = el.offsetHeight || 0; keptViews[el._csKey] = v; }
+    if (v && v.tab) { v.at = Date.now(); v.h = el.offsetHeight || 0; keptViews[el._csKey] = v; return; }
+    // A sheet swapped out before it drew passes the view it was given on.
+    var k = el && el._csKey ? keptViews[el._csKey] : null;
+    if (k) k.at = Date.now();
   }
   // The new element is empty until its data arrives, so it holds the old
   // sheet's height meanwhile and the page below does not jump up and back.
@@ -6766,6 +6769,10 @@
       el.classList.add('ds-sheet');
       el._csKey = campaignId && entityId ? campaignId + '/' + entityId : '';
       holdKeptHeight(el);
+      // A sheet the page swapped out while its data was loading must not draw
+      // later, or it would take the view kept for the sheet that replaced it.
+      var live = el._csLive = {};
+      function gone() { return el._csLive !== live; }
 
       var self = this;
       function finish(entity) {
@@ -6809,6 +6816,7 @@
         var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
         Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
+          if (gone()) return;
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
           if (refRenderer) refRenderer.injectStyles();
@@ -6827,7 +6835,7 @@
           // safe string reaches the user; the real error stays in the
           // console for diagnostics.
           if (typeof console !== 'undefined') console.warn('Character Sheet: entity load failed', err);
-          renderError(el, 'Failed to load character.');
+          if (!gone()) renderError(el, 'Failed to load character.');
         });
       } else {
         renderError(el, 'No entity context available.');
@@ -6836,6 +6844,7 @@
 
     destroy: function (el) {
       keepDashView(el);
+      el._csLive = null;
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       detachListeners(this, el);
       this._tf = null;
