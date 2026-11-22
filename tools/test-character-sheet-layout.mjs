@@ -603,13 +603,51 @@ test('dashboard: the open tab survives the page refreshing itself after a save',
   globalThis.window.Chronicle.registry['character-sheet'].destroy(old);
   assert.equal(old.innerHTML, '', 'destroy still empties the element');
   const fresh = { _csKey: 'c1/e1', querySelector: () => null };
-  assert.equal(cs.dashTabToKeep(fresh), 'story', 'the new sheet opens on the tab the reader had');
-  assert.equal(cs.dashTabToKeep(fresh), null, 'kept once: a later visit starts on Abilities');
+  assert.equal(cs.dashViewToKeep(fresh).tab, 'story', 'the new sheet opens on the tab the reader had');
+  assert.equal(cs.dashViewToKeep(fresh), null, 'kept once: a later visit starts on Abilities');
   const other = { _csKey: 'c1/e2', querySelector: () => null };
-  cs.keepDashTab(old);
-  assert.equal(cs.dashTabToKeep(other), null, 'another hero\'s page does not take it');
+  cs.keepDashView(old);
+  assert.equal(cs.dashViewToKeep(other), null, 'another hero\'s page does not take it');
   const inPlace = { _csKey: 'c1/e1', querySelector: (sel) => (sel === '[data-cs-dmain]' ? { getAttribute: () => 'features' } : null) };
-  assert.equal(cs.dashTabToKeep(inPlace), 'features', 'a redraw in place keeps what is on screen');
+  assert.equal(cs.dashViewToKeep(inPlace).tab, 'features', 'a redraw in place keeps what is on screen');
+});
+
+test('dashboard: the ability filter, the switch and the open rows survive the page refreshing itself', () => {
+  const mk = (attrs, extra) => Object.assign({ attrs: Object.assign({}, attrs), hidden: false,
+    getAttribute(k) { return this.attrs[k] == null ? null : this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = String(v); },
+    removeAttribute(k) { delete this.attrs[k]; }, hasAttribute(k) { return k in this.attrs; } }, extra);
+  // The old sheet: Maneuver filter, switch off, "Hit" unfolded.
+  const name = (t) => ({ textContent: t });
+  const oldAbs = mk({ 'data-dfilter': 'maneuver' }, { querySelectorAll: (sel) => (/aria-expanded="true"/.test(sel) ? [name('Hit')] : []) });
+  const oldMain = mk({ 'data-dtab': 'abilities' });
+  const old = { _csKey: 'c9/e9', innerHTML: 'x', classList: { remove() {} }, removeEventListener() {},
+    querySelector: (sel) => (sel === '[data-cs-dmain]' ? oldMain : sel === '[data-cs-dabs]' ? oldAbs : null) };
+  globalThis.window.Chronicle.registry['character-sheet'].destroy(old);
+  const v = cs.dashViewToKeep({ _csKey: 'c9/e9', querySelector: () => null });
+  assert.deepEqual({ tab: v.tab, filter: v.filter, afford: v.afford, open: v.open }, { tab: 'abilities', filter: 'maneuver', afford: false, open: ['Hit'] });
+  // The new sheet, drawn fresh: the same view goes back on it.
+  const data = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { abilities_json: JSON.stringify([{ name: 'Hit', type: 'main' }, { name: 'Dash', type: 'maneuver' }]) }) });
+  const row = (n, i) => {
+    const card = mk({}, { hidden: true, firstChild: null, innerHTML: '' });
+    const item = mk({}, { classList: { on: false, toggle(c, on) { this.on = on; } }, querySelector: () => card });
+    const btn = mk({ 'data-cs-dar': String(i), 'aria-expanded': 'false' }, { parentNode: item, querySelector: () => name(n) });
+    return { btn, card, item };
+  };
+  const rows = [row('Hit', 0), row('Dash', 1)];
+  const btns = ['all', 'main', 'maneuver'].map((id) => mk({ 'data-cs-dfilt': id }));
+  const groups = ['main', 'maneuver'].map((id) => mk({ 'data-dgroup': id }));
+  const sw = mk({ 'aria-checked': 'true' });
+  const abs = mk({ 'data-dfilter': 'all', 'data-dafford': '' }, {
+    querySelector: (sel) => { const m = sel.match(/data-cs-dfilt="([a-z]+)"/); return m ? (btns.find((b) => b.attrs['data-cs-dfilt'] === m[1]) || null) : sw; },
+    querySelectorAll: (sel) => (sel === '.sh-dar' ? rows.map((r) => r.btn) : /dfilt/.test(sel) ? btns : groups) });
+  const el = { querySelector: (sel) => (sel === '[data-cs-dabs]' ? abs : null) };
+  cs.applyDashView(el, v, data);
+  assert.equal(abs.attrs['data-dfilter'], 'maneuver');
+  assert.deepEqual(groups.map((g) => g.hidden), [true, false]);
+  assert.ok(!('data-dafford' in abs.attrs) && sw.attrs['aria-checked'] === 'false', 'the switch stays off');
+  assert.equal(rows[0].btn.attrs['aria-expanded'], 'true');
+  assert.ok(!rows[0].card.hidden && /sh-dar|Hit|For Bren/.test(rows[0].card.innerHTML), 'Hit unfolds to its full card');
+  assert.equal(rows[1].btn.attrs['aria-expanded'], 'false', 'Dash stays folded');
 });
 
 // ── The dashboard's ability lists ─────────────────────────────────────────

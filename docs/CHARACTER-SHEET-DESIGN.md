@@ -123,7 +123,12 @@ dashboard; the face list stays for phones and the paper styles.
   current heroic resource, a switch ("Only what 3 Insight pays for") folds
   those rows into one line per group that names each with its cost; "Show
   them" brings back one group, and turning the switch off brings back all of
-  them, greyed. The filter and the switch survive a redraw.
+  them, greyed.
+- The open tab, the filter, the switch and the rows the reader unfolded
+  survive a redraw, and also Chronicle reloading the page after a save,
+  which replaces the sheet's element: `keepDashView` keeps them by campaign
+  and page for a moment and the new sheet takes them once
+  (`dashViewToKeep`, `applyDashView`). Rows are matched by name.
 - A row unfolds in place to the full card (`dashAbCard`): the rules on the
   left, and on the right the roll for this hero, how often each tier comes
   up out of 100, the results with damage added and potency filled in from

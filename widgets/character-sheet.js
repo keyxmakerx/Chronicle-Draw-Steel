@@ -2311,19 +2311,6 @@
     };
     el.addEventListener('change', inst._onEdChange);
 
-    // A dashboard row unfolds in place to its full card.
-    function toggleDashRow(btn) {
-      var item = btn.parentNode;
-      var card = item && item.querySelector('.sh-dacard');
-      if (!card) return;
-      var open = card.hidden;
-      var a = abilities[parseInt(btn.getAttribute('data-cs-dar'), 10)];
-      if (open && !card.firstChild && a) card.innerHTML = dashAbCard(a, data);
-      card.hidden = !open;
-      item.classList.toggle('is-open', open);
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-
     // A name in "Every hero can" opens that move's card under the paragraph;
     // the same name again, or another one, closes it.
     function toggleEvery(btn) {
@@ -2373,7 +2360,7 @@
       var dtab = t.closest('[data-cs-dtab]');
       if (dtab) { e.preventDefault(); pickDashTab(dtab.getAttribute('data-cs-dtab')); return; }
       var dar = t.closest('[data-cs-dar]');
-      if (dar) { e.preventDefault(); toggleDashRow(dar); return; }
+      if (dar) { e.preventDefault(); toggleDashRow(dar, abilities, data); return; }
       var dev = t.closest('[data-cs-devery]');
       if (dev) { e.preventDefault(); toggleEvery(dev); return; }
       var dfl = t.closest('[data-cs-dfilt]');
@@ -3243,25 +3230,64 @@
   var DASH_CHARS = ['might', 'agility', 'reason', 'intuition', 'presence'];
   var dashSeq = 0;
 
-  // The open tab outlives the page refreshing itself after a save. Chronicle
-  // swaps the page's markup for a fresh copy, which ends this sheet and starts
-  // a new one on a new element, so the tab is kept by page for the moment in
-  // between, and only used once.
-  var keptTabs = {};
-  var KEEP_TAB_MS = 15000;
-  function keepDashTab(el) {
-    var main = el && el._csKey && el.querySelector ? el.querySelector('[data-cs-dmain]') : null;
-    var tab = main && main.getAttribute('data-dtab');
-    if (tab) keptTabs[el._csKey] = { tab: tab, at: Date.now() };
+  // A dashboard row unfolds in place to its full card.
+  function toggleDashRow(btn, abilities, data) {
+    var item = btn.parentNode;
+    var card = item && item.querySelector('.sh-dacard');
+    if (!card) return;
+    var open = card.hidden;
+    var a = abilities[parseInt(btn.getAttribute('data-cs-dar'), 10)];
+    if (open && !card.firstChild && a) card.innerHTML = dashAbCard(a, data);
+    card.hidden = !open;
+    item.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
-  // The tab to open on a new drawing: the one on screen when the sheet is
-  // drawn again in place, else the one kept when the page swapped it out.
-  function dashTabToKeep(el) {
+
+  // How the reader left the dashboard: the tab, the ability filter, the
+  // switch and the rows they opened (by name, since a save can reorder them).
+  function dashViewOf(el) {
     var main = el.querySelector('[data-cs-dmain]');
-    if (main) return main.getAttribute('data-dtab');
-    var k = el._csKey ? keptTabs[el._csKey] : null;
-    if (k) delete keptTabs[el._csKey];
-    return k && Date.now() - k.at < KEEP_TAB_MS ? k.tab : null;
+    if (!main) return null;
+    var abs = el.querySelector('[data-cs-dabs]');
+    return {
+      tab: main.getAttribute('data-dtab'),
+      filter: abs ? abs.getAttribute('data-dfilter') : null,
+      afford: abs ? abs.hasAttribute('data-dafford') : true,
+      open: abs ? [].map.call(abs.querySelectorAll('.sh-dar[aria-expanded="true"] .sh-dan'), function (n) { return n.textContent; }) : []
+    };
+  }
+
+  // That view outlives the page refreshing itself after a save. Chronicle
+  // swaps the page's markup for a fresh copy, which ends this sheet and starts
+  // a new one on a new element, so the view is kept by page for the moment in
+  // between, and only used once.
+  var keptViews = {};
+  var KEEP_VIEW_MS = 15000;
+  function keepDashView(el) {
+    var v = el && el._csKey && el.querySelector ? dashViewOf(el) : null;
+    if (v && v.tab) { v.at = Date.now(); keptViews[el._csKey] = v; }
+  }
+  // The view for a new drawing: the one on screen when the sheet is drawn
+  // again in place, else the one kept when the page swapped it out.
+  function dashViewToKeep(el) {
+    var v = dashViewOf(el);
+    if (v) return v;
+    var k = el._csKey ? keptViews[el._csKey] : null;
+    if (k) delete keptViews[el._csKey];
+    return k && Date.now() - k.at < KEEP_VIEW_MS ? k : null;
+  }
+  function applyDashView(el, v, data) {
+    if (!v) return;
+    if (v.tab && v.tab !== 'abilities') setDashTab(el, v.tab);
+    if (v.filter && v.filter !== 'all') setDashFilter(el, v.filter);
+    if (v.afford === false) setDashAfford(el, false);
+    var abs = v.open && v.open.length ? el.querySelector('[data-cs-dabs]') : null;
+    if (!abs) return;
+    var abilities = parseAbilities(data);
+    [].forEach.call(abs.querySelectorAll('.sh-dar'), function (btn) {
+      var n = btn.querySelector('.sh-dan');
+      if (n && v.open.indexOf(n.textContent) !== -1) toggleDashRow(btn, abilities, data);
+    });
   }
 
   // The highest characteristic the hero has synced, or null with none.
@@ -5161,14 +5187,9 @@
     [].forEach.call(el.querySelectorAll('[data-cs-common]'), function (d) {
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
-    var keptTab = dashTabToKeep(el);
-    var keptAbs = el.querySelector('[data-cs-dabs]');
-    var keptFilter = keptAbs ? keptAbs.getAttribute('data-dfilter') : null;
-    var keptAfford = keptAbs ? keptAbs.hasAttribute('data-dafford') : true;
+    var keptView = dashViewToKeep(el);
     el.innerHTML = paperSheetHtml(data);
-    if (keptTab && keptTab !== 'abilities') setDashTab(el, keptTab);
-    if (keptFilter && keptFilter !== 'all') setDashFilter(el, keptFilter);
-    if (!keptAfford) setDashAfford(el, false);
+    applyDashView(el, keptView, data);
     appendBlockSlots(el, data);
     var root = el.querySelector('[data-sheet]');
     if (typeof sm.rescan === 'function') sm.rescan();
@@ -6596,7 +6617,7 @@
     },
 
     destroy: function (el) {
-      keepDashTab(el);
+      keepDashView(el);
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       detachListeners(this, el);
       this._tf = null;
@@ -6636,7 +6657,7 @@
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
-      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashTab: keepDashTab, dashTabToKeep: dashTabToKeep, dashCss: dashCss,
+      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
