@@ -634,6 +634,38 @@ Elemental, Fey, Undead), `circle` (Blight, Storms, Spring, Graves), `role` and
 `cost` (the essence cost as printed). A champion's `advancement` holds its
 10th-level features, including its Champion Action.
 
+## Hero creation: classes.json, cultures.json and the manifest's creator blocks
+
+Chronicle's hero creator asks one step per text field of the `drawsteel-character`
+preset that has a pick list. The preset's `creator_order` puts the steps in the
+book's suggested order (ancestry, culture, career, class, subclass, kit,
+complication), and each field's `creator` block says what the rules ask of it:
+
+- `"needed": true`: the book expects this pick, so the creator does not offer to
+  skip it. It never refuses a hero that leaves it empty.
+- `"from": {"step": "class", "property": "subclasses"}`: the subclass step lists
+  the items of the chosen class's `subclasses`.
+- `"count_from": [...]`: how many kits the chosen class allows, from its `kits`
+  number; a subclass's own `kits` overrides its class. `kit_note` is the line the
+  creator shows beside it.
+
+`classes.json` therefore carries, per class:
+
+| Property | Type | Meaning |
+|---|---|---|
+| `kits` | number | Kits the class uses at 1st level: 0 (conduit, elementalist, null, talent, summoner), 1, or 2 (tactician) |
+| `kit_note` | string | Plain words on the class's kit rule, shown in the kit step |
+| `subclasses` | array of `{name, kits?, kit_note?}` | The subclass choices; the stormwight fury carries `kits: 0` because it uses stormwight kits |
+| `subclasses_text` | string | The subclass names, for the reference table |
+
+`cultures.json` holds only whole cultures (the typical ancestry and archetypical
+cultures), so a culture pick is never a single aspect. Each carries
+`skill_options` (one skill from each of its three aspects),
+`skill_options_quick_build` and `languages` (Caelian plus the culture's own, or a
+language that fits). The aspects themselves are in `culture-aspects.json`, for
+reading and for building a campaign's own culture.
+`tools/test-hero-creation-rules.mjs` pins all of this.
+
 ## Widget-only data files
 
 These files have no manifest category, so they are not in Chronicle's reference

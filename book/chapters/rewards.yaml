@@ -4,15 +4,360 @@ pages:
   - title: Victories and Experience
     blocks:
       - text: |
-          [[Victories]] are a running tally of the fights and challenges a
-          party has come through. They are not spent mid-combat. When the
-          party takes a respite, they turn into Experience, which the party
-          can use for lasting rewards.
-
-          A fight earns Victories according to its difficulty. See the
-          Director's chapter on building encounters for the numbers.
+          [[Victories]] are a running tally of how well your hero is doing
+          this adventure. You start an adventure with 0. They are not spent
+          mid-combat. When you finish a respite they turn into Experience
+          (XP), which permanently improves your hero.
+      - type: flaps
+        items:
+          - title: Victories for combat
+            text: |
+              Survive a combat encounter where the party achieves its
+              objectives and you earn 1 Victory. The Director can skip a
+              trivially easy fight, and award extra for a particularly hard
+              one.
+          - title: Victories for other challenges
+            text: |
+              A big challenge without combat can earn 1 Victory, such as a
+              deadly trap, a negotiation, a montage test, a puzzle, or a
+              clever plan that avoids a battle. A very hard one might earn
+              more.
+          - title: Experience
+            text: |
+              Finish a respite and you gain XP equal to your Victories, then
+              Victories reset to 0. See Making a hero for how XP raises your
+              level.
       - type: callout
-        title: Treasure
+        title: Other rewards
         text: |
-          Treasure, titles and renown are not in the package yet, so this
-          chapter will grow as the package adds more rules.
+          Heroes also win treasures, titles, [[renown|Renown]] and [[wealth|Wealth]]. The next
+          pages cover each. None arrives on a schedule: the Director grants
+          them as the story earns them.
+  - title: Treasures
+    blocks:
+      - text: |
+          Treasures are supernatural items heroes find or craft. They come in
+          four types.
+      - type: cards
+        items:
+          - title: Consumables
+            summary: Potions, dusts and oils. Mostly used once.
+            text: |
+              The most numerous treasure. Some have a set number of charges.
+              Once used up, the item is useless. You can carry any number.
+              They are sorted by echelon, and a hero should always be able to
+              find or craft consumables of their [[echelon]] and lower.
+          - title: Trinkets
+            summary: Supernatural items that never fade.
+            text: |
+              Bags, boots, cloaks, gloves, jewelry and oddities, giving a
+              small benefit at will. You can carry any number. Sorted by
+              echelon.
+          - title: Leveled treasures
+            summary: Armor, implements and weapons that grow with you.
+            text: |
+              Benefits at 1st, 5th and 9th level, cumulative. You can't use
+              a benefit until you reach its level. They bond with their
+              user. See the next page for the carrying limit.
+          - title: Artifacts
+            summary: Unique items of legendary power.
+            text: |
+              They can build a whole campaign around finding, using, hiding
+              or destroying one. They unbalance the game: wielders are far
+              beyond what encounter building expects. Most have a will of
+              their own and want to move on, and armies, dragons or gods
+              may come to take one.
+      - type: flaps
+        items:
+          - title: Found, earned or crafted
+            text: |
+              Most settings have no market for treasures. Town blacksmiths
+              don't sell magic maces. Heroes mostly **find** them on
+              adventures, often from the villains they defeat, are
+              **rewarded** with them by monarchs and mages, or **craft** them
+              as a downtime project (see Downtime). A craftable treasure
+              lists its item prerequisite, project source, project roll
+              characteristic and project goal.
+          - title: What does it do?
+            text: |
+              Examine a treasure for 5 uninterrupted minutes to learn its
+              properties, unless its description says otherwise.
+          - title: Item prerequisite
+            text: |
+              The material needed to craft it. Its nature is left loose so
+              the Director can work it into the campaign, perhaps as a
+              side quest.
+      - type: cards
+        items:
+          - title: Concealment Potion
+            entry: treasures/concealment-potion
+            summary: A 1st-echelon consumable.
+            text: A potion with the Psionic keyword.
+          - title: Shifting Ring
+            entry: treasures/shifting-ring
+            summary: A 3rd-echelon trinket.
+            text: |
+              Once per turn, a maneuver teleports you up to 3 squares.
+          - title: Lightning Treads
+            entry: treasures/lightning-treads
+            summary: Leveled boots.
+            text: |
+              Extra lightning damage on unarmed strikes and a speed bonus,
+              growing at levels 5 and 9.
+          - title: Blade of a Thousand Years
+            entry: treasures/blade-of-a-thousand-years
+            summary: An artifact sword.
+            text: |
+              Takes whatever weapon form its wielder wills, and rallies
+              everyone within a mile.
+      - type: links
+        title: The full list
+        items:
+          - title: All treasures
+            summary: "Every consumable, trinket, leveled treasure and artifact."
+            chapter: treasures-list
+  - title: Using treasures
+    blocks:
+      - type: flaps
+        items:
+          - title: Wearing treasures
+            text: |
+              Worn items resize themselves to fit unless the Director says
+              otherwise. A body keyword (Arms, Feet, Hands, Head, Neck, Waist,
+              or Ring for finger jewelry) shows where it goes, though it still
+              works if worn elsewhere. Any number can share a keyword if the
+              Director finds it reasonable. If they decide you wear too many
+              of one keyword, **none** of them work. A set (a pair of boots)
+              must be worn whole.
+          - title: Wielding treasures
+            text: |
+              Weapons, implements, armor and shields are wielded. A weapon
+              has a keyword for its weight or category, an implement has the
+              Implement keyword or its type, and armor is Light, Medium or
+              Heavy, or a Shield. You can wield as many as you can feasibly
+              hold or wear, but an ability benefits from only one weapon or
+              implement at a time.
+          - title: Treasures and kits
+            text: |
+              A weapon or armor treasure only helps if its keywords match
+              your [[kit]]'s gear. A Warrior Priest, for example, can use heavy
+              armor and light weapons. Without a kit you gain nothing from
+              them unless a feature says otherwise. A weapon's damage bonus
+              applies to melee abilities only if your kit has a melee damage
+              bonus, and likewise for ranged.
+          - title: Magic and Psionic treasures
+            text: |
+              These keywords say how a treasure was made, not who can use it.
+              A Magic implement can boost a Psionic ability and the reverse.
+              Using one to enhance an ability does not give that ability
+              the keyword.
+          - title: Stamina and damage bonuses
+            text: |
+              If two treasures give a Stamina bonus, or a bonus to rolled
+              damage, only the higher applies unless a description says
+              otherwise. Bonuses from consumables ignore this and stack.
+          - title: Carry three safely
+            text: |
+              Each [[leveled treasure]] is quasi-sentient and wants to be used.
+              You can carry **three** safely. Owning more is fine if the
+              extras are stored away or with others. If you carry more than
+              three, make a Presence test each respite.
+      - type: roll
+        dice: 2d10
+        label: Presence test, more than three leveled treasures
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or less
+            text: One treasure the Director picks takes hold of your mind. You sleepwalk and discard the rest somewhere you can't remember.
+          - max: 16
+            label: 12 to 16
+            text: Your items work together to stop you moving until you choose three and leave the rest behind.
+          - label: 17 or more
+            text: Nothing happens.
+      - type: callout
+        title: You don't need three
+        text: |
+          One or two leveled treasures is often the perfect fit. You are
+          still very powerful, especially with trinkets and consumables to
+          back them up.
+  - title: Titles
+    blocks:
+      - text: |
+          A title is a special benefit won through heroic deeds. Each carries
+          a new ability or other benefit. Together they set you apart and
+          become the stories told about you.
+
+          Titles are **won, not chosen**. Each has its own requirement,
+          such as defeating a specific monster, researching forbidden lore
+          or, for Monarch, winning a kingdom. The Director grants a title
+          when your deeds merit it. If you want one, tell your Director so
+          they can seed the story.
+      - type: flaps
+        items:
+          - title: Echelons
+            text: |
+              Each title sits in the echelon where it is most likely earned.
+              Knighthood tends to come by the 2nd, becoming a monarch in the
+              4th. A story can break that.
+          - title: How many
+            text: |
+              Meeting a requirement does not hand you the title. In general
+              a hero earns about one per echelon, more or fewer at the
+              Director's discretion. Winning a title tends to come with
+              treasure and Renown.
+          - title: Benefits
+            text: |
+              A title earned by one hero alone usually has one benefit.
+              Most are earned by the whole party and offer three or four
+              options. Each player picks the benefit their hero takes. You
+              may take any benefit you qualify for, and several heroes can
+              take the same one.
+          - title: Customizing
+            text: |
+              The Director can make custom titles, usually by changing an
+              existing title's requirement, to reward a milestone, a
+              faction, a villain or a master's teaching.
+      - type: note
+        text: |
+          **Granting early.** Don't grant a title more than one echelon
+          before its listed echelon unless you know what it does to the game.
+          Higher titles are stronger and can overshadow the rest of the
+          campaign. A perk can become a 1st-echelon title by adding a
+          prerequisite, such as a quest for an archmage who teaches the
+          hero a ritual.
+      - type: cards
+        items:
+          - title: Brawler
+            entry: titles/brawler
+            summary: 1st echelon. Win a battle without killing any foe.
+            text: |
+              The party picks from four benefits, such as redirecting a
+              strike onto a second flanker, or an edge in negotiations
+              with foes you spared.
+          - title: Local Hero
+            entry: titles/local-hero
+            summary: 1st echelon. Save a community from destruction.
+            text: |
+              Choose from an edge when dealing with that community, 1
+              Renown, or a [[hero token]] for the party each respite there.
+          - title: Knight
+            entry: titles/knight
+            summary: 2nd echelon. A noble grants you knighthood.
+            text: |
+              Choose 1 Renown, +6 Stamina maximum, or the Knightly Challenge
+              ability. You may be called upon for your liege's duties.
+      - type: links
+        title: The full list
+        items:
+          - title: All titles
+            summary: "All 59 titles, one page per echelon."
+            chapter: titles-list
+  - title: Renown and followers
+    blocks:
+      - text: |
+          Renown is how far your name carries. Every hero has a Renown score
+          that measures how well they can lean on their reputation, as fame
+          or infamy. It starts at **0**. Some careers raise the starting
+          score.
+      - type: flaps
+        items:
+          - title: Increasing Renown
+            text: |
+              Mostly you earn it at the end of an exciting adventure, often
+              when a powerful NPC acknowledges you saved them, their family,
+              their home or their nation. Witnesses tell the tale. Some
+              perks, downtime projects, titles and treasures also add Renown.
+              Most campaigns plan for **1 Renown per level**, though some
+              heroes are more or less famous.
+          - title: In negotiation
+            text: |
+              Renown changes how NPCs respond to you in a negotiation, fame
+              and infamy both.
+          - title: Followers
+            text: |
+              Your Renown lets you employ followers who do duties and
+              favors. You can let one go to hire another. Recruiting up to
+              your limit is a respite activity, when you are somewhere you
+              can find them or can send word.
+              - Renown 3: 1 follower.
+              - Renown 6: 2 followers.
+              - Renown 9: 3 followers.
+              - Renown 12: 4 followers.
+          - title: Stronghold
+            text: |
+              Many followers stay at a stronghold, a home base you name and
+              can change. It is usually shared with your party: rooms at an
+              inn, a castle you cleared, a fleet of ships.
+      - type: cards
+        items:
+          - title: Artisan
+            summary: A crafting expert.
+            text: |
+              Contributes one project roll a day to a project you choose,
+              whether you rest, adventure or do other things. They stay at
+              your stronghold or the project site and need materials. You
+              choose four crafting skills for them. They have a Might or
+              Agility of 1 (your pick), Reason 1 and 0 elsewhere, and know
+              Caelian and two more languages.
+          - title: Sage
+            summary: A research expert.
+            text: |
+              Works the same way as an artisan, contributing one project
+              roll a day. You choose four lore skills. They have Reason and
+              Intuition 1 and 0 elsewhere, and know Caelian and two more
+              languages.
+          - title: Retainer
+            summary: A heroic NPC who adventures with you.
+            text: |
+              Players control retainers in combat. They are simpler and
+              weaker than heroes. You can have one at a time unless the
+              Director allows more, and a large party may be limited to one
+              or none to keep fights short. Retainer rules are in the
+              Monsters book.
+  - title: Wealth
+    blocks:
+      - text: |
+          Draw Steel does not track coins. What you can buy depends on your
+          **Wealth score**, and an item must actually be available to you.
+          Money does little in a trackless forest or a remote ruin. The
+          Director can limit how many purchases a score allows, so Wealth 3
+          can buy a small house but not the whole street.
+      - type: flaps
+        items:
+          - title: Hero Wealth table
+            text: |
+              What a score affords. It is a guide, not a full list. If you
+              can buy a horse you can probably buy an ox.
+              - **1:** mundane clothing, gear, armor, implements and weapons;
+                a common tavern meal or inn stay; boat passage.
+              - **2:** a horse and cart; dinner and a stay at a fine tavern
+                or inn.
+              - **3:** a catapult; a small house.
+              - **4:** a library; a tavern; a manor home; a sailing boat.
+              - **5:** a church; a keep; a wizard tower.
+              - **6:** a castle; a shipyard.
+          - title: Earning Wealth
+            text: |
+              Every hero starts at **1**, which some careers raise. You earn
+              Wealth when you find and keep a huge amount of money, such as
+              a dragon's hoard or a monarch's gift of valuable paintings.
+              Generally a hero gains **1 Wealth every second level**, and the
+              Director can speed that up.
+          - title: Losing Wealth
+            text: |
+              Optional rule. A Director can let you make a purchase one
+              above your score. Afterward your Wealth drops by 1, to a
+              minimum of 0.
+          - title: What money can't buy
+            text: |
+              Magic swords, psionic crowns and healing potions are too rare
+              for the table. They are found, traded, given as rewards or
+              crafted. If you can't afford something, you might still get it
+              by negotiating or trading your services.
+      - type: callout
+        title: Heroes don't do it for gold
+        text: |
+          A hero answers a calling, not a job offer. When you make a hero,
+          think about why they take up the call, and make it about more than
+          gold.

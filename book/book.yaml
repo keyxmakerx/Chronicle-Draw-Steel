@@ -55,6 +55,7 @@ parts:
       - ancestries
       - culture-and-career
       - classes
+      - gods-and-religion
       - kits
       - perks-and-complications
       - tests
@@ -63,6 +64,14 @@ parts:
       - montages
       - downtime
       - rewards
+  - title: Lists
+    chapters:
+      - abilities-list
+      - perks-list
+      - complications-list
+      - projects-list
+      - titles-list
+      - treasures-list
   - title: Director's book
     director: true
     chapters:

@@ -1,23 +1,155 @@
 title: Montages
 intro: A long effort, played in a handful of rolls.
 pages:
-  - title: Montage tests
+  - title: How a montage works
     blocks:
       - text: |
-          A [[montage test|montage]] turns one big job, such as sneaking into
-          a barrow or crossing a wasteland, into a run of smaller tests.
-
-          - Each hero tackles a stretch of the job in their own way, using
-            whichever skill fits.
-          - The Director decides how many successes the party needs and how
-            many failures it can absorb.
-          - A failure is pressure, not a stop. Whichever total fills first
-            decides how the job turns out.
+          A [[montage test|montage]] turns one big job that needs more than a
+          single characteristic, such as crossing a desert, rousing farmers
+          against a tyrant or performing a ritual to open a sealed gate, into a
+          run of short tests. It plays out over hours or days, each test a
+          brief vignette starring one hero. Fights and negotiations can
+          interrupt it.
+      - type: flaps
+        items:
+          - title: When the Director calls one
+            text: |
+              When the goal has stakes and pressure, such as a deadline, a
+              race, a chase, weathering a hazard or readying a village for
+              war. A stroll through a quiet forest, or training during a
+              respite, can be narrated in montage style without any test.
+          - title: Setting the scene
+            text: |
+              The Director describes the task and the obstacles you might
+              face, such as crowds, carts and stray dogs in a chase. That
+              gives you ideas for what to try.
+          - title: A round
+            text: |
+              In each montage test round, every hero acts once: make a test,
+              assist another hero's test, or use an item, ability or other
+              option that could help. Once you have acted, you wait until
+              every other hero has. You may also do nothing, usually when you
+              have no one to assist and fear making things worse. Then a new
+              round starts.
+          - title: Clever options
+            text: |
+              The Director may reward a smart choice with automatic
+              successes. A magic fan keeping a ship's sails full could give
+              2 successes with no roll.
+          - title: Each test
+            text: |
+              The Director sets each test's difficulty, which can differ from
+              one test to the next. All the normal rules apply: no test if a
+              clever idea just works, edges and banes where fitting, and a
+              result never halts the story. Each success or failure counts
+              toward the overall goal. Failing to ford a river does not strand
+              you; it may let a rival reach the temple first.
+          - title: Consequences and rewards
+            text: |
+              Handled one test at a time. The usual defaults apply: 2 extra
+              [[malice]] at the next combat for a consequence, and a hero
+              token for the party for a reward.
+          - title: One skill, one use
+            text: |
+              You cannot use the same skill more than once in a montage test.
+              Different heroes can share a skill. A test or assist with a
+              skill is your whole contribution with it. The Director can lift
+              this for long montages, or ones where few skills apply.
+          - title: New obstacles each time
+            text: |
+              Each test should tackle an obstacle not yet overcome. Once
+              someone has distracted the stray dogs, more dog tests do not
+              count. The Director may loosen this when the hazard keeps
+              coming, like fire in a burning building. The Director can also
+              add new challenges mid-montage.
+          - title: Limited rounds
+            text: |
+              A montage lasts 2 rounds. If neither limit is hit by then, it
+              ends. This stops everyone just assisting the one best roller.
+              The Director may allow more rounds for a grueling job.
+  - title: Limits and outcomes
+    blocks:
+      - text: |
+          Every montage has a **success limit** and a **failure limit**, set by
+          the Director and kept secret or shared. A tally of each is kept. The
+          test ends when either limit is reached, or when the rounds run out.
+          More successes needed means a harder job, since you cannot repeat a
+          skill.
+      - type: cards
+        items:
+          - title: Easy
+            summary: 5 successes, 5 failures.
+            text: |
+              For a party of five. Total success earns 1 Victory.
+          - title: Moderate
+            summary: 6 successes, 4 failures.
+            text: |
+              For a party of five. Total success or partial success earns
+              1 Victory.
+          - title: Hard
+            summary: 7 successes, 3 failures.
+            text: |
+              For a party of five. Total success earns 2 Victories. Partial
+              success earns 1.
+      - type: flaps
+        items:
+          - title: Smaller parties
+            text: |
+              With four heroes or fewer, lower both limits by 1 for each hero
+              fewer than five, to a minimum of 2. Three heroes on an easy
+              montage have limits of 3 and 3.
+          - title: Larger parties
+            text: |
+              With six or more heroes, raise both limits by 1 for each hero
+              more than five.
+      - type: cards
+        items:
+          - title: Total success
+            summary: You reach the success limit first.
+            text: |
+              You do what you set out to do with no complication. Crossing the
+              desert, you reach the city with plenty of time to warn it.
+              Earns Victories as shown above.
+          - title: Partial success
+            summary: Limit or time reached with at least 2 more successes than failures.
+            text: |
+              You succeed, but with a complication or cost. You reach the
+              gates with the enemy right behind you, or arrive early but leave
+              a trail that tips off the tyrant. Earns 1 Victory on a moderate
+              or hard montage, none on an easy one.
+          - title: Total failure
+            summary: Failure limit or time reached without 2 more successes than failures.
+            text: |
+              You do not do what you set out to do, but the story moves on in
+              a more interesting and challenging way, such as reaching the
+              city to find it already besieged.
+      - type: callout
+        title: Reading the end
+        text: |
+          Success limit hit before the failure limit or time: total success.
+          Failure limit or time hit with successes ahead of failures by 2 or
+          more: partial success. Anything else: total failure.
+  - title: A montage in play
+    blocks:
+      - text: |
+          Four heroes cross a vast desert to warn a city of an approaching
+          army. The Director rates it hard. With four heroes the limits start
+          at 6 successes and 2 failures. Follow the tally.
       - type: example
-        title: Into the lair
+        title: Crossing the desert
         steps:
-          - 'Director: The barrow mouth breathes cold. Getting in unseen is a montage test. Tally: 0 successes, 0 failures.'
-          - 'Sera: I read the ward-glyphs. That is a Reason test.'
-          - 'Roll: 6 and 9 make 15, plus Reason 2 gives 17. That is Tier 3.'
-          - 'Director: The wards part like curtains. One success.'
-          - 'Orden tries to keep pace at the back but clips a loose stone. One failure, but the party is already inside.'
+          - 'Scene: the Director describes extreme heat, sudden sandstorms, dunes, deep sand, chasms and quicksand, and rules the dunes, sand and quicksand can be tackled more than once.'
+          - 'Round 1. The fury makes an Intuition test with Nature to time travel and rest around the worst weather. Easy. She totals 12: 1 success.'
+          - 'The tactician makes a Reason test with Climb to lead the party over dunes. Hard. He gets 9: failure with a consequence, a bane on his next power roll. 1 success, 1 failure.'
+          - 'The elementalist proposes sandshoes to spread weight. Medium Reason test with Tailoring. She totals 13: success with a consequence, so 2 extra Malice later. 2 successes, 1 failure.'
+          - 'The conduit scouts with Intuition and Navigate. Easy. She rolls 21: success with a reward, an edge for the next hero. End of round: 3 successes, 1 failure.'
+          - 'Interlude: a monster attacks as they cross ruins. They fight it, then the montage resumes.'
+          - 'Round 2. The fury hauls the group''s gear with Might and Lift. Hard, but she has the edge and totals 17. 4 successes, 1 failure.'
+          - 'The tactician tries Lead, but the Director says Lift fits, since his strength is helping. Medium Might test, with a bane from his earlier consequence. He totals 15: success with a consequence. 5 successes, 1 failure.'
+          - 'One success short, the elementalist assists the conduit with her Culture skill, a Reason test. She totals 16, giving the conduit an edge.'
+          - 'The conduit recalls local travel lore with History, a hard Reason test with the edge. She totals 17 and remembers a shortcut. The sixth success: total success, 2 Victories on a hard montage.'
+      - type: callout
+        title: Other things they could have tried
+        text: |
+          A sneaking test to lead the group past predators, Nature to find
+          food and water, or a rousing song of Music to quicken the march.

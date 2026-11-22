@@ -1,39 +1,85 @@
 title: Combat
-intro: How a fight runs, from the first turn to the last.
+intro: How a fight runs, from the first turn to the last, and every rule you need while it does.
 pages:
-  - title: Your turn
+  - title: The round
     blocks:
       - text: |
-          On your turn you get three things: a **main action**, a
-          **maneuver** and a **move action**. You can spread your movement
-          before, after or between the other two, and you can swap a main
-          action for a maneuver or a move action if you prefer.
+          A fight is two **sides**: the heroes and their allies (the players),
+          and everyone who opposes them (the Director). Opposing creatures are
+          all on one side, even if they also fight each other. An NPC ally
+          fights on your side, and the players run it.
 
-          Tap a heading to see what belongs under it.
+          Combat takes place over **rounds**. In a round every creature takes
+          one turn. When all have, a new round begins. Combat starts as soon as
+          one creature means to harm another, or a hazard is ready to hurt
+          someone, so a hero already has to pay their Heroic Resource for
+          heroic abilities.
       - type: flaps
         items:
-          - title: Main action
+          - title: Surprise
             text: |
-              The heaviest part of your turn. Most class and kit abilities are
-              main actions, along with Charge, Defend, Heal and Free Strike.
-          - title: Maneuver
+              Before the first turn the Director decides who was caught off
+              guard. A creature that was not ready is [[surprised]] until the
+              end of the first round: it cannot use triggered actions or free
+              triggered actions, and ability rolls against it gain an edge.
+              A hero who notices the danger first is not surprised, even if
+              they cannot warn their friends.
+          - title: Who goes first
             text: |
-              Lighter than a main action. Aid Attack, Catch Breath, Escape
-              Grab, Grab, Hide, Knockback, Stand Up and Use Consumable are
-              maneuvers.
-          - title: Move action
+              If every creature on one side is surprised, the other side goes
+              first. If both sides have creatures that are not surprised, the
+              Director (or a player they pick) rolls a d10 below. On a 6 or
+              higher the players choose which side goes first. Otherwise the
+              Director does.
+          - title: Taking turns
             text: |
-              Getting around the battlefield: Advance, Disengage or Ride.
-          - title: Triggered action
+              The side that goes first picks one creature to act. When that
+              turn ends, the other side picks one. Play passes back and forth.
+              A creature that has taken its turn cannot act again until the
+              next round, unless a rule says so. Flip a token or set a flag to
+              show who has gone.
+
+              When one side has creatures left and the other has none, those
+              creatures take their turns one after another in any order.
+              The side that went first in round one goes first in every round.
+          - title: Who acts next (heroes)
             text: |
-              Something you can do only when its stated trigger happens, on
-              your turn or anyone else's. You get one each round.
-          - title: Free triggered action
+              The players choose which hero goes next. Usually one or two
+              players want it and say why. If the table argues in circles, the
+              Director gives a warning and 30 seconds. After that the Director
+              picks a hero.
+          - title: Alternative turn order
             text: |
-              Works like a triggered action, but does not use up your one per
-              round.
-  - title: A turn in play
+              If planning the order is not fun, leave it to dice. At the start
+              of combat each hero, enemy and enemy group makes an Agility
+              test and the totals are recorded. On each hero turn the hero with
+              the highest unused total goes next, and so on down. Ties on the
+              same side are rerolled. At the Director's discretion a hero can
+              swap places with a willing hero at the start of a round.
+          - title: Enemies act in groups
+            text: |
+              The Director picks one creature or minion squad from a group to
+              take a turn, then another from that group, until the group is
+              done.
+      - type: roll
+        dice: 1d10
+        label: Who goes first (both sides ready)
+        bands:
+          - max: 5
+            label: 1 to 5
+            text: The Director decides which side goes first.
+          - label: 6 or higher
+            text: The players decide which side goes first.
+  - title: Your turn and actions
     blocks:
+      - text: |
+          On your turn you get a **main action**, a **maneuver** and a **move
+          action**. Do the maneuver and main action in either order, and split
+          your movement before, after or between them. You can turn your main
+          action into a maneuver or a move action, so a turn can be two move
+          actions and a maneuver, or two maneuvers and a move action. For
+          anything not listed here, the Director decides whether it is a
+          maneuver or a main action.
       - type: example
         title: Kaelen swings
         steps:
@@ -42,92 +88,1062 @@ pages:
           - 'Roll: the dice show 8 and 8, which makes 16.'
           - 'Add Kaelen''s Might of 2. The total is 18.'
           - 'Tier 3 starts at 17, so the bugbear takes the strongest result: 9 + Might damage (11) and is pushed 4 squares.'
-      - type: callout
-        title: Moving without being punished
-        text: |
-          A [[shift]] is a special movement that does not provoke free
-          strikes. [[Disengage]] is a move action that shifts you 1 square.
-          A [[free strike]] is a quick, automatic attack you can make outside
-          your turn, usually when an enemy leaves your reach.
+      - type: flaps
+        items:
+          - title: Main action
+            text: |
+              The heaviest part of your turn. Most class, kit and treasure
+              abilities are main actions. The baseline ones are Charge,
+              Defend, Free Strike and Heal (see Main actions below).
+          - title: Maneuver
+            text: |
+              Lighter than a main action. Your options are listed under
+              Maneuvers below. If you have nothing useful to do with it, that
+              is fine.
+          - title: Move action
+            text: |
+              Advance, Disengage or Ride. Choosing not to move is a tactical
+              choice too.
+          - title: Triggered action
+            text: |
+              Something you can do only when its stated trigger happens, on
+              your turn or anyone else's. You get **one triggered action per
+              round**. If several triggered actions answer one trigger, the
+              players decide among themselves which resolve first, then the
+              Director decides for the creatures they control.
+          - title: Free triggered action
+            text: |
+              Works like a triggered action but does not count against your
+              one per round. Anything that stops triggered actions also stops
+              free triggered actions.
+          - title: Free maneuver
+            text: |
+              Simple, boring things on your turn: opening an unlocked door,
+              picking up an arrow, handing an adjacent ally an object, drawing
+              a weapon. You can usually take as many as you like. The Director
+              can rule that a tense or awkward case needs a real maneuver or
+              main action. Anything that stops maneuvers also stops free
+              maneuvers.
+          - title: No-action activities
+            text: |
+              When it is not your turn you can still do very simple things
+              with the Director's approval, like shouting a warning or
+              dropping an item. The Director can limit this. Complex
+              tactical advice costs a free maneuver on your turn.
+      - type: cards
+        items:
+          - title: Advance
+            summary: Move up to your speed.
+            text: |
+              Move a number of squares up to your speed. You can break the
+              movement up around your maneuver and main action.
+          - title: Disengage
+            summary: Shift 1 square.
+            text: |
+              [[Shift]] 1 square, which does not provoke opportunity attacks.
+              Some features let you shift farther. You can break that shift up
+              around your maneuver and main action.
+          - title: Ride
+            summary: Move your mount.
+            text: |
+              Only while mounted. Your mount moves up to its speed and takes
+              you along, or your mount uses Disengage as a free triggered
+              action. Once per round for you, and a mount can only be given
+              this once per round.
+      - type: cards
+        items:
+          - title: Aid Attack
+            summary: Give an ally an edge.
+            text: |
+              Pick an enemy adjacent to you. The next ability roll an ally
+              makes against that enemy before the start of your next turn
+              gains an edge.
+          - title: Catch Breath
+            summary: Spend a recovery, regain Stamina.
+            text: |
+              Spend a Recovery and regain Stamina equal to your recovery
+              value. A dying creature cannot use it.
+          - title: Dig
+            summary: Burrowers tunnel up or down.
+            text: |
+              Needs "burrow" in your speed, a speed at least your size, and
+              burrowable ground you touch. Move vertically up to your size in
+              squares. You cannot dig deeper while holding a conscious
+              creature.
+          - title: Escape Grab
+            summary: Try to get free.
+            text: |
+              Roll below. You take a bane if you are smaller than whatever
+              has you grabbed.
+          - title: Grab
+            summary: Lock down a foe.
+            text: |
+              Roll below. You usually can only grab creatures of your size or
+              smaller, or any size up to your Might score if it is 2 or higher.
+              One creature at a time.
+          - title: Hide
+            summary: Slip out of sight.
+            text: |
+              Hide from creatures not watching you while you have cover or
+              concealment. Details are in the Tests chapter.
+          - title: Knockback
+            summary: Shove an adjacent creature.
+            text: |
+              Roll below. Same size limits as Grab.
+          - title: Make or assist a test
+            summary: Most tests in a fight are maneuvers.
+            text: |
+              Searching a chest, picking a lock or lifting a portcullis are
+              maneuvers. Assisting a test is one too. A long or complex test
+              can need a main action or cannot be done in combat. A test that
+              takes no time, like recalling lore, is usually a free maneuver.
+              The Director has the final say.
+          - title: Search for hidden creatures
+            summary: Try to find who is hidden from you.
+            text: Details are in the Tests chapter.
+          - title: Stand Up
+            summary: End prone, yours or a willing ally's.
+            text: |
+              Stand up from prone, ending the condition. You can also use it to
+              make a willing adjacent prone creature stand.
+          - title: Use Consumable
+            summary: Drink the potion.
+            text: |
+              Activate a consumable treasure, or give one that benefits the
+              user to a willing adjacent creature.
+      - type: roll
+        dice: 2d10
+        label: Grab (Might, melee 1)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: No effect.
+          - max: 16
+            label: 12 to 16
+            text: You can grab the target, but the target first makes a melee free strike against you.
+          - label: 17 or higher
+            text: The target is grabbed by you.
+      - type: roll
+        dice: 2d10
+        label: Escape Grab (Might or Agility)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: No effect.
+          - max: 16
+            label: 12 to 16
+            text: You can escape, but whoever has you grabbed makes a melee free strike against you first.
+          - label: 17 or higher
+            text: You are no longer grabbed.
+      - type: roll
+        dice: 2d10
+        label: Knockback (Might, melee 1)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: Push 1.
+          - max: 16
+            label: 12 to 16
+            text: Push 2.
+          - label: 17 or higher
+            text: Push 3.
+      - type: cards
+        items:
+          - title: Charge
+            summary: Run in a straight line, then strike.
+            text: |
+              Move up to your speed in a straight line, then make a melee free
+              strike against a target when you stop. If you have an ability
+              with the Charge keyword, use it instead of the free strike. You
+              cannot move through difficult terrain or shift while charging.
+              You can fly or burrow if you have that movement, but cannot
+              climb or swim unless you do so automatically at full speed.
+          - title: Defend
+            summary: Make yourself hard to hit.
+            text: |
+              Ability rolls against you have a **double bane** until the start
+              of your next turn, and you have a double edge on tests to resist
+              environmental effects or a creature's traits or abilities. You get
+              no benefit while another creature is taunted by you.
+          - title: Free Strike
+            summary: Always available, rarely best.
+            text: |
+              Use a free strike as your main action. Reach for it when nothing
+              better fits, such as an improvised ranged attack on a flyer.
+          - title: Heal
+            summary: Help an adjacent creature.
+            text: |
+              The adjacent target spends a Recovery to regain Stamina, or
+              makes a saving throw against one effect they suffer that ends on
+              a save.
+      - type: flaps
+        items:
+          - title: Free strikes
+            text: |
+              Every creature can use a free strike as a main action, and many
+              rules let you make one off your turn. A **melee weapon free
+              strike** is an unarmed strike or improvised weapon, a **ranged
+              weapon free strike** an improvised weapon. The Director can change
+              an improvised weapon's damage type, such as fire from a torch.
+              Your class may add free strike options, and your kit can improve
+              the standard ones.
+          - title: Opportunity attacks
+            text: |
+              When an enemy adjacent to you willingly moves to a space not
+              adjacent to you, without shifting, you can make a melee free
+              strike against it as a free triggered action. You cannot make
+              one if you have a bane or double bane on the power roll against
+              that enemy. Forced movement, teleporting and falling never
+              provoke them.
+          - title: Granted abilities
+            text: |
+              Some abilities let another creature use a signature or heroic
+              ability off its turn. Unless stated otherwise, that creature can
+              use a free strike instead.
+      - type: roll
+        dice: 2d10
+        label: Melee weapon free strike (Might or Agility)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: 2 + M or A damage.
+          - max: 16
+            label: 12 to 16
+            text: 5 + M or A damage.
+          - label: 17 or higher
+            text: 7 + M or A damage.
+      - type: roll
+        dice: 2d10
+        label: Ranged weapon free strike (Might or Agility, range 5)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: 2 + M or A damage.
+          - max: 16
+            label: 12 to 16
+            text: 4 + M or A damage.
+          - label: 17 or higher
+            text: 6 + M or A damage.
+  - title: Movement and terrain
+    blocks:
+      - text: |
+          Your **speed** is how many squares you can move with Advance or any
+          effect that lets you move. Heroes start with the speed their ancestry
+          gives, usually 5. Every adjacent square costs 1, diagonals included.
+          Tap a heading for the details.
+      - type: flaps
+        items:
+          - title: Moving through spaces
+            text: |
+              You can move freely through an ally's space. An enemy's space is
+              difficult terrain. You cannot stop in another creature's space,
+              even to strike or act mid-move, unless its size is two or more
+              steps larger or smaller than yours. At the Director's discretion
+              you can be forced into a space with a creature within 1 size of
+              you, such as by falling down a shaft. While squeezed in, your
+              ability rolls and tests take a bane.
+          - title: Cannot exceed speed
+            text: |
+              A move or effect can never move you farther than your speed
+              unless it says otherwise. A slowed creature given a 3-square
+              move can move only 2.
+          - title: Cannot cut corners
+            text: |
+              You cannot move diagonally past the corner of a wall or object
+              that fills the corner between your space and the next. This
+              applies to objects, not creatures.
+          - title: Shifting
+            text: |
+              A careful move that does not provoke opportunity attacks. You
+              cannot shift into or while in difficult or damaging terrain. If
+              a rule lets you shift, you can move that many squares instead (to
+              leave difficult terrain, say), but you cannot mix moving and
+              shifting in one move.
+          - title: Difficult terrain
+            text: |
+              Underbrush, rubble, webs and the like. Entering a square costs 1
+              extra square of movement. Forced movement ignores it.
+          - title: Damaging terrain
+            text: |
+              Acid, fire, sharp rocks, lava. The damage is given by the terrain
+              or the effect that made it. You cannot jump out of it.
+          - title: High ground
+            text: |
+              When you target a creature or object while standing on the ground
+              fully above its space (the bottom of your space is level with or
+              higher than the top of its), you gain an edge on the power roll.
+              Climbing counts only if you have a climb speed or climb
+              automatically at full speed. You cannot gain it against a
+              creature fully underground.
+      - text: |
+          **Movement types.** Creatures can walk, burrow, climb, swim, jump,
+          crawl, fly and teleport.
+      - type: flaps
+        items:
+          - title: Walk
+            text: Rolling, slithering and walking all count. Everyone can cross solid level ground.
+          - title: Climb or swim
+            text: |
+              With "climb" or "swim" in your speed you move over vertical
+              surfaces or through liquid at full speed. Without it, each square
+              of climbing or swimming costs 2 squares of movement. For a sheer
+              cliff or raging river the Director can call for a Might test; on a
+              failure you cannot climb or swim, but you waste no movement.
+          - title: Climbing other creatures
+            text: |
+              You can climb a larger creature. A willing one gives no trouble;
+              an unwilling one needs the test below. While you climb or ride a
+              creature you gain an edge on melee abilities against it. It can
+              use a maneuver to try to knock you off with the second test. If
+              you are knocked prone while climbing, you fall into an adjacent
+              space of your choice and take falling damage.
+          - title: Jump
+            text: |
+              Whenever you move, you can long jump up to your Might or Agility
+              score squares (your choice, minimum 1), 1 square high, for free.
+              To go farther or higher, make a Might or Agility test (below). You
+              cannot jump farther than the move allows, or out of difficult or
+              damaging terrain.
+          - title: Crawl
+            text: |
+              If prone you can crawl, which costs 1 extra square for every
+              square. You can drop prone on purpose as a free maneuver, and
+              stand from voluntary prone as a free maneuver.
+          - title: Fly and hover
+            text: |
+              With "fly" you move through the air at full speed and stay
+              aloft. If you are knocked prone or your speed drops to 0, you
+              fall. With "hover" you can stay motionless in the air and do not
+              fall in those cases.
+          - title: Burrow
+            text: |
+              With "burrow" you move horizontally through dirt (not stone,
+              unless stated) and can breathe or do not need to. You leave no
+              tunnel unless a rule says so. See Dig above for vertical digging.
+          - title: Targeting burrowing creatures
+            text: |
+              From the ground, you have line of effect to a burrower in ground
+              that touches the surface if you have line of effect to one of
+              those squares, and it has cover from you. If you are fully
+              underground you have no line of effect to surface creatures,
+              but you do to an adjacent burrower, and you both have cover.
+              If you are on the ground next to a willing burrower you can use
+              a maneuver to pull it up 1 square. Forced movement that is not
+              vertical does not move a fully buried creature; it takes 1
+              damage per square instead.
+          - title: Claw Dirt
+            text: |
+              A creature that cannot burrow but has speed 2 or more can dig in
+              with a Might maneuver (roll below).
+          - title: Teleport
+            text: |
+              You move from one space to another instantly, bypassing what lies
+              between and never provoking opportunity attacks or movement
+              triggers. You need line of effect to your destination, which
+              must be empty and different from where you began. The distance
+              comes from the effect and can exceed your speed. If you can
+              teleport as part of your usual movement, Advance lets you teleport
+              up to your normal, unmodified speed. Teleporting ends grabbed and
+              restrained, and a prone creature can arrive standing if able.
+      - type: roll
+        dice: 2d10
+        label: Climb an unwilling creature (Might or Agility)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: You fail, and it can make a free strike against you.
+          - max: 16
+            label: 12 to 16
+            text: You fail to climb it.
+          - label: 17 or higher
+            text: You climb the creature.
+      - type: roll
+        dice: 2d10
+        label: Stay on a creature that tries to knock you off (Might or Agility)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: You fall into an adjacent space of your choice, take falling damage and land prone.
+          - max: 16
+            label: 12 to 16
+            text: You slide down into an adjacent space of your choice and do not land prone.
+          - label: 17 or higher
+            text: You hold on.
+      - type: roll
+        dice: 2d10
+        label: Jump farther or higher (Might or Agility)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: No farther than your baseline jump.
+          - max: 16
+            label: 12 to 16
+            text: 1 square longer and higher than baseline.
+          - label: 17 or higher
+            text: 2 squares longer and higher than baseline.
+      - type: roll
+        dice: 2d10
+        label: Claw Dirt (Might)
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or lower
+            text: Move 1 square into, out of or through burrowable ground you touch. You are slowed and weakened (EoT).
+          - max: 16
+            label: 12 to 16
+            text: Use your main action this turn to move 1 square into, out of or through such ground. You are slowed (EoT).
+          - label: 17 or higher
+            text: Move 1 square into, out of or through such ground.
+      - type: flaps
+        items:
+          - title: Falling
+            text: |
+              Landing after falling 2 or more squares deals 2 damage per square
+              (maximum 50) and leaves you prone. Reduce the effective height by
+              your Agility score (minimum 0). Falling into liquid at least 1
+              square deep reduces it by 4 more. Falling is not forced movement,
+              but being force moved downward counts as falling. It never
+              provokes opportunity attacks.
+          - title: Falling onto another creature
+            text: |
+              The creature you land on takes the same fall damage. You land
+              prone in the nearest empty space of your choice. If your size is
+              greater than that creature's Might score, it is knocked prone.
+          - title: Falling far
+            text: |
+              A creature falling from a great height falls 100 squares in the
+              first round and another 100 at the end of each round it keeps
+              falling.
   - title: Forced movement
     blocks:
       - text: |
-          Some effects move a creature rather than letting it choose.
-
-          - [[Push]] moves a target away from the source.
-          - [[Pull]] moves a target toward the source.
-          - [[Slide]] moves a target up to a number of squares in any
-            horizontal direction, not necessarily in a straight line.
-
-          Forced movement never provokes free strikes, and
-          [[stability]] shortens how far it carries you.
-      - type: callout
-        title: Durations
-        text: |
-          "EoT" means an effect ends at the end of the affected creature's
-          next turn. "Save ends" means it lasts until the creature passes a
-          saving throw.
-  - title: Conditions
+          Some effects move a creature rather than letting it choose. You can
+          always move the target fewer squares than stated, including not at
+          all. Forced movement ignores difficult terrain and never provokes
+          opportunity attacks. A target moved into damaging terrain, or terrain
+          with an effect, is affected as if it had walked in. It does trigger
+          "when a creature moves" effects unless they say otherwise.
+      - type: flaps
+        items:
+          - title: Push X
+            text: |
+              Move the target up to X squares away from you in a straight line,
+              not vertically. Every square must put it farther from you.
+          - title: Pull X
+            text: |
+              Move the target up to X squares toward you in a straight line, not
+              vertically. Every square must bring it closer.
+          - title: Slide X
+            text: |
+              Move the target up to X squares in any horizontal direction. It
+              need not be a straight line.
+          - title: Vertical
+            text: |
+              If an effect says "vertical push 5", the target can move up or
+              down as well, in a straight line. Forced movement against a flying
+              creature is always vertical. A creature that cannot fly and is
+              left in midair falls. Without "vertical" you can still move a
+              target along a slope where each square is no more than 1 higher or
+              lower than the last.
+          - title: Stability
+            text: |
+              When you are force moved you reduce the movement by up to your
+              stability, in squares. Heroes start at 0. It cannot drop below 0.
+          - title: Big versus little
+            text: |
+              A larger creature force moving a smaller target with a melee
+              weapon ability adds 1 to the distance. A smaller creature moving a
+              larger target changes nothing.
+          - title: Several targets
+            text: |
+              Unless the ability says otherwise, the user picks the order and
+              finishes each target's movement before starting the next.
+          - title: Forced into a fall
+            text: |
+              If you cannot fly and are moved across open space, such as over a
+              cliff edge, you go the whole distance first. If you are then
+              still unsupported, you fall.
+          - title: Death effects
+            text: |
+              If damage from an ability that also force moves a creature takes
+              it to 0 Stamina, the forced movement happens before any
+              "when it dies" effect.
+      - text: |
+          **Slamming.** Moving something into something else hurts both.
+      - type: flaps
+        items:
+          - title: Slamming into creatures
+            text: |
+              The movement ends and both creatures take 1 damage for each
+              square of forced movement remaining. You can move an object into
+              a creature too. A larger creature slammed into several smaller
+              ones takes the damage only once. If a creature is killed by the
+              same effect that moved it, the second creature still takes
+              damage unless the Director rules otherwise. You can pull or
+              slide a creature into yourself.
+          - title: Slamming into objects
+            text: |
+              Moving a target into a stationary object its size or larger that
+              does not break ends the movement. The target takes 2 damage plus 1
+              for each square remaining. Forced down into an object (the ground
+              too), it also takes falling damage for that distance as if its
+              Agility were 0.
+          - title: Hurling through objects
+            text: |
+              Remaining forced movement can break a mundane object. The
+              creature takes the damage listed and then keeps moving with
+              whatever movement is left. Glass costs 1 square of movement to
+              break and deals 3 damage. Wood costs 3 and deals 5. Stone costs 6
+              and deals 8. Metal costs 9 and deals 11. Costs are per square
+              of the object.
+          - title: Objects that are force moved
+            text: |
+              At the Director's discretion, a mundane object slammed into
+              something takes damage as if it were a creature. Sturdy objects
+              take 3 damage per square (wood), 6 (stone) or 9 (metal) before
+              they are destroyed. Fragile objects break on any damage.
+  - title: Position and size
     blocks:
-      - text: Tap a condition to see what it does.
+      - text: |
+          Where you stand changes the dice. Tap a heading for the rule.
+      - type: flaps
+        items:
+          - title: Flanking
+            text: |
+              You and an ally are flanking an enemy when you are both adjacent
+              to it on opposite sides. You gain an edge on melee strikes against
+              it. Imagine a line from the center of your space to your ally's;
+              if it crosses opposite sides or corners of the enemy's space, you
+              flank. You must have line of effect to the enemy and be able to
+              take triggered actions to gain or grant the benefit.
+          - title: Cover
+            text: |
+              You have line of effect to the target, but at least half of its
+              form is blocked by a solid object such as a tree, wall or
+              overturned table. You take a bane on damage-dealing abilities used
+              against it.
+          - title: Concealment
+            text: |
+              Darkness, fog, invisibility magic and other effects that hide a
+              creature without shielding its body. If you cannot see or observe
+              a target you have line of effect to, it has concealment from you.
+              You can still strike it unless it is hidden, but strikes against
+              it take a bane.
+          - title: Invisible creatures
+            text: |
+              Always have concealment from others. If not hidden they can still
+              be targeted. A test to find a hidden invisible creature takes a
+              bane.
+          - title: High ground
+            text: |
+              Standing fully above your target gives you an edge. See Movement
+              and terrain.
+          - title: Size and space
+            text: |
+              A creature's size is how many squares long, wide and high it
+              occupies. A horse is size 2, a 2 by 2 by 2 cube. Size 1 breaks
+              into 1T (tiny), 1S (small), 1M (medium) and 1L (large). A rule
+              that mentions size 1 applies to all four. Objects have sizes too;
+              an irregular size means mass and weight relative to a creature of
+              that size. A square is 5 feet by default, but the Director can
+              change it as long as it stays the same.
+      - type: cards
+        title: Example sizes
+        items:
+          - title: 1T
+            summary: Pixie
+            text: One size smaller than 1S.
+          - title: 1S
+            summary: Polder
+            text: One size smaller than 1M.
+          - title: 1M
+            summary: Human
+            text: One size smaller than 1L.
+          - title: 1L
+            summary: Hakaan
+            text: Four sizes smaller than size 2.
+          - title: Size 2
+            summary: Ogre
+            text: Occupies a 2 by 2 by 2 space.
+          - title: Size 3
+            summary: Shambling mound
+            text: Occupies a 3 by 3 by 3 space.
+          - title: Size 4
+            summary: Hill giant
+            text: Occupies a 4 by 4 by 4 space.
+          - title: Size 5
+            summary: Omen dragon
+            text: Larger sizes exist; there is no limit.
+      - type: flaps
+        items:
+          - title: Mounted combat
+            text: |
+              A willing creature with the Mount role and a size greater than
+              yours can be your mount. You climb on freely and choose which
+              space you occupy. You can use Ride, once per round on a given
+              mount. Mount and rider each take their own turn. If the rider is
+              force moved, they are knocked off and make the test for staying on
+              a creature. If the mount is force moved, riders go with it. Riders
+              and mounts teleport separately. If the mount dies, it falls prone
+              and you land prone in the nearest empty space of your choice.
+          - title: Underwater combat
+            text: |
+              Fully submerged creatures have fire immunity 5 and lightning
+              weakness 5. If you cannot swim automatically at full speed, your
+              power rolls take a bane.
+          - title: Suffocating
+            text: |
+              In combat or other stress you can hold your breath for a number
+              of rounds equal to your Might score (minimum 1). At the end of
+              each round after that you take 1d6 damage. Out of combat you can
+              hold it for a number of minutes equal to your Might; after that it
+              counts as stress and you run out of air as above.
+          - title: Ground and ceiling
+            text: |
+              "Ground" is any surface a creature could stand, sit or lie on,
+              including a ship's deck or a platform high in the air. A "ceiling"
+              is any solid surface above you, even a wall of force.
+  - title: Abilities, potencies and areas
+    blocks:
+      - text: |
+          How to read an ability in the middle of a fight. An ability gives a
+          type (the action it uses), keywords, a distance, a target, a power
+          roll if it has one, and an effect. Tap a heading for the detail.
+      - type: flaps
+        items:
+          - title: Keywords
+            text: |
+              **Area** creates an area of effect. **Charge** lets it replace the
+              free strike in a Charge. **Magic** and **Psionic** mark spells and
+              psionic powers. **Melee** needs contact (body, weapon or
+              implement). **Ranged** reaches far targets. **Strike** targets
+              specific creatures or objects to harm them. **Weapon** needs a
+              weapon or the body's own strikes. An ability is never both Melee
+              and Ranged.
+          - title: Strikes are not areas
+            text: |
+              The Strike keyword is for abilities that target specific things
+              by a power roll. Area abilities are not strikes, so a feature
+              that interacts with strikes does nothing for them.
+          - title: Heroic and signature abilities
+            text: |
+              A **heroic ability** cannot be used at all without spending your
+              Heroic Resource, and you still pay if you use it off your turn.
+              A **signature ability** costs nothing but may let you spend
+              Heroic Resource to enhance it. An ability you can use free but
+              boost with resource is not heroic. A "Spend X" entry costs that
+              much resource for its extra effect; "Spend X+" lets you spend
+              multiples.
+          - title: Distance
+            text: |
+              "Melee X" reaches X squares by contact, so Melee 1 is adjacent.
+              "Ranged X" reaches X squares. "Self" starts from you. If you make
+              a ranged strike while an enemy is adjacent to you, you take a
+              bane. An ability with both a melee and a ranged distance is one
+              or the other each time you use it.
+          - title: Targets
+            text: |
+              You can always affect fewer targets than listed. You are not a
+              valid target of your own abilities unless "self" is a target.
+              **Enemy** targets are creatures hostile to you; **ally** targets
+              are willing, friendly creatures (the players decide, the Director
+              has the last word). Objects have poison and psychic immunity all.
+              An ability can damage objects, but unless noted objects ignore
+              its other effects, and an object forced to test gets tier 1.
+              A creature disguised as an ally cannot be targeted as an enemy.
+          - title: Rolled damage, M A R I P
+            text: |
+              A plus sign and a letter in damage, as in "6 + M", means add your
+              Might, Agility, Reason, Intuition or Presence score. "M or A"
+              lets you choose. **Rolled damage** is damage set by a power
+              roll; damage with no roll is not rolled damage.
+          - title: Damage and effects together
+            text: |
+              Damage and effect are separated by a semicolon. An effect from the
+              roll applies to the target unless stated, after damage is dealt to
+              all targets. Effects resolve in the order written. If the effect
+              targets the user or the Director, it happens once, not once per
+              target.
+          - title: One roll, many targets
+            text: |
+              Make one power roll and apply the total to every target. If you
+              have an edge or bane against only some targets, the total, and so
+              the tier, can differ per target.
+          - title: During the move
+            text: |
+              For abilities that affect others as you move, the move begins in
+              the space you first leave and ends in the last you enter.
+          - title: Actions within actions
+            text: |
+              If an effect lets you take a main action, maneuver, move action or
+              triggered action, its cost is already inside the ability's own
+              type. You never need a second action for it.
+          - title: Stacking
+            text: |
+              Different abilities' effects stack when duration and target
+              overlap. The same ability used several times does not; the best
+              effect applies and the latest use sets the duration. The same
+              condition from several sources does not stack either.
+      - text: |
+          **Areas of effect.** An area ability with "within X" starts from an
+          **origin square** at most X squares away that you have line of effect
+          to. Without it, the area starts from you. The area can include squares
+          you cannot see, if you have line of effect to the origin. Areas do not
+          pass through solid barriers or spread around corners.
+      - type: cards
+        items:
+          - title: X aura
+            summary: Moves with you.
+            text: |
+              Radius X squares around you for as long as the ability lasts.
+              Targets must be within X squares of you.
+          - title: X burst
+            summary: Around you, once.
+            text: |
+              Radius X squares around you, lasting only as long as it takes to
+              affect its targets.
+          - title: X cube
+            summary: A block of squares.
+            text: Each side is X squares long. Targets must be inside it.
+          - title: A x B line
+            summary: A straight run.
+            text: |
+              A squares long, B wide and high, all in one direction without
+              bending back. Targets must be inside it.
+          - title: X wall
+            summary: Built from squares.
+            text: |
+              X squares, each sharing a full side (not only a corner) with
+              another. You can stack squares to make it higher. It cannot be
+              placed in occupied squares and blocks line of effect.
+      - type: flaps
+        items:
+          - title: Straight lines
+            text: |
+              A straight line does not have to run along rows or columns. Pick
+              each square in turn heading one way without ever bending back.
+              The same holds for Charge and for pushes and pulls.
+          - title: Line of effect
+            text: |
+              You need line of effect to target a creature or object, or to
+              create an effect in a place. A solid object that completely blocks
+              the target from you cuts it off. If a straight line from any
+              corner of your space to any corner of the target's has no
+              obstruction, you have it. The Director may rule that glass or
+              linen does not block it and can be broken.
+          - title: Adjacent
+            text: Within 1 square of a creature.
+      - text: |
+          **Potencies.** Many effects only land if their **potency** beats the
+          target's characteristic. The effect applies when the target's score is
+          less than the potency value. Your values come from your highest
+          characteristic: **weak** is that score minus 2, **average** minus 1,
+          **strong** the score itself. Read "A < AVERAGE" aloud as "if the
+          target's Agility is less than my average potency".
+      - type: example
+        title: A potency in play
+        steps:
+          - 'A conduit with Intuition 2 has potencies weak 0, average 1 and strong 2.'
+          - 'Judgment''s Hammer, tier 2: 8 holy damage; A < 1, prone. The player writes the number in on the sheet.'
+          - 'Target: a bandit with Agility 0. The damage lands.'
+          - 'Is 0 less than 1? Yes, so the bandit is knocked prone. A bandit with Agility 1 would have stayed standing.'
+          - 'At tier 1 the effect would be A < 0, which nobody beats, so there is no extra effect at all.'
+      - type: flaps
+        items:
+          - title: Adjusting potencies
+            text: |
+              Some triggered actions and features raise or lower potencies, such
+              as the censor's Judgment or the null's Null Field. Watch for the
+              chance to help an ally or hinder an enemy.
+          - title: Spending resources on potencies
+            text: |
+              If you may spend Heroic Resource on an effect that depends wholly
+              on a potency and the target resists it, you do not spend the
+              resource. If spending it also gave an automatic effect, such as
+              extra damage, you do spend it. Directors follow the same rule
+              with Malice.
+      - type: flaps
+        items:
+          - title: Critical hit
+            text: |
+              If you make an ability roll as a **main action** and the dice
+              total 19 or 20 before any modifiers, it is a critical hit. You
+              immediately take an extra main action after resolving the roll,
+              even off your turn and even if dazed. It cannot come from a
+              maneuver or any other action type. An opportunity attack, or a
+              signature ability used as a free triggered action, can crit.
+          - title: Surges
+            text: |
+              Surges are tracked on your sheet and are lost as you spend them
+              and at the end of combat. When you deal rolled damage you can
+              spend up to 3 surges: each adds damage equal to your highest
+              characteristic to one target. When you target creatures with an
+              ability that has a potency you can spend 2 surges to raise the
+              potency by 1 for one target. Never more than 1 per target, but
+              you can spend more to do it for several targets.
+  - title: Conditions and ending effects
+    blocks:
+      - text: |
+          A condition is a lasting negative effect, and the same condition from
+          two sources never stacks. Tap one to see its exact effect.
       - type: flaps
         items:
           - title: Bleeding
-            text: Whenever you use a main action, use a triggered action, or make a test or ability roll using Might or Agility, you lose Stamina equal to 1d6 + your level once it is resolved. Nothing can prevent the loss.
+            text: |
+              Whenever you use a main action, use a triggered action, or make a
+              test or ability roll using Might or Agility, you lose Stamina
+              equal to 1d6 + your level after it resolves. Nothing can prevent
+              the loss, and it happens once per action. A main action used off
+              your turn, such as a free triggered signature ability, still
+              costs it.
           - title: Dazed
-            text: On your turn you can do only one thing, a main action, a maneuver or a move action. You cannot use triggered actions, free triggered actions or free maneuvers.
+            text: |
+              On your turn you can do only one thing: a main action, a maneuver
+              or a move action. You cannot use triggered actions, free
+              triggered actions or free maneuvers.
           - title: Frightened
-            text: Your ability rolls against the source of your fear take a bane, and its ability rolls against you gain an edge. You cannot willingly move closer to it if you know where it is.
+            text: |
+              Your ability rolls against the source of your fear take a bane. If
+              the source is a creature, its ability rolls against you gain an
+              edge. You cannot willingly move closer to it if you know where it
+              is. A new frightened condition from a different source replaces
+              the old one.
           - title: Grabbed
-            text: Your speed is 0, only your grabber can force move you, you cannot use the Knockback maneuver, and you take a bane on abilities that do not target your grabber. Use the Escape Grab maneuver to try to get free.
+            text: |
+              Your speed is 0. Only the grabber (or whatever has you grabbed) can
+              force move you. You cannot use Knockback, and you take a bane on
+              abilities that do not target your grabber. If your grabber moves,
+              you go with it, and its speed is halved if its size is equal to
+              or less than yours. Your grabber can use a maneuver to move you
+              to an empty adjacent space, or release you at any time for no
+              action. If you teleport, or you and your grabber are force moved
+              apart, you are no longer grabbed. Use Escape Grab to get free.
           - title: Prone
-            text: Your strikes take a bane and melee abilities against you gain an edge. You must crawl, which costs 1 extra square of movement for every square. Use the Stand Up maneuver to get up.
+            text: |
+              You are flat on the ground. Your strikes take a bane and melee
+              abilities against you gain an edge. You must crawl, costing 1
+              extra square per square. You cannot climb, jump, swim or fly,
+              and if you were doing one of those you fall. Use Stand Up to
+              rise, unless the effect says otherwise.
           - title: Restrained
-            text: Your speed is 0, you cannot use the Stand Up maneuver and you cannot be force moved. You take a bane on ability rolls and on Might and Agility tests, and abilities used against you gain an edge.
+            text: |
+              Your speed is 0, you cannot use Stand Up and you cannot be force
+              moved. You take a bane on ability rolls and on Might and Agility
+              tests, and abilities used against you gain an edge. Teleporting
+              ends it.
           - title: Slowed
             text: Your speed is 2 unless it is already lower, and you cannot shift.
           - title: Taunted
-            text: You have a double bane on ability rolls for any ability that does not target the creature who taunted you, as long as you have line of effect to them.
+            text: |
+              You have a double bane on ability rolls for any ability that does
+              not target the creature who taunted you, as long as you have line
+              of effect to it. A new taunt from a different source replaces the
+              old one.
           - title: Weakened
             text: You take a bane on power rolls.
           - title: Hidden
-            text: A creature you are hidden from cannot target you with abilities that lack the Area keyword, and you gain an edge on ability rolls against them. Using an ability or losing your cover or concealment ends it.
+            text: |
+              A creature you are hidden from cannot target you with abilities
+              that lack the Area keyword, and you gain an edge on ability rolls
+              against it. Using an ability or losing your cover or concealment
+              ends it.
           - title: Surprised
             text: |
-              You were not ready when combat began. You cannot take triggered
-              actions, and rolls against you gain an edge, until the end of
-              the first round.
-  - title: Position and terrain
+              You cannot use triggered actions or free triggered actions, and
+              ability rolls against you gain an edge, until the end of the first
+              round.
+          - title: Unconscious
+            text: |
+              You cannot take main actions, maneuvers, triggered actions, free
+              triggered actions or free maneuvers. Your speed is 0, you are
+              unaware of your surroundings and you are prone. Ability rolls
+              against you have a double edge. When you wake you can stand as a
+              free maneuver.
+      - text: |
+          **How long an effect lasts.** Whatever imposes an effect says when it
+          ends. Tap a heading for the common ones.
+      - type: flaps
+        items:
+          - title: End of next turn (EoT)
+            text: |
+              Lasts until the end of the target's next turn, or the end of its
+              current turn if it was imposed on that turn.
+          - title: Save ends
+            text: |
+              At the end of each of your turns, make a saving throw: roll a d10.
+              On a 6 or higher the effect ends. Otherwise it continues. A
+              Heal action, or other effects, can give a save at another time.
+          - title: End of encounter
+            text: |
+              Lasts until combat ends. Used outside combat, it lasts 5 minutes.
+          - title: Ended by the one who made it
+            text: |
+              A creature that put an effect on another with an ability can end
+              it as a free maneuver unless the ability says otherwise.
+          - title: After combat
+            text: |
+              Effects and conditions on heroes end when the encounter does, if
+              the hero wants, except winded, unconscious and dying. On other
+              creatures they end when it suits the heroes, so you can tie up an
+              unconscious foe, though the Director can rule a dragon does not
+              stay down that long.
+      - type: roll
+        dice: 1d10
+        label: Saving throw (end of your turn)
+        bands:
+          - max: 5
+            label: 1 to 5
+            text: The effect continues.
+          - label: 6 or higher
+            text: The effect ends.
+  - title: Stamina, damage and healing
     blocks:
       - text: |
-          Where you stand changes the dice.
-
-          - **Cover.** If at least half of a target is blocked by something
-            solid, damage-dealing abilities against it take a bane.
-          - **Concealment.** Darkness, fog and similar effects mean strikes
-            against the target take a bane.
-          - **Flanking.** With an ally adjacent to the enemy on the opposite
-            side, you gain an edge on melee strikes against it.
-          - **Difficult terrain.** Entering a square costs 1 extra square of
-            movement. Forced movement ignores it.
+          Damage reduces your **Stamina**, which is both your vitality and your
+          energy for dodging and resisting. After damage is reduced by
+          immunity and other effects, you lose Stamina equal to what is left.
+          Some effects lower your Stamina maximum, which limits what you can
+          regain.
+      - type: flaps
+        items:
+          - title: Damage types
+            text: |
+              Ordinary damage from weapons, falls, traps and claws has no type.
+              Elemental and supernatural damage is typed: acid, cold,
+              corruption, fire, holy, lightning, poison, psychic or sonic.
+          - title: Damage immunity
+            text: |
+              "Fire immunity 5" lowers fire damage by 5, to a minimum of 0.
+              "Damage immunity 5" with no type applies to all damage. An
+              immunity of "all" ignores that damage entirely. Apply immunity
+              last, after halving and similar effects. If several immunities
+              apply, only the highest counts. Example: fire immunity 5 against
+              8 fire damage leaves 3; if an ally halved it to 4 first, the
+              immunity brings it to 0.
+          - title: Damage weakness
+            text: |
+              Works like immunity but adds damage. Fire weakness 5 turns 10 fire
+              damage into 15. "Damage weakness X" with no type applies to every
+              type. If both apply, weakness goes first, then immunity. Only the
+              highest weakness counts.
+          - title: Temporary Stamina
+            text: |
+              Taken first when you are damaged; leftover damage hits your
+              Stamina. (10 temporary and 16 damage loses all 10 and 6 Stamina.)
+              It does not count toward your recovery or winded value, and does
+              not change winded, dying or dead. Healing cannot restore it. A new
+              amount replaces yours only if it is larger; they never add. It
+              ends with the encounter unless stated.
+          - title: Winded
+            text: |
+              Your winded value is half your Stamina maximum. At or below it
+              you are winded. That does nothing by itself, but many abilities
+              care. Creatures can tell when others are winded.
+          - title: Recoveries and recovery value
+            text: |
+              Your class sets how many Recoveries you have. Your recovery value
+              is one third of your Stamina maximum, rounded down. Catch Breath
+              in combat spends one Recovery to regain that much. Out of combat
+              you can spend as many as you have left. Some effects let you spend
+              one for extra, or regain Stamina without spending one.
+          - title: Dying and death
+            text: |
+              At 0 Stamina or lower you are dying. You cannot use Catch Breath
+              in combat. You are also bleeding, and that cannot be negated or
+              removed until you are no longer dying. You can still act, allies
+              can help you spend Recoveries, and out of combat you spend them
+              as usual. If your Stamina drops to the negative of your winded
+              value, you die and can be returned only by something like a Scroll
+              of Resurrection.
+          - title: Knocking creatures out
+            text: |
+              If an ability would kill a creature you can knock it unconscious
+              instead. Damage to it while unconscious this way kills it. After 1
+              hour, a Director-controlled creature gains 1 Stamina and wakes. A
+              hero spends a Recovery and wakes, but with none left cannot wake
+              until they finish a respite.
+          - title: Director-controlled creatures
+            text: |
+              Usually die or are destroyed at 0 Stamina. They have no Recoveries.
+              If a hero's ability lets one spend a Recovery, it regains one third
+              of its Stamina maximum.
+          - title: Object Stamina
+            text: |
+              Each square of a size 1 object made of glass has 1 Stamina, wood 3,
+              stone 6, metal 9. At 0 it is destroyed. Objects have poison and
+              psychic immunity all, unless the Director removes it for something
+              living. The Director can adjust for fine or shoddy work.
       - type: callout
-        title: Damage adjustments
+        title: Healing, in short
         text: |
-          Temporary Stamina absorbs damage first. Damage resistance reduces
-          incoming damage, and immunity and weakness adjust damage of a named
-          type. Check the glossary entries for the order they apply in.
-  - title: Hurt, dying and healing
+          Catch Breath (a maneuver) and Heal (a main action) both spend a
+          Recovery. Temporary Stamina is separate from both.
+  - title: Ending a fight
     blocks:
       - text: |
-          You are [[winded]] at half your maximum Stamina. At 0 or lower you
-          are [[dying]]: you count as bleeding, and you cannot use Catch
-          Breath during combat. If your Stamina falls to the negative of your
-          winded value, you die.
-
-          [[Catch Breath]] is a maneuver. You spend a recovery and regain
-          Stamina equal to your recovery value. Allies can still help a dying
-          hero spend recoveries.
+          The Director decides when combat is over, and awards Victories. Not
+          every fight needs every enemy down. Objectives can end it early, or
+          the Director can call it once the heroes clearly win. When it ends,
+          effects on you end if you want, except winded, unconscious and dying.
+      - type: flaps
+        items:
+          - title: Dramatic finish
+            text: |
+              The Director gives each hero one or more remaining enemies and the
+              player describes how the hero neutralizes the threat: a killing
+              blow, a knockout or letting it flee. If heroes outnumber enemies,
+              several can share one.
+          - title: Event ending
+            text: |
+              Reaching a set objective triggers a big narrative finish, such as
+              breaking a dam or banishing summoned demons.
+          - title: Fleeing foes
+            text: |
+              An enemy that runs is running to rethink their life. If one runs
+              for help, the players should get a sign of it, so stopping it is
+              part of the encounter.
+      - type: cards
+        title: Objectives the Director can set
+        items:
+          - title: Diminish numbers
+            summary: Defeat them before they defeat us.
+            text: Push foes until they break, flee or surrender.
+          - title: Defeat a specific foe
+            summary: Take down the leader.
+            text: Weaker foes may flee or surrender once the stars are gone.
+          - title: Get the thing
+            summary: Seize an important object.
+            text: Often paired with another objective.
+          - title: Destroy the thing
+            summary: Wreck their stuff.
+            text: Burn a ship, close a portal, stop a trap.
+          - title: Save another
+            summary: Rescue allies from foes.
+            text: The saved allies may swing the battle.
+          - title: Escort
+            summary: Keep someone safe on the way.
+            text: Enemies keep coming until the charge arrives.
+          - title: Hold them off
+            summary: Buy time.
+            text: Survive and guard a position for a number of rounds.
+          - title: Assault the defenses
+            summary: Take a strong point.
+            text: Ends when the heroes hold the position.
+          - title: Stop the action
+            summary: Interrupt a villain's plan.
+            text: A round timer applies, after which the battle changes.
+          - title: Complete the action
+            summary: Perform a ritual or launch the airship.
+            text: Ends when the event is done, even with foes left.
       - type: note
         text: |
-          Surprise matters for monsters too. A surprised creature cannot take
-          triggered actions, and rolls against it gain an edge.
+          Objective endings are set while building the encounter. The Director's
+          book covers monster roles, map advice and success conditions.

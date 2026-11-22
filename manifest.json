@@ -157,7 +157,8 @@
         { "key": "recoveries", "label": "Recoveries", "type": "number" },
         { "key": "skills", "label": "Skills", "type": "string" },
         { "key": "subclass_type", "label": "Subclass Type", "type": "string" },
-        { "key": "subclasses_display", "label": "Subclasses", "type": "string" },
+        { "key": "subclasses_text", "label": "Subclasses", "type": "string" },
+        { "key": "kits", "label": "Kits", "type": "number" },
         { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
     },
@@ -171,6 +172,15 @@
         { "key": "environment", "label": "Environment", "type": "string" },
         { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "upbringing", "label": "Upbringing", "type": "string" },
+        { "key": "skill_options", "label": "Skill Options", "type": "string" }
+      ]
+    },
+    {
+      "slug": "culture-aspects",
+      "name": "Culture Aspects",
+      "icon": "fa-puzzle-piece",
+      "fields": [
+        { "key": "aspect", "label": "Aspect", "type": "string" },
         { "key": "skill_options", "label": "Skill Options", "type": "string" },
         { "key": "provenance_display", "label": "Provenance Notes", "type": "string" }
       ]
@@ -447,6 +457,7 @@
       "color": "#7C3AED",
       "category": "character",
       "foundry_actor_type": "hero",
+      "creator_order": ["ancestry", "culture", "career", "class", "subclass", "kit", "complication"],
       "fields": [
         {
           "key": "class",
@@ -456,7 +467,10 @@
           "foundry_item_type": [
             "class"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "creator": {
+            "needed": true
+          }
         },
         {
           "key": "subclass",
@@ -466,7 +480,14 @@
           "foundry_item_type": [
             "subclass"
           ],
-          "foundry_item_single": true
+          "foundry_item_single": true,
+          "creator": {
+            "needed": true,
+            "from": {
+              "step": "class",
+              "property": "subclasses"
+            }
+          }
         },
         {
           "key": "ancestry",
@@ -495,6 +516,9 @@
               "Wode Elf"
             ],
             "max_length": 64
+          },
+          "creator": {
+            "needed": true
           }
         },
         {
@@ -510,6 +534,9 @@
             "edit": "owner",
             "kind": "text",
             "max_length": 64
+          },
+          "creator": {
+            "needed": true
           }
         },
         {
@@ -545,6 +572,9 @@
               "Watch Officer"
             ],
             "max_length": 64
+          },
+          "creator": {
+            "needed": true
           }
         },
         {
@@ -606,6 +636,20 @@
               "Whirlwind"
             ],
             "max_length": 64
+          },
+          "creator": {
+            "count_from": [
+              {
+                "step": "class",
+                "property": "kits",
+                "note": "kit_note"
+              },
+              {
+                "step": "subclass",
+                "property": "kits",
+                "note": "kit_note"
+              }
+            ]
           }
         },
         {

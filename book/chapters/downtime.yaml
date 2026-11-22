@@ -1,16 +1,341 @@
 title: Downtime
-intro: What happens between adventures.
+intro: What happens between adventures, from a night's rest to a months-long project.
 pages:
   - title: Respite
     blocks:
       - text: |
-          A [[respite]] is 24 uninterrupted hours of rest plus one respite
-          activity. A night's sleep on its own does not count.
+          A [[respite]] is a stretch of focused rest. You spend **24 hours
+          uninterrupted**, doing nothing but sleeping, eating, dressing
+          wounds and recuperating, and you can also do **one respite
+          activity**.
 
-          Finishing one restores all your Stamina and all your recoveries, and
-          it converts your [[victories]] into Experience.
+          When you finish a respite you regain all your Stamina and all your
+          [[recovery|recoveries]], and your [[victories]] convert to
+          Experience. You can take as many respites in a row as you like.
+          Enemies keep scheming while you rest.
+      - type: flaps
+        items:
+          - title: What counts as a respite
+            text: |
+              A normal night's sleep does not. The rules assume every hero
+              sleeps and eats anyway. A respite is 24 hours with nothing
+              else in them but rest and one activity.
+          - title: If it is interrupted
+            text: |
+              Enemies attacking, an earth tremor, swarms of biting insects or
+              a similar serious distraction ends the respite early, and you
+              get none of the benefits for finishing it. Take a respite
+              somewhere safe.
+          - title: Respite activities
+            text: |
+              You choose one per respite. The ones this book describes:
+              - Make a project roll on your own project, or contribute one to
+                another hero's project.
+              - Study a guide for a project.
+              - Search for a common project source in a library or among
+                experts.
+              - Serve as another hero's project source.
+              - Change your [[kit]].
+              - Recruit followers, up to what your [[renown|Renown]] allows.
+              - Lay low, if a complication or title lets you.
+              - Cook a dish from a recipe you have perfected.
       - type: callout
-        title: More to come
+        title: Projects are the main activity
         text: |
-          Projects, crafting and research are not in the package yet, so this
-          chapter will grow as the package adds more rules.
+          Most respites go on a project. The next pages cover how they work,
+          then the crafting, research and other projects you can start.
+  - title: Downtime projects
+    blocks:
+      - text: |
+          A downtime project lets you spend respites on a long goal: lost
+          lore, a magic item, an airship. You start a project during a
+          respite. You can have **as many projects as you like**, but you work
+          on **only one per respite**. Track progress on your character sheet.
+
+          A project is done when its **project points** reach its **project
+          goal**.
+      - type: flaps
+        items:
+          - title: Prerequisites
+            text: |
+              Every project has some. Many need an **item prerequisite**, a
+              special item you must hold before you start (an airship needs
+              a Wind Crystal of Quintessence). Others need certain activities
+              along the way.
+          - title: Project source
+            text: |
+              You also need a **project source**: lore on how the work is
+              done. It might be a book, scroll or schematic, a tutor, a
+              master artisan or a supernatural revelation. The Director
+              decides. You need access to the source each time you make a
+              project roll.
+              - Common sources can be found as a respite activity somewhere
+                with a library or experts. Ask your Director first.
+              - Another hero can be your source if the Director allows, but
+                they spend a respite activity each time you roll.
+          - title: Language
+            text: |
+              The Director chooses the language of a source. If you know it,
+              there is no issue. If you know only a related language, the
+              project roll takes a bane. If you know neither, it takes a
+              double bane.
+          - title: Skills
+            text: |
+              Skills from the crafting or lore groups apply to project rolls
+              that relate to the project. The Director can allow others when
+              they are directly related.
+          - title: Guides
+            text: |
+              A guide is a book, schematic, expert or recording that makes a
+              project far quicker. Each has a **knowledge value** and a
+              specific project. Studying it as a respite activity gives you
+              that many [[project points]]. A guide works once per project, but
+              can be used again for a different project of the same type.
+              A guide in a related language gives half its value, rounded down.
+          - title: Working together
+            text: |
+              Another hero can make a project roll to contribute to your
+              project as their respite activity.
+  - title: The project roll
+    blocks:
+      - text: |
+          The project roll is a test with an unusual result. Its total, **no
+          matter how low, becomes project points**. A penalty can't push the
+          total below 1. The project says which characteristic to use.
+
+          A natural 19 or 20 is a **breakthrough**: you add the points and
+          make another project roll for the same project in the same respite
+          activity.
+      - type: roll
+        dice: 2d10
+        label: Project roll (dice only)
+        bands:
+          - max: 18
+            label: Normal result
+            text: Add your characteristic and any bonuses. The total, at least 1, becomes project points.
+          - label: Breakthrough
+            text: A natural 19 or 20. Same points, and you roll again this respite.
+      - type: flaps
+        items:
+          - title: Edges and banes
+            text: |
+              Project rolls have no tiers, so edges and banes work as flat
+              numbers.
+              - Edge: add 2. Double edge: add 4.
+              - Bane: subtract 2. Double bane: subtract 4.
+          - title: Why not tiers
+            text: |
+              Because the total is the result, a big roll just means more
+              progress. The only special outcome is the [[breakthrough]].
+      - type: example
+        title: A week of research
+        steps:
+          - 'Discover Lore on obscure knowledge has a project goal of 45, and uses Reason.'
+          - 'First respite: the dice show 7 and 6, which is 13. With Reason 2 the total is 15, so the project has 15 points.'
+          - 'Second respite: 9 and 10, which is 19, a natural 19. With Reason 2 that is 21 points, 36 so far, and a breakthrough.'
+          - 'Breakthrough roll: 4 and 5 plus 2 is 11 points. The project reaches 47 and is complete.'
+      - type: note
+        text: |
+          **Project events (optional).** Events add drama to crafting and
+          research. Pick how they trigger. Roll a d6 once per respite when
+          anyone makes a project roll, and an event happens on a 6. Or use
+          milestones by goal: none at 30 or fewer, one halfway for 31 to 200,
+          two at one-third and two-thirds for 201 to 999, three at one-quarter,
+          one-half and three-quarters for 1,000 or more. Or drop one in
+          whenever it suits you. Each table entry says whether it applies
+          before or after the roll. An automatic breakthrough gives 20
+          project points and another project roll.
+  - title: Crafting projects
+    blocks:
+      - text: |
+          Crafting projects make vehicles, supernatural treasures and more.
+          Other creatures can use their respite activity to roll toward a
+          crafting project you started.
+      - type: flaps
+        items:
+          - title: Craft treasure
+            text: |
+              You can craft any treasure in the Rewards chapter. Each one
+              lists its item prerequisite, project source, project roll
+              characteristic and project goal.
+          - title: Imbue treasure
+            text: |
+              You turn a mundane item (a sword, a shield) into a leveled
+              treasure by imbuing it with magic or psionic power. You need
+              the mundane item when you start.
+              - You can imbue an item **three times**: a 1st-level
+                enhancement, then a 5th-level, then a 9th-level.
+              - You only gain an enhancement's benefit if your level matches
+                it and, for armor or weapons, your kit includes that type.
+              - An enhancement with a Roman numeral above I needs all the
+                earlier ones first. Phasing III needs Phasing I and II.
+                Numbered effects are cumulative unless said otherwise.
+              - The item gains the Magic or Psionic keyword (your choice)
+                and counts toward the matching kit categories.
+          - title: Find a cure
+            text: |
+              Research a cure for a disease, curse or affliction whose text
+              allows it. The goal is 50 times the level of the creature that
+              caused it. If the cause was innate (a werewolf's bite), you need
+              the remains of a creature of that kind. You make one dose, and
+              further doses cost half the points.
+      - type: cards
+        items:
+          - title: Craft Treasure
+            entry: projects/craft-treasure
+            summary: Make any treasure in the Rewards chapter.
+            text: |
+              Uses the treasure's own prerequisite, source, characteristic
+              and goal.
+          - title: Imbue Treasure
+            entry: projects/imbue-treasure
+            summary: Three enhancements at levels 1, 5 and 9.
+            text: |
+              Needs a mundane item. The enhancement tables list each
+              enhancement's prerequisite and source language.
+          - title: Find a Cure
+            entry: projects/find-a-cure
+            summary: Reason or Intuition. Goal is 50 times the creature's level.
+            text: |
+              Needs the remains of a creature of the kind that caused the
+              affliction. Later doses cost half.
+          - title: Build Airship
+            entry: projects/build-airship
+            summary: Might, Reason or Presence. Goal 3,000.
+            text: |
+              Needs a Wind Crystal of Quintessence and lore in Low Rhyvian.
+          - title: Craft Teleportation Platform
+            entry: projects/craft-teleportation-platform
+            summary: Reason. Goal 1,500.
+            text: |
+              Needs one spatial navigator and lore in Voll.
+          - title: Build or Repair Road
+            entry: projects/build-or-repair-road
+            summary: Might, Reason or Presence. The goal varies.
+            text: |
+              Has its own Renown rewards and event table.
+      - type: links
+        title: The full list
+        items:
+          - title: All downtime projects
+            summary: "Every project with its goal and characteristic."
+            chapter: projects-list
+  - title: Research projects
+    blocks:
+      - text: |
+          Research projects cover new lore, deeper knowledge, rumours and
+          secrets, and learning from others. Unless a project has its own
+          events, the Director uses the crafting and research table.
+      - type: flaps
+        items:
+          - title: Discover Lore
+            text: |
+              Uses Reason. You choose the lore and the questions, and the
+              Director says how esoteric it is. The more obscure, the bigger
+              the goal.
+              - **Common** (goal 15): a day or so of research with plentiful
+                local sources.
+              - **Obscure** (goal 45): known to specialist sages; several
+                days of research.
+              - **Lost** (goal 120): one or two scholars, or one text in a
+                dead language; over a week.
+              - **Forbidden** (goal 240): someone is hiding it, in ciphers
+                and passwords; weeks of leads.
+          - title: Learn From a Master
+            text: |
+              Needs a higher-level NPC or their teachings in a language you
+              know. Use your highest characteristic. You pick one benefit.
+              - **Hone ability** (goal 120): +1/+1/+1 damage on one ability,
+                or +2 distance on a ranged ability. Once per ability.
+              - **Improve control** (goal 500): one heroic ability costs 1
+                less [[heroic resource|Heroic Resource]], to a minimum of 1. Once per ability.
+              - **Acquire ability** (goal 1,000): one signature ability from
+                the master's class (a second if you share their class). A
+                tactician master can give Strike Now instead. Once per class.
+          - title: Hone Career Skills
+            text: |
+              Intuition. Goal 240 if your career gave you two skills, or 360
+              if three. When done, you gain an edge on tests using those
+              skills.
+          - title: Learn New Skill or Language
+            text: |
+              Reason or Intuition, goal 120 each. You need texts or teaching.
+              When done you gain the skill you chose, or understand the
+              language.
+          - title: Go Undercover
+            text: |
+              Intuition or Presence, goal 15. You gain common or obscure
+              knowledge about an organization you spy on. The first
+              completion has a 25 percent chance of being caught. Each repeat
+              with the same group adds 25 percent and 30 to the goal. The
+              Director may ask for a disguise or sign of membership, and
+              the group may demand a task of you. Failing it, or fleeing,
+              ends the project for good.
+          - title: Perfect New Recipe
+            text: |
+              Reason or Intuition, goal 100. You need the ingredients and a
+              recipe or tutor, and gain +3 if it is from your culture. After
+              it, you can cook five servings as a respite activity. A creature
+              who eats one gets a single benefit until their next respite.
+              - **Comforting:** when they fail a saving throw they can
+                succeed instead, once.
+              - **Hearty:** +1 Recovery at the end of the respite.
+              - **Supernatural power:** one characteristic is 1 higher, to
+                a maximum of 6.
+              Nobody benefits from more than one recipe, or more than one
+              serving of a recipe, at a time.
+      - type: cards
+        items:
+          - title: Discover Lore
+            entry: projects/discover-lore
+            summary: Reason. Goal 15, 45, 120 or 240.
+            text: The goal depends on how hidden the knowledge is.
+          - title: Learn From a Master
+            entry: projects/learn-from-a-master
+            summary: Highest characteristic. Goal 120, 500 or 1,000.
+            text: Hone an ability, improve its control or acquire a new one.
+          - title: Go Undercover
+            entry: projects/go-undercover
+            summary: Intuition or Presence. Goal 15.
+            text: Risky, and riskier each time you repeat it.
+  - title: Other projects
+    blocks:
+      - text: |
+          Not every hero wants to craft or research. Some want to build
+          organizations, see old friends, or go fishing.
+      - type: flaps
+        items:
+          - title: Community Service
+            text: |
+              Goal 75. You must be in a settlement each time you roll, and you
+              can run one per community. The Director picks the
+              characteristic from what you do. When done, someone gives you a
+              random consumable treasure as thanks.
+          - title: Spend Time With Loved Ones
+            text: |
+              Presence, goal 60. You must be able to talk with those people.
+              When done, your Stamina maximum rises by 12 plus your level
+              until the end of your next respite. You can't start another for
+              a month.
+          - title: Fishing
+            text: |
+              Agility, Reason or Intuition. You need a body of water. Points
+              show the size of your catch, and you keep rolling in a respite
+              until a tier 1 outcome (the fish got away, no points) or a
+              breakthrough. A breakthrough means the Director rolls a Fishing
+              event instead of you gaining points. When you finish, spend the
+              points on the Tackle table. Unspent points are lost.
+      - type: cards
+        items:
+          - title: Community Service
+            entry: projects/community-service
+            summary: Goal 75. A consumable as thanks.
+            text: Characteristic set by the Director.
+          - title: Spend Time With Loved Ones
+            entry: projects/spend-time-with-loved-ones
+            summary: Presence. Goal 60.
+            text: A Stamina boost until the end of your next respite.
+          - title: Fishing
+            entry: projects/fishing
+            summary: Agility, Reason or Intuition.
+            text: Spend project points on tackle at the end of the respite.

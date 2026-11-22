@@ -4,10 +4,10 @@ pages:
   - title: The power roll
     blocks:
       - text: |
-          When the outcome is uncertain, you roll two ten-sided dice, add one
-          of your five characteristics, and read which of three tiers the total
-          lands in. There is no plain miss: the lowest tier is a weak result,
-          not nothing.
+          When the outcome is uncertain, you make a [[power roll]]: roll two
+          ten-sided dice (2d10), add one characteristic, and read which of
+          three tiers the total lands in. There is no plain miss: the lowest
+          tier is a weak result, not nothing.
 
           Try it below. The band your total lands in lights up.
       - type: roll
@@ -23,6 +23,45 @@ pages:
             text: 12 to 16. A solid result.
           - label: Tier 3
             text: 17 or higher. The strongest result.
+      - type: flaps
+        items:
+          - title: Two kinds of power roll
+            text: |
+              An **ability roll** is made when you use an ability: it sets
+              the damage and effects. A **test** is a power roll you make for
+              anything else you try, such as climbing, lying or searching.
+              Tests have their own chapter.
+          - title: What each tier means
+            text: |
+              Abilities say what each tier does: tier 1 does something small,
+              tier 2 a moderate amount, tier 3 the full effect. For a test,
+              tier 1 usually means you fall short (and may pay for it), tier 2
+              might succeed at a cost, and tier 3 succeeds.
+          - title: Downgrading a roll
+            text: |
+              You may always pick the outcome of a lower tier than the one
+              you rolled. Say tier 3 restrains a foe but tier 2 only slows
+              it: you can choose slowed. Downgrading a critical hit still
+              gives you the extra action.
+          - title: Natural rolls
+            text: |
+              The **natural roll** is the total on the two dice before your
+              characteristic or any modifier. A natural 19 or 20 is always a
+              tier 3 result, whatever else applies. On an ability roll made as
+              a main action it is also a [[critical hit]].
+          - title: Automatic tier outcomes
+            text: |
+              Some effects give an automatic tier 1, 2 or 3. They beat every
+              edge, bane, bonus and penalty. If you still need a roll for an
+              extra effect, such as a critical hit, you still make it.
+              Automatic outcomes that disagree cancel out and are ignored;
+              ones that agree stand.
+          - title: Sapient creatures
+            text: |
+              Some abilities affect only sapient creatures (capable of
+              human-like thought and emotion) or only nonsapient ones. The
+              Director decides which a creature is. It has nothing to do with
+              its Reason score.
       - type: callout
         title: Remember
         text: |
@@ -31,62 +70,286 @@ pages:
   - title: Edges and banes
     blocks:
       - text: |
-          Circumstances push a roll up or down. An [[edge]] adds 2 to the
-          roll and a [[bane]] takes 2 away.
+          Circumstances push a roll up or down. An [[edge]] is a situational
+          advantage and adds 2 to the roll. A [[bane]] is a disadvantage and
+          takes 2 away. Striking a prone creature while standing is an edge;
+          striking while prone is a bane.
+      - type: flaps
+        items:
+          - title: Double edge and double bane
+            text: |
+              Two or more edges make a **double edge**: you add nothing, but
+              the outcome rises one tier (to at most tier 3). Two or more
+              banes make a **double bane**: you subtract nothing, but the
+              outcome drops one tier (to at least tier 1). Edges and banes
+              never count past two each.
+          - title: How edges and banes cancel
+            text: |
+              - One edge and one bane: roll as normal, with neither.
+              - A double edge and a double bane: roll as normal.
+              - A double edge and one bane: roll with one edge.
+              - A double bane and one edge: roll with one bane.
 
-          - Edges and banes never stack past two.
-          - A **double edge** raises the result by a whole tier instead.
-          - A **double bane** lowers it by a whole tier instead.
-          - One edge and one bane cancel each other out.
+              It does not matter how many separate sources made the double.
+          - title: Bonuses and penalties
+            text: |
+              A few rules add a flat number to a roll, such as the +2 from a
+              skill. They are worked out first, apart from edges and banes,
+              and there is no limit: they always add together. A skill's +2 is
+              not an edge, so you can have both.
+          - title: Who adds an edge or bane
+            text: |
+              The rules say when a roll gets one. The Director can also add
+              one for the circumstances: rain making a stone wall slick is
+              a fair bane on a climb.
+          - title: Opposed rolls use numbers instead
+            text: |
+              Opposed power rolls have no tiers, so a double edge is +4, a
+              double bane is -4, and an automatic tier up or down counts as
+              +4 or -4.
+      - type: example
+        title: Edges and banes together
+        steps:
+          - 'You strike a prone foe: that is an edge.'
+          - 'You are also weakened by poison, which gives a bane.'
+          - 'One edge and one bane cancel, so you roll with neither.'
+          - 'A friend then knocks the foe against a wall for a second edge. Now it is a double edge against one bane.'
+          - 'A double edge and a single bane leave you one edge: +2 on the roll.'
       - type: callout
         title: Critical hits
         text: |
-          A [[critical hit|critical]] happens when the two dice alone, before
-          any bonus, total 19 or 20 on a roll made as a main action. You then
-          get an extra main action straight away.
-  - title: Five characteristics
+          A [[critical hit|critical]] happens when you make an ability roll as
+          a main action and the two dice alone total 19 or 20. You then take
+          an extra main action straight away, even off your turn. It cannot
+          happen on a maneuver or other action type.
+  - title: Characteristics and dice
     blocks:
-      - text: Every hero has five characteristics. Which one you add depends on what you are trying to do.
+      - text: |
+          Every creature has five characteristics. Each is a score from -5 to
+          +5, and the average person has 0 in all five. The score is added to
+          power rolls. Which one you add depends on what you are trying to do.
       - type: cards
         items:
           - title: Might
             summary: Smash, grapple, resist.
             text: |
-              Might drives melee damage, forced movement, breaking things and
-              resisting being grabbed.
+              Strength and brawn (M). Breaking doors, swinging an axe,
+              standing in an earthquake, hurling an ally across a chasm.
           - title: Agility
             summary: Dodge, tumble, aim.
             text: |
-              Agility covers ranged finesse, keeping your balance, moving
-              unseen and getting out of the way.
+              Coordination and nimbleness (A). Backflipping out of danger,
+              shooting a crossbow, dodging an explosion, lifting keys from a
+              belt.
           - title: Reason
             summary: Deduce, recall, unravel.
             text: |
-              Reason is for lore, deduction, puzzles and rituals. Elementalist
-              abilities run on it.
+              A logical mind and education (R). Solving puzzles, recalling
+              lore, deciphering codes, blasting a foe with psionic power.
           - title: Intuition
             summary: Sense, spot, hold your nerve.
             text: |
-              Intuition covers perception, reading a room, noticing what is
-              hidden and standing firm against fear.
+              Instincts and experience (I). Hearing a distant rider, reading
+              a bluffer's tell, calming a horse, tracking across the tundra.
           - title: Presence
             summary: Lead, negotiate, inspire.
             text: |
-              Presence is force of personality: negotiation, leading and
-              inspiring allies. Talent abilities run on it.
-  - title: Numbers you will meet
+              Force of personality (P). Lying to a judge, rousing a crowd,
+              impressing a queen, casting a spell by singing.
+      - type: flaps
+        items:
+          - title: The dice you need
+            text: |
+              Each player, the Director included, wants two ten-sided dice.
+              Some are numbered 0 to 9: a 0 counts as 10. A d6 or two is
+              handy too.
+          - title: Rolling a d3
+            text: |
+              With a d6: 1 or 2 is a 1, 3 or 4 is a 2, 5 or 6 is a 3.
+          - title: Rolling a d100
+            text: |
+              Roll two d10s and decide which is the tens digit. A 5 and a 3
+              make 53. On dice numbered 1 to 10, a 10 counts as 0, so 10 and
+              9 make 9. Both showing 0 or 10 is 100.
+  - title: Hero tokens
     blocks:
       - text: |
-          - **Stamina** is your health. You are [[winded]] when it drops to
-            half your maximum, and [[dying]] when it reaches zero.
-          - A [[recovery]] is a second wind. Spending one heals you for a third
-            of your maximum Stamina, rounded down.
-          - [[Stability]] shortens any forced movement against you.
-          - A [[saving throw]] is a d10 rolled at the end of your turn. On a 6
-            or higher, an effect that says "save ends" stops.
+          Hero tokens are a bit of luck the whole party shares. They sit in
+          one pool that any hero can draw on. Track them with chips, stones
+          or a tally.
+      - type: cards
+        items:
+          - title: Earning tokens
+            summary: Start with one per hero.
+            text: |
+              At the start of each session the party has as many [[hero token|hero tokens]]
+              as there are heroes. You can earn more by taking a big risk to
+              save others, such as leaping off a cliff to reach a friend, or
+              by succeeding on a test with a reward. The Director decides
+              which acts count.
+          - title: Gain 2 surges
+            summary: Spend 1 token.
+            text: |
+              Spend a hero token to gain 2 [[surge|surges]], which boost the
+              damage or potency of an ability.
+          - title: Pass a saving throw
+            summary: Spend 1 token.
+            text: |
+              Spend a hero token when you fail a [[saving throw]] and you
+              succeed on it instead.
+          - title: Reroll a test
+            summary: Spend 1 token.
+            text: |
+              Spend a hero token to reroll a test. You must keep the new roll.
+          - title: Heal
+            summary: Spend 2 tokens.
+            text: |
+              On your turn, or when you take damage, spend 2 hero tokens (no
+              action needed) to regain Stamina equal to your recovery value.
+              If it is in answer to damage, you regain it before taking the
+              damage.
       - type: callout
-        title: Echelons
+        title: One benefit at a time
         text: |
-          Play is split into four bands of levels, called [[echelon|echelons]]:
-          levels 1 to 3, 4 to 6, 7 to 9, and level 10. Some bonuses grow each
-          time you enter a new one.
+          You can use only one hero token benefit per turn or per test.
+          Unless the Director rules otherwise, tokens left at the end of a
+          session disappear.
+      - type: note
+        text: |
+          Optional rule: tokens do not reset. For groups with short sessions,
+          the pool carries over instead of refreshing, one player notes the
+          count at session end, and you must remember to award tokens for
+          heroic acts since none arrive automatically.
+  - title: Rules of thumb
+    blocks:
+      - type: flaps
+        items:
+          - title: The game of exceptions
+            text: |
+              Plenty of options break the general rules, on purpose. When two
+              rules clash, a specific exception beats a general rule. The
+              Director has the final say.
+          - title: Always round down
+            text: |
+              Halve an odd number and round down. A parry that halves 7
+              damage leaves 3.
+          - title: Creatures and objects
+            text: |
+              Creatures are living or unliving beings: animals, elves,
+              dragons, zombies. Objects are inanimate matter: walls, ropes,
+              swords, coins. A creature that dies becomes an object, so
+              effects that need a creature no longer touch the body.
+          - title: Unattended objects
+            text: |
+              An ability that targets objects affects only **unattended**
+              ones, meaning not held, worn or controlled by a creature, unless
+              the Director says otherwise. You cannot wreck a foe's armor or
+              weapon that way.
+          - title: Supernatural or mundane
+            text: |
+              Abilities, creatures, objects and effects that are magic or
+              psionic are **supernatural**. Everything else is **mundane**.
+          - title: PCs and NPCs
+            text: |
+              Player characters (PCs, heroes) are made and run by the
+              players. Nonplayer characters (NPCs) are run by the Director.
+              When the rules say NPC they usually mean dealing with them
+              outside a fight.
+          - title: No exploiting the rules
+            text: |
+              Starting a pointless brawl or carrying a bag of rats will not
+              farm Victories or [[heroic resource|Heroic Resources]]. You earn them by facing
+              challenges worthy of a hero.
+  - title: A heroic story
+    blocks:
+      - text: |
+          The game is told in scenes. An adventure is a run of scenes with a
+          beginning, middle and end, and a campaign is a series of adventures.
+          Four things make each fight more exciting than the last: Victories,
+          Experience, Heroic Resources and Recoveries.
+      - type: flaps
+        items:
+          - title: Victories
+            text: |
+              [[Victories]] measure how far your hero has come in an
+              adventure. You start with 0.
+
+              - Surviving a combat in which the party achieves its aims earns
+                1 Victory. The Director may give none for a trivial fight and
+                extra for a hard one.
+              - Beating a big noncombat challenge, such as a deadly trap, a
+                negotiation, a montage test or a clever plan that avoids a
+                battle, can earn 1 or more.
+          - title: Experience (XP)
+            text: |
+              Victories are temporary; XP is permanent. When you finish a
+              [[respite]] you gain XP equal to your Victories and your
+              Victories drop to 0. XP is what improves your hero.
+          - title: Heroic Resource
+            text: |
+              Your class gives you a Heroic Resource. You gain it in play and
+              spend it on your strongest abilities. Your class explains how.
+          - title: Recoveries
+            text: |
+              A [[recovery]] is a breather. Spending one regains Stamina equal
+              to your **recovery value**, one third of your maximum Stamina.
+              In a fight, use the Catch Breath maneuver. Outside danger you
+              can spend them freely. Some allies can let you spend more.
+              You regain all Recoveries on a respite.
+          - title: Respite
+            text: |
+              A respite is 24 uninterrupted hours of sleeping, eating,
+              dressing wounds and recovering. You may also do one respite
+              activity, like a project roll or a [[kit]] change. At the end you
+              regain all Stamina and Recoveries and your Victories become XP.
+              You can chain respites.
+          - title: Safe rest only
+            text: |
+              Rest somewhere safe. If enemies, a tremor or biting swarms
+              interrupt a respite, it ends early with no benefits. A normal
+              night's sleep is not a respite.
+          - title: Numbers you will meet
+            text: |
+              - **Stamina** is your health. You are [[winded]] at half your
+                maximum and [[dying]] at zero.
+              - [[Stability]] shortens any forced movement against you.
+              - A [[saving throw]] is a d10 at the end of your turn. On a 6
+                or higher, an effect that says "save ends" stops.
+      - type: example
+        title: One adventure
+        steps:
+          - 'The party wins a fight: each hero gains 1 Victory.'
+          - 'They talk their way past a guarded gate and the Director awards another: 2 Victories.'
+          - 'They finish a respite. Each hero gains 2 XP, and Victories reset to 0.'
+          - 'They also regain all Stamina and all Recoveries.'
+  - title: Echelons of play
+    blocks:
+      - text: |
+          Play covers ten levels, split into four bands called
+          [[echelon|echelons]]. Each sets the kind of threat heroes face, the
+          stakes and the rewards. Some bonuses grow when you enter a new one.
+      - type: cards
+        items:
+          - title: 1st echelon
+            summary: Levels 1 to 3. Local heroes.
+            text: |
+              You save caravans, besieged villages and city neighborhoods
+              from mortal humanoid bands, with the odd larger monster such as
+              an ogre or chimera. Foes may serve something stronger, hinting
+              at what comes later.
+          - title: 2nd echelon
+            summary: Levels 4 to 6. Known across a region.
+            text: |
+              Your fame covers a country or several city districts. You face
+              powerful humanoids such as draconians, devils and hobgoblins,
+              and cunning bosses like medusas and overminds.
+          - title: 3rd echelon
+            summary: Levels 7 to 9. Known across a setting.
+            text: |
+              Most people know of you. Foes include giants, vampires and
+              valok.
+          - title: 4th echelon
+            summary: Level 10. Saving the timescape.
+            text: |
+              You face threats to the whole timescape: liches, powerful
+              dragons and overlords.
