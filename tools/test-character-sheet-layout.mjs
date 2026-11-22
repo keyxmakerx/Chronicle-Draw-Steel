@@ -428,3 +428,19 @@ test('a Story jump word scrolls only the panel body, and not when it has nothing
   const branch = src.slice(src.indexOf("closest('[data-cs-jump]')"), src.indexOf("closest('[data-cs-go-items]')"));
   assert.ok(!/scrollIntoView/.test(branch), 'scrollIntoView scrolls the page as well as the panel');
 });
+
+test('a synced ability with no effect text takes it from the package, and Foundry text still wins', async () => {
+  const pack = JSON.parse(readFileSync(new URL('../data/abilities.json', import.meta.url), 'utf8'));
+  globalThis.window.Chronicle.apiFetch = async () => ({ ok: true, json: async () => pack });
+  await cs.loadAbilityDefs('c1');
+  assert.equal(cs.abilityKey('Hesitation is Weakness'), cs.abilityKey('Hesitation Is Weakness (1 Insight)'));
+  const bare = cs.fillFromPackage({ name: 'Hesitation is Weakness', type: 'freeTriggered', trigger: '' });
+  assert.match(bare.effectAfter, /You take your turn after the triggering hero/);
+  assert.match(bare.trigger, /Another hero ends their turn/);
+  const defend = cs.fillFromPackage({ name: 'Defend', type: 'main' });
+  assert.match(defend.effectAfter, /double/, 'a common action gets its rules text');
+  const own = cs.fillFromPackage({ name: 'Coat the Blade', effectAfter: '<p>Mine.</p>', trigger: 'Mine too' });
+  assert.equal(own.effectAfter, '<p>Mine.</p>');
+  assert.equal(own.trigger, 'Mine too');
+  assert.equal(cs.fillFromPackage({ name: 'Ability', type: 'triggered' }).effectAfter, undefined, 'no match, nothing invented');
+});
