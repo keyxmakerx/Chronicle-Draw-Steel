@@ -128,7 +128,9 @@ dashboard; the face list stays for phones and the paper styles.
   survive a redraw, and also Chronicle reloading the page after a save,
   which replaces the sheet's element: `keepDashView` keeps them by campaign
   and page for a moment and the new sheet takes them once
-  (`dashViewToKeep`, `applyDashView`). Rows are matched by name.
+  (`dashViewToKeep`, `applyDashView`). Rows are matched by name. Until
+  its data arrives the new, empty element holds the old sheet's height
+  (`holdKeptHeight`), so the page under it doesn't jump.
 - A row unfolds in place to the full card (`dashAbCard`): the rules on the
   left, and on the right the roll for this hero, how often each tier comes
   up out of 100, the results with damage added and potency filled in from

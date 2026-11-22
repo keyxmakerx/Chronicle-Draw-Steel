@@ -3265,7 +3265,16 @@
   var KEEP_VIEW_MS = 15000;
   function keepDashView(el) {
     var v = el && el._csKey && el.querySelector ? dashViewOf(el) : null;
-    if (v && v.tab) { v.at = Date.now(); keptViews[el._csKey] = v; }
+    if (v && v.tab) { v.at = Date.now(); v.h = el.offsetHeight || 0; keptViews[el._csKey] = v; }
+  }
+  // The new element is empty until its data arrives, so it holds the old
+  // sheet's height meanwhile and the page below does not jump up and back.
+  function holdKeptHeight(el) {
+    var k = el._csKey ? keptViews[el._csKey] : null;
+    if (k && k.h && Date.now() - k.at < KEEP_VIEW_MS && el.style) el.style.minHeight = k.h + 'px';
+  }
+  function releaseHeight(el) {
+    if (el && el.style && el.style.minHeight) el.style.minHeight = '';
   }
   // The view for a new drawing: the one on screen when the sheet is drawn
   // again in place, else the one kept when the page swapped it out.
@@ -5360,6 +5369,7 @@
 
   function mountSheet(inst, el, data) {
     inst._paper = false;
+    releaseHeight(el);
     if (paperAvailable()) { mountPaper(inst, el, data); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
     // so this is belt-and-suspenders — degrade gracefully rather than throw if
@@ -5393,6 +5403,7 @@
   }
 
   function renderError(el, message) {
+    releaseHeight(el);
     el.innerHTML = '<div class="cs-empty">' +
       '<div class="cs-empty-icon">&#9888;</div>' +
       '<div class="cs-empty-title">Character unavailable</div>' +
@@ -6726,6 +6737,7 @@
       if (paperAvailable()) injectPaperStyles(); else injectStyles();
       el.classList.add('ds-sheet');
       el._csKey = campaignId && entityId ? campaignId + '/' + entityId : '';
+      holdKeptHeight(el);
 
       var self = this;
       function finish(entity) {
@@ -6835,7 +6847,7 @@
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
-      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, applyDashView: applyDashView, dashCss: dashCss,
+      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
       originRows: originRows, kitWords: kitWords, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,

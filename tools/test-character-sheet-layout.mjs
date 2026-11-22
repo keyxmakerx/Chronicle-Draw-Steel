@@ -614,6 +614,20 @@ test('dashboard: the open tab survives the page refreshing itself after a save',
   assert.equal(cs.dashViewToKeep(inPlace).tab, 'features', 'a redraw in place keeps what is on screen');
 });
 
+test('dashboard: the fresh element holds the old sheet\'s height until it is drawn', () => {
+  const main = { getAttribute: (k) => (k === 'data-dtab' ? 'abilities' : null) };
+  const old = { _csKey: 'c7/e7', offsetHeight: 1800, innerHTML: 'x', classList: { remove() {} }, removeEventListener() {},
+    querySelector: (sel) => (sel === '[data-cs-dmain]' ? main : null) };
+  globalThis.window.Chronicle.registry['character-sheet'].destroy(old);
+  const fresh = { _csKey: 'c7/e7', style: {}, querySelector: () => null };
+  cs.holdKeptHeight(fresh);
+  assert.equal(fresh.style.minHeight, '1800px');
+  const stranger = { _csKey: 'c7/e8', style: {} };
+  cs.holdKeptHeight(stranger);
+  assert.ok(!stranger.style.minHeight, 'another page holds nothing');
+  cs.dashViewToKeep(fresh);
+});
+
 test('dashboard: the ability filter, the switch and the open rows survive the page refreshing itself', () => {
   const mk = (attrs, extra) => Object.assign({ attrs: Object.assign({}, attrs), hidden: false,
     getAttribute(k) { return this.attrs[k] == null ? null : this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = String(v); },
