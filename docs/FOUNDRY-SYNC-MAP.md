@@ -236,3 +236,38 @@ name that only looks alike shows Match and Not the same; "Match another"
 searches Foundry's monsters. The box reads and writes Chronicle's
 `/api/v1/campaigns/:id/entities/:eid/foundry-match` (an older Chronicle answers
 404 and the box shows no match).
+
+---
+
+## 9. Items (`treasure` items)
+
+The `drawsteel-item` preset holds the treasure fields a campaign's Items take
+when the Director accepts the switch Chronicle offers on the Items list ("Use
+Draw Steel's treasure fields for Items?"; the preset's `switch` block names the
+fields it sets aside, `rarity` and `attunement`, and the one it reuses, `type`).
+A campaign that turns Draw Steel on with no item pages yet gets them at once.
+Until a campaign has switched, Chronicle's
+`GET /api/v1/campaigns/:id/systems/:systemId/item-fields` answers an empty
+`fields` list, so the module keeps sending plain named items.
+
+After the switch, an item a hero carries reaches Foundry as a Draw Steel
+`treasure` item (the preset's `foundry_item_type`) with these fields filled from
+the Chronicle page. Chronicle stays the one place the words are written: Foundry
+sends back only quantity and equipped, as for every carried item.
+`tools/test-item-preset.mjs` pins every path below to the system's treasure
+data model.
+
+| Chronicle field (key) | `foundry_path` | Conversion |
+|---|---|---|
+| Type (`type`) | `system.category` | `foundry_choices`: a key of `CONFIG.DRAW_STEEL.equipment.categories` |
+| Kind (`kind`) | `system.kind` | `foundry_choices`: a key of `...equipment.kinds` |
+| Echelon (`echelon`) | `system.echelon` | `foundry_format: integer` ("2nd" is 2) |
+| Keywords (`keywords`) | `system.keywords` | `foundry_format: treasure_keywords`: each word's key in the lists under `...equipment` ("Heavy Weapon" is the weapon list's `heavy`); a word no list has keeps its text |
+| Effect, 1st/5th/9th level | `system.description.value` | `foundry_format: html_section`: each a headed section after the page's own words |
+| Needs (`item_prerequisite`) | `system.project.prerequisites` | |
+| Lore from (`project_source`) | `system.project.source` | |
+| Project roll (`project_roll_characteristic`) | `system.project.rollCharacteristic` | `foundry_format: set` of `CONFIG.DRAW_STEEL.characteristics` keys ("Reason or Intuition") |
+| Project goal (`project_goal`) | `system.project.goal` | `foundry_format: integer`, only when the goal is one number |
+
+`book_source` is the Director's note of where a page was copied from; it is
+GM-only and has no Foundry path.

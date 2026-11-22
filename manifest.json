@@ -1407,6 +1407,140 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "slug": "drawsteel-item",
+      "name": "Item",
+      "name_plural": "Items",
+      "icon": "fa-box",
+      "color": "#8B5CF6",
+      "category": "item",
+      "foundry_item_type": "treasure",
+      "switch": {
+        "label": "treasure fields",
+        "set_aside": ["rarity", "attunement"],
+        "reuse": ["type"]
+      },
+      "fields": [
+        {
+          "key": "type",
+          "label": "Type",
+          "type": "enum",
+          "options": ["Consumable", "Trinket", "Leveled", "Artifact"],
+          "section": "Basics",
+          "format": "One of Consumable, Trinket, Leveled or Artifact",
+          "foundry_path": "system.category",
+          "foundry_choices": "DRAW_STEEL.equipment.categories"
+        },
+        {
+          "key": "kind",
+          "label": "Kind",
+          "type": "enum",
+          "options": ["Weapon", "Armor", "Implement", "Other"],
+          "section": "Basics",
+          "format": "Leveled treasures only: Weapon, Armor, Implement or Other. Leave it out for any other type",
+          "foundry_path": "system.kind",
+          "foundry_choices": "DRAW_STEEL.equipment.kinds"
+        },
+        {
+          "key": "echelon",
+          "label": "Echelon",
+          "type": "enum",
+          "options": ["1st", "2nd", "3rd", "4th"],
+          "section": "Basics",
+          "format": "Consumables and trinkets: 1st, 2nd, 3rd or 4th. Leveled treasures and artifacts have none",
+          "foundry_path": "system.echelon",
+          "foundry_format": "integer"
+        },
+        {
+          "key": "keywords",
+          "label": "Keywords",
+          "type": "string",
+          "section": "Basics",
+          "format": "Comma text, as the book prints them, e.g. \"Magic, Potion\" or \"Heavy Weapon, Magic\"",
+          "foundry_path": "system.keywords",
+          "foundry_format": "treasure_keywords",
+          "foundry_choices": "DRAW_STEEL.equipment"
+        },
+        {
+          "key": "effect",
+          "label": "Effect",
+          "type": "markdown",
+          "section": "Effect",
+          "format": "What the treasure does. A leveled treasure leaves it out and uses the 1st, 5th and 9th level fields",
+          "foundry_path": "system.description.value",
+          "foundry_format": "html_section"
+        },
+        {
+          "key": "level_1",
+          "label": "1st level",
+          "type": "markdown",
+          "section": "As it grows",
+          "format": "Leveled treasures only: what it does at 1st level",
+          "foundry_path": "system.description.value",
+          "foundry_format": "html_section"
+        },
+        {
+          "key": "level_5",
+          "label": "5th level",
+          "type": "markdown",
+          "section": "As it grows",
+          "format": "Leveled treasures only: what changes at 5th level",
+          "foundry_path": "system.description.value",
+          "foundry_format": "html_section"
+        },
+        {
+          "key": "level_9",
+          "label": "9th level",
+          "type": "markdown",
+          "section": "As it grows",
+          "format": "Leveled treasures only: what changes at 9th level",
+          "foundry_path": "system.description.value",
+          "foundry_format": "html_section"
+        },
+        {
+          "key": "item_prerequisite",
+          "label": "Needs",
+          "type": "string",
+          "section": "Making it",
+          "format": "The item prerequisite: what a crafter needs before the project starts",
+          "foundry_path": "system.project.prerequisites"
+        },
+        {
+          "key": "project_source",
+          "label": "Lore from",
+          "type": "string",
+          "section": "Making it",
+          "format": "The project source: the texts or lore a crafter learns it from",
+          "foundry_path": "system.project.source"
+        },
+        {
+          "key": "project_roll_characteristic",
+          "label": "Project roll",
+          "type": "string",
+          "section": "Making it",
+          "format": "The characteristics the project roll may use, e.g. \"Reason or Intuition\"",
+          "foundry_path": "system.project.rollCharacteristic",
+          "foundry_format": "set",
+          "foundry_choices": "DRAW_STEEL.characteristics"
+        },
+        {
+          "key": "project_goal",
+          "label": "Project goal",
+          "type": "string",
+          "section": "Making it",
+          "format": "The project goal as the book prints it, e.g. \"45\"",
+          "foundry_path": "system.project.goal",
+          "foundry_format": "integer"
+        },
+        {
+          "key": "book_source",
+          "label": "Copied from",
+          "type": "string",
+          "section": "Basics",
+          "gm_only": true
+        }
+      ]
     }
   ],
   "dm_screen": {
