@@ -540,15 +540,17 @@ test('dashboard: potency is the synced value, else the glossary rule from the hi
   assert.ok(!/sh-dpot/.test(cs.dashUnder({ name: 'B', fields: {} })), 'no potency box without a characteristic');
 });
 
-test('dashboard: Story is a tab only for the Director and the player; Skills only while the sheet is narrow', () => {
+test('dashboard: Story is for every reader, its backstory and lore only for the Director and the player; Skills only while narrow', () => {
   const tabs = (d) => cs.dashTabList(Object.assign({}, PAPER, d)).map((t) => t.id + (t.narrow ? '*' : ''));
   assert.deepEqual(tabs({}), ['abilities', 'skills*', 'features', 'equipment', 'story']);
-  assert.deepEqual(tabs({ isGm: false, isOwner: false }), ['abilities', 'skills*', 'features', 'equipment']);
+  assert.deepEqual(tabs({ isGm: false, isOwner: false }), ['abilities', 'skills*', 'features', 'equipment', 'story']);
   const counts = cs.dashTabList(PAPER).reduce((m, t) => (m[t.id] = t.n, m), {});
   assert.equal(counts.abilities, 2);
   assert.equal(counts.features, 1);
   const html = cs.paperSheetHtml(Object.assign({}, PAPER, { isGm: false, isOwner: false }));
-  assert.ok(!/data-cs-dtab="story"/.test(html) && !/data-dpane="story"/.test(html) && !/secret/.test(html), 'no Story pane, and the GM lore is nowhere');
+  const story = cs.dashPaneHtml('story', Object.assign({}, PAPER, { isGm: false, isOwner: false }));
+  assert.ok(/Where they come from/.test(story), 'where the hero comes from is for everyone');
+  assert.ok(!/A veteran\./.test(html) && !/secret/.test(html) && !/data-cs-anchor="story-bg"/.test(html), 'the backstory and the GM lore are nowhere');
 });
 
 test('dashboard: a choice not made is a dashed tag that opens the same picker', () => {
@@ -610,6 +612,20 @@ test('dashboard: the open tab survives the page refreshing itself after a save',
   assert.equal(cs.dashViewToKeep(other), null, 'another hero\'s page does not take it');
   const inPlace = { _csKey: 'c1/e1', querySelector: (sel) => (sel === '[data-cs-dmain]' ? { getAttribute: () => 'features' } : null) };
   assert.equal(cs.dashViewToKeep(inPlace).tab, 'features', 'a redraw in place keeps what is on screen');
+});
+
+test('dashboard: the fresh element holds the old sheet\'s height until it is drawn', () => {
+  const main = { getAttribute: (k) => (k === 'data-dtab' ? 'abilities' : null) };
+  const old = { _csKey: 'c7/e7', offsetHeight: 1800, innerHTML: 'x', classList: { remove() {} }, removeEventListener() {},
+    querySelector: (sel) => (sel === '[data-cs-dmain]' ? main : null) };
+  globalThis.window.Chronicle.registry['character-sheet'].destroy(old);
+  const fresh = { _csKey: 'c7/e7', style: {}, querySelector: () => null };
+  cs.holdKeptHeight(fresh);
+  assert.equal(fresh.style.minHeight, '1800px');
+  const stranger = { _csKey: 'c7/e8', style: {} };
+  cs.holdKeptHeight(stranger);
+  assert.ok(!stranger.style.minHeight, 'another page holds nothing');
+  cs.dashViewToKeep(fresh);
 });
 
 test('dashboard: the ability filter, the switch and the open rows survive the page refreshing itself', () => {
@@ -743,4 +759,76 @@ test('dashboard abilities: the filter shows one group, the switch brings back wh
   assert.equal(box.attrs['data-dfilter'], 'main');
   cs.setDashAfford(el, false);
   assert.ok(!('data-dafford' in box.attrs) && sw.attrs['aria-checked'] === 'false');
+});
+
+const ORIGIN_REFS = {
+  'ancestries.json': [{ slug: 'human', name: 'Human', description: 'People of every <land>.',
+    properties: { size: '1M', speed: 5, signature_traits: [{ name: 'Determination', description: 'Keep going.' }], purchased_traits: [{ name: 'Staying Power', cost: 2, description: 'More recoveries.' }] } }],
+  'careers.json': [{ slug: 'soldier', name: 'Soldier', description: 'You fought.', properties: { skills: 'Two martial skills', project_points: 120, questions: ['Who did you serve?'] } }],
+  'classes.json': [{ slug: 'tactician', name: 'Tactician', description: 'You lead.\nSecond paragraph.', properties: { heroic_resource: 'Focus', subclass_type: 'tactical doctrine' } }],
+  'cultures.json': [{ slug: 'typical-human', name: 'Human (typical ancestry culture)', description: 'Raised among humans.',
+    properties: { language: 'Vaslorian', environment: 'Urban', organization: 'Communal', upbringing: 'Labor', skill_options: 'One skill from each aspect.', skill_options_quick_build: 'Nature, Jump, Lift' } }],
+  'kits.json': [{ slug: 'armor', name: 'Armor', description: 'Heavy plates.', properties: { equipment: 'You wear heavy armor.', armor: 'Heavy', weapon: 'Medium', signature_ability: { name: 'Brace' } } }]
+};
+const withRefs = (fn) => { cs.setEditRefs(ORIGIN_REFS); try { return fn(); } finally { cs.setEditRefs({}); } };
+
+test('origins: each row has the pack\'s words, a word that opens the long entry, and says what is not chosen', () => withRefs(() => {
+  const html = cs.originRows(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { career: 'Soldier', subclass: 'Vanguard' }) }));
+  assert.ok(/People of every &lt;land&gt;\./.test(html), 'description from the pack, escaped');
+  assert.ok(/data-sheet-open="origin-ancestry"[^>]*>Its traits/.test(html) && /data-sheet-open="origin-career"[^>]*>What it gave/.test(html));
+  assert.ok(/You lead\./.test(html) && !/Second paragraph/.test(html), 'the class row keeps its first paragraph');
+  assert.ok(/<b class="sh-orig-none">Still to choose<\/b><p class="sh-sub sh-empty">Not chosen yet\./.test(html), 'culture not chosen');
+  assert.ok(!/origin-culture/.test(html), 'nothing to open for a choice not made');
+  assert.ok(!/data-sheet-open/.test(cs.originRows(PAPER, true)), 'inside a panel the rows open nothing');
+  assert.ok(/Where they come from[^]*People of every/.test(cs.pNotesPanel(PAPER)) && !/data-sheet-open="origin-/.test(cs.pNotesPanel(PAPER)), 'the Story panel');
+  assert.ok(/>Tactical doctrine<\/span>[^]*?<b>Vanguard<\/b>[^]*?No description yet\./.test(html), 'the subclass row, named by the class');
+}));
+
+test('origins: a name the pack does not have reads "No description yet." and opens nothing', () => withRefs(() => {
+  const html = cs.originRows(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { ancestry: 'Homebrew Elf' }) }));
+  assert.ok(/<b>Homebrew Elf<\/b><p class="sh-sub sh-empty">No description yet\./.test(html));
+  assert.ok(!/origin-ancestry/.test(html));
+  assert.ok(!panelIds(cs.paperPanels(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { ancestry: 'Homebrew Elf' }) })).map((p) => '<template data-sheet-panel="' + p.id + '"').join('')).includes('origin-ancestry'));
+}));
+
+test('origins: the long entries are panels, with what each origin gives', () => withRefs(() => {
+  const data = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { career: 'Soldier' }) });
+  const ids = cs.paperPanels(data).map((p) => p.id);
+  assert.ok(ids.includes('origin-ancestry') && ids.includes('origin-career') && ids.includes('origin-class') && !ids.includes('origin-culture'), ids.join());
+  const anc = cs.originPanelHtml(data, 'ancestry');
+  assert.ok(/<dt>Size<\/dt><dd>1M/.test(anc) && /Determination/.test(anc) && /Staying Power <small>2 points<\/small>/.test(anc));
+  const car = cs.originPanelHtml(data, 'career');
+  assert.ok(/<dt>Project points<\/dt><dd>120/.test(car) && /Who did you serve\?/.test(car));
+  const cul = cs.originPanelHtml(Object.assign({}, data, { fields: Object.assign({}, data.fields, { culture: 'Human (typical ancestry culture)' }) }), 'culture');
+  assert.ok(/<dt>Language<\/dt><dd>Vaslorian/.test(cul) && /<dt>Upbringing<\/dt><dd>Labor/.test(cul) && /<dt>Skills<\/dt><dd>One skill from each aspect\./.test(cul), cul);
+  const cls = cs.originPanelHtml(data, 'class');
+  assert.ok(/Second paragraph/.test(cls) && /Focus/.test(cls), 'the class panel has all of it');
+}));
+
+test('kit: its words, gear and signature ability reach the phone\'s Kit panel and the dashboard', () => withRefs(() => {
+  const words = cs.kitWords(PAPER, 'x');
+  assert.ok(/Heavy plates\./.test(words) && /You wear heavy armor\./.test(words) && !/Heavy armor/.test(words) && /Signature ability: <b>Brace<\/b>/.test(words));
+  assert.ok(/Heavy plates\./.test(cs.pKitPanel(PAPER)), 'the phone panel');
+  assert.ok(/sh-dkitw[^]*Heavy plates\./.test(cs.dashPaneHtml('equipment', PAPER)), 'the Equipment tab');
+  cs.setEditRefs({});
+  assert.ok(/No description yet\./.test(cs.pKitPanel(PAPER)), 'no pack entry, said plainly');
+}));
+
+test('story for another player: where the hero comes from, and no backstory or GM lore', () => withRefs(() => {
+  const data = Object.assign({}, PAPER, { isGm: false, isOwner: false });
+  const story = cs.dashPaneHtml('story', data);
+  assert.ok(/People of every/.test(story));
+  assert.ok(!/A veteran\./.test(story) && !/secret/.test(story) && !/GM lore/.test(story));
+}));
+
+test('page hooks: the quiet look asks for the wide column; the name hook follows the dashboard', () => {
+  const root = { attrs: {}, getAttribute(k) { return this.attrs[k] == null ? null : this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = String(v); }, removeAttribute(k) { delete this.attrs[k]; } };
+  cs.syncPageHooks(root, true);
+  assert.ok('data-sheet-wide' in root.attrs && 'data-sheet-names-page' in root.attrs);
+  cs.syncPageHooks(root, false);
+  assert.ok('data-sheet-wide' in root.attrs && !('data-sheet-names-page' in root.attrs), 'narrow: the header names the page again');
+  root.attrs['data-sheet-style'] = 'ledger';
+  cs.syncPageHooks(root, false);
+  assert.ok(!('data-sheet-wide' in root.attrs), 'a paper style keeps its 920px page');
+  assert.ok(/\.sh-folio \{[^}]*width:var\(--sheet-width, 920px\)/.test(readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8')), 'the folio follows Chronicle\'s width');
 });

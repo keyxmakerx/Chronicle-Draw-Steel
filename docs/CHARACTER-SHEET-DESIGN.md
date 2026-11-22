@@ -100,7 +100,7 @@ and not the window's). The phone and the paper styles never see it.
 - At 1100px and wider a left column (`dashRailInner`) holds Skills by group,
   Languages and the Kit's numbers. Narrower, the same list is a Skills tab.
 - Tabs: Abilities (below), Skills (narrow only),
-  Features, Equipment, and Story for the owner and the GM. Arrow keys, Home
+  Features, Equipment and Story. Arrow keys, Home
   and End move between them; the open tab survives a redraw. Editor saves
   redraw the panes, the column and the tab counts (`refreshDash`).
 - A strip pinned to the top once the number boxes scroll away (`attachDashPin`,
@@ -128,11 +128,42 @@ dashboard; the face list stays for phones and the paper styles.
   survive a redraw, and also Chronicle reloading the page after a save,
   which replaces the sheet's element: `keepDashView` keeps them by campaign
   and page for a moment and the new sheet takes them once
-  (`dashViewToKeep`, `applyDashView`). Rows are matched by name.
+  (`dashViewToKeep`, `applyDashView`). Rows are matched by name. Until
+  its data arrives the new, empty element holds the old sheet's height
+  (`holdKeptHeight`), so the page under it doesn't jump.
 - A row unfolds in place to the full card (`dashAbCard`): the rules on the
   left, and on the right the roll for this hero, how often each tier comes
   up out of 100, the results with damage added and potency filled in from
   `potencyOf`, and what it costs against what the hero has.
+
+Descriptions come from the pack's files (`kits.json`, `ancestries.json`,
+`cultures.json`, `careers.json`, `classes.json`, read through `editRefs`), at
+three lengths:
+
+- Short, in place: the Story tab's "Where they come from" (`originRows`) has
+  one row per origin with the entry's description (the class keeps its first
+  paragraph) and a subclass row named by the class ("Shadow college" for a Shadow).
+  Every reader sees it; the backstory and GM lore under it keep their gates.
+  The kit's words (`kitWords`: description, the pack's equipment sentence,
+  signature ability) sit on the Kit card, the Equipment tab and the phone's
+  Kit panel.
+- Long, as a panel: "Its traits", "What it gave" and "All of it" open
+  `origin-<kind>` panels (`originPanelHtml`): the whole description, then
+  what the entry gives (size, speed and traits with their cost; skills,
+  languages, perk, project points and questions; a culture's language,
+  aspects and skills; the class's numbers).
+- None: a name the pack does not have reads "No description yet." and opens
+  nothing; a choice not made reads "Not chosen yet." On phones and in the
+  paper styles the short rows are in the Story panel, which is the owner's
+  and the GM's; they open nothing there, because a panel opened from a panel
+  loses its way back.
+
+The quiet look marks the root `data-sheet-wide`, so Chronicle widens the
+folio and the tabbed panel under it to 1160px on a screen at least 1480px
+wide (the folio is `width: var(--sheet-width, 920px)`). While the dashboard
+prints the name, the root carries `data-sheet-names-page` and Chronicle's
+header keeps its name for screen readers only. Both follow a style switch
+(`syncPageHooks`); the paper styles keep their 920px page.
 
 Parts only the dashboard shows carry `sh-dq`; face parts it replaces carry
 `sh-fq`. Both are in the markup for every style, so switching style needs no
