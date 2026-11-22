@@ -1,18 +1,607 @@
 title: Culture and Career
-intro: Where you grew up and what you did before the adventure.
+intro: Where you grew up, what you did, and the language you speak.
 pages:
-  - title: Background
+  - title: Culture
     blocks:
       - text: |
-          Culture and career describe the life your hero led before the story
-          starts. This package does not yet carry their rules, so this chapter
-          is a placeholder.
+          Your culture is the community that raised you: its beliefs,
+          customs and way of life. It stands for **people, not a place**.
+          You might have grown up in a great city, but your culture is the
+          noble house, pirate crew or sworn order within it. Even a hero who
+          rejects their culture was shaped by it.
 
-          It will grow as the package adds more rules.
+          A culture has four **aspects**: language, environment,
+          organization and upbringing. Tap one to see what it means.
+      - type: flaps
+        items:
+          - title: Language
+            text: |
+              How your people speak. You learn your culture's language in
+              addition to Caelian. See the Languages page.
+          - title: Environment
+            text: |
+              Where your people spend their time: **nomadic, rural,
+              secluded, urban or wilderness**.
+          - title: Organization
+            text: |
+              How your people are led: **bureaucratic** or **communal**.
+          - title: Upbringing
+            text: |
+              How you were raised within your culture: **academic,
+              creative, labor, lawless, martial or noble**.
       - type: callout
-        title: In the meantime
+        title: What a culture gives you
         text: |
-          Skills are the part of your background the package does cover. The
-          Lore group includes a Culture skill, for knowing a culture's
-          customs, folktales and taboos. See the Tests chapter for the full
-          skill list.
+          - You know your culture's language, plus Caelian.
+          - You pick **one skill from each of** the environment,
+            organization and upbringing lists.
+          - You gain an [[edge]] on tests to recall lore about your culture,
+            and on tests to influence or interact with people of it.
+      - type: flaps
+        items:
+          - title: Your culture need not match your ancestry
+            text: |
+              Many cultures have a majority ancestry, but you can belong to
+              one with a different ancestry. A dwarf raised among wode elves
+              speaks Yllyric and may know a lot about nature, while a dwarf
+              from a dwarf thanedom speaks Zaliac and may know smithing.
+              Revenants gain their ancestry only after death, so they have no
+              typical ancestry culture.
+          - title: Build it your way
+            text: |
+              Build a culture one aspect at a time, start from a ready-made
+              one, or change a ready-made one. Work with the Director to find
+              its place in the world.
+          - title: But I really want Alertness
+            text: |
+              If your culture does not offer a skill you want, ask the Director
+              to change what its aspects offer. A noble upbringing can
+              reasonably include Alertness, since people who covet your power
+              keep you watchful.
+  - title: Environment, organization, upbringing
+    blocks:
+      - text: |
+          Each aspect lists the skill options it opens, and a quick build.
+          You pick one skill from each aspect you choose. Skill groups are
+          covered in the Tests chapter.
+
+          **Environment**
+      - type: flaps
+        items:
+          - title: Nomadic
+            text: |
+              Travels from place to place to survive.
+              - **Skill options:** One skill from the exploration or
+                interpersonal groups.
+              - **Quick build:** Navigate.
+          - title: Rural
+            text: |
+              A town, village or smaller settled enclave, where most folk
+              learn a trade.
+              - **Skill options:** One skill from the crafting or lore groups.
+              - **Quick build:** Nature.
+          - title: Secluded
+            text: |
+              One close-quarters structure, such as a monastery, castle or
+              prison, with little contact outside.
+              - **Skill options:** One skill from the interpersonal or lore
+                groups.
+              - **Quick build:** Read Person.
+          - title: Urban
+            text: |
+              Centered in a city of any kind, aboveground or below.
+              - **Skill options:** One skill from the interpersonal or
+                intrigue groups.
+              - **Quick build:** Alertness.
+          - title: Wilderness
+            text: |
+              Thrives in untamed land, taking everything from it.
+              - **Skill options:** One skill from the crafting or exploration
+                groups.
+              - **Quick build:** Endurance.
+      - text: '**Organization**'
+      - type: flaps
+        items:
+          - title: Bureaucratic
+            text: |
+              Official leaders and recorded laws, from a guildmaster to a
+              feudal lord to a military. Members learn to use the rules to
+              their advantage.
+              - **Skill options:** One skill from the interpersonal or
+                intrigue groups.
+              - **Quick build:** Persuade.
+          - title: Communal
+            text: |
+              Everyone is equal and decisions are shared. Leaders carry out
+              what the community decides. Communal cultures often live in
+              the wilds or hidden corners and look after themselves.
+              - **Skill options:** One skill from the crafting or exploration
+                groups.
+              - **Quick build:** Jump.
+      - text: '**Upbringing**'
+      - type: flaps
+        items:
+          - title: Academic
+            text: |
+              Raised among people who collect, study and share knowledge.
+              - **Skill options:** One skill from the lore group.
+              - **Quick build:** History.
+          - title: Creative
+            text: |
+              Raised among makers of art and valuable wares.
+              - **Skill options:** Music or Perform, or one skill from the
+                crafting group.
+              - **Quick build:** Perform.
+          - title: Labor
+            text: |
+              Raised among workers: farmers, hunters, miners, builders.
+              - **Skill options:** Blacksmithing (crafting), Handle Animals
+                (interpersonal), or a skill from the exploration group.
+              - **Quick build:** Lift.
+          - title: Lawless
+            text: |
+              Raised among folk whose activities others call unlawful:
+              pirates, assassins, spies, rebels.
+              - **Skill options:** One skill from the intrigue group.
+              - **Quick build:** Sneak.
+          - title: Martial
+            text: |
+              Raised by warriors: soldiers, mercenaries, monster-slayers.
+              - **Skill options:** Blacksmithing or Fletching (crafting);
+                Climb, Endurance or Ride (exploration); Intimidate
+                (interpersonal); Alertness or Track (intrigue); or Monsters
+                or Strategy (lore).
+              - **Quick build:** Intimidate.
+          - title: Noble
+            text: |
+              Raised among rulers who play politics to keep power.
+              - **Skill options:** One skill from the interpersonal group.
+              - **Quick build:** Lead.
+  - title: Ready-made cultures
+    blocks:
+      - text: |
+          Pick one as is, or change an aspect to suit your hero. Each card
+          shows the aspects it uses and its quick build skills.
+
+          **Typical ancestry cultures** are for a hero raised mostly among
+          their own people. Revenants are left out because they gain their
+          ancestry only after death.
+      - type: cards
+        items:
+          - title: "Devil"
+            entry: cultures/typical-devil
+            summary: "Anjali. Urban, bureaucratic, academic."
+            text: "Languages: Caelian and Anjali. Environment urban, organization bureaucratic, upbringing academic. Quick build skills: Alertness, Persuade, History."
+          - title: "Dragon knight"
+            entry: cultures/typical-dragon-knight
+            summary: "Vastariax. Secluded, bureaucratic, martial."
+            text: "Languages: Caelian and Vastariax. Environment secluded, organization bureaucratic, upbringing martial. Quick build skills: Read Person, Persuade, Intimidate."
+          - title: "Dwarf"
+            entry: cultures/typical-dwarf
+            summary: "Zaliac. Secluded, bureaucratic, creative."
+            text: "Languages: Caelian and Zaliac. Environment secluded, organization bureaucratic, upbringing creative. Quick build skills: Read Person, Persuade, Perform."
+          - title: "Wode elf"
+            entry: cultures/typical-wode-elf
+            summary: "Yllyric. Wilderness, bureaucratic, martial."
+            text: "Languages: Caelian and Yllyric. Environment wilderness, organization bureaucratic, upbringing martial. Quick build skills: Endurance, Persuade, Intimidate."
+          - title: "High elf"
+            entry: cultures/typical-high-elf
+            summary: "Hyrallic. Secluded, bureaucratic, martial."
+            text: "Languages: Caelian and Hyrallic. Environment secluded, organization bureaucratic, upbringing martial. Quick build skills: Read Person, Persuade, Intimidate."
+          - title: "Hakaan"
+            entry: cultures/typical-hakaan
+            summary: "Vhoric. Rural, communal, labor."
+            text: "Languages: Caelian and Vhoric. Environment rural, organization communal, upbringing labor. Quick build skills: Nature, Jump, Lift."
+          - title: "Human"
+            entry: cultures/typical-human
+            summary: "Vaslorian. Urban, communal, labor."
+            text: "Languages: Caelian and Vaslorian. Environment urban, organization communal, upbringing labor. Quick build skills: Alertness, Jump, Lift."
+          - title: "Memonek"
+            entry: cultures/typical-memonek
+            summary: "Axiomatic. Nomadic, communal, academic."
+            text: "Languages: Caelian and Axiomatic. Environment nomadic, organization communal, upbringing academic. Quick build skills: Navigate, Jump, History."
+          - title: "Orc"
+            entry: cultures/typical-orc
+            summary: "Kalliak. Wilderness, communal, creative."
+            text: "Languages: Caelian and Kalliak. Environment wilderness, organization communal, upbringing creative. Quick build skills: Endurance, Jump, Perform."
+          - title: "Polder"
+            entry: cultures/typical-polder
+            summary: "Khoursirian. Urban, communal, creative."
+            text: "Languages: Caelian and Khoursirian. Environment urban, organization communal, upbringing creative. Quick build skills: Alertness, Jump, Perform."
+          - title: "Time raider"
+            entry: cultures/typical-time-raider
+            summary: "Voll. Nomadic, communal, martial."
+            text: "Languages: Caelian and Voll. Environment nomadic, organization communal, upbringing martial. Quick build skills: Navigate, Jump, Intimidate."
+      - text: |
+          **Archetypical cultures** are quick starting points built on a
+          cultural archetype, such as a noble house or a pirate crew. Add a
+          language that fits the culture's concept.
+      - type: cards
+        items:
+          - title: "Artisan guild"
+            entry: cultures/artisan-guild
+            summary: "Urban, bureaucratic, creative."
+            text: "Environment urban, organization bureaucratic, upbringing creative. Quick build skills: Alertness, Persuade, Perform. Add a language that fits the culture."
+          - title: "Borderland homestead"
+            entry: cultures/borderland-homestead
+            summary: "Wilderness, communal, labor."
+            text: "Environment wilderness, organization communal, upbringing labor. Quick build skills: Endurance, Jump, Lift. Add a language that fits the culture."
+          - title: "College conclave"
+            entry: cultures/college-conclave
+            summary: "Urban, bureaucratic, academic."
+            text: "Environment urban, organization bureaucratic, upbringing academic. Quick build skills: Alertness, Persuade, History. Add a language that fits the culture."
+          - title: "Criminal gang"
+            entry: cultures/criminal-gang
+            summary: "Urban, communal, lawless."
+            text: "Environment urban, organization communal, upbringing lawless. Quick build skills: Alertness, Jump, Sneak. Add a language that fits the culture."
+          - title: "Farming village"
+            entry: cultures/farming-village
+            summary: "Rural, bureaucratic, labor."
+            text: "Environment rural, organization bureaucratic, upbringing labor. Quick build skills: Nature, Persuade, Lift. Add a language that fits the culture."
+          - title: "Herding community"
+            entry: cultures/herding-community
+            summary: "Nomadic, communal, labor."
+            text: "Environment nomadic, organization communal, upbringing labor. Quick build skills: Navigate, Jump, Lift. Add a language that fits the culture."
+          - title: "Knightly order"
+            entry: cultures/knightly-order
+            summary: "Secluded, bureaucratic, martial."
+            text: "Environment secluded, organization bureaucratic, upbringing martial. Quick build skills: Read Person, Persuade, Intimidate. Add a language that fits the culture."
+          - title: "Laborer neighborhood"
+            entry: cultures/laborer-neighborhood
+            summary: "Urban, communal, labor."
+            text: "Environment urban, organization communal, upbringing labor. Quick build skills: Alertness, Jump, Lift. Add a language that fits the culture."
+          - title: "Mercenary band"
+            entry: cultures/mercenary-band
+            summary: "Nomadic, bureaucratic, martial."
+            text: "Environment nomadic, organization bureaucratic, upbringing martial. Quick build skills: Navigate, Persuade, Intimidate. Add a language that fits the culture."
+          - title: "Merchant caravan"
+            entry: cultures/merchant-caravan
+            summary: "Nomadic, bureaucratic, creative."
+            text: "Environment nomadic, organization bureaucratic, upbringing creative. Quick build skills: Navigate, Persuade, Perform. Add a language that fits the culture."
+          - title: "Monastic order"
+            entry: cultures/monastic-order
+            summary: "Secluded, bureaucratic, academic."
+            text: "Environment secluded, organization bureaucratic, upbringing academic. Quick build skills: Read Person, Persuade, History. Add a language that fits the culture."
+          - title: "Noble house"
+            entry: cultures/noble-house
+            summary: "Urban, bureaucratic, noble."
+            text: "Environment urban, organization bureaucratic, upbringing noble. Quick build skills: Alertness, Persuade, Lead. Add a language that fits the culture."
+          - title: "Outlaw band"
+            entry: cultures/outlaw-band
+            summary: "Wilderness, communal, lawless."
+            text: "Environment wilderness, organization communal, upbringing lawless. Quick build skills: Endurance, Jump, Sneak. Add a language that fits the culture."
+          - title: "Pirate crew"
+            entry: cultures/pirate-crew
+            summary: "Nomadic, communal, lawless."
+            text: "Environment nomadic, organization communal, upbringing lawless. Quick build skills: Navigate, Jump, Sneak. Add a language that fits the culture."
+          - title: "Telepathic hive"
+            entry: cultures/telepathic-hive
+            summary: "Secluded, communal, creative."
+            text: "Environment secluded, organization communal, upbringing creative. Quick build skills: Read Person, Jump, Perform. Add a language that fits the culture."
+          - title: "Traveling entertainers"
+            entry: cultures/traveling-entertainers
+            summary: "Nomadic, communal, creative."
+            text: "Environment nomadic, organization communal, upbringing creative. Quick build skills: Navigate, Jump, Perform. Add a language that fits the culture."
+  - title: Languages
+    blocks:
+      - text: |
+          If your hero knows a language, they can speak, read, write and
+          understand it. The languages below are those of Orden, the
+          baseline world; the Director can swap in their own list.
+      - type: callout
+        title: Every hero knows Caelian
+        text: |
+          Caelian is the language of the fallen Caelian Empire and is now
+          "the common tongue". A second language in Orden is almost always
+          Caelian. All player characters know it.
+      - type: flaps
+        items:
+          - title: Languages of the playable peoples
+            text: |
+              - Devil, hobgoblin: **Anjali** (the language of contract law)
+              - Dragon knight, dragon: **Vastariax**
+              - Dwarf: **Zaliac** (the language of engineering)
+              - High elf: **Hyrallic** (the language of diplomacy)
+              - Wode elf: **Yllyric** (the language of druids)
+              - Hakaan: **Vhoric**
+              - Memonek: **Axiomatic** (also the common trade language of
+                the timescape)
+              - Orc: **Kalliak**
+              - Polder and human: **Khoursirian**
+              - Time raider: **Voll**
+          - title: Other speaking peoples
+            text: |
+              - Angulotl: Filliaric
+              - Shadow elf: Illyvric
+              - Kobold: Kethaic
+              - Bugbear, fey: Khelt
+              - Bredbeddle, giant, ogre, troll: High Kuric
+              - Elemental: Low Kuric
+              - Goblin, radenwight: Szetch
+              - Higher demon, gnoll: Tholl
+              - Lower demon: Proto-Ctholl
+              - Olothec, troll, voiceless talker: Variac (the common
+                language of the World Below)
+              - Voiceless talker: Mindspeech, a symbolic language of
+                telepaths
+              - Elder dragon: The First Language, the language of magic
+              - Overmind: Za'hariax
+          - title: Human languages of Vasloria and beyond
+            text: |
+              - The Gol: Uvalic
+              - Higara: Higaran
+              - Ix: Oaxuatl
+              - Khemhara: Khemharic
+              - Khoursir: Khoursirian
+              - Phaedros: Phaedran
+              - Rioja: Riojan
+              - Vanigar: Vaniric
+              - Vasloria: Vaslorian
+          - title: Dead languages
+            text: |
+              Much deep lore survives only in ancient writing in languages
+              no one speaks any more. These were not codes, just tongues that
+              faded, and sages can reconstruct them from modern relatives.
+              Reading them helps with crafting and research.
+              - **Ananjali** (old hobgoblin): Zodiakol, the bloodmetal
+              - **High Rhyvian** (sun elf): Liannar, the sunmetal
+              - **Khamish** (beast lord): beast magic
+              - **Kheltivari** (old fae): using a wode to travel through time
+              - **Low Rhyvian** (sky elf): flying castles
+              - **Old Variac** (olothec): Kollar, the sinmetal
+              - **Phorialtic** (old elemental): moving between manifolds
+              - **Rallarian** (steel dwarf): Valiar, the truemetal
+              - **Ullorvic** (star elf): Rovion, the starmetal
+          - title: Where you meet them
+            text: |
+              Hyrallic is a status language: most nobles of every ancestry
+              teach it to their children. Yllyric is common among those who
+              protect the forests. Zaliac fills the jargon of machines,
+              masonry and geology. Anjali fills the jargon of contracts and
+              trials. Variac is the common tongue of the World Below.
+          - title: Leaving a language open
+            text: |
+              You can leave a language unchosen until you know which will
+              help in the campaign (see Making a Hero).
+  - title: Careers
+    blocks:
+      - text: |
+          Being a hero is a calling, not a job. Before you answered it, you
+          had a career that paid the bills, and what you learned in it now
+          helps you save lives and slay monsters.
+
+          A career does not describe the work in detail; you know the basics
+          of what an artisan or a gladiator does. Each career has a list of
+          **career questions** to help you fill in the specifics, such as
+          "What did you create?" You need not answer them, but telling the
+          Director the answers gives them details to work into the game.
+      - type: flaps
+        title: Career benefits
+        items:
+          - title: Skills
+            text: Two or three skills, depending on the career.
+          - title: Languages
+            text: |
+              Some careers let you learn extra languages from the Languages
+              page.
+          - title: Renown
+            text: |
+              Some careers raise your starting [[renown|Renown]] above 0. See Rewards.
+          - title: Wealth
+            text: |
+              Some careers raise your starting [[wealth|Wealth]] above 1. See Rewards.
+          - title: Project points
+            text: |
+              Some careers give [[project points]] you can put toward crafting
+              and research projects. You can split them among several
+              projects but cannot use them twice, and you still need a
+              project's other prerequisites to start it. If the Director
+              agrees, your career may also start you with the materials for
+              a project, so you can begin before the adventure starts.
+          - title: Perk
+            text: |
+              Each career gives you one perk of a given type, focused outside
+              combat. See Perks and Complications.
+      - type: flaps
+        title: Your inciting incident
+        items:
+          - title: Inciting incident
+            text: |
+              Each career has a table of six inciting incidents, each a
+              reason you gave up a reliable living to become an adventurer.
+              You can roll a d6 for one or choose one. You can also use any
+              career's table as inspiration for an incident of your own with
+              the Director.
+          - title: What was taken from you
+            text: |
+              During your [[inciting incident]], something was taken: an object
+              such as an heirloom, a loved one killed or cursed, or something
+              abstract like a chance at happiness or faith in goodness. You
+              might want it back, or want to stop others suffering the same
+              loss. Write it on your sheet and tell the Director.
+      - type: roll
+        dice: 1d6
+        label: Inciting incident (d6)
+        bands:
+          - max: 1
+            label: "1"
+            text: Entry 1 on your career's table.
+          - max: 2
+            label: "2"
+            text: Entry 2.
+          - max: 3
+            label: "3"
+            text: Entry 3.
+          - max: 4
+            label: "4"
+            text: Entry 4.
+          - max: 5
+            label: "5"
+            text: Entry 5.
+          - label: "6"
+            text: Entry 6.
+  - title: The eighteen careers
+    blocks:
+      - text: |
+          Open a career to see its benefits and quick build. Each card
+          opens the full entry, with its questions and its six inciting
+          incidents.
+      - type: cards
+        items:
+          - title: "Agent"
+            entry: careers/agent
+            summary: "Spy for a government or organization. Intrigue skills, two languages."
+            text: |
+              - Skills: The Sneak skill from the intrigue skill group, plus one skill from the interpersonal group and one other skill from the intrigue group.
+              - Languages: Two languages.
+              - Perk: One intrigue perk.
+              - Quick build: Disguise, Lie, Sneak; perk Forgettable Face.
+          - title: "Aristocrat"
+            entry: careers/aristocrat
+            summary: "Born, married or conned into money. Renown +1, Wealth +1."
+            text: |
+              - Skills: One skill from the interpersonal skill group and one skill from the lore group.
+              - Languages: One language.
+              - Renown: +1.
+              - Wealth: +1.
+              - Perk: One lore perk.
+              - Quick build: Brag, Society; perk I've Read About This Place.
+          - title: "Artisan"
+            entry: careers/artisan
+            summary: "You made and sold useful wares. Crafting skills, 240 project points."
+            text: |
+              - Skills: Two skills from the crafting skill group.
+              - Languages: One language.
+              - Project points: 240.
+              - Perk: One crafting perk.
+              - Quick build: Blacksmithing, Carpentry; perk Area of Expertise.
+          - title: "Beggar"
+            entry: careers/beggar
+            summary: "You lived on the generosity of crowds. Rumors, two languages."
+            text: |
+              - Skills: The Rumors skill (from the lore skill group), plus one skill from the exploration group and one skill from the interpersonal group.
+              - Languages: Two languages.
+              - Perk: One interpersonal perk.
+              - Quick build: Empathize, Endurance, Rumors; perk Spot the Tell.
+          - title: "Criminal"
+            entry: careers/criminal
+            summary: "Bandit, smuggler, outlaw or assassin. Criminal Underworld, 120 project points."
+            text: |
+              - Skills: The Criminal Underworld skill (from the lore skill group), plus two skills from the intrigue group.
+              - Languages: One language.
+              - Project points: 120.
+              - Perk: One intrigue perk.
+              - Quick build: Criminal Underworld, Pick Lock, Pick Pocket; perk Criminal Contacts.
+          - title: "Disciple"
+            entry: careers/disciple
+            summary: "Clergy in a church or temple. Religion, 240 project points."
+            text: |
+              - Skills: The Religion skill (from the lore skill group), plus two more skills from the lore group.
+              - Project points: 240.
+              - Perk: One supernatural perk.
+              - Quick build: Culture, Magic, Religion; perk Ritualist.
+          - title: "Explorer"
+            entry: careers/explorer
+            summary: "Cartographer, researcher or resource finder. Navigate, two languages."
+            text: |
+              - Skills: The Navigate skill (from the exploration skill group), plus two more skills from the exploration group.
+              - Languages: Two languages.
+              - Perk: One exploration perk.
+              - Quick build: Climb, Heal, Navigate; perk Wood Wise.
+          - title: "Farmer"
+            entry: careers/farmer
+            summary: "You grew crops or cared for livestock. Handle Animals, 120 project points."
+            text: |
+              - Skills: The Handle Animals skill (from the interpersonal skill group), plus two skills from the exploration group.
+              - Languages: One language.
+              - Project points: 120.
+              - Perk: One exploration perk.
+              - Quick build: Drive, Handle Animals, Lift; perk Monster Whisperer.
+          - title: "Gladiator"
+            entry: careers/gladiator
+            summary: "Arena entertainer. Exploration skills, Renown +2."
+            text: |
+              - Skills: Two skills from the exploration skill group.
+              - Languages: One language.
+              - Renown: +2.
+              - Perk: One exploration perk.
+              - Quick build: Gymnastics, Jump; perk Friend Catapult.
+          - title: "Laborer"
+            entry: careers/laborer
+            summary: "Builder, miner, forester and other hard work. Endurance, 120 project points."
+            text: |
+              - Skills: The Endurance skill (from the exploration skill group), plus two skills from either the crafting group or the exploration group.
+              - Languages: One language.
+              - Project points: 120.
+              - Perk: One exploration perk.
+              - Quick build: Blacksmithing, Endurance, Lift; perk Brawny.
+          - title: "Mage's Apprentice"
+            entry: careers/mages-apprentice
+            summary: "Years studying under a mage. Magic, Renown +1."
+            text: |
+              - Skills: The Magic skill (from the lore skill group), plus two other skills from the lore group.
+              - Languages: One language.
+              - Renown: +1.
+              - Perk: One supernatural perk.
+              - Quick build: Magic, Monsters, Timescape; perk Arcane Trick.
+          - title: "Performer"
+            entry: careers/performer
+            summary: "You sing, act or dance for pay. Music or Perform, Renown +2."
+            text: |
+              - Skills: The Music or Perform skill (from the interpersonal skill group), plus two more skills from the interpersonal group.
+              - Renown: +2.
+              - Perk: One interpersonal perk.
+              - Quick build: Flirt, Music, Perform; perk Harmonizer.
+          - title: "Politician"
+            entry: careers/politician
+            summary: "Leader in a formal organization or government. Renown +1, Wealth +1."
+            text: |
+              - Skills: Two skills from the interpersonal skill group.
+              - Languages: One language.
+              - Renown: +1.
+              - Wealth: +1.
+              - Perk: One interpersonal perk.
+              - Quick build: Lead, Lie; perk Engrossing Monologue.
+          - title: "Sage"
+            entry: careers/sage
+            summary: "A life of learning. Two lore skills, 240 project points."
+            text: |
+              - Skills: Two skills from the lore skill group.
+              - Languages: One language.
+              - Project points: 240.
+              - Perk: One lore perk.
+              - Quick build: History, Magic; perk Expert Sage.
+          - title: "Sailor"
+            entry: careers/sailor
+            summary: "Crew on a merchant, military or pirate ship. Swim, two languages."
+            text: |
+              - Skills: Swim (from the exploration skill group), plus two more skills from the exploration group.
+              - Languages: Two languages.
+              - Perk: One exploration perk.
+              - Quick build: Climb, Gymnastics, Swim; perk Put Your Back Into It!.
+          - title: "Soldier"
+            entry: careers/soldier
+            summary: "You fought in skirmishes and campaigns. Renown +1, two languages."
+            text: |
+              - Skills: One skill from the exploration skill group and one skill from the intrigue group.
+              - Languages: Two languages.
+              - Renown: +1.
+              - Perk: One exploration perk.
+              - Quick build: Alertness, Endurance; perk Teamwork.
+          - title: "Warden"
+            entry: careers/warden
+            summary: "You protected a wild region. Nature, 120 project points."
+            text: |
+              - Skills: Nature (from the lore skill group), plus one skill from the exploration group and one skill from the intrigue group.
+              - Languages: One language.
+              - Project points: 120.
+              - Perk: One exploration perk.
+              - Quick build: Nature, Navigate, Track; perk Camouflage Hunter.
+          - title: "Watch Officer"
+            entry: careers/watch-officer
+            summary: "Officer of the law for a local government. Alertness, two languages."
+            text: |
+              - Skills: Alertness (from the intrigue skill group), plus two more skills from the intrigue group.
+              - Languages: Two languages.
+              - Perk: One exploration perk.
+              - Quick build: Alertness, Search, Track; perk Team Leader.

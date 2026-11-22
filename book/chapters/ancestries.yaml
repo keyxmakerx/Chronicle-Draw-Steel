@@ -4,55 +4,170 @@ pages:
   - title: Choosing an ancestry
     blocks:
       - text: |
-          There are twelve ancestries. Each one gives you a **signature
-          trait** for free, plus a budget of **ancestry points** to spend on
-          its optional **purchased traits**.
+          Ancestry is how you were born. It gives you body-based benefits,
+          never a culture, so it grants no crafting or lore skills. Culture is
+          picked separately (see Culture and career). A wode elf raised by
+          dwarves is as valid as one raised in a forest.
 
-          Unless an ancestry says otherwise, a hero is size 1M, has speed 5
-          and has stability 0. Most ancestries give 3 points. Memonek and
-          polder give 4, and revenant gives 2.
-      - type: callout
-        title: Revenants are special
-        text: |
-          Nobody starts life as a revenant. A hero of any ancestry can return
-          from death as one, keeping the size of the life they had before.
+          Each of the twelve ancestries gives you a **signature trait** for
+          free, plus a budget of **ancestry points** to spend on optional
+          **purchased traits**.
+      - type: flaps
+        items:
+          - title: Signature traits
+            text: |
+              Free and defining: every hero of that ancestry has them. Most
+              ancestries have one. Memonek, polder and revenant have two.
+          - title: Ancestry points and purchased traits
+            text: |
+              Each purchased trait has a cost of 1 or 2 points. Pick any
+              traits whose costs add up to your budget or less. You cannot go
+              over, and you cannot take the same trait twice (the revenant's
+              Previous Life 1-point trait is the one exception).
+
+              - Most ancestries give **3 points**.
+              - **Memonek** and **polder** give **4 points**.
+              - **Revenant** gives **2 points**, or 3 if your size is 1S.
+          - title: Starting size, speed and stability
+            text: |
+              Unless an ancestry says otherwise, a hero is **size 1M**, has
+              **speed 5** and **stability 0**.
+
+              - **Hakaan** are size 1L (signature trait Big!).
+              - **Polder** are size 1S (signature trait Small!).
+              - **Revenants** take the size of the ancestry they had in life,
+                with speed 5.
+
+              Some traits change these. Beast Legs and Swift give speed 6,
+              Lightning Nimbleness gives speed 7, and Grounded adds 1 to
+              stability.
+          - title: Quick build
+            text: |
+              Every ancestry lists a suggested set of purchased traits that
+              fits its points exactly. Use it when you want to build fast, or
+              as a starting point to swap from.
+          - title: Revenants are special
+            text: |
+              Nobody starts life as a revenant. A hero of any ancestry can
+              return from death as one. See "Choices and special cases" for
+              how the points and Former Life work.
+          - title: Height, weight and lifespan
+            text: |
+              These are only averages. Dwarves run 4 feet to 4 feet 6 and live
+              700 to 1,500 years. Hakaan are 9 to 10 feet and live 300 to 500.
+              Polder are about 3 feet 3 to 3 feet 6. Elves live 1,200 to 3,000
+              years, humans 70 to 120. Your hero can sit outside any range.
+      - type: example
+        title: Building a devil
+        steps:
+          - 'A devil gets the signature trait Silver Tongue for free, and 3 ancestry points.'
+          - 'Barbed Tail, Glowing Eyes and Hellsight cost 1 point each. Taking all three spends the 3 points.'
+          - 'Or take one 1-point trait and one 2-point trait, such as Beast Legs and Wings.'
+          - 'Impressive Horns (2) and Wings (2) together cost 4, so they do not both fit in 3 points.'
   - title: Peoples, part one
     blocks:
+      - text: |
+          Open a card for the ancestry's traits. The number after each trait
+          is its ancestry point cost.
       - type: cards
         items:
           - title: Devil
             entry: ancestries/devil
             summary: Horned, tailed, silver-tongued. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait, Silver Tongue, gives you an
-              interpersonal skill and helps you read what an NPC wants during
-              a negotiation.
+              Size 1M, speed 5. **Signature:** Silver Tongue gives you one
+              interpersonal skill of your choice and an edge on tests to learn
+              an NPC's motivations and pitfalls in a negotiation.
+
+              **Purchased (3 points):**
+              - Barbed Tail (1): once a round, a melee strike deals extra damage equal to your highest characteristic.
+              - Beast Legs (1): speed 6.
+              - Glowing Eyes (1): when a creature damages you, a triggered action deals it 1d10 + your level psychic damage.
+              - Hellsight (1): no bane on strikes against creatures with concealment.
+              - Impressive Horns (2): saving throws succeed on a 5 or higher.
+              - Prehensile Tail (2): you can't be flanked.
+              - Wings (2): you can fly for a number of rounds equal to your Might (minimum 1).
+
+              *Quick build:* Beast Legs, Impressive Horns.
           - title: Dragon Knight
             entry: ancestries/dragon-knight
             summary: Draconic and muscled, 6 to 7 feet tall. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Wyrmplate.
+              Size 1M, speed 5. **Signature:** Wyrmplate gives you damage
+              immunity equal to your level to one type: acid, cold, corruption,
+              fire, lightning or poison. You can change the type after a
+              respite.
+
+              **Purchased (3 points):**
+              - Draconian Guard (1): when you or an adjacent creature takes strike damage, a triggered action reduces it by your level.
+              - Draconian Pride (2): a roar signature ability (1 burst, damages and pushes each enemy).
+              - Dragon Breath (2): a breath signature ability (3 cube within 1, damages each enemy).
+              - Prismatic Scales (1): keep one extra Wyrmplate immunity at all times.
+              - Remember Your Oath (1): as a maneuver, saving throws succeed on a 4 or higher until your next turn.
+              - Wings (2): fly for rounds equal to your Might (minimum 1).
+
+              *Quick build:* Dragon Breath, Prismatic Scales.
           - title: Dwarf
             entry: ancestries/dwarf
             summary: Short and stout, with stone in their flesh. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Runic Carving.
+              Size 1M, speed 5. **Signature:** Runic Carving lets you carve
+              one rune on your skin in 10 minutes (Detection, Light or Voice).
+
+              **Purchased (3 points):**
+              - Great Fortitude (2): you can't be made weakened.
+              - Grounded (1): +1 stability.
+              - Spark Off Your Skin (2): +6 Stamina, rising by 6 at levels 4, 7 and 10.
+              - Stand Tough (1): your Might counts as 1 higher to resist potencies, and an edge on Might tests against environmental effects and creature traits.
+              - Stone Singer (1): after an hour of singing, reshape unworked stone within 3 squares.
+
+              *Quick build:* Grounded, Spark Off Your Skin.
           - title: Hakaan
             entry: ancestries/hakaan
             summary: Stone-giant descendants, over 9 feet tall. 3 points.
             text: |
-              The largest ancestry, size 1L, speed 5. The signature trait is
-              Big!
+              The largest ancestry, size 1L, speed 5. **Signature:** Big!
+
+              **Purchased (3 points):**
+              - All Is a Feather (1): an edge on tests to lift and haul heavy objects.
+              - Doomsight (2): name an encounter in which you will die. You become doomed and get tier 3 on tests and ability rolls, then die at its end.
+              - Forceful (1): +1 to forced movement distance you cause.
+              - Great Fortitude (2): you can't be made weakened.
+              - Stand Tough (1): as the dwarf trait.
+
+              *Quick build:* Doomsight, Forceful.
           - title: High Elf
             entry: ancestries/high-elf
             summary: Tall and willowy, with metal inlays. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is High Elf Glamor.
+              Size 1M, speed 5. **Signature:** High Elf Glamor gives an edge on
+              Presence tests using Flirt or Persuade.
+
+              **Purchased (3 points):**
+              - Glamor of Terror (2): when a creature damages you, a triggered action frightens it until the end of its next turn.
+              - Graceful Retreat (1): +1 shift distance when you Disengage.
+              - High Senses (1): an edge on tests to notice threats.
+              - Otherworldly Grace (2): saving throws succeed on a 5 or higher.
+              - Revisit Memory (1): an edge on tests to recall lore.
+              - Unstoppable Mind (2): you can't be made dazed.
+
+              *Quick build:* High Senses, Otherworldly Grace.
           - title: Human
             entry: ancestries/human
             summary: The most numerous people, and able to sense the supernatural. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Detect the Supernatural.
+              Size 1M, speed 5. **Signature:** Detect the Supernatural, a
+              maneuver that shows where supernatural objects and undead,
+              constructs and other-world creatures are within 5 squares.
+
+              **Purchased (3 points):**
+              - Can't Take Hold (1): ignore magical difficult terrain, and reduce forced movement from magic or psionics by 1.
+              - Determination (2): a maneuver ends frightened, slowed or weakened.
+              - Perseverance (1): an edge on Endurance tests, and slowed only drops you to speed 3.
+              - Resist the Unnatural (1): a triggered action halves typed damage.
+              - Staying Power (2): +2 Recoveries.
+
+              *Quick build:* Perseverance, Staying Power.
   - title: Peoples, part two
     blocks:
       - type: cards
@@ -61,35 +176,167 @@ pages:
             entry: ancestries/memonek
             summary: A people of metal, marble and glass. 4 points.
             text: |
-              Size 1M, speed 5. Two signature traits: Fall Lightly and
-              Lightweight.
+              Size 1M, speed 5. **Signatures:** Fall Lightly (falls are 2
+              squares shorter) and Lightweight (you count as one size smaller
+              against forced movement).
+
+              **Purchased (4 points):**
+              - I Am Law (1): enemies can't move through your space.
+              - Keeper of Order (2): once a round, a free triggered action removes an edge or bane from your or an adjacent creature's power roll.
+              - Lightning Nimbleness (2): speed 7.
+              - Nonstop (2): you can't be made slowed.
+              - Systematic Mind (1): an edge on tests to parse maps and schematics, and you treat unknown languages as a related one.
+              - Unphased (1): you can't be made surprised.
+              - Useful Emotion (1): gain 1 surge at the start of combat.
+
+              *Quick build:* Lightning Nimbleness, Nonstop.
           - title: Orc
             entry: ancestries/orc
             summary: Green-toned, with colored lines of energy in their veins. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Relentless.
+              Size 1M, speed 5. **Signature:** Relentless. When damage leaves
+              you dying, you can make a free strike against any creature, and
+              if it drops to 0 Stamina you can spend a Recovery.
+
+              **Purchased (3 points):**
+              - Bloodfire Rush (1): the first time you take damage in a round, +2 speed until the round ends.
+              - Glowing Recovery (2): Catch Breath lets you spend any number of Recoveries.
+              - Grounded (1): +1 stability.
+              - Nonstop (2): you can't be made slowed.
+              - Passionate Artisan (1): pick two crafting skills and gain +2 on project rolls that use them.
+
+              *Quick build:* Glowing Recovery, Grounded.
           - title: Polder
             entry: ancestries/polder
             summary: The smallest ancestry, under three and a half feet. 4 points.
             text: |
-              Size 1S, speed 5. Two signature traits: Shadowmeld and Small!
+              Size 1S, speed 5. **Signatures:** Shadowmeld (a maneuver that
+              flattens you into a shadow and hides you from creatures you
+              have cover or concealment from) and Small!
+
+              **Purchased (4 points):**
+              - Corruption Immunity (1): corruption immunity equal to your level + 2.
+              - Fearless (2): you can't be made frightened.
+              - Graceful Retreat (1): +1 shift distance when you Disengage.
+              - Nimblestep (2): ignore difficult terrain and sneak at full speed.
+              - Polder Geist (1): +3 speed on turns when you start out of sight or concealed.
+              - Reactive Tumble (1): when force moved, shift 1 square as a free triggered action.
+
+              *Quick build:* Corruption Immunity, Fearless, Graceful Retreat.
           - title: Revenant
             entry: ancestries/revenant
             summary: Returned from death to finish unfinished business. 2 points.
             text: |
-              Size as in your previous life, speed 5. Two signature traits:
-              Former Life and Tough But Withered.
+              Size as in your previous life, speed 5. **Signatures:** Former
+              Life and Tough But Withered (immunity to cold, corruption,
+              lightning and poison equal to your level, fire weakness 5, no
+              need to breathe, eat or drink, and you go inert instead of
+              dying).
+
+              **Purchased (2 points, or 3 at size 1S):**
+              - Bloodless (2): you can't be made bleeding.
+              - Previous Life: 1 Point (1): take a 1-point trait from your old ancestry. Repeatable, each a different trait.
+              - Previous Life: 2 Points (2): take a 2-point trait from your old ancestry.
+              - Undead Influence (1): an edge on Reason, Intuition and Presence tests to deal with undead.
+              - Vengeance Mark (2): place sigils on creatures to track them, and gain the Detonate Sigil signature ability.
+
+              *Quick build:* Bloodless, plus Undead Influence at size 1S.
           - title: Time Raider
             entry: ancestries/time-raider
             summary: Four-armed, one-eyed, often psionic. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Psychic Scar.
+              Size 1M, speed 5. **Signature:** Psychic Scar gives you psychic
+              immunity equal to your level.
+
+              **Purchased (3 points):**
+              - Beyondsight (1): a maneuver lets you see through obstructions 1 square thick or less.
+              - Foresight (1): you know where concealed creatures within 20 are, and you ignore the strike bane against them.
+              - Four-Armed Athletics (1): an edge on Climb, Gymnastics and Swim tests when you can use all arms.
+              - Four-Armed Martial Arts (2): Grab and Knockback can target one extra adjacent creature, and you can hold two grabbed creatures.
+              - Psionic Gift (2): pick one signature ability (see Choices).
+              - Unstoppable Mind (2): you can't be made dazed.
+
+              *Quick build:* Beyondsight, Psionic Gift with Psionic Bolt.
           - title: Wode Elf
             entry: ancestries/wode-elf
             summary: Lithe and furred, hidden by a natural glamor. 3 points.
             text: |
-              Size 1M, speed 5. The signature trait is Wode Elf Glamor.
+              Size 1M, speed 5. **Signature:** Wode Elf Glamor gives an edge on
+              tests to hide and sneak, and a bane on tests to find you while
+              you are hidden.
+
+              **Purchased (3 points):**
+              - Forest Walk (1): shift into and through difficult terrain.
+              - Otherworldly Grace (2): saving throws succeed on a 5 or higher.
+              - Quick and Brutal (1): a critical hit gives an extra main action and extra move action.
+              - Revisit Memory (1): an edge on tests to recall lore.
+              - Swift (1): speed 6.
+              - The Wode Defends (2): a signature ability usable at will.
+
+              *Quick build:* Swift, Otherworldly Grace.
       - type: note
         text: |
-          The full trait lists, costs and quick-build suggestions for each
-          ancestry are in the Ancestries category of the reference browser.
+          The full text of every trait is in the Ancestries category of the
+          reference browser.
+  - title: Choices and special cases
+    blocks:
+      - text: |
+          A few traits ask you to choose something when you build your hero.
+          Open one to see what you pick.
+      - type: flaps
+        items:
+          - title: Devil, Silver Tongue
+            text: |
+              Pick one skill from the **interpersonal** skill group. You also
+              get an edge on tests to discover an NPC's motivations and
+              pitfalls during a negotiation.
+          - title: Dragon knight, Wyrmplate
+            text: |
+              Pick one damage type for your immunity: acid, cold, corruption,
+              fire, lightning or poison. You can swap it whenever you finish a
+              [[respite]]. Prismatic Scales then lets you pin one extra
+              immunity.
+          - title: Dwarf, Runic Carving
+            text: |
+              Pick one rune and carve it in 10 uninterrupted minutes. You can
+              have one rune at a time, and changing it takes another 10
+              minutes.
+
+              - **Detection:** choose a creature or object type. The rune
+                glows within 20 squares of one, even without line of effect.
+                Changing the type is a maneuver.
+              - **Light:** your skin lights 10 squares. Toggle it as a
+                maneuver.
+              - **Voice:** as a maneuver, talk telepathically with a willing
+                creature you know by name within 1 mile.
+          - title: Orc, Passionate Artisan
+            text: |
+              When you collect your starting skills, name two skills from the
+              **crafting** group, whether you already have them or not. You
+              add 2 to project rolls for crafting projects that use them.
+          - title: Time raider, Psionic Gift
+            text: |
+              Pick one signature ability, usable at will. Each is a psionic
+              ability that runs on Reason, Intuition or Presence (your
+              choice of the three):
+
+              - **Concussive Slam:** ranged 10 strike, damage 2 / 5 / 7, with a push at higher tiers and a prone chance at tier 3.
+              - **Psionic Bolt:** ranged 10 strike, damage 2 / 5 / 7, and slide 1 / 2 / 3.
+              - **Minor Acceleration:** a melee 1 maneuver that gives you or an ally a speed bonus until your next turn.
+          - title: Revenant, Former Life
+            text: |
+              Name the ancestry you had before you died. You take its size,
+              speed 5, and none of its other traits, unless you buy a
+              **Previous Life** trait.
+
+              - Previous Life 1 Point lets you pick one 1-point trait from that
+                ancestry. Repeat it for a different 1-point trait each time.
+              - Previous Life 2 Points lets you pick one 2-point trait.
+              - Your budget is 2 points, or 3 at size 1S, so a revenant often
+                buys one or two Previous Life traits.
+          - title: Dragon knight and time raider, ability traits
+            text: |
+              Draconian Pride, Dragon Breath, Detonate Sigil and The Wode
+              Defends hand you a signature ability. Read it like any other
+              ability (see Classes, Reading an ability). Signature abilities
+              cost nothing and can be used at will.

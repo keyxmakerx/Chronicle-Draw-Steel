@@ -4,99 +4,639 @@ pages:
   - title: Eleven classes
     blocks:
       - text: |
-          A class is the heart of a hero. It gives you abilities, and most of
-          them cost a class-specific **Heroic Resource**. The resource name
-          is different for each class.
+          A class gives you most of your abilities, your Stamina and
+          Recoveries, your starting characteristics and a **Heroic Resource**
+          that pays for your strongest abilities. Open a card for the class at
+          a glance. Every card follows the same order.
+      - type: flaps
+        items:
+          - title: How a class and a subclass fit together
+            text: |
+              You pick one class, then one **subclass** at 1st level (an
+              order, college, aspect, specialization, [[domain]] and so on). The
+              subclass gives many of your features and abilities from 1st level
+              on. Each class names its subclass differently, but they work the
+              same way.
+          - title: What each class gives at 1st level
+            text: |
+              - Starting characteristic scores and a potency value.
+              - Stamina and a number of Recoveries.
+              - Skills, some fixed and some of your choice.
+              - A subclass choice.
+              - A [[kit]], or a different option if the class has no kit.
+              - One or more class features, such as a stance or a marked foe.
+              - Your first abilities: signature abilities and heroic abilities.
+          - title: Free strikes and basic maneuvers
+            text: |
+              Every hero also has a melee and a ranged weapon free strike, and
+              basic maneuvers like Grab and Knockback, whatever the class.
+              See the Combat chapter.
       - type: cards
         items:
           - title: Beastheart
-            summary: Heroic Resource, Ferocity.
+            entry: classes/beastheart
+            summary: "Heroic Resource, Ferocity. Fights beside a wild companion."
             text: |
-              Spend Ferocity to power your heroic abilities. A beastheart
-              fights beside a wild companion, and the two of you share one
-              turn.
+              Fights beside an untamed companion. Your companion can fall into a rampage and lash out at friends as well as foes.
+
+              **Heroic Resource:** Ferocity.
+
+              **Starting scores:** Might and Intuition start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 21 at 1st level, +12 each level after. **Recoveries:** 12.
+
+              **Skills:** You gain the Animal Handling skill. Then choose any two skills from the exploration or intrigue skill groups. *Quick build:* Animal Handling, Navigate, Track.
+
+              **Kit:** One kit.
+
+              **1st-level abilities:** See this class's page in All abilities.
           - title: Censor
-            summary: Heroic Resource, Wrath.
-            text: Spend Wrath to power your heroic abilities.
+            entry: classes/censor
+            summary: "Heroic Resource, Wrath. Judges and locks down foes."
+            text: |
+              A holy warrior who judges one enemy at a time and locks it down.
+
+              **Heroic Resource:** Wrath.
+
+              **Starting scores:** Might and Presence start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 21 at 1st level, +9 each level after. **Recoveries:** 12.
+
+              **Skills:** Choose any two skills from the interpersonal or lore skill groups. *Quick build:* Intimidate, Religion.
+
+              **Subclass:** Censor order: Exorcist (Read Person skill), Oracle (Magic) or Paragon (Lead). You also pick a deity and one of its domains.
+
+              **Kit:** One kit.
+
+              **1st-level abilities:** One signature ability, one 3-Wrath ability and one 5-Wrath ability.
+
+              **Class features:** Judgment (marks a foe), My Life for Yours (a triggered heal).
           - title: Conduit
-            summary: Heroic Resource, Piety.
-            text: Spend Piety to power your heroic abilities.
+            entry: classes/conduit
+            summary: "Heroic Resource, Piety. Divine healer and smiter."
+            text: |
+              A priest who heals and empowers allies and smites foes with holy power.
+
+              **Heroic Resource:** Piety.
+
+              **Starting scores:** Intuition start at 2. Spread one of these sets over the other characteristics: 2, 2, -1, -1 / 2, 1, 1, -1 / 2, 1, 0, 0 / 1, 1, 1, 0.
+
+              **Stamina:** 18 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** Choose any two skills from the interpersonal or lore skill groups. *Quick build:* Read Person, Religion.
+
+              **Subclass:** Pick a deity and two domains from Creation, Death, Fate, Knowledge, Life, Love, Nature, Protection, Storm, Sun, Trickery and War.
+
+              **Kit:** No kit. Pick a prayer and a ward instead.
+
+              **1st-level abilities:** Two signature abilities, one 3-Piety ability and one 5-Piety ability.
+
+              **Class features:** Healing Grace, Ray of Wrath, a triggered action, a prayer and a ward.
           - title: Elementalist
-            summary: Heroic Resource, Essence.
+            entry: classes/elementalist
+            summary: "Heroic Resource, Essence. Elemental area control."
             text: |
-              Spend Essence to power your heroic abilities. Elementalist
-              abilities are keyed to Reason, and many carry an element keyword
-              such as fire, earth or void.
+              A caster of wide-area elemental magic, with tricks for the fight and for the world after it.
+
+              **Heroic Resource:** Essence.
+
+              **Starting scores:** Reason start at 2. Spread one of these sets over the other characteristics: 2, 2, -1, -1 / 2, 1, 1, -1 / 2, 1, 0, 0 / 1, 1, 1, 0.
+
+              **Stamina:** 18 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Magic skill. Then choose any three skills from the crafting or lore skill groups. *Quick build:* Alchemy, Blacksmithing, History, Magic.
+
+              **Subclass:** Elemental specialization: Earth, Fire, Green or Void.
+
+              **Kit:** No kit. Pick an enchantment and a ward instead.
+
+              **1st-level abilities:** Two signature abilities, one 3-Essence ability and one 5-Essence ability.
+
+              **Class features:** Hurl Element, Persistent Magic, Practical Magic, an enchantment and a ward.
           - title: Fury
-            summary: Heroic Resource, Ferocity.
+            entry: classes/fury
+            summary: "Heroic Resource, Ferocity. Fast, close-range damage."
             text: |
-              Spend Ferocity to power your heroic abilities. Fury abilities
-              often run on Might, like the signature ability Brutal Slam.
+              A mobile brawler who gets close, hits hard and grows stronger as they get hurt.
+
+              **Heroic Resource:** Ferocity.
+
+              **Starting scores:** Might and Agility start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 21 at 1st level, +9 each level after. **Recoveries:** 10.
+
+              **Skills:** You gain the Nature skill. Then choose any two skills from the exploration or intrigue skill groups. *Quick build:* Alertness, Jump, Nature.
+
+              **Subclass:** Primordial aspect: Berserker, Reaver or Stormwight.
+
+              **Kit:** A berserker or reaver takes one kit. A stormwight takes a stormwight kit.
+
+              **1st-level abilities:** One signature ability, one 3-Ferocity ability and one 5-Ferocity ability.
+
+              **Class features:** Growing Ferocity and Mighty Leaps.
           - title: "Null"
-            summary: Heroic Resource, Discipline.
-            text: Spend Discipline to power your heroic abilities.
+            entry: classes/null
+            summary: "Heroic Resource, Discipline. Unarmed psionic warrior."
+            text: |
+              An unarmed psionic warrior whose aura hinders enemies and quells the supernatural.
+
+              **Heroic Resource:** Discipline.
+
+              **Starting scores:** Agility and Intuition start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 21 at 1st level, +9 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Psionics skill. Then choose any two skills from the interpersonal or lore skill groups. *Quick build:* Psionics, Read Person, Timescape.
+
+              **Subclass:** Null tradition: Chronokinetic, Cryokinetic or Metakinetic.
+
+              **Kit:** No kit. Pick a psionic augmentation instead.
+
+              **1st-level abilities:** Two signature abilities, one 3-Discipline ability and one 5-Discipline ability.
+
+              **Class features:** Null Field, Inertial Shield, Null Speed and Psionic Martial Arts.
           - title: Shadow
-            summary: Heroic Resource, Insight.
-            text: Spend Insight to power your heroic abilities.
+            entry: classes/shadow
+            summary: "Heroic Resource, Insight. Stealthy assassin."
+            text: |
+              An assassin and thief who strikes from hiding, in melee or at range, and moves by magic.
+
+              **Heroic Resource:** Insight.
+
+              **Starting scores:** Agility start at 2. Spread one of these sets over the other characteristics: 2, 2, -1, -1 / 2, 1, 1, -1 / 2, 1, 0, 0 / 1, 1, 1, 0.
+
+              **Stamina:** 18 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Hide and Sneak skills. Then choose any five skills from Criminal Underworld or the skills of the exploration, interpersonal, or intrigue skill groups. *Quick build:* Criminal Underworld, Hide, Lie, Pick Lock, Pick Pocket, Sabotage, Sneak.
+
+              **Subclass:** Shadow college: Black Ash, Caustic Alchemy or the Harlequin Mask.
+
+              **Kit:** One kit.
+
+              **1st-level abilities:** One signature ability, one 3-Insight ability and one 5-Insight ability.
+
+              **Class features:** Hesitation Is Weakness and a college triggered action.
           - title: Summoner
-            summary: Heroic Resource, Essence.
+            entry: classes/summoner
+            summary: "Heroic Resource, Essence. Commands squads of minions."
             text: |
-              Spend Essence to power your heroic abilities. A summoner calls
-              forth squads of minions and keeps them fighting.
+              A mage who calls squads of minions to hold the line, and a champion to finish the fight.
+
+              **Heroic Resource:** Essence.
+
+              **Starting scores:** Reason start at 2. Spread one of these sets over the other characteristics: 2, 2, -1, -1 / 2, 1, 1, -1 / 2, 1, 0, 0 / 1, 1, 1, 0.
+
+              **Stamina:** 15 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Magic and Strategy skills and can choose any two skills from the intrigue or lore skill groups. *Quick build:* Eavesdrop, Magic, Monsters, Strategy.
+
+              **Subclass:** Summoner circle: Blight, Graves, Spring or Storms.
+
+              **Kit:** No kit at 1st level. You conjure your own at 3rd level.
+
+              **1st-level abilities:** See this class's page in All abilities.
           - title: Tactician
-            summary: Heroic Resource, Focus.
-            text: Spend Focus to power your heroic abilities.
+            entry: classes/tactician
+            summary: "Heroic Resource, Focus. Gives allies actions and movement."
+            text: |
+              A strategist and weapons master who gives allies extra movement, damage and actions.
+
+              **Heroic Resource:** Focus.
+
+              **Starting scores:** Might and Reason start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 21 at 1st level, +9 each level after. **Recoveries:** 10.
+
+              **Skills:** You gain the Lead skill. Then choose any two skills from Alertness, Architecture, Blacksmithing, Brag, Culture, Empathize, Fletching, Mechanics, Monsters, Search, Strategy, or the skills of the exploration skill group. *Quick build:* Lead, Monsters, Strategy.
+
+              **Subclass:** Tactical doctrine: Insurgent, Mastermind or Vanguard.
+
+              **Kit:** Two kits, with both signature abilities.
+
+              **1st-level abilities:** A 3-Focus and a 5-Focus ability. Your signature abilities come from your two kits.
+
+              **Class features:** Mark, Strike Now and Field Arsenal.
           - title: Talent
-            summary: Heroic Resource, Clarity.
+            entry: classes/talent
+            summary: "Heroic Resource, Clarity. Psionic power at a price."
             text: |
-              Spend Clarity to power your heroic abilities. Talent abilities
-              often run on Presence.
+              A psionic master of objects, minds and time who can overreach and pay for it.
+
+              **Heroic Resource:** Clarity.
+
+              **Starting scores:** Reason and Presence start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 18 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Psionics and Read Person skills. Then choose any two skills from the interpersonal or lore skill groups. *Quick build:* Empathize, Psionics, Read Person, Timescape.
+
+              **Subclass:** Talent tradition: Chronopathy, Telekinesis or Telepathy.
+
+              **Kit:** No kit. Pick a psionic augmentation and a ward instead.
+
+              **1st-level abilities:** Two signature abilities, one 3-Clarity ability and one 5-Clarity ability.
+
+              **Class features:** Mind Spike, Telepathic Speech, an augmentation and a ward.
           - title: Troubadour
-            summary: Heroic Resource, Drama.
+            entry: classes/troubadour
+            summary: "Heroic Resource, Drama. Magical performer."
             text: |
-              Spend Drama to power your heroic abilities. Performance
-              abilities are magical presentations that allies can join.
+              A performer whose songs, stories and swordplay become real magic.
+
+              **Heroic Resource:** Drama.
+
+              **Starting scores:** Agility and Presence start at 2. Spread one of these sets over the other characteristics: 2, -1, -1 / 1, 1, -1 / 1, 0, 0.
+
+              **Stamina:** 18 at 1st level, +6 each level after. **Recoveries:** 8.
+
+              **Skills:** You gain the Read Person skill. Then choose two skills from the interpersonal skill group and one skill from the intrigue or lore skill groups. *Quick build:* Brag, Flirt, Read Person, Rumors.
+
+              **Subclass:** Class act: Auteur, Duelist or Virtuoso.
+
+              **Kit:** One kit.
+
+              **1st-level abilities:** One signature ability, one 3-Drama ability and one 5-Drama ability.
+
+              **Class features:** Scene Partner and Routines.
+      - type: links
+        title: Every ability
+        items:
+          - title: All abilities
+            summary: Every hero ability, one page per class.
+            chapter: abilities-list
+  - title: Starting as a class
+    blocks:
+      - text: |
+          Open each step to see how a class sets up your hero at 1st level.
+      - type: flaps
+        items:
+          - title: Characteristic scores
+            text: |
+              Your class fixes one or two **primary** characteristics at 2.
+              You then pick one array of numbers for the others. Classes with
+              two primaries offer 2, -1, -1 or 1, 1, -1 or 1, 0, 0 for the
+              other three characteristics. Classes with one primary offer 2,
+              2, -1, -1 or 2, 1, 1, -1 or 2, 1, 0, 0 or 1, 1, 1, 0 for the
+              other four.
+          - title: Potency
+            text: |
+              Your class ties your potency to one characteristic. Your
+              **strong** potency is that score, **average** is 1 lower, and
+              **weak** is 2 lower. Beastheart and fury use Might, censor and
+              troubadour Presence, conduit and null Intuition, shadow Agility,
+              and elementalist, summoner, tactician and talent Reason.
+          - title: Stamina and Recoveries
+            text: |
+              Stamina is your starting figure plus the per-level gain for
+              each level after 1st. Your Recoveries count is fixed by class.
+              Your recovery value, what each Recovery heals, is one-third of
+              your Stamina maximum, rounded down.
+          - title: Skills
+            text: |
+              Most classes give you some skills outright and let you choose
+              others from skill groups (see the Tests chapter). Each class
+              lists a quick-build set if you just want to move fast.
+          - title: Subclass
+            text: |
+              Pick it at 1st level. A censor or conduit also picks a deity
+              from the setting (see your Director) and a domain from its
+              portfolio. A fury who picks stormwight chooses an animal kit.
+          - title: Kit, or what replaces it
+            text: |
+              - **Censor, shadow, troubadour, beastheart:** one kit.
+              - **Berserker or reaver fury:** one kit. A **stormwight** fury
+                takes a stormwight kit (see Kits).
+              - **Tactician:** two kits, with both signature abilities.
+              - **Conduit:** a prayer and a ward. **Elementalist:** an
+                enchantment and a ward. **Null:** an augmentation. **Talent:**
+                an augmentation and a ward. Each of these includes a "battle"
+                option that lets you use light armor and a light weapon
+                without a kit. You can't take it if you have a kit.
+              - **Summoner:** none at 1st level, a conjured kit at 3rd.
+              Prayers, enchantments, augmentations and wards can be changed
+              as a respite activity.
+          - title: First abilities
+            text: |
+              Your advancement table says what you pick. A table entry such
+              as "Signature, 3, 5" means one signature ability, one that costs
+              3 of your [[heroic resource|Heroic Resource]] and one that costs 5. Conduit,
+              elementalist, null and talent start with **two** signature
+              abilities. The tactician's table lists only "3, 5" because its
+              signature abilities come from its kits.
+      - type: example
+        title: Building a censor
+        steps:
+          - 'Class: censor. Might and Presence start at 2. You pick 1, 0, 0 for Agility, Reason and Intuition.'
+          - 'Stamina 21, 12 Recoveries, so your recovery value is 7.'
+          - 'Skills: two from interpersonal or lore, plus the skill your order gives.'
+          - 'Subclass: Paragon order (the Lead skill). Pick a deity and a domain.'
+          - 'Kit: Warrior Priest.'
+          - 'Abilities: one signature, one 3-Wrath and one 5-Wrath ability.'
   - title: Heroic resources in play
     blocks:
       - text: |
-          Every class fuels its heroic abilities with its own Heroic Resource.
-          You start each fight with some, gain more every turn, and each class
-          has its own way of earning extra. Pick a class to read how its
-          resource works, then open its pop-up book: a small practice fight
-          where you click the scene and watch the resource rise and fall.
+          Every class powers its heroic abilities with its own Heroic
+          Resource. Pick a class below to see how it is gained, then open the
+          pop-up book: a small practice fight where you click the scene and
+          watch the resource rise and fall.
+      - type: flaps
+        items:
+          - title: The rules every resource shares
+            text: |
+              - At the start of a fight you gain your resource equal to your
+                [[Victories]].
+              - You gain more at the start of each of your turns, and in the
+                class-specific ways below.
+              - You lose what is left when the encounter ends.
+              - A **heroic ability** can't be used at all without paying its
+                cost. A **signature ability** costs nothing, though some let
+                you spend extra to boost them.
+              - You can't gain the resource outside combat, but you can use
+                abilities that cost it without spending any. Once you do, you
+                can't use that ability outside combat again until you earn a
+                Victory or finish a [[respite]]. An ability that lets you
+                spend any amount counts as if you spent your Victories.
+              - If a heroic ability's extra effect depends only on a potency
+                and the target resists, you don't spend the resource.
+          - title: Wrath (censor)
+            text: |
+              Gain 2 at the start of each of your turns. Gain 1 the first
+              time each round a creature you have judged damages you, and 1
+              the first time each round you damage a judged creature.
+          - title: Piety (conduit)
+            text: |
+              Gain 1d3 at the start of each turn. Before that roll you can
+              pray (no action). On a 1 you gain 1 more but anger the gods and
+              take 1d6 + your level psychic damage that nothing can reduce.
+              On a 2 you gain 1 more. On a 3 you gain 2 more and can trigger
+              a domain effect. Each of your domains also pays 2 piety the first
+              time per encounter a specific event happens near you, such as a
+              creature regaining Stamina for Life or an enemy being force
+              moved for Storm.
+          - title: Essence (elementalist and summoner)
+            text: |
+              **Elementalist:** gain 2 at the start of each turn, and 1 the
+              first time each round that you or a creature within 10 squares
+              takes damage that isn't untyped or holy.
+
+              **Summoner:** gain 2 at the start of each turn, and 1 the first
+              time each round any minion within your range dies unwillingly.
+              You can sacrifice your own minions to lower an ability's cost by
+              1.
+          - title: Ferocity (fury and beastheart)
+            text: |
+              **Fury:** gain 1d3 at the start of each turn, 1 the first time
+              each round you take damage, and 1d3 the first time you become
+              winded or are dying in an encounter. Growing Ferocity gives you
+              extra benefits at ferocity 2, 4, 6, 8, 10 and 12.
+
+              **Beastheart:** gain 1d3 at the start of each turn, and 2 the
+              first time each round a creature next to your companion takes
+              damage.
+          - title: Discipline (null)
+            text: |
+              Gain 2 at the start of each turn. Gain 1 the first time each
+              round an enemy in your Null Field uses a main action, and 1 the
+              first time each round the Director spends Malice.
+          - title: Insight (shadow)
+            text: |
+              Gain 1d3 at the start of each turn, and 1 the first time each
+              round you deal damage using surges. A heroic ability with a power
+              roll costs 1 less insight if you have an edge or double edge on
+              it.
+          - title: Focus (tactician)
+            text: |
+              Gain 2 at the start of each turn. Gain 1 the first time each
+              round that you or an ally damages a creature you have marked, and
+              1 the first time each round an ally within 10 squares uses a
+              heroic ability.
+          - title: Clarity and strain (talent)
+            text: |
+              Gain 1d3 at the start of each turn, and 1 the first time each
+              round a creature is force moved. You can spend clarity you don't
+              have, down to negative 1 + your Reason. While below 0 you are
+              **strained**: some psionic abilities do more when you are, and at
+              the end of each of your turns you take 1 damage per negative
+              point. Negative clarity resets when the encounter ends.
+          - title: Drama (troubadour)
+            text: |
+              Gain 1d3 at the start of each turn. Also gain 2 the first time
+              three or more heroes use an ability on the same turn, 2 the first
+              time a hero is made winded, 3 whenever a creature in your line of
+              effect rolls a natural 19 or 20, and 10 when you or another hero
+              dies. If you die and reach 30 drama in that encounter, you return
+              with 1 Stamina and 0 drama. If you stay dead afterward you can't
+              gain drama in later encounters.
       - type: widget
         widget: class-fights
   - title: Reading an ability
     blocks:
       - text: |
           Abilities are written in a fixed order, so once you can read one you
-          can read them all.
+          can read them all. Open any part below.
+      - type: flaps
+        items:
+          - title: Name and cost
+            text: |
+              A **signature ability** has no cost and can be used at will. A
+              **heroic ability** has a cost in your Heroic Resource and can't
+              be used without paying it. Some abilities are free to use but let
+              you spend resource to boost them (a conduit's Healing Grace); they
+              are not heroic abilities. The flavor text and name never limit
+              how you use it: Impaled can be done with an axe or a hammer.
+          - title: Keywords
+            text: |
+              Tags on the left of the first line. An ability with none shows a
+              dash.
 
-          - **Name and type.** A signature ability has no cost. A heroic ability has a cost in your Heroic
-            Resource.
-          - **Keywords.** Tags such as [[magic]], [[psionic]], [[melee]],
-            [[ranged]], [[weapon]], [[strike]] and [[area]] say how it works
-            and what interacts with it.
-          - **Action type.** Main action, maneuver, triggered action and so
-            on. See the Combat chapter.
-          - **Distance and target.** How far it reaches and what it can hit.
-          - **Power roll.** The characteristic you add, and what happens at
-            each of the three tiers.
-          - **Effect.** Anything that happens regardless of the roll.
+              - **Area:** affects an area, not named targets. It is not a strike.
+              - **Charge:** can be used with the Charge main action in place of a melee free strike.
+              - **Magic** and **psionic:** used by casters and psions.
+              - **Melee:** needs contact with a body, weapon or implement.
+              - **Ranged:** reaches targets you can't touch.
+              - **Strike:** harms specific creatures or objects you target. Only strikes interact with features that say "strike".
+              - **Weapon:** must be used with a weapon, or your own body (unarmed strikes, bites, kicks).
+          - title: Type and trigger
+            text: |
+              The right side of the first line: main action, maneuver, move
+              action, triggered action, free maneuver or free triggered action.
+              A triggered ability also lists a **Trigger**, the exact event
+              that lets you use it.
+          - title: Distance
+            text: |
+              **Melee X** reaches creatures within X squares (Melee 1 is
+              adjacent). **Ranged X** reaches targets within X squares. A
+              kit's distance bonus is already in your kit's signature ability.
+          - title: Area shapes
+            text: |
+              An area ability may say "within X": one square of the area, the
+              **origin square**, must be that close to you and in your line of
+              effect. Areas don't pass through walls or spread around corners.
+
+              - **X aura:** radius X around you, and it moves with you.
+              - **X burst:** radius X around you, lasting only to affect targets.
+              - **X cube:** a cube with sides of X.
+              - **A x B line:** A long, B wide and tall, in one direction.
+              - **X wall:** X squares, each sharing a side with another, which
+                can be stacked up and blocks line of effect.
+          - title: Target
+            text: |
+              The number and kind of target. You can always pick fewer.
+              **Creature**, **object** (objects have poison and psychic
+              immunity unless noted), **enemy** (hostile to you), **ally**
+              (willing and friendly), **self**, or **each** creature in an
+              area. You aren't a valid target of your own ability unless it
+              says self. When the Director and players disagree about who is
+              an enemy or ally, the Director decides.
+          - title: Power roll and tiers
+            text: |
+              Roll 2d10 and add the characteristic shown. An **ability roll
+              always does something**: the tier sets how much. It reads
+              **<=11**, **12-16** and **17+**. A damage entry like "6 + M"
+              means 6 plus your Might (or A, R, I, P for the others). Effects
+              after a semicolon, such as "push 2", apply to the target after
+              the damage.
+          - title: Effect and Spend
+            text: |
+              An **Effect** line is anything that happens regardless of the
+              roll, or the whole ability if there is no roll. A **Spend X**
+              entry buys extra effect for X resource. **Spend X+** lets you
+              spend more in multiples of X.
+          - title: Rolled damage
+            text: |
+              Damage that comes from an ability roll. Effects that add to
+              "rolled damage", including surges, do not apply to damage that
+              needs no roll.
       - type: callout
-        title: Potency
+        title: Abilities in combat
         text: |
-          Many effects read like "M < WEAK". That is a [[potency]] check: the
-          added effect lands only if your potency beats the target's score in
-          that characteristic.
-  - title: Surges and recoveries
+          Abilities in this book are used as a main action, maneuver,
+          triggered action or other part of your turn, so you can use them in
+          combat. An ability that takes a minute or more can't be used in a
+          fight.
+  - title: Rolling an ability
     blocks:
       - text: |
-          Two resources show up in almost every class.
+          Try a fury's signature ability, Brutal Slam. It is a Might power
+          roll for a melee strike on one adjacent creature. Set your Might and
+          roll.
+      - type: roll
+        dice: 2d10
+        label: Brutal Slam (Might)
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: 3 + Might damage, push 1.
+          - max: 16
+            label: Tier 2
+            text: 6 + Might damage, push 2.
+          - label: Tier 3
+            text: 9 + Might damage, push 4.
+      - type: flaps
+        items:
+          - title: Potency
+            text: |
+              Some effects read like "M < WEAK". The extra effect lands only
+              if the target's characteristic is **lower** than your potency
+              value. Your weak, average and strong values come from your class
+              (see Starting as a class). Say it as "if their Agility is less
+              than 1, they fall prone", which lets the Director sort out the
+              rest.
 
-          - [[Surge|Surges]] are stored momentum. When you deal rolled
-            damage you can spend up to three against one target, each adding
-            damage equal to your highest characteristic. Leftover surges are
-            lost when the fight ends.
-          - [[Recovery|Recoveries]] heal you. You get a number of them from
-            your class, and a [[respite]] refills them all.
+              A potency effect is only resolved against the characteristic
+              named. Features can raise or lower a potency by 1 for a target,
+              such as the censor's Judgment and the null's Null Field.
+          - title: Critical hit
+            text: |
+              If you make an ability roll as a main action and the dice show a
+              **natural 19 or 20**, you score a critical hit and immediately
+              take another main action, even off your turn or while dazed. A
+              maneuver or triggered action can't crit, but a main action used
+              off turn can (an opportunity attack, for example).
+          - title: Several targets
+            text: |
+              Make one roll and apply the total to every target. An edge or
+              bane that affects only some targets can put them in a different
+              tier. If an effect hits the Director or you rather than the
+              targets, it happens once, not once per target.
+          - title: Surges
+            text: |
+              [[Surge|Surges]] are stored momentum. When you deal rolled
+              damage you can spend up to **3** to add your highest
+              characteristic to the damage of one target for each. Or spend
+              **2** to raise a potency by 1 against one target (never more than
+              +1 per target). You lose leftover surges at the end of combat.
+          - title: Recoveries
+            text: |
+              [[Recovery|Recoveries]] heal you. Your class gives you a number
+              of them, and a [[respite]] refills them all. See the Combat
+              chapter for how to spend one.
+          - title: During the move
+            text: |
+              If an ability lets you move and affect things on the way, the
+              move starts in the space you first leave and ends in the last
+              space you enter.
+          - title: Stacking effects
+            text: |
+              Effects from different abilities combine if their durations and
+              targets overlap. The same ability used several times doesn't
+              stack: the strongest effect applies, with the latest use setting
+              the duration. A condition can't be imposed twice either, so a
+              target isn't weakened twice for a double bane, and two Null
+              Fields cut a potency by 1, not 2.
+          - title: How long effects last
+            text: |
+              - **EoT:** until the end of the target's next turn.
+              - **Save ends:** roll a d10 at the end of each of your turns. A 6
+                or higher ends it.
+              - **End of encounter:** outside combat, it lasts 5 minutes.
+              - After a fight, effects on heroes end whenever the hero likes,
+                except winded, unconscious or dying.
+              - A creature that imposes an effect with an ability can end it
+                as a free maneuver.
+  - title: Advancement in brief
+    blocks:
+      - text: |
+          You gain a level each time your Director says you have earned it
+          (by default, after enough Experience at a respite). Every class's
+          advancement table lists what each level gives. These parts are the
+          same for all classes.
+      - type: flaps
+        items:
+          - title: Every level
+            text: |
+              More Stamina (the class's per-level gain), new features, and new
+              abilities from the class table.
+          - title: Abilities by level
+            text: |
+              Heroic abilities cost more resource as you rise. At 3rd level you
+              add one costing 7, at 5th one costing 9, and at 8th one costing
+              11. Your subclass adds one costing 5 at 2nd level, one costing 9
+              at 6th, and one costing 11 at 9th. The elementalist has no separate
+              subclass list: its 2nd- and 6th-level abilities sit in the main
+              list.
+          - title: Perks
+            text: |
+              A new perk at 2nd, 4th, 6th, 8th and 10th level. See Perks and
+              complications.
+          - title: Skills
+            text: One new skill of your choice at 4th, 7th and 10th level.
+          - title: Characteristic increases
+            text: |
+              At **4th** level your primary characteristics rise to 3. Classes
+              with one primary also let you add 1 to another score, to a
+              maximum of 3. At **7th** every characteristic rises by 1, to a
+              maximum of 4. At **10th** your primaries rise to 5, with one
+              more score up by 1 (to 5) for single-primary classes.
+          - title: Echelons
+            text: |
+              Levels 1 to 3 are the first [[echelon]], 4 to 6 the second, 7
+              to 9 the third, and 10 the fourth. Kit Stamina bonuses and many
+              ability numbers grow with your echelon.
+          - title: Changing your mind
+            text: |
+              You can freely change a skill, ability, class or even ancestry
+              between sessions. Tell your Director. Swapping a kit needs a
+              respite. A Director may also let heroes swap signature and heroic
+              abilities during a respite.

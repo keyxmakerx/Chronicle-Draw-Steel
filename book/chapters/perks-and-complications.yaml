@@ -1,11 +1,204 @@
 title: Perks and Complications
-intro: Small talents, and the trouble that follows a hero around.
+intro: Small talents for the moments outside a fight, and the trouble that follows a hero around.
 pages:
-  - title: Coming soon
+  - title: Perks
     blocks:
       - text: |
-          Perks are small extra talents, and complications are a bit of
-          built-in trouble for the story to use. The package does not carry
-          their rules yet, so this chapter is a placeholder.
+          A perk is a feature that gives your hero a heroic moment outside of
+          combat: exploring, investigating, negotiating, crafting or knowing
+          something nobody else does. Many are versatile enough to help in a
+          fight too.
 
-          It will grow as the package adds more rules.
+          **When you get one.** Your **career** grants one perk. Each class
+          then lets you choose another at levels 2, 4, 6, 8 and 10. The class
+          feature says which perk groups you may pick from; some say any group.
+      - type: flaps
+        items:
+          - title: Crafting perks
+            text: |
+              Sharpen your talent for making things and make you an expert in
+              what you create. Several help with crafting and research
+              projects (6 perks).
+          - title: Exploration perks
+            text: |
+              Help you cross and survive different environments, and lend
+              muscle to the party (10 perks).
+          - title: Interpersonal perks
+            text: |
+              Improve how you deal with other creatures, in conversation and
+              in a negotiation (10 perks).
+          - title: Intrigue perks
+            text: |
+              Make you better at uncovering mysteries and finding the truth
+              while your own secrets stay hidden (6 perks).
+          - title: Lore perks
+            text: |
+              Improve your memory, languages and knowledge across many topics
+              (8 perks).
+          - title: Supernatural perks
+            text: |
+              The one group that gives a hero of any class a touch of magic
+              or psionics. Unlike the other groups, a Director cannot let
+              anyone do these with a test (7 perks).
+      - type: callout
+        title: Perks and tests
+        text: |
+          A perk does not mean other heroes cannot try the same thing. Apart
+          from supernatural perks, a Director can let anyone attempt the task
+          with a test. A perk is special because you do it **without a test**,
+          and often get a better result than a successful test would give.
+          Catching a falling ally is a good example. Anyone might try with a
+          Might test; the I've Got You perk does it automatically as a free
+          triggered action.
+      - text: |
+          The cards on the next page show how perks read.
+      - type: links
+        title: The full list
+        items:
+          - title: All perks
+            summary: "All 47 perks, one page per group."
+            chapter: perks-list
+  - title: A few perks
+    blocks:
+      - type: cards
+        items:
+          - title: Area of Expertise
+            entry: perks/area-of-expertise
+            summary: Crafting. Turns a weak result into a middling one.
+            text: |
+              Pick a crafting skill you have. A tier 1 outcome on an easy or
+              medium test with it counts as tier 2. Spend a minute looking at
+              an object of that skill to estimate its value and spot flaws.
+          - title: Danger Sense
+            entry: perks/danger-sense
+            summary: Exploration. You can't be surprised in the wild.
+            text: |
+              In natural environments (not settlements) you gain an edge on
+              Alertness tests and can't be surprised. You also feel a natural
+              disaster coming within the next 72 hours.
+          - title: Linguist
+            entry: perks/linguist
+            summary: Lore. Two languages, and picking up more quickly.
+            text: |
+              You learn two languages you have heard or seen. After 7 days
+              somewhere a language is used, you can hold a conversation in it,
+              and learning it properly as a project costs half.
+          - title: Charming Liar
+            entry: perks/charming-liar
+            summary: Interpersonal. Failed lies cost you nothing.
+            text: |
+              Failing a Lie test brings no consequences, and in a negotiation
+              you can be caught in one lie without penalty. Using either
+              benefit locks the perk until you next earn a Victory.
+          - title: Forgettable Face
+            entry: perks/forgettable-face
+            summary: Intrigue. Strangers cannot describe you.
+            text: |
+              After 10 minutes or less with someone new, you can make them
+              forget your face. An hour spent on a disguise automatically
+              gets tier 2 on a Disguise test, or tier 3 if you have the skill.
+          - title: Familiar
+            entry: perks/familiar
+            summary: Supernatural. A small spirit companion.
+            text: |
+              A spirit in the form of a small animal or object chooses to be
+              your familiar, using the familiar stat block.
+  - title: Complications
+    blocks:
+      - text: |
+          A complication is an **optional** feature that adds to your hero's
+          backstory. Each one gives you a **benefit** and a **drawback**, and
+          the drawback is balanced against the benefit: a strong upside
+          comes with a heavy downside.
+
+          Because it is optional, **check with your Director before taking
+          one**. The Director decides how it plays out in the story, and that
+          is part of the deal. Its drawback might hang over the whole
+          campaign, or you might get a chance to be rid of it.
+      - type: flaps
+        items:
+          - title: Benefit and drawback
+            text: |
+              Some are mechanical and some are narrative. Either way they
+              give the Director hooks to pull your hero into the story.
+          - title: Changing the story
+            text: |
+              With your Director you can reshape a complication's story, or
+              swap it out entirely. Infernal Contract could just as well be a
+              deal with an archfey or an undead general. Many details are
+              left vague on purpose, so you decide what happened and who else
+              was involved.
+          - title: Picking one
+            text: |
+              Choose any complication you like, or roll a d100 for one that
+              feels like an unexpected part of your life. They are numbered
+              in alphabetical order.
+      - type: roll
+        dice: 1d100
+        label: Roll a complication
+        bands:
+          - max: 25
+            label: 1 to 25
+            text: Advanced Studies to Evanesceria, alphabetically. Look up the number in All complications.
+          - max: 50
+            label: 26 to 50
+            text: Exile to Lightning Soul.
+          - max: 75
+            label: 51 to 75
+            text: Loner to Secret Twin.
+          - label: 76 to 100
+            text: Self-Taught to Wrongly Imprisoned.
+      - type: links
+        title: The full list
+        items:
+          - title: All complications
+            summary: "All 100, A to Z. The roll's number is the entry's place in the list."
+            chapter: complications-list
+  - title: A few complications
+    blocks:
+      - type: cards
+        items:
+          - title: Coward
+            entry: complications/coward
+            summary: You run toward what scares you.
+            text: |
+              **Benefit.** While frightened, you can move toward the source
+              of your fear.
+
+              **Drawback.** Each saving throw to end frightened rolls a d10
+              twice and takes the lower.
+          - title: Lucky
+            entry: complications/lucky
+            summary: Fortune favours you, until you stop trusting it.
+            text: |
+              **Benefit.** When you spend a [[hero token]] to pass a saving throw
+              or reroll a test, roll a d10. On a 6 or higher you keep the token.
+
+              **Drawback.** After a tier 1 outcome on a test where you do not
+              spend a hero token to reroll, you take a bane on your next test.
+          - title: Rival
+            entry: complications/rival
+            summary: A former companion always one step ahead.
+            text: |
+              **Benefit.** One skill of yours gives +3 instead of +2.
+
+              **Drawback.** Your rival excels at a skill the Director
+              chooses, and you take a bane on tests using that skill.
+          - title: Hunted
+            entry: complications/hunted
+            summary: Someone is always on your trail.
+            text: |
+              **Benefit.** You gain an intrigue skill, and you can lay low as
+              a respite activity so pursuers lose track of you and your party.
+
+              **Drawback.** Each time you earn [[renown|Renown]], your pursuer learns
+              where you are. Unless you lay low or move, agents arrive within
+              1d10 days.
+          - title: Curse of Poverty
+            entry: complications/curse-of-poverty
+            summary: Riches slip through your fingers.
+            text: |
+              Whenever you take a respite with [[wealth|Wealth]] above 1, your Wealth
+              drops to 1 and you gain 1 Recovery for each point lost. Your
+              Recoveries go back to normal the first time you take a respite
+              with fewer than your maximum.

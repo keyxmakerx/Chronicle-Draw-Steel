@@ -1,58 +1,631 @@
 title: Tests
 intro: When something matters outside a fight, you roll a test.
 pages:
-  - title: Making a test
+  - title: When to test
     blocks:
       - text: |
-          A test is a [[power roll]] made outside combat. The Director names
-          the characteristic that fits the task, and the tier you land in is
-          the outcome: a low tier goes badly, a high tier goes well. Having a
-          fitting skill gives you an edge.
-      - type: example
-        title: Bursting the door
-        steps:
-          - 'Director: The iron door is barred, and the chanting beyond it is getting faster.'
-          - 'Orden: I hit it shoulder-first. That is a Might test.'
-          - 'Roll: the dice show 7 and 5, which makes 12.'
-          - 'Add 2 for Orden''s Might, because this is a Might test. The total is 14.'
-          - 'Director: 14 is Tier 2. The bar splinters and you are through, but the noise carries.'
-  - title: Skills
+          A test is any [[power roll]] where failure or a consequence is
+          possible. Heroes make tests; the Director decides when one is
+          called for and which characteristic fits. Tap a heading below.
+      - type: flaps
+        items:
+          - title: When the Director calls for one
+            text: |
+              Only when the consequences of failure are interesting or
+              dramatic and failure will not stall the story. Hopping a
+              waist-high wall in a quiet street needs no test. Doing it
+              while chased does.
+          - title: Failure never stops the story
+            text: |
+              If the only way forward hangs on one roll, a failure should
+              open another route, not end the scene. A botched lore check
+              might send you to a library or a ruin instead.
+          - title: It just works
+            text: |
+              A clever idea can skip the test entirely. Smearing your hands
+              with sticky webbing to climb a wall may just work. It often
+              works free the first time, and the Director may ask for a test
+              if you repeat it.
+          - title: How long it takes
+            text: |
+              The Director sets it. Recalling lore may take no time, hiding
+              behind a barrel a maneuver or main action, tracking a band
+              across a wasteland days. Many tests in combat are maneuvers.
+          - title: Trying again
+            text: |
+              After a failure you usually cannot retry until something
+              changes: better lockpicks, oiled tumblers, a demonstration.
+              The Director decides when it has changed enough.
+          - title: Tests never steer a hero
+            text: |
+              No creature can force what your hero does by making a test
+              against you, whether a monster, NPC or another player. An NPC
+              can suggest, and you decide. A PC may not be able to read
+              another PC's honesty with a test either. A table can agree to
+              lift this together.
+      - type: cards
+        items:
+          - title: Might tests
+            summary: Physical strength.
+            text: |
+              Breaking down doors, hurling heavy objects, pulling up a sheer
+              wall, swimming against a current.
+          - title: Agility tests
+            summary: Coordination and nimbleness.
+            text: |
+              Tumbling, sneaking quietly, picking locks, sleight of hand.
+          - title: Reason tests
+            summary: Mind and education.
+            text: |
+              Recalling lore, deducing from clues, puzzles, forging, breaking
+              codes, logical arguments, estimating.
+          - title: Intuition tests
+            summary: Observation and instinct.
+            text: |
+              Noticing hidden creatures or details, reading motives and
+              honesty, calming others, training animals.
+          - title: Presence tests
+            summary: Force of personality.
+            text: |
+              Gaining trust, projecting confidence, influencing and leading.
+  - title: Difficulty and outcomes
     blocks:
       - text: |
-          Skills are sorted into five groups. A skill that fits the task gives
-          you an edge on the test.
+          The Director rates the task **easy**, **medium** or **hard**, in
+          secret or aloud. Easier than easy just works. Harder than hard may
+          be impossible. You roll a power roll with the characteristic the
+          Director names, adding **+2** if a skill applies. Roll for each
+          difficulty below and watch the band light up.
+      - type: roll
+        dice: 2d10
+        label: Easy test
+        modifier: true
+        bands:
+          - max: 11
+            label: Success with a consequence
+            text: You do it, but it costs you.
+          - max: 16
+            label: Success
+            text: You do it.
+          - label: Success with a reward
+            text: You do it and get something extra.
+      - type: roll
+        dice: 2d10
+        label: Medium test
+        modifier: true
+        bands:
+          - max: 11
+            label: Failure
+            text: You do not do it.
+          - max: 16
+            label: Success with a consequence
+            text: You do it, but it costs you.
+          - label: Success
+            text: You do it.
+      - type: roll
+        dice: 2d10
+        label: Hard test
+        modifier: true
+        bands:
+          - max: 11
+            label: Failure with a consequence
+            text: You do not do it, and you suffer a setback.
+          - max: 16
+            label: Failure
+            text: You do not do it.
+          - label: Success
+            text: You do it.
+      - type: callout
+        title: Natural 19 or 20
+        text: |
+          If the two dice alone total 19 or 20 you succeed with a reward on
+          any difficulty. Any success includes a plain success, a success
+          with a consequence and a success with a reward. A failure includes
+          a plain failure and a failure with a consequence.
+      - text: |
+          Dislike the result? Spend a hero token to reroll the test and keep
+          the new roll.
+  - title: Consequences and rewards
+    blocks:
+      - type: flaps
+        items:
+          - title: Failure with a consequence
+            text: |
+              You do not do what you set out to, and you suffer an impactful
+              setback tied to the task: falling from the wall and landing
+              prone, being spotted by the cultists, a bribed guard who
+              arrests you. Consequences need not show at once; a cheat noticed
+              at cards may only bite later.
+          - title: Failure
+            text: |
+              You simply do not do it. The Director may add a small penalty,
+              lighter than a consequence, such as one cultist coming to
+              investigate. The Director can also offer to let you succeed
+              with a consequence instead: break the door down, but lose 1d6
+              Stamina doing so.
+          - title: Success with a consequence
+            text: |
+              You do it, with an added cost: the wall crumbles for the ally
+              behind you, you leave footprints, the guard lets you in but
+              wants a gem to let you out. The Director may offer you a plain
+              failure instead, such as keeping your lockpicks intact but not
+              opening the lock.
+          - title: Success
+            text: You do exactly what you set out to do.
+          - title: Success with a reward
+            text: |
+              You succeed and gain momentum or luck: a ladder at the top for
+              your allies, a barrel dosed as you slip past, a guard who
+              unlocks one more door.
+          - title: Common consequences
+            text: |
+              - An NPC storms off or turns on you.
+              - A group of foes notices you.
+              - A trap or hazard captures or hurts you or an ally.
+              - Important gear breaks.
+              - You think you know something you do not.
+              - You are stuck in a negotiation or montage test you did not
+                need before.
+          - title: Common rewards
+            text: |
+              - A follow-up task succeeds automatically.
+              - An ally on the same task skips the test.
+              - You gain a consumable treasure or useful mundane gear.
+              - You learn something helpful.
+              - Someone grants you a small favor.
+              - You spot a danger well before it strikes.
+          - title: The default stand-ins
+            text: |
+              If the Director has no better idea, a consequence can be 2
+              extra [[malice]] at the start of the next combat, and a reward
+              can be a hero token for the party. A table may let players
+              pitch consequences and rewards instead, which the Director
+              can reject or reshape.
+  - title: Who rolls, and reactive tests
+    blocks:
+      - text: |
+          Heroes make tests and NPCs do not: the heroes are the stars, and
+          outcomes weigh on them. When a creature opposes a hero, the Director
+          rates the test instead. An NPC companion may still roll now and then.
+      - type: flaps
+        items:
+          - title: Rating an opposed task
+            text: |
+              Guidelines, not hard rules.
 
-          There are fifty-seven in all. The cards on the next page name them.
-  - title: Skill groups, part one
+              - **Easy:** one opponent with a lower test bonus than yours.
+              - **Medium:** several opponents who each have a lower bonus than
+                yours, or one opponent with the same bonus.
+              - **Hard:** an opponent with a higher bonus than yours, or
+                several with the same bonus.
+
+              The consequence of failing an opposed task is usually that the
+              opposition wins: you are noticed, caught lying, or buying the
+              ale.
+          - title: NPCs roll for deceptive tasks
+            text: |
+              To avoid tipping the table off, the Director may roll for an NPC
+              instead. An assassin sneaking up on a camp rolls Agility if no
+              one is keeping watch; a hero watching rolls Intuition. An NPC
+              lying to heroes who have no reason for doubt rolls Presence.
+              If you ask to read an NPC's honesty, you roll Intuition.
+          - title: Opposed power rolls
+            text: |
+              For a dramatic duel of tests, every creature rolls and the
+              highest total wins. No reward is earned, and there are no
+              tiers. A tie leaves the scene unchanged, so a hidden watcher
+              stays unaware, or an aware one still does not know where you are.
+              Double edge is +4 and double bane -4.
+          - title: Reactive tests
+            text: |
+              Sometimes the Director asks for a test without saying why,
+              because you might notice or know something you would not think
+              to ask about. Common cases:
+
+              - Intuition to spot a secret door, a hidden trap or another
+                disguised feature.
+              - Intuition to notice a hidden foe.
+              - Intuition to read whether someone is lying or hiding emotion.
+              - Reason to recall what you know about an object, fact or event.
+              - Reactive tests set by some monsters and terrain. Skills do not
+                modify these.
+          - title: Secret reactive tests
+            text: |
+              Optionally the Director rolls these for you in secret, so asking
+              does not give away that there is something to find. This needs
+              everyone's characteristics and skills to hand.
+  - title: How skills work
     blocks:
+      - text: |
+          Skills are your specialties beyond fighting, defending and your
+          ancestry and class features. If a skill fits the test, you gain
+          **+2**.
+      - type: flaps
+        items:
+          - title: The +2 is a bonus, not an edge
+            text: |
+              You can have both a skill's +2 and an edge on the same test.
+              You cannot apply more than one skill to a test.
+          - title: Justify the skill
+            text: |
+              The Director names the characteristic and you say if a skill
+              applies. If it is not obvious, describe your approach and why it
+              uses that skill. The Director's ruling is final. Creative but
+              reasonable thinking pays: without Brag, a brief exciting lecture
+              on the elements might let your Magic skill apply to impressing
+              a noble.
+          - title: Skills mix with any characteristic
+            text: |
+              A skill applies to any characteristic that makes sense. Verbal
+              Intimidate is Presence, tearing a log in half to scare a foe is
+              Might, and Intimidate fits both. Climbing is Might, leaping
+              balcony to balcony is Agility, and Climb fits both.
+          - title: Many narrow skills
+            text: |
+              Skills are specific on purpose: Climb, Jump, Lift and Swim
+              rather than Athletics. No hero covers everything, and you do not
+              need a skill to have a decent chance, so take the ones that
+              suit your hero. Someone has to try it anyway.
+          - title: Making your own skills
+            text: |
+              The Director may add skills the campaign needs, such as
+              Brewing or Painting.
+      - type: callout
+        title: Five groups, fifty-seven skills
+        text: |
+          Crafting, exploration, interpersonal, intrigue and lore. The next
+          two pages list them all; open a card to read its entry.
+  - title: Skills, part one
+    blocks:
+      - type: callout
+        title: Crafting
+        text: "Crafting skills make and appraise goods and jury-rig contraptions, and shine during downtime. Rewards: leftover rare materials, a buyer who pays extra, a jury-rig that lasts longer than it should. Consequences: wasted materials, a badly misjudged value, a contraption that harms the wrong people."
       - type: cards
         items:
-          - title: Crafting
-            summary: Make things.
-            text: |
-              Alchemy, Architecture, Blacksmithing, Carpentry, Cooking,
-              Fletching, Forgery, Jewelry, Mechanics, Tailoring.
-          - title: Exploration
-            summary: Move through and survive the world.
-            text: |
-              Climb, Drive, Endurance, Gymnastics, Heal, Jump, Lift, Navigate,
-              Ride, Swim.
-          - title: Interpersonal
-            summary: Deal with other people.
-            text: |
-              Brag, Empathize, Flirt, Gamble, Handle Animals, Interrogate,
-              Intimidate, Lead, Lie, Music, Perform, Persuade, Read Person.
-  - title: Skill groups, part two
-    blocks:
+          - title: Alchemy
+            entry: skills/alchemy
+            summary: "Make bombs and potions"
+            text: "Make bombs and potions."
+          - title: Architecture
+            entry: skills/architecture
+            summary: "Create buildings and vehicles"
+            text: "Create buildings and vehicles."
+          - title: Blacksmithing
+            entry: skills/blacksmithing
+            summary: "Forge metal armor and weapons"
+            text: "Forge metal armor and weapons."
+          - title: Carpentry
+            entry: skills/carpentry
+            summary: "Create items out of wood"
+            text: "Create items out of wood."
+          - title: Cooking
+            entry: skills/cooking
+            summary: "Create delicious dishes"
+            text: "Create delicious dishes."
+          - title: Fletching
+            entry: skills/fletching
+            summary: "Make ranged weapons and ammunition"
+            text: "Make ranged weapons and ammunition."
+          - title: Forgery
+            entry: skills/forgery
+            summary: "Create false badges, documents, and other items"
+            text: "Create false badges, documents, and other items."
+          - title: Jewelry
+            entry: skills/jewelry
+            summary: "Create bracelets, crowns, rings, and other jewelry"
+            text: "Create bracelets, crowns, rings, and other jewelry."
+          - title: Mechanics
+            entry: skills/mechanics
+            summary: "Build machines and clockwork items"
+            text: "Build machines and clockwork items."
+          - title: Tailoring
+            entry: skills/tailoring
+            summary: "Craft clothing of cloth or leather"
+            text: "Craft clothing of cloth or leather."
+      - type: callout
+        title: Exploration
+        text: "Exploration skills move you through the world and past physical obstacles. Rewards: an ally who skips the test, an automatic follow-up success, arriving early, spotting a hazard ahead. Consequences: hurting yourself, your gear or allies, getting lost, stumbling into a hazard."
       - type: cards
         items:
-          - title: Intrigue
-            summary: Sneak, hide and steal.
+          - title: Climb
+            entry: skills/climb
+            summary: "Move up vertical surfaces"
+            text: "Move up vertical surfaces."
+          - title: Drive
+            entry: skills/drive
+            summary: "Control vehicles"
+            text: "Control vehicles."
+          - title: Endurance
+            entry: skills/endurance
+            summary: "Remain engaged in strenuous activity over a long period of time"
+            text: "Remain engaged in strenuous activity over a long period of time."
+          - title: Gymnastics
+            entry: skills/gymnastics
+            summary: "Move across unsteady or narrow surfaces; tumble"
+            text: "Move across unsteady or narrow surfaces; tumble."
+          - title: Heal
+            entry: skills/heal
+            summary: "Use mundane first aid"
+            text: "Use mundane first aid."
+          - title: Jump
+            entry: skills/jump
+            summary: "Leap vertical and horizontal distances"
+            text: "Leap vertical and horizontal distances."
+          - title: Lift
+            entry: skills/lift
+            summary: "Pick up, carry, and throw heavy objects"
+            text: "Pick up, carry, and throw heavy objects."
+          - title: Navigate
+            entry: skills/navigate
+            summary: "Read a map and travel without becoming lost"
+            text: "Read a map and travel without becoming lost."
+          - title: Ride
+            entry: skills/ride
+            summary: "Ride and control a nonsapient mount, such as a horse"
+            text: "Ride and control a nonsapient mount, such as a horse."
+          - title: Swim
+            entry: skills/swim
+            summary: "Move through deep liquid"
+            text: "Move through deep liquid."
+      - type: callout
+        title: Interpersonal
+        text: "Interpersonal skills deal with other creatures and are strongest in negotiations. Apart from Handle Animals, they work only on creatures with emotions who can understand you. Rewards: an extra favor, item or piece of information. Consequences: the creature ends up angry, upset or embarrassed and may ignore, spurn, expose or attack you."
+      - type: cards
+        items:
+          - title: Brag
+            entry: skills/brag
+            summary: "Impress others with stories of your deeds"
+            text: "Impress others with stories of your deeds."
+          - title: Empathize
+            entry: skills/empathize
+            summary: "Relate to someone on a personal level"
+            text: "Relate to someone on a personal level."
+          - title: Flirt
+            entry: skills/flirt
+            summary: "Attract romantic attention from someone"
+            text: "Attract romantic attention from someone."
+          - title: Gamble
+            entry: skills/gamble
+            summary: "Make bets with others"
+            text: "Make bets with others."
+          - title: Handle Animals
+            entry: skills/handleAnimals
+            summary: "Interact with nonsapient animal wildlife"
+            text: "Interact with nonsapient animal wildlife."
+          - title: Interrogate
+            entry: skills/interrogate
+            summary: "Obtain information from a creature withholding it"
+            text: "Obtain information from a creature withholding it."
+          - title: Intimidate
+            entry: skills/intimidate
+            summary: "Awe or scare a creature"
+            text: "Awe or scare a creature."
+          - title: Lead
+            entry: skills/lead
+            summary: "Inspire people to action"
+            text: "Inspire people to action."
+          - title: Lie
+            entry: skills/lie
+            summary: "Convince someone that a falsehood is true"
+            text: "Convince someone that a falsehood is true."
+          - title: Music
+            entry: skills/music
+            summary: "Perform music vocally or with an instrument"
+            text: "Perform music vocally or with an instrument."
+          - title: Perform
+            entry: skills/perform
+            summary: "Engage in dance, oratory, acting, or some other physical performance"
+            text: "Engage in dance, oratory, acting, or some other physical performance."
+          - title: Persuade
+            entry: skills/persuade
+            summary: "Convince someone to agree with you through use of your charms and grace"
+            text: "Convince someone to agree with you through use of your charms and grace."
+          - title: Read Person
+            entry: skills/readPerson
+            summary: "Read the emotions and body language of other creatures"
+            text: "Read the emotions and body language of other creatures."
+  - title: Skills, part two
+    blocks:
+      - type: callout
+        title: Intrigue
+        text: "Intrigue skills cover investigation, thievery and spycraft. Rewards: an ally who skips the test, an automatic follow-up success, extra helpful information. Consequences: getting caught, or missing a detail that puts you in danger such as a trap or ambush."
+      - type: cards
+        items:
+          - title: Alertness
+            entry: skills/alertness
+            summary: "Intuitively sense the details of your surroundings"
+            text: "Intuitively sense the details of your surroundings."
+          - title: Conceal Object
+            entry: skills/concealObject
+            summary: "Hide an object on your person or in your environment"
+            text: "Hide an object on your person or in your environment."
+          - title: Disguise
+            entry: skills/disguise
+            summary: "Change your appearance to look like a different person"
+            text: "Change your appearance to look like a different person."
+          - title: Eavesdrop
+            entry: skills/eavesdrop
+            summary: "Actively listen to something that is hard to hear, such as a whispered conversation through a door"
+            text: "Actively listen to something that is hard to hear, such as a whispered conversation through a door."
+          - title: Escape Artist
+            entry: skills/escapeArtist
+            summary: "Escape from bonds such as rope or manacles"
+            text: "Escape from bonds such as rope or manacles."
+          - title: Hide
+            entry: skills/hide
+            summary: "Conceal yourself from others' observation"
+            text: "Conceal yourself from others' observation."
+          - title: Pick Lock
+            entry: skills/pickLock
+            summary: "Open a lock without using the key"
+            text: "Open a lock without using the key."
+          - title: Pick Pocket
+            entry: skills/pickPocket
+            summary: "Steal an item that another person wears or carries without them noticing"
+            text: "Steal an item that another person wears or carries without them noticing."
+          - title: Sabotage
+            entry: skills/sabotage
+            summary: "Disable a mechanical device such as a trap"
+            text: "Disable a mechanical device such as a trap."
+          - title: Search
+            entry: skills/search
+            summary: "Actively search an environment for important details and items"
+            text: "Actively search an environment for important details and items."
+          - title: Sneak
+            entry: skills/sneak
+            summary: "Move silently"
+            text: "Move silently."
+          - title: Track
+            entry: skills/track
+            summary: "Follow a trail that another creature has left behind"
+            text: "Follow a trail that another creature has left behind."
+      - type: callout
+        title: Lore
+        text: "Lore skills research and recall specific knowledge, and shine during downtime. Rewards: an extra useful fact. Consequences: learning something wrong that seems useful, or wasting time."
+      - type: cards
+        items:
+          - title: Criminal Underworld
+            entry: skills/criminalUnderworld
+            summary: "Knowing about criminal organizations, their crimes, their relationships, and their leaders"
+            text: "Knowing about criminal organizations, their crimes, their relationships, and their leaders."
+          - title: Culture
+            entry: skills/culture
+            summary: "Knowing about a culture's customs, folktales, and taboos"
+            text: "Knowing about a culture's customs, folktales, and taboos."
+          - title: History
+            entry: skills/history
+            summary: "Knowing about significant past events"
+            text: "Knowing about significant past events."
+          - title: Magic
+            entry: skills/magic
+            summary: "Knowing about magical places, spells, rituals, items, and phenomena"
+            text: "Knowing about magical places, spells, rituals, items, and phenomena."
+          - title: Monsters
+            entry: skills/monsters
+            summary: "Knowing monster ecology, strengths, and weaknesses"
+            text: "Knowing monster ecology, strengths, and weaknesses."
+          - title: Nature
+            entry: skills/nature
+            summary: "Knowing about natural flora, fauna, and weather"
+            text: "Knowing about natural flora, fauna, and weather."
+          - title: Psionics
+            entry: skills/psionics
+            summary: "Knowing about psionic places, spells, rituals, items, and phenomena"
+            text: "Knowing about psionic places, spells, rituals, items, and phenomena."
+          - title: Religion
+            entry: skills/religion
+            summary: "Knowing about religious mythology, practices, and rituals"
+            text: "Knowing about religious mythology, practices, and rituals."
+          - title: Rumors
+            entry: skills/rumors
+            summary: "Knowing gossip, legends, and uncertain truths"
+            text: "Knowing gossip, legends, and uncertain truths."
+          - title: Society
+            entry: skills/society
+            summary: "Knowing noble etiquette and the leadership and power dynamics of noble families"
+            text: "Knowing noble etiquette and the leadership and power dynamics of noble families."
+          - title: Strategy
+            entry: skills/strategy
+            summary: "Knowing about battle tactics and logistics"
+            text: "Knowing about battle tactics and logistics."
+          - title: Timescape
+            entry: skills/timescape
+            summary: "Knowing about the many worlds of the timescape"
+            text: "Knowing about the many worlds of the timescape."
+  - title: Example tests
+    blocks:
+      - text: |
+          A trio wants to climb a 40-foot castle wall. Step through how the
+          tests go.
+      - type: example
+        title: Climbing the wall
+        steps:
+          - 'Director: The wall is smooth and built to repel climbers. That is a Might test, and I am keeping the difficulty secret. It is hard.'
+          - 'The tactician goes first. She has Might 2 and the Climb skill, so +2 more. The dice show 13, for a total of 17.'
+          - 'Tier 3 on a hard test is a success. She is on top and sees guards looking the other way.'
+          - 'She drops a rope. With the rope the Director rates the conduit''s climb as easy. The conduit rolls 11 plus Might 2 for 13: tier 2, a success on an easy test.'
+          - 'The shadow has Might -1 and no skills. The tactician offers to haul him up while he clings on. That is a medium Might test, and the Lift skill applies.'
+          - 'She rolls 2, plus 2 for Might and 2 for Lift: 6. Tier 1 on a medium test is a failure.'
+          - 'Director: Rather than leave him behind, you can pull him up and suffer the consequence of making noise. They agree: a lantern swings their way.'
+      - type: callout
+        title: What to notice
+        text: |
+          The rope changed the difficulty. A skill added to the characteristic
+          but was not an edge. A failure was offered back as a success with
+          a consequence. Nobody was left stuck: every result moved the story.
+  - title: Assist, hide, group
+    blocks:
+      - type: flaps
+        items:
+          - title: Assist a test
             text: |
-              Alertness, Conceal Object, Disguise, Eavesdrop, Escape Artist,
-              Hide, Pick Lock, Pick Pocket, Sabotage, Search, Sneak, Track.
-          - title: Lore
-            summary: Know things.
+              You can help another creature's test if you have a skill that
+              applies, they are not using that same skill, and you can
+              describe your help sensibly. Shouting encouragement will not
+              make anyone stealthier. You make a test with your skill and a
+              characteristic the Director picks, and the result gives them a
+              bonus, as the roller below shows.
+          - title: Hiding
             text: |
-              Criminal Underworld, Culture, History, Magic, Monsters, Nature,
-              Psionics, Religion, Rumors, Society, Strategy, Timescape.
+              You can hide only if you have [[cover]] or [[concealment]] from
+              a creature that is not observing you. Observing means they know
+              your exact spot, as if shouting "there they are". You cannot
+              hide from a dragon at your heels until you break its sight. In
+              combat, the Hide maneuver makes you [[hidden]] automatically
+              unless the Director says otherwise. Out of combat the Director
+              may ask for a Hide test.
+          - title: What hidden does
+            text: |
+              Creatures cannot target you with abilities that lack the Area
+              keyword, and you gain an edge on ability rolls against them,
+              lasting until the end of the turn you stop being hidden. You
+              stop being hidden when you lose cover or concealment, or after
+              you use an ability, interact with an enemy, move without
+              sneaking or make noise. The activity resolves first, then you
+              are revealed.
+          - title: Searching for hidden creatures
+            text: |
+              As a maneuver, make an Intuition test with the Search skill.
+              Each hidden creature within 10 squares that you have line of
+              effect to makes an opposed Agility test with Hide. If you beat
+              one, it is no longer hidden from you, and you can point it out
+              to allies within 10 squares. If a creature is hidden from your
+              allies but not from you, pointing it out is a maneuver with no
+              test. The Director may swap in other characteristics and skills.
+          - title: Sneaking
+            text: |
+              While hidden and out of combat, you can sneak to stay hidden as
+              you move: your speed is halved and you make an Agility test
+              with the Sneak skill at the Director's difficulty. The
+              Director may allow another characteristic, such as Presence to
+              blend into a crowd.
+          - title: Group tests
+            text: |
+              When two or more heroes tackle one simple task together with the
+              same test, the Director can call a group test: easy, medium or
+              hard, like any test. Everyone rolls alone, and none can assist
+              another. The test **succeeds** if half or more succeed,
+              otherwise it fails.
+          - title: Group rewards and consequences
+            text: |
+              If it succeeds and half or more earned a reward, the group
+              gets one collective reward worth two single ones, and
+              consequences are ignored. If it fails and more than half
+              incurred a consequence, the group gets a collective consequence
+              and rewards are ignored: each hero takes a bane on their next
+              power roll, or the Director gains 2 [[malice]] per hero. If
+              fewer than half earned a reward or consequence, the test simply
+              succeeds or fails.
+      - type: roll
+        dice: 2d10
+        label: Assisting a test
+        modifier: true
+        bands:
+          - max: 11
+            label: Bane
+            text: You get in the way. The creature takes a bane on their test.
+          - max: 16
+            label: Edge
+            text: Your help gives the creature an edge on their test.
+          - label: Double edge
+            text: Your help gives the creature a double edge on their test.

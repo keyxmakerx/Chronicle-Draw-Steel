@@ -1,159 +1,448 @@
 title: Kits
 intro: Your fighting style, your armor and your weapons.
 pages:
-  - title: What a kit does
+  - title: How kits work
     blocks:
       - text: |
-          A kit says what you wear and carry, and it adjusts your numbers:
-          Stamina, speed, stability, damage and reach. It also hands you a
-          **signature ability** of its own.
+          A [[kit]] is a bundle of armor, weapons and fighting technique. It
+          adjusts your numbers (Stamina, speed, stability, damage, reach,
+          disengage) and gives you a **signature ability** of its own. There
+          are twenty-one kits, plus four stormwight kits for one kind of fury.
+      - type: flaps
+        items:
+          - title: Who uses a kit
+            text: |
+              - **Censor, shadow, troubadour and beastheart:** pick one kit.
+              - **Fury:** a berserker or reaver picks one kit. A stormwight
+                picks a stormwight kit instead (see the last page of this
+                chapter).
+              - **Tactician:** picks **two** kits and gets both signature
+                abilities. If both give the same kind of bonus, you take one
+                of the two until your next [[respite]]. Usually that is the
+                higher.
+              - **Conduit, elementalist, null and talent:** no kit. They pick
+                a prayer, enchantment or augmentation (and a ward) instead.
+                Those include a "battle" option that lets them wear light
+                armor and a light weapon without a kit.
+              - **Summoner:** no kit at 1st level. A summoner conjures their
+                own kit at 3rd level.
+          - title: Changing your kit
+            text: |
+              You are never locked in. You can change your kit as a
+              [[respite]] activity, for example when the next adventure needs
+              longer reach or heavier armor.
+          - title: Wearing gear outside your kit
+            text: |
+              You can wear any armor and wield any weapon, but only the gear
+              your kit lists gives you the kit's bonuses. A weapon outside
+              your kit is an improvised weapon, and so are rocks, bottles and
+              furniture. Improvised weapons work with class weapon abilities,
+              never with your kit's signature ability, and they add none of
+              your kit's bonuses.
+          - title: Kits and magic treasures
+            text: |
+              A magic weapon or armor works for you only if it is in one of
+              your kit's categories. A medium weapon treasure suits the
+              Ranger or Shining Armor kits, but not Cloak and Dagger, which
+              has no medium weapon. Otherwise it is just an improvised weapon
+              in your hands. Change your kit in a respite if you want to use
+              it properly.
+          - title: Describing your gear
+            text: |
+              The categories are broad on purpose. Medium armor can be thick
+              hides, a breastplate or metal scales. A whip can be a spiked
+              chain. Describe your gear however suits your hero.
+          - title: Optional rule, losing equipment
+            text: |
+              For stories where heroes are stripped of their gear, the
+              Director can use these rules.
 
-          There are twenty-one kits. The next pages sort them by the armor
-          they give.
-      - type: callout
-        title: Stamina bonus
-        text: |
-          A kit's Stamina bonus is given per [[echelon]], so it grows as
-          your hero crosses into each new band of levels. The card shows the
-          per-echelon figure.
-  - title: No armor
+              - Armor not worn (or a shield not wielded): lose the kit's
+                Stamina and stability bonus. Keeping armor but losing the
+                shield costs 3 Stamina per echelon. A carried shield keeps its
+                bonus.
+              - A medium or heavy weapon not wielded: lose the melee damage
+                bonus.
+              - A light weapon not wielded: lose the melee and ranged damage
+                bonus and the thrown distance bonus (a bow in the same kit
+                keeps its own).
+              - A polearm or whip not wielded: lose the melee damage bonus and
+                melee distance bonus.
+              - An ensnaring weapon not wielded: lose the signature ability.
+              - A bow not wielded: lose the ranged damage and distance bonus.
+  - title: What the bonuses do
     blocks:
+      - text: |
+          Open a bonus to see how it applies. Every bonus is added to the
+          abilities it names, including free strikes.
+      - type: flaps
+        items:
+          - title: Stamina bonus
+            text: |
+              Added to your Stamina maximum, and it grows with your
+              [[echelon]]. A kit that says "+3 per echelon" gives +3 in your
+              first echelon, +6 in your second, and so on.
+          - title: Speed bonus
+            text: Added to your speed.
+          - title: Stability bonus
+            text: Added to your [[stability]].
+          - title: Damage bonuses
+            text: |
+              A melee damage bonus adds to the rolled damage of damage-dealing
+              abilities that have both the Melee and Weapon keywords. A ranged
+              damage bonus does the same for abilities with both Ranged and
+              Weapon. An ability is never melee and ranged at once, so only
+              one applies.
+
+              A bonus is written **+X/+Y/+Z**: X is added at tier 1, Y at tier
+              2, Z at tier 3. Try one below.
+          - title: Distance bonuses
+            text: |
+              A melee distance bonus extends abilities with Melee and Weapon.
+              A ranged distance bonus extends abilities with Ranged and
+              Weapon. It never makes an area of effect bigger.
+          - title: Disengage bonus
+            text: |
+              Adds to the squares you can [[shift]] when you take the
+              [[Disengage]] move action.
+          - title: Signature abilities already include the bonuses
+            text: |
+              The distance and damage printed on your kit's signature ability
+              already include the kit's bonuses, so don't add them again. For
+              example the Guisarmier's Forward Thrust, Backward Smash is
+              melee 2 and deals 4, 7 or 9, with its kit bonuses counted in.
+              A tactician who keeps a different kit's bonus has to adjust the
+              other signature ability's numbers by hand.
+      - type: roll
+        dice: 2d10
+        label: A Sniper's ranged weapon ability
+        modifier: true
+        bands:
+          - max: 11
+            label: Tier 1
+            text: The Sniper's +0/+0/+4 adds 0 damage.
+          - max: 16
+            label: Tier 2
+            text: Still 0 extra damage.
+          - label: Tier 3
+            text: Plus 4 damage from the kit.
+      - type: example
+        title: Reading a kit card
+        steps:
+          - 'Mountain says Stamina +9 per echelon, stability +2 and melee damage +0/+0/+4.'
+          - 'In the first echelon you have 9 extra Stamina. After reaching 4th level it is 18.'
+          - 'Your melee weapon strike hits at tier 2. The damage bonus there is +0, so you add nothing.'
+          - 'On a tier 3 result the same strike adds +4.'
+  - title: Armor and weapons
+    blocks:
+      - text: |
+          A kit lists armor in one of five categories and weapons in up to
+          two of eight. Open one to see what counts.
+      - type: flaps
+        items:
+          - title: Armor, none
+            text: Wear whatever clothing you like.
+          - title: Armor, light
+            text: Padded cloth, leather or a chain shirt.
+          - title: Armor, medium
+            text: Thick hides, a breastplate or metal scales.
+          - title: Armor, heavy
+            text: Chain mail, ring mail or plate. The best mundane protection.
+          - title: Shield
+            text: Any shape, any mundane material. Some kits include one.
+          - title: Bow
+            text: |
+              Anything that fires an arrow or bolt: crossbows, longbows and
+              shortbows. Also slings, atlatls and other hurled bullets, stones,
+              darts or small spears. You don't track mundane ammunition unless
+              the Director says so.
+          - title: Ensnaring weapon
+            text: Bolas, nets and other weapons made to catch and hold an enemy.
+          - title: Light weapon
+            text: |
+              One-handed melee weapons for fast strikes, many throwable:
+              daggers, shortswords, rapiers, handaxes and throwing hammers. A
+              kit with a light weapon lets you wield two at once.
+          - title: Medium weapon
+            text: |
+              One-handed melee weapons that leave a hand free for a shield or
+              an implement: battleaxes, clubs, longswords and warhammers.
+          - title: Heavy weapon
+            text: |
+              Two-handed melee weapons made to end a fight in one blow:
+              greatswords, greataxes, mauls and morningstars.
+          - title: Polearm
+            text: |
+              Two-handed melee weapons with long hafts for reach: glaives,
+              halberds, longspears and quarterstaffs.
+          - title: Unarmed strikes
+            text: "Your body is the weapon: punches, kicks and the like."
+          - title: Whip
+            text: A whip, spiked chain, flail or any long, flexible melee weapon.
+  - title: Kits without armor
+    blocks:
+      - text: |
+          Each card gives gear, bonuses and the signature ability. Bonuses are per echelon where noted.
       - type: cards
         items:
           - title: Arcane Archer
             entry: kits/arcane-archer
-            summary: Bow and magic. Signature, Exploding Arrow.
+            summary: "Bow and magic. Signature, Exploding Arrow."
             text: |
-              No armor, a bow. Speed +1, ranged damage +2, disengage +1,
-              ranged distance +10.
+              **Gear:** No armor, a bow.
+
+              **Bonuses:** Speed +1, ranged damage +2/+2/+2, ranged distance +10, disengage +1.
+
+              **Signature ability:** Exploding Arrow (Magic, Ranged, Strike, Weapon; main action; ranged 15; one creature or object).
           - title: Martial Artist
             entry: kits/martial-artist
-            summary: Fast unarmed fighting. Signature, Battle Grace.
+            summary: "Fast unarmed fighting. Signature, Battle Grace."
             text: |
-              No armor, unarmed strikes. Stamina +3, speed +3, melee damage
-              +2, disengage +1.
+              **Gear:** No armor, unarmed strikes.
+
+              **Bonuses:** Stamina +3 per echelon, speed +3, melee damage +2/+2/+2, disengage +1.
+
+              **Signature ability:** Battle Grace (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Panther
             entry: kits/panther
-            summary: Balanced protection, speed and damage. Signature, Devastating Rush.
+            summary: "Balanced protection, speed and damage. Signature, Devastating Rush."
             text: |
-              No armor, a heavy weapon. Stamina +6, speed +1, stability +1,
-              melee damage +0/+0/+4.
+              **Gear:** No armor, a heavy weapon.
+
+              **Bonuses:** Stamina +6 per echelon, speed +1, stability +1, melee damage +0/+0/+4.
+
+              **Signature ability:** Devastating Rush (Melee, Strike, Weapon; main action; melee 1; one creature or object).
           - title: Pugilist
             entry: kits/pugilist
-            summary: Brawler and boxer. Signature, Let's Dance.
+            summary: "Brawler and boxer. Signature, Let's Dance."
             text: |
-              No armor, unarmed strikes. Stamina +6, speed +2, stability +1,
-              melee damage +1.
+              **Gear:** No armor, unarmed strikes.
+
+              **Bonuses:** Stamina +6 per echelon, speed +2, stability +1, melee damage +1/+1/+1.
+
+              **Signature ability:** Let's Dance (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Sniper
             entry: kits/sniper
-            summary: Takes down enemies from afar. Signature, Patient Shot.
+            summary: "Takes down enemies from afar. Signature, Patient Shot."
             text: |
-              No armor, a bow. Speed +1, ranged damage +0/+0/+4, disengage +1.
+              **Gear:** No armor, a bow.
+
+              **Bonuses:** Speed +1, ranged damage +0/+0/+4, ranged distance +10, disengage +1.
+
+              **Signature ability:** Patient Shot (Ranged, Strike, Weapon; main action; ranged 15; one creature).
           - title: Whirlwind
             entry: kits/whirlwind
-            summary: A whip for mobility and reach. Signature, Extension of My Arm.
+            summary: "A whip for mobility and reach. Signature, Extension of My Arm."
             text: |
-              No armor, a whip. Speed +3, melee damage +1, disengage +1.
-  - title: Light armor
+              **Gear:** No armor, a whip.
+
+              **Bonuses:** Speed +3, melee damage +1/+1/+1, melee distance +1, disengage +1.
+
+              **Signature ability:** Extension of My Arm (Melee, Strike, Weapon; main action; melee 3; one creature).
+  - title: Kits with light armor
     blocks:
       - type: cards
         items:
           - title: Battlemind
             entry: kits/battlemind
-            summary: Lightly armored and hard to move. Signature, Unmooring.
+            summary: "Lightly armored and hard to move. Signature, Unmooring."
             text: |
-              Light armor, a medium weapon. Stamina +3, speed +2, stability
-              +1, melee damage +2.
+              **Gear:** Light armor, a medium weapon.
+
+              **Bonuses:** Stamina +3 per echelon, speed +2, stability +1, melee damage +2/+2/+2.
+
+              **Signature ability:** Unmooring (Melee, Psionic, Strike, Weapon; main action; melee 1; one creature).
           - title: Cloak and Dagger
             entry: kits/cloak-and-dagger
-            summary: Throwable light weapons, concealed by a cloak. Signature, Fade.
+            summary: "Throwable light weapons, concealed by a cloak. Signature, Fade."
             text: |
-              Light armor, a light weapon. Stamina +3, speed +2, melee and
-              ranged damage +1, disengage +1.
+              **Gear:** Light armor, a light weapon.
+
+              **Bonuses:** Stamina +3 per echelon, speed +2, melee damage +1/+1/+1, ranged damage +1/+1/+1, ranged distance +5, disengage +1.
+
+              **Signature ability:** Fade (Melee, Ranged, Strike, Weapon; main action; melee 1 or ranged 10; one creature).
           - title: Rapid-Fire
             entry: kits/rapid-fire
-            summary: Many arrows into nearby enemies. Signature, Two Shot.
+            summary: "Many arrows into nearby enemies. Signature, Two Shot."
             text: |
-              Light armor, a bow. Stamina +3, speed +1, ranged damage +2,
-              disengage +1.
+              **Gear:** Light armor, a bow.
+
+              **Bonuses:** Stamina +3 per echelon, speed +1, ranged damage +2/+2/+2, ranged distance +7, disengage +1.
+
+              **Signature ability:** Two Shot (Ranged, Strike, Weapon; main action; ranged 12; two creatures or objects).
           - title: Retiarius
             entry: kits/retiarius
-            summary: Net in one hand, trident in the other. Signature, Net and Stab.
+            summary: "Net in one hand, trident in the other. Signature, Net and Stab."
             text: |
-              Light armor, an ensnaring weapon and a polearm. Stamina +3,
-              speed +1, melee damage +2, disengage +1.
+              **Gear:** Light armor, an ensnaring weapon and a polearm.
+
+              **Bonuses:** Stamina +3 per echelon, speed +1, melee damage +2/+2/+2, melee distance +1, disengage +1.
+
+              **Signature ability:** Net and Stab (Melee, Strike, Weapon; main action; melee 2; one creature).
           - title: Stick and Robe
             entry: kits/stick-and-robe
-            summary: A reach weapon and plenty of movement. Signature, Where I Want You.
+            summary: "A reach weapon and plenty of movement. Signature, Where I Want You."
             text: |
-              Light armor, a polearm. Stamina +3, speed +2, melee damage +1,
-              disengage +1.
+              **Gear:** Light armor, a polearm.
+
+              **Bonuses:** Stamina +3 per echelon, speed +2, melee damage +1/+1/+1, melee distance +1, disengage +1.
+
+              **Signature ability:** Where I Want You (Melee, Strike, Weapon; main action; melee 2; one creature).
           - title: Swashbuckler
             entry: kits/swashbuckler
-            summary: Mobile and hard-hitting in melee. Signature, Fancy Footwork.
+            summary: "Mobile and hard-hitting in melee. Signature, Fancy Footwork."
             text: |
-              Light armor, a medium weapon. Stamina +3, speed +3, melee
-              damage +2, disengage +1.
+              **Gear:** Light armor, a medium weapon.
+
+              **Bonuses:** Stamina +3 per echelon, speed +3, melee damage +2/+2/+2, disengage +1.
+
+              **Signature ability:** Fancy Footwork (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Raider
             entry: kits/raider
-            summary: Light armor and a shield, full mobility. Signature, Raider's Awe.
+            summary: "Light armor and a shield, full mobility. Signature, Raider's Awe."
             text: |
-              Light armor and a shield, a light weapon. Stamina +6, speed +1,
-              melee and ranged damage +1, disengage +1.
+              **Gear:** Light armor and a shield, a light weapon.
+
+              **Bonuses:** Stamina +6 per echelon, speed +1, melee damage +1/+1/+1, ranged damage +1/+1/+1, ranged distance +5, disengage +1.
+
+              **Signature ability:** Raider's Awe (Melee, Ranged, Strike, Weapon; main action; melee 1 or ranged 10; one creature).
           - title: Spellsword
             entry: kits/spellsword
-            summary: Melee strikes with a little magic. Signature, Leaping Lightning.
+            summary: "Melee strikes with a little magic. Signature, Leaping Lightning."
             text: |
-              Light armor and a shield, a medium weapon. Stamina +6, speed
-              +1, stability +1, melee damage +2.
-  - title: Medium and heavy armor
+              **Gear:** Light armor and a shield, a medium weapon.
+
+              **Bonuses:** Stamina +6 per echelon, speed +1, stability +1, melee damage +2/+2/+2.
+
+              **Signature ability:** Leaping Lightning (Magic, Melee, Strike, Weapon; main action; melee 1; one creature or object).
+  - title: Kits with medium or heavy armor
     blocks:
       - type: cards
         items:
           - title: Dual Wielder
             entry: kits/dual-wielder
-            summary: Two weapons at once. Signature, Double Strike.
+            summary: "Two weapons at once. Signature, Double Strike."
             text: |
-              Medium armor, light and medium weapons. Stamina +6, speed +2,
-              melee damage +2, disengage +1.
+              **Gear:** Medium armor, light and medium weapons.
+
+              **Bonuses:** Stamina +6 per echelon, speed +2, melee damage +2/+2/+2, disengage +1.
+
+              **Signature ability:** Double Strike (Melee, Strike, Weapon; main action; melee 1; two creatures or objects).
           - title: Guisarmier
             entry: kits/guisarmier
-            summary: A polearm and sturdy armor. Signature, Forward Thrust, Backward Smash.
+            summary: "A polearm and sturdy armor. Signature, Forward Thrust, Backward Smash."
             text: |
-              Medium armor, a polearm. Stamina +6, stability +1, melee damage
-              +2.
+              **Gear:** Medium armor, a polearm.
+
+              **Bonuses:** Stamina +6 per echelon, stability +1, melee damage +2/+2/+2, melee distance +1.
+
+              **Signature ability:** Forward Thrust, Backward Smash (Melee, Strike, Weapon; main action; melee 2; two creatures or objects).
           - title: Ranger
             entry: kits/ranger
-            summary: Switch easily between melee and ranged. Signature, Hamstring Shot.
+            summary: "Switch easily between melee and ranged. Signature, Hamstring Shot."
             text: |
-              Medium armor, a bow and a medium weapon. Stamina +6, speed +1,
-              melee and ranged damage +1, disengage +1.
+              **Gear:** Medium armor, a bow and a medium weapon.
+
+              **Bonuses:** Stamina +6 per echelon, speed +1, melee damage +1/+1/+1, ranged damage +1/+1/+1, ranged distance +5, disengage +1.
+
+              **Signature ability:** Hamstring Shot (Ranged, Strike, Weapon; main action; ranged 10; one creature).
           - title: Sword and Board
             entry: kits/sword-and-board
-            summary: A shield that doubles as a weapon. Signature, Shield Bash.
+            summary: "A shield that doubles as a weapon. Signature, Shield Bash."
             text: |
-              Medium armor and a shield, a medium weapon. Stamina +9,
-              stability +1, melee damage +2, disengage +1.
+              **Gear:** Medium armor and a shield, a medium weapon.
+
+              **Bonuses:** Stamina +9 per echelon, stability +1, melee damage +2/+2/+2, disengage +1.
+
+              **Signature ability:** Shield Bash (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Mountain
             entry: kits/mountain
-            summary: Heavy armor, heavy weapon, immovable. Signature, Pain for Pain.
+            summary: "Heavy armor, heavy weapon, immovable. Signature, Pain for Pain."
             text: |
-              Heavy armor, a heavy weapon. Stamina +9, stability +2, melee
-              damage +0/+0/+4.
+              **Gear:** Heavy armor, a heavy weapon.
+
+              **Bonuses:** Stamina +9 per echelon, stability +2, melee damage +0/+0/+4.
+
+              **Signature ability:** Pain for Pain (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Shining Armor
             entry: kits/shining-armor
-            summary: The most protection a kit offers. Signature, Protective Attack.
+            summary: "The most protection a kit offers. Signature, Protective Attack."
             text: |
-              Heavy armor and a shield, a medium weapon. Stamina +12,
-              stability +1, melee damage +2.
+              **Gear:** Heavy armor and a shield, a medium weapon.
+
+              **Bonuses:** Stamina +12 per echelon, stability +1, melee damage +2/+2/+2.
+
+              **Signature ability:** Protective Attack (Melee, Strike, Weapon; main action; melee 1; one creature).
           - title: Warrior Priest
             entry: kits/warrior-priest
-            summary: A weapon imbued with divine power. Signature, Weakening Brand.
+            summary: "A weapon imbued with divine power. Signature, Weakening Brand."
             text: |
-              Heavy armor, a light weapon. Stamina +9, speed +1, stability +1,
-              melee damage +1.
+              **Gear:** Heavy armor, a light weapon.
+
+              **Bonuses:** Stamina +9 per echelon, speed +1, stability +1, melee damage +1/+1/+1.
+
+              **Signature ability:** Weakening Brand (Magic, Melee, Strike, Weapon; main action; melee 1; one creature or object).
+  - title: Stormwight kits
+    blocks:
+      - text: |
+          A stormwight fury does not take one of the kits above. They take a
+          **stormwight kit**, which is tied to an animal, a primordial storm
+          and a damage type. You wear no armor and fight with unarmed strikes
+          that grow into natural weapons as your ferocity builds. You know one
+          stormwight kit at first and can master more in play. Changing kit is
+          a respite activity, as with any kit.
+      - type: flaps
+        items:
+          - title: What every stormwight kit gives
+            text: |
+              - **Aspect of the Wild:** a magic maneuver to shift between your
+                true form, your hybrid form and your animal form. In animal or
+                hybrid form you can still speak, and you can speak to animals
+                of your kind. Spend 1 ferocity to shift a second time as a free
+                maneuver.
+              - **Aspect benefit:** a feature that is always on.
+              - **Animal and hybrid form:** extra benefits only in those forms.
+                An animal form is often too small to use abilities other than
+                Aspect of the Wild.
+              - **Primordial storm:** the damage type your fury abilities use.
+              - **Kit bonuses:** they apply in all three forms.
+              - **Signature ability:** a new one from the kit.
+              - **Growing Ferocity:** extra benefits as your ferocity climbs.
+      - type: cards
+        items:
+          - title: Boren (bear)
+            summary: Big, durable and grabby. Signature, Bear Claws.
+            text: |
+              **Storm:** blizzard, cold damage.
+
+              **Bonuses:** Stamina +9 per echelon, stability +2, melee damage +0/+0/+4.
+
+              **Aspect:** when you push a creature you can pull it instead, and a pulled adjacent creature with M < AVERAGE can be grabbed. In bear form you are size 2 and gain +1 distance with melee weapon abilities.
+          - title: Corven (crow)
+            summary: Stealthy and quick. Signature, Wing Buffet.
+            text: |
+              **Storm:** anabatic wind, fire damage.
+
+              **Bonuses:** Stamina +3 per echelon, speed +3, melee damage +2/+2/+2, disengage +1.
+
+              **Aspect:** an edge on tests to hide and sneak, and when you fall you can use Aspect of the Wild as a free triggered action. In crow form you are size 1T and can fly.
+          - title: Raden (rat)
+            summary: Mobile and elusive. Signature, Driving Pounce.
+            text: |
+              **Storm:** rat flood, corruption damage.
+
+              **Bonuses:** Stamina +3 per echelon, speed +3, melee damage +2/+2/+2, disengage +1.
+
+              **Aspect:** an edge on tests to hide and sneak, and you ignore difficult terrain. In rat form you are size 1T, climb at full speed and can stay hidden while moving through creatures' squares.
+          - title: Vuken (wolf)
+            summary: A fleet-footed hunter. Signature, Unbalancing Attack.
+            text: |
+              **Storm:** thunderstorm, lightning damage.
+
+              **Bonuses:** Stamina +9 per echelon, speed +2, melee damage +2/+2/+2, disengage +1.
+
+              **Aspect:** after the Knockback maneuver you can use Aid Attack as a free triggered action. In wolf form you are size 1L, gain +2 speed and ignore difficult terrain.
       - type: note
         text: |
-          The bonuses here come from the Kits category of the reference
-          browser. Open that category for the exact equipment and
-          signature ability text.
+          The full text of every kit is in the Kits category of the
+          reference browser. The stormwight kits are not listed there yet.

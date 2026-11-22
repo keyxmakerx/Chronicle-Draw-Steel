@@ -1,0 +1,329 @@
+title: Gods and Religion
+intro: Who your censor or conduit prays to, and how faith works in the world.
+pages:
+  - title: How faith works
+    blocks:
+      - text: |
+          In Orden the gods are real, but people do not think the gods
+          control everything. They see the world as having its own cycles.
+          When a harvest fails, some curse the gods, but few think a god
+          caused it.
+
+          The gods are forbidden from acting directly in the world. They
+          work through **saints** (human word) or **legendary heroes**
+          (other peoples' word): once-mortal beings of demigod status who
+          serve a patron god in eternity. These are not the heroes you build
+          in this book. Saints appear only briefly, and are usually silent.
+      - type: callout
+        title: You can ignore all of it
+        text: |
+          Religion matters to Orden's people about as much as it did to
+          premodern people on Earth: a factor, not the only one. Your hero
+          need not follow any god. Many people still carry a talisman out
+          of habit or family tradition, and yours can too.
+      - type: flaps
+        items:
+          - title: Gods and saints
+            text: |
+              People pray to a god but expect a saint to answer, and they
+              rarely worry about which. A farmer might call on one god for
+              strength, then thank a different saint for a cool breeze, and
+              say "I'm sure they worked it out between them." Silence from the
+              gods is normal.
+          - title: Churches and temples
+            text: |
+              Because gods cannot act directly, churches and temples are
+              consecrated to **saints**, not gods. There is a Church of a
+              named saint, never a temple to Ord or a church of Cavall. A
+              popular saint can have several distinct churches with their own
+              rituals. They usually accept each other as valid, though some
+              compete to be the "true" church.
+
+              Some religions are only a tradition passed from shaman to
+              shaman, and some are secret. Most churches expect their clergy
+              to do good works: tend the sick, ease pain, perform birth,
+              death and union rites.
+          - title: Conduits and censors
+            text: |
+              "Conduit" and "censor" are **jobs, not titles**. An abbot or
+              bishop may be one, but many church leaders are administrators
+              who know only the minor orisons every acolyte knows. Conduits
+              and censors go out into the world to represent their saint's
+              ethos, and are given powerful prayers for it.
+
+              A conduit or censor grows closer to their saint over time: a
+              feel for their mood, then a dialogue in battle, and at higher
+              levels a sense of the god behind the saint. Even an acolyte's
+              prayers go unheard if they break the faith's tenets. Any large
+              group, even a thieves' guild, can have its own conduits and
+              censors, which implies their church approves.
+          - title: Interspecies worship
+            text: |
+              Elves, dwarves and orcs revere their own creator gods: **Val,
+              Ord and Kul**. Humans worship many gods, the Innumerable Younger
+              Gods. Dwarves mostly venerate dwarf heroes and humans human
+              saints, but only because people of one ancestry tend to share
+              a culture.
+              Large cities have temples to gods of many peoples, and a single
+              dedicated conduit can start a church of their saint anywhere.
+
+              Each region's pantheon reflects what its people value and fear.
+              Religion is à la carte: there are human heroes among the elves
+              and dwarf saints among human pantheons. The gods treat every
+              soul as equally worthy, whatever their ancestry or rank.
+          - title: Evil gods and saints
+            text: |
+              Every pantheon has saints, even gods, who teach selfishness,
+              cruelty, or power for its own sake. Their followers rarely
+              build public temples. In Vasloria these are the gods **Nikros**
+              the Tyrant and **Cyrvis** the Lich, each with saints. Under
+              tyrants, such religions come out into the open. They are an
+              option for anti-heroes.
+          - title: The afterlife
+            text: |
+              Most people believe a soul dissipates after death into
+              creation. Losing your soul by bargaining with a devil or being
+              consumed by a demon slowly erases your personality and memory.
+              A few cultures make exceptions for the especially virtuous:
+              elves who live with meaning may join Val in the faerie world of
+              Arcadia, dwarves who distinguish themselves live on in Ord's
+              memory, and Vanigar humans feast at the vigbordh. Hakaan and
+              orcs often feel their ancestors watch over them.
+  - title: Picking a deity and domains
+    blocks:
+      - text: |
+          A **censor** and a **conduit** each choose a god or saint they
+          revere, then choose **domains** from that deity's portfolio. Your
+          [[domain|domains]] decide many of the features you gain as you level. The
+          Classes chapter gives the features; this page tells you how to
+          pick.
+      - type: cards
+        items:
+          - title: Censor
+            summary: One deity, one domain.
+            text: |
+              Choose a god or saint, then **one domain** from their
+              portfolio. Your domain decides many of your features, including
+              a skill from a group the domain names.
+
+              Quick build: Cavall as deity and War as domain.
+          - title: Conduit
+            summary: One deity, two domains.
+            text: |
+              Choose a god or saint, then **two domains** from their
+              portfolio. Those two domains make up your subclass and decide
+              the features you gain as you level.
+
+              Quick build: Adûn as deity, Life and Protection as domains.
+      - type: callout
+        title: Your own deity
+        text: |
+          Ask the Director about the deities in their campaign world. With
+          the Director's permission you can also invent a deity and give them
+          four domains, or invent a saint or herald by picking two domains
+          from a god's list.
+      - text: |
+          Tap a domain for what a censor gets from it and what a conduit
+          prays for. A conduit's prayer effects use the Intuition score.
+      - type: flaps
+        items:
+          - title: Creation
+            text: |
+              - **Censor:** Hands of the Maker, with a skill from the
+                crafting group.
+              - **Conduit prayer:** a wall of stone within 10 squares.
+          - title: Death
+            text: |
+              - **Censor:** Grave Speech, with a lore skill.
+              - **Conduit prayer:** a deadly curse on up to two enemies
+                within 10 squares, dealing corruption damage.
+          - title: Fate
+            text: |
+              - **Censor:** Oracular Visions, with a lore skill.
+              - **Conduit prayer:** a creature within 10 squares
+                automatically gets a tier 1 or tier 3 outcome (your choice)
+                on its next power roll this encounter.
+          - title: Knowledge
+            text: |
+              - **Censor:** Blessing of Comprehension, with a lore skill.
+              - **Conduit prayer:** up to five allies within 10 squares gain
+                1 surge each.
+          - title: Life
+            text: |
+              - **Censor:** Revitalizing Ritual, with an exploration skill.
+              - **Conduit prayer:** you or an ally within 10 squares spends a
+                Recovery, ends an effect, or stands up; or gains temporary
+                Stamina.
+          - title: Love
+            text: |
+              - **Censor:** Blessing of Compassion, with an interpersonal
+                skill.
+              - **Conduit prayer:** each ally within 10 squares gains
+                temporary Stamina.
+          - title: Nature
+            text: |
+              - **Censor:** Faithful Friend, with an exploration skill.
+              - **Conduit prayer:** vines grab creatures within 10 squares
+                and you slide them.
+          - title: Protection
+            text: |
+              - **Censor:** Protective Circle, with an exploration skill.
+              - **Conduit prayer:** one ally within 10 squares gains
+                temporary Stamina.
+          - title: Storm
+            text: |
+              - **Censor:** Blessing of Fortunate Weather, with an
+                exploration skill.
+              - **Conduit prayer:** lightning damage to each enemy in a
+                3 cube within 10 squares.
+          - title: Sun
+            text: |
+              - **Censor:** Inner Light, with a lore skill.
+              - **Conduit prayer:** fire damage to one enemy within 10
+                squares.
+          - title: Trickery
+            text: |
+              - **Censor:** Inspired Deception, with an intrigue skill.
+              - **Conduit prayer:** you slide a creature within 10 squares.
+          - title: War
+            text: |
+              - **Censor:** Sanctified Weapon, with an exploration skill.
+              - **Conduit prayer:** up to three allies within 10 squares
+                gain 2 surges each.
+  - title: The pantheons
+    blocks:
+      - text: |
+          Each card names a god or the saints who serve them, with the
+          domains each offers. A saint offers two or three domains of their
+          own; a god offers a longer list to choose from. Remember that
+          temples are consecrated to saints, not to gods.
+
+          **Elder gods** made the elves, dwarves and orcs.
+      - type: cards
+        items:
+          - title: Val
+            summary: "Creation, Knowledge, Life, Nature, Protection."
+            text: |
+              Patron of the elves, the Noble Lord. Holds that the greatest
+              purpose is art and appreciating beauty. Left Orden for his
+              private world of Arcadia.
+
+              **Saints:**
+              - A Sea of Suns: Creation, Life
+              - The Taste of Morning: Creation, Knowledge
+              - Ripples of Honey on a Shore of Gold: Life, Protection
+              - Yllin Dyrvis: Knowledge, Nature
+              - Thyll Hylacae: Life, Nature
+              - Illwyv li Orchiax: Nature, Protection
+          - title: Ord
+            summary: "Creation, Knowledge, Protection, Sun, War."
+            text: |
+              Patron of the dwarves, the Maker. Values integrity, honor,
+              faithfulness and fair play, and expects his children to create
+              new marvels.
+
+              **Saints:**
+              - Zarok the Law-Giver: Protection, War
+              - Valak-koth the Seeker: Knowledge, Sun
+              - Stakros the Engineer: Creation, Knowledge
+          - title: Kul
+            summary: "Knowledge, Life, Sun, Trickery, War."
+            text: |
+              Patron of the orcs, Father of Flames and Lord of the Forge.
+
+              **Orc heroes:**
+              - Khorvath Who Slew a Thousand: Sun, War
+              - Grole the One-Handed: Life, War
+              - Khravila Who Ran Forty Leagues: Knowledge, Trickery
+
+              **Hakaan heroes.** Most hakaan are animists with no formal
+              church:
+              - Mahsiti the Weaver: Creation, Knowledge, Trickery
+              - Prexaspes the Stargazer: Nature, Protection, Sun
+              - Atossa the Shepherd: Fate, Protection, Trickery
+      - text: |
+          **Human gods of Vasloria** are some of the Innumerable Younger
+          Gods. Each reflects what the region's people value.
+      - type: cards
+        items:
+          - title: Adûn
+            summary: "Creation, Life, Love, Protection."
+            text: |
+              Teaches that truth and hard work are virtues, and that real
+              physical labor shows honesty. Worshipped more in the field than
+              the city.
+
+              **Saints:**
+              - Gaed the Confessor: Love, Protection
+              - Gryffyn the Stout: Creation, Life
+          - title: Cavall
+            summary: "Life, Love, Protection, War."
+            text: |
+              God of justice, civil law and just punishment. A watchhouse
+              chaplain is almost certainly his.
+
+              **Saints:**
+              - Llewellyn the Valiant: Life, Protection
+              - Gwenllian the Fell-Handed: Protection, War
+          - title: Salorna
+            summary: "Life, Nature, Storm, Sun."
+            text: |
+              Teaches that nature and its balance are a moral good. Tilling
+              land is as natural as a forest, but a land of all farms or all
+              trees is out of balance.
+
+              **Saints:**
+              - Draighen the Warden: Nature, Sun
+              - Eriarwen the Wroth: Nature, Storm
+          - title: Nikros
+            summary: "Death, Fate, Storm, War. Evil."
+            text: |
+              The Tyrant. Strength and the right of the strong to rule. For
+              players who want an anti-hero.
+
+              **Saint:** Pentalion the Paladin: Death, War
+          - title: Cyrvis
+            summary: "Death, Fate, Knowledge, Trickery. Evil."
+            text: |
+              Enemy of fate, god of those who feel wronged by life. A god of
+              magic as a way to bend others to your will. For players who want
+              an anti-hero.
+
+              **Saint:** Eseld of the Eye: Knowledge, Trickery
+      - text: |
+          **Devil saints** serve the seven Archdukes of Hell, who stand where
+          gods stand in other pantheons. Devils raised in Orden usually
+          follow the gods and saints of their own culture. Devils treat
+          church attendance rather like paying taxes.
+      - type: cards
+        items:
+          - title: Thellasko the Great Designer
+            summary: "Knowledge, War."
+            text: Saint of Strategy, who invented war simulation to train officers.
+          - title: Uryal the Subtle
+            summary: "Knowledge, Trickery."
+            text: Saint of Lies, a banker who rose through deception.
+          - title: Kuryalka the False Principle
+            summary: "Death, Trickery."
+            text: Saint of Ambition, who invented the Kuryalka Ploy.
+      - text: |
+          **Space gods of the timescape** are corporeal beings, often of
+          planetary size, who stand for abstract ideas such as order, chaos
+          and balance. Each has a single **herald** instead of saints.
+      - type: cards
+        items:
+          - title: Nebular the Star Mother
+            summary: "Creation, Life, Love, Sun."
+            text: |
+              A living nebula, most popular among memonek and senior among the
+              Lords of Law. Ships in need may find themselves healed within
+              her.
+
+              **Herald:** Lady Magnetar: Life, Sun
+          - title: OV the Wave Pilot
+            summary: "Fate, Knowledge, Storm, Sun."
+            text: |
+              The Navigator, one of the Lords of Balance. He helps lost ships
+              find a path home, whatever their allegiance.
+
+              **Herald:** Cho'kassa the Time Rider: Storm, Sun

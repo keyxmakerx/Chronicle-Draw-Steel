@@ -1,26 +1,431 @@
 title: Making a Hero
-intro: Who you are, where you come from, what you do and how you fight.
+intro: Ten steps from a blank sheet to a hero ready for the table, and how that hero grows.
 pages:
-  - title: The steps
+  - title: The ten steps
     blocks:
       - text: |
-          A hero is built from a handful of choices, and each has its own
-          chapter in this book.
+          A hero is built in ten steps. The order is a suggestion, not a
+          rule. Some players start in the past with ancestry and culture;
+          others start with the present, picking a career and a class first
+          and working out where the hero came from afterwards.
 
-          - **Ancestry** gives you a people, a size and a few traits.
-          - **Culture and career** say where you grew up and what you did.
-          - **Class** is your calling, and the resource that powers it.
-          - **Kit** is your fighting style: armor, weapon and a signature move.
-          - **Perks and complications** add small talents and a little trouble.
-  - title: Five scores, one total
+          Tap a step to see what it asks of you. Your first hero can take an
+          hour, so set time aside and build alongside friends if you can.
+      - type: flaps
+        items:
+          - title: 1. Think
+            text: |
+              Decide what kind of hero you want before you pick anything.
+              Ask yourself:
+              - Do you fight with weapons, magic, psionics, or a mix?
+              - What do you want to do well outside combat?
+              - What did you do before, and why did you become a hero?
+              - What is your personality like? Which people, places and
+                objects matter to you?
+              - How will you complement the rest of the party?
+          - title: 2. Ancestry
+            text: |
+              Choose your people: devil, dragon knight, dwarf, wode elf,
+              high elf, hakaan, human, memonek, orc, polder, revenant or
+              time raider. Ancestry gives you body-and-blood traits and your
+              starting size, speed and stability. See the Ancestries chapter.
+          - title: 3. Culture
+            text: |
+              Choose or build the community that raised you. Culture gives
+              you languages and skills, not physical traits. See Culture and
+              Career.
+          - title: 4. Career
+            text: |
+              Choose what you did for a living before you became a hero. A
+              career gives you skills, a perk and an [[inciting incident]], and
+              may add languages, [[renown|Renown]], [[wealth|Wealth]] or [[project points]]. See
+              Culture and Career.
+          - title: 5. Class
+            text: |
+              Your class has the biggest effect on how you play, especially in
+              combat. It sets your starting characteristics, your Stamina and
+              Recoveries, your skills, your heroic resource and your
+              abilities. See Classes.
+          - title: 6. Kit
+            text: |
+              A [[kit]] is your armor, weapon and fighting style, with a signature
+              ability and bonuses to your numbers. Not every class uses one;
+              the Kit page of this chapter says which do.
+          - title: 7. Free strikes
+            text: |
+              Every hero has a melee and a ranged free strike. They start
+              identical, and you decide what they look like. See the Free
+              strikes page.
+          - title: 8. Complication
+            text: |
+              An optional bit of backstory trouble, with a benefit and a
+              drawback. Ask the Director whether the game uses them. See
+              Perks and Complications.
+          - title: 9. Details
+            text: |
+              Tie your culture, career, inciting incident and class into one
+              story. Pick a name, an appearance, scars, habits and quirks.
+          - title: 10. Connections
+            text: |
+              If the heroes already know each other, build links between
+              them with the other players. Prompts are on the Details page.
+      - type: links
+        title: Where each choice lives
+        items:
+          - title: Ancestries
+            summary: Your people, size, speed and traits.
+            chapter: ancestries
+          - title: Culture and Career
+            summary: Where you came from and what you did.
+            chapter: culture-and-career
+          - title: Classes
+            summary: Your calling and your abilities.
+            chapter: classes
+          - title: Kits
+            summary: Armor, weapon and fighting style.
+            chapter: kits
+          - title: Perks and Complications
+            summary: Small talents and a little trouble.
+            chapter: perks-and-complications
+  - title: Before you build
     blocks:
       - text: |
-          Your five characteristics (Might, Agility, Reason, Intuition and
-          Presence) are small numbers that you add to power rolls. Your class
-          and the kit you carry decide which ones you lean on, so look at the
-          characteristic named in the abilities you like before you decide
-          where to put your best scores.
+          A few habits make building a hero smoother. Open the folds below
+          before you start.
+      - type: flaps
+        items:
+          - title: Session zero
+            text: |
+              Many groups spend the first session making heroes together and
+              talking about the campaign. The Director may cover:
+              - Safety tools, and which topics to avoid or embrace.
+              - The world and the major story themes.
+              - Options that are limited or rare in this campaign, such as no
+                psionic classes or very few memonek and time raiders. Ask
+                before you fall in love with a build.
+              - What each player hopes to experience.
+              - Making heroes, so backstories can tie together.
+              - A short opening encounter, if there is time.
+          - title: Quick build
+            text: |
+              Every 1st-level option names a **Quick Build**: the most
+              straightforward pick for a hero. Choosing the quick build for
+              each step gets you playing fast. Quick builds do not choose
+              languages for you, because the Director knows which will matter
+              most. Quick build abilities in classes carry a gold icon.
+          - title: Choosing skills
+            text: |
+              You gain skills from culture, career and class, and later
+              levels. Write down every skill you might take from each source
+              and choose them all at the end, instead of flipping back and
+              forth.
+
+              If two sources give you the same specific skill, you pick a
+              different skill from any skill group for the second one.
+          - title: Leaving languages open
+            text: |
+              You do not have to pick every language at the start, because you
+              may not know which will be useful. Leave some open, then reveal
+              your choice in play: in a negotiation where it helps, or on a
+              tome nobody else in the party can read.
+          - title: Ambition is good
+            text: |
+              Heroes drive the story. It is good for your hero to want
+              something: to found an organization, win justice for someone,
+              forge a magic sword. It only becomes a problem when personal
+              ambition outweighs the group's story. Share your hero's goals
+              with the Director so they can weave them in, and talk to them if
+              your goals change.
+      - type: callout
+        title: Not sure where to start
+        text: |
+          Take the quick build at every step, finish the sheet, play a
+          session, and swap what you do not like. You can freely change
+          options between sessions (see Gear and changes).
+  - title: Free strikes
+    blocks:
       - text: |
-          Derived numbers follow from your choices. Your size, speed and
-          stability start from your ancestry, a kit adds to speed, stability
-          and Stamina, and your recovery value is a third of your Stamina.
+          A [[free strike]] is a combat ability you can use when it is not
+          your turn: the simplest, most basic weapon attack you can make. An
+          enemy walks away from you in melee? Free strike.
+
+          Every hero has a **melee weapon free strike** and a **ranged weapon
+          free strike**. They are the same for everyone until your kit or
+          class changes them, and you decide what yours look like: a thrown
+          dagger, a punch, a staff swing.
+
+          You can also make a free strike on your own turn to use a weapon
+          your hero is not otherwise themed around. A wode elf archer can
+          stab a too-close enemy with a dagger; a greataxe orc can hurl a
+          handaxe at a flying enemy.
+      - type: callout
+        title: Melee weapon free strike
+        text: |
+          **Keywords:** Charge, Melee, Strike, Weapon. **Main action.**
+          **Distance:** Melee 1. **Target:** One creature or object.
+          Use Might or Agility.
+      - type: roll
+        dice: 2d10
+        label: Melee free strike
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or less
+            text: 2 + Might or Agility damage.
+          - max: 16
+            label: 12-16
+            text: 5 + Might or Agility damage.
+          - label: 17 or more
+            text: 7 + Might or Agility damage.
+      - type: callout
+        title: Ranged weapon free strike
+        text: |
+          **Keywords:** Ranged, Strike, Weapon. **Main action.**
+          **Distance:** Ranged 5. **Target:** One creature or object.
+          Use Might or Agility.
+      - type: roll
+        dice: 2d10
+        label: Ranged free strike
+        modifier: true
+        bands:
+          - max: 11
+            label: 11 or less
+            text: 2 + Might or Agility damage.
+          - max: 16
+            label: 12-16
+            text: 4 + Might or Agility damage.
+          - label: 17 or more
+            text: 6 + Might or Agility damage.
+      - text: |
+          Pick the characteristic to add (Might or Agility) when you roll.
+          Combat covers when a free strike can be triggered.
+  - title: Your starting numbers
+    blocks:
+      - text: |
+          A new hero starts at **level 1**. Open each fold to see where a
+          number comes from.
+      - type: flaps
+        items:
+          - title: Characteristics
+            text: |
+              Your class gives you a set of starting characteristic scores
+              (Might, Agility, Reason, Intuition, Presence). It offers an
+              array to assign, with the highest scores going where your
+              chosen abilities need them. Check the characteristic named in
+              the abilities you like before you decide.
+          - title: Stamina and Recoveries
+            text: |
+              Your class sets your starting Stamina and your number of
+              Recoveries. Stamina goes up each level, and a kit adds a Stamina
+              bonus for each [[echelon]] you have reached.
+          - title: Recovery value
+            text: |
+              Spending a [[recovery]] heals you for your **recovery value**,
+              which is **one third of your Stamina**, rounded down.
+          - title: Winded
+            text: |
+              You are [[winded]] when your Stamina is **half your maximum or
+              lower**. Some abilities care whether you or a foe is winded.
+          - title: Size, speed and stability
+            text: |
+              Your ancestry gives you your starting size, speed and
+              [[stability]]. A kit can add to speed and stability on top.
+          - title: Wealth and Renown
+            text: |
+              You start with **Wealth 1** and **Renown 0**. Some careers add
+              to them.
+          - title: Skills, languages and perk
+            text: |
+              Skills come from your culture, career and class. You know
+              Caelian plus your culture's language, plus any your career
+              grants. Your career grants one perk of a specified type.
+      - type: example
+        title: Recovery and winded
+        steps:
+          - 'Say a hero has 30 Stamina. Their recovery value is a third of that: 10.'
+          - 'Taking damage drops them to 18. Not winded yet, because half of 30 is 15.'
+          - 'Another hit takes them to 14. They are now winded (15 or lower).'
+          - 'They spend a Recovery and regain 10 Stamina, back to 24 and no longer winded.'
+  - title: Does my class use a kit?
+    blocks:
+      - text: |
+          Not every class takes a kit, and some take two. Find your class
+          below, then look up kits on the Kits chapter.
+      - type: callout
+        title: In short
+        text: |
+          **One kit:** censor, shadow, troubadour, beastheart, and berserker
+          or reaver furies. **Two kits:** tactician. **A stormwight kit
+          instead:** stormwight fury. **No kit:** conduit, elementalist,
+          null, talent, and summoner (until 3rd level).
+      - type: cards
+        items:
+          - title: Beastheart
+            summary: One kit.
+            text: Choose one kit from the Kits chapter.
+          - title: Censor
+            summary: One kit.
+            text: Choose one kit from the Kits chapter.
+          - title: Conduit
+            summary: No kit.
+            text: |
+              Your prayer and your ward take the place of a kit.
+          - title: Elementalist
+            summary: No kit.
+            text: |
+              Your enchantment and your ward take the place of a kit.
+          - title: Fury, berserker or reaver
+            summary: One kit.
+            text: Choose one kit from the Kits chapter.
+          - title: Fury, stormwight
+            summary: A stormwight kit instead.
+            text: |
+              You use a stormwight kit, not a normal kit. Choose one of
+              Boren, Corven, Raden or Vuken.
+          - title: "Null"
+            summary: No kit.
+            text: Your psionic augmentation takes the place of a kit.
+          - title: Shadow
+            summary: One kit.
+            text: Choose one kit from the Kits chapter.
+          - title: Summoner
+            summary: No kit until 3rd level.
+            text: You start without a kit.
+          - title: Tactician
+            summary: Two kits.
+            text: |
+              Your Field Arsenal feature lets you use two kits and gain both
+              of their signature abilities. When you choose or change one,
+              you can choose or change the other.
+          - title: Talent
+            summary: No kit.
+            text: |
+              Your psionic augmentation and your ward take the place of a kit.
+          - title: Troubadour
+            summary: One kit.
+            text: Choose one kit from the Kits chapter.
+  - title: Details, gear and changes
+    blocks:
+      - type: flaps
+        items:
+          - title: Complications
+            text: |
+              A complication is a moment from your backstory that gives you
+              pathos, a reason to be an outsider, an urge to avoid intimacy or
+              a vendetta. Each gives a benefit and a drawback. You do not
+              need one to make a great hero; check whether the Director is
+              using them.
+          - title: Details to decide
+            text: |
+              How do your culture, career, inciting incident and class fit
+              into one story? What is your name? What do you look like? Any
+              scars, tattoos or quirks?
+          - title: Connections
+            text: |
+              If the heroes start out knowing each other, ask the Director,
+              then build links with the other players. Some prompts:
+              - A party member saved your life. What were you fighting?
+              - Who looks after everyone's well-being? If not you, how do you
+                see them?
+              - Who is the grumpiest? How do you react to them?
+              - What is one thing your fellow heroes know about you that
+                others do not?
+              - What is your favorite way to bond with them?
+              - You have known one hero longest. Who, and how did you meet?
+              - Another hero makes something you enjoy. Who, and what?
+              - Another hero is teaching you something. Who, and what?
+
+              Get a player's approval if your answer uses their hero.
+          - title: Adventuring gear
+            text: |
+              The game does not track gear, food or water. You do not list
+              your equipment. If a skill implies gear (lockpicks for Pick
+              Lock, basic supplies for Alchemy), you have it. You also carry
+              standard adventuring gear: at minimum a torch, a rope and a
+              backpack. The Director may have you lose or break gear during an
+              adventure, which can make some tasks harder.
+          - title: Changing options
+            text: |
+              If you dislike a skill, ability, class, ancestry or other
+              option, you can **freely change it between sessions**. To change
+              something mid-session, ask the Director.
+
+              If you are changing it for a reason other than fun, follow the
+              usual rule for that option. For example, swap a kit during a
+              respite as the Kits chapter describes. If no rule exists, talk
+              to the Director.
+          - title: 'Optional rule: respite ability changes'
+            text: |
+              If the Director allows it, you can change any number of the
+              signature and heroic abilities your class gives you as a
+              respite activity. This lets you prepare for upcoming encounters
+              and try new builds. Everyone should be comfortable with
+              constantly learning new abilities.
+  - title: Advancing
+    blocks:
+      - text: |
+          Heroic advancement is marked by **level**. Each new level raises
+          your Stamina and brings new features and abilities from your
+          class's advancement.
+
+          In the standard game, heroes gain **Experience (XP)** each time
+          they finish a respite, and gain a level in that same respite when
+          they have enough. XP is cumulative. Ask your Director which
+          method the game uses.
+      - type: flaps
+        items:
+          - title: Standard XP advancement
+            text: |
+              - 1st level: 0-15 XP
+              - 2nd: 16-31
+              - 3rd: 32-47
+              - 4th: 48-63
+              - 5th: 64-79
+              - 6th: 80-95
+              - 7th: 96-111
+              - 8th: 112-127
+              - 9th: 128-143
+              - 10th: 144 or more
+          - title: Adjusted XP, double speed
+            text: |
+              For campaigns where heroes level at double the pace.
+              - 1st level: 0-7 XP
+              - 2nd: 8-15
+              - 3rd: 16-23
+              - 4th: 24-31
+              - 5th: 32-39
+              - 6th: 40-47
+              - 7th: 48-55
+              - 8th: 56-63
+              - 9th: 64-71
+              - 10th: 72 or more
+          - title: Adjusted XP, half speed
+            text: |
+              For campaigns where heroes level at half the pace.
+              - 1st level: 0-31 XP
+              - 2nd: 32-63
+              - 3rd: 64-95
+              - 4th: 96-127
+              - 5th: 128-159
+              - 6th: 160-191
+              - 7th: 192-223
+              - 8th: 224-255
+              - 9th: 256-287
+              - 10th: 288 or more
+          - title: Milestone advancement
+            text: |
+              No XP. Heroes gain a level when they reach a story milestone,
+              such as defeating the villain of an adventure and foiling their
+              plan. Many Directors make the end of each adventure a milestone
+              and share the goals so players can work toward them. A milestone
+              can be met by violence, negotiation or any other way of thwarting
+              the plan.
+          - title: Director says so
+            text: |
+              No XP and no stated goals. The heroes gain a level whenever the
+              Director decides the story calls for it.
+      - type: callout
+        title: Custom pacing
+        text: |
+          The Director can set any pace for XP-based advancement. The
+          adjusted tables are just two ready-made options.

@@ -812,5 +812,105 @@
       "category": "movement"
     },
     "source": "Draw Steel Heroes Book, ch. 10 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "renown",
+    "name": "Renown",
+    "summary": "Your reputation as a score.",
+    "description": "Your reputation as a score. It starts at 0, a career can raise it, and deeds and titles add more. It draws followers and helps in negotiations with people who know of you.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "wealth",
+    "name": "Wealth",
+    "summary": "What your hero can afford, as a score instead of coins.",
+    "description": "What your hero can afford, as a score instead of coins. It starts at 1, a career can raise it, and big hoards or rich rewards add more. You can buy anything priced at or below your Wealth.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "hero-token",
+    "name": "Hero Token",
+    "summary": "A party resource.",
+    "description": "A party resource. The party starts each session with one per hero and can earn more by acting heroically. Spend one to gain 2 surges, turn a failed saving throw into a success, or reroll a test; spend two to regain Stamina equal to your recovery value. One hero token benefit per turn or per test. Unused tokens usually vanish at the end of the session.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "Draw Steel Heroes Book, ch. 1 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "heroic-resource",
+    "name": "Heroic Resource",
+    "summary": "The class resource a hero builds during combat and spends on heroic abilities, such as a fury's ferocity or a conduit's piety.",
+    "description": "The class resource a hero builds during combat and spends on heroic abilities, such as a fury's ferocity or a conduit's piety. Each class names its own and says how it is gained. It drops back to 0 when the encounter ends.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "Draw Steel Heroes Book, ch. 1 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "kit",
+    "name": "Kit",
+    "summary": "A fighting style: the armor and weapons a hero uses, the bonuses they give (Stamina, speed, stability, damage, distance), and a signature ability.",
+    "description": "A fighting style: the armor and weapons a hero uses, the bonuses they give (Stamina, speed, stability, damage, distance), and a signature ability. Most classes use one kit; some use none.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "Draw Steel Heroes Book, ch. 6 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "project-points",
+    "name": "Project Points",
+    "summary": "Progress on a downtime project.",
+    "description": "Progress on a downtime project. Each project roll adds its total (at least 1) as project points, and the project is done when its points reach the project goal.",
+    "properties": {
+      "category": "resource"
+    },
+    "source": "Draw Steel Heroes Book, ch. 12 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "breakthrough",
+    "name": "Breakthrough",
+    "summary": "A natural 19 or 20 on a project roll.",
+    "description": "A natural 19 or 20 on a project roll. The total still counts as project points, and you make another project roll for the same project in the same respite activity.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "Draw Steel Heroes Book, ch. 12 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "inciting-incident",
+    "name": "Inciting Incident",
+    "summary": "The event from your career that pushed your hero into a life of adventure.",
+    "description": "The event from your career that pushed your hero into a life of adventure. Each career offers six to roll or choose from.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "Draw Steel Heroes Book, ch. 4 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "domain",
+    "name": "Domain",
+    "summary": "A part of a god's or saint's portfolio, such as Life or War.",
+    "description": "A part of a god's or saint's portfolio, such as Life or War. A censor takes one domain of their deity and a conduit takes two; the domains decide some of their features.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "Draw Steel Heroes Book, ch. 14 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "leveled-treasure",
+    "name": "Leveled Treasure",
+    "summary": "A magic armor, weapon, implement or other item that grows stronger as its wielder levels up, with benefits at 1st, 5th and 9th level.",
+    "description": "A magic armor, weapon, implement or other item that grows stronger as its wielder levels up, with benefits at 1st, 5th and 9th level. Carrying more than three at once is risky.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
   }
 ]
