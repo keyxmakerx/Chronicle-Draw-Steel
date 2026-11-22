@@ -626,7 +626,8 @@ test('dashboard abilities: one group per action, own columns, the face list kept
   assert.ok(/Damage at/.test(d.split('data-dgroup="maneuver"')[0]), 'main actions carry the damage heading');
   assert.ok(/<span class="sh-danote">Judge one creature\.<\/span>/.test(d), 'a maneuver says what it does under its name');
   assert.ok(/<span class="sh-danote"><b>Trigger<\/b> A judged creature hurts an ally<\/span>/.test(d), 'a triggered action names its trigger');
-  assert.ok(/>4<i aria-hidden="true">·<\/i>7<i aria-hidden="true">·<\/i>9 holy</.test(d), 'Halt: the hero\'s own tier results');
+  assert.ok(/<span class="sh-dadm-n">4<i aria-hidden="true">·<\/i>7<i aria-hidden="true">·<\/i>9<\/span> <small>holy<\/small>/.test(d),
+    'Halt: the hero\'s own tier results, the damage type under them so a long one cannot run into Target');
   // The Free Strike main action joins the moves every hero has, here only.
   const every = d.split('data-dgroup="every"')[1];
   assert.ok(/>Charge</.test(every) && />Free Strike</.test(every));
@@ -644,11 +645,23 @@ test('dashboard abilities: what the resource cannot pay for folds into one line 
   assert.ok(!/data-cs-dafford/.test(rich) && !/sh-dcut/.test(rich), 'no switch when everything is paid for');
 });
 
+test('dashboard abilities: a resource below zero still lists everything that costs nothing', () => {
+  const d = cs.dashAbilities(faceData([
+    { name: 'Spike', category: 'signature', type: 'action' }, { name: 'Grip', category: 'heroic', type: 'action', cost: 5 },
+    { name: 'Step', type: 'maneuver' }
+  ], { heroic_resource_name: 'Clarity', heroic_resource_current: -2 }), 1);
+  assert.equal((d.match(/sh-dai is-short/g) || []).length, 1, 'only Grip, which has a cost, is out of reach');
+  assert.ok(/1 more cost over -2 Clarity<\/span>.*Grip <b class="num">5<\/b>/.test(d));
+  assert.ok(/pays for<small class="num">2 of 3<\/small>/.test(d));
+});
+
 test('dashboard abilities: a hero with no free strike synced gets the kit\'s line', () => {
   const d = cs.dashAbilities(faceData(FACE.filter((a) => a.category !== 'freeStrike'), {
     kit_details_json: JSON.stringify([{ meleeDamageT1: 1, meleeDamageT2: 2, meleeDamageT3: 3 }])
   }), 1);
   assert.ok(/data-cs-dar="-1"/.test(d) && /Melee free strike/.test(d) && /kit \+1 · \+2 · \+3/.test(d));
+  assert.ok(/<h3>Free strike<\/h3>/.test(d) && /data-cs-dfilt="free" aria-pressed="false">Free strike<\/button>/.test(d),
+    'the kit\'s line is not counted, so the groups add up to All');
 });
 
 test('dashboard full card: the rules, then the roll worked out for this hero and what it costs', () => {

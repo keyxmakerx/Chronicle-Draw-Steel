@@ -3577,6 +3577,9 @@
       String(a.name || '').trim().toLowerCase() === 'free strike';
   }
   function heroHave(data) { return num(data, 'heroic_resource_current', 0); }
+  // Only a cost can be out of reach: a free ability is always there, even
+  // when the resource has gone below zero.
+  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroHave(data); }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
   // The first sentence of a text, whole, for the line under a row's name.
@@ -3598,7 +3601,13 @@
   // empty cell is never read as missing data.
   function dashAbResult(a, data, kind) {
     var r = heroResult(a, heroBest(a, data));
-    if (r) return '<span class="sh-dadm num">' + esc(r).replace(/ · /g, '<i aria-hidden="true">·</i>') + '</span>';
+    if (r) {
+      // The numbers stay on one line; the damage types wrap under them.
+      var m = r.match(/^([-\d.]+(?: · [-\d.]+)*)(?: (.+))?$/);
+      var nums = m ? m[1] : r, types = m && m[2] ? m[2] : '';
+      return '<span class="sh-dadm num"><span class="sh-dadm-n">' + esc(nums).replace(/ · /g, '<i aria-hidden="true">·</i>') + '</span>' +
+        (types ? ' <small>' + esc(types) + '</small>' : '') + '</span>';
+    }
     if (kind === 'main' && !powerRollChars(a).length) return '<span class="sh-dadm is-none">No roll</span>';
     return '<span class="sh-dadm"></span>';
   }
@@ -3606,7 +3615,7 @@
   // One ability as one line; it unfolds in place to the full card, which is
   // built when first asked for.
   function dashAbRow(a, data, kind, idx, uid) {
-    var short = abCost(a) > heroHave(data);
+    var short = cantPay(a, data);
     var dist = distanceLabel(a), tgt = kind === 'free' ? '' : targetLabel(a);
     var note = '';
     if (kind === 'triggered' && a.trigger) note = '<span class="sh-danote"><b>Trigger</b> ' + esc(firstSentence(cleanFoundryText(a.trigger))) + '</span>';
@@ -3690,7 +3699,7 @@
     var rows = list.length
       ? list.map(function (a) { return dashAbRow(a, data, kind, all.indexOf(a), uid); }).join('')
       : dashFreeStrikeRow(data, uid);
-    var short = list.filter(function (a) { return abCost(a) > have; });
+    var short = list.filter(function (a) { return cantPay(a, data); });
     var cut = '';
     if (short.length) {
       cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
@@ -3702,7 +3711,7 @@
         '<button type="button" class="sh-link" data-cs-dshow aria-expanded="false">Show them</button></p>';
     }
     return '<section class="sh-dag" data-dgroup="' + kind + '">' +
-      '<div class="sh-dagh"><h3>' + DASH_AB_LABELS[kind] + '<small class="num">' + (list.length || 1) + '</small></h3>' +
+      '<div class="sh-dagh"><h3>' + DASH_AB_LABELS[kind] + (list.length ? '<small class="num">' + list.length + '</small>' : '') + '</h3>' +
         '<span class="sh-dcols" aria-hidden="true">' + cols + '</span>' +
         (rolled ? '<span class="sh-dtiers num" aria-hidden="true">Damage at ≤11 · 12–16 · 17+</span>' : '<span></span>') + '</div>' +
       rows + cut + '</section>';
@@ -3727,13 +3736,13 @@
   // there when something costs more than the hero has.
   function dashAbFilter(groups, common, own, data) {
     var have = heroHave(data);
-    var can = own.filter(function (a) { return abCost(a) <= have; }).length;
+    var can = own.filter(function (a) { return !cantPay(a, data); }).length;
     var btn = function (id, label, n, on) {
       return '<button type="button" data-cs-dfilt="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + label +
-        '<small class="num">' + n + '</small></button>';
+        (n ? '<small class="num">' + n + '</small>' : '') + '</button>';
     };
     var out = btn('all', 'All', own.length, true);
-    groups.forEach(function (g) { out += btn(g.kind, DASH_AB_LABELS[g.kind], g.list.length || 1, false); });
+    groups.forEach(function (g) { out += btn(g.kind, DASH_AB_LABELS[g.kind], g.list.length, false); });
     if (common.length) out += btn('every', 'Every hero', common.length, false);
     if (can < own.length) {
       out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
@@ -5833,7 +5842,9 @@
       '  Q .sh-dac { white-space:nowrap;font-size:calc(13px * var(--ts));color:var(--paper-ink); }',
       '  Q .sh-dac.is-sig { color:var(--paper-ink-soft); }',
       '  Q :is(.sh-dad,.sh-dat) { font-size:calc(13.5px * var(--ts));color:var(--paper-ink-soft);overflow-wrap:anywhere; }',
-      '  Q .sh-dadm { justify-self:end;white-space:nowrap;font:700 calc(14.5px * var(--ts)) var(--paper-num-font);color:var(--paper-ink);text-align:right; }',
+      '  Q .sh-dadm { justify-self:end;min-width:0;font:700 calc(14.5px * var(--ts)) var(--paper-num-font);color:var(--paper-ink);text-align:right; }',
+      '  Q .sh-dadm-n { white-space:nowrap; }',
+      '  Q .sh-dadm small { display:block;font:400 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);overflow-wrap:anywhere; }',
       '  Q .sh-dadm i { margin:0 3px;font-style:normal;font-weight:400;color:var(--paper-mute); }',
       '  Q .sh-dadm.is-none { font-weight:400;font-size:calc(13px * var(--ts));color:var(--paper-mute); }',
       '  Q .sh-dachev { justify-self:end;display:grid;color:var(--paper-mute);transition:transform var(--dur-standard,200ms) var(--ease-out); }',
