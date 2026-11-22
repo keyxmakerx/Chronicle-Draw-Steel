@@ -653,6 +653,17 @@
     { key: 'kit', label: 'Kit' }
   ];
 
+  // originVal is a hero's origin choice, or '' when it only holds the name
+  // Foundry gives a new, empty item of that kind ("Complication", "New
+  // Complication"): that is no choice, so it reads as unset, names no entry
+  // and opens the picker empty rather than as typed text.
+  function originVal(data, key) {
+    var v = String(f(data, key, '') || '').trim();
+    var label = key.charAt(0).toUpperCase() + key.slice(1);
+    var low = v.toLowerCase(), l = label.toLowerCase();
+    return low === l || low === 'new ' + l ? '' : v;
+  }
+
   // Class has no slot in the origin row: Foundry owns it when a world is
   // linked, and otherwise it is a builder choice like the origins.
   var CLASS_SLOT = { key: 'class', label: 'Class' };
@@ -682,7 +693,7 @@
       : '';
 
     var slots = ORIGIN_SLOTS.map(function (s) {
-      var v = f(data, s.key, '');
+      var v = originVal(data, s.key);
       var text = v ? esc(v) : '<span class="cs-id-unset">' + esc(s.none || 'Not set') + '</span>';
       var inner = canPick
         ? '<button type="button" class="cs-id-pick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false">' +
@@ -2107,7 +2118,7 @@
       try {
         p = Chronicle.pickChoice({
           campaignId: data.campaignId, entityId: data.entityId, fieldKey: key,
-          current: f(data, key, ''), label: btn.getAttribute('data-cs-label') || key,
+          current: originVal(data, key), label: btn.getAttribute('data-cs-label') || key,
           anchorEl: fold, save: true
         });
       } catch (err) { openPick = null; btn.setAttribute('aria-expanded', 'false'); return; }
@@ -2630,7 +2641,7 @@
   // real address, so it also works as a plain link and from the keyboard.
   // Changing it is the quiet word beside it, so the two never share a press.
   function pOrigin(data, s, canPick) {
-    var v = f(data, s.key, '');
+    var v = originVal(data, s.key);
     // An empty choice (only an optional one is drawn empty) names no entry:
     // it is the picker itself, or quiet text for a reader.
     if (!v) {
@@ -2679,7 +2690,7 @@
   function pIdentityTodo(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
-    var left = slots.filter(function (s) { return !f(data, s.key, ''); });
+    var left = slots.filter(function (s) { return !originVal(data, s.key); });
     if (!left.length) return '';
     return '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
@@ -2691,7 +2702,7 @@
 
   function pIdentityInner(data) {
     var canPick = !!data.canEditIdentity && typeof Chronicle.pickChoice === 'function';
-    var has = function (k) { return !!f(data, k, ''); };
+    var has = function (k) { return !!originVal(data, k); };
     var bySlot = {};
     ORIGIN_SLOTS.forEach(function (s) { bySlot[s.key] = s; });
     var className = f(data, 'class', '');

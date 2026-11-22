@@ -384,6 +384,20 @@ test('complication: shown with the origins, pickable, and an empty one reads as 
   assert.ok(old.includes('data-cs-pick="complication"') && /No complication/.test(old));
 });
 
+test('a Foundry placeholder name is no choice: unset, no entry link, the picker opens empty', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  for (const placeholder of ['Complication', 'New Complication', ' complication ']) {
+    const d = Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { complication: placeholder }) });
+    const html = cs.pIdentity(d);
+    assert.ok(/No complication \u2014 optional/.test(html), placeholder + ' reads as unset');
+    assert.ok(!/named\/complication/.test(html), placeholder + ' names no entry');
+    const old = cs.rIdentity({}, Object.assign({ name: 'Bren', canEditIdentity: true }, { fields: { complication: placeholder } }));
+    assert.ok(/No complication/.test(old), placeholder + ' reads as unset in the classic band');
+  }
+  const real = cs.pIdentity(Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { complication: 'Complicated Past' }) }));
+  assert.ok(/data-v="origin-complication">Complicated Past</.test(real), 'a real name that only starts with the word stays');
+});
+
 test('class and the Foundry line follow whether a Foundry world is linked', () => {
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const linked = cs.pIdentity(Object.assign({}, PAPER, { foundryLinked: true }));
