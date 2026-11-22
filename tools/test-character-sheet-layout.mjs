@@ -335,7 +335,20 @@ test('face: the hero\'s own tier results, the star, the cost tag and the unaffor
   assert.ok(html.indexOf('Halt') < html.indexOf('Driving'), 'signature first');
   assert.ok(html.includes('Ranged 10'), 'no power roll: the distance stands in');
   assert.ok(/data-sheet-fold/.test(html) && /data-move="fold"/.test(html), 'unfolds with the Fold move');
-  assert.ok(/data-sheet-open="abilities"/.test(html), 'the full card stays reachable');
+  assert.ok(!/data-sheet-open="abilities"[^>]*>Full card/.test(html), 'Full card no longer pulls the side panel');
+  assert.equal((html.match(/data-cs-fullcard="\d+" aria-expanded="false">Full card</g) || []).length, FACE.length, 'every line has its own full card');
+  assert.equal((html.match(/data-sheet-open="abilities"/g) || []).length, 1, 'the filterable list keeps one way in');
+});
+
+test('face: a line\'s Full card points at that ability in the synced list', () => {
+  const html = cs.pAbilities(faceData(FACE));
+  FACE.forEach((a, i) => {
+    const at = html.indexOf('data-cs-fullcard="' + i + '"');
+    assert.ok(at > 0, a.name);
+    const head = html.slice(html.lastIndexOf('<summary>', at), at);
+    assert.ok(head.includes(a.name), a.name + ' owns index ' + i);
+  });
+  assert.ok(/data-cs-short>/.test(html) && /data-cs-full hidden>/.test(html), 'short card shown, full card empty until asked for');
 });
 
 test('face: a free strike is always listed, worked out from the kit when none is synced', () => {

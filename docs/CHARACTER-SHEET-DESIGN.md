@@ -55,7 +55,7 @@ contract instead of boxes: a `data-sheet` root, a `.paper-stack > .paper`
 holding the parts, and each part with more to show is a `.paper-pull` with a
 `data-sheet-open` button whose body is a `<template data-sheet-panel>` (turn,
 abilities, kit, damage, progression, items, features, skills, notes; the
-abilities panel opens from a Full card link, not from a part). Items,
+abilities panel opens from the All abilities word under the list, not from a part). Items,
 Notes and GM lore keep the box sheet's gates. Changing numbers carry `data-v` /
 `data-pv`, and the widget calls `Chronicle.sheetMotion.land` after the origin
 picker changes one. Panel content is wired from `sheet:panel-ready`, because the
@@ -92,8 +92,9 @@ redraw keeps whichever way the reader left it.
 Each is a fold: name, a star for signature, the cost as a tag (the reason when
 the hero cannot pay it), the hero's own tier results from the first damage
 effect (`heroResult`), and under it the distance and one effect sentence. The
-fold shows the three tiers and the effect, and a Full card link opens the
-Abilities panel. A free strike is always listed: the synced one, or a line from
+fold shows the three tiers and the effect, and its Full card word swaps that
+for the whole rules card in the same line (Short card swaps back). All abilities,
+under the list, opens the Abilities panel. A free strike is always listed: the synced one, or a line from
 the kit's damage bonus per tier, because the base damage is Foundry's and is not
 invented here. Kit, Items, Features, Skills and Notes are quiet ledger lines.
 

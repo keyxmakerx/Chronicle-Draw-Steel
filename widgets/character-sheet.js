@@ -2234,6 +2234,21 @@
     };
     el.addEventListener('change', inst._onEdChange);
 
+    // Swaps an ability line's short card for its full one, and back.
+    function toggleFullCard(btn) {
+      var line = btn.closest('details');
+      var full = line && line.querySelector('[data-cs-full]');
+      var brief = line && line.querySelector('[data-cs-short]');
+      var a = abilities[parseInt(btn.getAttribute('data-cs-fullcard'), 10)];
+      if (!full || !brief || !a) return;
+      var show = full.hidden;
+      if (show && !full.firstChild) full.innerHTML = fullCardHtml(a, data);
+      full.hidden = !show;
+      brief.hidden = show;
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+      btn.textContent = show ? 'Short card' : 'Full card';
+    }
+
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
@@ -2259,6 +2274,8 @@
         if (sum) { sum.click(); if (sum.focus) sum.focus({ preventScroll: true }); }
         return;
       }
+      var fullBtn = t.closest('[data-cs-fullcard]');
+      if (fullBtn) { e.preventDefault(); toggleFullCard(fullBtn); return; }
       var jmp = t.closest('[data-cs-jump]');
       if (jmp) {
         e.preventDefault();
@@ -2818,7 +2835,7 @@
   // One ability as a line that unfolds in place: name, the hero's own result,
   // and under it the distance and the main effect. The cost tag turns into the
   // reason when the hero cannot pay it.
-  function abilityLine(a, data) {
+  function abilityLine(a, data, idx) {
     var g = groupOf(a), kind = actionKind(a);
     var name = a.name || 'Untitled';
     var best = heroBest(a, data);
@@ -2837,11 +2854,14 @@
       '<span class="sx-res num">' + esc(result || dist) + '</span></span>' +
       (meta ? '<span class="sx-meta">' + esc(meta) + '</span>' : '');
     var tiers = tierLinesHtml(a, best);
-    var body = (tiers ? '<div class="sx-tiers">' + tiers + '</div>' : '') +
+    // The full card unfolds in the same line, in place of the short one, so it
+    // appears where it was asked for. It is built when first asked for.
+    var body = '<div data-cs-short>' + (tiers ? '<div class="sx-tiers">' + tiers + '</div>' : '') +
       (trig ? '<p class="sx-eff"><span class="ds-big__block-k">Trigger</span>' + refSynced(trig) + '</p>' : '') +
       (eff ? '<p class="sx-eff">' + refSynced(teaser(eff, 420)) + '</p>' : '') +
-      ((!tiers && !trig && !eff) ? '<p class="sx-eff ds-muted">No detail synced yet.</p>' : '') +
-      '<button type="button" class="sh-link" data-sheet-open="abilities">Full card</button>';
+      ((!tiers && !trig && !eff) ? '<p class="sx-eff ds-muted">No detail synced yet.</p>' : '') + '</div>' +
+      (idx >= 0 ? '<div class="sx-full" data-cs-full hidden></div>' +
+        '<button type="button" class="sh-link" data-cs-fullcard="' + idx + '" aria-expanded="false">Full card</button>' : '');
     return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
   }
 
@@ -2877,10 +2897,10 @@
   // It starts open, so a style that hides its heading simply lists them; the
   // quiet look shuts it when the sheet mounts.
   var COMMON_HEADS = { main: 'Every hero\u2019s main actions', maneuver: 'Every hero\u2019s maneuvers and moves', triggered: 'Every hero\u2019s triggered actions' };
-  function commonFold(kind, list, data) {
+  function commonFold(kind, list, data, all) {
     var head = '<span class="sx-std-n">' + esc(COMMON_HEADS[kind] || 'Every hero\u2019s actions') + '</span>' +
       '<span class="sx-std-c num">' + list.length + '</span>';
-    return foldHtml('sx-std', head, list.map(function (a) { return abilityLine(a, data); }).join(''), true)
+    return foldHtml('sx-std', head, list.map(function (a) { return abilityLine(a, data, all.indexOf(a)); }).join(''), true)
       .replace('<details ', '<details data-cs-common="' + kind + '" ');
   }
 
@@ -2897,16 +2917,18 @@
     var html = ACTION_ORDER.map(function (k) {
       var own = groups[k].filter(function (a) { return !isCommonAbility(a); });
       var common = groups[k].filter(isCommonAbility);
-      var lines = own.map(function (a) { return abilityLine(a, data); }).join('');
-      if (common.length) lines += commonFold(k, common, data);
+      var lines = own.map(function (a) { return abilityLine(a, data, abilities.indexOf(a)); }).join('');
+      if (common.length) lines += commonFold(k, common, data, abilities);
       if (k === 'free' && !lines) lines = freeStrikeLine(data);
       if (!lines) return '';
       var rolled = groups[k].some(function (a) { return heroBest(a, data) != null; });
       return '<div class="sx-grp"><div class="sx-h"><span class="paper-kind">' + ACTION_LABELS[k] + '</span>' +
         (rolled ? '<span class="sh-sub">tier 1 · 2 · 3</span>' : '') + '</div>' + lines + '</div>';
     }).join('');
+    // The panel is the place to filter a long list, so it keeps a word of its own.
+    var all = abilities.length ? '<button type="button" class="sh-link sx-all" data-sheet-open="abilities">All abilities</button>' : '';
     return '<section class="sh-band sh-abs sh-o2" aria-label="Abilities">' +
-      (abilities.length ? '' : pEmpty('No abilities yet.')) + html + '</section>';
+      (abilities.length ? '' : pEmpty('No abilities yet.')) + html + all + '</section>';
   }
 
   // Counts shown on the ledger lines. Each is a number or an escaped label.
@@ -3318,6 +3340,12 @@
     var bits = [t ? humanizeId(t.replace(/([A-Z])/g, ' $1')) : '', distanceLabel(a), powerRollLabel(a)].filter(Boolean);
     return bits.join(' · ');
   }
+  // The whole rules card, then the same card worked out for this hero.
+  function fullCardHtml(a, data) {
+    var forHero = forHeroHtml(a, data);
+    return '<div class="ab-rules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
+      (forHero ? '<div class="ds-big__sec ds-big__sec--for">For ' + esc(firstName(data.name)) + '</div>' + forHero : '');
+  }
   function pAbilityFold(a, data, open) {
     var g = groupOf(a);
     var name = (a && a.name) || 'Untitled';
@@ -3327,9 +3355,7 @@
       (g === 'signature' ? '<span class="ds-card__sig">Sig</span>' : '') +
       (cost ? '<span class="ds-card__cost">' + esc(cost) + '</span>' : '') + '</span>' +
       (meta ? '<span class="ab-meta">' + esc(meta) + '</span>' : '');
-    var forHero = forHeroHtml(a, data);
-    var body = '<div class="ab-rules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
-      (forHero ? '<div class="ds-big__sec ds-big__sec--for">For ' + esc(firstName(data.name)) + '</div>' + forHero : '');
+    var body = fullCardHtml(a, data);
     return '<details class="ft ab-fold' + (open ? ' is-in' : '') + '" data-sheet-fold data-ds-row data-ds-name="' + escAttr(name) + '"' + (open ? ' open' : '') + '>' +
       '<summary>' + head + '</summary><div class="fold-body"><div class="fold-in" data-move="fold">' + body + '</div></div></details>';
   }
@@ -5402,6 +5428,8 @@
       '[data-sheet] .sx-tiers { padding:0 2px 4px; }',
       '[data-sheet] .sx-eff { margin:2px 2px 8px;font-size:calc(13px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
       '[data-sheet] .sx-line .sh-link { margin:0 2px 10px; }',
+      '[data-sheet] .sx-full { margin:2px 2px 0; }',
+      '[data-sheet] .sx-all { display:block;margin:12px 2px 0; }',
       // The floating definition tooltip is appended to <body>, outside the sheet, as on the box render.
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
