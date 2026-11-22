@@ -77,6 +77,14 @@ test('tierFragments builds resolved damage for a hero, generic for the rules car
   assert.equal(cs.tierFragments(a, 3, 2), '9 damage');        // no types
   assert.equal(cs.tierFragments(a, 1, null), '2 + M fire damage'); // generic
   assert.equal(cs.tierFragments({ tiers: [] }, 1, 2), '');    // no effects → empty
+  // applied, forced and other effects keep their tiers under their own type
+  const b = { tiers: [
+    { type: 'damage', damage: { tier1: { value: '5', types: ['holy'] } } },
+    { type: 'applied', applied: { tier1: { display: '{{potency}} slowed (save ends)', potency: { characteristic: 'might', value: '@potency.weak' } } } },
+    { type: 'forced', forced: { tier1: { display: '{{forced}}', movement: ['push'], distance: '2', properties: [] } } },
+    { type: 'other', other: { tier1: { display: 'You gain 1 surge.' } } },
+  ] };
+  assert.equal(cs.tierFragments(b, 1, 2), '5 holy damage; M < WEAK slowed (save ends); push 2; You gain 1 surge.');
 });
 
 // ── groupOf (ability list bucket) ─────────────────────────────────────────
@@ -197,4 +205,17 @@ test('SKILL_TO_GROUP maps skill ids to the five Draw Steel groups', () => {
   assert.equal(cs.SKILL_TO_GROUP.alchemy, 'crafting');
   assert.equal(cs.SKILL_TO_GROUP.hide, 'intrigue');
   assert.equal(cs.SKILL_TO_GROUP.nonsense, undefined);     // unknown → caller's "Other"
+});
+
+test('distanceLabel reads area and two-range shapes the way the rules print them', () => {
+  assert.equal(cs.distanceLabel({ distanceType: 'meleeRanged', distance: 1, distanceSecondary: 10 }), 'Melee 1 or ranged 10');
+  assert.equal(cs.distanceLabel({ distanceType: 'cube', distance: 3, distanceSecondary: 10 }), '3 cube within 10');
+  assert.equal(cs.distanceLabel({ distanceType: 'line', distance: 5, distanceSecondary: 1, distanceTertiary: 10 }), '5 × 1 line within 10');
+  assert.equal(cs.distanceLabel({ distanceType: 'burst', distance: 2 }), '2 burst');
+});
+
+test('Foundry text decodes every entity once and drops any link syntax to its label', () => {
+  assert.equal(cs.htmlToText('<p>Rook&rsquo;s &mdash; &#8220;hi&#x201D; &amp;lt;</p>'), 'Rook’s — “hi” &lt;');
+  assert.equal(cs.cleanFoundryText('See @Compendium[draw-steel.abilities.x]{Mark} now'), 'See Mark now');
+  assert.equal(cs.cleanFoundryProse('<p>One</p><ul><li>A</li><li>B</li></ul>'), 'One\n\n• A\n• B');
 });

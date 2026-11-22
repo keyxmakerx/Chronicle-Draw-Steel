@@ -776,7 +776,7 @@
     if (isNum(data, 'save_threshold')) {
       var sb = f(data, 'save_bonus', '');
       var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
       chipList += '<div class="cs-chip"><span class="cs-chip-label">Save</span>' +
         '<span class="cs-chip-value">' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</span></div>';
     }
@@ -1321,7 +1321,7 @@
   // rGmLore renders GM-only notes. Scheduled ONLY when data.isGm (the buildSchema
   // gate), so it never reaches a player; rendered inline (not the reading overlay).
   function rGmLore(def, data) {
-    var notes = f(data, 'gm_notes', '');
+    var notes = cleanFoundryProse(f(data, 'gm_notes', ''));
     if (!notes) return ph('No GM notes.');
     return '<div class="cs-gmlore">' + refText(notes) + '</div>';
   }
@@ -1387,11 +1387,21 @@
   // is then re-escaped + {@…}-resolved by refText, so it's render-safe.
   function htmlToText(h) {
     if (!h) return '';
-    return String(h)
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
-      .replace(/\s+/g, ' ').trim();
+    return decodeEntities(String(h).replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+  }
+
+  // decodeEntities turns the entities editors and Foundry write (numeric, and the
+  // named quotes and dashes) back into characters, so the later escape shows
+  // "can't" rather than "can&rsquo;t". &amp; goes last so "&amp;lt;" stays "&lt;".
+  var NAMED_ENTITIES = { nbsp: ' ', lt: '<', gt: '>', quot: '"', apos: "'", lsquo: '\u2018', rsquo: '\u2019',
+    ldquo: '\u201C', rdquo: '\u201D', ndash: '\u2013', mdash: '\u2014', hellip: '\u2026', times: '\u00D7',
+    minus: '\u2212', frac12: '\u00BD', deg: '\u00B0', middot: '\u00B7', bull: '\u2022', copy: '\u00A9' };
+  function decodeEntities(s) {
+    return String(s)
+      .replace(/&#(\d{1,7});/g, function (m, n) { var c = +n; return c > 0 && c < 0x110000 ? String.fromCodePoint(c) : m; })
+      .replace(/&#x([0-9a-f]{1,6});/gi, function (m, n) { var c = parseInt(n, 16); return c > 0 && c < 0x110000 ? String.fromCodePoint(c) : m; })
+      .replace(/&([a-z][a-z0-9]*);/gi, function (m, n) { return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, n) ? NAMED_ENTITIES[n] : m; })
+      .replace(/&amp;/g, '&');
   }
 
   // stripEnrichers removes Foundry rich-text enrichers that arrive raw in synced
@@ -1403,13 +1413,13 @@
   // (drop a leading "/", the "lookup" keyword, and @path tokens).
   function stripEnrichers(s) {
     return String(s == null ? '' : s)
-      .replace(/@UUID\[[^\]]*\]\{([^}]*)\}/g, '$1')
+      .replace(/@[A-Za-z]+\[[^\]]*\]\{([^}]*)\}/g, '$1')
       .replace(/\[\[[^\]]*\]\]\{([^}]*)\}/g, '$1')
       .replace(/\[\[([^\]]*)\]\]/g, function (_m, inner) {
         return String(inner).replace(/^\s*\//, '').replace(/\blookup\b/g, '')
           .replace(/@[\w.]+/g, '').replace(/\s+/g, ' ').trim();
       })
-      .replace(/@UUID\[[^\]]*\]/g, '');
+      .replace(/@(?:UUID|Compendium|Embed|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]/g, '');
   }
 
   // cleanFoundryText — inline-safe plain text from a synced rich field: strip
@@ -1425,12 +1435,11 @@
   function cleanFoundryProse(h) {
     if (!h) return '';
     var s = String(h)
-      .replace(/<\/(p|div|li|h[1-6])>/gi, '\n\n')
+      .replace(/<\/(p|div|h[1-6]|ul|ol)>/gi, '\n\n').replace(/<\/li>/gi, '\n')
       .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'");
-    return stripEnrichers(s).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+      .replace(/<li[^>]*>/gi, '\u2022 ')
+      .replace(/<[^>]+>/g, '');
+    return stripEnrichers(decodeEntities(s)).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
   }
 
   function powerRollChars(a) {
@@ -1450,6 +1459,13 @@
     var d = (a.distance != null && a.distance !== '') ? a.distance : '';
     if (!t && d === '') return '';
     if (t === 'self') return 'Self';
+    var d2 = a.distanceSecondary, d3 = a.distanceTertiary;
+    // Area and two-range shapes read the way the rules print them.
+    if (t === 'meleeranged') return ('Melee ' + d + (d2 ? ' or ranged ' + d2 : '')).trim();
+    if (t === 'cube' && d !== '') return d + ' cube' + (d2 ? ' within ' + d2 : '');
+    if (t === 'wall' && d !== '') return d + ' wall' + (d2 ? ' within ' + d2 : '');
+    if (t === 'line' && d !== '') return d + (d2 ? ' \u00D7 ' + d2 : '') + ' line' + (d3 ? ' within ' + d3 : '');
+    if (t === 'burst' && d !== '') return d + ' burst';
     var label = t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
     if (d !== '') label += (label ? ' ' : '') + d;
     if (a.distanceSecondary) label += ' × ' + a.distanceSecondary;
@@ -1592,6 +1608,34 @@
     return ev != null ? String(ev) : s.replace(/@chr/gi, String(subVal));
   }
 
+  // fillTierDisplay fills the {{potency}} and {{forced}} placeholders Foundry
+  // leaves in a tier's display text, the way the rules print them ("M < WEAK
+  // push 2"); an unknown placeholder is dropped rather than shown raw.
+  var POTENCY_LETTERS = { might: 'M', agility: 'A', reason: 'R', intuition: 'I', presence: 'P' };
+  function potencyPhrase(pt) {
+    if (!pt || typeof pt !== 'object') return '';
+    var letter = POTENCY_LETTERS[String(pt.characteristic || '').toLowerCase()];
+    if (!letter) return '';
+    var v = String(pt.value == null ? '' : pt.value).trim();
+    var m = v.match(/^@potency\.(weak|average|strong)$/i);
+    if (m) v = m[1].toUpperCase();
+    return v ? letter + ' < ' + v : '';
+  }
+  function fillTierDisplay(disp, tt) {
+    if (!disp) return '';
+    var forced = '';
+    if (tt.movement) {
+      var mv = (Array.isArray(tt.movement) ? tt.movement : [tt.movement]).filter(Boolean).join(' or ');
+      var vert = Array.isArray(tt.properties) && tt.properties.indexOf('vertical') !== -1;
+      forced = ((vert ? 'vertical ' : '') + mv + (tt.distance != null && tt.distance !== '' ? ' ' + tt.distance : '')).trim();
+    }
+    return String(disp)
+      .replace(/\{\{\s*potency\s*\}\}/gi, potencyPhrase(tt.potency))
+      .replace(/\{\{\s*forced\s*\}\}/gi, forced)
+      .replace(/\{\{[^}]*\}\}/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+
   // tierFragments builds the outcome text for one tier (1..3) from the ability's
   // power-roll effects (system.power.effects, normalized to an array). Handles
   // the damage-effect shape well; degrades to '' for effect types we don't model
@@ -1613,10 +1657,12 @@
         frags.push(val + (types.length ? ' ' + types.join('/') : '') + ' damage');
         return;
       }
-      // generic per-tier text shapes (applied/other effects): a display/text/value
-      var tt = eff[key];
+      // Applied, forced and other effects keep their tiers under their own type
+      // ({ type: 'applied', applied: { tier1: { display, potency } } }); a flat
+      // { tier1: … } is still read for older data.
+      var tt = eff[key] || (eff.type && eff[eff.type] && typeof eff[eff.type] === 'object' ? eff[eff.type][key] : null);
       if (tt && typeof tt === 'object') {
-        var disp = tt.display || tt.text || tt.description;
+        var disp = fillTierDisplay(tt.display || tt.text || tt.description, tt);
         if (disp) frags.push(cleanFoundryText(disp));
       } else if (typeof tt === 'string' && tt) {
         frags.push(cleanFoundryText(tt));
@@ -1961,7 +2007,8 @@
         else grp.classList.remove('ds-ab-grp--empty');
         if (q) grp.classList.add('ds-ab-grp--filtering');
         else grp.classList.remove('ds-ab-grp--filtering');
-        if (shown && !grp.classList.contains('ds-ab-grp--off')) anyShown = true;
+        // A typed name searches every tab: a group off-tab still shows its matches.
+        if (shown && (q || !grp.classList.contains('ds-ab-grp--off'))) anyShown = true;
       });
       var none = rail.querySelector('[data-ds-no-match]');
       if (none) none.hidden = anyShown;
@@ -2130,7 +2177,6 @@
       var html = def[1](data);
       var tpl = el.querySelector('template[data-sheet-panel="' + def[0] + '"]');
       if (tpl) tpl.innerHTML = html;
-      if (kind === 'backstory') inst._pin = null;
       if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === def[0]) {
         inst._panelBody.innerHTML = html;
         var again = inst._panelBody.querySelector('[data-cs-ed-open="' + kind + '"]');
@@ -2205,14 +2251,36 @@
       if (edCancel) { e.preventDefault(); inst._closeEditor(edScope(edCancel), true); return; }
       var edQuick = t.closest('[data-cs-ed-quick]');
       if (edQuick) { e.preventDefault(); useSuggested(edQuick); return; }
-      var unp = t.closest('[data-unpin]');
-      if (unp) { e.preventDefault(); unpin(inst, true); return; }
+      var less = t.closest('[data-cs-story-less]');
+      if (less) {
+        e.preventDefault();
+        var more = less.closest('details');
+        var sum = more && more.querySelector('summary');
+        if (sum) { sum.click(); if (sum.focus) sum.focus({ preventScroll: true }); }
+        return;
+      }
+      var jmp = t.closest('[data-cs-jump]');
+      if (jmp) {
+        e.preventDefault();
+        // Only the panel's own body scrolls: scrolling the anchor into view would also scroll the page under the panel and carry the
+        // panel out of the window.
+        var box = jmp.closest('.paper-dbody');
+        var tgt = box && box.querySelector('[data-cs-anchor="' + jmp.getAttribute('data-cs-jump') + '"]');
+        if (tgt) {
+          var top = jumpTop(box.getBoundingClientRect().top, tgt.getBoundingClientRect().top, box.scrollTop, box.scrollHeight, box.clientHeight);
+          if (top !== null) {
+            if (box.scrollTo) box.scrollTo({ top: top, behavior: reduced() ? 'auto' : 'smooth' });
+            else box.scrollTop = top;
+          }
+        }
+        return;
+      }
+      var goItems = t.closest('[data-cs-go-items]');
+      if (goItems) { e.preventDefault(); goToItemsTab(); return; }
       var rs = t.closest('[data-cs-read-story]');
       if (rs) {
         e.preventDefault();
-        // On paper the story is pinned onto the open Notes panel.
-        if (inst._paper) openStoryPin(inst, rs, data);
-        else openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', ''));
+        openReadingView(data.name || 'Background', f(data, 'backstory', '') || f(data, 'notes', ''));
         return;
       }
       // Clicking anywhere on the big card returns to the small card (symmetric
@@ -2663,7 +2731,7 @@
     if (isNum(data, 'save_threshold')) {
       var sb = f(data, 'save_bonus', '');
       var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb)) : '';
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
       out += '<span>Save<b>' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</b></span>';
     }
     var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
@@ -2680,7 +2748,7 @@
     var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var pips = '';
-    for (var i = 0; i < Math.min(recMax, 12); i++) pips += i < rec ? '●' : '○';
+    for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
     var top = pStamina(cur, max, winded) +
       '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
@@ -2870,7 +2938,7 @@
   }
 
   // The ledger lines for the panels that exist. Items is absent when the
-  // host shows its own item list; Notes is a permission gate, as before.
+  // host shows its own item list; Story is a permission gate, as before.
   function paperLedger(data) {
     var lines = [];
     if (!data.armoryItems) {
@@ -2882,8 +2950,16 @@
     lines.push(['skills', 'Skills', skillsLine(data)]);
     var kit = kitFacts(data);
     lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : 'No kit equipped']);
-    if (data.isGm || data.isOwner) lines.push(['notes', 'Notes', 'Background' + (data.isGm ? ', GM lore' : '')]);
+    // With the Armory on, the hero's items live in the page's Items tab; this
+    // row points there and stays hidden until that tab is on the page.
+    if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
+    if (data.isGm || data.isOwner) lines.push(['notes', 'Story', 'Background' + (data.isGm ? ', GM lore' : '')]);
     return '<section class="sh-ledger sh-o3">' + lines.map(function (l) {
+      if (l[0] === 'items-go') {
+        return '<div class="paper-pull sh-golink" data-cs-items-row hidden><button type="button" class="sh-pullbtn" data-cs-go-items>' +
+          '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds">' + l[2] + '</span>' +
+          '<span class="sh-pull">Go to items ' + fa('arrow-down') + '</span></button></div>';
+      }
       return '<div class="paper-pull" data-sheet-section="' + l[0] + '">' +
         pullBtn(l[0], '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds" data-ds="' + l[0] + '">' + l[2] + '</span>') + '</div>';
     }).join('') + '</section>';
@@ -2959,9 +3035,10 @@
       pullBtn('progression', '<span class="paper-kind">Progression</span>') + '<div class="sh-dl">' + cells + '</div></section>';
   }
 
-  function pFoot() {
+  function pFoot(data) {
     return '<footer class="sh-foot"><span><span class="only-paper">Tap any section to pull out the paper behind it.</span>' +
-      '<span class="only-modern">Select any section to open its panel.</span></span><span>Synced with Foundry</span></footer>';
+      '<span class="only-modern">Select any section to open its panel.</span></span>' +
+      (foundryLinked(data) ? '<span>Synced with Foundry</span>' : '') + '</footer>';
   }
 
   // ── Panels (the papers pulled out from behind a part) ──────────────────────
@@ -3059,9 +3136,9 @@
     ft = featureOf(ft);
     var name = esc((ft && ft.name) || 'Feature') + layerTag(data, layerOf(data, ft));
     var lvl = (ft && ft.level) ? ' <span class="sh-lvl">L' + esc(String(ft.level)) + '</span>' : '';
-    var desc = cleanFoundryText(ft && ft.description);
+    var desc = cleanFoundryProse(ft && ft.description);
     if (!desc) return '<div class="ft ft-flat">' + name + lvl + '</div>';
-    return foldHtml('', name + lvl, '<p>' + refSynced(desc) + '</p>', false);
+    return foldHtml('', name + lvl, '<p class="ft-desc">' + refSynced(desc) + '</p>', false);
   }
   function pFeatureGroup(label, list, data) {
     if (!list || !list.length) return '';
@@ -3143,17 +3220,63 @@
       (canEditLists(data) ? '<div class="lf-grp">' + edOpen('skills', 'Choose skills and languages') + '</div>' : '');
   }
 
+  // The story is read in place: the first lines show and "Keep reading"
+  // unfolds the rest below them, so the panel stays the one scroll box.
+  // Paragraph breaks survive through pre-line; a lead cut mid-paragraph
+  // ends on a sentence.
+  // Where a panel body scrolls to so a jump word's anchor sits at its top: null when the body has nothing to scroll,
+  // and never past the body's end.
+  function jumpTop(boxTop, anchorTop, scrollTop, scrollHeight, clientHeight) {
+    var room = scrollHeight - clientHeight;
+    if (!(room > 0)) return null;
+    return Math.max(0, Math.min(room, Math.round(anchorTop - boxTop + scrollTop)));
+  }
+
+  function storySplit(prose) {
+    var paras = String(prose).split(/\n{2,}/).map(function (p) { return p.trim(); }).filter(Boolean);
+    var lead = [], len = 0, i = 0;
+    while (i < paras.length && (i === 0 || len < 280)) { lead.push(paras[i]); len += paras[i].length; i++; }
+    var rest = paras.slice(i);
+    if (!rest.length && lead.length === 1 && lead[0].length > 420) {
+      var one = lead[0], cut = one.slice(0, 320).search(/[.!?…]["'”’)]*\s[^.!?]*$/);
+      var at = cut > 120 ? one.indexOf(' ', cut) : one.indexOf(' ', 320);
+      if (at > 0 && at < one.length - 40) { lead = [one.slice(0, at)]; rest = [one.slice(at + 1)]; }
+    }
+    return { lead: lead, rest: rest };
+  }
+
+  function storyParas(list) {
+    return list.map(function (p) { return '<p class="sn-p">' + refSynced(p) + '</p>'; }).join('');
+  }
+
+  function storyHtml(prose) {
+    var sp = storySplit(prose);
+    var out = storyParas(sp.lead);
+    if (sp.rest.length) {
+      out += '<details class="sn-more" data-sheet-fold><summary class="sh-link">Keep reading</summary>' +
+        '<div class="fold-body"><div class="fold-in" data-move="fold">' + storyParas(sp.rest) +
+        '<button type="button" class="sh-link sn-less" data-cs-story-less>Show less</button></div></div></details>';
+    }
+    return out;
+  }
+
   function pNotesPanel(data) {
     var notes = f(data, 'backstory', '') || f(data, 'notes', '');
     var edit = data.canEditIdentity && data.campaignId
       ? edOpen('backstory', notes ? 'Edit' : 'Write your backstory') : '';
-    var out = '<div class="lf-grp"><span class="sh-k">Background</span> ' + edit + (notes
-      ? '<p class="lf-text">' + esc(teaser(cleanFoundryText(notes), 180)) + '</p>' +
-        '<button type="button" class="sh-link" data-cs-read-story aria-expanded="false">Read full story</button>'
+    var jump = data.isGm
+      ? '<p class="sn-jump"><button type="button" class="sh-link" data-cs-jump="story-bg">Background</button>' +
+        '<span aria-hidden="true"> · </span><button type="button" class="sh-link" data-cs-jump="story-gm">GM lore</button></p>'
+      : '';
+    var out = jump + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
+      ? storyHtml(cleanFoundryProse(notes))
       : pEmpty('No backstory yet.')) + '</div>';
     if (data.isGm) {
-      var gm = f(data, 'gm_notes', '');
-      out += foldHtml('lf-grp', 'GM lore <span class="sh-seal">GM only</span>', gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.'), false);
+      // GM notes arrive as Foundry/editor HTML, so they get the same cleaning
+      // as the backstory; the line breaks survive through pre-line.
+      var gm = cleanFoundryProse(f(data, 'gm_notes', ''));
+      out += '<div class="lf-grp" data-cs-anchor="story-gm"><span class="sh-k">GM lore <span class="sh-seal">GM only</span></span>' +
+        (gm ? '<p class="lore">' + refText(gm) + '</p>' : pEmpty('No GM notes.')) + '</div>';
     }
     return out;
   }
@@ -3248,7 +3371,7 @@
     if (!data.armoryItems) list.push({ id: 'items', title: 'Items', kind: name, html: pItemsPanel(data) });
     list.push({ id: 'features', title: 'Features', kind: name, html: pFeaturesPanel(data) });
     list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
-    if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Notes', kind: name, html: pNotesPanel(data) });
+    if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Story', kind: name, size: 'tall', html: pNotesPanel(data) });
     return list;
   }
 
@@ -4021,15 +4144,40 @@
     }).catch(function () { return { presets: [], canSave: false }; });
   }
 
+  // The page's tab bar is outside the widget; the sheet only presses the
+  // tab's own button, and does nothing when the page has no Items tab.
+  function itemsTabButton() {
+    var b = document.querySelector('[data-widget="page-tabs"] [data-pt-tab="items"]');
+    return b && !b.hidden ? b : null;
+  }
+  function goToItemsTab() {
+    var b = itemsTabButton();
+    if (!b) return;
+    b.click();
+    var pane = document.getElementById('pt-pane-items');
+    if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' });
+  }
+  // The row appears once the tab does; the tab bar settles after the sheet.
+  function showItemsRow(el) {
+    var row = el.querySelector('[data-cs-items-row]');
+    if (!row) return;
+    var tries = 0;
+    (function look() {
+      if (!el.isConnected || !row.isConnected) return;
+      if (itemsTabButton()) { row.hidden = false; return; }
+      if (++tries < 10) setTimeout(look, 400);
+    })();
+  }
+
   function paperSheetHtml(data) {
     var name = data.name || 'Unnamed Hero';
     var templates = paperPanels(data).map(function (p) {
-      return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '">' + p.html + '</template>';
+      return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '"' + (p.size ? ' data-size="' + escAttr(p.size) + '"' : '') + '>' + p.html + '</template>';
     }).join('');
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
       pHead(data) + pIdentity(data) + pChanges(data) + pTurn(data) +
       '<div class="sh-body"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot() + '</article>';
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
       templates + '</div>';
@@ -4037,73 +4185,16 @@
 
   // ── Paper interactions ─────────────────────────────────────────────────────
 
-  // The longest transition on an element, so a pin is removed only after its
-  // own move has played (Calm and Off already shorten or remove it in CSS).
-  function transitionMs(node) {
-    var cs = getComputedStyle(node), d = cs.transitionDuration.split(','), l = cs.transitionDelay.split(','), m = 0;
-    function ms(x) { x = String(x).trim(); return (parseFloat(x) || 0) * (/ms$/.test(x) ? 1 : 1000); }
-    d.forEach(function (x, i) { m = Math.max(m, ms(x) + ms(l[i % l.length])); });
-    return m;
-  }
-
-  // A pin is a slip tacked onto the open panel. Chronicle styles it
-  // (.paper-pin) and moves it by toggling .is-pinned; the engine has no
-  // call for it, so the widget places and removes it.
-  function unpin(inst, focus) {
-    var p = inst._pin;
-    if (!p) return;
-    inst._pin = null;
-    p.el.classList.remove('is-pinned');
-    p.trigger.setAttribute('aria-expanded', 'false');
-    if (focus && p.trigger.isConnected && p.trigger.focus) p.trigger.focus({ preventScroll: true });
-    setTimeout(function () { if (p.el.parentNode) p.el.parentNode.removeChild(p.el); }, transitionMs(p.el) + 20);
-  }
-
-  function storyPinHtml(data) {
-    var title = (data.name || 'Background') + '’s story';
-    var prose = cleanFoundryProse(f(data, 'backstory', '') || f(data, 'notes', ''));
-    var paras = prose.split(/\n{2,}/).filter(Boolean).map(function (p) { return '<p>' + refSynced(p) + '</p>'; }).join('');
-    return '<span class="pin" aria-hidden="true"></span><div class="slip-in"><div class="slip-head"><h3 tabindex="-1">' + esc(title) + '</h3>' +
-      '<button type="button" class="unpin" data-unpin aria-label="' + escAttr('Unpin ' + title) + '">' + fa('xmark') + ' Unpin</button></div>' + paras + '</div>';
-  }
-
-  function openStoryPin(inst, trigger, data) {
-    var body = trigger.closest ? trigger.closest('.paper-dbody') : null;
-    if (!body) return;
-    if (inst._pin && inst._pin.trigger === trigger) { unpin(inst, true); return; }
-    unpin(inst, false);
-    var el = document.createElement('div');
-    el.className = 'paper-pin' + ((inst._pinFlip = (inst._pinFlip || 0) + 1) % 2 ? '' : ' alt');
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', (data.name || 'Background') + '’s story');
-    el.innerHTML = storyPinHtml(data);
-    var br = body.getBoundingClientRect(), tr = trigger.getBoundingClientRect();
-    el.style.top = (tr.bottom - br.top + body.scrollTop + 8) + 'px';
-    body.appendChild(el);
-    el.style.setProperty('--ox', Math.round(tr.left + tr.width / 2 - el.getBoundingClientRect().left) + 'px');
-    el.style.setProperty('--oy', '0px');
-    void el.offsetWidth;
-    el.classList.add('is-pinned');
-    trigger.setAttribute('aria-expanded', 'true');
-    inst._pin = { el: el, trigger: trigger };
-    setTimeout(function () {
-      var h = el.querySelector('h3');
-      if (h) h.focus({ preventScroll: true });
-      if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
-    }, 40);
-  }
-
   // The panel body is a fresh clone each time a panel opens, so anything
   // interactive inside it is wired from sheet:panel-ready, never at mount.
   function attachPaperPanels(inst, el, root) {
     inst._onPanelReady = function (e) {
       var d = e.detail || {};
-      inst._pin = null;
       inst._panelBody = d.body || null;
       inst._panelId = d.id || null;
       if (d.id === 'abilities' && inst._selectFirst) inst._selectFirst();
     };
-    inst._onPanelClose = function () { inst._pin = null; inst._panelBody = null; inst._panelId = null; };
+    inst._onPanelClose = function () { inst._panelBody = null; inst._panelId = null; };
     root.addEventListener('sheet:panel-ready', inst._onPanelReady);
     root.addEventListener('sheet:close', inst._onPanelClose);
 
@@ -4117,7 +4208,6 @@
       // other key is left alone so typing in a box is never taken over.
       var ed = e.target && e.target.closest ? e.target.closest('[data-cs-ed-scope]') : null;
       if (ed && inst._closeEditor) { e.preventDefault(); e.stopPropagation(); inst._closeEditor(ed, true); return; }
-      if (inst._pin) { e.preventDefault(); e.stopPropagation(); unpin(inst, true); return; }
       var big = inst._panelBody && inst._panelBody.querySelector ? inst._panelBody.querySelector('[data-ds-collapse]') : null;
       if (big && inst._collapse) { e.preventDefault(); e.stopPropagation(); inst._collapse(parseInt(big.getAttribute('data-ds-collapse'), 10)); }
     };
@@ -4166,7 +4256,7 @@
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_pin', '_closeEditor'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -4203,6 +4293,7 @@
     if (root) attachPaperPanels(inst, el, root);
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
+    showItemsRow(el);
   }
 
 
@@ -4397,6 +4488,7 @@
       '.ds-ab-grp--filtering .ds-ab-grp__rows { display:block; }',
       '.ds-li--hidden { display:none; }',
       '.ds-ab-grp--empty { display:none; }',
+      '.ds-ab-grp--off.ds-ab-grp--filtering:not(.ds-ab-grp--empty) { display:block; }',
       '.ds-li { display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:8px 13px; background:none; border:0; border-top:1px solid var(--color-border-light,#f3f4f6); font:inherit; font-size:13px; color:var(--color-text-secondary,#6b7280); cursor:pointer; transition:background 120ms ease, color 120ms ease; }',
       '.ds-li:hover { background:rgba(var(--color-accent-rgb,168,85,247),0.05); color:var(--color-text-primary,#111827); }',
       '.ds-li:focus-visible { outline:2px solid var(--color-accent,#a855f7); outline-offset:-2px; }',
@@ -4517,7 +4609,7 @@
       '.cs-reading-dark .cs-reading__eyebrow { color:#cdb06b; }',
       '.cs-reading__title { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:32px; font-weight:700; text-align:center; margin:4px 0 24px; color:#211c14; }',
       '.cs-reading-dark .cs-reading__title { color:#f7f1e3; }',
-      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; }',
+      '.cs-reading__body { font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-size:17px; line-height:1.95; max-width:600px; margin:0 auto; white-space:pre-wrap; overflow-wrap:anywhere; }',
       '.cs-reading__body::first-letter { float:left; font-family:Georgia,serif; font-weight:700; font-size:52px; line-height:0.72; padding:7px 10px 0 0; color:#7c3aed; }',
       '.cs-reading-dark .cs-reading__body::first-letter { color:#bda6f4; }',
       // ── Reserved Option-C block slots — hidden until Chronicle hydrates ──
@@ -4581,7 +4673,7 @@
       '.cs-kit-tiers span, .cs-kit-tierhead span { display:inline-block; min-width:34px; text-align:center; font-variant-numeric:tabular-nums; }',
       '.cs-kit-tiers span { font-weight:700; color:var(--color-text-primary,#111827); }',
       // ── v3 GM Lore ──
-      '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; }',
+      '.cs-gmlore { font-size:13px; line-height:1.6; color:var(--color-text-body,#374151); border-left:3px solid rgba(var(--color-accent-rgb,99,102,241),0.5); padding:4px 0 4px 12px; white-space:pre-line; }',
       // ── Mobile ──
       '@media (max-width:600px) {',
       '  .cs-stat-row { grid-template-columns:repeat(5,1fr); gap:4px; }',
@@ -4745,7 +4837,7 @@
       '[data-sheet] .sh-was { color:var(--paper-mute);font-weight:400;text-decoration-thickness:1px;margin-right:2px; }',
       '[data-sheet] .sh-sr { position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }',
       '[data-sheet] .sh-layers { display:inline-flex;gap:6px;flex-wrap:wrap; }',
-      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);white-space:nowrap; }',
+      '[data-sheet] .sh-layer { display:inline-flex;align-items:center;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:999px;padding:0 8px;font:600 calc(11px * var(--ts))/18px var(--paper-ui-font);max-width:100%;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-layer-sm { font-size:calc(10px * var(--ts));line-height:16px;padding:0 6px;vertical-align:1px; }',
       // The Director's preview is drawn in the sheet's warning colour, which
       // the player never sees on a layer; a pushed layer keeps the accent.
@@ -4873,12 +4965,6 @@
       '[data-sheet] .sh-ledger .sh-nm { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink);min-width:calc(78px * var(--ts) * 1.12); }',
       '[data-sheet] .sh-ledger .sh-ds { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);min-width:0; }',
       '[data-sheet] .sh-foot { border-top:1px dashed var(--paper-edge);padding-top:9px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
-      '[data-sheet] .slip-in { padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px; }',
-      '[data-sheet] .slip-head { display:flex;align-items:center;gap:8px; }',
-      '[data-sheet] .slip-head h4,[data-sheet] .slip-head h3 { margin:0;font:700 calc(14.5px * var(--ts)) var(--paper-font);color:var(--paper-ink);outline:none; }',
-      '[data-sheet] .paper-pin .slip-in { padding:14px 14px 12px; }',
-      '[data-sheet] .paper-pin .unpin { border:0;background:none;color:var(--paper-ink-soft);font:600 calc(11.5px * var(--ts)) var(--paper-ui-font);padding:2px 4px;margin-left:auto;display:inline-flex;gap:4px;align-items:center; }',
-      '[data-sheet] .paper-pin .unpin:hover { color:var(--paper-neg); }',
       '[data-sheet] .ab { position:relative;padding:8px 0 9px;border-bottom:1px dashed var(--paper-edge); }',
       '[data-sheet] .ab-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .ab .sh-link { font-size:calc(12px * var(--ts));margin-top:3px; }',
@@ -4900,14 +4986,18 @@
       '[data-sheet] .sh-lvl { font:600 calc(10px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);border:1px solid var(--paper-edge);border-radius:3px;padding:0 4px; }',
       '[data-sheet] .skills { display:flex;flex-wrap:wrap;gap:5px; }',
       '[data-sheet] .lf-text { margin:0 0 6px;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--paper-ink-soft); }',
-      '[data-sheet] .lore { border-left:2px solid var(--paper-accent);padding:2px 0 2px 10px;font-style:italic; }',
+      '[data-sheet] .lore { border-left:2px solid var(--paper-accent);padding:2px 0 2px 10px;font-style:italic;white-space:pre-line; }',
       '[data-sheet] .rule { margin:0 0 10px; }',
       '[data-sheet] .rule b { display:block;font:700 calc(14px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
-      '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts)); }',
+      '[data-sheet] .rule p { margin:2px 0 0;font-size:calc(13px * var(--ts));white-space:pre-line; }',
       '@container sheet (max-width:819px) {',
       '  [data-sheet] .sh-sheet { padding:22px 26px 24px;gap:14px; }',
       '  [data-sheet] .sh-body { display:flex;flex-direction:column;align-items:stretch;gap:14px; }',
       '  [data-sheet] .sh-col { display:contents; }',
+      // The tilted sheet peeking from behind sits past the right edge; on a narrow
+      // page that edge would scroll the page sideways. Only the stack clips, so a
+      // panel beside the sheet (in the folio) is untouched.
+      '  [data-sheet] .sh-stack { overflow-x:clip; }',
       '}',
       '@container sheet (max-width:600px) {',
       '  [data-sheet] .sh-sheet { padding:18px 15px 20px; }',
@@ -4996,7 +5086,7 @@
       '[data-sheet][data-sheet-style="pencil"] .sh-num small,[data-sheet][data-sheet-style="pencil"] .sh-big small { text-shadow:none; }',
       '@container sheet (max-width:600px) {',
       '  [data-sheet][data-sheet-style="pencil"] .sh-chars b { font-size:calc(28px * var(--ts)); }',
-      '  [data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(10px * var(--ts));letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="pencil"] .sh-chars span { font-size:calc(9.5px * var(--ts));letter-spacing:0; }',
       '  [data-sheet][data-sheet-style="pencil"] .sh-name h2 { font-size:calc(38px * var(--ts)); }',
       '}',
       '[data-sheet][data-sheet-style="starship"] .sh-id,[data-sheet][data-sheet-style="starship"] .sh-turn,[data-sheet][data-sheet-style="starship"] .sh-band,[data-sheet][data-sheet-style="starship"] .sh-sec.paper-pull,[data-sheet][data-sheet-style="starship"] .sh-ledger { border:1px solid var(--hud-dim);border-radius:2px;background:linear-gradient(rgb(95 215 245 / .06),rgb(95 215 245 / .015)); }',
@@ -5088,7 +5178,7 @@
       '[data-sheet][data-sheet-style="runes"] .sh-chars b.sh-neg { color:var(--paper-neg); }',
       '@container sheet (max-width:600px) {',
       '  [data-sheet][data-sheet-style="runes"] .sh-chars b { font-size:calc(19px * var(--ts)); }',
-      '  [data-sheet][data-sheet-style="runes"] .sh-chars span { letter-spacing:.06em; }',
+      '  [data-sheet][data-sheet-style="runes"] .sh-chars span { letter-spacing:0; }',
       '  [data-sheet][data-sheet-style="runes"] .sh-name h2 { font-size:calc(24px * var(--ts)); }',
       '}',
       '[data-sheet][data-sheet-style="brass"] :is(.sh-id,.sh-turn,.sh-band,.sh-sec.paper-pull,.sh-ledger) { border:1px solid var(--bs-line,rgb(184 138 53 / .55));border-radius:3px;background:linear-gradient(rgb(0 0 0 / .3),rgb(0 0 0 / .14));box-shadow:inset 0 1px 4px rgb(0 0 0 / .6),0 1px 0 rgb(255 220 150 / .12); }',
@@ -5149,8 +5239,14 @@
       '[data-sheet] .sh-on { font: 600 calc(10.5px * var(--ts)) var(--paper-ui-font); color: var(--paper-neg); }',
       '[data-sheet] .sh-cnd--warn { border-color: var(--paper-warn); color: var(--paper-warn); background: color-mix(in srgb, var(--paper-warn) 6%, transparent); }',
       '[data-sheet] .ft-flat { display: flex; align-items: center; gap: 8px; padding: 7px 2px; font: 700 calc(14.5px * var(--ts)) var(--paper-font); color: var(--paper-ink); }',
-      '[data-sheet] .paper-pin .slip-in { max-height: min(60vh, 420px); overflow: auto; }',
-      '[data-sheet] .paper-pin p { margin: 0 0 8px; white-space: pre-line; }',
+      '[data-sheet] .sn-jump { margin:0 0 10px;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sn-p { margin:0 0 8px;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--paper-ink-soft);white-space:pre-line;overflow-wrap:anywhere; }',
+      '[data-sheet] .sn-more > summary { list-style:none;cursor:pointer;display:inline-block;margin-top:2px; }',
+      '[data-sheet] .sn-more > summary::-webkit-details-marker { display:none; }',
+      '[data-sheet] .sn-more.is-in > summary { display:none; }',
+      '[data-sheet] .sn-less { display:block;margin-top:2px; }',
+      '[data-sheet] .sh-golink .sh-pullbtn { width:100%;text-align:left; }',
+      '[data-sheet] .ft-desc { white-space: pre-line; overflow-wrap: anywhere; }',
       '[data-sheet] [data-tip] { cursor: help; }',
       '[data-sheet] .ds-ref:hover::after, [data-sheet] .ds-ref:focus-visible::after { content: none; }',
       // The abilities panel is a master-detail; a panel is 390px wide, so the rail sits above the card instead of beside it.
@@ -5160,6 +5256,7 @@
       '[data-sheet] .ds-tab em { font-style: normal; font-size: calc(11px * var(--ts)); color: var(--paper-mute); font-variant-numeric: tabular-nums; }',
       '[data-sheet] .ds-ab-grp--off, [data-sheet] .ds-ab-grp--empty, [data-sheet] .ds-li--hidden { display: none; }',
       '[data-sheet] .ds-ab-grp--filtering .ds-ab-grp__rows { display: block; }',
+      '[data-sheet] .ds-ab-grp--off.ds-ab-grp--filtering:not(.ds-ab-grp--empty) { display: block; }',
       '[data-sheet] .ds-md { display: flex; flex-direction: column; gap: 10px; }',
       '[data-sheet] .ds-rail { border: 1px solid var(--paper-edge); border-radius: 4px; max-height: 210px; overflow: hidden auto; overscroll-behavior: contain; }',
       '[data-sheet] .ds-rail__tools { position: sticky; top: 0; z-index: 2; padding: 6px; background: var(--paper-cut); border-bottom: 1px solid var(--paper-edge); }',
@@ -5390,7 +5487,7 @@
   // (no CommonJS `module`), so the widget's runtime behavior is unchanged.
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
+      jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
       targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
       substituteFormula: substituteFormula, tierFragments: tierFragments, tierOdds: tierOdds,
@@ -5402,7 +5499,7 @@
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
-      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, storyPinHtml: storyPinHtml,
+      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
