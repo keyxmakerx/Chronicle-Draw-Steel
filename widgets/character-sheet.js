@@ -3501,6 +3501,7 @@
         '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="skills" aria-expanded="false">What each one covers</button></p></section>' +
       '<section class="sh-dcard"><h3 class="sh-dh">Languages<small>' + sl.langs.length + '</small></h3>' + dashLanguages(data) + '</section>' +
       '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : '') + '</h3>' +
+        (kit ? '<div class="sh-dkitw">' + kitWords(data, 'sh-dplain') + '</div>' : '') +
         (kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
         (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '') + '</section>';
   }
@@ -3515,7 +3516,7 @@
       { id: 'features', label: 'Features', n: featureCount(data) },
       { id: 'equipment', label: 'Equipment' }
     ];
-    if (data.isGm || data.isOwner) list.push({ id: 'story', label: 'Story' });
+    list.push({ id: 'story', label: 'Story' });
     return list;
   }
 
@@ -3523,6 +3524,7 @@
     var kit = dashKitName(data);
     var rows = dashKitRows(data);
     var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : 'Kit') + '</h3>' +
+      (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
       (kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
     out += '<h3 class="sh-dsec">Items</h3>';
@@ -3542,7 +3544,12 @@
       '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="skills" aria-expanded="false">What each one covers</button></p>';
     if (id === 'features') return '<div class="sh-dlist">' + pFeaturesPanel(data) + '</div>';
     if (id === 'equipment') return dashEquipment(data);
-    if (id === 'story') return '<div class="sh-dlist">' + pNotesPanel(data, true) + '</div>';
+    // Where the hero comes from is for every reader; the backstory and GM
+    // lore under it keep the panel's gates.
+    if (id === 'story') {
+      return '<h3 class="sh-dsec">Where they come from</h3>' + originRows(data) +
+        (data.isGm || data.isOwner ? '<div class="sh-dlist sh-dnotes">' + pNotesPanel(data, true) + '</div>' : '');
+    }
     return '';
   }
 
@@ -3794,6 +3801,126 @@
         dashEvery(common, all, uid)
       : pEmpty('No abilities yet.');
     return '<section class="sh-dabs sh-dq" data-cs-dabs data-dfilter="all" data-dafford>' + body + '</section>';
+  }
+
+  // ── What each origin is: words from the pack's own files ───────────────────
+
+  // The files that say what a hero's kit and origins are. They are read at
+  // mount with the rest, so the words are there on first paint.
+  var ORIGIN_FILES = { kit: 'kits.json', ancestry: 'ancestries.json', culture: 'cultures.json', career: 'careers.json', class: 'classes.json' };
+  var ORIGIN_LABELS = { ancestry: 'Ancestry', culture: 'Culture', career: 'Career', class: 'Class' };
+  var NO_DESC = 'No description yet.';
+
+  function originName(data, kind) {
+    return kind === 'kit' ? dashKitName(data) : String(f(data, kind, '') || '').trim();
+  }
+  // The pack's entry for the hero's kit or origin, or null when the name is
+  // not in the file (a homebrew name, or a file that did not load).
+  function originDef(data, kind) {
+    var name = originName(data, kind);
+    return name ? originEntry(editRefs[ORIGIN_FILES[kind]], name) : null;
+  }
+  // The paragraph: the entry's description, else its summary, else nothing.
+  function originText(entry) {
+    return entry ? String(entry.description || entry.summary || '').trim() : '';
+  }
+  function originPara(entry, cls) {
+    var t = originText(entry);
+    return t ? '<p class="' + cls + '">' + refText(t) + '</p>' : pEmpty(NO_DESC);
+  }
+
+  // The kit in words: what it is, what it puts in the hero's hands (the
+  // pack's own sentence), and its signature ability by name. The numbers
+  // stay where they are.
+  function kitWords(data, cls) {
+    var e = originDef(data, 'kit');
+    var p = (e && e.properties) || {};
+    var sig = p.signature_ability && p.signature_ability.name ? String(p.signature_ability.name) : '';
+    return originPara(e, cls) +
+      (p.equipment ? '<p class="' + cls + '">' + refText(String(p.equipment)) + '</p>' : '') +
+      (sig ? '<p class="' + cls + '">Signature ability: <b>' + esc(sig) + '</b></p>' : '');
+  }
+
+  // Where the hero comes from, one row per origin: the name, what it is, and
+  // a word that opens its long entry. A choice not made yet says so. The
+  // class row keeps to its first paragraph; its panel has the rest.
+  function subclassLabel(t) {
+    t = String(t || '').trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Subclass';
+  }
+  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it' };
+  function originRow(label, name, body, kind) {
+    return '<div class="sh-orig"><span class="sh-k">' + esc(label) + '</span>' +
+      '<div class="sh-orig-b"><b' + (name ? '' : ' class="sh-orig-none"') + '>' + esc(name || 'Still to choose') + '</b>' + body + '</div>' +
+      (kind ? '<button type="button" class="sh-link sh-orig-more" data-sheet-open="origin-' + kind + '" aria-expanded="false">' + ORIGIN_MORE[kind] +
+        '<span class="sh-sr"> about ' + esc(name) + '</span></button>' : '') +
+    '</div>';
+  }
+  // Inside a panel the rows open nothing: a panel opened from a panel closes
+  // its own way back.
+  function originRows(data, inPanel) {
+    var rows = ['ancestry', 'culture', 'career', 'class'].map(function (kind) {
+      var name = originName(data, kind);
+      var e = originDef(data, kind);
+      var t = originText(e);
+      if (kind === 'class') t = t.split('\n')[0].trim();
+      var body = !name ? pEmpty('Not chosen yet.') : t ? '<p class="sh-orig-p">' + refText(t) + '</p>' : pEmpty(NO_DESC);
+      return originRow(ORIGIN_LABELS[kind], name, body, e && !inPanel ? kind : '');
+    });
+    var cls = originDef(data, 'class');
+    var subType = cls && cls.properties && cls.properties.subclass_type ? String(cls.properties.subclass_type) : '';
+    var sub = String(f(data, 'subclass', '') || '').trim();
+    if (sub || subType) {
+      rows.push(originRow(subclassLabel(subType), sub, sub ? pEmpty(NO_DESC) : pEmpty('Not chosen yet.'), ''));
+    }
+    return '<div class="sh-whence">' + rows.join('') + '</div>';
+  }
+
+  // The long entry for one origin, as its own panel: the words, then what it
+  // gives, read straight from the pack's entry.
+  function originFacts(rows) {
+    var shown = rows.filter(function (r) { return r[1] != null && r[1] !== ''; });
+    return shown.length ? '<dl class="sh-ofacts">' + shown.map(function (r) {
+      return '<div><dt>' + esc(r[0]) + '</dt><dd>' + refText(String(r[1])) + '</dd></div>';
+    }).join('') + '</dl>' : '';
+  }
+  function originTraits(label, list, withCost) {
+    if (!Array.isArray(list) || !list.length) return '';
+    return '<div class="lf-grp"><span class="sh-k">' + esc(label) + '</span>' + list.map(function (t) {
+      return '<div class="rule"><b>' + esc(t && t.name || '') + (withCost && t.cost != null ? ' <small>' + esc(String(t.cost)) + (String(t.cost) === '1' ? ' point' : ' points') + '</small>' : '') + '</b>' +
+        (t && t.description ? '<p>' + refText(String(t.description)) + '</p>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  function originPanelHtml(data, kind) {
+    var e = originDef(data, kind);
+    if (!e) return '';
+    var p = e.properties || {};
+    var out = '<div class="lf-grp">' + originPara(e, 'sh-orig-p') + '</div>';
+    if (kind === 'ancestry') {
+      out += originFacts([['Size', p.size], ['Speed', p.speed], ['Stability', p.stability], ['Ancestry points', p.ancestry_points]]) +
+        originTraits('Signature trait', p.signature_traits, false) + originTraits('Traits to buy', p.purchased_traits, true);
+    } else if (kind === 'career') {
+      out += originFacts([['Skills', p.skills], ['Languages', p.languages], ['Perk', p.perk], ['Project points', p.project_points]]);
+      if (Array.isArray(p.questions) && p.questions.length) {
+        out += '<div class="lf-grp"><span class="sh-k">Questions</span><ul class="sh-oq">' +
+          p.questions.map(function (q) { return '<li>' + refText(String(q)) + '</li>'; }).join('') + '</ul></div>';
+      }
+    } else if (kind === 'class') {
+      var res = p.heroic_resource ? String(p.heroic_resource).charAt(0).toUpperCase() + String(p.heroic_resource).slice(1) : '';
+      var sub = String(f(data, 'subclass', '') || '').trim();
+      out += originFacts([['Heroic resource', res], ['Primary characteristics', p.primary_characteristics_display],
+        ['Starting Stamina', p.starting_stamina != null ? p.starting_stamina + (p.stamina_per_level != null ? ', +' + p.stamina_per_level + ' per level' : '') : ''],
+        ['Recoveries', p.recoveries], ['Skills', p.skills]]);
+      if (sub) {
+        // The pack names each subclass and does not describe it yet.
+        out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' +
+          '<div class="rule"><b>' + esc(sub) + '</b>' + pEmpty(NO_DESC) + '</div></div>';
+      }
+    } else if (kind === 'culture') {
+      out += originFacts([['Language', p.language], ['Environment', p.environment], ['Organization', p.organization], ['Upbringing', p.upbringing],
+        ['Skills', p.skill_options], ['Quick build', p.skill_options_quick_build]]);
+    }
+    return out;
   }
 
   // ── Panels (the papers pulled out from behind a part) ──────────────────────
@@ -4064,7 +4191,8 @@
       ? '<p class="sn-jump"><button type="button" class="sh-link" data-cs-jump="story-bg">Background</button>' +
         '<span aria-hidden="true"> · </span><button type="button" class="sh-link" data-cs-jump="story-gm">GM lore</button></p>'
       : '';
-    var out = jump + pAbout(data) + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
+    var origins = inPane ? '' : '<div class="lf-grp"><span class="sh-k">Where they come from</span>' + originRows(data, true) + '</div>';
+    var out = jump + origins + pAbout(data) + '<div class="lf-grp sn-story" data-cs-anchor="story-bg"><span class="sh-k">Background</span> ' + edit + (notes
       ? storyHtml(cleanFoundryProse(notes))
       : pEmpty('No backstory yet.')) + '</div>';
     if (data.isGm) {
@@ -4134,7 +4262,8 @@
   function pKitPanel(data) {
     var k = kitFacts(data);
     if (!k.name && !k.grid && !k.chips.length) return pEmpty('No kit equipped.');
-    return '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name" style="font-size:19px">' + esc(k.name || 'Kit') + '</div></div>' +
+    return '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name" style="font-size:19px">' + esc(k.name || 'Kit') + '</div>' +
+      (k.name ? '<div class="sh-kitw">' + kitWords(data, 'sh-orig-p') + '</div>' : '') + '</div>' +
       (k.grid || k.chips.length
         ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') + '</div>'
         : pEmpty('No kit details synced.'));
@@ -4172,6 +4301,10 @@
     list.push({ id: 'features', title: 'Features', kind: name, html: pFeaturesPanel(data) });
     list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
     if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Story', kind: name, size: 'tall', html: pNotesPanel(data) });
+    ['ancestry', 'culture', 'career', 'class'].forEach(function (kind) {
+      var e = originDef(data, kind);
+      if (e) list.push({ id: 'origin-' + kind, title: e.name, kind: ORIGIN_LABELS[kind], html: originPanelHtml(data, kind) });
+    });
     return list;
   }
 
@@ -5067,6 +5200,7 @@
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
     if (inst._dashIo) inst._dashIo.disconnect();
     if (inst._dashRo) inst._dashRo.disconnect();
+    if (inst._dashMo) inst._dashMo.disconnect();
     if (inst._onTfDown) el.removeEventListener('pointerdown', inst._onTfDown, true);
     if (inst._onTfUp && typeof document !== 'undefined') {
       document.removeEventListener('pointerup', inst._onTfUp, true);
@@ -5074,7 +5208,7 @@
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -5132,19 +5266,38 @@
   // The widths dashCss's container queries switch at, read from the same box.
   var DASH_AT = 820, DASH_RAIL_AT = 1100;
 
+  // Chronicle's page hooks: the quiet look asks for the wider column, and
+  // while the dashboard prints the hero's name the page header stops
+  // showing it too. Paper styles keep their 920px page.
+  function syncPageHooks(root, dash) {
+    if (quietLook(root)) root.setAttribute('data-sheet-wide', '');
+    else root.removeAttribute('data-sheet-wide');
+    if (dash) root.setAttribute('data-sheet-names-page', '');
+    else root.removeAttribute('data-sheet-names-page');
+  }
+
   // Follows the sheet's width so the tabs stay true to what is drawn: the
   // Abilities list is a tab panel only on the dashboard, and once the left
   // column shows, the Skills tab is hidden, so an open Skills tab gives way
   // to Abilities rather than leaving no visible tab selected.
   function attachDashWidth(inst, el) {
     if (inst._dashRo) { inst._dashRo.disconnect(); inst._dashRo = null; }
+    if (inst._dashMo) { inst._dashMo.disconnect(); inst._dashMo = null; }
     var sheet = el.querySelector('.sh-sheet'), root = el.querySelector('[data-sheet]');
     var body = el.querySelector('[data-cs-dmain] > .sh-body');
     if (!sheet || !root || !body || typeof ResizeObserver !== 'function') return;
     var tab = body.id.replace('cs-dp-', 'cs-dt-');
+    var lastW = 0;
+    // A style switch changes the look without a redraw or a resize.
+    if (typeof MutationObserver === 'function') {
+      inst._dashMo = new MutationObserver(function () { syncPageHooks(root, quietLook(root) && lastW >= DASH_AT); });
+      inst._dashMo.observe(root, { attributes: true, attributeFilter: ['data-sheet-style'] });
+    }
+    syncPageHooks(root, false);
     inst._dashRo = new ResizeObserver(function (entries) {
-      var w = entries[entries.length - 1].contentRect.width;
+      var w = lastW = entries[entries.length - 1].contentRect.width;
       var dash = quietLook(root) && w >= DASH_AT;
+      syncPageHooks(root, dash);
       if (dash) { body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', tab); }
       else { body.removeAttribute('role'); body.removeAttribute('aria-labelledby'); }
       var main = el.querySelector('[data-cs-dmain]');
@@ -5915,6 +6068,13 @@
       '  Q .sh-devery .sh-link[aria-expanded="true"] { font-weight:600; }',
       '  Q .sh-devcard { margin-top:4px; }',
       '  Q .sh-devname { grid-column:1 / -1;margin:6px 0 0;font:600 calc(15px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dpane .sh-whence,Q .sh-dpane .sh-dnotes { padding:0 8px; }',
+      '  Q .sh-dpane .sh-dnotes { margin-top:12px;border-top:1px solid color-mix(in srgb,var(--paper-edge) 60%,transparent);padding-top:12px; }',
+      '  Q .sh-dpane .sh-orig { grid-template-columns:150px minmax(0,1fr) auto;align-items:baseline;padding:12px 0; }',
+      '  Q .sh-dpane .sh-orig > .sh-k { grid-column:auto; }',
+      '  Q .sh-dkitw { margin:0 0 8px; }',
+      '  Q .sh-dkitw .sh-dplain { margin:0 0 8px;font-size:calc(13.5px * var(--ts));line-height:1.5; }',
+      '  Q .sh-dkitw .sh-empty { margin:0 0 8px; }',
       // The pinned strip: Stamina and the resource stay in view once the boxes scroll off.
       '  Q .sh-dpin { position:sticky;top:var(--sh-stick,0px);z-index:4;height:0;margin-bottom:-18px; }',
       '  Q .sh-dpin-in { display:flex;align-items:center;gap:20px;height:var(--sh-pin-h,52px);margin:0 -12px;padding:0 12px;background:var(--paper);border:' + edge + ';border-top:0;border-radius:0 0 var(--shape-r-panel,12px) var(--shape-r-panel,12px);box-shadow:var(--elev-hover,none);font-family:var(--paper-ui-font);' +
@@ -6030,7 +6190,7 @@
       '[data-sheet] .sh-tf-err { color:var(--paper-neg);font-weight:600; }',
       '[data-sheet] .sh-tf-msg { margin:0;color:var(--paper-ink-soft); }',
       '[data-sheet] .sh-tf :focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
-      '[data-sheet] .sh-folio { position:relative;isolation:isolate;width:920px;max-width:100%;margin-inline:auto; }',
+      '[data-sheet] .sh-folio { position:relative;isolation:isolate;width:var(--sheet-width, 920px);max-width:100%;margin-inline:auto; }',
       '[data-sheet] .sh-stack { position:relative;z-index:2;width:100%; }',
       '[data-sheet] .sh-sheet { padding:24px 36px 26px;display:flex;flex-direction:column;gap:16px;font-size:calc(13.5px * var(--ts));line-height:1.55; }',
       '[data-sheet] .sh-body { display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:16px 36px;align-items:start; }',
@@ -6514,6 +6674,23 @@
       '[data-sheet] .sx-line .sh-link { margin:0 2px 10px; }',
       '[data-sheet] .sx-full { margin:2px 2px 0; }',
       '[data-sheet] .sx-all { display:block;margin:12px 2px 0; }',
+      // Where the hero comes from, and the long entry for each origin; in every style, since the panels open in every style.
+      '[data-sheet] .sh-orig { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--paper-edge) 60%,transparent); }',
+      '[data-sheet] .sh-orig:last-child { border-bottom:0; }',
+      '[data-sheet] .sh-orig > .sh-k { grid-column:1 / -1; }',
+      '[data-sheet] .sh-orig-b { min-width:0; }',
+      '[data-sheet] .sh-orig-b b { font-weight:600;color:var(--paper-ink); }',
+      '[data-sheet] .sh-orig-b b.sh-orig-none { font-weight:500;color:var(--paper-mute); }',
+      '[data-sheet] .sh-orig-p { margin:4px 0 0;max-width:66ch;white-space:pre-line;font-size:calc(13.5px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-orig-more { align-self:start;min-height:32px; }',
+      '[data-sheet] .sh-kitw { margin-top:6px; }',
+      '[data-sheet] .sh-ofacts { display:grid;grid-template-columns:max-content minmax(0,1fr);gap:0 16px;margin:8px 0 0; }',
+      '[data-sheet] .sh-ofacts div { display:contents; }',
+      '[data-sheet] .sh-ofacts :is(dt,dd) { padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--paper-edge) 60%,transparent);font-size:calc(13.5px * var(--ts));line-height:1.45; }',
+      '[data-sheet] .sh-ofacts dt { color:var(--paper-mute); }',
+      '[data-sheet] .sh-ofacts dd { margin:0;color:var(--paper-ink); }',
+      '[data-sheet] .sh-oq { margin:4px 0 0;padding-left:18px;font-size:calc(13.5px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
+      '[data-sheet] .rule b small { float:right;font-weight:500;color:var(--paper-mute); }',
       // The floating definition tooltip is appended to <body>, outside the sheet, as on the box render.
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
@@ -6589,8 +6766,9 @@
           });
         });
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
+        var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId)]).then(function (got) {
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
           if (refRenderer) refRenderer.injectStyles();
@@ -6659,6 +6837,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
+      originRows: originRows, kitWords: kitWords, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
