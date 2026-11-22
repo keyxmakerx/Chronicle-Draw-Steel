@@ -361,6 +361,7 @@ export const CATEGORIES = [
       ['skills', 'Skills', 'string'],
       ['subclass_type', 'Subclass Type', 'string'],
       ['subclasses', 'Subclasses', 'string'],
+      ['kits', 'Kits', 'number'],
     ],
   },
   {
@@ -374,6 +375,16 @@ export const CATEGORIES = [
       ['environment', 'Environment', 'string'],
       ['organization', 'Organization', 'string'],
       ['upbringing', 'Upbringing', 'string'],
+      ['skill_options', 'Skill Options', 'string'],
+    ],
+  },
+  {
+    file: 'culture-aspects.json',
+    slug: 'culture-aspects',
+    name: 'Culture Aspects',
+    icon: 'fa-puzzle-piece',
+    columns: [
+      ['aspect', 'Aspect', 'string'],
       ['skill_options', 'Skill Options', 'string'],
     ],
   },

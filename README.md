@@ -26,7 +26,7 @@ Chronicle's Rules page opens the package as a handbook you turn the pages of. Th
 - **Hero sheet**: a read-only hero sheet, synced from Foundry VTT.
 - **DM Screen**: Stamina, Recoveries, the heroic resource and current conditions for each hero.
 - **Page types**: Hero and Creature types that sync with Foundry VTT actors through the [Chronicle Sync module](https://github.com/keyxmakerx/Chronicle-Foundry-Module).
-- **Reference data**: 604 hero abilities, 12 ancestries, 21 kits, 18 careers, 11 classes, 14 Beastheart companions, 53 Summoner minions and champions, 40 cultures and culture aspects, 100 complications, 57 skills, 47 perks, 59 titles, 98 treasures, 16 downtime projects, 86 glossary entries, the negotiation rules, 1,606 creature abilities (1,555 of them from the Monsters book), the Monsters book's 394 stat blocks (named villains left out, see `data/NOTICE.md`) and 35 example creatures written for this package.
+- **Reference data**: 604 hero abilities, 12 ancestries, 21 kits, 18 careers, 11 classes, 14 Beastheart companions, 53 Summoner minions and champions, 27 cultures, 13 culture aspects, 100 complications, 57 skills, 47 perks, 59 titles, 98 treasures, 16 downtime projects, 86 glossary entries, the negotiation rules, 1,606 creature abilities (1,555 of them from the Monsters book), the Monsters book's 394 stat blocks (named villains left out, see `data/NOTICE.md`) and 35 example creatures written for this package.
 
 ## Install
 

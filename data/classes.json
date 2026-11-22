@@ -25,7 +25,8 @@
       "stamina_per_level": 12,
       "recoveries": 12,
       "skills_quick_build": "Animal Handling, Navigate, Track",
-      "skills": "You gain the Animal Handling skill. Then choose any two skills from the exploration or intrigue skill groups."
+      "skills": "You gain the Animal Handling skill. Then choose any two skills from the exploration or intrigue skill groups.",
+      "kits": 1
     },
     "source": "The Beastheart for Draw Steel (mcdm.beastheart.v1), via Steel Compendium"
   },
@@ -58,11 +59,18 @@
       "skills": "Choose any two skills from the interpersonal or lore skill groups.",
       "subclass_type": "Censor order",
       "subclasses": [
-        "Exorcist",
-        "Oracle",
-        "Paragon"
+        {
+          "name": "Exorcist"
+        },
+        {
+          "name": "Oracle"
+        },
+        {
+          "name": "Paragon"
+        }
       ],
-      "subclasses_display": "Exorcist, Oracle, Paragon"
+      "kits": 1,
+      "subclasses_text": "Exorcist, Oracle, Paragon"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -95,20 +103,46 @@
       "skills": "Choose any two skills from the interpersonal or lore skill groups.",
       "subclass_type": "Domains (pick two)",
       "subclasses": [
-        "Creation",
-        "Death",
-        "Fate",
-        "Knowledge",
-        "Life",
-        "Love",
-        "Nature",
-        "Protection",
-        "Storm",
-        "Sun",
-        "Trickery",
-        "War"
+        {
+          "name": "Creation"
+        },
+        {
+          "name": "Death"
+        },
+        {
+          "name": "Fate"
+        },
+        {
+          "name": "Knowledge"
+        },
+        {
+          "name": "Life"
+        },
+        {
+          "name": "Love"
+        },
+        {
+          "name": "Nature"
+        },
+        {
+          "name": "Protection"
+        },
+        {
+          "name": "Storm"
+        },
+        {
+          "name": "Sun"
+        },
+        {
+          "name": "Trickery"
+        },
+        {
+          "name": "War"
+        }
       ],
-      "subclasses_display": "Creation, Death, Fate, Knowledge, Life, Love, Nature, Protection, Storm, Sun, Trickery, War"
+      "kits": 0,
+      "kit_note": "Conduits don't use a kit. They choose a prayer and a ward instead.",
+      "subclasses_text": "Creation, Death, Fate, Knowledge, Life, Love, Nature, Protection, Storm, Sun, Trickery, War"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -141,12 +175,22 @@
       "skills": "You gain the Magic skill. Then choose any three skills from the crafting or lore skill groups.",
       "subclass_type": "Elemental specialization",
       "subclasses": [
-        "Earth",
-        "Fire",
-        "Green",
-        "Void"
+        {
+          "name": "Earth"
+        },
+        {
+          "name": "Fire"
+        },
+        {
+          "name": "Green"
+        },
+        {
+          "name": "Void"
+        }
       ],
-      "subclasses_display": "Earth, Fire, Green, Void"
+      "kits": 0,
+      "kit_note": "Elementalists don't use a kit. They choose an enchantment and a ward instead.",
+      "subclasses_text": "Earth, Fire, Green, Void"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -179,11 +223,21 @@
       "skills": "You gain the Nature skill. Then choose any two skills from the exploration or intrigue skill groups.",
       "subclass_type": "Primordial aspect",
       "subclasses": [
-        "Berserker",
-        "Reaver",
-        "Stormwight"
+        {
+          "name": "Berserker"
+        },
+        {
+          "name": "Reaver"
+        },
+        {
+          "name": "Stormwight",
+          "kits": 0,
+          "kit_note": "Stormwight furies use a stormwight kit (Boren, Corven, Raden or Vuken) instead of these kits. Chronicle doesn't list the stormwight kits yet."
+        }
       ],
-      "subclasses_display": "Berserker, Reaver, Stormwight"
+      "kits": 1,
+      "kit_note": "Berserker and reaver furies use a kit. Stormwight furies use a stormwight kit instead.",
+      "subclasses_text": "Berserker, Reaver, Stormwight"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -216,11 +270,19 @@
       "skills": "You gain the Psionics skill. Then choose any two skills from the interpersonal or lore skill groups.",
       "subclass_type": "Null tradition",
       "subclasses": [
-        "Chronokinetic",
-        "Cryokinetic",
-        "Metakinetic"
+        {
+          "name": "Chronokinetic"
+        },
+        {
+          "name": "Cryokinetic"
+        },
+        {
+          "name": "Metakinetic"
+        }
       ],
-      "subclasses_display": "Chronokinetic, Cryokinetic, Metakinetic"
+      "kits": 0,
+      "kit_note": "Nulls don't use a kit. They choose a psionic augmentation instead.",
+      "subclasses_text": "Chronokinetic, Cryokinetic, Metakinetic"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -253,14 +315,21 @@
       "skills": "You gain the Hide and Sneak skills. Then choose any five skills from Criminal Underworld or the skills of the exploration, interpersonal, or intrigue skill groups.",
       "subclass_type": "Shadow college",
       "subclasses": [
-        "College of Black Ash",
-        "College of Caustic Alchemy",
-        "College of the Harlequin Mask"
+        {
+          "name": "College of Black Ash"
+        },
+        {
+          "name": "College of Caustic Alchemy"
+        },
+        {
+          "name": "College of the Harlequin Mask"
+        }
       ],
-      "subclasses_display": "College of Black Ash, College of Caustic Alchemy, College of the Harlequin Mask",
       "omissions": [
         "The epigraph quotation and its attribution to a named institution are not reproduced; the class description is otherwise complete."
       ],
+      "kits": 1,
+      "subclasses_text": "College of Black Ash, College of Caustic Alchemy, College of the Harlequin Mask",
       "provenance_display": "omissions — The epigraph quotation and its attribution to a named institution are not reproduced; the class description is otherwise complete."
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
@@ -294,12 +363,22 @@
       "skills": "You gain the Magic and Strategy skills and can choose any two skills from the intrigue or lore skill groups.",
       "subclass_type": "Summoner circle",
       "subclasses": [
-        "Blight",
-        "Graves",
-        "Spring",
-        "Storms"
+        {
+          "name": "Blight"
+        },
+        {
+          "name": "Graves"
+        },
+        {
+          "name": "Spring"
+        },
+        {
+          "name": "Storms"
+        }
       ],
-      "subclasses_display": "Blight, Graves, Spring, Storms"
+      "kits": 0,
+      "kit_note": "Summoners don't use a kit at 1st level. They conjure their own kit at 3rd level.",
+      "subclasses_text": "Blight, Graves, Spring, Storms"
     },
     "source": "Draw Steel: The Summoner (mcdm.summoner.v1), via Steel Compendium"
   },
@@ -332,11 +411,19 @@
       "skills": "You gain the Lead skill. Then choose any two skills from Alertness, Architecture, Blacksmithing, Brag, Culture, Empathize, Fletching, Mechanics, Monsters, Search, Strategy, or the skills of the exploration skill group.",
       "subclass_type": "Tactical doctrine",
       "subclasses": [
-        "Insurgent",
-        "Mastermind",
-        "Vanguard"
+        {
+          "name": "Insurgent"
+        },
+        {
+          "name": "Mastermind"
+        },
+        {
+          "name": "Vanguard"
+        }
       ],
-      "subclasses_display": "Insurgent, Mastermind, Vanguard"
+      "kits": 2,
+      "kit_note": "Tacticians carry two kits and use both signature abilities. Chronicle keeps one kit here for now.",
+      "subclasses_text": "Insurgent, Mastermind, Vanguard"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -369,11 +456,19 @@
       "skills": "You gain the Psionics and Read Person skills. Then choose any two skills from the interpersonal or lore skill groups.",
       "subclass_type": "Talent tradition",
       "subclasses": [
-        "Chronopathy",
-        "Telekinesis",
-        "Telepathy"
+        {
+          "name": "Chronopathy"
+        },
+        {
+          "name": "Telekinesis"
+        },
+        {
+          "name": "Telepathy"
+        }
       ],
-      "subclasses_display": "Chronopathy, Telekinesis, Telepathy"
+      "kits": 0,
+      "kit_note": "Talents don't use a kit. They choose a psionic augmentation and a ward instead.",
+      "subclasses_text": "Chronopathy, Telekinesis, Telepathy"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   },
@@ -406,14 +501,21 @@
       "skills": "You gain the Read Person skill. Then choose two skills from the interpersonal skill group and one skill from the intrigue or lore skill groups.",
       "subclass_type": "Troubadour class act",
       "subclasses": [
-        "Auteur",
-        "Duelist",
-        "Virtuoso"
+        {
+          "name": "Auteur"
+        },
+        {
+          "name": "Duelist"
+        },
+        {
+          "name": "Virtuoso"
+        }
       ],
-      "subclasses_display": "Auteur, Duelist, Virtuoso",
       "omissions": [
         "The epigraph quotation and its attribution to a named character are not reproduced; the class description is otherwise complete."
       ],
+      "kits": 1,
+      "subclasses_text": "Auteur, Duelist, Virtuoso",
       "provenance_display": "omissions — The epigraph quotation and its attribution to a named character are not reproduced; the class description is otherwise complete."
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"

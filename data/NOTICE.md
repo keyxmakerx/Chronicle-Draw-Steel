@@ -12,8 +12,9 @@ from the published Draw Steel 1.0 ruleset (the *Heroes Book*):
 | `ancestries.json` | The twelve ancestries: signature traits, purchased traits, point costs, and granted abilities | *Heroes Book* ch. 3 (Ancestries) |
 | `kits.json` | The twenty-one kits: equipment, armor and weapon categories, Stamina/speed/stability/damage/distance/disengage bonuses, and signature abilities | *Heroes Book* ch. 6 (Kits) |
 | `careers.json` | The eighteen careers: description, skills, languages, perk, Renown, wealth and project points where a career grants them, the Quick Build picks, the career questions, and the six inciting incidents | *Heroes Book* ch. 4 (Background) |
-| `classes.json` | The eleven classes at class level (the Beastheart and Summoner rows come from their own books, see below): Heroic Resource, starting characteristics and primary characteristics, potency, starting Stamina, Stamina per level, Recoveries, skills, and the subclass names (abilities live in `abilities.json`) | *Heroes Book* ch. 5 (Classes) |
-| `cultures.json` | The thirteen culture aspects (five environments, two organizations, six upbringings) with their skill options, plus the Typical Ancestry Cultures and Archetypical Cultures tables as sample cultures | *Heroes Book* ch. 4 (Background) |
+| `classes.json` | The eleven classes at class level (the Beastheart and Summoner rows come from their own books, see below): Heroic Resource, starting characteristics and primary characteristics, potency, starting Stamina, Stamina per level, Recoveries, skills, the subclass names, and whether the class uses a kit at 1st level (abilities live in `abilities.json`) | *Heroes Book* ch. 5 (Classes) |
+| `cultures.json` | The Typical Ancestry Cultures and Archetypical Cultures tables as sample cultures, each with the skill options of its three aspects and its languages (Caelian plus the culture's own) | *Heroes Book* ch. 4 (Background) |
+| `culture-aspects.json` | The thirteen culture aspects (five environments, two organizations, six upbringings) with their skill options | *Heroes Book* ch. 4 (Background) |
 | `complications.json` | The one hundred complications with their benefit and drawback text (including the abilities and projects a few of them grant) | *Heroes Book* ch. 8 (Complications) |
 | `abilities.json` | 604 abilities: the eleven classes' signature/heroic/other abilities with their Heroic Resource costs, the twenty-one kit signature abilities, and the common main actions, maneuvers and move actions — each with keywords, type, distance, target, power-roll tiers and effect text | *Heroes Book* ch. 5 (Classes), ch. 6 (Kits), ch. 10 (Combat) |
 | `ability-keywords.json` | The ability keywords, the four elemental specializations, and the talent traditions | *Heroes Book* ch. 5 (Classes) |
@@ -64,7 +65,7 @@ change recorded in the entry's `properties.omissions`. Affected entries:
 Contract (the place the archdevil sends its servants), Refugee (a named
 conqueror), Shadow Born (the ruler of the dusk land and a chapter pointer),
 War Dog Collar (the owner of the war dogs), Exile and Ivory Tower (a pointer
-naming the setting world); `cultures.json` Urban environment (a named city);
+naming the setting world); `culture-aspects.json` Urban environment (a named city);
 `classes.json` Shadow and Troubadour (the epigraph quotations and their
 attributions). Language names, the word "timescape", and ancestry and monster
 names used as mechanics stay. The names of Prisoner of the Synlirii and

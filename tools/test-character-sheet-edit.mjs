@@ -135,15 +135,16 @@ test('skills, languages and perks are read-only while a Foundry world is linked'
 });
 
 test('grants: a career, culture and kit show their own text and suggested picks', () => {
-  const hero = HERO({ career: 'Agent', culture: 'Nomadic environment', kit: 'Arcane Archer' });
+  const hero = HERO({ career: 'Agent', culture: 'Pirate crew', kit: 'Arcane Archer' });
   const rows = cs.grantRows(hero, 'skills');
   assert.deepEqual(rows.map((r) => r.label), ['Culture', 'Career']);
+  assert.deepEqual(rows.find((r) => r.label === 'Culture').quick, ['Navigate', 'Jump', 'Sneak']);
   const career = rows.find((r) => r.label === 'Career');
   assert.deepEqual(career.quick, ['Disguise', 'Lie', 'Sneak']);
   assert.match(cs.edSkillsHtml(hero), /Use the suggested picks/);
   assert.deepEqual(cs.grantRows(hero, 'perks').map((r) => r.quick[0]), ['Forgettable Face']);
   assert.match(cs.edPerksHtml(hero), /Forgettable Face/);
-  assert.equal(cs.grantRows(hero, 'languages')[0].text, 'Two languages');
+  assert.deepEqual(cs.grantRows(hero, 'languages').map((r) => r.text), ['Caelian, plus one language that fits the culture', 'Two languages']);
 });
 
 test('every suggested skill and perk in the data names something the editors can tick', () => {
