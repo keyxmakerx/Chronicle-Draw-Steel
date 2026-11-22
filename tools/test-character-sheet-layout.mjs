@@ -135,6 +135,13 @@ test('paperPanels: items, notes and GM lore follow the same gates as the box sch
   assert.ok(!/data-sheet-section="notes"/.test(html) && !/data-sheet-section="items"[^]*armory/.test(html));
 });
 
+test('GM lore written as HTML reads as text, with its paragraphs kept', () => {
+  const gm = '<p>Moved from the backstory &amp; hidden.</p><p>Ended up thrown out.</p>';
+  const html = cs.paperPanels({ isGm: true, fields: { gm_notes: gm } }).find((p) => p.id === 'notes').html;
+  assert.ok(!/&lt;p&gt;|&lt;\/p&gt;/.test(html), 'no tag text shown');
+  assert.ok(/Moved from the backstory &amp; hidden\.\n\nEnded up thrown out\./.test(html), 'paragraphs survive as line breaks');
+});
+
 test('paper folds use the contract: details > .fold-body > .fold-in[data-move=fold]', () => {
   const html = cs.paperPanels(PAPER).map((p) => p.html).join('');
   assert.ok(/<details[^>]*data-sheet-fold/.test(html), 'a fold is present');
@@ -376,4 +383,48 @@ test('class and the Foundry line follow whether a Foundry world is linked', () =
   assert.ok(/aria-label="Choose class"/.test(noClass));
   const old = cs.rIdentity({}, { name: 'Bren', canEditIdentity: true, foundryLinked: false, fields: { class: 'Fury' } });
   assert.ok(old.includes('data-cs-pick="class"') && !/set in Foundry/.test(old));
+});
+
+const LONG = 'First paragraph of the tale, told plainly for the table to read.\n\n' +
+  'Second paragraph that goes on for a good while so the lead is long enough to stop here and no further than this. ' + 'More words to pad it past the lead length. '.repeat(5) + '\n\n' +
+  'Third paragraph the reader only sees after asking to keep reading.';
+
+test('the Notes row and panel are called Story, ids unchanged, and the panel is tall', () => {
+  const html = cs.paperSheetHtml(PAPER);
+  assert.ok(/data-sheet-section="notes"/.test(html) && />Story</.test(html), 'ledger row labelled Story');
+  assert.ok(!/<span class="sh-nm">Notes</.test(html), 'no Notes label left');
+  const tpl = html.match(/<template data-sheet-panel="notes"[^>]*>/)[0];
+  assert.ok(/data-title="Story"/.test(tpl) && /data-size="tall"/.test(tpl), tpl);
+  assert.ok(!/data-size=/.test(html.match(/<template data-sheet-panel="kit"[^>]*>/)[0]), 'other panels keep their size');
+});
+
+test('the Story panel reads in place: Keep reading is a quiet fold, no pin, jump words for the GM', () => {
+  const html = cs.pNotesPanel(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { backstory: LONG }) }));
+  assert.ok(/data-sheet-fold/.test(html) && />Keep reading</.test(html) && />Show less</.test(html));
+  assert.ok(!/data-cs-read-story|Read full story|paper-pin|data-unpin/.test(html), 'the pin is gone');
+  assert.ok(/data-cs-jump="story-bg"/.test(html) && /data-cs-jump="story-gm"/.test(html));
+  assert.ok(html.indexOf('First paragraph') < html.indexOf('Keep reading') && html.indexOf('Keep reading') < html.indexOf('Third paragraph'));
+  const player = cs.pNotesPanel({ isOwner: true, fields: { backstory: LONG } });
+  assert.ok(!/data-cs-jump|GM lore/.test(player), 'no GM jump for a player');
+  const short = cs.pNotesPanel({ isOwner: true, fields: { backstory: 'A veteran.' } });
+  assert.ok(!/Keep reading/.test(short), 'a short story has nothing to unfold');
+});
+
+test('the Items row shows only when the items live in the Armory', () => {
+  const on = cs.paperSheetHtml(Object.assign({}, PAPER, { armoryItems: true }));
+  assert.ok(/data-cs-go-items/.test(on) && /Go to items/.test(on));
+  assert.ok(/data-cs-items-row hidden/.test(on), 'hidden until the page has the tab');
+  assert.ok(!/data-sheet-open="items"/.test(on), 'no in-sheet Items panel');
+  const off = cs.paperSheetHtml(Object.assign({}, PAPER, { armoryItems: false }));
+  assert.ok(!/data-cs-go-items/.test(off) && /data-sheet-open="items"/.test(off), 'the sheet keeps its own Items panel');
+});
+
+test('a Story jump word scrolls only the panel body, and not when it has nothing to scroll', () => {
+  assert.equal(cs.jumpTop(120, 520, 0, 2000, 700), 400, 'anchor brought to the top of the body');
+  assert.equal(cs.jumpTop(120, 300, 400, 2000, 700), 580, 'measured from where the body already is');
+  assert.equal(cs.jumpTop(120, 5000, 0, 2000, 700), 1300, 'never past the end');
+  assert.equal(cs.jumpTop(120, 520, 0, 700, 700), null, 'a body that fits does not move');
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  const branch = src.slice(src.indexOf("closest('[data-cs-jump]')"), src.indexOf("closest('[data-cs-go-items]')"));
+  assert.ok(!/scrollIntoView/.test(branch), 'scrollIntoView scrolls the page as well as the panel');
 });
