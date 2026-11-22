@@ -6,8 +6,7 @@
  * `json_list` field whose text does not parse as a JSON list. A hero's list
  * fields are read by widgets/character-sheet.js as JSON, and a value that is
  * not a list draws as empty, so each one is flagged and its note names the
- * shape the sheet reads. The origin picks name the lookup that lists their
- * values, and the figures Foundry reports say never to invent one.
+ * shape the sheet reads. The figures Foundry reports say never to invent one.
  *
  * Run: `node --test tools/test-hero-ai-fields.mjs`
  */
@@ -48,14 +47,6 @@ test('the shapes the notes promise are ones the sheet draws', () => {
   // A skill id the sheet groups, and a language list it reads from a JSON array.
   assert.match(sheet, /'alchemy'.*'handleAnimals'.*'pickLock'/s);
   assert.match(sheet, /function featureOf\(ft\)[\s\S]*typeof ft !== 'string'/, 'a bare name is a valid perk, feature or title');
-});
-
-test('origin picks send the AI to the system-entries lookup', () => {
-  for (const k of ['class', 'ancestry', 'culture', 'career', 'kit', 'complication']) {
-    assert.match(field(k).format || '', new RegExp('system-entries lookup \\(field `' + k + '`\\)'), k);
-    assert.match(field(k).format, /never invented/, k);
-  }
-  assert.match(field('subclass').format, /subclass of the chosen class/);
 });
 
 test('figures Foundry reports tell the AI not to invent them', () => {

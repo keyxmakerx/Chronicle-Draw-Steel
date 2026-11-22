@@ -463,7 +463,6 @@
           "key": "class",
           "label": "Class",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `class`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "class"
@@ -477,7 +476,6 @@
           "key": "subclass",
           "label": "Subclass",
           "type": "string",
-          "format": "When written, a subclass of the chosen class, never invented: the class's own entry in the system-entries lookup (field `class`) lists its subclasses",
           "foundry_collection": "items",
           "foundry_item_type": [
             "subclass"
@@ -495,7 +493,6 @@
           "key": "ancestry",
           "label": "Ancestry",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `ancestry`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "ancestry"
@@ -528,7 +525,6 @@
           "key": "culture",
           "label": "Culture",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `culture`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "culture"
@@ -547,7 +543,6 @@
           "key": "career",
           "label": "Career",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `career`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "career"
@@ -586,7 +581,6 @@
           "key": "complication",
           "label": "Complication",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `complication`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "complication"
@@ -610,7 +604,6 @@
           "key": "kit",
           "label": "Kit",
           "type": "string",
-          "format": "When written, a name from the campaign's pick list, never invented: read the list first with the system-entries lookup (field `kit`)",
           "foundry_collection": "items",
           "foundry_item_type": [
             "kit"
