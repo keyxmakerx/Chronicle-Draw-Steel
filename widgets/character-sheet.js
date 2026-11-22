@@ -469,36 +469,45 @@
   // fetchLayers reads the hero's layers from Chronicle, and whether this
   // viewer may change them. With the Transformations add-on off, no
   // campaign, or any failure, the sheet is the hero's own: no layers and no
-  // drawer, never an error on the page.
-  function fetchLayers(cid, eid) {
+  // drawer, never an error on the page. strict (a refresh of a drawn sheet)
+  // rejects on a failure instead, so a lost request never reads as the
+  // layers being gone.
+  function fetchLayers(cid, eid, strict) {
     var none = { layers: [], canEdit: false };
     if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(none);
     var url = '/campaigns/' + encodeURIComponent(cid) + '/pages/' + encodeURIComponent(eid) + '/layers';
     return Chronicle.apiFetch(url).then(function (res) {
-      if (!res.ok) return none;
+      if (!res.ok) return refused(res, strict, none);
       return res.json().then(function (b) {
         return { layers: (b && Array.isArray(b.layers)) ? b.layers : [], canEdit: !!(b && b.canEdit) };
       });
-    }).catch(function () { return none; });
+    }).catch(function (e) { if (strict) throw e; return none; });
+  }
+
+  // A 403 or 404 is Chronicle's answer (the add-on is off, or this viewer
+  // gets nothing), so it reads as none; any other refusal is a failure.
+  function refused(res, strict, none) {
+    if (strict && res.status !== 403 && res.status !== 404) throw new Error('load ' + res.status);
+    return none;
   }
 
   // fetchChoiceRules reads what the Director's hero-choice rules say about
   // this hero: picks it holds that are no longer offered, and requests
   // waiting for a Director's answer. Only the hero's player and Directors
   // get them; anything else, or a failure, is no lines and never an error.
-  function fetchChoiceRules(cid, eid) {
+  function fetchChoiceRules(cid, eid, strict) {
     var none = { breaks: [], waiting: [] };
     if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(none);
     var url = '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/fields';
     return Chronicle.apiFetch(url).then(function (res) {
-      if (!res.ok) return none;
+      if (!res.ok) return refused(res, strict, none);
       return res.json().then(function (b) {
         return {
           breaks: (b && Array.isArray(b.choice_breaks)) ? b.choice_breaks : [],
           waiting: (b && Array.isArray(b.choice_waiting)) ? b.choice_waiting : []
         };
       });
-    }).catch(function () { return none; });
+    }).catch(function (e) { if (strict) throw e; return none; });
   }
 
   function stepLabel(key) {
@@ -2134,6 +2143,7 @@
         }
         // The server clears the bought traits when the ancestry changes, and
         // the sheet drops them too so the list never names the old ancestry's.
+        wroteHere(inst, el);
         if (key === 'ancestry' && res.value !== f(data, 'ancestry', '')) delete data.fields.ancestry_choices_json;
         data.fields[key] = res.value;
         // On paper the identity is drawn again: a first choice leaves the
@@ -2274,6 +2284,7 @@
       btn.disabled = true;
       if (msg) msg.textContent = 'Saving…';
       saveFields(data, got.patch).then(function () {
+        wroteHere(inst, el);
         Object.keys(got.patch).forEach(function (k) { data.fields[k] = got.patch[k]; });
         redrawAfterSave(kind, btn);
       }, function () {
@@ -4897,6 +4908,7 @@
     st.msg = st.err = '';
     tfRerender(inst, el, data, { attr: 'data-tf', val: 'push' });
     req().then(function (msg) {
+      wroteHere(inst, el);
       st.busy = false;
       st.add = st.remove = null;
       st.msg = msg;
@@ -4925,6 +4937,7 @@
         if (!res.ok) throw res;
         return res.json();
       }).then(function (recipe) {
+        wroteHere(inst, el);
         var mine = ownPreset(recipe);
         st.busy = false; st.saving = false;
         if (mine) {
@@ -5371,7 +5384,9 @@
     inst._dashIo.observe(boxes);
   }
 
-  function mountPaper(inst, el, data) {
+  // still: a refresh of a sheet already on screen, drawn without the
+  // entrance, since fading the whole sheet in again reads as a reload.
+  function mountPaper(inst, el, data, still) {
     var sm = Chronicle.sheetMotion;
     if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
     inst._paper = true;
@@ -5382,6 +5397,9 @@
     });
     var keptView = dashViewToKeep(el);
     el.innerHTML = paperSheetHtml(data);
+    // The settle plays from its class; taken off before the first style
+    // pass, it never starts.
+    if (still) [].forEach.call(el.querySelectorAll('.paper-settle'), function (n) { n.classList.remove('paper-settle'); });
     applyDashView(el, keptView, data);
     appendBlockSlots(el, data);
     var root = el.querySelector('[data-sheet]');
@@ -5398,10 +5416,10 @@
   }
 
 
-  function mountSheet(inst, el, data) {
+  function mountSheet(inst, el, data, still) {
     inst._paper = false;
     releaseHeight(el);
-    if (paperAvailable()) { mountPaper(inst, el, data); return; }
+    if (paperAvailable()) { mountPaper(inst, el, data, still); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
     // so this is belt-and-suspenders — degrade gracefully rather than throw if
     // it is somehow absent.
@@ -5415,7 +5433,7 @@
     appendBlockSlots(el, data);
     attachInteractions(inst, el, data);
     attachTooltips(inst, el);
-    playEntrance(el);
+    if (!still) playEntrance(el);
   }
 
   // ── API fetch fallback (embed without data attributes) ───
@@ -6765,6 +6783,28 @@
     var want = mountAttrs(fresh), have = mountAttrs(el), k;
     for (k in have) if (!(k in want)) el.removeAttribute(k);
     for (k in want) if (have[k] !== want[k]) el.setAttribute(k, want[k]);
+    el._csStale = false;
+  }
+
+  // The mount's copy of the fields is what a refresh draws from, unless the
+  // reader has saved since it arrived; then the hero is read from Chronicle.
+  function seedOf(el) {
+    var seed = parseJsonAttr((el.dataset || {}).fieldsData, null);
+    return seed && (seed.fields_data || seed.custom_fields) && !el._csStale ? seed : null;
+  }
+
+  // The reader's own save is newer than any load or check already under way,
+  // so those lose. One that was bringing in someone else's change starts
+  // again, reading the hero from Chronicle until a fresh mount arrives.
+  function wroteHere(inst, el) {
+    if (!el._csLive) return;
+    var pending = !!(el._csWait || el._csLoading);
+    el._csStale = true;
+    el._csLive = {};
+    el._csLoading = null;
+    clearTimeout(el._csWait);
+    el._csWait = null;
+    if (pending) inst.init(el, {}, true);
   }
 
   // What the sheet fetched for itself beside its mount: the layers, the
@@ -6805,21 +6845,23 @@
 
   // With the mount unchanged the hero's fields are as drawn; only what the
   // sheet fetched itself is asked for again, and the sheet loads afresh only
-  // when that differs. A failed check changes nothing.
+  // when that differs. A failed check, any one request of it, changes
+  // nothing.
   function recheck(inst, el) {
     var live = el._csLive, seen = el._csSeen, ds = el.dataset || {};
     if (!live || !seen) return;
     var cid = ds.campaignId || '', eid = ds.entityId || '';
-    var seed = parseJsonAttr(ds.fieldsData, null);
-    var seeded = !!(seed && (seed.fields_data || seed.custom_fields));
+    el._csLoading = live;
+    function done() { if (el._csLoading === live) el._csLoading = null; }
     Promise.all([
-      fetchLayers(cid, eid),
-      (flag(ds.isOwner) || flag(ds.isGm)) ? fetchChoiceRules(cid, eid) : Promise.resolve({ breaks: [], waiting: [] }),
-      seeded || !cid || !eid ? Promise.resolve(null) : fetchEntity(cid, eid)
+      fetchLayers(cid, eid, true),
+      (flag(ds.isOwner) || flag(ds.isGm)) ? fetchChoiceRules(cid, eid, true) : Promise.resolve({ breaks: [], waiting: [] }),
+      seedOf(el) || !cid || !eid ? Promise.resolve(null) : fetchEntity(cid, eid)
     ]).then(function (got) {
+      done();
       if (el._csLive !== live || seenKey(got[0], got[1], got[2]) === seen) return;
       inst.init(el, {}, true);
-    }, function () {});
+    }, done);
   }
 
   // ── widget ─────────────────────────────────────────────────────────
@@ -6855,9 +6897,11 @@
       // later, or it would take the view kept for the sheet that replaced it.
       var live = el._csLive = {};
       function gone() { return el._csLive !== live; }
+      if (refresh) el._csLoading = live;
+      function loaded() { if (el._csLoading === live) el._csLoading = null; }
 
       var self = this;
-      var seeded = !!(entityObj && (entityObj.fields_data || entityObj.custom_fields));
+      var seeded = refresh ? !!seedOf(el) : !!(entityObj && (entityObj.fields_data || entityObj.custom_fields));
       function finish(entity) {
         var data = {
           // Chronicle serializes the field bundle as `fields_data` (the platform-wide
@@ -6889,7 +6933,7 @@
         var loadRef = refRenderer ? refRenderer.load() : Promise.resolve();
         // The drawer's presets load only for a Director Chronicle lets
         // change this hero, after the layers say so.
-        var layered = fetchLayers(campaignId, entityId).then(function (lv) {
+        var layered = fetchLayers(campaignId, entityId, refresh).then(function (lv) {
           if (!lv.canEdit || !data.isGm) return { lv: lv, tf: null };
           return loadTransformData(campaignId).then(function (d) {
             return { lv: lv, tf: { canEdit: true, layers: lv.layers, presets: d.presets, ancestries: d.ancestries, canSave: d.canSave } };
@@ -6897,9 +6941,10 @@
         });
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
         var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
-        var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId) : Promise.resolve({ breaks: [], waiting: [] });
+        var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId, refresh) : Promise.resolve({ breaks: [], waiting: [] });
         Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
           if (gone()) return;
+          loaded();
           el._csSeen = seenKey(got[2].lv, got[5], seeded ? null : entity);
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
@@ -6909,9 +6954,12 @@
           // a refresh keeps the drawer as the Director left it.
           var st = !data.tf ? null : refresh ? self._tf : tfFromAddress(data, typeof location !== 'undefined' ? location.search : '');
           if (st) { self._tf = st; data.tfState = st; }
-          var draw = function () { mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null)); };
+          var draw = function () { mountSheet(self, el, withLayers(data, got[2].lv.layers, st ? tfPreview(data, st) : null), refresh); };
           if (!refresh) { draw(); return; }
           drawWhenFree(self, el, function () { detachListeners(self, el); draw(); });
+        }, function () {
+          // Only a refresh's loads reject: the last drawing stays up.
+          if (!gone()) loaded();
         });
       }
 
@@ -6923,6 +6971,7 @@
           // safe string reaches the user; the real error stays in the
           // console for diagnostics.
           if (typeof console !== 'undefined') console.warn('Character Sheet: entity load failed', err);
+          if (!gone()) loaded();
           // A refresh that cannot load leaves the last drawing up.
           if (!gone() && !(refresh && el._csSeen)) renderError(el, 'Failed to load character.');
         });
@@ -6945,6 +6994,7 @@
     destroy: function (el) {
       keepDashView(el);
       el._csLive = null;
+      el._csLoading = null;
       clearTimeout(el._csWait);
       el._csWait = null;
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
@@ -6998,6 +7048,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
+      wroteHere: wroteHere,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
   }

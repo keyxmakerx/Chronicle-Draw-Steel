@@ -4,13 +4,17 @@
  * place when someone saves it and hands each mounted widget its fresh mount.
  * An unchanged mount must leave the drawing alone; a changed one redraws
  * over the old drawing without blanking it, keeping the reader's dashboard
- * view; an open editor holds the redraw back; nothing leaks listeners.
+ * view and without replaying the sheet's entrance; an open editor holds the
+ * redraw back; the reader's own save beats any older load; a failed request
+ * during a refresh changes nothing; nothing leaks listeners or restarts
+ * after destroy.
  *
  * Run: `node --test tools/test-character-sheet-refresh.mjs`
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 import { makeChronicle } from './_xss-harness.mjs';
 
 const C = makeChronicle();
@@ -22,20 +26,26 @@ globalThis.document = {
   head: { appendChild() {} }
 };
 const require = createRequire(import.meta.url);
-require('../widgets/character-sheet.js');
+const cs = require('../widgets/character-sheet.js');
 const reg = C.registry['character-sheet'];
 
 // Paper render without the engine's DOM work: the sheet's own markup is
 // what the assertions read.
 C.sheetMotion = { mount() {}, rescan() {} };
 
-// Answers by URL; `rules` is what the hero's choice rules say right now.
+// Answers by URL; `rules` is what the hero's choice rules say right now,
+// `route` lets a test answer (or delay, or fail) a request itself.
 let rules = { choice_breaks: [], choice_waiting: [] };
+let layers = {};
+let route = null;
 let fetches = [];
+const answer = (body, status) => ({ ok: !status || status < 400, status: status || 200, json: () => Promise.resolve(body) });
+const later = (ms, v) => new Promise((ok) => setTimeout(() => ok(v), ms));
 C.apiFetch = (url) => {
   fetches.push(url);
-  const body = /\/fields$/.test(url) ? rules : {};
-  return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+  const own = route && route(url);
+  if (own) return own;
+  return Promise.resolve(answer(/\/fields$/.test(url) ? rules : /\/layers$/.test(url) ? layers : {}));
 };
 
 const camel = (n) => n.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
@@ -81,7 +91,8 @@ function makeMount(attrs) {
     addEventListener(t, fn, cap) { el._fns = el._fns.concat([[t, fn, !!cap]]); },
     removeEventListener(t, fn, cap) { el._fns = el._fns.filter((f) => !(f[0] === t && f[1] === fn && f[2] === !!cap)); },
     querySelector: (sel) => (sel === '[data-cs-dmain]' && html ? main : null),
-    querySelectorAll: (sel) => (/data-cs-ed-host|data-cs-pick-fold/.test(sel) ? held : [])
+    nodes: {}, // selector -> nodes the stub hands back, for the entrance checks
+    querySelectorAll: (sel) => (/data-cs-ed-host|data-cs-pick-fold/.test(sel) ? held : el.nodes[sel] || [])
   });
   Object.defineProperty(el, 'innerHTML', { get: () => html, set(v) { html = v; el.writes.push(v); } });
   return el;
@@ -91,8 +102,8 @@ const live = (el) => el._fns.length;
 const stamina = (el) => (el.innerHTML.match(/data-v="stamina">(-?\d+)</) || [])[1];
 const settle = (ms) => new Promise((ok) => setTimeout(ok, ms || 30));
 
-async function mounted(fields) {
-  const el = makeMount(attrsFor(fields));
+async function mounted(fields, extra) {
+  const el = makeMount(attrsFor(fields, extra));
   reg.init(el, {});
   await settle();
   return el;
@@ -180,4 +191,137 @@ test('destroy while a redraw waits stops it for good', async () => {
   await settle(1150);
   assert.equal(el.writes.length, writes, 'nothing drawn after destroy');
   assert.equal(el._csWait, null, 'no timer left behind');
+});
+
+// A node whose class list records what was put on and taken off.
+function classed(...names) {
+  const set = new Set(names);
+  return { style: {}, classList: { add: (c) => set.add(c), remove: (c) => set.delete(c), contains: (c) => set.has(c) }, has: (c) => set.has(c) };
+}
+
+test('a refresh redraws without the entrance; the first drawing keeps it', async () => {
+  const el = makeMount(attrsFor({ stamina_current: 20, stamina_max: 30 }));
+  const first = classed('sh-settle', 'paper-settle');
+  el.nodes['.paper-settle'] = [first];
+  reg.init(el, {});
+  await settle();
+  assert.ok(first.has('paper-settle'), 'the first drawing settles in');
+  const again = classed('sh-settle', 'paper-settle');
+  el.nodes['.paper-settle'] = [again];
+  reg.update(el, makeNode(attrsFor({ stamina_current: 8, stamina_max: 30 })));
+  await settle();
+  assert.equal(stamina(el), '8');
+  assert.ok(!again.has('paper-settle') && again.has('sh-settle'), 'the refresh drawing has no settle to play');
+  reg.destroy(el);
+});
+
+test('the older render plays its entrance only on the first drawing', async () => {
+  const motion = C.sheetMotion;
+  delete C.sheetMotion;
+  const mounts = [];
+  C.surface = { mount(node, schema) { mounts.push(schema); } };
+  try {
+    const el = makeMount(attrsFor({ stamina_current: 20, stamina_max: 30 }));
+    const box1 = classed('cs-box');
+    el.nodes['.cs-box'] = [box1];
+    reg.init(el, {});
+    await settle();
+    assert.equal(mounts.length, 1);
+    assert.ok(box1.has('ds-anim-in'), 'boxes rise in on the first drawing');
+    const box2 = classed('cs-box');
+    el.nodes['.cs-box'] = [box2];
+    reg.update(el, makeNode(attrsFor({ stamina_current: 8, stamina_max: 30 })));
+    await settle();
+    assert.equal(mounts.length, 2, 'drawn again');
+    assert.ok(!box2.has('ds-anim-in'), 'no entrance on the refresh');
+    reg.destroy(el);
+  } finally { C.sheetMotion = motion; delete C.surface; }
+});
+
+test('the reader\'s save makes a refresh load already under way lose, and loads again after it', async () => {
+  const el = await mounted({ stamina_current: 20, stamina_max: 30 });
+  // The refresh's load is slow; by the time the save lands Chronicle holds
+  // the reader's figure, which the mount does not carry yet.
+  route = (url) => (/\/layers$/.test(url) ? later(300, answer({})) : null);
+  try {
+    reg.update(el, makeNode(attrsFor({ stamina_current: 7, stamina_max: 30 })));
+    await settle(20);
+    route = (url) => (/\/api\/v1\/campaigns\/c1\/entities\/e1$/.test(url)
+      ? Promise.resolve(answer({ id: 'e1', name: 'Bren', fields_data: { stamina_current: 12, stamina_max: 30 } })) : null);
+    cs.wroteHere(reg, el);
+    await settle(450);
+    assert.equal(stamina(el), '12', 'the load after the save draws what Chronicle holds');
+    assert.ok(!el.writes.some((w) => /data-v="stamina">7</.test(w)), 'the older load never drew');
+    assert.ok(fetches.some((u) => /\/api\/v1\/campaigns\/c1\/entities\/e1$/.test(u)), 'the hero is read from Chronicle, not the mount');
+  } finally { route = null; }
+  reg.destroy(el);
+});
+
+test('a save with no refresh under way loads nothing', async () => {
+  const el = await mounted({ stamina_current: 20, stamina_max: 30 });
+  fetches = [];
+  cs.wroteHere(reg, el);
+  await settle();
+  assert.deepEqual(fetches, []);
+  assert.equal(el.writes.length, 1);
+  reg.destroy(el);
+});
+
+test('every in-sheet write tells the sheet it saved', () => {
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  const after = (marker) => { const i = src.indexOf(marker); assert.ok(i > 0, marker); return src.slice(i, i + 400); };
+  assert.match(after('saveFields(data, got.patch).then(function () {'), /wroteHere\(inst, el\)/, 'field editor');
+  assert.match(src.slice(src.indexOf('if (!res || res.value == null)'), src.indexOf("if (key === 'ancestry' && res.value")), /wroteHere\(inst, el\)/, 'origin pick');
+  assert.match(after('req().then(function (msg) {'), /wroteHere\(inst, el\)/, 'transformation push');
+  assert.match(after('}).then(function (recipe) {'), /wroteHere\(inst, el\)/, 'preset save');
+});
+
+test('a failed layers or choice-rules request during a refresh changes nothing', async () => {
+  layers = { layers: [], canEdit: true };
+  try {
+    const el = await mounted({ stamina_current: 20, stamina_max: 30 });
+    const fail = [
+      (url) => (/\/layers$/.test(url) ? Promise.resolve(answer({}, 500)) : null),
+      (url) => (/\/layers$/.test(url) ? Promise.reject(new Error('offline')) : null),
+      (url) => (/\/fields$/.test(url) ? Promise.resolve(answer({}, 502)) : null)
+    ];
+    for (const f of fail) {
+      route = f;
+      reg.update(el, makeNode(attrsFor({ stamina_current: 20, stamina_max: 30 })));
+      await settle();
+      assert.equal(el.writes.length, 1, 'an unchanged mount: the check failed, no redraw');
+      reg.update(el, makeNode(attrsFor({ stamina_current: 4, stamina_max: 30 })));
+      await settle();
+      assert.equal(el.writes.length, 1, 'a changed mount: the load failed, the last drawing stays');
+      assert.equal(stamina(el), '20');
+      assert.equal(el._csLoading, null, 'nothing left marked as loading');
+      // Put the mount back as drawn for the next case.
+      route = null;
+      reg.update(el, makeNode(attrsFor({ stamina_current: 20, stamina_max: 30 })));
+      await settle();
+      el.writes.length = 1;
+    }
+    // A 404 is Chronicle's answer (the add-on is off), not a failure.
+    route = (url) => (/\/layers$/.test(url) ? Promise.resolve(answer({}, 404)) : null);
+    reg.update(el, makeNode(attrsFor({ stamina_current: 20, stamina_max: 30 })));
+    await settle(60);
+    assert.equal(el.writes.length, 2, 'the layers really went away: drawn again');
+    reg.destroy(el);
+  } finally { route = null; layers = {}; }
+});
+
+test('nothing restarts the sheet after destroy', async () => {
+  const el = await mounted({ stamina_current: 20, stamina_max: 30 });
+  route = (url) => (/\/layers$/.test(url) ? later(100, answer({})) : null);
+  try {
+    reg.update(el, makeNode(attrsFor({ stamina_current: 6, stamina_max: 30 })));
+    reg.destroy(el);
+    fetches = [];
+    const writes = el.writes.length;
+    cs.wroteHere(reg, el);
+    reg.update(el, makeNode(attrsFor({ stamina_current: 6, stamina_max: 30 })));
+    await settle(200);
+    assert.equal(el.writes.length, writes, 'no drawing after destroy');
+    assert.ok(!fetches.some((u) => /\/layers$|\/fields$/.test(u)), 'a save or check resolving late starts no load');
+  } finally { route = null; }
 });
