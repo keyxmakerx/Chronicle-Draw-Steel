@@ -740,6 +740,7 @@
           "key": "speed",
           "label": "Speed",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.movement.value",
           "foundry_writable": false
         },
@@ -747,6 +748,7 @@
           "key": "stability",
           "label": "Stability",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.combat.stability",
           "foundry_writable": false
         },
@@ -809,6 +811,7 @@
           "key": "disengage",
           "label": "Disengage",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.movement.disengage",
           "foundry_writable": false
         },
@@ -855,6 +858,8 @@
           "key": "skills_json",
           "label": "Skills Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text of skill ids, e.g. [\"alchemy\", \"handleAnimals\", \"pickLock\"]: camelCase, as the sheet's skill groups spell them. Plain text is refused, because the sheet would show nothing",
           "foundry_path": "system.skills.value",
           "foundry_writable": false
         },
@@ -862,6 +867,8 @@
           "key": "languages_json",
           "label": "Languages Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text of language names, e.g. [\"Caelian\", \"Variac\"]",
           "foundry_path": "system.biography.languages",
           "foundry_writable": false
         },
@@ -876,6 +883,7 @@
           "key": "movement_hover",
           "label": "Hover",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.movement.hover",
           "foundry_writable": false
         },
@@ -883,6 +891,7 @@
           "key": "save_threshold",
           "label": "Save Threshold",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.combat.save.threshold",
           "foundry_writable": false
         },
@@ -904,6 +913,8 @@
           "key": "kit_details_json",
           "label": "Kit Details Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text holding one object, the kit's bonuses: `name`; `meleeDamageT1`, `meleeDamageT2`, `meleeDamageT3` and the same three for `ranged`; `meleeDistance`, `rangedDistance`; `stability`, `speed`, `stamina`, `disengage`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "kit"
@@ -928,6 +939,7 @@
           "key": "potency_weak",
           "label": "Potency (weak)",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.potency.weak",
           "foundry_writable": false
         },
@@ -935,6 +947,7 @@
           "key": "potency_average",
           "label": "Potency (average)",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.potency.average",
           "foundry_writable": false
         },
@@ -942,6 +955,7 @@
           "key": "potency_strong",
           "label": "Potency (strong)",
           "type": "number",
+          "format": "Foundry works this figure out and reports it, so never invent one",
           "foundry_path": "system.potency.strong",
           "foundry_writable": false
         },
@@ -949,6 +963,8 @@
           "key": "abilities_json",
           "label": "Abilities Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text, one object per ability, as Foundry reports it: `name`; `type` (main, maneuver, freeManeuver, move, triggered or freeTriggered); `category`; `cost`; `keywords` (a list of words); `powerRollChars` (a list of characteristic keys); `trigger`; `effectBefore`; `effectAfter`. Leave `tiers` out: it is Foundry's own nested effect list",
           "foundry_collection": "items",
           "foundry_item_type": [
             "ability"
@@ -1063,6 +1079,8 @@
           "key": "features_json",
           "label": "Features Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text, one entry per feature: its name, or an object with `name`, `description` and `level`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "feature"
@@ -1079,6 +1097,8 @@
           "key": "perks_json",
           "label": "Perks Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text, one entry per perk: its name, or an object with `name` and `description`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "perk"
@@ -1094,6 +1114,8 @@
           "key": "titles_json",
           "label": "Titles Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text, one entry per title: its name, or an object with `name` and `description`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "title"
@@ -1110,6 +1132,8 @@
           "key": "treasures_json",
           "label": "Treasures Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text, one object per treasure: `name`; `category` (leveled, trinket, consumable or artifact); `echelon`; `quantity`; `keywords` (a list of words); `description`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "treasure"
@@ -1143,6 +1167,8 @@
           "key": "conditions_json",
           "label": "Conditions Data",
           "type": "string",
+          "json_list": true,
+          "format": "A JSON list as text of condition ids, e.g. [\"bleeding\", \"prone\"], or objects with `name` and `severity`",
           "foundry_path": "statuses",
           "foundry_writable": false,
           "play": {
