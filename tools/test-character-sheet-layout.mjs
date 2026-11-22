@@ -832,3 +832,27 @@ test('page hooks: the quiet look asks for the wide column; the name hook follows
   assert.ok(!('data-sheet-wide' in root.attrs), 'a paper style keeps its 920px page');
   assert.ok(/\.sh-folio \{[^}]*width:var\(--sheet-width, 920px\)/.test(readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8')), 'the folio follows Chronicle\'s width');
 });
+
+test('a class that uses no kit: no "still to choose", the kit reads "Not used" with the pack\'s note', () => {
+  const classes = [
+    { slug: 'conduit', name: 'Conduit', properties: { kits: 0, kit_note: 'Conduits don\'t use a kit.' } },
+    { slug: 'fury', name: 'Fury', properties: { kits: 1, kit_note: 'Stormwights use their own.', subclasses: [{ name: 'Berserker' }, { name: 'Stormwight', kits: 0, kit_note: 'Stormwight kits instead.' }] } }
+  ];
+  cs.setEditRefs({ 'classes.json': classes });
+  try {
+    const hero = (fields) => ({ name: 'Ash', isOwner: true, canEditIdentity: true, fields: Object.assign({ ancestry: 'Human', culture: 'X', career: 'Y', level: 1 }, fields) });
+    const conduit = hero({ class: 'Conduit' });
+    assert.equal(cs.noKitNote(conduit), 'Conduits don\'t use a kit.');
+    const id = cs.pIdentityInner(conduit);
+    assert.ok(!/data-cs-pick="kit"/.test(id) && !/Still to choose/.test(id), 'the kit is not asked for');
+    assert.ok(/<small>Not used<\/small>[^]*Conduits don(?:'|&#39;)t use a kit\./.test(cs.dashRailInner(conduit)), 'the Kit card');
+    assert.ok(/Kit: not used/.test(cs.dashPaneHtml('equipment', conduit)), 'the Equipment tab');
+    assert.ok(/Not used[^]*Conduits don(?:'|&#39;)t use a kit\./.test(cs.pKitPanel(conduit)), 'the phone Kit panel');
+    assert.ok(/data-sheet-section="kit"[^]*?Not used/.test(cs.paperSheetHtml(conduit)), 'the phone ledger line');
+    assert.equal(cs.noKitNote(hero({ class: 'Fury', subclass: 'Stormwight' })), 'Stormwight kits instead.', 'the subclass\'s own count wins');
+    assert.equal(cs.noKitNote(hero({ class: 'Fury', subclass: 'Berserker' })), '', 'a berserker still chooses a kit');
+    assert.ok(/data-cs-pick="kit"/.test(cs.pIdentityInner(hero({ class: 'Fury' }))));
+    assert.equal(cs.noKitNote(hero({ class: 'Homebrew' })), '', 'an unknown class says nothing');
+    assert.equal(cs.noKitNote(hero({ class: 'Conduit', kit: 'Shining Armor' })), '', 'a kit the hero has anyway still shows');
+  } finally { cs.setEditRefs({}); }
+});

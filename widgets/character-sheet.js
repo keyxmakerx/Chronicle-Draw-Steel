@@ -995,7 +995,7 @@
   function rKit(def, data) {
     var arr = parseJson(f(data, 'kit_details_json', ''), []);
     var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
-    if (!k) return ph('No kit equipped.');
+    if (!k) return ph(noKitNote(data) || 'No kit equipped.');
 
     var has = function (v) { return v != null && v !== '' && v !== 0; };
     // H-2: escape the non-numeric branch — kit_details_json values are
@@ -2780,7 +2780,8 @@
   function pIdentityTodo(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
-    var left = slots.filter(function (s) { return !originVal(data, s.key); });
+    var unused = noKitNote(data);
+    var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
     if (!left.length) return '';
     return '<p class="sh-idtodo sh-fq"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
@@ -2795,7 +2796,8 @@
   function dashTodoTags(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
-    var left = slots.filter(function (s) { return !originVal(data, s.key); });
+    var unused = noKitNote(data);
+    var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
     if (!left.length) return '';
     return '<dl class="sh-idset-todo sh-dq">' + left.map(function (s) {
       return '<div><dt>' + s.label + '</dt><dd>' + (canPick
@@ -3125,7 +3127,7 @@
     lines.push(['features', 'Features', featuresLine(data)]);
     lines.push(['skills', 'Skills', skillsLine(data)]);
     var kit = kitFacts(data);
-    lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : 'No kit equipped']);
+    lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : (noKitNote(data) ? 'Not used' : 'No kit equipped')]);
     // With the Armory on, the hero's items live in the page's Items tab; this
     // row points there and stays hidden until that tab is on the page.
     if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
@@ -3506,12 +3508,13 @@
     var sl = skillLists(data);
     var kit = dashKitName(data);
     var kitRows = dashKitRows(data);
+    var unused = noKitNote(data);
     return '<section class="sh-dcard"><h3 class="sh-dh">Skills<small>' + sl.skills.length + '</small></h3>' + dashSkillGroups(data, false) +
         '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="skills" aria-expanded="false">What each one covers</button></p></section>' +
       '<section class="sh-dcard"><h3 class="sh-dh">Languages<small>' + sl.langs.length + '</small></h3>' + dashLanguages(data) + '</section>' +
-      '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : '') + '</h3>' +
+      '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : unused ? '<small>Not used</small>' : '') + '</h3>' +
         (kit ? '<div class="sh-dkitw">' + kitWords(data, 'sh-dplain') + '</div>' : '') +
-        (kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
+        (unused ? noKitHtml(unused, 'sh-dplain') : kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
         (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '') + '</section>';
   }
 
@@ -3532,9 +3535,10 @@
   function dashEquipment(data) {
     var kit = dashKitName(data);
     var rows = dashKitRows(data);
-    var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : 'Kit') + '</h3>' +
+    var unused = noKitNote(data);
+    var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : unused ? 'Kit: not used' : 'Kit') + '</h3>' +
       (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
-      (kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
+      (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
     out += '<h3 class="sh-dsec">Items</h3>';
     if (data.armoryItems) {
@@ -3836,6 +3840,27 @@
   function originPara(entry, cls) {
     var t = originText(entry);
     return t ? '<p class="' + cls + '">' + refText(t) + '</p>' : pEmpty(NO_DESC);
+  }
+
+  // A class that uses no kit (kits 0 in the pack, a subclass's own count
+  // winning, as the creator reads it) leaves the kit as "Not used" with the
+  // pack's note, not as a choice still to make. A kit the hero has anyway
+  // still shows, and an unknown class says nothing.
+  function noKitNote(data) {
+    if (dashKitName(data)) return '';
+    var cls = originDef(data, 'class');
+    var p = (cls && cls.properties) || {};
+    var sub = String(f(data, 'subclass', '') || '').trim().toLowerCase();
+    var own = sub && Array.isArray(p.subclasses) ? p.subclasses.filter(function (x) {
+      var n = String(x && x.name || '').trim().toLowerCase();
+      return n && (n === sub || n.indexOf(sub) !== -1 || sub.indexOf(n) !== -1);
+    })[0] : null;
+    var src = own && typeof own.kits === 'number' ? own : p;
+    if (src.kits !== 0) return '';
+    return String(src.kit_note || p.kit_note || 'This class uses no kit.');
+  }
+  function noKitHtml(note, cls) {
+    return '<p class="' + (cls || 'sh-sub') + ' sh-nokit">' + esc(note) + '</p>';
   }
 
   // The kit in words: what it is, what it puts in the hero's hands (the
@@ -4270,7 +4295,10 @@
 
   function pKitPanel(data) {
     var k = kitFacts(data);
-    if (!k.name && !k.grid && !k.chips.length) return pEmpty('No kit equipped.');
+    if (!k.name && !k.grid && !k.chips.length) {
+      var unused = noKitNote(data);
+      return unused ? '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name">Not used</div>' + noKitHtml(unused) + '</div>' : pEmpty('No kit equipped.');
+    }
     return '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name" style="font-size:19px">' + esc(k.name || 'Kit') + '</div>' +
       (k.name ? '<div class="sh-kitw">' + kitWords(data, 'sh-orig-p') + '</div>' : '') + '</div>' +
       (k.grid || k.chips.length
@@ -6849,7 +6877,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,

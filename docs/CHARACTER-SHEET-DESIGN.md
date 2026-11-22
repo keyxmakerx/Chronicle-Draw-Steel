@@ -158,6 +158,12 @@ three lengths:
   and the GM's; they open nothing there, because a panel opened from a panel
   loses its way back.
 
+A class that uses no kit (`kits: 0` in `classes.json`, where a subclass's
+own `kits` wins, as in the creator) is never asked for one: the kit leaves
+the "Still to choose" line and tags, and the Kit card, Equipment tab, phone
+ledger line and Kit panel read "Not used" with the pack's `kit_note`
+(`noKitNote`). A kit the hero has anyway still shows.
+
 The quiet look marks the root `data-sheet-wide`, so Chronicle widens the
 folio and the tabbed panel under it to 1160px on a screen at least 1480px
 wide (the folio is `width: var(--sheet-width, 920px)`). While the dashboard
