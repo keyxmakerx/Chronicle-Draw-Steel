@@ -66,8 +66,9 @@ Career, Kit) opens across the full width under the identity row. Layout rules li
 
 On paper the sheet's face is the hero's turn: Hero · Draw Steel, an identity
 line (ancestry, class and level, subclass, kit; Culture and career are one fold
-away and keep their pickers), the This turn part, then the abilities. The name
-is printed once, in Chronicle's page header.
+away and keep their pickers), the This turn part, then the abilities. On a
+phone and in the paper styles the name is printed only in Chronicle's page
+header; the computer dashboard (below) prints it as its own heading.
 
 A choice not made yet (ancestry, culture, career, kit) is never printed as an
 empty value. It is named on one "Still to choose" line under the identity, each
@@ -80,6 +81,36 @@ choice made as a labelled value, and the Items to Notes rows beside the
 abilities. Both identities are in the markup (`sh-id-l` for the paper styles,
 `sh-id-q` for the quiet look) and the style shows one, so a style changed in
 the Customizer preview needs no redraw. The other styles keep their own frames.
+
+### The computer dashboard
+
+In the quiet look, a sheet at least 820px wide is laid out as a dashboard
+(`dashCss`, a container query on `.sh-sheet`, so the sheet's own width decides
+and not the window's). The phone and the paper styles never see it.
+
+- Header: portrait (`dashPortrait`), name, the identity tags with a "Still to
+  choose" list of pickers (`dashTodoTags`), and the progression box (level,
+  victories, XP, renown, wealth) that opens the Progression panel.
+- A row of number boxes (`dashBoxes`): the five characteristics, then Stamina
+  (opens the turn panel), speed, stability, disengage, size and save. Under
+  it (`dashUnder`): heroic resource, surges with their damage, potency (the
+  synced fields, otherwise the glossary rule from the highest characteristic),
+  damage immunities and weaknesses, and conditions. Vitals and conditions
+  stay read-only.
+- At 1100px and wider a left column (`dashRailInner`) holds Skills by group,
+  Languages and the Kit's numbers. Narrower, the same list is a Skills tab.
+- Tabs: Abilities (today's face list and ledger), Skills (narrow only),
+  Features, Equipment, and Story for the owner and the GM. Arrow keys, Home
+  and End move between them; the open tab survives a redraw. Editor saves
+  redraw the panes, the column and the tab counts (`refreshDash`).
+- A strip pinned to the top once the number boxes scroll away (`attachDashPin`,
+  an IntersectionObserver on the scroll container): portrait, name, Stamina,
+  heroic resource, surges and recoveries. It is hidden from screen readers,
+  because it repeats what is already on the page.
+
+Parts only the dashboard shows carry `sh-dq`; face parts it replaces carry
+`sh-fq`. Both are in the markup for every style, so switching style needs no
+redraw.
 
 The face lists abilities under Main action, Maneuver, Triggered and Free strike
 (`actionKind`: Foundry's `system.type`, with `category: freeStrike` for free

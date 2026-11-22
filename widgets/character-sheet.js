@@ -2210,7 +2210,40 @@
     // After a save the part of the sheet that shows the field is drawn
     // again, in the panel on screen and in the template it opens from.
     var EDIT_PANEL = { backstory: ['notes', pNotesPanel], about: ['notes', pNotesPanel], skills: ['skills', pSkillsPanel], perks: ['features', pFeaturesPanel] };
-    function redrawAfterSave(kind) {
+    // The dashboard shows the same lists in its tabs and left column.
+    // A panel's open button is the node the sheet engine hands focus back to
+    // when the panel shuts, so a redraw keeps the old buttons in place.
+    function redrawKeepingTriggers(host, html) {
+      var old = {};
+      [].forEach.call(host.querySelectorAll('[data-sheet-open]'), function (b) { old[b.getAttribute('data-sheet-open')] = b; });
+      host.innerHTML = html;
+      [].forEach.call(host.querySelectorAll('[data-sheet-open]'), function (b) {
+        var k = b.getAttribute('data-sheet-open');
+        if (old[k]) { b.parentNode.replaceChild(old[k], b); delete old[k]; }
+      });
+    }
+    function refreshDash(kind, from) {
+      var ids = { skills: ['skills'], perks: ['features'], backstory: ['story'], about: ['story'] }[kind] || [];
+      var home = from && from.closest ? from.closest('[data-cs-dpane-body]') : null;
+      ids.forEach(function (id) {
+        var pane = el.querySelector('[data-cs-dpane-body="' + id + '"]');
+        if (pane) redrawKeepingTriggers(pane, dashPaneHtml(id, data));
+      });
+      if (kind === 'skills') {
+        var rail = el.querySelector('[data-cs-drail]');
+        if (rail) redrawKeepingTriggers(rail, dashRailInner(data));
+      }
+      var counts = { skills: ['skills', skillLists(data).skills.length], perks: ['features', featureCount(data)] }[kind];
+      var n = counts ? el.querySelector('[data-cs-dtab="' + counts[0] + '"] small') : null;
+      if (n) n.textContent = String(counts[1]);
+      if (home && home.isConnected) {
+        var again = home.querySelector('[data-cs-ed-open="' + kind + '"]');
+        if (again && again.focus) again.focus({ preventScroll: true });
+      }
+    }
+
+    function redrawAfterSave(kind, from) {
+      refreshDash(kind, from);
       if (kind === 'traits') {
         var idin = el.querySelector('[data-cs-idin]');
         if (idin) idin.innerHTML = pIdentityInner(data);
@@ -2242,7 +2275,7 @@
       if (msg) msg.textContent = 'Saving…';
       saveFields(data, got.patch).then(function () {
         Object.keys(got.patch).forEach(function (k) { data.fields[k] = got.patch[k]; });
-        redrawAfterSave(kind);
+        redrawAfterSave(kind, btn);
       }, function () {
         btn.disabled = false;
         if (msg) msg.textContent = 'That did not save. Try again in a moment.';
@@ -2293,9 +2326,23 @@
       btn.textContent = show ? 'Short card' : 'Full card';
     }
 
+    // A tab chosen while the bar is stuck under the pinned strip brings the
+    // top of its pane into view, so the reader starts at the top of it.
+    function pickDashTab(id) {
+      var bar = el.querySelector('.sh-dtabs');
+      var under = el.querySelector('.sh-dunder');
+      var stuck = !!(bar && under && bar.offsetParent !== null && bar.getBoundingClientRect().top - under.getBoundingClientRect().bottom > 32);
+      var main = setDashTab(el, id);
+      if (!main || !stuck) return;
+      var pane = id === 'abilities' ? main.querySelector('.sh-body') : main.querySelector('[data-dpane="' + id + '"]');
+      if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start' });
+    }
+
     inst._onAbilityClick = function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
+      var dtab = t.closest('[data-cs-dtab]');
+      if (dtab) { e.preventDefault(); pickDashTab(dtab.getAttribute('data-cs-dtab')); return; }
       var tab = t.closest('[data-ds-tab]');
       if (tab) { e.preventDefault(); selectTab(tab.getAttribute('data-ds-tab'), false); return; }
       var chip = t.closest('[data-cs-change-image]');
@@ -2375,6 +2422,16 @@
         if (!openBig) { var p0 = pane(); openBig = p0 ? p0.querySelector('[data-ds-collapse]') : null; }
         if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
         return;
+      }
+      var dtEl = (t && t.closest) ? t.closest('[data-cs-dtab]') : null;
+      if (dtEl) {
+        var shown = [].filter.call(el.querySelectorAll('[data-cs-dtab]'), function (b) { return b.offsetParent !== null; });
+        var at = shown.indexOf(dtEl), go = -1;
+        if (e.key === 'ArrowRight') go = (at + 1) % shown.length;
+        else if (e.key === 'ArrowLeft') go = (at + shown.length - 1) % shown.length;
+        else if (e.key === 'Home') go = 0;
+        else if (e.key === 'End') go = shown.length - 1;
+        if (go >= 0 && shown[go]) { e.preventDefault(); pickDashTab(shown[go].getAttribute('data-cs-dtab')); shown[go].focus(); return; }
       }
       var tabEl = (t && t.closest) ? t.closest('[data-ds-tab]') : null;
       if (tabEl) {
@@ -2692,12 +2749,27 @@
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var left = slots.filter(function (s) { return !originVal(data, s.key); });
     if (!left.length) return '';
-    return '<p class="sh-idtodo"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
+    return '<p class="sh-idtodo sh-fq"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
         ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
     }).join('') + '</p>';
+  }
+
+  // The dashboard names a choice not made yet as a dashed tag beside the
+  // others, in place of the "Still to choose" line; the same pickers open.
+  function dashTodoTags(data, canPick) {
+    var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
+    if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
+    var left = slots.filter(function (s) { return !originVal(data, s.key); });
+    if (!left.length) return '';
+    return '<dl class="sh-idset-todo sh-dq">' + left.map(function (s) {
+      return '<div><dt>' + s.label + '</dt><dd>' + (canPick
+        ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+            ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">Still to choose</button>'
+        : 'Still to choose') + '</dd></div>';
+    }).join('') + '</dl>';
   }
 
   function pIdentityInner(data) {
@@ -2738,13 +2810,14 @@
     }).join('') + '</dl>' : '';
 
     var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
-    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + pIdentityTodo(data, canPick) + choiceNotesHtml(data) + pTraits(data) +
-      '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
+    return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + dashTodoTags(data, canPick) + pIdentityTodo(data, canPick) + choiceNotesHtml(data) + pTraits(data) +
+      '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint sh-fq' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
 
   function pIdentity(data) {
     var name = data.name || 'Unnamed Hero';
     return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
+      '<h2 class="sh-dname sh-dq">' + esc(name) + '</h2>' +
       '<div class="sh-idin" data-cs-idin>' + pIdentityInner(data) + '</div>' +
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
   }
@@ -2817,7 +2890,7 @@
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
         (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
         (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
-    return '<section class="sh-turn paper-pull" data-sheet-section="turn" aria-label="This turn">' +
+    return '<section class="sh-turn paper-pull sh-fq" data-sheet-section="turn" aria-label="This turn">' +
       '<div class="sh-turnhead">' + pullBtn('turn', '<span class="paper-kind">This turn</span>') + '</div>' +
       '<div class="sh-turn-top">' + top + '</div>' + pConditions(data) + pStats(data) + '</section>';
   }
@@ -2827,7 +2900,7 @@
       var v = num(data, k, 0);
       return '<div><span>' + CHAR_LABELS[k] + '</span><b class="' + (v < 0 ? 'sh-neg' : '') + '">' + signedStat(v) + '</b></div>';
     }).join('');
-    return '<section class="sh-o1" aria-label="Characteristics"><div class="paper-kind">Characteristics</div><div class="sh-chars">' + cells + '</div></section>';
+    return '<section class="sh-o1 sh-fq" aria-label="Characteristics"><div class="paper-kind">Characteristics</div><div class="sh-chars">' + cells + '</div></section>';
   }
 
   // ── The abilities on the sheet's face ──────────────────────────────────────
@@ -3020,7 +3093,7 @@
     // row points there and stays hidden until that tab is on the page.
     if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
     if (data.isGm || data.isOwner) lines.push(['notes', 'Story', 'Background' + (data.isGm ? ', GM lore' : '')]);
-    return '<section class="sh-ledger sh-o3">' + lines.map(function (l) {
+    return '<section class="sh-ledger sh-o3 sh-fq">' + lines.map(function (l) {
       if (l[0] === 'items-go') {
         return '<div class="paper-pull sh-golink" data-cs-items-row hidden><button type="button" class="sh-pullbtn" data-cs-go-items>' +
           '<span class="sh-nm">' + l[1] + '</span><span class="sh-ds">' + l[2] + '</span>' +
@@ -3081,7 +3154,7 @@
     var line = function (label, list, key) {
       return '<div class="sh-line"><span class="sh-k" style="display:inline">' + label + '</span> ' + wasHtml(data, key, shown) + (list.length ? esc(list.join(' · ')) : 'None') + '</div>';
     };
-    return '<section class="sh-sec paper-pull sh-o4" data-sheet-section="damage" aria-label="Damage">' +
+    return '<section class="sh-sec paper-pull sh-o4 sh-fq" data-sheet-section="damage" aria-label="Damage">' +
       pullBtn('damage', '<span class="paper-kind">Damage</span>') +
       line('Immunities', d.imm, 'immunities') + line('Weaknesses', d.weak, 'weaknesses') + (d.status.length ? line('Condition immunities', d.status) : '') + '</section>';
   }
@@ -3097,14 +3170,320 @@
       var attr = (p[1] === 'victories' || p[1] === 'xp') ? ' data-pv="' + p[1] + '"' : '';
       return '<div><span class="sh-k">' + p[0] + '</span><b' + attr + '>' + progValue(data, p[1]) + '</b></div>';
     }).join('');
-    return '<section class="sh-sec paper-pull sh-o5" data-sheet-section="progression" aria-label="Progression">' +
+    return '<section class="sh-sec paper-pull sh-o5 sh-fq" data-sheet-section="progression" aria-label="Progression">' +
       pullBtn('progression', '<span class="paper-kind">Progression</span>') + '<div class="sh-dl">' + cells + '</div></section>';
   }
 
   function pFoot(data) {
     return '<footer class="sh-foot"><span><span class="only-paper">Tap any section to pull out the paper behind it.</span>' +
-      '<span class="only-modern">Select any section to open its panel.</span></span>' +
+      '<span class="only-modern sh-fq">Select any section to open its panel.</span><span class="sh-dfoot sh-dq">Select any box to open its panel.</span></span>' +
       (foundryLinked(data) ? '<span>Synced with Foundry</span>' : '') + '</footer>';
+  }
+
+  // ── The computer dashboard ─────────────────────────────────────────────────
+  // On a computer the quiet look is a dashboard: a header with the portrait
+  // and name, one row of number boxes, skills, languages and the kit in a
+  // narrow column, and one tabbed area for abilities, features, equipment and
+  // story. Its pieces (sh-dq) are in the markup for every style and width and
+  // only the quiet look's CSS on a sheet 820px or wider shows them; the parts
+  // they replace there are marked sh-fq. So a phone, a narrow column and every
+  // paper style draw the sheet they always did, and a style changed in the
+  // Customizer needs no redraw.
+
+  var DASH_CHARS = ['might', 'agility', 'reason', 'intuition', 'presence'];
+  var dashSeq = 0;
+
+  // The highest characteristic the hero has synced, or null with none.
+  function topChar(data) {
+    var top = null;
+    DASH_CHARS.forEach(function (k) {
+      if (!isNum(data, k)) return;
+      var v = num(data, k, 0);
+      if (top == null || v > top) top = v;
+    });
+    return top;
+  }
+
+  // Weak, average and strong potency: the synced values, else the rule the
+  // pack's glossary states (highest characteristic minus 2, minus 1, as is).
+  function potencyOf(data) {
+    var keys = ['potency_weak', 'potency_average', 'potency_strong'];
+    if (keys.some(function (k) { return isNum(data, k); })) {
+      return keys.map(function (k) { return isNum(data, k) ? num(data, k, 0) : null; });
+    }
+    var top = topChar(data);
+    return top == null ? null : [top - 2, top - 1, top];
+  }
+
+  // The skill's entry in the pack's skills file, whichever way it is spelled
+  // ("Pick Lock", "pickLock", "pick-lock").
+  function skillDef(id) {
+    if (!skillDefs) return null;
+    var s = String(id == null ? '' : id);
+    return skillDefs[s.toLowerCase()] || skillDefs[slugify(s.replace(/([a-z])([A-Z])/g, '$1 $2'))] || null;
+  }
+
+  function dashSignal(n) { return (typeof n === 'number') ? signedStat(n) : esc(String(n)); }
+
+  function dashPortrait(data) {
+    var name = data.name || 'Unnamed Hero';
+    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var pic = src
+      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '">'
+      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
+    return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>';
+  }
+
+  function dashProg(data) {
+    var cells = [['Level', String(num(data, 'level', 1))]].concat(PROGRESS_KEYS.map(function (p) { return [p[0], progValue(data, p[1])]; }));
+    var sync = foundryLinked(data)
+      ? '<p class="sh-dsync">' + fa('arrows-rotate') + ' Synced with Foundry. Class, level and subclass are set there.</p>' : '';
+    return '<div class="sh-dprog sh-dq"><button type="button" class="sh-dprog-b" data-sheet-open="progression" aria-expanded="false">' +
+      '<span class="sh-sr">Progression: </span><dl>' + cells.map(function (c) {
+        return '<div><dt>' + c[0] + '</dt><dd class="num">' + c[1] + '</dd></div>';
+      }).join('') + '</dl></button>' + sync + '</div>';
+  }
+
+  function dashBox(label, value, cls) {
+    return '<div class="sh-dbox' + (cls ? ' ' + cls : '') + '"><span class="sh-dk">' + label + '</span><span class="sh-dbig num">' + value + '</span></div>';
+  }
+
+  function dashStamina(data) {
+    var cur = num(data, 'stamina_current', 0), max = num(data, 'stamina_max', 0);
+    var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
+    var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
+    var st = staminaState(cur, winded, max);
+    var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
+    var bar = max > 0
+      ? '<span class="sh-bar" aria-hidden="true"><span style="width:' + pct + '%"></span>' +
+          (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</span>'
+      : '';
+    var dots = '';
+    for (var i = 0; i < Math.min(recMax, 24); i++) dots += '<i' + (i < rec ? '' : ' class="off"') + '></i>';
+    var subs = [];
+    if (winded > 0) subs.push('<span class="sh-dsub num">Winded ' + winded + ' · Dying 0 · Dead −' + winded + '</span>');
+    if (max > 0) subs.push('<span class="sh-dsub num">Catch Breath heals ' + Math.floor(max / 3) + '</span>');
+    return '<button type="button" class="sh-dbox sh-dstam" data-sheet-open="turn" aria-expanded="false">' +
+      '<span class="sh-dstam-n"><span class="sh-dk">Stamina' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>' +
+        '<span class="sh-dbig num"><span data-v="stamina">' + cur + '</span> <small>/ ' + wasHtml(data, 'stamina_max') + max + '</small></span></span>' +
+      '<span class="sh-drec"><span class="sh-dk">Recoveries</span><span class="sh-dbig num"><span data-v="rec">' + rec + '</span>' +
+        (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
+        (dots ? '<span class="sh-ddots" aria-hidden="true">' + dots + '</span>' : '') + '</span>' +
+      '<span class="sh-dstam-b">' + bar + (subs.length ? '<span class="sh-dsubs">' + subs.join('') + '</span>' : '') + '</span></button>';
+  }
+
+  // Characteristics, the static combat numbers and Stamina, as one row of boxes.
+  function dashBoxes(data) {
+    var chars = DASH_CHARS.map(function (k) {
+      var v = num(data, k, 0);
+      return dashBox(CHAR_LABELS[k], wasHtml(data, k) + '<span' + (v < 0 ? ' class="sh-neg"' : '') + '>' + signedStat(v) + '</span>');
+    }).join('');
+    var stat = function (label, key) {
+      var v = f(data, key, null);
+      return dashBox(label, wasHtml(data, key) + ((v == null || v === '') ? '–' : esc(String(scalar(v)))));
+    };
+    var combat = stat('Speed', 'speed') + stat('Stability', 'stability');
+    if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') combat += stat('Disengage', 'disengage');
+    if (f(data, 'size', '') !== '') combat += stat('Size', 'size');
+    if (isNum(data, 'save_threshold')) {
+      var sb = f(data, 'save_bonus', '');
+      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
+        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
+      combat += dashBox('Save', num(data, 'save_threshold', 6) + '+' + sbTxt);
+    }
+    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
+      .filter(function (m) { return m && m !== 'walk'; }).map(function (m) { return esc(humanizeId(m)); });
+    if (num(data, 'movement_hover', 0)) modes.push('Hover');
+    if (modes.length) combat += dashBox('Moves', modes.join(', '), 'sh-dwords');
+    return '<section class="sh-dboxes sh-dq" aria-label="Characteristics, movement and Stamina">' +
+      '<div class="sh-dchars">' + chars + '</div><div class="sh-dcombat">' + combat + '</div>' + dashStamina(data) + '</section>';
+  }
+
+  function dashConditions(data) {
+    var conds = parseJson(f(data, 'conditions_json', ''), []);
+    return (Array.isArray(conds) ? conds : []).map(function (c) {
+      return humanizeId((c && (c.name || c)) || '');
+    }).filter(Boolean);
+  }
+
+  // The resource, surges, potency, damage and conditions: what a player looks
+  // at while choosing an ability, so they sit directly above the list.
+  function dashUnder(data) {
+    var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
+    var top = topChar(data);
+    var pot = potencyOf(data);
+    var out = '<button type="button" class="sh-dbox sh-dres" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">' + esc(hrName) + '</span>' +
+      '<span class="sh-dbig num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-dsub">Heroic resource</span></button>';
+    if (isNum(data, 'surges')) {
+      out += '<button type="button" class="sh-dbox sh-dsurge" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Surges</span>' +
+        '<span class="sh-dbig num" data-v="surges">' + num(data, 'surges', 0) + '</span>' +
+        (top != null && top > 0 ? '<span class="sh-dsub">+' + top + ' damage each</span>' : '') + '</button>';
+    }
+    if (pot) {
+      var pv = function (v) { return v == null ? '–' : String(v); };
+      out += '<button type="button" class="sh-dbox sh-dpot" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Potency</span>' +
+        '<span class="sh-dpotv num"><b>' + pv(pot[0]) + '</b><b>' + pv(pot[1]) + '</b><b>' + pv(pot[2]) + '</b>' +
+        '<span>Weak</span><span>Average</span><span>Strong</span></span></button>';
+    }
+    var d = damageLists(data);
+    var shown = function (v) { return toDamageEntries(v).map(dmgEntryText).filter(Boolean).join(' · ') || 'None'; };
+    out += '<button type="button" class="sh-dbox sh-ddmg" data-sheet-open="damage" aria-expanded="false"><span class="sh-dk">Damage</span><dl class="sh-dkv">' +
+      '<dt>Immune</dt><dd>' + wasHtml(data, 'immunities', shown) + (d.imm.length ? esc(d.imm.join(' · ')) : 'None') + '</dd>' +
+      '<dt>Weak to</dt><dd>' + wasHtml(data, 'weaknesses', shown) + (d.weak.length ? esc(d.weak.join(' · ')) : 'None') + '</dd>' +
+      (d.status.length ? '<dt>Never</dt><dd>' + esc(d.status.join(' · ')) + '</dd>' : '') + '</dl></button>';
+    var conds = dashConditions(data);
+    out += '<button type="button" class="sh-dbox sh-dcond" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Conditions</span>' +
+      '<span class="sh-dval">' + (conds.length ? esc(conds.join(', ')) : 'None') + '</span></button>';
+    return '<section class="sh-dunder sh-dq" aria-label="Resources and defenses">' + out + '</section>';
+  }
+
+  // Skills grouped as the official sheet groups them, the largest group first.
+  // wide adds what each skill covers under its name, for the Skills tab.
+  function dashSkillGroups(data, wide) {
+    var sl = skillLists(data);
+    if (!sl.skills.length) return pEmpty('No trained skills.');
+    var buckets = {};
+    sl.skills.forEach(function (s) {
+      var id = String(s == null ? '' : s);
+      var g = SKILL_TO_GROUP[id.replace(/[\s-]+/g, '').toLowerCase()] || 'other';
+      (buckets[g] = buckets[g] || []).push(id);
+    });
+    var groups = SKILL_GROUPS.map(function (g) { return { label: g.label, list: buckets[g.key] || [] }; })
+      .concat([{ label: 'Other', list: buckets.other || [] }])
+      .filter(function (g) { return g.list.length; });
+    groups.sort(function (a, b) { return b.list.length - a.list.length; });
+    groups.forEach(function (g) { g.list.sort(function (x, y) { return humanizeId(x).localeCompare(humanizeId(y)); }); });
+    return groups.map(function (g) {
+      return '<p class="sh-dgrp">' + esc(g.label) + '<small>' + g.list.length + '</small></p><ul class="sh-drows">' +
+        g.list.map(function (id) {
+          var d = skillDef(id);
+          var words = d ? (d.summary || d.description || '') : '';
+          var tip = (!wide && words) ? ' data-tip="' + escAttr(words) + '" tabindex="0"' : '';
+          return '<li' + tip + '>' + esc(humanizeId(id)) + (wide && words ? '<span>' + esc(words) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>';
+    }).join('');
+  }
+
+  function dashLanguages(data) {
+    var langs = skillLists(data).langs.map(function (l) { return humanizeId(l); });
+    return langs.length ? '<p class="sh-dplain">' + esc(langs.join(', ')) + '</p>' : pEmpty('None yet.');
+  }
+
+  // The kit's numbers as label and value rows. Values are user authored, so a
+  // number is signed and anything else escaped.
+  function dashKitRows(data) {
+    var k = kitObject(data);
+    if (!k) return '';
+    var has = function (v) { return v != null && v !== '' && v !== 0; };
+    var rows = [];
+    if (has(k.stamina)) rows.push(['Stamina', dashSignal(k.stamina) + (typeof k.stamina === 'number' ? ' per echelon' : '')]);
+    [['Speed', 'speed'], ['Stability', 'stability'], ['Disengage', 'disengage']].forEach(function (p) {
+      if (has(k[p[1]])) rows.push([p[0], dashSignal(k[p[1]])]);
+    });
+    [['Melee damage', 'melee'], ['Ranged damage', 'ranged']].forEach(function (p) {
+      var t = [k[p[1] + 'DamageT1'], k[p[1] + 'DamageT2'], k[p[1] + 'DamageT3']];
+      if (t.some(has)) rows.push([p[0], t.map(function (v) { return (v == null || v === '') ? '–' : dashSignal(v); }).join(' / ')]);
+    });
+    [['Melee distance', 'meleeDistance'], ['Ranged distance', 'rangedDistance']].forEach(function (p) {
+      if (has(k[p[1]])) rows.push([p[0], dashSignal(k[p[1]])]);
+    });
+    if (!rows.length) return '';
+    return '<dl class="sh-dkit">' + rows.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd class="num">' + r[1] + '</dd></div>'; }).join('') + '</dl>';
+  }
+
+  function dashKitName(data) {
+    var k = kitObject(data);
+    return f(data, 'kit', '') || (k && k.name) || '';
+  }
+
+  function dashRailInner(data) {
+    var sl = skillLists(data);
+    var kit = dashKitName(data);
+    var kitRows = dashKitRows(data);
+    return '<section class="sh-dcard"><h3 class="sh-dh">Skills<small>' + sl.skills.length + '</small></h3>' + dashSkillGroups(data, false) +
+        '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="skills" aria-expanded="false">What each one covers</button></p></section>' +
+      '<section class="sh-dcard"><h3 class="sh-dh">Languages<small>' + sl.langs.length + '</small></h3>' + dashLanguages(data) + '</section>' +
+      '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : '') + '</h3>' +
+        (kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
+        (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '') + '</section>';
+  }
+
+  // The tabs the hero has. Story is a permission gate, as the panel is; Skills
+  // is a tab only while the sheet is too narrow for the left column.
+  function dashTabList(data) {
+    var own = parseAbilities(data).filter(function (a) { return a && typeof a === 'object' && !isCommonAbility(a); }).length;
+    var list = [
+      { id: 'abilities', label: 'Abilities', n: own },
+      { id: 'skills', label: 'Skills', n: skillLists(data).skills.length, narrow: true },
+      { id: 'features', label: 'Features', n: featureCount(data) },
+      { id: 'equipment', label: 'Equipment' }
+    ];
+    if (data.isGm || data.isOwner) list.push({ id: 'story', label: 'Story' });
+    return list;
+  }
+
+  function dashEquipment(data) {
+    var kit = dashKitName(data);
+    var rows = dashKitRows(data);
+    var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : 'Kit') + '</h3>' +
+      (kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
+      (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
+    out += '<h3 class="sh-dsec">Items</h3>';
+    if (data.armoryItems) {
+      out += '<p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
+        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p>';
+    } else {
+      out += '<div class="sh-dlist">' + pItemsPanel(data) + '</div>';
+    }
+    return out;
+  }
+
+  function dashPaneHtml(id, data) {
+    // The Skills tab stands in for the left column, so it keeps the way into
+    // the Skills panel, where skills and languages are chosen.
+    if (id === 'skills') return dashSkillGroups(data, true) + '<h3 class="sh-dsec">Languages</h3>' + dashLanguages(data) +
+      '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="skills" aria-expanded="false">What each one covers</button></p>';
+    if (id === 'features') return '<div class="sh-dlist">' + pFeaturesPanel(data) + '</div>';
+    if (id === 'equipment') return dashEquipment(data);
+    if (id === 'story') return '<div class="sh-dlist">' + pNotesPanel(data, true) + '</div>';
+    return '';
+  }
+
+  function dashTabs(data, uid) {
+    return '<div class="sh-dtabs sh-dq" role="tablist" aria-label="Sheet sections">' + dashTabList(data).map(function (t) {
+      var on = t.id === 'abilities';
+      return '<button type="button" role="tab" class="sh-dtab' + (t.narrow ? ' sh-dnarrow' : '') + '" id="cs-dt-' + uid + '-' + t.id + '"' +
+        ' aria-controls="cs-dp-' + uid + '-' + t.id + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-cs-dtab="' + t.id + '">' +
+        t.label + (t.n != null ? '<small class="num">' + t.n + '</small>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+
+  function dashPanes(data, uid) {
+    return dashTabList(data).filter(function (t) { return t.id !== 'abilities'; }).map(function (t) {
+      return '<div class="sh-dpane sh-dq" role="tabpanel" id="cs-dp-' + uid + '-' + t.id + '" aria-labelledby="cs-dt-' + uid + '-' + t.id + '"' +
+        ' data-dpane="' + t.id + '" data-cs-dpane-body="' + t.id + '">' + dashPaneHtml(t.id, data) + '</div>';
+    }).join('');
+  }
+
+  // The slim strip that follows the reader down the list once the boxes have
+  // scrolled away. It repeats what is on the boxes, so it is hidden from
+  // assistive technology and holds nothing to press.
+  function dashPin(data) {
+    var cur = num(data, 'stamina_current', 0), max = num(data, 'stamina_max', 0);
+    var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
+    var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
+    var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
+    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
+    return '<div class="sh-dpin sh-dq" aria-hidden="true"><div class="sh-dpin-in">' +
+      (src ? '<span class="sh-dpin-port"><img src="' + escAttr(src) + '" alt=""></span>' : '') +
+      '<span class="sh-dpin-who">' + esc(data.name || 'Unnamed Hero') + '</span>' +
+      '<span class="sh-dpin-st"><span class="sh-dpin-v num"><span class="sh-dk">Stamina</span>' + cur + ' <small>/ ' + max + '</small></span>' +
+        (max > 0 ? '<span class="sh-bar"><span style="width:' + pct + '%"></span>' + (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</span>' : '') + '</span>' +
+      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + num(data, 'heroic_resource_current', 0) + '</span>' +
+      (isNum(data, 'surges') ? '<span class="sh-dpin-v num"><span class="sh-dk">Surges</span>' + num(data, 'surges', 0) + '</span>' : '') +
+      '<span class="sh-dpin-v num sh-dpin-rec"><span class="sh-dk">Recoveries</span>' + rec + (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
+      '</div></div>';
   }
 
   // ── Panels (the papers pulled out from behind a part) ──────────────────────
@@ -3366,11 +3745,12 @@
     return out;
   }
 
-  function pNotesPanel(data) {
+  // inPane leaves out the jump words, which scroll a panel's own body.
+  function pNotesPanel(data, inPane) {
     var notes = f(data, 'backstory', '') || f(data, 'notes', '');
     var edit = data.canEditIdentity && data.campaignId
       ? edOpen('backstory', notes ? 'Edit' : 'Write your backstory') : '';
-    var jump = data.isGm
+    var jump = data.isGm && !inPane
       ? '<p class="sn-jump"><button type="button" class="sh-link" data-cs-jump="story-bg">Background</button>' +
         '<span aria-hidden="true"> · </span><button type="button" class="sh-link" data-cs-jump="story-gm">GM lore</button></p>'
       : '';
@@ -4280,12 +4660,12 @@
   }
   // The row appears once the tab does; the tab bar settles after the sheet.
   function showItemsRow(el) {
-    var row = el.querySelector('[data-cs-items-row]');
-    if (!row) return;
+    var rows = [].slice.call(el.querySelectorAll('[data-cs-items-row]'));
+    if (!rows.length) return;
     var tries = 0;
     (function look() {
-      if (!el.isConnected || !row.isConnected) return;
-      if (itemsTabButton()) { row.hidden = false; return; }
+      if (!el.isConnected || !rows[0].isConnected) return;
+      if (itemsTabButton()) { rows.forEach(function (r) { r.hidden = false; }); return; }
       if (++tries < 10) setTimeout(look, 400);
     })();
   }
@@ -4295,10 +4675,15 @@
     var templates = paperPanels(data).map(function (p) {
       return '<template data-sheet-panel="' + p.id + '" data-title="' + escAttr(p.title) + '" data-kind="' + escAttr(p.kind) + '"' + (p.size ? ' data-size="' + escAttr(p.size) + '"' : '') + '>' + p.html + '</template>';
     }).join('');
+    var uid = ++dashSeq;
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
-      pHead(data) + pIdentity(data) + pChanges(data) + pTurn(data) +
-      '<div class="sh-body"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + pFoot(data) + '</article>';
+      pHead(data) + '<header class="sh-top">' + dashPortrait(data) + pIdentity(data) + dashProg(data) + '</header>' +
+      pChanges(data) + dashPin(data) + dashBoxes(data) + pTurn(data) +
+      '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
+      '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
+      '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) + '</div></div>' +
+      pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
       templates + '</div>';
@@ -4370,6 +4755,8 @@
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    if (inst._dashIo) inst._dashIo.disconnect();
+    if (inst._dashRo) inst._dashRo.disconnect();
     if (inst._onTfDown) el.removeEventListener('pointerdown', inst._onTfDown, true);
     if (inst._onTfUp && typeof document !== 'undefined') {
       document.removeEventListener('pointerup', inst._onTfUp, true);
@@ -4377,7 +4764,7 @@
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -4394,6 +4781,69 @@
     });
   }
 
+  // setDashTab opens one of the dashboard's tabs; null when the sheet has no
+  // such tab (Story is a permission gate).
+  function setDashTab(el, id) {
+    var main = el.querySelector('[data-cs-dmain]');
+    if (!main || !main.querySelector('[data-cs-dtab="' + id + '"]')) return null;
+    main.setAttribute('data-dtab', id);
+    [].forEach.call(main.querySelectorAll('[data-cs-dtab]'), function (b) {
+      var on = b.getAttribute('data-cs-dtab') === id;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1');
+    });
+    return main;
+  }
+
+  // The widths dashCss's container queries switch at, read from the same box.
+  var DASH_AT = 820, DASH_RAIL_AT = 1100;
+
+  // Follows the sheet's width so the tabs stay true to what is drawn: the
+  // Abilities list is a tab panel only on the dashboard, and once the left
+  // column shows, the Skills tab is hidden, so an open Skills tab gives way
+  // to Abilities rather than leaving no visible tab selected.
+  function attachDashWidth(inst, el) {
+    if (inst._dashRo) { inst._dashRo.disconnect(); inst._dashRo = null; }
+    var sheet = el.querySelector('.sh-sheet'), root = el.querySelector('[data-sheet]');
+    var body = el.querySelector('[data-cs-dmain] > .sh-body');
+    if (!sheet || !root || !body || typeof ResizeObserver !== 'function') return;
+    var tab = body.id.replace('cs-dp-', 'cs-dt-');
+    inst._dashRo = new ResizeObserver(function (entries) {
+      var w = entries[entries.length - 1].contentRect.width;
+      var dash = quietLook(root) && w >= DASH_AT;
+      if (dash) { body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', tab); }
+      else { body.removeAttribute('role'); body.removeAttribute('aria-labelledby'); }
+      var main = el.querySelector('[data-cs-dmain]');
+      if (dash && w >= DASH_RAIL_AT && main && main.getAttribute('data-dtab') === 'skills') setDashTab(el, 'abilities');
+    });
+    inst._dashRo.observe(sheet);
+  }
+
+  // The pinned strip shows once the number boxes have scrolled out of the
+  // box the page scrolls in (Chronicle's main column, else the window).
+  function attachDashPin(inst, el) {
+    if (inst._dashIo) { inst._dashIo.disconnect(); inst._dashIo = null; }
+    attachDashWidth(inst, el);
+    var sheet = el.querySelector('.sh-sheet'), boxes = el.querySelector('.sh-dboxes');
+    if (!sheet || !boxes || typeof IntersectionObserver !== 'function') return;
+    var scroller = null;
+    for (var n = sheet.parentElement; n && n !== document.body; n = n.parentElement) {
+      var oy = getComputedStyle(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.clientHeight) { scroller = n; break; }
+    }
+    // Sticky offsets count from inside the scroll box's padding; the strip
+    // belongs at its very top edge.
+    var pad = scroller ? parseFloat(getComputedStyle(scroller).paddingTop) || 0 : 0;
+    if (pad) sheet.style.setProperty('--sh-stick', -pad + 'px');
+    inst._dashIo = new IntersectionObserver(function (entries) {
+      var en = entries[entries.length - 1];
+      var top = en.rootBounds ? en.rootBounds.top : 0;
+      var gone = !en.isIntersecting && en.boundingClientRect.height > 0 && en.boundingClientRect.bottom <= top + 1;
+      if (gone) sheet.classList.add('is-pinned'); else sheet.classList.remove('is-pinned');
+    }, { root: scroller });
+    inst._dashIo.observe(boxes);
+  }
+
   function mountPaper(inst, el, data) {
     var sm = Chronicle.sheetMotion;
     if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
@@ -4403,7 +4853,10 @@
     [].forEach.call(el.querySelectorAll('[data-cs-common]'), function (d) {
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
+    var keptMain = el.querySelector('[data-cs-dmain]');
+    var keptTab = keptMain ? keptMain.getAttribute('data-dtab') : null;
     el.innerHTML = paperSheetHtml(data);
+    if (keptTab && keptTab !== 'abilities') setDashTab(el, keptTab);
     appendBlockSlots(el, data);
     var root = el.querySelector('[data-sheet]');
     if (typeof sm.rescan === 'function') sm.rescan();
@@ -4414,6 +4867,7 @@
     if (root) attachPaperPanels(inst, el, root);
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
+    attachDashPin(inst, el);
     showItemsRow(el);
   }
 
@@ -4917,6 +5371,166 @@
       '}',
       'Q .sh-foot { margin-top:8px; }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' ').replace(/P /g, P + ' '); });
+  }
+
+  // The dashboard's rules (see "The computer dashboard"). The sheet itself is
+  // the container they measure, since the root can be wider than the sheet.
+  // Shape comes from the shared style-kit tokens, colour from the --paper-*
+  // tokens, so a kit or theme changes the boxes with the rest of the page.
+  // Q is the quiet look; D opens the wide-sheet query and W the one wide
+  // enough for the left column.
+  function dashCss() {
+    var Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+    var hair = 'color-mix(in srgb,var(--paper-edge) 60%,transparent)';
+    var edge = 'var(--shape-edge,1px) solid var(--paper-edge)';
+    var box = 'background:var(--paper);border:' + edge + ';border-radius:var(--shape-r-panel,12px);box-shadow:var(--elev-resting,none);';
+    var cap = 'font:600 calc(11px * var(--ts)) var(--paper-ui-font);letter-spacing:.07em;text-transform:uppercase;color:var(--paper-mute);';
+    return [
+      '[data-sheet] .sh-dq { display:none; }',
+      '[data-sheet] :is(.sh-top,.sh-dgrid,.sh-dmain) { display:contents; }',
+      'Q .sh-sheet { container:shdash / inline-size; }',
+      '@container shdash (min-width:820px) {',
+      '  Q .sh-fq { display:none; }',
+      '  Q .sh-dq { display:block; }',
+      // Header: portrait, the name as the heading, who they are as tags, progression at the right.
+      '  Q .sh-top { display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center; }',
+      '  Q .sh-top > .sh-id { display:block;padding:0;border:0;min-width:0; }',
+      '  Q .sh-dport { width:104px;height:104px;border-radius:var(--shape-r-panel,12px);overflow:hidden;border:' + edge + ';box-shadow:var(--elev-resting,none);background:var(--paper-under); }',
+      '  Q .sh-dport .sh-port-ph { font-size:calc(34px * var(--ts)); }',
+      '  Q .sh-dname { margin:0;font:700 calc(clamp(26px,3.4cqi,38px) * var(--ts))/1.1 var(--paper-head-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '  Q .sh-idwho { margin:4px 0 0;font:600 calc(16px * var(--ts))/1.35 var(--paper-ui-font);letter-spacing:0;color:var(--paper-ink); }',
+      '  Q .sh-idlv { font-weight:600;color:var(--paper-ink); }',
+      '  Q .sh-idsub { margin-left:0;padding-left:0;border-left:0;font-weight:400;color:var(--paper-ink-soft); }',
+      '  Q .sh-idsub::before { content:"\\00b7";margin:0 8px;color:var(--paper-mute); }',
+      '  Q :is(.sh-idset,.sh-idset-todo) { display:inline;margin:0; }',
+      '  Q .sh-idset { margin-top:4px; }',
+      '  Q :is(.sh-idset,.sh-idset-todo) > div { display:inline-flex;align-items:baseline;gap:6px;margin:10px 6px 0 0;vertical-align:top;padding:3px 8px;border:' + edge + ';border-radius:var(--shape-r-tag,4px);background:var(--paper); }',
+      '  Q :is(.sh-idset,.sh-idset-todo) dt { font:500 calc(11px * var(--ts)) var(--paper-ui-font);letter-spacing:.06em;text-transform:uppercase;color:var(--paper-mute); }',
+      '  Q :is(.sh-idset,.sh-idset-todo) dd { margin:0;font:600 calc(13px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-idset-todo > div { border-style:dashed;background:none; }',
+      '  Q .sh-idset-todo dd { font-weight:500;color:var(--paper-accent); }',
+      '  Q .sh-idset-todo .sh-idpick { font:inherit;color:inherit; }',
+      '  Q .sh-idmore:empty { display:none; }',
+      '  Q .sh-dprog { display:grid;gap:6px;justify-items:end; }',
+      '  Q .sh-dprog-b { border:0;background:none;padding:4px 6px;border-radius:var(--shape-r-ctl,8px);color:inherit;font:inherit;cursor:pointer;transition:background-color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dprog-b:hover { background:var(--paper-under); }',
+      '  Q .sh-dprog dl { display:flex;gap:20px;margin:0; }',
+      '  Q .sh-dprog dl div { min-width:44px;text-align:center; }',
+      '  Q .sh-dprog dt { ' + cap + 'font-weight:500;letter-spacing:.06em; }',
+      '  Q .sh-dprog dd { margin:2px 0 0;font:700 calc(20px * var(--ts)) var(--paper-num-font);color:var(--paper-ink); }',
+      '  Q .sh-dsync { margin:0;max-width:52ch;text-align:right;font:400 calc(12.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
+      // One box, used everywhere: a fact panel, filled and lifted a little. Pressing one opens its panel.
+      '  Q .sh-dbox { display:grid;align-content:center;gap:4px;min-width:0;padding:10px 4px 12px;text-align:center;' + box + 'color:var(--paper-ink);font:inherit;font-family:var(--paper-ui-font); }',
+      '  Q button.sh-dbox { cursor:pointer;transition:box-shadow var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out); }',
+      '  Q button.sh-dbox:hover,Q button.sh-dbox[aria-expanded="true"] { box-shadow:var(--elev-hover,none);border-color:color-mix(in srgb,var(--paper-accent) 55%,var(--paper-edge)); }',
+      '  Q button.sh-dbox:active { box-shadow:inset 0 1px 3px rgb(0 0 0 / .18); }',
+      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '  Q .sh-dk { display:block;' + cap + 'letter-spacing:.06em; }',
+      '  Q .sh-dbig { display:block;font:700 calc(30px * var(--ts))/1.1 var(--paper-num-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '  Q .sh-dbig small { font-size:.5em;font-weight:500;letter-spacing:0;color:var(--paper-ink-soft); }',
+      '  Q .sh-dbig .sh-neg { color:var(--paper-neg); }',
+      '  Q .sh-dsub { display:block;font:400 calc(12.5px * var(--ts))/1.35 var(--paper-ui-font);color:var(--paper-mute); }',
+      '  Q .sh-dboxes { display:grid;gap:12px;grid-template-columns:auto minmax(280px,1fr);grid-template-areas:"chars stam" "combat stam";align-items:stretch; }',
+      '  Q .sh-dchars { grid-area:chars;display:grid;grid-template-columns:repeat(5,minmax(64px,88px));gap:8px; }',
+      '  Q .sh-dcombat { grid-area:combat;display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px; }',
+      '  Q .sh-dcombat .sh-dk { font-size:calc(10.5px * var(--ts));letter-spacing:.03em; }',
+      '  Q .sh-dcombat .sh-dbig { font-size:calc(24px * var(--ts)); }',
+      '  Q .sh-dcombat .sh-dwords .sh-dbig { font-size:calc(14px * var(--ts));letter-spacing:0; }',
+      '  Q .sh-dstam { grid-area:stam;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 20px;align-content:start;align-items:start;padding:10px 12px;text-align:left; }',
+      '  Q .sh-dstam-n .sh-dbig { font-size:calc(34px * var(--ts)); }',
+      '  Q .sh-drec { text-align:right; }',
+      '  Q .sh-drec .sh-dbig { font-size:calc(24px * var(--ts)); }',
+      '  Q .sh-ddots { display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;margin-top:4px; }',
+      '  Q .sh-ddots i { width:8px;height:8px;border-radius:50%;background:var(--paper-ink-soft); }',
+      '  Q .sh-ddots i.off { background:none;box-shadow:inset 0 0 0 1.5px var(--paper-edge); }',
+      '  Q .sh-dstam-b { grid-column:1 / -1;display:block; }',
+      '  Q .sh-dstam .sh-bar,Q .sh-dpin .sh-bar { display:block;height:8px;border-radius:999px;margin:6px 0 0;background:var(--paper-under);overflow:visible; }',
+      '  Q .sh-dstam .sh-bar span,Q .sh-dpin .sh-bar span { border-radius:999px; }',
+      '  Q .sh-dstam .sh-bar .w,Q .sh-dpin .sh-bar .w { top:-3px;bottom:-3px;width:2px;border-radius:1px; }',
+      '  Q .sh-dsubs { display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 16px;margin-top:6px; }',
+      // The left column beside one tabbed area.
+      '  Q .sh-dgrid { display:block; }',
+      '  Q .sh-drail { display:none; }',
+      '  Q .sh-dmain { display:block;min-width:0; }',
+      '  Q .sh-dunder { display:flex;flex-wrap:wrap;gap:12px; }',
+      '  Q .sh-dunder .sh-dbox { padding:10px 12px;text-align:left;align-content:start; }',
+      '  Q .sh-dunder .sh-dbig { font-size:calc(26px * var(--ts)); }',
+      '  Q .sh-dres { flex:0 1 124px; }',
+      '  Q .sh-dsurge { flex:0 1 136px; }',
+      '  Q .sh-dpot { flex:0 1 216px; }',
+      '  Q .sh-ddmg { flex:1 1 190px; }',
+      '  Q .sh-dcond { flex:.8 1 150px; }',
+      '  Q .sh-dpotv { display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:2px 14px;margin-top:2px; }',
+      '  Q .sh-dpotv b { font:700 calc(20px * var(--ts))/1.2 var(--paper-num-font);color:var(--paper-ink); }',
+      '  Q .sh-dpotv span { grid-row:2;font:400 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '  Q .sh-dkv { display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:2px 0 0;font:400 calc(13.5px * var(--ts)) var(--paper-ui-font); }',
+      '  Q .sh-dkv dt { color:var(--paper-mute); }',
+      '  Q .sh-dkv dd { margin:0;font-weight:600;color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '  Q .sh-dval { display:block;margin-top:2px;font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dcard { padding:14px 16px;' + box + '}',
+      '  Q .sh-dh { display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 8px;padding-bottom:8px;border-bottom:var(--shape-rule,1px) solid ' + hair + ';font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dh small { font:400 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-align:right; }',
+      '  Q .sh-dgrp { display:flex;justify-content:space-between;margin:12px 0 2px;' + cap + 'color:var(--paper-accent); }',
+      '  Q .sh-dgrp small { font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
+      '  Q .sh-drows { list-style:none;margin:0;padding:0; }',
+      '  Q .sh-drows li { padding:4px 0;border-bottom:var(--shape-rule,1px) solid ' + hair + ';font:400 calc(14px * var(--ts))/1.45 var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-drows li:last-child { border-bottom:0; }',
+      '  Q .sh-drows li span { display:block;font-size:calc(12.5px * var(--ts));color:var(--paper-mute); }',
+      '  Q .sh-dpane .sh-drows { columns:2;column-gap:32px; }',
+      '  Q .sh-dpane .sh-drows li { break-inside:avoid; }',
+      '  Q .sh-dplain { margin:0;font:400 calc(14px * var(--ts))/1.45 var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dmore { margin:10px 0 0; }',
+      '  Q .sh-dmore .sh-link,Q .sh-dpane .sh-link { font-size:calc(13.5px * var(--ts));font-weight:500;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--paper-accent) 40%,transparent);text-underline-offset:3px; }',
+      '  Q .sh-dkit { margin:0; }',
+      '  Q .sh-dkit div { display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:var(--shape-rule,1px) solid ' + hair + ';font:400 calc(14px * var(--ts)) var(--paper-ui-font); }',
+      '  Q .sh-dkit dt { color:var(--paper-ink-soft); }',
+      '  Q .sh-dkit dd { margin:0;font-weight:700;color:var(--paper-ink);text-align:right; }',
+      '  Q .sh-dpane .sh-dkit { display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 24px;padding:0 8px; }',
+      // Tabs: the open one is underlined in the accent. They stay in view under the pinned strip.
+      '  Q .sh-dtabs { position:sticky;top:calc(var(--sh-stick,0px) + var(--sh-pin-h,52px));z-index:3;display:flex;flex-wrap:wrap;gap:0 28px;margin-top:20px;background:var(--color-bg-primary,var(--paper));border-bottom:var(--shape-rule,1px) solid var(--paper-edge); }',
+      '  Q .sh-dtab { display:inline-flex;align-items:baseline;min-height:44px;margin-bottom:-1px;padding:12px 0 10px;border:0;border-bottom:2px solid transparent;background:none;cursor:pointer;font:600 calc(12px * var(--ts)) var(--paper-ui-font);letter-spacing:.09em;text-transform:uppercase;color:var(--paper-mute);transition:color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dtab:hover { color:var(--paper-ink); }',
+      '  Q .sh-dtab[aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '  Q .sh-dtab small { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
+      '  Q .sh-dtab.sh-dnarrow { display:inline-flex; }',
+      '  Q .sh-dmain > .sh-body { display:block;margin-top:12px;scroll-margin-top:110px; }',
+      '  Q .sh-dmain > .sh-body > .sh-col { display:block; }',
+      '  Q .sh-dmain:not([data-dtab="abilities"]) > .sh-body { display:none; }',
+      '  Q .sh-dpane { display:none;padding-top:8px;scroll-margin-top:110px; }',
+      '  Q .sh-dmain:is([data-dtab="skills"]) > .sh-dpane[data-dpane="skills"],Q .sh-dmain[data-dtab="features"] > .sh-dpane[data-dpane="features"],' +
+        'Q .sh-dmain[data-dtab="equipment"] > .sh-dpane[data-dpane="equipment"],Q .sh-dmain[data-dtab="story"] > .sh-dpane[data-dpane="story"] { display:block; }',
+      '  Q .sh-dsec { margin:24px 0 0;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dpane > .sh-dsec:first-child { margin-top:12px; }',
+      '  Q .sh-dpara { margin:12px 8px 0;max-width:66ch;font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '  Q .sh-dpane .sh-dmore { margin:10px 8px 0; }',
+      // The pinned strip: Stamina and the resource stay in view once the boxes scroll off.
+      '  Q .sh-dpin { position:sticky;top:var(--sh-stick,0px);z-index:4;height:0;margin-bottom:-18px; }',
+      '  Q .sh-dpin-in { display:flex;align-items:center;gap:20px;height:var(--sh-pin-h,52px);margin:0 -12px;padding:0 12px;background:var(--paper);border:' + edge + ';border-top:0;border-radius:0 0 var(--shape-r-panel,12px) var(--shape-r-panel,12px);box-shadow:var(--elev-hover,none);font-family:var(--paper-ui-font);' +
+        'opacity:0;transform:translateY(-100%);pointer-events:none;transition:transform var(--dur-micro) var(--ease-in),opacity var(--dur-micro) var(--ease-in); }',
+      '  Q .sh-sheet.is-pinned .sh-dpin-in { opacity:1;transform:none;transition:transform var(--dur-standard,200ms) var(--ease-out),opacity var(--dur-standard,200ms) var(--ease-out); }',
+      '  Q .sh-dpin-port { width:34px;height:34px;flex:none;overflow:hidden;border-radius:var(--shape-r-ctl,8px);border:' + edge + '; }',
+      '  Q .sh-dpin-port img { display:block;width:100%;height:100%;object-fit:cover; }',
+      '  Q .sh-dpin-who { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 calc(15px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dpin-st { display:flex;align-items:center;gap:10px; }',
+      '  Q .sh-dpin-st .sh-bar { width:140px;margin:0; }',
+      '  Q .sh-dpin-v { white-space:nowrap;font:700 calc(15px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dpin-v small { font-size:calc(12.5px * var(--ts));font-weight:500;color:var(--paper-ink-soft); }',
+      '  Q .sh-dpin .sh-dk { display:inline;margin-right:6px; }',
+      '  Q .sh-dpin-rec { margin-left:auto; }',
+      '  Q .sh-dfoot { display:inline; }',
+      '}',
+      '@container shdash (min-width:1100px) {',
+      '  Q .sh-dboxes { grid-template-columns:auto auto minmax(260px,1fr);grid-template-areas:"chars combat stam"; }',
+      '  Q .sh-dchars { grid-template-columns:repeat(5,minmax(64px,80px)); }',
+      '  Q .sh-dcombat { grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(60px,74px); }',
+      '  Q .sh-dgrid { display:grid;grid-template-columns:264px minmax(0,1fr);gap:24px;align-items:start; }',
+      '  Q .sh-drail { display:grid;gap:12px; }',
+      '  Q .sh-dtab.sh-dnarrow { display:none; }',
+      '  Q .sh-dmain[data-dtab="skills"] > .sh-body { display:block; }',
+      '  Q .sh-dmain[data-dtab="skills"] > .sh-dpane[data-dpane="skills"] { display:none; }',
+      '}',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b) { transition:none !important; }'
+    ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
   }
 
   function injectPaperStyles() {
@@ -5489,7 +6103,7 @@
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
       '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
-    ].concat(quietLookCss()).join('\n');
+    ].concat(quietLookCss(), dashCss()).join('\n');
     var style = document.createElement('style');
     style.id = 'ds-character-sheet-paper-styles';
     style.textContent = css;
@@ -5625,6 +6239,8 @@
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
+      topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
+      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, dashCss: dashCss,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
