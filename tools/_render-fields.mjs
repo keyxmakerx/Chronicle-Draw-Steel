@@ -157,6 +157,12 @@ export const AUTHORED_SUFFIX = '_text';
 /** Provenance bookkeeping, folded into one "Provenance Notes" column. */
 export const PROVENANCE_KEYS = ['custom_fields', 'derived_from', 'omissions'];
 
+/**
+ * How Chronicle's hero creator draws an entry's card: a border from its
+ * library and a colour. Not rules text, so never folded into Details.
+ */
+export const CARD_LOOK_KEYS = ['card_border', 'card_colour'];
+
 /** The two aggregate columns the builder derives. */
 export const DETAILS_KEY = 'details' + DERIVED_SUFFIX;
 export const PROVENANCE_KEY = 'provenance' + DERIVED_SUFFIX;

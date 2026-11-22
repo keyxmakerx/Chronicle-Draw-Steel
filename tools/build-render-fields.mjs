@@ -33,6 +33,7 @@ import {
   CATEGORY_BY_FILE,
   WIDGET_ONLY,
   PROVENANCE_KEYS,
+  CARD_LOOK_KEYS,
   DERIVED_SUFFIX,
   DETAILS_KEY,
   PROVENANCE_KEY,
@@ -104,6 +105,7 @@ function rebuildProperties(properties, category, flattened = new Set()) {
         !columnKeys.has(k) &&
         !exclude.has(k) &&
         !PROVENANCE_KEYS.includes(k) &&
+        !CARD_LOOK_KEYS.includes(k) &&
         !k.endsWith('_text'),
     );
     const details = foldEntries(authored, rest);
