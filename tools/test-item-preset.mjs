@@ -58,6 +58,7 @@ test('the item preset is the campaign\'s Items, taken on the Director\'s yes', (
   // accepts takes rarity and attunement off; Type is kept and reused.
   assert.deepEqual(item.switch, {
     label: 'treasure fields',
+    summary: 'Type, Kind, Echelon, Keywords, Effect, the three levels and how to make it',
     set_aside: ['rarity', 'attunement'],
     reuse: ['type'],
   });
