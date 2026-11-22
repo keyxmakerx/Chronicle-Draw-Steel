@@ -611,3 +611,85 @@ test('dashboard: the open tab survives the page refreshing itself after a save',
   const inPlace = { _csKey: 'c1/e1', querySelector: (sel) => (sel === '[data-cs-dmain]' ? { getAttribute: () => 'features' } : null) };
   assert.equal(cs.dashTabToKeep(inPlace), 'features', 'a redraw in place keeps what is on screen');
 });
+
+// ── The dashboard's ability lists ─────────────────────────────────────────
+
+test('dashboard abilities: one group per action, own columns, the face list kept for phones', () => {
+  const data = faceData(FACE.concat([{ name: 'Charge', type: 'main' }, { name: 'Free Strike', type: 'main' }]));
+  const html = cs.paperSheetHtml(data);
+  assert.ok(/<section class="sh-band sh-abs sh-o2 sh-fq"/.test(html), 'the face list is hidden only on the dashboard');
+  assert.ok(/<section class="sh-dabs sh-dq" data-cs-dabs/.test(html), 'the dashboard list shows only on the dashboard');
+  const d = cs.dashAbilities(data, 1);
+  const groups = [...d.matchAll(/data-dgroup="([a-z]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(groups, ['main', 'maneuver', 'triggered', 'free', 'every']);
+  assert.ok(/<span>Cost<\/span><span>Distance<\/span><span>Target<\/span>/.test(d));
+  assert.ok(/Damage at/.test(d.split('data-dgroup="maneuver"')[0]), 'main actions carry the damage heading');
+  assert.ok(/<span class="sh-danote">Judge one creature\.<\/span>/.test(d), 'a maneuver says what it does under its name');
+  assert.ok(/<span class="sh-danote"><b>Trigger<\/b> A judged creature hurts an ally<\/span>/.test(d), 'a triggered action names its trigger');
+  assert.ok(/>4<i aria-hidden="true">·<\/i>7<i aria-hidden="true">·<\/i>9 holy</.test(d), 'Halt: the hero\'s own tier results');
+  // The Free Strike main action joins the moves every hero has, here only.
+  const every = d.split('data-dgroup="every"')[1];
+  assert.ok(/>Charge</.test(every) && />Free Strike</.test(every));
+  assert.ok(/>Free Strike</.test(cs.pAbilities(data).split('sx-std')[0]), 'the face keeps Free Strike where it was');
+});
+
+test('dashboard abilities: what the resource cannot pay for folds into one line naming each', () => {
+  const d = cs.dashAbilities(faceData(FACE), 1);
+  assert.ok(/<div class="sh-dai is-short">.*?Arrest/.test(d), 'Arrest (5) costs more than 4 Wrath');
+  assert.ok(!/<div class="sh-dai is-short">[^]*?Driving/.test(d.split('Arrest')[0]), 'Driving (3) is paid for');
+  assert.ok(/1 more cost over 4 Wrath<\/span>.*Arrest <b class="num">5<\/b>/.test(d));
+  assert.ok(/role="switch" aria-checked="true" data-cs-dafford>.*Only what 4 Wrath pays for<small class="num">5 of 6<\/small>/.test(d));
+  assert.ok(/<span class="sh-sr">, you have 4<\/span>/.test(d), 'a screen reader hears why a row is grey');
+  const rich = cs.dashAbilities(faceData(FACE, { heroic_resource_current: 9 }), 1);
+  assert.ok(!/data-cs-dafford/.test(rich) && !/sh-dcut/.test(rich), 'no switch when everything is paid for');
+});
+
+test('dashboard abilities: a hero with no free strike synced gets the kit\'s line', () => {
+  const d = cs.dashAbilities(faceData(FACE.filter((a) => a.category !== 'freeStrike'), {
+    kit_details_json: JSON.stringify([{ meleeDamageT1: 1, meleeDamageT2: 2, meleeDamageT3: 3 }])
+  }), 1);
+  assert.ok(/data-cs-dar="-1"/.test(d) && /Melee free strike/.test(d) && /kit \+1 · \+2 · \+3/.test(d));
+});
+
+test('dashboard full card: the rules, then the roll worked out for this hero and what it costs', () => {
+  const data = faceData(FACE, { might: 2 });
+  const arrest = cs.dashAbCard(FACE[1], data);
+  assert.ok(/<h4>For Tyne<\/h4>/.test(arrest));
+  assert.ok(/2d10 \+ 2<span>most often 12 to 16<\/span>/.test(arrest));
+  assert.ok(/<dd>8 damage<\/dd>/.test(arrest) && /36 in 100/.test(arrest));
+  assert.ok(/Costs 5 Wrath\. You have 4, so 1 short\./.test(arrest));
+  const halt = cs.dashAbCard(FACE[0], data);
+  assert.ok(/A signature ability\. It costs nothing\./.test(halt));
+  const pushed = { name: 'Shove', type: 'action', powerRollChars: ['might'],
+    tiers: [{ type: 'applied', applied: { tier1: { display: '{{potency}} slowed', potency: { characteristic: 'might', value: '@potency.weak' } } } }] };
+  assert.ok(/<dd>M &lt; 0 /.test(cs.dashAbCard(pushed, data)), 'potency is filled in from the hero\'s numbers');
+  assert.ok(!/For Tyne/.test(cs.dashAbCard({ name: 'Look', type: 'maneuver' }, data)), 'nothing to work out, no hero column');
+});
+
+test('dashboard abilities escape what the hero carries', () => {
+  const bad = '<img src=x onerror=1>';
+  const data = faceData([{ name: bad, type: 'maneuver', effectAfter: bad, trigger: bad, targetCustom: bad },
+    { name: bad, type: 'triggered', trigger: bad, cost: 9 }, { name: 'Charge', type: 'main' }], { heroic_resource_name: bad });
+  const html = cs.dashAbilities(data, 1) + cs.dashAbCard(JSON.parse(data.fields.abilities_json)[0], Object.assign({}, data, { name: bad }));
+  assert.ok(!/<img src=x/.test(html));
+});
+
+test('dashboard abilities: the filter shows one group, the switch brings back what cannot be paid for', () => {
+  const mk = (attrs) => ({ attrs: Object.assign({}, attrs), hidden: false,
+    getAttribute(k) { return this.attrs[k] == null ? null : this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = String(v); },
+    removeAttribute(k) { delete this.attrs[k]; }, hasAttribute(k) { return k in this.attrs; } });
+  const btns = ['all', 'main', 'every'].map((id) => mk({ 'data-cs-dfilt': id }));
+  const groups = ['main', 'maneuver', 'every'].map((id) => mk({ 'data-dgroup': id }));
+  const sw = mk({ 'aria-checked': 'true' });
+  const box = mk({ 'data-dfilter': 'all', 'data-dafford': '' });
+  box.querySelector = (sel) => { const m = sel.match(/data-cs-dfilt="([a-z]+)"/); return m ? (btns.find((b) => b.attrs['data-cs-dfilt'] === m[1]) || null) : sw; };
+  box.querySelectorAll = (sel) => (/dfilt/.test(sel) ? btns : groups);
+  const el = { querySelector: () => box };
+  cs.setDashFilter(el, 'main');
+  assert.deepEqual(groups.map((g) => g.hidden), [false, true, true]);
+  assert.deepEqual(btns.map((b) => b.attrs['aria-pressed']), ['false', 'true', 'false']);
+  assert.equal(cs.setDashFilter(el, 'maneuver'), null, 'a filter the list does not have changes nothing');
+  assert.equal(box.attrs['data-dfilter'], 'main');
+  cs.setDashAfford(el, false);
+  assert.ok(!('data-dafford' in box.attrs) && sw.attrs['aria-checked'] === 'false');
+});

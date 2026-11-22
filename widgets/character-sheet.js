@@ -2311,6 +2311,35 @@
     };
     el.addEventListener('change', inst._onEdChange);
 
+    // A dashboard row unfolds in place to its full card.
+    function toggleDashRow(btn) {
+      var item = btn.parentNode;
+      var card = item && item.querySelector('.sh-dacard');
+      if (!card) return;
+      var open = card.hidden;
+      var a = abilities[parseInt(btn.getAttribute('data-cs-dar'), 10)];
+      if (open && !card.firstChild && a) card.innerHTML = dashAbCard(a, data);
+      card.hidden = !open;
+      item.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    // A name in "Every hero can" opens that move's card under the paragraph;
+    // the same name again, or another one, closes it.
+    function toggleEvery(btn) {
+      var sec = btn.closest('.sh-devery');
+      var card = sec && sec.querySelector('.sh-devcard');
+      var a = abilities[parseInt(btn.getAttribute('data-cs-devery'), 10)];
+      if (!card || !a) return;
+      var open = btn.getAttribute('aria-expanded') !== 'true';
+      [].forEach.call(sec.querySelectorAll('[data-cs-devery]'), function (b) { b.setAttribute('aria-expanded', 'false'); });
+      if (open) {
+        card.innerHTML = '<h4 class="sh-devname">' + esc(a.name || 'Untitled') + '</h4>' + dashAbCard(a, data);
+        btn.setAttribute('aria-expanded', 'true');
+      }
+      card.hidden = !open;
+    }
+
     // Swaps an ability line's short card for its full one, and back.
     function toggleFullCard(btn) {
       var line = btn.closest('details');
@@ -2343,6 +2372,23 @@
       if (!t || !t.closest) return;
       var dtab = t.closest('[data-cs-dtab]');
       if (dtab) { e.preventDefault(); pickDashTab(dtab.getAttribute('data-cs-dtab')); return; }
+      var dar = t.closest('[data-cs-dar]');
+      if (dar) { e.preventDefault(); toggleDashRow(dar); return; }
+      var dev = t.closest('[data-cs-devery]');
+      if (dev) { e.preventDefault(); toggleEvery(dev); return; }
+      var dfl = t.closest('[data-cs-dfilt]');
+      if (dfl) { e.preventDefault(); setDashFilter(el, dfl.getAttribute('data-cs-dfilt')); return; }
+      var daf = t.closest('[data-cs-dafford]');
+      if (daf) { e.preventDefault(); setDashAfford(el, daf.getAttribute('aria-checked') !== 'true'); return; }
+      var dsh = t.closest('[data-cs-dshow]');
+      if (dsh) {
+        e.preventDefault();
+        var grp = dsh.closest('.sh-dag'), on = dsh.getAttribute('aria-expanded') !== 'true';
+        if (grp) grp.classList.toggle('is-all', on);
+        dsh.setAttribute('aria-expanded', on ? 'true' : 'false');
+        dsh.textContent = on ? 'Fold them away' : 'Show them';
+        return;
+      }
       var tab = t.closest('[data-ds-tab]');
       if (tab) { e.preventDefault(); selectTab(tab.getAttribute('data-ds-tab'), false); return; }
       var chip = t.closest('[data-cs-change-image]');
@@ -2991,7 +3037,7 @@
   // A hero with no free strike synced still gets one line, worked out from
   // the kit: its distance and the kit's damage bonus per tier. The base damage
   // is Foundry's, so no total is invented here.
-  function freeStrikeLine(data) {
+  function freeStrikeParts(data) {
     var k = kitObject(data) || {};
     var has = function (v) { return v != null && v !== '' && v !== 0; };
     var sets = [['Melee', 'melee', 'Melee 1'], ['Ranged', 'ranged', 'Ranged']].filter(function (p) {
@@ -3003,11 +3049,15 @@
       return (typeof v === 'number') ? (v >= 0 ? '+' + v : String(v)) : '–';
     }).join(' · ') : '';
     var en = glossaryEntry('free-strike');
-    var head = '<span class="sx-top"><b class="sx-name">' + set[0] + ' free strike</b><span class="sx-res num">' +
-      (bonus ? 'kit ' + esc(bonus) : '') + '</span></span><span class="sx-meta">' + esc(set[2]) + '</span>';
     var body = '<p class="sx-eff">' + (en && en.description ? refText(en.description) : 'A quick, automatic attack you can make outside your turn.') + '</p>' +
       (bonus ? '<p class="sx-eff ds-muted">Damage bonus from your kit at each tier: ' + esc(bonus) + '.</p>' : '');
-    return foldHtml('sx-line', head, body, false);
+    return { name: set[0] + ' free strike', dist: set[2], bonus: bonus, body: body };
+  }
+  function freeStrikeLine(data) {
+    var p = freeStrikeParts(data);
+    var head = '<span class="sx-top"><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
+      (p.bonus ? 'kit ' + esc(p.bonus) : '') + '</span></span><span class="sx-meta">' + esc(p.dist) + '</span>';
+    return foldHtml('sx-line', head, p.body, false);
   }
 
   // Every hero's own abilities come first; the common ones follow as one fold.
@@ -3044,7 +3094,7 @@
     }).join('');
     // The panel is the place to filter a long list, so it keeps a word of its own.
     var all = abilities.length ? '<button type="button" class="sh-link sx-all" data-sheet-open="abilities">All abilities</button>' : '';
-    return '<section class="sh-band sh-abs sh-o2" aria-label="Abilities">' +
+    return '<section class="sh-band sh-abs sh-o2 sh-fq" aria-label="Abilities">' +
       (abilities.length ? '' : pEmpty('No abilities yet.')) + html + all + '</section>';
   }
 
@@ -3432,7 +3482,7 @@
   // The tabs the hero has. Story is a permission gate, as the panel is; Skills
   // is a tab only while the sheet is too narrow for the left column.
   function dashTabList(data) {
-    var own = parseAbilities(data).filter(function (a) { return a && typeof a === 'object' && !isCommonAbility(a); }).length;
+    var own = parseAbilities(data).filter(function (a) { return a && typeof a === 'object' && !isEveryHero(a); }).length;
     var list = [
       { id: 'abilities', label: 'Abilities', n: own },
       { id: 'skills', label: 'Skills', n: skillLists(data).skills.length, narrow: true },
@@ -3505,6 +3555,210 @@
       (isNum(data, 'surges') ? '<span class="sh-dpin-v num"><span class="sh-dk">Surges</span>' + num(data, 'surges', 0) + '</span>' : '') +
       '<span class="sh-dpin-v num sh-dpin-rec"><span class="sh-dk">Recoveries</span>' + rec + (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
       '</div></div>';
+  }
+
+  // ── The dashboard's ability lists ──────────────────────────────────────────
+
+  // Each group has its own columns, as Foundry's sheet does: main actions and
+  // free strikes show damage, maneuvers what they do, triggered actions their
+  // trigger.
+  var DASH_AB_LABELS = { main: 'Main action', maneuver: 'Maneuver', triggered: 'Triggered action', free: 'Free strike' };
+  var TIER_BANDS = ['≤11', '12–16', '17+'];
+  var TIER_MOST = ['11 or less', '12 to 16', '17 or more'];
+
+  function abCost(a) { return Number(a && a.cost) > 0 ? Number(a.cost) : 0; }
+
+  // The dashboard counts the Free Strike main action, which every hero has,
+  // with the other common moves; the face keeps it where it always was.
+  function isEveryHero(a) {
+    if (isCommonAbility(a)) return true;
+    var c = String((a && a.category) || '').toLowerCase();
+    return !!a && !abCost(a) && c !== 'signature' && c !== 'heroic' && c !== 'freestrike' &&
+      String(a.name || '').trim().toLowerCase() === 'free strike';
+  }
+  function heroHave(data) { return num(data, 'heroic_resource_current', 0); }
+  function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
+
+  // The first sentence of a text, whole, for the line under a row's name.
+  function firstSentence(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    var m = t.match(/^(.+?[.!?])(\s|$)/);
+    return teaser(m ? m[1] : t, 320);
+  }
+
+  function dashAbCost(a, data) {
+    if (groupOf(a) === 'signature') return '<span class="sh-dac is-sig">Signature</span>';
+    var c = abCost(a), have = heroHave(data);
+    if (!c) return '<span class="sh-dac"></span>';
+    return '<span class="sh-dac num">' + esc(costLabel(a, data)) +
+      (c > have ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
+  }
+
+  // The hero's tier results. A main action with no power roll says so, so an
+  // empty cell is never read as missing data.
+  function dashAbResult(a, data, kind) {
+    var r = heroResult(a, heroBest(a, data));
+    if (r) return '<span class="sh-dadm num">' + esc(r).replace(/ · /g, '<i aria-hidden="true">·</i>') + '</span>';
+    if (kind === 'main' && !powerRollChars(a).length) return '<span class="sh-dadm is-none">No roll</span>';
+    return '<span class="sh-dadm"></span>';
+  }
+
+  // One ability as one line; it unfolds in place to the full card, which is
+  // built when first asked for.
+  function dashAbRow(a, data, kind, idx, uid) {
+    var short = abCost(a) > heroHave(data);
+    var dist = distanceLabel(a), tgt = kind === 'free' ? '' : targetLabel(a);
+    var note = '';
+    if (kind === 'triggered' && a.trigger) note = '<span class="sh-danote"><b>Trigger</b> ' + esc(firstSentence(cleanFoundryText(a.trigger))) + '</span>';
+    else if (kind === 'maneuver') {
+      var one = firstSentence(abilityEffectText(a));
+      if (one) note = '<span class="sh-danote">' + esc(one) + '</span>';
+    }
+    var id = 'cs-da-' + uid + '-' + idx;
+    return '<div class="sh-dai' + (short ? ' is-short' : '') + '">' +
+      '<button type="button" class="sh-dar" aria-expanded="false" aria-controls="' + id + '" data-cs-dar="' + idx + '">' +
+        '<span class="sh-dan">' + esc(a.name || 'Untitled') + '</span>' + (kind === 'free' ? '<span></span>' : dashAbCost(a, data)) +
+        '<span class="sh-dad">' + esc(dist) + '</span><span class="sh-dat">' + esc(tgt) + '</span>' +
+        dashAbResult(a, data, kind) + '<span class="sh-dachev" aria-hidden="true">' + fa('chevron-down') + '</span>' + note +
+      '</button><div class="sh-dacard" id="' + id + '" hidden></div></div>';
+  }
+
+  // A hero with no free strike synced still gets its line, from the kit, with
+  // its card already written.
+  function dashFreeStrikeRow(data, uid) {
+    var p = freeStrikeParts(data);
+    var id = 'cs-da-' + uid + '-free';
+    return '<div class="sh-dai">' +
+      '<button type="button" class="sh-dar" aria-expanded="false" aria-controls="' + id + '" data-cs-dar="-1">' +
+        '<span class="sh-dan">' + esc(p.name) + '</span><span></span><span class="sh-dad">' + esc(p.dist) + '</span><span class="sh-dat"></span>' +
+        '<span class="sh-dadm num">' + (p.bonus ? 'kit ' + esc(p.bonus) : '') + '</span>' +
+        '<span class="sh-dachev" aria-hidden="true">' + fa('chevron-down') + '</span>' +
+      '</button><div class="sh-dacard is-one" id="' + id + '" hidden><div class="sh-darules">' + p.body + '</div></div></div>';
+  }
+
+  // The full card: the rules as written on the left, and on the right the
+  // same ability worked out for this hero (the roll, how often each tier comes
+  // up, the results with potency filled in) and whether they can pay for it.
+  function dashAbCard(a, data) {
+    var best = heroBest(a, data);
+    var you = '';
+    if (best != null) {
+      var odds = tierOdds(best);
+      var most = odds.indexOf(Math.max.apply(null, odds));
+      var pot = potencyOf(data);
+      var rows = '';
+      for (var n = 1; n <= 3; n++) {
+        var txt = tierFragments(a, n, best);
+        if (pot) {
+          txt = txt.replace(/<\s*(WEAK|AVERAGE|STRONG)\b/g, function (m, w) {
+            var v = pot[{ WEAK: 0, AVERAGE: 1, STRONG: 2 }[w]];
+            return v == null ? m : '< ' + v;
+          });
+        }
+        rows += '<div><dt class="num">' + TIER_BANDS[n - 1] + '<small>' + odds[n - 1] + ' in 100</small></dt>' +
+          '<dd>' + (txt ? refSynced(txt) : '<span class="ds-muted">—</span>') + '</dd></div>';
+      }
+      you += '<p class="sh-droll num">2d10 ' + (best < 0 ? '− ' + (-best) : '+ ' + best) +
+          '<span>most often ' + TIER_MOST[most] + '</span></p>' +
+        '<div class="sh-dodds" aria-hidden="true">' + odds.map(function (o) { return '<i style="flex:' + o + '"></i>'; }).join('') + '</div>' +
+        '<dl class="sh-dtier">' + rows + '</dl>';
+    }
+    var c = abCost(a), have = heroHave(data);
+    if (c) you += '<p class="sh-dpay' + (c > have ? ' is-short' : '') + '">Costs ' + esc(costLabel(a, data)) + '. You have ' + have +
+      (c > have ? ', so ' + (c - have) + ' short.' : '.') + '</p>';
+    else if (groupOf(a) === 'signature') you += '<p class="sh-dpay">A signature ability. It costs nothing.</p>';
+    var who = esc(firstName(data.name));
+    return '<div class="sh-darules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
+      (you ? '<div class="sh-dyou"><h4>For ' + who + '</h4>' + you + '</div>' : '');
+  }
+
+  function sortOwn(kind, list) {
+    if (kind === 'free') return list;
+    return list.slice().sort(function (x, y) {
+      var sx = groupOf(x) === 'signature' ? 0 : 1, sy = groupOf(y) === 'signature' ? 0 : 1;
+      return (sx - sy) || (abCost(x) - abCost(y)) || String(x.name || '').localeCompare(String(y.name || ''));
+    });
+  }
+
+  // A group of rows under its own column headings. What the hero cannot pay
+  // for folds into one line that still names each and its cost.
+  function dashAbGroup(kind, list, data, all, uid) {
+    var have = heroHave(data);
+    var rolled = (kind === 'main' || kind === 'free') &&
+      (!list.length || list.some(function (a) { return !!heroResult(a, heroBest(a, data)); }));
+    var cols = kind === 'free' ? '<span></span><span>Distance</span><span></span>' : '<span>Cost</span><span>Distance</span><span>Target</span>';
+    var rows = list.length
+      ? list.map(function (a) { return dashAbRow(a, data, kind, all.indexOf(a), uid); }).join('')
+      : dashFreeStrikeRow(data, uid);
+    var short = list.filter(function (a) { return abCost(a) > have; });
+    var cut = '';
+    if (short.length) {
+      cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
+          ' cost over ' + have + ' ' + esc(heroResName(data)) + '</span><span class="sh-dcut-names">' +
+        short.map(function (a, i) {
+          return '<span class="sh-dcut-nm">' + esc(a.name || 'Untitled') + ' <b class="num">' + abCost(a) + '</b>' +
+            (i < short.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
+        }).join(' ') + '</span>' +
+        '<button type="button" class="sh-link" data-cs-dshow aria-expanded="false">Show them</button></p>';
+    }
+    return '<section class="sh-dag" data-dgroup="' + kind + '">' +
+      '<div class="sh-dagh"><h3>' + DASH_AB_LABELS[kind] + '<small class="num">' + (list.length || 1) + '</small></h3>' +
+        '<span class="sh-dcols" aria-hidden="true">' + cols + '</span>' +
+        (rolled ? '<span class="sh-dtiers num" aria-hidden="true">Damage at ≤11 · 12–16 · 17+</span>' : '<span></span>') + '</div>' +
+      rows + cut + '</section>';
+  }
+
+  // The moves every hero has, as one paragraph of names. A name unfolds that
+  // move's card under the paragraph.
+  function dashEvery(common, all, uid) {
+    if (!common.length) return '';
+    var list = common.slice().sort(function (x, y) { return String(x.name || '').localeCompare(String(y.name || '')); });
+    var id = 'cs-de-' + uid;
+    return '<section class="sh-devery" data-dgroup="every">' +
+      '<h3>Every hero can<small class="num">' + list.length + '</small></h3><p>' +
+      list.map(function (a, i) {
+        return '<span class="sh-devit"><button type="button" class="sh-link" data-cs-devery="' + all.indexOf(a) + '" aria-expanded="false" aria-controls="' + id + '">' +
+          esc(a.name || 'Untitled') + '</button>' + (i < list.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
+      }).join(' ') + '</p><div class="sh-dacard sh-devcard" id="' + id + '" hidden></div></section>';
+  }
+
+  // The filter row picks one group or all of them; the switch at its end
+  // folds away what the current heroic resource cannot pay for. It is only
+  // there when something costs more than the hero has.
+  function dashAbFilter(groups, common, own, data) {
+    var have = heroHave(data);
+    var can = own.filter(function (a) { return abCost(a) <= have; }).length;
+    var btn = function (id, label, n, on) {
+      return '<button type="button" data-cs-dfilt="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + label +
+        '<small class="num">' + n + '</small></button>';
+    };
+    var out = btn('all', 'All', own.length, true);
+    groups.forEach(function (g) { out += btn(g.kind, DASH_AB_LABELS[g.kind], g.list.length || 1, false); });
+    if (common.length) out += btn('every', 'Every hero', common.length, false);
+    if (can < own.length) {
+      out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
+        '<span>Only what ' + have + ' ' + esc(heroResName(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
+        '<span class="sh-dsw" aria-hidden="true"></span></button>';
+    }
+    return '<div class="sh-dfilt" role="group" aria-label="Show abilities">' + out + '</div>';
+  }
+
+  // The dashboard's Abilities tab. The face's list stays for phones and the
+  // paper styles; this one shows only on the dashboard.
+  function dashAbilities(data, uid) {
+    var all = parseAbilities(data);
+    var objs = all.filter(function (a) { return a && typeof a === 'object'; });
+    var own = objs.filter(function (a) { return !isEveryHero(a); });
+    var common = objs.filter(isEveryHero);
+    var groups = ACTION_ORDER.map(function (k) {
+      return { kind: k, list: sortOwn(k, own.filter(function (a) { return actionKind(a) === k; })) };
+    }).filter(function (g) { return g.list.length || (g.kind === 'free' && own.length); });
+    var body = objs.length
+      ? dashAbFilter(groups, common, own, data) +
+        groups.map(function (g) { return dashAbGroup(g.kind, g.list, data, all, uid); }).join('') +
+        dashEvery(common, all, uid)
+      : pEmpty('No abilities yet.');
+    return '<section class="sh-dabs sh-dq" data-cs-dabs data-dfilter="all" data-dafford>' + body + '</section>';
   }
 
   // ── Panels (the papers pulled out from behind a part) ──────────────────────
@@ -4702,7 +4956,7 @@
       pChanges(data) + dashPin(data) + dashBoxes(data) + pTurn(data) +
       '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
       '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
-      '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + paperLedger(data) + '</div>' +
+      '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + dashAbilities(data, uid) + paperLedger(data) + '</div>' +
       '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) + '</div></div>' +
       pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
@@ -4802,6 +5056,30 @@
     });
   }
 
+  // The filter shows one group of abilities, or all of them.
+  function setDashFilter(el, id) {
+    var box = el.querySelector('[data-cs-dabs]');
+    if (!box || !box.querySelector('[data-cs-dfilt="' + id + '"]')) return null;
+    box.setAttribute('data-dfilter', id);
+    [].forEach.call(box.querySelectorAll('[data-cs-dfilt]'), function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-cs-dfilt') === id ? 'true' : 'false');
+    });
+    [].forEach.call(box.querySelectorAll('[data-dgroup]'), function (g) {
+      g.hidden = !(id === 'all' || g.getAttribute('data-dgroup') === id);
+    });
+    return box;
+  }
+
+  // The switch folds away, or brings back greyed, what the hero cannot pay for.
+  function setDashAfford(el, on) {
+    var box = el.querySelector('[data-cs-dabs]');
+    var sw = box && box.querySelector('[data-cs-dafford]');
+    if (!box) return null;
+    if (on) box.setAttribute('data-dafford', ''); else box.removeAttribute('data-dafford');
+    if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    return box;
+  }
+
   // setDashTab opens one of the dashboard's tabs; null when the sheet has no
   // such tab (Story is a permission gate).
   function setDashTab(el, id) {
@@ -4875,8 +5153,13 @@
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
     var keptTab = dashTabToKeep(el);
+    var keptAbs = el.querySelector('[data-cs-dabs]');
+    var keptFilter = keptAbs ? keptAbs.getAttribute('data-dfilter') : null;
+    var keptAfford = keptAbs ? keptAbs.hasAttribute('data-dafford') : true;
     el.innerHTML = paperSheetHtml(data);
     if (keptTab && keptTab !== 'abilities') setDashTab(el, keptTab);
+    if (keptFilter && keptFilter !== 'all') setDashFilter(el, keptFilter);
+    if (!keptAfford) setDashAfford(el, false);
     appendBlockSlots(el, data);
     var root = el.querySelector('[data-sheet]');
     if (typeof sm.rescan === 'function') sm.rescan();
@@ -5523,6 +5806,83 @@
       '  Q .sh-dpane > .sh-dsec:first-child { margin-top:12px; }',
       '  Q .sh-dpara { margin:12px 8px 0;max-width:66ch;font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink-soft); }',
       '  Q .sh-dpane .sh-dmore { margin:10px 8px 0; }',
+      // Abilities: a filter row, then one grid per action with its own columns, one line per ability.
+      '  Q .sh-dabs [hidden] { display:none !important; }',
+      '  Q .sh-dfilt { display:flex;flex-wrap:wrap;align-items:center;gap:0 18px;margin:0 0 4px; }',
+      '  Q .sh-dfilt button { min-height:40px;padding:8px 0;border:0;background:none;cursor:pointer;font:400 calc(13.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);text-underline-offset:6px; }',
+      '  Q .sh-dfilt button:hover { color:var(--paper-ink);text-decoration:underline; }',
+      '  Q .sh-dfilt button[aria-pressed="true"] { font-weight:600;color:var(--paper-accent);text-decoration:underline;text-decoration-thickness:2px; }',
+      '  Q .sh-dfilt small { display:inline-block;margin-left:4px;font-size:calc(12px * var(--ts));font-weight:400;color:var(--paper-mute); }',
+      '  Q .sh-dfilt .sh-dafford { display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--paper-ink);text-decoration:none !important; }',
+      '  Q .sh-dsw { position:relative;flex:none;width:30px;height:18px;border-radius:999px;background:var(--paper-mute);transition:background-color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dsw::after { content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgb(0 0 0 / .3);transition:transform var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dafford[aria-checked="true"] .sh-dsw { background:var(--paper-accent); }',
+      '  Q .sh-dafford[aria-checked="true"] .sh-dsw::after { transform:translateX(12px); }',
+      '  Q .sh-dag { margin-top:16px; }',
+      '  Q :is(.sh-dagh,.sh-dar) { display:grid;grid-template-columns:minmax(0,1.45fr) 100px minmax(0,.95fr) minmax(0,1.05fr) minmax(0,.9fr) 28px;column-gap:16px;align-items:center; }',
+      '  Q .sh-dagh { align-items:end;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);' + cap + ' }',
+      '  Q .sh-dcols { display:contents; }',
+      '  Q .sh-dagh h3 { margin:0;font:600 calc(16px * var(--ts)) var(--paper-ui-font);letter-spacing:0;text-transform:none;color:var(--paper-ink); }',
+      '  Q .sh-dagh h3 small { margin-left:6px;font-size:calc(12.5px * var(--ts));font-weight:400;color:var(--paper-mute); }',
+      '  Q .sh-dtiers { grid-column:5 / 7;justify-self:end;padding-right:36px;white-space:nowrap;font-weight:500;font-size:calc(12px * var(--ts));letter-spacing:0;text-transform:none; }',
+      '  Q .sh-dai { border-bottom:var(--shape-rule,1px) solid ' + hair + '; }',
+      '  Q .sh-dar { width:100%;min-height:44px;row-gap:2px;padding:10px 8px;border:0;border-left:2px solid transparent;border-radius:var(--shape-r-ctl,8px);background:none;cursor:pointer;text-align:left;color:var(--paper-ink);font-family:var(--paper-ui-font);transition:background-color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dar:hover { background:var(--paper-under); }',
+      '  Q .sh-dar:focus-visible { outline:2px solid var(--paper-accent);outline-offset:-2px; }',
+      '  Q .sh-dan { font:600 calc(14.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
+      '  Q .sh-dac { white-space:nowrap;font-size:calc(13px * var(--ts));color:var(--paper-ink); }',
+      '  Q .sh-dac.is-sig { color:var(--paper-ink-soft); }',
+      '  Q :is(.sh-dad,.sh-dat) { font-size:calc(13.5px * var(--ts));color:var(--paper-ink-soft);overflow-wrap:anywhere; }',
+      '  Q .sh-dadm { justify-self:end;white-space:nowrap;font:700 calc(14.5px * var(--ts)) var(--paper-num-font);color:var(--paper-ink);text-align:right; }',
+      '  Q .sh-dadm i { margin:0 3px;font-style:normal;font-weight:400;color:var(--paper-mute); }',
+      '  Q .sh-dadm.is-none { font-weight:400;font-size:calc(13px * var(--ts));color:var(--paper-mute); }',
+      '  Q .sh-dachev { justify-self:end;display:grid;color:var(--paper-mute);transition:transform var(--dur-standard,200ms) var(--ease-out); }',
+      '  Q .sh-danote { grid-column:1 / 6;font-size:calc(13px * var(--ts));line-height:1.45;color:var(--paper-ink-soft); }',
+      '  Q .sh-danote b { font-weight:600; }',
+      '  Q .sh-dai.is-open > .sh-dar { border-left-color:var(--paper-accent);border-radius:0 var(--shape-r-ctl,8px) 0 0;background:color-mix(in srgb,var(--paper-accent) 7%,transparent); }',
+      '  Q .sh-dai.is-open .sh-dachev { transform:rotate(180deg); }',
+      // Costs more than the hero has: still readable, plainly second.
+      '  Q .sh-dai.is-short :is(.sh-dan,.sh-dadm) { font-weight:500;color:var(--paper-ink-soft); }',
+      '  Q .sh-dai.is-short :is(.sh-dad,.sh-dat,.sh-dac) { color:var(--paper-mute); }',
+      '  Q .sh-dabs[data-dafford] .sh-dag:not(.is-all) .sh-dai.is-short { display:none; }',
+      '  Q .sh-dcut { display:none;margin:0;padding:10px 8px;border-bottom:var(--shape-rule,1px) solid ' + hair + ';font:400 calc(13px * var(--ts))/1.7 var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '  Q .sh-dabs[data-dafford] .sh-dcut { display:block; }',
+      '  Q .sh-dcut-lead { margin-right:10px;font-weight:600; }',
+      '  Q .sh-dcut-nm { white-space:nowrap; }',
+      '  Q .sh-dcut-nm b { font-weight:600; }',
+      '  Q .sh-dsep { margin:0 4px 0 9px;color:var(--paper-mute); }',
+      '  Q .sh-dcut .sh-link { margin-left:12px; }',
+      '  Q .sh-dag.is-all .sh-dcut-names { display:none; }',
+      '  Q :is(.sh-dcut,.sh-devery) .sh-link { font-size:calc(13px * var(--ts));font-weight:500;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--paper-accent) 40%,transparent);text-underline-offset:3px; }',
+      // The full card, unfolded under its row: the rules on the left, the hero's own numbers on the right.
+      '  Q .sh-dacard { display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px 32px;padding:8px 20px 18px 18px;border-left:2px solid var(--paper-accent);background:color-mix(in srgb,var(--paper-accent) 4%,transparent);font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-dai.is-open > .sh-dacard { animation:sh-dunfold var(--dur-standard,200ms) var(--ease-out); }',
+      '  Q .sh-dacard.is-one { grid-template-columns:minmax(0,1fr); }',
+      '  Q .sh-darules { min-width:0;max-width:72ch; }',
+      '  Q .sh-dyou { align-self:start;padding:14px 16px;' + box + '}',
+      '  Q .sh-dyou h4 { margin:0 0 8px;' + cap + 'color:var(--paper-accent); }',
+      '  Q .sh-droll { margin:0;font:700 calc(16px * var(--ts)) var(--paper-num-font);color:var(--paper-ink); }',
+      '  Q .sh-droll span { margin-left:6px;font:400 calc(13px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '  Q .sh-dodds { display:flex;gap:2px;height:8px;margin:10px 0 4px;overflow:hidden;border-radius:999px; }',
+      '  Q .sh-dodds i { display:block;background:color-mix(in srgb,var(--paper-mute) 45%,transparent); }',
+      '  Q .sh-dodds i:nth-child(2) { background:var(--paper-mute); }',
+      '  Q .sh-dodds i:nth-child(3) { background:var(--paper-ink); }',
+      '  Q .sh-dtier { margin:0; }',
+      '  Q .sh-dtier div { display:grid;grid-template-columns:92px minmax(0,1fr);gap:0 12px;padding:6px 0;border-top:var(--shape-rule,1px) solid ' + hair + '; }',
+      '  Q .sh-dtier dt { font-weight:600;color:var(--paper-ink-soft); }',
+      '  Q .sh-dtier dt small { display:block;font-size:calc(12px * var(--ts));font-weight:400;color:var(--paper-mute); }',
+      '  Q .sh-dtier dd { margin:0;font-weight:600;color:var(--paper-ink); }',
+      '  Q .sh-dpay { margin:10px 0 0;font-size:calc(13px * var(--ts));color:var(--paper-ink-soft); }',
+      '  Q .sh-dpay.is-short { color:var(--paper-ink); }',
+      // Every hero's moves: one paragraph of names.
+      '  Q .sh-devery { margin-top:24px; }',
+      '  Q .sh-devery h3 { margin:0;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-devery h3 small { margin-left:6px;font-size:calc(12.5px * var(--ts));font-weight:400;color:var(--paper-mute); }',
+      '  Q .sh-devery p { margin:0;padding:12px 8px;font:400 calc(14px * var(--ts))/2 var(--paper-ui-font); }',
+      '  Q .sh-devit { white-space:nowrap; }',
+      '  Q .sh-devery .sh-link[aria-expanded="true"] { font-weight:600; }',
+      '  Q .sh-devcard { margin-top:4px; }',
+      '  Q .sh-devname { grid-column:1 / -1;margin:6px 0 0;font:600 calc(15px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
       // The pinned strip: Stamina and the resource stay in view once the boxes scroll off.
       '  Q .sh-dpin { position:sticky;top:var(--sh-stick,0px);z-index:4;height:0;margin-bottom:-18px; }',
       '  Q .sh-dpin-in { display:flex;align-items:center;gap:20px;height:var(--sh-pin-h,52px);margin:0 -12px;padding:0 12px;background:var(--paper);border:' + edge + ';border-top:0;border-radius:0 0 var(--shape-r-panel,12px) var(--shape-r-panel,12px);box-shadow:var(--elev-hover,none);font-family:var(--paper-ui-font);' +
@@ -5549,7 +5909,10 @@
       '  Q .sh-dmain[data-dtab="skills"] > .sh-body { display:block; }',
       '  Q .sh-dmain[data-dtab="skills"] > .sh-dpane[data-dpane="skills"] { display:none; }',
       '}',
-      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b) { transition:none !important; }'
+      '@keyframes sh-dunfold { from { opacity:0;transform:translateY(-4px); } }',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dacard { animation:none !important; }',
+      '@media (prefers-reduced-motion:reduce) { Q :is(.sh-dar,.sh-dachev,.sh-dsw),Q .sh-dsw::after { transition:none !important; } Q .sh-dacard { animation:none !important; } }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
   }
 
@@ -6263,6 +6626,7 @@
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashTab: keepDashTab, dashTabToKeep: dashTabToKeep, dashCss: dashCss,
+      dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,

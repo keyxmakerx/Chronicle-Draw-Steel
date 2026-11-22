@@ -99,7 +99,7 @@ and not the window's). The phone and the paper styles never see it.
   stay read-only.
 - At 1100px and wider a left column (`dashRailInner`) holds Skills by group,
   Languages and the Kit's numbers. Narrower, the same list is a Skills tab.
-- Tabs: Abilities (today's face list and ledger), Skills (narrow only),
+- Tabs: Abilities (below), Skills (narrow only),
   Features, Equipment, and Story for the owner and the GM. Arrow keys, Home
   and End move between them; the open tab survives a redraw. Editor saves
   redraw the panes, the column and the tab counts (`refreshDash`).
@@ -107,6 +107,27 @@ and not the window's). The phone and the paper styles never see it.
   an IntersectionObserver on the scroll container): portrait, name, Stamina,
   heroic resource, surges and recoveries. It is hidden from screen readers,
   because it repeats what is already on the page.
+
+The Abilities tab (`dashAbilities`) replaces the face's list on the
+dashboard; the face list stays for phones and the paper styles.
+
+- One group per action (Main action, Maneuver, Triggered action, Free
+  strike), each with its own column headings: name, cost, distance, target,
+  and for main actions and free strikes the hero's damage at each tier. A
+  maneuver shows the first sentence of what it does under its name, a
+  triggered action its trigger. Signature abilities come first, then by cost.
+- The moves every hero has (the common abilities, plus the Free Strike main
+  action, `isEveryHero`) are one paragraph of names under "Every hero can";
+  a name opens that move's card under the paragraph.
+- A filter row shows one group or all. When something costs more than the
+  current heroic resource, a switch ("Only what 3 Insight pays for") folds
+  those rows into one line per group that names each with its cost; "Show
+  them" brings back one group, and turning the switch off brings back all of
+  them, greyed. The filter and the switch survive a redraw.
+- A row unfolds in place to the full card (`dashAbCard`): the rules on the
+  left, and on the right the roll for this hero, how often each tier comes
+  up out of 100, the results with damage added and potency filled in from
+  `potencyOf`, and what it costs against what the hero has.
 
 Parts only the dashboard shows carry `sh-dq`; face parts it replaces carry
 `sh-fq`. Both are in the markup for every style, so switching style needs no
