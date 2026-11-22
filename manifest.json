@@ -47,6 +47,16 @@
       "source": "Project source"
     }
   },
+  "crits": [
+    {
+      "dice": "2d10",
+      "judge": "total",
+      "succ": [
+        19,
+        20
+      ]
+    }
+  ],
   "goods": [
     {
       "category": "treasures",

@@ -144,3 +144,11 @@ test('the goods list names treasures a shop may stock, with no invented price', 
   assert.ok(stocked.length > 0);
   for (const i of stocked) assert.match(String(i.properties[g.rarity_key]), /^\d/, `${i.slug} has no echelon to rate it by`);
 });
+
+// The dice tray judges crits by the crits block (internal/systems/crits.go,
+// validateCrits) and rejects the whole manifest for one it cannot judge. A
+// natural 19 or 20 on the two d10s of a power roll is a critical hit, judged
+// on the pair's total; Draw Steel has no fumble, and a d20 is never a crit.
+test('the crits block is the power roll crit and nothing else', () => {
+  assert.deepEqual(manifest.crits, [{ dice: '2d10', judge: 'total', succ: [19, 20] }]);
+});
