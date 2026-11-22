@@ -187,7 +187,7 @@ test('paper identity: the name opens its entry, and Change beside it is the pick
 
 test('paper identity: choices not made are named on one "Still to choose" line', () => {
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
-  const todo = (html) => (html.match(/<p class="sh-idtodo">([^]*?)<\/p>/) || [])[1];
+  const todo = (html) => (html.match(/<p class="sh-idtodo[^"]*">([^]*?)<\/p>/) || [])[1];
   const some = todo(cs.pIdentity(PAPER));
   assert.ok(/Still to choose/.test(some));
   assert.deepEqual([...some.matchAll(/data-cs-pick="([a-z]+)"/g)].map((m) => m[1]), ['culture', 'career', 'kit'], 'in the order the book makes them');
@@ -210,9 +210,15 @@ test('paper identity: the paper styles keep culture and career one fold away; th
   assert.ok(/<p class="sh-idwho sh-id-q">[^]*Tactician[^]*level 2/.test(one), 'the class is the heading');
 });
 
-test('paper sheet prints the hero name once, in the page header', () => {
-  const html = cs.paperSheetHtml(Object.assign({}, PAPER, { name: 'Zorblax' }));
-  assert.ok(!/<h2/.test(html) && !/>Zorblax</.test(html));
+test('paper sheet: the name is printed once, as the computer dashboard\'s heading; the face leaves it to the page header', () => {
+  const full = cs.paperSheetHtml(Object.assign({}, PAPER, { name: 'Zorblax' }));
+  // The pinned strip repeats it for sighted readers once the header scrolls
+  // away; it is hidden from screen readers, so it is not a second reading.
+  const pin = full.match(/<div class="sh-dpin sh-dq" aria-hidden="true">[^]*?<\/div><\/div>/);
+  assert.ok(pin && />Zorblax</.test(pin[0]), 'the pinned strip carries the name, hidden from screen readers');
+  const html = full.replace(pin[0], '');
+  assert.deepEqual(html.match(/>Zorblax</g), ['>Zorblax<']);
+  assert.ok(/<h2 class="sh-dname sh-dq">Zorblax<\/h2>/.test(html), 'only the dashboard, which no phone or paper style shows, prints it');
   assert.ok(/Hero · Draw Steel/.test(html));
 });
 
@@ -374,7 +380,7 @@ test('complication: shown with the origins, pickable, and an empty one reads as 
   globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
   const empty = cs.pIdentity(PAPER);
   assert.ok(empty.includes('data-cs-pick="complication"') && /No complication \u2014 optional/.test(empty));
-  const todo = (empty.match(/<p class="sh-idtodo">([^]*?)<\/p>/) || [])[1];
+  const todo = (empty.match(/<p class="sh-idtodo[^"]*">([^]*?)<\/p>/) || [])[1];
   assert.ok(!/complication/i.test(todo), 'optional, so never "still to choose"');
   const set = cs.pIdentity(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { complication: 'Lucky' }) }));
   assert.ok(/data-v="origin-complication">Lucky</.test(set));
@@ -507,4 +513,83 @@ test('the full card and the glossary pass leave no markup in the visible text fo
       check(html, src, f + ' ' + e.slug);
     }
   }
+});
+
+// ── The computer dashboard ─────────────────────────────────────────────────
+
+test('dashboard: its pieces are dashboard-only, and the face parts it replaces are face-only', () => {
+  const html = cs.paperSheetHtml(PAPER);
+  for (const cls of ['sh-dport', 'sh-dprog', 'sh-dboxes', 'sh-drail', 'sh-dunder', 'sh-dtabs', 'sh-dpin']) {
+    assert.ok(new RegExp('class="[^"]*\\b' + cls + '\\b[^"]*\\bsh-dq\\b').test(html), cls + ' is marked sh-dq');
+  }
+  assert.ok(/class="sh-turn paper-pull sh-fq"/.test(html) && /class="sh-ledger sh-o3 sh-fq"/.test(html), 'This turn and the ledger give way');
+  assert.ok(/class="sh-o1 sh-fq"/.test(html) && /sh-o4 sh-fq/.test(html) && /sh-o5 sh-fq/.test(html), 'characteristics, damage and progression give way');
+  assert.ok(/<div class="sh-body" id="cs-dp-\d+-abilities">[^]*class="sh-band sh-abs/.test(html), 'the ability list is the Abilities pane, so phones keep it where it was');
+  const css = cs.dashCss().join('\n');
+  assert.ok(/\[data-sheet\] \.sh-dq \{ display:none; \}/.test(css), 'hidden unless the quiet look is wide');
+  assert.ok(/@container shdash \(min-width:820px\)/.test(css) && !/\[data-sheet-style="(ledger|night|brass)"\]/.test(css), 'only the quiet look, only a wide sheet');
+});
+
+test('dashboard: potency is the synced value, else the glossary rule from the highest characteristic', () => {
+  assert.deepEqual(cs.potencyOf({ fields: { might: 2, agility: 5, reason: 0 } }), [3, 4, 5]);
+  assert.deepEqual(cs.potencyOf({ fields: { might: 2, potency_weak: 1, potency_average: 2, potency_strong: 4 } }), [1, 2, 4]);
+  assert.equal(cs.potencyOf({ fields: {} }), null, 'nothing synced: no box rather than a guess');
+  assert.equal(cs.topChar({ fields: { might: -1, presence: -2 } }), -1);
+  const under = cs.dashUnder({ name: 'B', fields: { agility: 5, surges: 2, heroic_resource_name: 'Insight', heroic_resource_current: 3 } });
+  assert.ok(/\+5 damage each/.test(under) && />Insight</.test(under) && /<b>3<\/b><b>4<\/b><b>5<\/b>/.test(under));
+  assert.ok(!/sh-dpot/.test(cs.dashUnder({ name: 'B', fields: {} })), 'no potency box without a characteristic');
+});
+
+test('dashboard: Story is a tab only for the Director and the player; Skills only while the sheet is narrow', () => {
+  const tabs = (d) => cs.dashTabList(Object.assign({}, PAPER, d)).map((t) => t.id + (t.narrow ? '*' : ''));
+  assert.deepEqual(tabs({}), ['abilities', 'skills*', 'features', 'equipment', 'story']);
+  assert.deepEqual(tabs({ isGm: false, isOwner: false }), ['abilities', 'skills*', 'features', 'equipment']);
+  const counts = cs.dashTabList(PAPER).reduce((m, t) => (m[t.id] = t.n, m), {});
+  assert.equal(counts.abilities, 2);
+  assert.equal(counts.features, 1);
+  const html = cs.paperSheetHtml(Object.assign({}, PAPER, { isGm: false, isOwner: false }));
+  assert.ok(!/data-cs-dtab="story"/.test(html) && !/data-dpane="story"/.test(html) && !/secret/.test(html), 'no Story pane, and the GM lore is nowhere');
+});
+
+test('dashboard: a choice not made is a dashed tag that opens the same picker', () => {
+  globalThis.window.Chronicle.pickChoice = () => Promise.resolve(null);
+  const tags = cs.dashTodoTags(PAPER, true);
+  assert.deepEqual([...tags.matchAll(/data-cs-pick="([a-z]+)"/g)].map((m) => m[1]), ['culture', 'career', 'kit']);
+  assert.ok(/class="sh-idset-todo sh-dq"/.test(tags) && /Still to choose/.test(tags));
+  const ro = cs.dashTodoTags(PAPER, false);
+  assert.ok(!/<button/.test(ro) && /Culture/.test(ro), 'a reader sees the words, not buttons');
+  const full = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { culture: 'Nomadic', career: 'Disciple', kit: 'Mountain' }) });
+  assert.equal(cs.dashTodoTags(full, true), '');
+});
+
+test('dashboard: the left column and panes escape what the hero carries', () => {
+  const bad = '<img src=x onerror=1>';
+  const d = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, {
+    skills_json: JSON.stringify([bad]), languages_json: JSON.stringify([bad]), kit: bad,
+    kit_details_json: JSON.stringify([{ name: bad, speed: bad, meleeDamageT1: bad }]),
+    conditions_json: JSON.stringify([bad]), immunities: JSON.stringify([{ type: bad, value: 1 }]), heroic_resource_name: bad
+  }) });
+  const html = cs.dashRailInner(d) + cs.dashUnder(d) + cs.dashBoxes(d) + cs.dashPaneHtml('equipment', d) + cs.dashPaneHtml('skills', d) + cs.paperSheetHtml(d);
+  assert.ok(!/<img src=x/.test(html));
+});
+
+test('dashboard: the Skills tab keeps the way into the Skills panel, as the left column does', () => {
+  // Between 820 and 1100 wide the tab replaces both the ledger row and the
+  // left column, so without this word an owner could not choose skills.
+  assert.ok(/data-sheet-open="skills"/.test(cs.dashPaneHtml('skills', PAPER)));
+  assert.ok(/data-sheet-open="skills"/.test(cs.dashRailInner(PAPER)));
+});
+
+test('dashboard: setDashTab opens a tab the sheet has and ignores one it does not', () => {
+  const tabs = ['abilities', 'features', 'story'].map((id) => ({ id, attrs: {}, getAttribute(k) { return k === 'data-cs-dtab' ? id : null; }, setAttribute(k, v) { this.attrs[k] = v; } }));
+  const main = { attrs: {}, setAttribute(k, v) { this.attrs[k] = v; },
+    querySelector(sel) { const m = sel.match(/data-cs-dtab="([a-z]+)"/); return tabs.find((t) => t.id === m[1]) || null; },
+    querySelectorAll() { return tabs; } };
+  const el = { querySelector: () => main };
+  assert.equal(cs.setDashTab(el, 'features'), main);
+  assert.equal(main.attrs['data-dtab'], 'features');
+  assert.deepEqual(tabs.map((t) => t.attrs['aria-selected']), ['false', 'true', 'false']);
+  assert.deepEqual(tabs.map((t) => t.attrs.tabindex), ['-1', '0', '-1']);
+  assert.equal(cs.setDashTab(el, 'equipment'), null);
+  assert.equal(main.attrs['data-dtab'], 'features', 'a missing tab leaves the open one open');
 });
