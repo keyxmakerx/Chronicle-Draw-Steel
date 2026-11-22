@@ -3193,6 +3193,27 @@
   var DASH_CHARS = ['might', 'agility', 'reason', 'intuition', 'presence'];
   var dashSeq = 0;
 
+  // The open tab outlives the page refreshing itself after a save. Chronicle
+  // swaps the page's markup for a fresh copy, which ends this sheet and starts
+  // a new one on a new element, so the tab is kept by page for the moment in
+  // between, and only used once.
+  var keptTabs = {};
+  var KEEP_TAB_MS = 15000;
+  function keepDashTab(el) {
+    var main = el && el._csKey && el.querySelector ? el.querySelector('[data-cs-dmain]') : null;
+    var tab = main && main.getAttribute('data-dtab');
+    if (tab) keptTabs[el._csKey] = { tab: tab, at: Date.now() };
+  }
+  // The tab to open on a new drawing: the one on screen when the sheet is
+  // drawn again in place, else the one kept when the page swapped it out.
+  function dashTabToKeep(el) {
+    var main = el.querySelector('[data-cs-dmain]');
+    if (main) return main.getAttribute('data-dtab');
+    var k = el._csKey ? keptTabs[el._csKey] : null;
+    if (k) delete keptTabs[el._csKey];
+    return k && Date.now() - k.at < KEEP_TAB_MS ? k.tab : null;
+  }
+
   // The highest characteristic the hero has synced, or null with none.
   function topChar(data) {
     var top = null;
@@ -4853,8 +4874,7 @@
     [].forEach.call(el.querySelectorAll('[data-cs-common]'), function (d) {
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
-    var keptMain = el.querySelector('[data-cs-dmain]');
-    var keptTab = keptMain ? keptMain.getAttribute('data-dtab') : null;
+    var keptTab = dashTabToKeep(el);
     el.innerHTML = paperSheetHtml(data);
     if (keptTab && keptTab !== 'abilities') setDashTab(el, keptTab);
     appendBlockSlots(el, data);
@@ -6133,6 +6153,7 @@
 
       if (paperAvailable()) injectPaperStyles(); else injectStyles();
       el.classList.add('ds-sheet');
+      el._csKey = campaignId && entityId ? campaignId + '/' + entityId : '';
 
       var self = this;
       function finish(entity) {
@@ -6201,6 +6222,7 @@
     },
 
     destroy: function (el) {
+      keepDashTab(el);
       if (el._csSurfaceCleanup) { try { el._csSurfaceCleanup(); } catch (e) {} el._csSurfaceCleanup = null; }
       detachListeners(this, el);
       this._tf = null;
@@ -6240,7 +6262,7 @@
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
-      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, dashCss: dashCss,
+      dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashTab: keepDashTab, dashTabToKeep: dashTabToKeep, dashCss: dashCss,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
