@@ -100,6 +100,9 @@ test('about: pronouns, gender and looks are optional, shown in the Story panel, 
   assert.ok(!/ · /.test(some.split('About')[1].split('</p>')[0]), 'an empty gender adds no separator');
   assert.ok(!/<b>braid/.test(some), 'looks are shown as text, never markup');
   assert.match(some, />Edit</);
+  const body = cs.pAbout(HERO({ age: '31', height: 5.9, height_units: 'feet', weight: 185, weight_units: 'pounds' }, { canEditIdentity: false }));
+  assert.match(body, /Age 31 · 5\.9 ft · 185 lbs/, 'age, height and weight synced from Foundry show in About');
+  assert.ok(!/<script/.test(cs.pAbout(HERO({ age: '<script>' }, { canEditIdentity: false }))), 'age is escaped');
   assert.equal(cs.pAbout(HERO({}, { canEditIdentity: false })), '', 'nothing to show and nothing to edit: no group');
   assert.ok(!/data-cs-ed-open="about"/.test(cs.pAbout(HERO({ pronouns: 'they/them' }, { canEditIdentity: false }))));
   const ed = cs.edAboutHtml(HERO({ pronouns: 'he/him', gender: '"x"' }));

@@ -3221,17 +3221,28 @@
   }
 
   // About is who the hero is in a line: pronouns, gender and what they look
-  // like, all optional, written in the hero creator or here, any time.
+  // like, all optional, written in the hero creator or here, any time. Age,
+  // height and weight come from the Foundry sheet when a world is linked.
+  var UNIT_SHORT = { inches: 'in', feet: 'ft', pounds: 'lbs', centimeters: 'cm', meters: 'm', kilograms: 'kg' };
+  function measure(data, key) {
+    var v = f(data, key, null);
+    if (v == null || v === '') return '';
+    var u = String(f(data, key + '_units', '') || '');
+    return String(v) + (u ? ' ' + (UNIT_SHORT[u] || u) : '');
+  }
   function pAbout(data) {
     var who = [f(data, 'pronouns', ''), f(data, 'gender', '')].map(function (v) { return String(v || '').trim(); }).filter(Boolean);
     var looks = String(f(data, 'appearance', '') || '').trim();
+    var age = String(f(data, 'age', '') || '').trim();
+    var body = [age ? 'Age ' + age : '', measure(data, 'height'), measure(data, 'weight')].filter(Boolean);
     var edit = data.canEditIdentity && data.campaignId
       ? edOpen('about', who.length || looks ? 'Edit' : 'Add pronouns, gender and looks') : '';
-    if (!who.length && !looks && !edit) return '';
+    if (!who.length && !looks && !body.length && !edit) return '';
     return '<div class="lf-grp"><span class="sh-k">About</span> ' + edit +
       (who.length ? '<p class="lf-text">' + esc(who.join(' · ')) + '</p>' : '') +
+      (body.length ? '<p class="lf-text">' + esc(body.join(' · ')) + '</p>' : '') +
       (looks ? '<p class="lf-text">' + esc(cleanFoundryText(looks)) + '</p>' : '') +
-      (!who.length && !looks ? pEmpty('Nothing about them yet.') : '') + '</div>';
+      (!who.length && !looks && !body.length ? pEmpty('Nothing about them yet.') : '') + '</div>';
   }
 
   var ABOUT_SHORT_MAX = 60;
