@@ -614,6 +614,27 @@ test('dashboard: the open tab survives the page refreshing itself after a save',
   assert.equal(cs.dashViewToKeep(inPlace).tab, 'features', 'a redraw in place keeps what is on screen');
 });
 
+test('dashboard: a sheet swapped out before it drew passes the kept view on and never draws', async () => {
+  const main = { getAttribute: (k) => (k === 'data-dtab' ? 'story' : null) };
+  const drawn = { _csKey: 'c3/e3', innerHTML: 'x', classList: { remove() {} }, removeEventListener() {},
+    querySelector: (sel) => (sel === '[data-cs-dmain]' ? main : null) };
+  const reg = globalThis.window.Chronicle.registry['character-sheet'];
+  reg.destroy(drawn);
+  // The next sheet mounts and is swapped out again while its data loads.
+  const seed = JSON.stringify({ name: 'Bren', fields_data: { might: 2 } });
+  const loading = { dataset: { fieldsData: seed, campaignId: 'c3', entityId: 'e3' }, style: {}, innerHTML: '',
+    classList: { add() {}, remove() {} }, addEventListener() {}, removeEventListener() {}, querySelector: () => null, querySelectorAll: () => [] };
+  const hadDoc = 'document' in globalThis;
+  if (!hadDoc) globalThis.document = { getElementById: () => ({}) };
+  try {
+    reg.init.call({}, loading, {});
+    reg.destroy(loading);
+    await new Promise((ok) => setTimeout(ok, 50));
+  } finally { if (!hadDoc) delete globalThis.document; }
+  assert.equal(loading.innerHTML, '', 'the swapped-out sheet stays empty');
+  assert.equal(cs.dashViewToKeep({ _csKey: 'c3/e3', querySelector: () => null }).tab, 'story', 'the sheet after it still opens on Story');
+});
+
 test('dashboard: the fresh element holds the old sheet\'s height until it is drawn', () => {
   const main = { getAttribute: (k) => (k === 'data-dtab' ? 'abilities' : null) };
   const old = { _csKey: 'c7/e7', offsetHeight: 1800, innerHTML: 'x', classList: { remove() {} }, removeEventListener() {},
