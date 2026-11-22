@@ -127,6 +127,13 @@ not reproduced monsters. The evidence and the trademark caveat are in
 | `properties.custom_fields` | array | Present on an otherwise-published entry whose *specific listed fields* were written for this package rather than reproduced. E.g. every `ancestries.json` entry carries `["description"]`, because the published ancestry descriptions are setting fiction that is deliberately not reproduced. |
 | `properties.derived_from` | string | On a `"custom"` entry that was computed from other data in this package, the file it was computed from — so the derivation can be re-checked. |
 | `properties.omissions` | array | Published content deliberately not reproduced, and why. |
+| `properties.card_border` | string | The border the entry's card wears in Chronicle's hero creator: a key from Chronicle's border library (`carved-stone`, `earth`, `fire`, `ice`, `storm`, `glass`, `glass-smoke`, `glass-sea`, `glass-rose`, `glass-midnight`, `rune-metal`, `great-rune`, `thorn-glass`, `scales`, `vine`). A key Chronicle does not know gives a plain card. |
+| `properties.card_colour` | string | The colour that border takes, as `#` and six lower-case hex digits. Left out, the border keeps its own colour. |
+
+The two card properties are a look, not rules text: the builder never folds
+them into Details and the manifest never declares them. Every
+`ancestries.json` entry carries both; `tools/test-card-looks.mjs` pins that
+each names a real border and a valid colour.
 
 Operator-authored content (new ancestries, creatures, kits) and any worked
 example, derived table or helper entry sets the root `"source": "custom"`;

@@ -62,6 +62,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "thorn-glass",
+      "card_colour": "#c4243a",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -160,6 +162,8 @@
       "omissions": [
         "The verse of the oath recited by the Remember Your Oath trait is flavor text and is not reproduced here; the trait's mechanics are complete."
       ],
+      "card_border": "scales",
+      "card_colour": "#2fb5a4",
       "provenance_display": "custom fields — description · omissions — The verse of the oath recited by the Remember Your Oath trait is flavor text and is not reproduced here; the trait's mechanics are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -217,6 +221,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "carved-stone",
+      "card_colour": "#e0a030",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -274,6 +280,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "storm",
+      "card_colour": "#6fa8dc",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -336,6 +344,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "great-rune",
+      "card_colour": "#b48cf2",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -393,6 +403,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "glass",
+      "card_colour": "#58c4d8",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -467,6 +479,8 @@
       "omissions": [
         "Flavor sentences naming the memonek home plane and their word for worldsickness are setting material and are not reproduced; the mechanics of Keeper of Order, Nonstop, and Useful Emotion are complete."
       ],
+      "card_border": "rune-metal",
+      "card_colour": "#3fc8d4",
       "provenance_display": "custom fields — description · omissions — Flavor sentences naming the memonek home plane and their word for worldsickness are setting material and are not reproduced; the mechanics of Keeper of Order, Nonstop, and Useful Emotion are complete."
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -524,6 +538,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "fire",
+      "card_colour": "#d9622b",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -603,6 +619,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "vine",
+      "card_colour": "#6fae4f",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -683,6 +701,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "ice",
+      "card_colour": "#8fd8b0",
       "provenance_display": "custom fields — description",
       "details_display": "ancestry points note — 3 ancestry points instead if your size is 1S."
     },
@@ -795,6 +815,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "glass-midnight",
+      "card_colour": "#a78bfa",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
@@ -874,6 +896,8 @@
       "custom_fields": [
         "description"
       ],
+      "card_border": "great-rune",
+      "card_colour": "#5fd3a2",
       "provenance_display": "custom fields — description"
     },
     "source": "Draw Steel Heroes Book, ch. 3 (mcdm.heroes.v1), via Steel Compendium"
