@@ -107,3 +107,19 @@ test('picking another class settles its page in; the first drawing does not move
   assert.ok(!el.innerHTML.includes('clf-settle'), 'picking the same class again should not move it');
   def.destroy(el);
 });
+
+// When the standing pieces shared the spread's 3D context, the browser
+// depth-sorted them against each other and the paper, and figures blinked
+// out mid-fight. They now stand in a flat layer over the spread, each with
+// the book's tilt, painted back to front by z-index.
+test('the standing pieces are not depth-sorted with the spread', () => {
+  const src = readFileSync(new URL('../widgets/class-fights.js', import.meta.url), 'utf8');
+  const rule = (sel) => (src.match(new RegExp("'\\" + sel + "\\{[^']*'")) || [''])[0];
+  assert.ok(rule('.clf-stand'), 'the flat layer for the pieces is missing');
+  assert.ok(!/preserve-3d/.test(rule('.clf-stand')), 'the pieces layer must not be a 3D context');
+  assert.ok(!/preserve-3d/.test(rule('.clf-pop')), 'a piece must flatten its own art, not join a 3D context');
+  assert.match(src, /'\.clf-pop\{[^']*transform:' \+ hinge\(-180\)/, 'a piece carries the book tilt itself');
+  assert.match(src, /this\.n\('stand'\)\.innerHTML = st/, 'the pieces are drawn into the flat layer');
+  assert.match(src, /z-index:' \+ Math\.round\(p\.y\)/, 'nearer pieces paint over further ones');
+  assert.match(src, /class="clf-pbook clf-closed" data-n="book"><div class="clf-spread" data-n="spread"><\/div><div class="clf-stand" data-n="stand">/);
+});
