@@ -2855,7 +2855,7 @@
       return '<div><dt>' + s.label + '</dt><dd>' + pOrigin(data, s, canPick) + '</dd></div>';
     }).join('') + '</dl>' : '';
 
-    var chip = data.canChangeImage ? '<button type="button" class="sh-idpick" data-cs-change-image>Change picture</button>' : '';
+    var chip = data.canChangeImage ? '<button type="button" class="sh-idpick sh-fq" data-cs-change-image>Change picture</button>' : '';
     return '<p class="sh-idline sh-id-l">' + line + '</p>' + who + set + dashTodoTags(data, canPick) + pIdentityTodo(data, canPick) + choiceNotesHtml(data) + pTraits(data) +
       '<div class="sh-idmore">' + more + chip + (hint ? '<span class="sh-sub sh-idhint sh-fq' + (more ? ' sh-id-q' : '') + '">' + hint + '</span>' : '') + '</div>';
   }
@@ -2863,7 +2863,7 @@
   function pIdentity(data) {
     var name = data.name || 'Unnamed Hero';
     return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
-      '<h2 class="sh-dname sh-dq">' + esc(name) + '</h2>' +
+      '<h2 class="sh-dname sh-dq">' + esc(name) + '</h2>' + dashProg(data) +
       '<div class="sh-idin" data-cs-idin>' + pIdentityInner(data) + '</div>' +
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
   }
@@ -3353,7 +3353,9 @@
     var pic = src
       ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '">'
       : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
-    return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>';
+    // Changing the picture is a quiet word under the picture it changes.
+    var chip = data.canChangeImage ? '<button type="button" class="sh-dpicchg sh-dq" data-cs-change-image>Change picture</button>' : '';
+    return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>' + chip;
   }
 
   function dashProg(data) {
@@ -4789,7 +4791,7 @@
     var first = firstName(data.name || 'The hero');
     var id = 'sh-tf-' + slugify(data.entityId || 'hero');
     var tab = '<div class="sh-tf-tabrow"><button type="button" class="sh-tf-tab" data-tf="tab" aria-expanded="' + (st.open ? 'true' : 'false') + '" aria-controls="' + id + '">' +
-      fa('masks-theater') + ' Changes' + (tf.layers.length ? ' · ' + tf.layers.length : '') + '</button></div>';
+      'Changes' + (tf.layers.length ? ' · ' + tf.layers.length : '') + '</button></div>';
     if (!st.open) return '<section class="sh-tf" aria-label="Changes">' + tab + '</section>';
 
     var onRows = tf.layers.map(function (l) {
@@ -5173,7 +5175,7 @@
     }).join('');
     var uid = ++dashSeq;
     var sheet = '<article class="paper sh-sheet" aria-label="' + escAttr(name + "'s sheet") + '">' +
-      pHead(data) + '<header class="sh-top">' + dashPortrait(data) + pIdentity(data) + dashProg(data) + '</header>' +
+      pHead(data) + '<header class="sh-top">' + dashPortrait(data) + pIdentity(data) + '</header>' +
       pChanges(data) + dashPin(data) + dashBoxes(data) + pTurn(data) +
       '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
       '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
@@ -5915,7 +5917,10 @@
       '  Q .paper-pull[data-sheet-section]:hover { background:var(--paper-under);box-shadow:0 0 0 8px var(--paper-under);border-radius:6px;transform:none; }',
       '  Q .sh-ledger .paper-pull[data-sheet-section]:hover { box-shadow:-8px 0 0 var(--paper-under),8px 0 0 var(--paper-under);border-radius:0; }',
       '}',
-      'Q .sh-foot { margin-top:8px; }'
+      'Q .sh-foot { margin-top:8px; }',
+      // Accent-filled buttons take the page's fill pair, so their words read
+      // on whatever colour the campaign picked.
+      'Q :is(.sh-edsave,.sh-tf-pri) { background:var(--color-accent-fill,var(--paper-accent));color:var(--color-accent-on-fill,var(--paper-on-accent)); }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' ').replace(/P /g, P + ' '); });
   }
 
@@ -5939,8 +5944,13 @@
       '  Q .sh-fq { display:none; }',
       '  Q .sh-dq { display:block; }',
       // Header: portrait, the name as the heading, who they are as tags, progression at the right.
-      '  Q .sh-top { display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:center; }',
-      '  Q .sh-top > .sh-id { display:block;padding:0;border:0;min-width:0; }',
+      // The progression floats at the right of the identity, so the origin
+      // tags and traits run on under it instead of leaving the middle empty.
+      '  Q .sh-top { display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr;gap:8px 24px;align-items:start; }',
+      '  Q .sh-top > .sh-id { display:block;grid-column:2;grid-row:1 / span 2;padding:0;border:0;min-width:0; }',
+      '  Q .sh-dpicchg { justify-self:center;min-height:32px;padding:4px 2px;border:0;background:none;cursor:pointer;font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);text-underline-offset:3px; }',
+      '  Q .sh-dpicchg:hover { text-decoration:underline; }',
+      '  Q .sh-dpicchg:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       '  Q .sh-dport { width:104px;height:104px;border-radius:var(--shape-r-panel,12px);overflow:hidden;border:' + edge + ';box-shadow:var(--elev-resting,none);background:var(--paper-under); }',
       '  Q .sh-dport .sh-port-ph { font-size:calc(34px * var(--ts)); }',
       '  Q .sh-dname { margin:0;font:700 calc(clamp(26px,3.4cqi,38px) * var(--ts))/1.1 var(--paper-head-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
@@ -5950,21 +5960,34 @@
       '  Q .sh-idsub::before { content:"\\00b7";margin:0 8px;color:var(--paper-mute); }',
       '  Q :is(.sh-idset,.sh-idset-todo) { display:inline;margin:0; }',
       '  Q .sh-idset { margin-top:4px; }',
-      '  Q :is(.sh-idset,.sh-idset-todo) > div { display:inline-flex;align-items:baseline;gap:6px;margin:10px 6px 0 0;vertical-align:top;padding:3px 8px;border:' + edge + ';border-radius:var(--shape-r-tag,4px);background:var(--paper); }',
+      '  Q :is(.sh-idset,.sh-idset-todo) > div { display:inline-flex;align-items:baseline;gap:8px;margin:8px 8px 0 0;vertical-align:top;padding:4px 10px;border:' + edge + ';border-radius:var(--shape-r-tag,4px);background:var(--paper); }',
       '  Q :is(.sh-idset,.sh-idset-todo) dt { font:500 calc(11px * var(--ts)) var(--paper-ui-font);letter-spacing:.06em;text-transform:uppercase;color:var(--paper-mute); }',
       '  Q :is(.sh-idset,.sh-idset-todo) dd { margin:0;font:600 calc(13px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
       '  Q .sh-idset-todo > div { border-style:dashed;background:none; }',
       '  Q .sh-idset-todo dd { font-weight:500;color:var(--paper-accent); }',
       '  Q .sh-idset-todo .sh-idpick { font:inherit;color:inherit; }',
       '  Q .sh-idmore:empty { display:none; }',
-      '  Q .sh-dprog { display:grid;gap:6px;justify-items:end; }',
+      '  Q .sh-idmore { margin-top:0; }',
+      '  Q .sh-tf { margin:-10px 0 16px; }',
+      '  Q .sh-tf-tabrow { border-bottom:var(--shape-rule,1px) solid var(--paper-edge); }',
+      '  Q .sh-tf-tab:not([aria-expanded="true"]) { border-bottom-color:transparent; }',
+      // An open origin picker takes the full width, under the progression.
+      '  Q .sh-id > .ag-fold { clear:right; }',
+      // Ancestry traits read as one line under the tags: the label, the
+      // traits, then the quiet word that changes them; its form opens below.
+      '  Q .sh-traits { display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-top:12px; }',
+      '  Q .sh-traits .sh-trl { display:flex;flex-wrap:wrap;gap:4px 14px;font:500 calc(13.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-traits .sh-edwrap { display:contents; }',
+      '  Q .sh-traits .sh-edhost { flex-basis:100%; }',
+      '  Q .sh-traits .sh-edhost:empty { display:none; }',
+      '  Q .sh-dprog { float:right;display:grid;gap:6px;justify-items:end;margin:0 0 12px 32px; }',
       '  Q .sh-dprog-b { border:0;background:none;padding:4px 6px;border-radius:var(--shape-r-ctl,8px);color:inherit;font:inherit;cursor:pointer;transition:background-color var(--dur-micro) var(--ease-out); }',
       '  Q .sh-dprog-b:hover { background:var(--paper-under); }',
       '  Q .sh-dprog dl { display:flex;gap:20px;margin:0; }',
       '  Q .sh-dprog dl div { min-width:44px;text-align:center; }',
       '  Q .sh-dprog dt { ' + cap + 'font-weight:500;letter-spacing:.06em; }',
       '  Q .sh-dprog dd { margin:2px 0 0;font:700 calc(20px * var(--ts)) var(--paper-num-font);color:var(--paper-ink); }',
-      '  Q .sh-dsync { margin:0;max-width:52ch;text-align:right;font:400 calc(12.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
+      '  Q .sh-dsync { margin:0;max-width:34ch;text-align:right;font:400 calc(12.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
       // One box, used everywhere: a fact panel, filled and lifted a little. Pressing one opens its panel.
       '  Q .sh-dbox { display:grid;align-content:center;gap:4px;min-width:0;padding:10px 4px 12px;text-align:center;' + box + 'color:var(--paper-ink);font:inherit;font-family:var(--paper-ui-font); }',
       '  Q button.sh-dbox { cursor:pointer;transition:box-shadow var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out); }',
@@ -6213,11 +6236,18 @@
       // the player never sees on a layer; a pushed layer keeps the accent.
       '[data-sheet] .sh-was-pv { color:var(--paper-warn, #b45309);text-decoration-color:var(--paper-warn, #b45309);text-decoration-thickness:2px; }',
       '[data-sheet] .sh-layer-pv { border-style:dashed;border-color:var(--paper-warn, #b45309);color:var(--paper-warn, #b45309); }',
-      '[data-sheet] .sh-tf { margin:-4px 0 10px; }',
+      // The standard's tab weight: small capitals over a hairline, with a line
+      // up its right side that runs on down the drawer's side when it opens,
+      // so the drawer hangs from the tab. The dashboard runs the hairline the
+      // full width, closing the header; elsewhere the identity has its own
+      // rule above, so the line stays under the tab.
+      '[data-sheet] .sh-tf { margin:0 0 12px; }',
       '[data-sheet] .sh-tf-tabrow { display:flex;justify-content:flex-end; }',
-      '[data-sheet] .sh-tf-tab { display:inline-flex;align-items:center;gap:6px;border:1px solid var(--paper-edge);border-top:0;border-radius:0 0 8px 8px;background:transparent;color:var(--paper-ink-soft);font:600 calc(12px * var(--ts))/1 var(--paper-ui-font);padding:6px 12px;cursor:pointer; }',
-      '[data-sheet] .sh-tf-tab[aria-expanded="true"], [data-sheet] .sh-tf-tab:hover { color:var(--paper-accent);border-color:var(--paper-accent); }',
-      '[data-sheet] .sh-tf-drawer { border:1px solid var(--paper-edge);border-radius:8px;margin-top:6px;padding:10px 12px;display:grid;gap:8px;font-family:var(--paper-ui-font); }',
+      '[data-sheet] .sh-tf-tab { display:inline-flex;align-items:center;min-height:32px;margin-bottom:-1px;padding:8px 10px 6px 0;border:0;border-right:var(--shape-rule,1px) solid var(--paper-edge);border-bottom:var(--shape-rule,1px) solid var(--paper-edge);border-radius:0;background:none;color:var(--paper-mute);font:600 calc(11.5px * var(--ts))/1 var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:color var(--dur-micro) var(--ease-out); }',
+      '[data-sheet] .sh-tf-tab:hover { color:var(--paper-ink); }',
+      '[data-sheet] .sh-tf-tab[aria-expanded="true"] { color:var(--paper-accent);border-right-color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '[data-sheet] .sh-tf-tab:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '[data-sheet] .sh-tf-drawer { border-right:var(--shape-rule,1px) solid var(--paper-accent);padding:12px 14px 4px 0;display:grid;gap:8px;font-family:var(--paper-ui-font); }',
       '[data-sheet] .sh-tf-drawer > .sh-k { margin-top:2px; }',
       '[data-sheet] .sh-tf-on { display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--paper-ink); }',
       '[data-sheet] .sh-tf-on input, [data-sheet] .sh-tf-opt input { accent-color:var(--paper-accent);width:16px;height:16px; }',
@@ -6705,7 +6735,11 @@
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '[data-sheet] .sh-idmore { display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px; }',
-      '[data-sheet] .sh-idmore > .sh-idpick,[data-sheet] .sh-idchange { font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      // Change and Change picture are quiet words: the accent marks what can be
+      // acted on, so they never read as a label or a value beside them. A grey
+      // would match the labels under high contrast.
+      '[data-sheet] .sh-idmore > .sh-idpick,[data-sheet] .sh-idchange { font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-accent);border-bottom:0;text-underline-offset:3px; }',
+      '[data-sheet] :is(.sh-idmore > .sh-idpick,.sh-idchange):is(:hover,[aria-expanded="true"]) { text-decoration:underline; }',
       '[data-sheet] a.sh-idname { text-decoration:none; }',
       '[data-sheet] .sh-origins { border:0;min-width:0; }',
       '[data-sheet] .sh-origins > summary { padding:4px 0;font:600 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',

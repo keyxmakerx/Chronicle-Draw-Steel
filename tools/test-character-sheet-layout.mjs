@@ -877,3 +877,20 @@ test('a class that uses no kit: no "still to choose", the kit reads "Not used" w
     assert.equal(cs.noKitNote(hero({ class: 'Conduit', kit: 'Shining Armor' })), '', 'a kit the hero has anyway still shows');
   } finally { cs.setEditRefs({}); }
 });
+
+test('dashboard header: Change picture sits under the portrait, the progression floats inside the identity', () => {
+  const html = cs.paperSheetHtml(PAPER);
+  const top = html.match(/<header class="sh-top">([^]*?)<\/header>/)[1];
+  assert.ok(/class="sh-port sh-dport sh-dq">[^]*?<\/div><button type="button" class="sh-dpicchg sh-dq" data-cs-change-image>Change picture<\/button>/.test(top), 'the dashboard\'s Change picture follows the portrait');
+  assert.ok(/class="sh-idpick sh-fq" data-cs-change-image>Change picture/.test(top), 'the face keeps its own, hidden on the dashboard');
+  assert.ok(/<h2 class="sh-dname sh-dq">Bren<\/h2><div class="sh-dprog sh-dq">/.test(top), 'the progression comes right after the name, inside the identity');
+  assert.ok(!/data-cs-change-image/.test(cs.paperSheetHtml(Object.assign({}, PAPER, { canChangeImage: false })).match(/<header class="sh-top">([^]*?)<\/header>/)[1]), 'no Change picture without the right');
+  const css = cs.dashCss().join('\n');
+  assert.ok(css.includes('.sh-dprog { float:right;'), 'the progression floats, so the tags run on under it');
+});
+
+test('Changes tab: a word on a hairline, no icon or box', () => {
+  const tf = { canEdit: true, layers: [], presets: [], ancestries: [] };
+  const html = cs.pChanges(Object.assign({}, PAPER, { tf }));
+  assert.ok(/<button type="button" class="sh-tf-tab" data-tf="tab" aria-expanded="false" aria-controls="[^"]+">Changes<\/button>/.test(html), 'just the word, no icon');
+});
