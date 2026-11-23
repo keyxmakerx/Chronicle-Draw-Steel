@@ -912,5 +912,75 @@
       "category": "keyword"
     },
     "source": "Draw Steel Heroes Book, ch. 13 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "speed",
+    "name": "Speed",
+    "summary": "How many squares you can move when you take the Advance move action. Each square of difficult terrain costs 1 extra.",
+    "description": "How many squares you can move when you take the Advance move action. Each square of difficult terrain costs 1 extra.",
+    "properties": {
+      "category": "movement"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "size",
+    "name": "Size",
+    "summary": "How much space a creature takes up. Sizes 1T, 1S, 1M and 1L each fill one square; size 2 fills a block 2 squares on each side, size 3 a block of 3, and so on.",
+    "description": "How much space a creature takes up. Sizes 1T, 1S, 1M and 1L each fill one square; size 2 fills a block 2 squares on each side, size 3 a block of 3, and so on.",
+    "properties": {
+      "category": "combat"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "might",
+    "name": "Might",
+    "summary": "Strength and bodily power. Added to tests and power rolls that use Might: lifting, breaking, grappling and hitting hard.",
+    "description": "Strength and bodily power. Added to tests and power rolls that use Might: lifting, breaking, grappling and hitting hard.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "agility",
+    "name": "Agility",
+    "summary": "Speed and coordination. Added to tests and power rolls that use Agility: quick hands, balance, dodging and aim.",
+    "description": "Speed and coordination. Added to tests and power rolls that use Agility: quick hands, balance, dodging and aim.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "reason",
+    "name": "Reason",
+    "summary": "Learning and logic. Added to tests and power rolls that use Reason: knowledge, logic and working things out.",
+    "description": "Learning and logic. Added to tests and power rolls that use Reason: knowledge, logic and working things out.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "intuition",
+    "name": "Intuition",
+    "summary": "Awareness and instinct. Added to tests and power rolls that use Intuition: noticing things, reading people and animals, and gut instinct.",
+    "description": "Awareness and instinct. Added to tests and power rolls that use Intuition: noticing things, reading people and animals, and gut instinct.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "custom"
+  },
+  {
+    "slug": "presence",
+    "name": "Presence",
+    "summary": "Force of personality. Added to tests and power rolls that use Presence: persuading, lying, leading and frightening.",
+    "description": "Force of personality. Added to tests and power rolls that use Presence: persuading, lying, leading and frightening.",
+    "properties": {
+      "category": "keyword"
+    },
+    "source": "custom"
   }
 ]

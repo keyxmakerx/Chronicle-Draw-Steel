@@ -3368,8 +3368,29 @@
       }).join('') + '</dl></button>' + sync + '</div>';
   }
 
-  function dashBox(label, value, cls) {
-    return '<div class="sh-dbox' + (cls ? ' ' + cls : '') + '"><span class="sh-dk">' + label + '</span><span class="sh-dbig num">' + value + '</span></div>';
+  // A number box. With a stat key it is a button that opens the stat's small
+  // card; die marks the five that roll, for a viewer who may roll them.
+  function dashBox(label, value, cls, stat, die) {
+    var inner = '<span class="sh-dk">' + label + '</span><span class="sh-dbig num">' + value + '</span>';
+    if (!stat) return '<div class="sh-dbox' + (cls ? ' ' + cls : '') + '">' + inner + '</div>';
+    return '<button type="button" class="sh-dbox sh-dstat' + (cls ? ' ' + cls : '') + '" data-cs-stat="' + stat + '" aria-haspopup="dialog" aria-expanded="false">' +
+      inner + (die ? '<span class="sh-ddie">' + fa('dice') + '</span>' : '') + '</button>';
+  }
+
+  // The save as the box shows it: the threshold, then any bonus ("6+", "6+ +1").
+  function saveText(data) {
+    var sb = f(data, 'save_bonus', '');
+    var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
+      ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
+    return num(data, 'save_threshold', 6) + '+' + sbTxt;
+  }
+
+  // The hero's movement modes beyond walking, as words.
+  function moveModes(data) {
+    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
+      .filter(function (m) { return m && m !== 'walk'; });
+    if (num(data, 'movement_hover', 0) && modes.indexOf('hover') === -1) modes.push('hover');
+    return modes;
   }
 
   function dashStamina(data) {
@@ -3398,29 +3419,374 @@
 
   // Characteristics, the static combat numbers and Stamina, as one row of boxes.
   function dashBoxes(data) {
+    var die = canRollStats(data);
     var chars = DASH_CHARS.map(function (k) {
       var v = num(data, k, 0);
-      return dashBox(CHAR_LABELS[k], wasHtml(data, k) + '<span' + (v < 0 ? ' class="sh-neg"' : '') + '>' + signedStat(v) + '</span>');
+      return dashBox(CHAR_LABELS[k], wasHtml(data, k) + '<span' + (v < 0 ? ' class="sh-neg"' : '') + '>' + signedStat(v) + '</span>', '', k, die);
     }).join('');
     var stat = function (label, key) {
       var v = f(data, key, null);
-      return dashBox(label, wasHtml(data, key) + ((v == null || v === '') ? '–' : esc(String(scalar(v)))));
+      return dashBox(label, wasHtml(data, key) + ((v == null || v === '') ? '–' : esc(String(scalar(v)))), '', key);
     };
     var combat = stat('Speed', 'speed') + stat('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') combat += stat('Disengage', 'disengage');
     if (f(data, 'size', '') !== '') combat += stat('Size', 'size');
-    if (isNum(data, 'save_threshold')) {
-      var sb = f(data, 'save_bonus', '');
-      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
-      combat += dashBox('Save', num(data, 'save_threshold', 6) + '+' + sbTxt);
-    }
-    var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
-      .filter(function (m) { return m && m !== 'walk'; }).map(function (m) { return esc(humanizeId(m)); });
-    if (num(data, 'movement_hover', 0)) modes.push('Hover');
-    if (modes.length) combat += dashBox('Moves', modes.join(', '), 'sh-dwords');
+    if (isNum(data, 'save_threshold')) combat += dashBox('Save', saveText(data), '', 'save');
+    var modes = moveModes(data).map(function (m) { return esc(humanizeId(m)); });
+    if (modes.length) combat += dashBox('Moves', modes.join(', '), 'sh-dwords', 'moves');
     return '<section class="sh-dboxes sh-dq" aria-label="Characteristics, movement and Stamina">' +
       '<div class="sh-dchars">' + chars + '</div><div class="sh-dcombat">' + combat + '</div>' + dashStamina(data) + '</section>';
+  }
+
+  // ── Stat cards: pressing a number box ────────────────────────────────────
+  // A characteristic's card rolls a test through Chronicle's own roll route,
+  // the same request the Table makes, so the Table's notice and log read it as
+  // a power roll. The other numbers' cards explain them. Only the hero's
+  // player and the Director roll; anyone else gets the explanation.
+
+  var STAT_LABELS = { speed: 'Speed', stability: 'Stability', disengage: 'Disengage', size: 'Size', save: 'Save', moves: 'Moves' };
+  var STAT_RULES = { speed: 'speed', stability: 'stability', disengage: 'disengage', size: 'size', save: 'saving-throw' };
+  var MOVE_RULES = { fly: 'fly', hover: 'hover', climb: 'climb-or-swim', swim: 'climb-or-swim', burrow: 'burrow', teleport: 'teleport' };
+  var ROLL_STEPS = [[-2, 'Double bane', '2× bane'], [-1, 'Bane', 'Bane'], [0, 'Plain', 'Plain'], [1, 'Edge', 'Edge'], [2, 'Double edge', '2× edge']];
+  var ROLL_NOTE = 'Goes to the Table. Everyone sees it.';
+
+  function canRollStats(data) { return !!(data && data.campaignId && (data.isGm || data.isOwner)); }
+
+  // The campaign's power roll (dice, edge, bane, tier breaks), read once per
+  // campaign from the route the Table reads. null when the system declares
+  // none or the read fails; a failed read is tried again next time.
+  var powerRules = {};
+  var powerRulesRead = {};
+  function loadPowerRules(campaignId) {
+    if (!campaignId || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve(null);
+    if (powerRules[campaignId]) return powerRules[campaignId];
+    var p = Chronicle.apiFetch('/campaigns/' + encodeURIComponent(campaignId) + '/rolls/power')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.declared) return null;
+        var n = function (v) { v = Number(v); return isFinite(v) ? v : 0; };
+        return { dice: j.dice || '2d10', edge: n(j.edge), bane: n(j.bane), tiers: [n((j.tiers || [])[0]), n((j.tiers || [])[1])], characteristics: j.characteristics || [] };
+      })
+      .catch(function () { return null; });
+    powerRules[campaignId] = p;
+    p.then(function (r) {
+      if (r) powerRulesRead[campaignId] = r;
+      else if (powerRules[campaignId] === p) delete powerRules[campaignId];
+    });
+    return p;
+  }
+
+  // "2d10+4" as the card prints it: "2d10 + 4", with a true minus.
+  function formulaText(formula) {
+    return String(formula).replace(/([+-])(\d+)$/, function (m, sign, n) { return ' ' + (sign === '-' ? '−' : '+') + ' ' + n; });
+  }
+
+  // The hero's abilities whose power roll uses this characteristic, by name.
+  function rolledBy(data, key) {
+    return parseAbilities(data).filter(function (a) {
+      return a && powerRollChars(a).some(function (c) { return String(c).toLowerCase() === key; });
+    }).map(function (a) { return String(a.name || '').replace(/\s*\([^)]*\)\s*$/, ''); }).filter(Boolean);
+  }
+  function namesSentence(names) {
+    if (names.length > 4) names = names.slice(0, 3).concat([(names.length - 3) + ' more']);
+    return names.length < 2 ? names.join('') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  // Where a number comes from, as far as the sheet can tell: the ancestry's
+  // base and the kit's bonus. When those don't add up to the number shown,
+  // the card says the rest comes from something it can't name.
+  function statSources(data, key) {
+    if (key !== 'speed' && key !== 'stability' && key !== 'disengage' && key !== 'size') return { rows: [], note: '' };
+    var anc = findEntry(editRefs['ancestries.json'], originVal(data, 'ancestry'));
+    var ap = (anc && anc.properties) || {};
+    var ancName = anc ? String(anc.name || '') : '';
+    if (key === 'size') {
+      return { rows: anc && /^\d/.test(String(ap.size || '')) ? [['Ancestry', esc(ancName + ' ' + ap.size)]] : [], note: '' };
+    }
+    var k = kitObject(data) || {};
+    var kd = originDef(data, 'kit');
+    var kp = (kd && kd.properties) || {};
+    var kv = k[key];
+    if (kv == null || kv === '') kv = kp[key + '_bonus'];
+    var kitBonus = (kv == null || kv === '' || !isFinite(Number(kv))) ? null : Number(kv);
+    var kitName = dashKitName(data);
+    var rows = [], sum = 0;
+    if (key === 'disengage') { rows.push(['Base', '1']); sum += 1; }
+    else if (anc && ap[key] != null && isFinite(Number(ap[key]))) { rows.push(['Ancestry', esc(ancName) + ' ' + Number(ap[key])]); sum += Number(ap[key]); }
+    if (kitName && kitBonus) { rows.push(['Kit', esc(kitName) + ' ' + signedStat(kitBonus)]); sum += kitBonus; }
+    var shown = isNum(data, key) ? num(data, key, 0) : null;
+    var note = '';
+    // Without the ancestry's base there is no sum to compare against.
+    var whole = key === 'disengage' || !!anc;
+    if (whole && rows.length && shown != null && shown !== sum) {
+      note = 'That makes ' + sum + '. The other ' + signedStat(shown - sum) + ' comes from something the sheet can’t name, such as a feature, a title or a treasure.';
+    }
+    return { rows: rows, note: note };
+  }
+
+  // The card's words for one stat. st carries what the card is doing: the
+  // edge or bane picked, the rules once read, a result or an error.
+  function statCardHtml(data, key, st) {
+    var isChar = DASH_CHARS.indexOf(key) !== -1;
+    var label = isChar ? CHAR_LABELS[key] : STAT_LABELS[key];
+    var head, roll = '', body = '';
+    if (isChar) {
+      var v = num(data, key, 0);
+      var pr = Chronicle && Chronicle.powerRoll;
+      var rollable = canRollStats(data) && pr && typeof pr.plan === 'function' && (st.rules || !st.rulesTried);
+      if (rollable && !st.rules) {
+        // The campaign's rules are still on their way; the card keeps its shape.
+        head = '<p class="sh-sc-h"><b>' + esc(label) + ' test</b></p>';
+        roll = '<div class="sh-sc-go"><button type="button" class="sh-edsave sh-sc-roll" aria-disabled="true">Roll</button>' +
+          '<span class="sh-sc-note">Getting the roll ready…</span></div>';
+      } else if (rollable) {
+        var plan = pr.plan(st.rules, label, v, st.step);
+        var more = st.step >= 2 ? ' · a tier higher' : st.step <= -2 ? ' · a tier lower' : '';
+        head = '<p class="sh-sc-h"><b>' + esc(label) + ' test</b> <span class="sh-sc-f num">' + esc(formulaText(plan.formula)) + more + '</span></p>';
+        roll = '<div class="sh-sc-seg" role="group" aria-label="Edge or bane">' + ROLL_STEPS.map(function (s) {
+          return '<button type="button" data-cs-sc-step="' + s[0] + '" aria-pressed="' + (st.step === s[0]) + '" aria-label="' + s[1] + '">' + s[2] + '</button>';
+        }).join('') + '</div>' +
+          '<div class="sh-sc-go"><button type="button" class="sh-edsave sh-sc-roll" data-cs-sc-roll' + (st.busy ? ' aria-disabled="true"' : '') + '>Roll</button>' +
+          '<span class="sh-sc-note' + (st.error ? ' is-err' : st.result ? ' is-res' : '') + '">' +
+          esc(st.error || (st.result ? st.result + '. In the Table’s log.' : ROLL_NOTE)) + '</span></div>';
+      } else {
+        head = '<p class="sh-sc-h"><b>' + esc(label) + ' ' + signedStat(v) + '</b></p>';
+        if (canRollStats(data) && (st.rulesTried || !pr)) {
+          roll = '<p class="sh-sc-note">' + (pr ? 'This campaign’s rolls couldn’t be read here. ' : '') + 'Roll it from the Table.</p>';
+        }
+      }
+      var en = glossaryEntry(key);
+      var names = rolledBy(data, key);
+      body = (en ? '<p>' + refText(en.summary || en.description || '') + '</p>' : '') +
+        (names.length ? '<p>' + esc(namesSentence(names)) + (names.length === 1 ? ' rolls it.' : ' roll it.') + '</p>' : '');
+    } else {
+      var val = key === 'save' ? saveText(data) : key === 'moves' ? '' : esc(String(scalar(f(data, key, '–'))));
+      head = '<p class="sh-sc-h"><b>' + esc(label) + (val ? ' ' + val : '') + '</b></p>';
+      if (key === 'moves') {
+        var seen = {};
+        body = moveModes(data).map(function (m) {
+          var slug = MOVE_RULES[m];
+          if (!slug || seen[slug]) return '';
+          seen[slug] = true;
+          var e = glossaryEntry(slug);
+          return e ? '<p><b>' + esc(e.name || humanizeId(m)) + '.</b> ' + refText(e.summary || e.description || '') + '</p>' : '';
+        }).join('');
+      } else {
+        var ge = glossaryEntry(STAT_RULES[key]);
+        if (ge) body = '<p>' + refText(ge.summary || ge.description || '') + '</p>';
+      }
+      var src = statSources(data, key);
+      if (src.rows.length) {
+        body += '<dl class="sh-sc-src">' + src.rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd class="num">' + r[1] + '</dd>'; }).join('') + '</dl>';
+      }
+      if (src.note) body += '<p class="sh-sc-note">' + esc(src.note) + '</p>';
+      if (!body) body = '<p class="sh-sc-note">The rules glossary has not loaded.</p>';
+      if (canRollStats(data)) body += '<hr><p class="sh-sc-note">Nothing to roll here. The five characteristics above roll.</p>';
+    }
+    return '<span class="sh-sc-notch" aria-hidden="true"></span>' + head + roll + (roll && body ? '<hr>' : '') + (body ? '<div class="sh-sc-body">' + body + '</div>' : '');
+  }
+
+  // Hangs the card under its box, kept inside the row of boxes, with the
+  // notch pointing at the box; Grow starts from the notch.
+  function placeStatCard(card, btn, host) {
+    var hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect();
+    var w = Math.min(340, hr.width);
+    var left = Math.max(0, Math.min(br.left - hr.left - 6, hr.width - w));
+    var notch = Math.max(14, Math.min(br.left - hr.left + br.width / 2 - left - 6, w - 26));
+    card.style.width = w + 'px';
+    card.style.left = left + 'px';
+    card.style.top = (br.bottom - hr.top + 10) + 'px';
+    card.style.setProperty('--sc-notch', notch + 'px');
+    card.style.setProperty('--ox', (notch + 6) + 'px');
+    card.style.setProperty('--oy', '0px');
+  }
+
+  function reducedMotion() {
+    try {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        /^(calm|off)$/.test(document.documentElement.getAttribute('data-motion') || '');
+    } catch (e) { return false; }
+  }
+
+  function attachStatCards(inst, el, data) {
+    detachStatCards(inst, el);
+    if (typeof document === 'undefined') return;
+    // Read ahead for a viewer who may roll, so the first card opens ready.
+    if (canRollStats(data) && el.querySelector('[data-cs-stat]')) loadPowerRules(data.campaignId);
+
+    function draw() {
+      var sc = inst._sc;
+      if (!sc) return;
+      var had = document.activeElement, step = had && had.getAttribute && had.getAttribute('data-cs-sc-step');
+      var onRoll = had && had.hasAttribute && had.hasAttribute('data-cs-sc-roll');
+      sc.inner.innerHTML = statCardHtml(data, sc.key, sc);
+      var back = step != null ? sc.card.querySelector('[data-cs-sc-step="' + step + '"]') : onRoll ? sc.card.querySelector('[data-cs-sc-roll]') : null;
+      if (back) back.focus({ preventScroll: true });
+    }
+
+    function close(refocus) {
+      var sc = inst._sc;
+      if (!sc) return;
+      inst._sc = null;
+      sc.btn.setAttribute('aria-expanded', 'false');
+      sc.btn.removeAttribute('aria-controls');
+      var card = sc.card;
+      if (refocus && sc.btn.isConnected) sc.btn.focus({ preventScroll: true });
+      // Closing is quicker than opening and only fades; Calm and Off end at once.
+      if (!card.isConnected || reducedMotion()) { if (card.parentNode) card.parentNode.removeChild(card); return; }
+      card.classList.add('is-closing');
+      setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 90);
+    }
+    inst._closeStatCard = close;
+
+    function open(btn, fromKeys) {
+      var host = btn.closest('.sh-dboxes');
+      if (!host) return;
+      close(false);
+      var key = btn.getAttribute('data-cs-stat');
+      var card = document.createElement('div');
+      card.className = 'sh-sc';
+      card.id = 'sh-sc-' + (++dashSeq);
+      card.setAttribute('role', 'dialog');
+      card.setAttribute('aria-label', (CHAR_LABELS[key] || STAT_LABELS[key] || key));
+      card.tabIndex = -1;
+      var known = data.campaignId && (data.campaignId in powerRulesRead) ? powerRulesRead[data.campaignId] : undefined;
+      var sc = inst._sc = { btn: btn, card: card, key: key, step: 0, rules: known || null, rulesTried: known !== undefined, busy: false, result: '', error: '', w: window.innerWidth };
+      var isChar = DASH_CHARS.indexOf(key) !== -1;
+      // The words are redrawn inside; the live region stays, so a result or
+      // an error put into it is read out.
+      card.innerHTML = '<div data-cs-sc-in></div><span class="sh-sr" role="status" data-cs-sc-live></span>';
+      sc.inner = card.querySelector('[data-cs-sc-in]');
+      sc.live = card.querySelector('[data-cs-sc-live]');
+      sc.inner.innerHTML = statCardHtml(data, key, sc);
+      host.appendChild(card);
+      placeStatCard(card, btn, host);
+      btn.setAttribute('aria-expanded', 'true');
+      btn.setAttribute('aria-controls', card.id);
+      // From the keyboard it appears at once; a press grows it out of the box.
+      if (fromKeys) card.classList.add('is-open'); else growIn(card);
+      var focus = function () {
+        if (inst._sc !== sc) return;
+        var r = card.querySelector('[data-cs-sc-roll]');
+        (r || card).focus({ preventScroll: true });
+      };
+      focus();
+      if (isChar && canRollStats(data) && !sc.rulesTried && Chronicle && Chronicle.powerRoll) {
+        loadPowerRules(data.campaignId).then(function (rules) {
+          if (inst._sc !== sc) return;
+          sc.rules = rules;
+          sc.rulesTried = true;
+          var hadFocus = card.contains(document.activeElement);
+          sc.inner.innerHTML = statCardHtml(data, key, sc);
+          if (hadFocus) focus();
+        });
+      }
+      // The ancestry and kit files name where Speed and the others come from.
+      if (!isChar && key !== 'save' && key !== 'moves' && data.campaignId) {
+        Promise.resolve(ensureEditRefs(data.campaignId, ['ancestries.json', 'kits.json'])).then(function () {
+          if (inst._sc === sc) draw();
+        });
+      }
+    }
+
+    function roll() {
+      var sc = inst._sc;
+      var pr = Chronicle && Chronicle.powerRoll;
+      if (!sc || sc.busy || !sc.rules || !pr) return;
+      var p = pr.plan(sc.rules, CHAR_LABELS[sc.key], num(data, sc.key, 0), sc.step);
+      sc.busy = true;
+      sc.error = '';
+      sc.live.textContent = '';
+      draw();
+      Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) + '/rolls', { method: 'POST', body: { formula: p.formula, label: p.label, mode: 'public' } })
+        .then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (d) { return { ok: res.ok, d: d || {} }; });
+        })
+        .then(function (out) {
+          if (!out.ok) throw { server: String(out.d.message || out.d.error || 'The roll didn’t go through. Try again.') };
+          var read = typeof pr.read === 'function' ? pr.read(out.d, sc.rules) : null;
+          sc.result = read ? pr.headline(read) : (out.d.total != null ? String(out.d.total) : 'Rolled');
+          // Edge or bane is for one roll, as at the Table.
+          sc.step = 0;
+        })
+        .catch(function (err) {
+          // Only the server's own reason is shown; a failed request reads the same in every browser.
+          sc.error = err && err.server ? err.server : 'The roll didn’t go through. Check your connection and try again.';
+        })
+        .then(function () {
+          sc.busy = false;
+          if (inst._sc !== sc) return;
+          draw();
+          sc.live.textContent = sc.error || (sc.result + '. In the Table’s log.');
+        });
+    }
+
+    inst._onStatClick = function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var box = t.closest('[data-cs-stat]');
+      if (box && el.contains(box)) {
+        e.preventDefault();
+        if (inst._sc && inst._sc.btn === box) close(false);
+        else open(box, e.detail === 0);
+        return;
+      }
+      var sc = inst._sc;
+      if (!sc || !sc.card.contains(t)) return;
+      var stepBtn = t.closest('[data-cs-sc-step]');
+      if (stepBtn) {
+        e.preventDefault();
+        sc.step = parseInt(stepBtn.getAttribute('data-cs-sc-step'), 10) || 0;
+        sc.result = '';
+        sc.error = '';
+        draw();
+        return;
+      }
+      if (t.closest('[data-cs-sc-roll]')) { e.preventDefault(); roll(); }
+    };
+    el.addEventListener('click', inst._onStatClick);
+
+    // Escape puts the card away before anything larger, and focus goes back
+    // to the box it came from.
+    inst._onStatKey = function (e) {
+      if ((e.key !== 'Escape' && e.key !== 'Esc') || !inst._sc) return;
+      e.preventDefault();
+      e.stopPropagation();
+      close(true);
+    };
+    el.addEventListener('keydown', inst._onStatKey, true);
+
+    // A press anywhere else closes it, losing nothing.
+    inst._onStatDown = function (e) {
+      var sc = inst._sc;
+      if (!sc || sc.card.contains(e.target) || sc.btn.contains(e.target)) return;
+      close(false);
+    };
+    document.addEventListener('pointerdown', inst._onStatDown, true);
+
+    // The card is placed for the layout it opened in, so a change of width
+    // puts it away (a phone's bar sliding away on scroll changes only height).
+    inst._onStatResize = function () { if (inst._sc && window.innerWidth !== inst._sc.w) close(false); };
+    if (typeof window.addEventListener === 'function') window.addEventListener('resize', inst._onStatResize);
+
+    // Tabbing out of the card closes it too.
+    inst._onStatLeave = function (e) {
+      var sc = inst._sc, to = e.relatedTarget;
+      if (!sc || !to || sc.card.contains(to) || sc.btn === to) return;
+      if (sc.card.contains(e.target) || sc.btn === e.target) close(false);
+    };
+    el.addEventListener('focusout', inst._onStatLeave);
+  }
+
+  function detachStatCards(inst, el) {
+    if (inst._closeStatCard) inst._closeStatCard(false);
+    if (inst._onStatClick) el.removeEventListener('click', inst._onStatClick);
+    if (inst._onStatKey) el.removeEventListener('keydown', inst._onStatKey, true);
+    if (inst._onStatLeave) el.removeEventListener('focusout', inst._onStatLeave);
+    if (inst._onStatDown && typeof document !== 'undefined') document.removeEventListener('pointerdown', inst._onStatDown, true);
+    if (inst._onStatResize && typeof window !== 'undefined' && typeof window.removeEventListener === 'function') window.removeEventListener('resize', inst._onStatResize);
+    inst._sc = null;
+    inst._onStatClick = inst._onStatKey = inst._onStatLeave = inst._onStatDown = inst._onStatResize = inst._closeStatCard = null;
   }
 
   function dashConditions(data) {
@@ -5253,6 +5619,7 @@
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    detachStatCards(inst, el);
     if (inst._dashIo) inst._dashIo.disconnect();
     if (inst._dashRo) inst._dashRo.disconnect();
     if (inst._dashMo) inst._dashMo.disconnect();
@@ -5414,6 +5781,7 @@
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
     attachDashPin(inst, el);
+    attachStatCards(inst, el, data);
     showItemsRow(el);
   }
 
@@ -5994,6 +6362,40 @@
       '  Q button.sh-dbox:hover,Q button.sh-dbox[aria-expanded="true"] { box-shadow:var(--elev-hover,none);border-color:color-mix(in srgb,var(--paper-accent) 55%,var(--paper-edge)); }',
       '  Q button.sh-dbox:active { box-shadow:inset 0 1px 3px rgb(0 0 0 / .18); }',
       '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      // A number box opens its small card, which hangs under it over the row
+      // below. The five that roll carry a quiet die.
+      '  Q .sh-dboxes { position:relative; }',
+      '  Q .sh-dstat { position:relative; }',
+      '  Q .sh-dstat[aria-expanded="true"] { border-color:var(--paper-accent);box-shadow:0 0 0 1px var(--paper-accent),var(--elev-hover,none); }',
+      '  Q .sh-ddie { position:absolute;right:8px;bottom:7px;font-size:calc(11px * var(--ts));line-height:1;color:var(--paper-mute); }',
+      '  Q .sh-sc { position:absolute;z-index:40;box-sizing:border-box;padding:14px 16px;background:var(--paper);color:var(--paper-ink-soft,var(--paper-ink));border:' + edge + ';border-radius:var(--shape-r-panel,12px);box-shadow:var(--elev-hover,0 8px 24px rgb(0 0 0 / .16));font:400 calc(14px * var(--ts))/1.45 var(--paper-ui-font);text-align:left; }',
+      '  Q .sh-sc[data-move="grow"] { --mv-t:calc(var(--dur-everyday,120ms) * var(--mv-k,1)); }',
+      '  Q .sh-sc.is-closing { opacity:0;transition:opacity 80ms var(--ease-in,ease-in); }',
+      '  Q .sh-sc:focus { outline:none; }',
+      '  Q .sh-sc-notch { position:absolute;top:-7px;left:var(--sc-notch,30px);width:12px;height:12px;background:var(--paper);border-left:' + edge + ';border-top:' + edge + ';transform:rotate(45deg); }',
+      '  Q .sh-sc-h { margin:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px; }',
+      '  Q .sh-sc-h b { font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
+      '  Q .sh-sc-f { font:500 calc(13px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
+      '  Q .sh-sc-seg { display:inline-flex;margin-top:12px;border:' + edge + ';border-radius:var(--shape-r-ctl,8px);overflow:hidden; }',
+      '  Q .sh-sc-seg button { min-height:36px;padding:6px 10px;border:0;border-left:' + edge + ';background:none;color:var(--paper-ink-soft,var(--paper-ink));font:500 calc(13px * var(--ts)) var(--paper-ui-font);cursor:pointer;transition:background-color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-sc-seg button:first-child { border-left:0; }',
+      '  Q .sh-sc-seg button:hover { background:var(--paper-under); }',
+      '  Q .sh-sc-seg button[aria-pressed="true"] { background:color-mix(in srgb,var(--paper-accent) 12%,transparent);color:var(--paper-accent);font-weight:600; }',
+      '  Q .sh-sc-seg button:focus-visible { outline:2px solid var(--paper-accent);outline-offset:-2px; }',
+      '  Q .sh-sc-go { display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:12px; }',
+      '  Q .sh-sc-roll { min-height:40px;padding:8px 20px;border-radius:var(--shape-r-ctl,8px); }',
+      '  Q .sh-sc-roll[aria-disabled="true"] { opacity:.6;cursor:default; }',
+      '  Q .sh-sc-roll:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '  Q .sh-sc-note { margin:0;font-size:calc(13px * var(--ts));color:var(--paper-mute); }',
+      '  Q .sh-sc-note.is-res { font-weight:600;color:var(--paper-ink); }',
+      '  Q .sh-sc-note.is-err { color:var(--paper-warn,var(--paper-neg)); }',
+      '  Q .sh-sc hr { border:0;border-top:var(--shape-rule,1px) solid ' + hair + ';margin:12px 0 0; }',
+      '  Q .sh-sc-body > p { margin:8px 0 0; }',
+      '  Q .sh-sc-body > p:first-child { margin-top:6px; }',
+      '  Q .sh-sc-body b { font-weight:600;color:var(--paper-ink); }',
+      '  Q .sh-sc-src { display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:10px 0 0;font-size:calc(13.5px * var(--ts)); }',
+      '  Q .sh-sc-src dt { color:var(--paper-mute); }',
+      '  Q .sh-sc-src dd { margin:0;color:var(--paper-ink-soft,var(--paper-ink)); }',
       '  Q .sh-dk { display:block;' + cap + 'letter-spacing:.06em; }',
       '  Q .sh-dbig { display:block;font:700 calc(30px * var(--ts))/1.1 var(--paper-num-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
       '  Q .sh-dbig small { font-size:.5em;font-weight:500;letter-spacing:0;color:var(--paper-ink-soft); }',
@@ -6856,6 +7258,8 @@
     var st = inst._tf;
     if (st && (st.busy || st.saving || st.add || st.remove || inst._tfAdjDirty)) return true;
     if (inst._panelBody && inst._panelBody.isConnected) return true;
+    // An open stat card, or a roll on its way, waits too: a redraw would drop it.
+    if (inst._sc && inst._sc.card && inst._sc.card.isConnected) return true;
     return [].some.call(el.querySelectorAll('[data-cs-ed-host],[data-cs-pick-fold]'), function (n) { return !!n.firstChild; });
   }
 
@@ -7055,6 +7459,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       setRefRenderer: function (r) { refRenderer = r; }, abilityRulesHtml: abilityRulesHtml,
+      statCardHtml: statCardHtml, statSources: statSources, formulaText: formulaText, canRollStats: canRollStats,
       loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey,
       jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,

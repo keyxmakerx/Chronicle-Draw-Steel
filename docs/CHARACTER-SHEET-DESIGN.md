@@ -8,7 +8,9 @@
 A read-only DM reference: a director looks up a player's abilities, stats and
 defenses while building monsters or writing notes, so data completeness beats
 interactivity. Foundry is the source of truth; nothing on the sheet writes
-back, except the origin picker and the Changes drawer in the paper layout.
+back, except the origin picker and the Changes drawer in the paper layout. A
+characteristic's test rolled from the dashboard goes to the Table's log, not
+onto the hero.
 
 ## Testing
 
@@ -92,11 +94,24 @@ and not the window's). The phone and the paper styles never see it.
   choose" list of pickers (`dashTodoTags`), and the progression box (level,
   victories, XP, renown, wealth) that opens the Progression panel.
 - A row of number boxes (`dashBoxes`): the five characteristics, then Stamina
-  (opens the turn panel), speed, stability, disengage, size and save. Under
-  it (`dashUnder`): heroic resource, surges with their damage, potency (the
-  synced fields, otherwise the glossary rule from the highest characteristic),
-  damage immunities and weaknesses, and conditions. Vitals and conditions
-  stay read-only.
+  (opens the turn panel), speed, stability, disengage, size, save and moves.
+  Under it (`dashUnder`): heroic resource, surges with their damage, potency
+  (the synced fields, otherwise the glossary rule from the highest
+  characteristic), damage immunities and weaknesses, and conditions. Vitals
+  and conditions stay read-only.
+- Pressing a number box other than Stamina opens a small card under it
+  (`attachStatCards`, `statCardHtml`) that Grows out of the box (at once from
+  the keyboard) and closes on Escape (focus goes back to the box), a press
+  elsewhere, tabbing out or a change of window width. While one is open, a
+  live refresh of the page waits (`holdsWork`). A characteristic's card rolls a test, for the hero's
+  player and the Director only (`canRollStats`; the five boxes carry a die):
+  edge or bane first, then Roll asks Chronicle's roll route for the power
+  roll the Table would make (`Chronicle.powerRoll.plan` with the campaign's
+  rules from `GET /campaigns/:id/rolls/power`), always seen by everyone and
+  under the presser's name, and the card shows the tier. Every card explains
+  its number from the glossary; speed, stability, disengage and size also list
+  the ancestry and kit parts (`statSources`), and speed, stability and
+  disengage say when those don't add up to the number shown.
 - At 1100px and wider a left column (`dashRailInner`) holds Skills by group,
   Languages and the Kit's numbers. Narrower, the same list is a Skills tab.
 - Tabs: Abilities (below), Skills (narrow only),

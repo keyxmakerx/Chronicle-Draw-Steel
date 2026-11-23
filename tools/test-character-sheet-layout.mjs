@@ -894,3 +894,71 @@ test('Changes tab: a word on a hairline, no icon or box', () => {
   const html = cs.pChanges(Object.assign({}, PAPER, { tf }));
   assert.ok(/<button type="button" class="sh-tf-tab" data-tf="tab" aria-expanded="false" aria-controls="[^"]+">Changes<\/button>/.test(html), 'just the word, no icon');
 });
+
+test('stat boxes: every number opens its card; only the hero\'s player and the Director see the dice', () => {
+  const d = Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { speed: 6, stability: 1, size: '1M', save_threshold: 6, movement_types: 'Fly' }) });
+  const html = cs.dashBoxes(d);
+  for (const k of ['might', 'agility', 'reason', 'intuition', 'presence', 'speed', 'stability', 'size', 'save', 'moves']) {
+    assert.ok(new RegExp('<button type="button" class="sh-dbox sh-dstat[^"]*" data-cs-stat="' + k + '" aria-haspopup="dialog" aria-expanded="false">').test(html), k + ' is a button');
+  }
+  assert.equal((html.match(/class="sh-ddie"/g) || []).length, 5, 'the five characteristics carry the die');
+  const viewer = cs.dashBoxes(Object.assign({}, d, { isGm: false, isOwner: false }));
+  assert.ok(!/sh-ddie/.test(viewer) && /data-cs-stat="agility"/.test(viewer), 'another viewer can still read them');
+  assert.ok(!cs.canRollStats(Object.assign({}, d, { campaignId: '' })), 'no campaign, no roll');
+});
+
+test('stat cards: a characteristic rolls a test with edge or bane; anyone else reads it', () => {
+  const C = globalThis.window.Chronicle;
+  C.powerRoll = { plan: (rules, name, v, n) => ({ formula: rules.dice + '+' + (v + (n === 1 ? rules.edge : 0)), label: name }) };
+  try {
+    const d = Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { agility: 2,
+      abilities_json: JSON.stringify([{ name: 'Fade', powerRollChars: ['agility'] }, { name: 'Shove (1 Focus)', powerRollChars: ['Agility', 'might'] }, { name: 'Think', powerRollChars: ['reason'] }]) }) });
+    const rules = { dice: '2d10', edge: 2, bane: -2, tiers: [11, 16] };
+    const st = (o) => Object.assign({ step: 0, rules, rulesTried: true, busy: false, result: '', error: '' }, o);
+    const card = cs.statCardHtml(d, 'agility', st());
+    assert.ok(/<b>Agility test<\/b> <span class="sh-sc-f num">2d10 \+ 2<\/span>/.test(card), 'the test and its formula');
+    assert.equal((card.match(/data-cs-sc-step="/g) || []).length, 5, '2× bane, bane, plain, edge, 2× edge');
+    assert.ok(/data-cs-sc-step="0" aria-pressed="true"/.test(card), 'plain to start');
+    assert.ok(/data-cs-sc-roll>Roll<\/button>/.test(card) && /Goes to the Table\. Everyone sees it\./.test(card));
+    assert.ok(/Fade and Shove roll it\./.test(card), 'the abilities that roll it, without their cost');
+    assert.ok(/2d10 \+ 4/.test(cs.statCardHtml(d, 'agility', st({ step: 1 }))), 'an edge is in the formula');
+    assert.ok(/a tier higher/.test(cs.statCardHtml(d, 'agility', st({ step: 2 }))), 'a double edge moves the tier');
+    assert.ok(/Tier 2 · 14\. In the Table’s log\./.test(cs.statCardHtml(d, 'agility', st({ result: 'Tier 2 · 14' }))), 'the result');
+    const other = cs.statCardHtml(Object.assign({}, d, { isGm: false, isOwner: false }), 'agility', st());
+    assert.ok(/<b>Agility \+2<\/b>/.test(other) && !/data-cs-sc-roll|sh-sc-seg|Everyone sees it/.test(other), 'another viewer gets the explanation only');
+    const failed = cs.statCardHtml(d, 'agility', st({ rules: null }));
+    assert.ok(!/data-cs-sc-roll/.test(failed) && /Roll it from the Table/.test(failed), 'unreadable rules say where to roll');
+    delete C.powerRoll;
+    assert.ok(!/data-cs-sc-roll/.test(cs.statCardHtml(d, 'agility', st())), 'without Chronicle\'s power roll there is nothing to press');
+  } finally { delete C.powerRoll; }
+});
+
+test('stat cards: Speed says where it comes from, and what the sheet can\'t name', () => {
+  const refs = Object.assign({}, ORIGIN_REFS, { 'kits.json': [{ slug: 'armor', name: 'Armor', properties: { speed_bonus: 0, stability_bonus: 2, disengage_bonus: 1 } }] });
+  cs.setEditRefs(refs);
+  try {
+    const d = (f) => Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { kit: 'Armor', kit_details_json: '' }, f) });
+    assert.deepEqual(cs.statSources(d({ speed: 5 }), 'speed'), { rows: [['Ancestry', 'Human 5']], note: '' }, 'a kit adding nothing is left out');
+    const st = cs.statSources(d({ stability: 2 }), 'stability');
+    assert.deepEqual(st.rows, [['Kit', 'Armor +2']]);
+    const off = cs.statSources(d({ speed: 7 }), 'speed');
+    assert.ok(/That makes 5\. The other \+2 comes from something the sheet can’t name/.test(off.note));
+    assert.deepEqual(cs.statSources(d({ disengage: 2 }), 'disengage').rows, [['Base', '1'], ['Kit', 'Armor +1']]);
+    assert.deepEqual(cs.statSources(d({ ancestry: 'Homebrew Folk', speed: 7, kit_details_json: JSON.stringify([{ name: 'Armor', speed: 2 }]) }), 'speed'),
+      { rows: [['Kit', 'Armor +2']], note: '' }, 'an ancestry the pack doesn\'t know is not blamed on a treasure');
+    assert.deepEqual(cs.statSources(d({ size: '1M' }), 'size').rows, [['Ancestry', 'Human 1M']]);
+    const synced = cs.statSources(d({ speed: 7, kit_details_json: JSON.stringify([{ name: 'Armor', speed: 2 }]) }), 'speed');
+    assert.deepEqual(synced, { rows: [['Ancestry', 'Human 5'], ['Kit', 'Armor +2']], note: '' }, 'Foundry\'s kit numbers win');
+    const card = cs.statCardHtml(d({ speed: 5 }), 'speed', {});
+    assert.ok(/<b>Speed 5<\/b>/.test(card) && /<dt>Ancestry<\/dt><dd class="num">Human 5<\/dd>/.test(card));
+    assert.ok(/Nothing to roll here\. The five characteristics above roll\./.test(card), 'a roller is told which numbers roll');
+    assert.ok(!/Nothing to roll/.test(cs.statCardHtml(Object.assign(d({ speed: 5 }), { isGm: false, isOwner: false }), 'speed', {})));
+  } finally { cs.setEditRefs({}); }
+});
+
+test('stat cards: the glossary explains every number the cards read', () => {
+  const g = new Set(JSON.parse(readFileSync(new URL('../data/rules-glossary.json', import.meta.url), 'utf8')).map((e) => e.slug));
+  for (const s of ['might', 'agility', 'reason', 'intuition', 'presence', 'speed', 'stability', 'disengage', 'size', 'saving-throw', 'fly', 'hover', 'climb-or-swim', 'burrow', 'teleport']) {
+    assert.ok(g.has(s), s + ' has a glossary entry');
+  }
+});
