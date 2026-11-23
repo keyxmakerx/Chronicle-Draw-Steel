@@ -322,6 +322,15 @@
   var STYLE_ID = 'clf-style';
   var FOLD_MS = 300;   // the pieces lie down before the cover turns over them
   var SHUT_MS = 1060;  // folding plus the cover's swing, before the board fades
+  var RISE_MS = 950;   // the first piece rises once the turning page has landed
+  var TILT = 58;       // how far the open book leans back from the reader
+  var SPREAD_W = 600, SPREAD_H = 250;  // the open spread, as .clf-spread and .clf-stand size it
+
+  // hinge is a standing piece's transform: the book's tilt about the spread's
+  // centre, then the piece's own fold about its bottom edge.
+  function hinge(fold) {
+    return 'rotateX(' + TILT + 'deg) translateY(var(--by)) rotateX(' + fold + 'deg) translateY(calc(var(--by) * -1))';
+  }
 
   var D = 'var(--clf-display,"Big Shoulders Display","Oswald","Arial Narrow",Impact,sans-serif)';
   var U = 'var(--clf-ui,"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif)';
@@ -397,7 +406,12 @@
         'background:radial-gradient(80% 70% at 50% 110%,rgba(225,163,44,.35),transparent 70%),radial-gradient(130% 100% at 50% 0%,#3a1c2a 0%,#140c14 75%)}',
       '.clf-fit{position:absolute;left:50%;top:0;width:700px;height:520px;margin-left:-350px;transform:scale(var(--clf-s,1));transform-origin:50% 0}',
       '.clf-pbook{position:absolute;left:0;right:0;top:48px;height:360px;perspective:1200px;perspective-origin:50% 0%}',
-      '.clf-spread{position:absolute;left:50px;top:150px;width:600px;height:250px;transform-style:preserve-3d;transform:rotateX(58deg)}',
+      '.clf-spread{position:absolute;left:50px;top:150px;width:600px;height:250px;transform-style:preserve-3d;transform:rotateX(' + TILT + 'deg)}',
+      // The standing pieces sit over the spread, not in its 3D context: each
+      // carries the spread's tilt itself and is painted back to front, so the
+      // browser never depth-sorts them against each other or the paper. That
+      // sorting is what made figures blink out during the fight.
+      '.clf-stand{position:absolute;left:50px;top:150px;width:600px;height:250px;perspective:1200px;perspective-origin:300px -150px}',
       '.clf-page{position:absolute;top:0;width:300px;height:250px;background:#efe9dc;transform-style:preserve-3d}',
       '.clf-pl{left:0;border-radius:6px 0 0 6px;box-shadow:inset -26px 0 30px -18px rgba(40,20,20,.5);transform-origin:100% 50%;transition:transform 1100ms cubic-bezier(.6,.05,.25,1)}',
       '.clf-pr{left:300px;border-radius:0 6px 6px 0;box-shadow:inset 26px 0 30px -18px rgba(40,20,20,.5)}',
@@ -408,18 +422,19 @@
         'background:linear-gradient(135deg,color-mix(in srgb,var(--k) 80%,#000),color-mix(in srgb,var(--k) 45%,#000));' +
         'box-shadow:inset 0 0 0 7px #3d0b15,inset 0 0 0 9px #e9b84a;display:grid;place-items:center;text-align:center;font:900 30px/.9 ' + D + ';color:#f6dfa4;text-transform:uppercase;padding:0 30px}',
       '.clf-runner{position:absolute;top:34px;width:52px;height:216px;background:#8e1f2b;transform:translateZ(1px)}',
-      // a standing piece is hinged on its bottom edge: face-down when folded
-      '.clf-pop{position:absolute;transform-origin:50% 100%;transform-style:preserve-3d;transform:rotateX(-180deg);transition:transform 380ms ease-in}',
-      '.clf-pop.clf-up{transform:rotateX(-90deg);transition:transform 700ms cubic-bezier(.3,1.6,.5,1)}',
-      '.clf-opening .clf-pop.clf-up{transition-delay:calc(800ms + var(--i,0) * 110ms)}',
-      '.clf-closed .clf-pop.clf-up{transform:rotateX(-180deg);transition:transform 380ms ease-in}',
-      CARD + '{position:absolute;inset:0;transform-origin:50% 100%;backface-visibility:hidden;transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity .4s}',
-      // a folded piece is hidden as well as flat, so no browser's 3D sorting
-      // can show it through the cover; it appears only as it starts to rise
+      // a standing piece is hinged on its bottom edge (--by below the spread's
+      // centre, its transform origin): face-down when folded
+      '.clf-pop{position:absolute;backface-visibility:hidden;transform:' + hinge(-180) + ';transition:transform 380ms ease-in}',
+      '.clf-pop.clf-up{transform:' + hinge(-90) + ';transition:transform 700ms cubic-bezier(.3,1.6,.5,1)}',
+      '.clf-opening .clf-pop.clf-up{transition-delay:calc(' + RISE_MS + 'ms + var(--i,0) * 110ms)}',
+      '.clf-closed .clf-pop.clf-up{transform:' + hinge(-180) + ';transition:transform 380ms ease-in}',
+      CARD + '{position:absolute;inset:0;transform-origin:50% 100%;transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity .4s}',
+      // a folded piece is hidden as well as flat, so it never shows through
+      // the cover; it appears only as it starts to rise, once the page is down
       '.clf-pop:not(.clf-up)>.clf-pc,.clf-closed .clf-pop>.clf-pc{opacity:0;visibility:hidden;' +
         'transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,opacity 200ms ease-in 100ms,visibility 0s ' + FOLD_MS + 'ms}',
       '.clf-opening .clf-pop.clf-up>.clf-pc{transition:transform 460ms cubic-bezier(.4,1.4,.5,1),filter .3s,' +
-        'opacity 160ms ease-out calc(800ms + var(--i,0) * 110ms),visibility 0s calc(800ms + var(--i,0) * 110ms)}',
+        'opacity 160ms ease-out calc(' + RISE_MS + 'ms + var(--i,0) * 110ms),visibility 0s calc(' + RISE_MS + 'ms + var(--i,0) * 110ms)}',
       '.clf-art{display:block;width:100%;height:100%;overflow:visible;filter:url(#clf-cut)}',
       '.clf-shade{position:absolute;transform:translateZ(.5px);background:radial-gradient(closest-side,rgba(60,20,10,.45),transparent)}',
       '.clf-closed .clf-shade{opacity:0}',
@@ -966,7 +981,7 @@
     return '<div class="clf-bhead"><h2 data-n="title"><small data-n="kick"></small><span data-n="tname"></span></h2>' +
       '<button class="clf-ib" type="button" data-a="again" aria-label="Start again">↻</button>' +
       '<button class="clf-ib" type="button" data-a="shut" aria-label="Close the pop-up book">✕</button></div>' +
-      '<div class="clf-scene" data-n="scene"><div class="clf-fit"><div class="clf-pbook"><div class="clf-spread clf-closed" data-n="spread"></div></div></div>' +
+      '<div class="clf-scene" data-n="scene"><div class="clf-fit"><div class="clf-pbook clf-closed" data-n="book"><div class="clf-spread" data-n="spread"></div><div class="clf-stand" data-n="stand"></div></div></div>' +
       '<div class="clf-bub clf-bf" data-n="bubF" aria-live="polite"></div><div class="clf-bub clf-bh" data-n="bubH" aria-live="polite"></div>' +
       '<div class="clf-float" data-n="float" aria-hidden="true"></div></div>' +
       '<div class="clf-table"><div class="clf-col">' +
@@ -981,7 +996,7 @@
 
   View.prototype.n = function (name) { return this.board.querySelector('[data-n="' + name + '"]'); };
   View.prototype.pieces = function (tag) {
-    return [].slice.call(this.n('spread').querySelectorAll('[data-tag="' + tag + '"]'));
+    return [].slice.call(this.n('stand').querySelectorAll('[data-tag="' + tag + '"]'));
   };
 
   View.prototype.build = function () {
@@ -1001,9 +1016,9 @@
     this.veil.addEventListener('click', function () { self.close(); });
     b.addEventListener('click', function (e) {
       var t = e.target.closest ? e.target.closest('button,input') : null;
-      if (t && !t.disabled && !t.closest('.clf-spread')) self.press(t);
+      if (t && !t.disabled && !t.closest('.clf-stand')) self.press(t);
     });
-    var sp = this.n('spread');
+    var sp = this.n('stand');
     sp.addEventListener('click', function (e) {
       var p = e.target.closest ? e.target.closest('.clf-hot') : null;
       if (p) self.pieceClick(p);
@@ -1031,22 +1046,26 @@
   };
 
   // buildSpread lays the scene's pieces on the pop-up book's two pages. A
-  // piece that makes a move is a button on the stage.
+  // piece that makes a move is a button on the stage. A piece further down
+  // the page stands nearer the reader, so its z-index is its y: that paints
+  // the stand back to front while the tab order stays the data's.
   View.prototype.buildSpread = function () {
     var S = this.S, sc = S.sc, c = { id: S.c.id, k: COLOR[S.c.id] }, fl = FLOORS[sc.floor] || ['', ''];
-    var h = '<div class="clf-page clf-pr">' + fl[1] + '</div><div class="clf-page clf-pl">' + fl[0] + '<div class="clf-cover">The ' + esc(S.c.name) + '</div></div>';
+    var h = '<div class="clf-page clf-pr">' + fl[1] + '</div><div class="clf-page clf-pl">' + fl[0] + '<div class="clf-cover">The ' + esc(S.c.name) + '</div></div>', st = '';
     sc.pieces.forEach(function (p, i) {
       var hot = '', lab;
       if (p.act !== undefined) {
         lab = p.act === 'turn' ? 'Start your turn' : sc.acts[p.act].b;
         hot = ' clf-hot" data-do="' + attr(p.act) + '" role="button" tabindex="0" aria-label="' + attr(lab);
       }
-      h += '<div class="clf-shade" style="left:' + (p.x - 6) + 'px;top:' + (p.y - 10) + 'px;width:' + (p.w + 12) + 'px;height:22px"></div>' +
-        '<div class="clf-pop clf-up' + (p.tag === 'glass' ? ' clf-glass' : '') + hot + '"' + (p.tag ? ' data-tag="' + attr(p.tag) + '"' : '') +
-        ' style="--i:' + i + ';left:' + p.x + 'px;top:' + (p.y - p.h) + 'px;width:' + p.w + 'px;height:' + p.h + 'px">' +
+      h += '<div class="clf-shade" style="left:' + (p.x - 6) + 'px;top:' + (p.y - 10) + 'px;width:' + (p.w + 12) + 'px;height:22px"></div>';
+      st += '<div class="clf-pop clf-up' + (p.tag === 'glass' ? ' clf-glass' : '') + hot + '"' + (p.tag ? ' data-tag="' + attr(p.tag) + '"' : '') +
+        ' style="--i:' + i + ';--by:' + (p.y - SPREAD_H / 2) + 'px;z-index:' + Math.round(p.y) + ';left:' + p.x + 'px;top:' + (p.y - p.h) + 'px;width:' + p.w + 'px;height:' + p.h + 'px;' +
+        'transform-origin:' + (SPREAD_W / 2 - p.x) + 'px ' + (SPREAD_H / 2 - p.y + p.h) + 'px">' +
         '<div class="clf-pc">' + PIECE[p.art](c) + '</div></div>';
     });
     this.n('spread').innerHTML = h;
+    this.n('stand').innerHTML = st;
     this.lift(sc.down || [], false);
     var self = this;
     (sc.swing || []).forEach(function (tag) { self.pieces(tag).forEach(function (p) { p.style.setProperty('--sw', '40deg'); }); });
@@ -1101,7 +1120,7 @@
     if (c.death) b += '<button type="button" data-a="rise"' + (canRise(S) ? '' : ' disabled') + '>Come back to life<small>needs ' + c.death.rise_at + ' ' + esc(c.res.toLowerCase()) + '</small></button>';
     b += '<button type="button" data-a="end"' + (on ? '' : ' disabled') + '>End the fight<small>lose what’s left</small></button>';
     this.n('btns').innerHTML = b;
-    [].forEach.call(this.n('spread').querySelectorAll('.clf-hot'), function (p) {
+    [].forEach.call(this.n('stand').querySelectorAll('.clf-hot'), function (p) {
       var x = p.getAttribute('data-do'), ok = x === 'turn' ? on : canAct(S, sc.acts[+x]);
       p.classList.toggle('clf-off', on && !ok);
       p.setAttribute('aria-disabled', on && !ok ? 'true' : 'false');
@@ -1220,7 +1239,7 @@
     var c = this.cls(id), self = this;
     if (!c || (this.board && !this.board.hidden) || this.shutting) return;
     if (!this.board) this.build();
-    var sp = this.n('spread'), lc = c.name.toLowerCase();
+    var sp = this.n('book'), lc = c.name.toLowerCase();
     this.opener = from || document.activeElement;
     this.S = newFight(this.R, c);
     this.board.style.setProperty('--k', COLOR[c.id]);
@@ -1252,7 +1271,7 @@
   // board, so nothing standing shows through the closing cover.
   View.prototype.close = function () {
     if (!this.board || this.board.hidden || this.shutting) return;
-    var self = this, sp = this.n('spread');
+    var self = this, sp = this.n('book');
     this.bub(null);
     this.n('float').classList.remove('clf-go');
     function done() {
