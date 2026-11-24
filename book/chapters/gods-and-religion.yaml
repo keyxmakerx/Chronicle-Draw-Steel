@@ -139,6 +139,11 @@ pages:
                 maneuver that creates a mundane object of size 1S or
                 smaller, up to your Intuition score of them at once.
               - **Skill:** one from the crafting group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-hands-of-the-maker|Hands of the Maker]] (1st level),
+                [[@abilities/conduit-statue-of-power-5-piety|Statue of Power]] (2nd level),
+                [[@abilities/conduit-gods-machine-9-piety|Gods' Machine]] (6th level),
+                [[@abilities/conduit-divine-dragon-11-piety|Divine Dragon]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that a creature within 10 squares uses an area
                 ability.
@@ -153,6 +158,11 @@ pages:
                 maneuver to speak with a creature that died in the last
                 24 hours, once per creature.
               - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-grave-speech|Grave Speech]] (1st level),
+                [[@abilities/conduit-reap-5-piety|Reap]] (2nd level),
+                [[@abilities/conduit-aura-of-souls-9-piety|Aura of Souls]] (6th level),
+                [[@abilities/conduit-word-of-final-redemption-11-piety|Word of Final Redemption]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that a non-minion creature within 10 squares
                 is reduced to 0 Stamina, or a solo creature within 10
@@ -169,6 +179,10 @@ pages:
                 spend one to grant a creature within 10 squares an edge
                 on a test.
               - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-blessing-of-fate-and-destiny-5-piety|Blessing of Fate and Destiny]] (2nd level),
+                [[@abilities/conduit-your-story-ends-here-9-piety|Your Story Ends Here]] (6th level),
+                [[@abilities/conduit-bend-fate-11-piety|Bend Fate]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that an ally within 10 squares obtains a tier
                 3 outcome on a power roll, or an enemy within 10 squares
@@ -184,6 +198,10 @@ pages:
                 Comprehension. You count as fluent in all languages for
                 understanding a crafting or research project source.
               - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-the-gods-command-you-obey-5-piety|The Gods Command You Obey]] (2nd level),
+                [[@abilities/conduit-invocation-of-undoing-9-piety|Invocation of Undoing]] (6th level),
+                [[@abilities/conduit-word-of-weakening-11-piety|Word of Weakening]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that the Director spends Malice.
               - **Conduit prayer:** Up to five allies within 10 squares,
@@ -197,6 +215,10 @@ pages:
                 recovery value equal to your level until your next
                 respite.
               - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-wellspring-of-grace-5-piety|Wellspring of Grace]] (2nd level),
+                [[@abilities/conduit-revitalizing-grace-9-piety|Revitalizing Grace]] (6th level),
+                [[@abilities/conduit-radiance-of-grace-11-piety|Radiance of Grace]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that a creature within 10 squares regains
                 Stamina.
@@ -214,6 +236,11 @@ pages:
                 gains 1 patience (max 5) and the first test to influence
                 them gains an edge.
               - **Skill:** one from the interpersonal group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-our-hearts-your-strength-5-piety|Our Hearts Your Strength]] (2nd level),
+                [[@abilities/conduit-lauded-by-god-9-piety|Lauded by God]] (6th level),
+                [[@abilities/conduit-guided-to-your-side|Guided to Your Side]] (7th level),
+                [[@abilities/conduit-alacrity-of-the-heart-11-piety|Alacrity of the Heart]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that you or an ally within 10 squares uses the
                 Aid Attack maneuver or an ability that targets an ally.
@@ -227,6 +254,11 @@ pages:
                 main action ability that conjures an incorporeal animal
                 spirit whose senses you share.
               - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-faithful-friend|Faithful Friend]] (1st level),
+                [[@abilities/conduit-nature-judges-thee-5-piety|Nature Judges Thee]] (2nd level),
+                [[@abilities/conduit-spirit-stampede-9-piety|Spirit Stampede]] (6th level),
+                [[@abilities/conduit-thorn-cage-11-piety|Thorn Cage]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that you or a creature within 10 squares takes
                 acid, cold, fire, lightning, poison or sonic damage.
@@ -241,6 +273,10 @@ pages:
                 minutes of work makes a circle that lasts 24 hours, and
                 a creature inside it can't be targeted by strikes.
               - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-sacred-bond-5-piety|Sacred Bond]] (2nd level),
+                [[@abilities/conduit-cuirass-of-the-gods-9-piety|Cuirass of the Gods]] (6th level),
+                [[@abilities/conduit-blessing-of-the-fortress-11-piety|Blessing of the Fortress]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that you or an ally within 10 squares gains
                 temporary Stamina, or uses a triggered action to reduce
@@ -259,6 +295,10 @@ pages:
                 each giving you and your allies an edge on certain
                 tests.
               - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-saints-tempest-5-piety|Saint's Tempest]] (2nd level),
+                [[@abilities/conduit-lightning-lord-9-piety|Lightning Lord]] (6th level),
+                [[@abilities/conduit-godstorm-11-piety|Godstorm]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that an enemy within 10 squares is force
                 moved.
@@ -273,6 +313,10 @@ pages:
                 respite you give yourself or one ally a +1 bonus to
                 saving throws until your next respite.
               - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-morning-light-5-piety|Morning Light]] (2nd level),
+                [[@abilities/conduit-blessing-of-the-midday-sun-9-piety|Blessing of the Midday Sun]] (6th level),
+                [[@abilities/conduit-solar-flare-11-piety|Solar Flare]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that an enemy within 10 squares takes fire or
                 holy damage.
@@ -286,6 +330,12 @@ pages:
                 When you test with an intrigue skill you have, you can
                 use Intuition instead of another characteristic.
               - **Skill:** one from the intrigue group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-divine-comedy-5-piety|Divine Comedy]] (2nd level),
+                [[@abilities/conduit-blessing-of-secrets|Blessing of Secrets]] (4th level),
+                [[@abilities/conduit-invocation-of-mystery-9-piety|Invocation of Mystery]] (6th level),
+                [[@abilities/conduit-trinity-of-trickery-9-piety|Trinity of Trickery]] (7th level),
+                [[@abilities/conduit-night-falls-11-piety|Night Falls]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that you or a creature within 10 squares takes
                 the Aid Attack or Hide maneuver.
@@ -300,6 +350,10 @@ pages:
                 wielder +1 rolled damage with its abilities until your
                 next respite.
               - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-blessing-of-insight-5-piety|Blessing of Insight]] (2nd level),
+                [[@abilities/conduit-blade-of-the-heavens-9-piety|Blade of the Heavens]] (6th level),
+                [[@abilities/conduit-righteous-phalanx-11-piety|Righteous Phalanx]] (9th level).
               - **Conduit piety:** You gain 2 piety the first time in an
                 encounter that you or a creature within 10 squares takes
                 damage greater than 10 + your level in a single turn.

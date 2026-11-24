@@ -4,3 +4,6 @@ index:
   category: abilities
   group: class
   other: Common and kit abilities
+  filters: [level, type, action_type, subclass, keywords]
+  sections: level
+  tiers: [tier1_display, tier2_display, tier3_display]

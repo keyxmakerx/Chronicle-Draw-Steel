@@ -3,3 +3,5 @@ intro: Every treasure, one page per kind.
 index:
   category: treasures
   group: type
+  filters: [echelon, kind]
+  tiers: [level_1, level_5, level_9]
