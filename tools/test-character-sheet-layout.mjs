@@ -927,9 +927,12 @@ test('still to choose: a conduit\'s second domain and a tactician\'s second kit'
     assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: 'Life', kit: '' })), ['One more domain']);
     assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: 'Life, War', kit: '' })), []);
     assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: '', kit: '' })), ['Domains']);
-    assert.deepEqual(cs.morePicks(Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true })), [], 'Foundry owns the subclass');
+    assert.deepEqual(cs.morePicks(Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true })), ['One more domain, in Foundry'], 'Foundry owns the subclass, but a short one still says so');
     assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor' })), ['One more kit']);
     assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor, Spellsword' })), []);
+    const linked = Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true, campaignId: 'c1', canEditIdentity: true });
+    assert.ok(/One more domain, in Foundry/.test(cs.dashTodoTags(linked, true)), 'the dashboard names it too');
+    assert.ok(!/href=[^>]*>One more domain, in Foundry/.test(cs.pIdentityTodo(linked, true)), 'no builder link for a pick Foundry owns');
   } finally { cs.setEditRefs({}); }
 });
 

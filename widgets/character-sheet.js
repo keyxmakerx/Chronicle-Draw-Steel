@@ -2858,11 +2858,11 @@
     var subs = Array.isArray(p.subclasses) ? p.subclasses.length : 0;
     var haveSub = subclassPicks(data).length, wantSub = typeof p.subclass_count === 'number' ? p.subclass_count : 1;
     var word = subclassLabel(p.subclass_type).toLowerCase().replace(/s$/, '');
-    // Foundry owns the subclass in a linked world, as it does the class.
-    if (subs && !foundryLinked(data)) {
-      if (!haveSub) out.push(subclassLabel(p.subclass_type));
-      else if (haveSub < wantSub) out.push('One more ' + word);
-    }
+    // Foundry owns the subclass in a linked world, as it does the class: an
+    // empty one is Foundry's to show, but a short one still says so here,
+    // since the sheet would otherwise read as finished.
+    if (subs && !foundryLinked(data) && !haveSub) out.push(subclassLabel(p.subclass_type));
+    else if (subs && haveSub && haveSub < wantSub) out.push('One more ' + word + (foundryLinked(data) ? ', in Foundry' : ''));
     var haveKit = kitNames(data).length;
     if (typeof p.kits === 'number' && p.kits > 1 && haveKit && haveKit < p.kits) out.push('One more kit');
     return out;
@@ -2884,7 +2884,7 @@
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
     }).concat(more.map(function (label) {
-      return builder ? '<a class="sh-idpick" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span>' + esc(label) + '</span>';
+      return builder && !/in Foundry$/.test(label) ? '<a class="sh-idpick" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span>' + esc(label) + '</span>';
     })).join('') + '</p>';
   }
 
@@ -2895,8 +2895,11 @@
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var unused = noKitNote(data);
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
-    if (!left.length) return '';
-    return '<dl class="sh-idset-todo sh-dq">' + left.map(function (s) {
+    var more = morePicks(data);
+    if (!left.length && !more.length) return '';
+    return '<dl class="sh-idset-todo sh-dq">' + more.map(function (label) {
+      return '<div><dt>' + esc(label) + '</dt><dd>Still to choose</dd></div>';
+    }).join('') + left.map(function (s) {
       return '<div><dt>' + s.label + '</dt><dd>' + (canPick
         ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">Still to choose</button>'
@@ -7660,7 +7663,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, pIdentityTodo: pIdentityTodo, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
