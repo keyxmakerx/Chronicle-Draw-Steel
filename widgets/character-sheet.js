@@ -2850,18 +2850,42 @@
       ' aria-label="' + escAttr(v ? 'Class: ' + v + '. Change' : 'Choose class') + '"><span data-cs-val data-v="origin-class">' + text + '</span></button>';
   }
 
+  // Picks a class takes more of than the hero holds: a conduit's second
+  // domain, a tactician's second kit. The counts are the class entry's own
+  // (subclass_count, kits); a hero with none of them is on the line already.
+  function morePicks(data) {
+    var cls = originDef(data, 'class'), p = (cls && cls.properties) || {}, out = [];
+    var subs = Array.isArray(p.subclasses) ? p.subclasses.length : 0;
+    var haveSub = subclassPicks(data).length, wantSub = typeof p.subclass_count === 'number' ? p.subclass_count : 1;
+    var word = subclassLabel(p.subclass_type).toLowerCase().replace(/s$/, '');
+    // Foundry owns the subclass in a linked world, as it does the class.
+    if (subs && !foundryLinked(data)) {
+      if (!haveSub) out.push(subclassLabel(p.subclass_type));
+      else if (haveSub < wantSub) out.push('One more ' + word);
+    }
+    var haveKit = kitNames(data).length;
+    if (typeof p.kits === 'number' && p.kits > 1 && haveKit && haveKit < p.kits) out.push('One more kit');
+    return out;
+  }
+
   function pIdentityTodo(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var unused = noKitNote(data);
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
-    if (!left.length) return '';
+    var more = morePicks(data);
+    if (!left.length && !more.length) return '';
+    // A pick that adds to others (a second domain) is made in the hero
+    // builder, which keeps the first; the sheet's picker would replace it.
+    var builder = canPick && data.campaignId ? '/campaigns/' + encodeURIComponent(data.campaignId) + '/characters' : '';
     return '<p class="sh-idtodo sh-fq"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
         ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
-    }).join('') + '</p>';
+    }).concat(more.map(function (label) {
+      return builder ? '<a class="sh-idpick" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span>' + esc(label) + '</span>';
+    })).join('') + '</p>';
   }
 
   // The dashboard names a choice not made yet as a dashed tag beside the
@@ -7607,7 +7631,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, kitNames: kitNames, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
