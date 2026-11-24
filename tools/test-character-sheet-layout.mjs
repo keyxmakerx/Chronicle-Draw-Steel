@@ -865,6 +865,25 @@ test('origins: the long entries are panels, with what each origin gives', () => 
   assert.ok(/Second paragraph/.test(cls) && /Focus/.test(cls), 'the class panel has all of it');
 }));
 
+test('subclass: each pick shows the pack\'s words, opens its rules, and a two-domain conduit lists both', () => {
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'classes.json': [{ slug: 'conduit', name: 'Conduit', description: 'Divine.', properties: {
+    subclass_type: 'Domains (pick two)', subclasses: [
+      { name: 'Life', summary: 'Healing & recovery.', description: 'Revitalizing Ritual: a bonus to recovery value.' },
+      { name: 'War', summary: 'Battle.', description: 'Sanctified Weapon.' }] } }] }));
+  try {
+    const data = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { class: 'Conduit', subclass: 'Life, War' }) });
+    const rows = cs.originRows(data);
+    assert.ok(/>Domains<\/span>/.test(rows) && !/pick two/.test(rows), 'the label drops the bracket');
+    assert.ok(/<b>Life:<\/b> Healing &amp; recovery\./.test(rows) && /<b>War:<\/b> Battle\./.test(rows), 'both picks, escaped');
+    assert.ok(/data-sheet-open="origin-subclass"[^>]*>Its rules/.test(rows));
+    const panel = cs.paperPanels(data).filter((p) => p.id === 'origin-subclass')[0];
+    assert.ok(panel && panel.kind === 'Domains' && /Revitalizing Ritual/.test(panel.html) && /Sanctified Weapon/.test(panel.html), 'the rules panel');
+    assert.ok(/Revitalizing Ritual/.test(cs.originPanelHtml(data, 'class')) && !/No description yet/.test(cs.originPanelHtml(data, 'class')), 'the class panel too');
+    const odd = Object.assign({}, data, { fields: Object.assign({}, data.fields, { subclass: 'Homebrew' }) });
+    assert.ok(!cs.paperPanels(odd).some((p) => p.id === 'origin-subclass') && /No description yet/.test(cs.originRows(odd)), 'an unknown name opens nothing');
+  } finally { cs.setEditRefs({}); }
+});
+
 test('kit: its words, gear and signature ability reach the phone\'s Kit panel and the dashboard', () => withRefs(() => {
   const words = cs.kitWords(PAPER, 'x');
   assert.ok(/Heavy plates\./.test(words) && /You wear heavy armor\./.test(words) && !/Heavy armor/.test(words) && /Signature ability: <b>Brace<\/b>/.test(words));

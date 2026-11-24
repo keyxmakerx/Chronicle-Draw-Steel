@@ -2813,6 +2813,14 @@
     return '<span class="sh-idval">' + name + change + '</span>';
   }
 
+  // The subclass in the identity line opens its rules panel, and its summary
+  // shows on hover; a name the pack does not describe stays plain text.
+  function subclassName(data, subclass) {
+    if (!subclassDescribed(data)) return esc(subclass);
+    return '<button type="button" class="sh-link sh-idsubopen" data-sheet-open="origin-subclass" aria-expanded="false" title="' +
+      escAttr(subclassHint(data)) + '">' + esc(subclass) + '<span class="sh-sr"> rules</span></button>';
+  }
+
   // originHref is the address of the entry a hero's choice names. The sheet
   // knows the name, not the slug, so it asks by kind and name and Chronicle
   // answers for whoever reads: a rewritten entry, an old name or a people
@@ -2884,7 +2892,7 @@
     var line = [
       has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
       '<span class="sh-idval">' + pClass(data, canPick, (className ? esc(className) : '&ndash;') + ' ' + level) + '</span>',
-      subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
+      subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
     ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
@@ -2896,7 +2904,7 @@
 
     var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + pClass(data, canPick, className ? esc(className) : 'No class') +
       ' <span class="sh-idlv">level ' + level + '</span></span>' +
-      (subclass ? '<span class="sh-idsub">' + esc(subclass) + '</span>' : '') +
+      (subclass ? '<span class="sh-idsub">' + subclassName(data, subclass) + '</span>' : '') +
       (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
     var made = ORIGIN_SLOTS.filter(shows);
     var set = made.length ? '<dl class="sh-idset sh-id-q">' + made.map(function (s) {
@@ -4319,10 +4327,40 @@
   // a word that opens its long entry. A choice not made yet says so. The
   // class row keeps to its first paragraph; its panel has the rest.
   function subclassLabel(t) {
-    t = String(t || '').trim();
+    t = String(t || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
     return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Subclass';
   }
-  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it' };
+  // The hero's subclass picks, each with the class entry's own words for it.
+  // A class that takes several (a conduit's two domains) stores them in one
+  // field joined with commas; a name the pack does not know keeps a null def.
+  function subclassPicks(data) {
+    var raw = String(f(data, 'subclass', '') || '').trim();
+    if (!raw) return [];
+    var cls = originDef(data, 'class');
+    var list = cls && cls.properties && Array.isArray(cls.properties.subclasses) ? cls.properties.subclasses : [];
+    return raw.split(/\s*,\s*/).filter(Boolean).map(function (name) {
+      var key = name.toLowerCase();
+      var def = list.filter(function (x) { return String(x && x.name || '').trim().toLowerCase() === key; })[0] || null;
+      return { name: name, def: def };
+    });
+  }
+  function subclassDescribed(data) {
+    return subclassPicks(data).some(function (p) { return p.def && (p.def.description || p.def.summary); });
+  }
+  // A one-line hint for a hover: each pick's short summary.
+  function subclassHint(data) {
+    return subclassPicks(data).map(function (p) {
+      return p.def && p.def.summary ? p.name + ': ' + p.def.summary : '';
+    }).filter(Boolean).join(' ');
+  }
+  function subclassRules(data) {
+    return subclassPicks(data).map(function (p) {
+      var d = p.def ? String(p.def.description || p.def.summary || '').trim() : '';
+      var lead = p.def && p.def.summary && p.def.description ? '<p>' + refText(String(p.def.summary)) + '</p>' : '';
+      return '<div class="rule"><b>' + esc(p.name) + '</b>' + (d ? lead + '<p>' + refText(d) + '</p>' : pEmpty(NO_DESC)) + '</div>';
+    }).join('');
+  }
+  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it', subclass: 'Its rules' };
   function originRow(label, name, body, kind) {
     return '<div class="sh-orig"><span class="sh-k">' + esc(label) + '</span>' +
       '<div class="sh-orig-b"><b' + (name ? '' : ' class="sh-orig-none"') + '>' + esc(name || 'Still to choose') + '</b>' + body + '</div>' +
@@ -4345,7 +4383,11 @@
     var subType = cls && cls.properties && cls.properties.subclass_type ? String(cls.properties.subclass_type) : '';
     var sub = String(f(data, 'subclass', '') || '').trim();
     if (sub || subType) {
-      rows.push(originRow(subclassLabel(subType), sub, sub ? pEmpty(NO_DESC) : pEmpty('Not chosen yet.'), ''));
+      var subBody = !sub ? pEmpty('Not chosen yet.') : subclassPicks(data).map(function (p) {
+        var t = p.def ? String(p.def.summary || p.def.description || '').trim() : '';
+        return t ? '<p class="sh-orig-p">' + (subclassPicks(data).length > 1 ? '<b>' + esc(p.name) + ':</b> ' : '') + refText(t) + '</p>' : '';
+      }).join('') || pEmpty(NO_DESC);
+      rows.push(originRow(subclassLabel(subType), sub, subBody, subclassDescribed(data) && !inPanel ? 'subclass' : ''));
     }
     return '<div class="sh-whence">' + rows.join('') + '</div>';
   }
@@ -4386,9 +4428,7 @@
         ['Starting Stamina', p.starting_stamina != null ? p.starting_stamina + (p.stamina_per_level != null ? ', +' + p.stamina_per_level + ' per level' : '') : ''],
         ['Recoveries', p.recoveries], ['Skills', p.skills]]);
       if (sub) {
-        // The pack names each subclass and does not describe it yet.
-        out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' +
-          '<div class="rule"><b>' + esc(sub) + '</b>' + pEmpty(NO_DESC) + '</div></div>';
+        out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' + subclassRules(data) + '</div>';
       }
     } else if (kind === 'culture') {
       out += originFacts([['Language', p.language], ['Environment', p.environment], ['Organization', p.organization], ['Upbringing', p.upbringing],
@@ -4782,6 +4822,12 @@
       var e = originDef(data, kind);
       if (e) list.push({ id: 'origin-' + kind, title: e.name, kind: ORIGIN_LABELS[kind], html: originPanelHtml(data, kind) });
     });
+    if (subclassDescribed(data)) {
+      var cdef = originDef(data, 'class');
+      list.push({ id: 'origin-subclass', title: String(f(data, 'subclass', '')).trim(),
+        kind: subclassLabel(cdef && cdef.properties && cdef.properties.subclass_type),
+        html: '<div class="lf-grp">' + subclassRules(data) + '</div>' });
+    }
     return list;
   }
 
@@ -6661,6 +6707,7 @@
         '[data-sheet][data-sheet-style]:not([data-sheet-style="modern"]):not([data-sheet-style="starship"]):not([data-sheet-style="neon"]):not([data-sheet-style="runes"]):not([data-sheet-style="brass"]) .only-modern { display:none; }',
       '[data-sheet] .sh-k { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-link { border:0;background:none;padding:0;color:var(--paper-accent);font:600 calc(12.5px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .sh-link.sh-idsubopen { font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-decoration-color:var(--paper-mute);text-underline-offset:3px; }',
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
       // Inline editors: a quiet word opens a plain form under it. Colours are
       // the sheet's own tokens with light fallbacks, so dark mode follows the
