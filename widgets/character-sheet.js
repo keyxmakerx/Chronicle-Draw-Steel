@@ -2862,7 +2862,7 @@
     // empty one is Foundry's to show, but a short one still says so here,
     // since the sheet would otherwise read as finished.
     if (subs && !foundryLinked(data) && !haveSub) out.push(subclassLabel(p.subclass_type));
-    else if (subs && haveSub && haveSub < wantSub) out.push('One more ' + word + (foundryLinked(data) ? ', in Foundry' : ''));
+    else if (subs && haveSub && haveSub < wantSub) out.push('One more ' + word);
     var haveKit = kitNames(data).length;
     if (typeof p.kits === 'number' && p.kits > 1 && haveKit && haveKit < p.kits) out.push('One more kit');
     return out;
@@ -2883,18 +2883,15 @@
   }
   // The red word beside a short pick. Only the hero's player and Directors
   // see it, as they do the Unfinished tape that points at it.
-  // A Foundry-linked hero's subclass and kits are Foundry's: Chronicle never
-  // writes them back there, so the mark says where to pick instead of
-  // linking to the hero builder, which would only be overwritten.
+  // The mark opens the hero builder. On a Foundry-linked hero the pick is
+  // then offered to the hero's owner in Foundry, which adds it through the
+  // system's own steps; Chronicle never puts the item on the sheet itself.
   function missMark(data, kind) {
     var t = data.canEditIdentity ? shortOf(data, kind) : '';
     if (!t) return '';
-    if (foundryLinked(data)) {
-      return ' <span class="sh-miss" tabindex="-1" title="' + escAttr('Pick it on the hero\u2019s Foundry sheet; it comes over on the next sync.') + '">' +
-        esc(t) + '<span class="sh-miss-where"> \u00b7 pick in Foundry</span></span>';
-    }
     var href = data.campaignId ? '/campaigns/' + encodeURIComponent(data.campaignId) + '/characters' : '';
-    return href ? ' <a class="sh-miss" href="' + escAttr(href) + '" title="Pick it in the hero builder">' + esc(t) + '</a>'
+    var tip = foundryLinked(data) ? 'Pick it in the hero builder; Foundry then offers to add it to the sheet.' : 'Pick it in the hero builder';
+    return href ? ' <a class="sh-miss" href="' + escAttr(href) + '" title="' + escAttr(tip) + '">' + esc(t) + '</a>'
       : ' <span class="sh-miss" tabindex="-1">' + esc(t) + '</span>';
   }
   // The extra picks for the to-choose lists, less any the red mark beside
@@ -2936,7 +2933,7 @@
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
     }).concat(more.map(function (label) {
-      return builder && !/in Foundry$/.test(label) ? '<a class="sh-idpick' + miss + '" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span class="' + miss.trim() + '" tabindex="-1">' + esc(label) + '</span>';
+      return builder ? '<a class="sh-idpick' + miss + '" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span class="' + miss.trim() + '" tabindex="-1">' + esc(label) + '</span>';
     })).join('') + '</p>';
   }
 
@@ -2970,7 +2967,7 @@
     var faction = f(data, 'faction', '');
     var level = num(data, 'level', 1);
     var linked = foundryLinked(data);
-    var hint = linked ? fa('arrows-rotate') + ' Class, level and subclass are set in Foundry.' : '';
+    var hint = linked ? fa('arrows-rotate') + ' Class and level are set in Foundry.' : '';
     // An empty complication is offered to whoever may pick, and stays quiet
     // for a reader who may not: it is optional, so it is not a gap to point at.
     var shows = function (s) { return has(s.key) || (s.optional && canPick); };
@@ -3508,7 +3505,7 @@
   function dashProg(data) {
     var cells = [['Level', String(num(data, 'level', 1))]].concat(PROGRESS_KEYS.map(function (p) { return [p[0], progValue(data, p[1])]; }));
     var sync = foundryLinked(data)
-      ? '<p class="sh-dsync">' + fa('arrows-rotate') + ' Synced with Foundry. Class, level and subclass are set there.</p>' : '';
+      ? '<p class="sh-dsync">' + fa('arrows-rotate') + ' Synced with Foundry. Class and level are set there.</p>' : '';
     return '<div class="sh-dprog sh-dq"><button type="button" class="sh-dprog-b" data-sheet-open="progression" aria-expanded="false">' +
       '<span class="sh-sr">Progression: </span><dl>' + cells.map(function (c) {
         return '<div><dt>' + c[0] + '</dt><dd class="num">' + c[1] + '</dd></div>';
