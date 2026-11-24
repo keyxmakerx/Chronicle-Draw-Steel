@@ -1209,6 +1209,11 @@
           "type": "markdown",
           "gm_only": true,
           "foundry_path": "system.biography.director"
+        },
+        {
+          "key": "token_image",
+          "label": "Token picture",
+          "type": "string"
         }
       ]
     },
