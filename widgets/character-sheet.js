@@ -4565,7 +4565,11 @@
   function complicationTerms(entry) {
     var p = (entry && entry.properties) || {};
     var str = function (v) { return typeof v === 'string' ? v.trim() : ''; };
-    if (str(p.benefit) || str(p.drawback)) return [['Benefit', str(p.benefit)], ['Drawback', str(p.drawback)]];
+    // Only a Director's read still holds the list of hidden details; the
+    // label says which part players do not see.
+    var hid = Array.isArray(p.director_only) ? p.director_only : [];
+    var lab = function (word, key) { return hid.indexOf(key) >= 0 ? word + ' (hidden from players)' : word; };
+    if (str(p.benefit) || str(p.drawback)) return [[lab('Benefit', 'benefit'), str(p.benefit)], [lab('Drawback', 'drawback'), str(p.drawback)]];
     if (str(p.benefit_and_drawback)) return [['Benefit and drawback', str(p.benefit_and_drawback)]];
     return [];
   }
@@ -5064,8 +5068,48 @@
   function ensureEditRefs(campaignId, files) {
     return Promise.all(files.map(function (file) {
       if (editRefs[file] && editRefs[file].length) return null;
-      return loadRefFile(campaignId, file).then(function (a) { editRefs[file] = a; });
+      var field = ownEntryField(file);
+      return Promise.all([loadRefFile(campaignId, file), field ? loadOwnEntries(campaignId, field) : []]).then(function (r) {
+        // The campaign's own entries go first, so a homemade complication
+        // named like a printed one shows the campaign's text.
+        editRefs[file] = r[1].concat(r[0]);
+      });
     }));
+  }
+
+  // The character field whose campaign entries join a pack file, or ''.
+  function ownEntryField(file) {
+    for (var k in ORIGIN_FILES) if (ORIGIN_FILES[k] === file) return k;
+    return '';
+  }
+
+  // The campaign's own entries for a field, as the viewer may read them:
+  // Chronicle drops Directors-only entries and every detail the Director
+  // hid (director_only) before a player gets them. Shaped like pack entries;
+  // their description is the server's cleaned HTML, read here as plain text.
+  // A viewer the route refuses gets none.
+  var ownCache = {};
+  function loadOwnEntries(campaignId, field) {
+    if (!campaignId || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var key = campaignId + '/' + field;
+    if (ownCache[key]) return ownCache[key];
+    var p = Chronicle.apiFetch('/campaigns/' + encodeURIComponent(campaignId) + '/system-entries?fieldKey=' + encodeURIComponent(field))
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (body) {
+        var list = body && Array.isArray(body.entries) ? body.entries : [];
+        return list.filter(function (e) { return e && e.name && (!e.status || e.status === 'accepted'); }).map(function (e) {
+          return { slug: e.slug, name: e.name, summary: e.summary || '', description: htmlText(e.description), properties: e.properties || {}, own: true };
+        });
+      })
+      .catch(function () { return []; });
+    ownCache[key] = p;
+    return p;
+  }
+  function htmlText(html) {
+    if (!html) return '';
+    if (typeof DOMParser === 'undefined') return String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    var doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+    return String(doc.body.textContent || '').replace(/\s+/g, ' ').trim();
   }
 
   // The files each editor needs; ancestries are read at mount because the
@@ -7831,6 +7875,7 @@
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
       wroteHere: wroteHere,
+      loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
   }

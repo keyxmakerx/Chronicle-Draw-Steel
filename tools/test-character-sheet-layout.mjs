@@ -1123,3 +1123,23 @@ test('stat cards: the glossary explains every number the cards read', () => {
     assert.ok(g.has(s), s + ' has a glossary entry');
   }
 });
+
+test('origins: a campaign\'s own complication reads as benefit and drawback, and says which part players do not see', async () => {
+  const prev = globalThis.window.Chronicle.apiFetch;
+  let asked = '';
+  globalThis.window.Chronicle.apiFetch = (url) => { asked = url; return Promise.resolve({ ok: true, json: () => Promise.resolve({ entries: [
+    { slug: 'red-tide', name: 'The Red Tide', description: '<p>A sea-curse.</p>', status: 'accepted',
+      properties: { benefit: 'You breathe water.', drawback: 'The tide calls you home.', director_only: ['drawback'] } },
+    { slug: 'pending-one', name: 'Pending One', status: 'pending', properties: {} }
+  ] }) }); };
+  try {
+    const own = await cs.loadOwnEntries('camp-1', 'complication');
+    assert.equal(asked, '/campaigns/camp-1/system-entries?fieldKey=complication');
+    assert.deepEqual(own.map((e) => e.name), ['The Red Tide'], 'only accepted entries');
+    assert.equal(own[0].description, 'A sea-curse.', 'the HTML is read as text');
+    cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'complications.json': own.concat(ORIGIN_REFS['complications.json']) }));
+    const html = cs.originRows(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { complication: 'The Red Tide' }) }));
+    assert.ok(/<b>Benefit\.<\/b> You breathe water\./.test(html), html);
+    assert.ok(/<b>Drawback \(hidden from players\)\.<\/b> The tide calls you home\./.test(html), 'the Director is told which part is hidden');
+  } finally { globalThis.window.Chronicle.apiFetch = prev; cs.setEditRefs({}); }
+});
