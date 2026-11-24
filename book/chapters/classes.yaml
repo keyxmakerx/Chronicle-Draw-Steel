@@ -64,7 +64,7 @@ pages:
 
               **Skills:** Choose any two skills from the interpersonal or lore skill groups. *Quick build:* Intimidate, Religion.
 
-              **Subclass:** Censor order: Exorcist (Read Person skill), Oracle (Magic) or Paragon (Lead). You also pick a deity and one of its domains.
+              **Subclass:** Censor order: [[Exorcist]] (Read Person skill), [[Oracle]] (Magic) or [[Paragon]] (Lead). You also pick a deity and one of its [[domain|domains]].
 
               **Kit:** One kit.
 
@@ -85,7 +85,7 @@ pages:
 
               **Skills:** Choose any two skills from the interpersonal or lore skill groups. *Quick build:* Read Person, Religion.
 
-              **Subclass:** Pick a deity and two domains from Creation, Death, Fate, Knowledge, Life, Love, Nature, Protection, Storm, Sun, Trickery and War.
+              **Subclass:** Pick a deity and two [[domain|domains]] from [[Creation domain|Creation]], [[Death domain|Death]], [[Fate domain|Fate]], [[Knowledge domain|Knowledge]], [[Life domain|Life]], [[Love domain|Love]], [[Nature domain|Nature]], [[Protection domain|Protection]], [[Storm domain|Storm]], [[Sun domain|Sun]], [[Trickery domain|Trickery]] and [[War domain|War]].
 
               **Kit:** No kit. Pick a prayer and a ward instead.
 
@@ -106,7 +106,7 @@ pages:
 
               **Skills:** You gain the Magic skill. Then choose any three skills from the crafting or lore skill groups. *Quick build:* Alchemy, Blacksmithing, History, Magic.
 
-              **Subclass:** Elemental specialization: Earth, Fire, Green or Void.
+              **Subclass:** Elemental specialization: [[Earth specialization|Earth]], [[Fire specialization|Fire]], [[Green specialization|Green]] or [[Void specialization|Void]].
 
               **Kit:** No kit. Pick an enchantment and a ward instead.
 
@@ -127,7 +127,7 @@ pages:
 
               **Skills:** You gain the Nature skill. Then choose any two skills from the exploration or intrigue skill groups. *Quick build:* Alertness, Jump, Nature.
 
-              **Subclass:** Primordial aspect: Berserker, Reaver or Stormwight.
+              **Subclass:** Primordial aspect: [[Berserker]], [[Reaver]] or [[Stormwight]].
 
               **Kit:** A berserker or reaver takes one kit. A stormwight takes a stormwight kit.
 
@@ -148,7 +148,7 @@ pages:
 
               **Skills:** You gain the Psionics skill. Then choose any two skills from the interpersonal or lore skill groups. *Quick build:* Psionics, Read Person, Timescape.
 
-              **Subclass:** Null tradition: Chronokinetic, Cryokinetic or Metakinetic.
+              **Subclass:** Null tradition: [[Chronokinetic]], [[Cryokinetic]] or [[Metakinetic]].
 
               **Kit:** No kit. Pick a psionic augmentation instead.
 
@@ -169,7 +169,7 @@ pages:
 
               **Skills:** You gain the Hide and Sneak skills. Then choose any five skills from Criminal Underworld or the skills of the exploration, interpersonal, or intrigue skill groups. *Quick build:* Criminal Underworld, Hide, Lie, Pick Lock, Pick Pocket, Sabotage, Sneak.
 
-              **Subclass:** Shadow college: Black Ash, Caustic Alchemy or the Harlequin Mask.
+              **Subclass:** Shadow college: [[College of Black Ash|Black Ash]], [[College of Caustic Alchemy|Caustic Alchemy]] or [[College of the Harlequin Mask|the Harlequin Mask]].
 
               **Kit:** One kit.
 
@@ -209,7 +209,7 @@ pages:
 
               **Skills:** You gain the Lead skill. Then choose any two skills from Alertness, Architecture, Blacksmithing, Brag, Culture, Empathize, Fletching, Mechanics, Monsters, Search, Strategy, or the skills of the exploration skill group. *Quick build:* Lead, Monsters, Strategy.
 
-              **Subclass:** Tactical doctrine: Insurgent, Mastermind or Vanguard.
+              **Subclass:** Tactical doctrine: [[Insurgent]], [[Mastermind]] or [[Vanguard]].
 
               **Kit:** Two kits, with both signature abilities.
 
@@ -230,7 +230,7 @@ pages:
 
               **Skills:** You gain the Psionics and Read Person skills. Then choose any two skills from the interpersonal or lore skill groups. *Quick build:* Empathize, Psionics, Read Person, Timescape.
 
-              **Subclass:** Talent tradition: Chronopathy, Telekinesis or Telepathy.
+              **Subclass:** Talent tradition: [[Chronopathy]], [[Telekinesis]] or [[Telepathy]].
 
               **Kit:** No kit. Pick a psionic augmentation and a ward instead.
 
@@ -251,7 +251,7 @@ pages:
 
               **Skills:** You gain the Read Person skill. Then choose two skills from the interpersonal skill group and one skill from the intrigue or lore skill groups. *Quick build:* Brag, Flirt, Read Person, Rumors.
 
-              **Subclass:** Class act: Auteur, Duelist or Virtuoso.
+              **Subclass:** Class act: [[Auteur]], [[Duelist]] or [[Virtuoso]].
 
               **Kit:** One kit.
 

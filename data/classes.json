@@ -62,17 +62,17 @@
         {
           "name": "Exorcist",
           "summary": "An order of censors who hunt their order's hidden enemies.",
-          "description": "You have the Read Person skill. The order also shapes the censor features you gain at higher levels."
+          "description": "You have the Read Person skill. Judgment order benefit: the first time on a turn you judge a creature, you can teleport up to twice your Presence score in squares, ending closer to it; you don't need line of effect. The order also shapes the censor features you gain at higher levels."
         },
         {
           "name": "Oracle",
           "summary": "An order of censors who uncover clandestine threats to their order.",
-          "description": "You have the Magic skill. The order also shapes the censor features you gain at higher levels."
+          "description": "You have the Magic skill. Judgment order benefit: the first time on a turn you judge a creature, you can deal it holy damage equal to twice your Presence score. The order also shapes the censor features you gain at higher levels."
         },
         {
           "name": "Paragon",
           "summary": "An order of censors who set the example for their order.",
-          "description": "You have the Lead skill. The order also shapes the censor features you gain at higher levels."
+          "description": "You have the Lead skill. Judgment order benefit: the first time on a turn you judge a creature, you can vertical pull it up to twice your Presence score in squares. The order also shapes the censor features you gain at higher levels."
         }
       ],
       "kits": 1,
@@ -317,17 +317,17 @@
         {
           "name": "Chronokinetic",
           "summary": "Chronokinetic nulls move through the flow of time as another dimension.",
-          "description": "You gain one skill from the lore group."
+          "description": "You gain one skill from the lore group. 1st-level feature Chronokinetic Mastery: whenever you use Inertial Shield, you can use the Disengage move action as a free triggered action. As your discipline grows you gain more: at 2, Disengage before or after Knockback; at 4, 1 surge the first time on a turn you willingly move as part of an ability; at 6, an edge on Grab and Knockback."
         },
         {
           "name": "Cryokinetic",
           "summary": "Cryokinetic nulls tap absolute cold and manifest it in their bodies.",
-          "description": "You gain one skill from the crafting group."
+          "description": "You gain one skill from the crafting group. 1st-level feature Cryokinetic Mastery: whenever you use Inertial Shield, you can then use the Grab maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback targets one more creature and your psionic untyped damage can be cold; at 4, 1 surge the first time on a turn you grab a creature or an enemy moves in your Null Field; at 6, an edge on Grab and Knockback."
         },
         {
           "name": "Metakinetic",
           "summary": "Metakinetic nulls see through the universe's illusions to understand their bodies and psionic potential.",
-          "description": "You gain one skill from the exploration group."
+          "description": "You gain one skill from the exploration group. 1st-level feature Metakinetic Mastery: whenever you use Inertial Shield, you can then use the Knockback maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback moves the target extra squares equal to your Intuition score; at 4, 1 surge the first time in a round you take damage or are force moved; at 6, an edge on Grab and Knockback."
         }
       ],
       "kits": 0,

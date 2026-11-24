@@ -982,5 +982,412 @@
       "category": "keyword"
     },
     "source": "custom"
+  },
+  {
+    "slug": "exorcist",
+    "name": "Exorcist",
+    "summary": "You have the Read Person skill. Judgment order benefit: the first time on a turn you judge a creature, you can teleport up to twice your Presence score in squares, ending closer to it; you don't need line of effect. The order also shapes the censor features you gain at higher levels.",
+    "description": "An order of censors who hunt their order's hidden enemies. You have the Read Person skill. Judgment order benefit: the first time on a turn you judge a creature, you can teleport up to twice your Presence score in squares, ending closer to it; you don't need line of effect. The order also shapes the censor features you gain at higher levels.",
+    "properties": {
+      "category": "subclass",
+      "class": "Censor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "oracle",
+    "name": "Oracle",
+    "summary": "You have the Magic skill. Judgment order benefit: the first time on a turn you judge a creature, you can deal it holy damage equal to twice your Presence score. The order also shapes the censor features you gain at higher levels.",
+    "description": "An order of censors who uncover clandestine threats to their order. You have the Magic skill. Judgment order benefit: the first time on a turn you judge a creature, you can deal it holy damage equal to twice your Presence score. The order also shapes the censor features you gain at higher levels.",
+    "properties": {
+      "category": "subclass",
+      "class": "Censor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "paragon",
+    "name": "Paragon",
+    "summary": "You have the Lead skill. Judgment order benefit: the first time on a turn you judge a creature, you can vertical pull it up to twice your Presence score in squares. The order also shapes the censor features you gain at higher levels.",
+    "description": "An order of censors who set the example for their order. You have the Lead skill. Judgment order benefit: the first time on a turn you judge a creature, you can vertical pull it up to twice your Presence score in squares. The order also shapes the censor features you gain at higher levels.",
+    "properties": {
+      "category": "subclass",
+      "class": "Censor"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "creation-domain",
+    "name": "Creation domain",
+    "summary": "1st-level domain feature (censor and conduit): Hands of the Maker (a maneuver that creates a mundane object of size 1S or smaller, up to your Intuition score of them at once). Skill group: Crafting. Piety (conduit): you gain 2 piety the first time in an encounter that a creature within 10 squares uses an area ability. Prayer effect (conduit): a wall of stone within 10 squares, size 5 + your Intuition score, lasting to the end of the encounter.",
+    "description": "The domain of making things, with stone walls and objects conjured from thought. 1st-level domain feature (censor and conduit): Hands of the Maker (a maneuver that creates a mundane object of size 1S or smaller, up to your Intuition score of them at once). Skill group: Crafting. Piety (conduit): you gain 2 piety the first time in an encounter that a creature within 10 squares uses an area ability. Prayer effect (conduit): a wall of stone within 10 squares, size 5 + your Intuition score, lasting to the end of the encounter. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "death-domain",
+    "name": "Death domain",
+    "summary": "1st-level domain feature (censor and conduit): Grave Speech (a maneuver to speak with a creature that died in the last 24 hours, once per creature). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that a non-minion creature within 10 squares is reduced to 0 Stamina, or a solo creature within 10 squares becomes winded. Prayer effect (conduit): curse up to two enemies within 10 squares, each taking corruption damage equal to twice your Intuition score.",
+    "description": "The domain of the dead and of curses. 1st-level domain feature (censor and conduit): Grave Speech (a maneuver to speak with a creature that died in the last 24 hours, once per creature). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that a non-minion creature within 10 squares is reduced to 0 Stamina, or a solo creature within 10 squares becomes winded. Prayer effect (conduit): curse up to two enemies within 10 squares, each taking corruption damage equal to twice your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fate-domain",
+    "name": "Fate domain",
+    "summary": "1st-level domain feature (censor and conduit): Oracular Visions (you earn fate points equal to the Victories you earn and spend one to grant a creature within 10 squares an edge on a test). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that an ally within 10 squares obtains a tier 3 outcome on a power roll, or an enemy within 10 squares obtains a tier 1 outcome. Prayer effect (conduit): a creature within 10 squares automatically gets a tier 1 or tier 3 outcome (your choice) on its next power roll this encounter.",
+    "description": "The domain of omens and of nudging how things turn out. 1st-level domain feature (censor and conduit): Oracular Visions (you earn fate points equal to the Victories you earn and spend one to grant a creature within 10 squares an edge on a test). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that an ally within 10 squares obtains a tier 3 outcome on a power roll, or an enemy within 10 squares obtains a tier 1 outcome. Prayer effect (conduit): a creature within 10 squares automatically gets a tier 1 or tier 3 outcome (your choice) on its next power roll this encounter. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "knowledge-domain",
+    "name": "Knowledge domain",
+    "summary": "1st-level domain feature (censor and conduit): Blessing of Comprehension (you count as fluent in all languages for understanding a crafting or research project source). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that the Director spends Malice. Prayer effect (conduit): up to five allies within 10 squares, or yourself in place of one ally, each gain 1 surge.",
+    "description": "The domain of learning, lore and comprehension. 1st-level domain feature (censor and conduit): Blessing of Comprehension (you count as fluent in all languages for understanding a crafting or research project source). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that the Director spends Malice. Prayer effect (conduit): up to five allies within 10 squares, or yourself in place of one ally, each gain 1 surge. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "life-domain",
+    "name": "Life domain",
+    "summary": "1st-level domain feature (censor and conduit): Revitalizing Ritual (at each respite you give yourself or one ally a bonus to recovery value equal to your level until your next respite). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that a creature within 10 squares regains Stamina. Prayer effect (conduit): yourself or one ally within 10 squares spends a Recovery, ends an effect, or stands up; or you or an ally gains temporary Stamina equal to twice your Intuition score.",
+    "description": "The domain of healing and recovery. 1st-level domain feature (censor and conduit): Revitalizing Ritual (at each respite you give yourself or one ally a bonus to recovery value equal to your level until your next respite). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that a creature within 10 squares regains Stamina. Prayer effect (conduit): yourself or one ally within 10 squares spends a Recovery, ends an effect, or stands up; or you or an ally gains temporary Stamina equal to twice your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "love-domain",
+    "name": "Love domain",
+    "summary": "1st-level domain feature (censor and conduit): Blessing of Compassion (you gain an edge on tests to assist another creature, and at the start of a negotiation one NPC gains 1 patience (max 5) and the first test to influence them gains an edge). Skill group: Interpersonal. Piety (conduit): you gain 2 piety the first time in an encounter that you or an ally within 10 squares uses the Aid Attack maneuver or an ability that targets an ally. Prayer effect (conduit): each ally within 10 squares gains temporary Stamina equal to twice your Intuition score.",
+    "description": "The domain of compassion and of helping others. 1st-level domain feature (censor and conduit): Blessing of Compassion (you gain an edge on tests to assist another creature, and at the start of a negotiation one NPC gains 1 patience (max 5) and the first test to influence them gains an edge). Skill group: Interpersonal. Piety (conduit): you gain 2 piety the first time in an encounter that you or an ally within 10 squares uses the Aid Attack maneuver or an ability that targets an ally. Prayer effect (conduit): each ally within 10 squares gains temporary Stamina equal to twice your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "nature-domain",
+    "name": "Nature domain",
+    "summary": "1st-level domain feature (censor and conduit): Faithful Friend (a main action ability that conjures an incorporeal animal spirit whose senses you share). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes acid, cold, fire, lightning, poison or sonic damage. Prayer effect (conduit): vines wrap a number of creatures equal to your Intuition score within 10 squares, and you can slide each up to your Intuition score in squares.",
+    "description": "The domain of beasts, plants and the elements of the wild. 1st-level domain feature (censor and conduit): Faithful Friend (a main action ability that conjures an incorporeal animal spirit whose senses you share). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes acid, cold, fire, lightning, poison or sonic damage. Prayer effect (conduit): vines wrap a number of creatures equal to your Intuition score within 10 squares, and you can slide each up to your Intuition score in squares. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "protection-domain",
+    "name": "Protection domain",
+    "summary": "1st-level domain feature (censor and conduit): Protective Circle (10 minutes of work makes a circle that lasts 24 hours, and a creature inside it can't be targeted by strikes). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or an ally within 10 squares gains temporary Stamina, or uses a triggered action to reduce incoming damage or impose a bane or double bane on an enemy's power roll. Prayer effect (conduit): one ally within 10 squares gains temporary Stamina equal to four times your Intuition score.",
+    "description": "The domain of wards and of shielding allies. 1st-level domain feature (censor and conduit): Protective Circle (10 minutes of work makes a circle that lasts 24 hours, and a creature inside it can't be targeted by strikes). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or an ally within 10 squares gains temporary Stamina, or uses a triggered action to reduce incoming damage or impose a bane or double bane on an enemy's power roll. Prayer effect (conduit): one ally within 10 squares gains temporary Stamina equal to four times your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "storm-domain",
+    "name": "Storm domain",
+    "summary": "1st-level domain feature (censor and conduit): Blessing of Fortunate Weather (at each respite you choose the weather within 100 squares (clear, foggy, overcast or precipitation), each giving you and your allies an edge on certain tests). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that an enemy within 10 squares is force moved. Prayer effect (conduit): each enemy in a 3 cube within 10 squares takes lightning damage equal to twice your Intuition score.",
+    "description": "The domain of weather and lightning. 1st-level domain feature (censor and conduit): Blessing of Fortunate Weather (at each respite you choose the weather within 100 squares (clear, foggy, overcast or precipitation), each giving you and your allies an edge on certain tests). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that an enemy within 10 squares is force moved. Prayer effect (conduit): each enemy in a 3 cube within 10 squares takes lightning damage equal to twice your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "sun-domain",
+    "name": "Sun domain",
+    "summary": "1st-level domain feature (censor and conduit): Inner Light (at each respite you give yourself or one ally a +1 bonus to saving throws until your next respite). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that an enemy within 10 squares takes fire or holy damage. Prayer effect (conduit): one enemy within 10 squares takes fire damage equal to three times your Intuition score.",
+    "description": "The domain of light and fire. 1st-level domain feature (censor and conduit): Inner Light (at each respite you give yourself or one ally a +1 bonus to saving throws until your next respite). Skill group: Lore. Piety (conduit): you gain 2 piety the first time in an encounter that an enemy within 10 squares takes fire or holy damage. Prayer effect (conduit): one enemy within 10 squares takes fire damage equal to three times your Intuition score. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "trickery-domain",
+    "name": "Trickery domain",
+    "summary": "1st-level domain feature (censor and conduit): Inspired Deception (when you test with an intrigue skill you have, you can use Intuition instead of another characteristic). Skill group: Intrigue. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes the Aid Attack or Hide maneuver. Prayer effect (conduit): you slide one creature within 10 squares up to 5 + your conduit level squares.",
+    "description": "The domain of deceit and thievery. 1st-level domain feature (censor and conduit): Inspired Deception (when you test with an intrigue skill you have, you can use Intuition instead of another characteristic). Skill group: Intrigue. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes the Aid Attack or Hide maneuver. Prayer effect (conduit): you slide one creature within 10 squares up to 5 + your conduit level squares. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "war-domain",
+    "name": "War domain",
+    "summary": "1st-level domain feature (censor and conduit): Sanctified Weapon (as a respite activity you bless a weapon, giving its wielder +1 rolled damage with its abilities until your next respite). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes damage greater than 10 + your level in a single turn. Prayer effect (conduit): up to three allies within 10 squares, or yourself in place of one ally, each gain 2 surges.",
+    "description": "The domain of battle and bloodshed. 1st-level domain feature (censor and conduit): Sanctified Weapon (as a respite activity you bless a weapon, giving its wielder +1 rolled damage with its abilities until your next respite). Skill group: Exploration. Piety (conduit): you gain 2 piety the first time in an encounter that you or a creature within 10 squares takes damage greater than 10 + your level in a single turn. Prayer effect (conduit): up to three allies within 10 squares, or yourself in place of one ally, each gain 2 surges. A censor uses Presence wherever the feature says Intuition, and gains neither the piety nor the prayer.",
+    "properties": {
+      "category": "subclass",
+      "class": "Conduit"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "earth-specialization",
+    "name": "Earth specialization",
+    "summary": "Specialization benefit, Acolyte of Earth: when you use an ability with the Earth and Magic keywords, your stability increases by 1 until the start of your next turn, cumulatively. 1st-level feature Motivate Earth: a main action to raise a 5 wall of mundane dirt, stone or metal, or to open or seal a 1-square opening in a structure. Triggered action: Skin Like Castle Walls.",
+    "description": "Earth elementalists become harder to move and shape the ground itself. Specialization benefit, Acolyte of Earth: when you use an ability with the Earth and Magic keywords, your stability increases by 1 until the start of your next turn, cumulatively. 1st-level feature Motivate Earth: a main action to raise a 5 wall of mundane dirt, stone or metal, or to open or seal a 1-square opening in a structure. Triggered action: Skin Like Castle Walls.",
+    "properties": {
+      "category": "subclass",
+      "class": "Elementalist"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "fire-specialization",
+    "name": "Fire specialization",
+    "summary": "Specialization benefit, Acolyte of Fire: abilities with the Fire and Magic keywords gain +1 to rolled damage, and so does Hurl Element when it deals fire damage. 1st-level feature Return to Formlessness: a main action to melt or burn one square of a mundane object. Triggered action: Explosive Assistance.",
+    "description": "Fire elementalists specialize in destructive flames. Specialization benefit, Acolyte of Fire: abilities with the Fire and Magic keywords gain +1 to rolled damage, and so does Hurl Element when it deals fire damage. 1st-level feature Return to Formlessness: a main action to melt or burn one square of a mundane object. Triggered action: Explosive Assistance.",
+    "properties": {
+      "category": "subclass",
+      "class": "Elementalist"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "green-specialization",
+    "name": "Green specialization",
+    "summary": "Specialization benefit, Acolyte of the Green: when a Green and Magic ability that costs essence damages creatures, you or one creature within 10 squares gains temporary Stamina equal to your Reason score. 1st-level feature It Is the Soul Which Hears: you can speak with and understand animals, beasts and plant creatures, using Reason instead of Presence to influence them, and talk telepathically to a living plant. Triggered action: Breath of Dawn Remembered.",
+    "description": "Green elementalists use growth and life magic to bolster themselves and their allies. Specialization benefit, Acolyte of the Green: when a Green and Magic ability that costs essence damages creatures, you or one creature within 10 squares gains temporary Stamina equal to your Reason score. 1st-level feature It Is the Soul Which Hears: you can speak with and understand animals, beasts and plant creatures, using Reason instead of Presence to influence them, and talk telepathically to a living plant. Triggered action: Breath of Dawn Remembered.",
+    "properties": {
+      "category": "subclass",
+      "class": "Elementalist"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "void-specialization",
+    "name": "Void specialization",
+    "summary": "Specialization benefit, Acolyte of the Mystery: the distance of your Magic, Ranged, Void abilities increases by 2 squares. 1st-level feature A Beyonding of Vision: you see through illusions and invisibility, can't be concealed from by supernatural effects, and know if something is magical and what it does; you also gain the Shared Void Sense ability. Triggered action: Subtle Relocation.",
+    "description": "Void elementalists work the mystery of the void to see further and reach further. Specialization benefit, Acolyte of the Mystery: the distance of your Magic, Ranged, Void abilities increases by 2 squares. 1st-level feature A Beyonding of Vision: you see through illusions and invisibility, can't be concealed from by supernatural effects, and know if something is magical and what it does; you also gain the Shared Void Sense ability. Triggered action: Subtle Relocation.",
+    "properties": {
+      "category": "subclass",
+      "class": "Elementalist"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "berserker",
+    "name": "Berserker",
+    "summary": "You have the Lift skill. 1st-level features: a kit, and Primordial Strength, which adds your Might score to damage when a weapon strike hits an object or you push a creature into one. Growing Ferocity gives Might-based benefits as your ferocity rises. Triggered action: Lines of Force.",
+    "description": "Berserkers turn ferocity into physical might. You have the Lift skill. 1st-level features: a kit, and Primordial Strength, which adds your Might score to damage when a weapon strike hits an object or you push a creature into one. Growing Ferocity gives Might-based benefits as your ferocity rises. Triggered action: Lines of Force.",
+    "properties": {
+      "category": "subclass",
+      "class": "Fury"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "reaver",
+    "name": "Reaver",
+    "summary": "You have the Hide skill. 1st-level features: a kit, and Primordial Cunning, which means you are never surprised and can slide a target instead of pushing it. Growing Ferocity gives Agility-based benefits as your ferocity rises. Triggered action: Unearthly Reflexes.",
+    "description": "Reavers turn ferocity into instinct and cunning. You have the Hide skill. 1st-level features: a kit, and Primordial Cunning, which means you are never surprised and can slide a target instead of pushing it. Growing Ferocity gives Agility-based benefits as your ferocity rises. Triggered action: Unearthly Reflexes.",
+    "properties": {
+      "category": "subclass",
+      "class": "Fury"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "stormwight",
+    "name": "Stormwight",
+    "summary": "You have the Track skill. 1st-level features: Beast Shape, which lets you use a stormwight kit, and Relentless Hunter, which gives you an edge on Track tests. Triggered action: Furious Change.",
+    "description": "Stormwights turn ferocity into primordial storms and take animal or hybrid form. You have the Track skill. 1st-level features: Beast Shape, which lets you use a stormwight kit, and Relentless Hunter, which gives you an edge on Track tests. Triggered action: Furious Change.",
+    "properties": {
+      "category": "subclass",
+      "class": "Fury"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "chronokinetic",
+    "name": "Chronokinetic",
+    "summary": "You gain one skill from the lore group. 1st-level feature Chronokinetic Mastery: whenever you use Inertial Shield, you can use the Disengage move action as a free triggered action. As your discipline grows you gain more: at 2, Disengage before or after Knockback; at 4, 1 surge the first time on a turn you willingly move as part of an ability; at 6, an edge on Grab and Knockback.",
+    "description": "Chronokinetic nulls move through the flow of time as another dimension. You gain one skill from the lore group. 1st-level feature Chronokinetic Mastery: whenever you use Inertial Shield, you can use the Disengage move action as a free triggered action. As your discipline grows you gain more: at 2, Disengage before or after Knockback; at 4, 1 surge the first time on a turn you willingly move as part of an ability; at 6, an edge on Grab and Knockback.",
+    "properties": {
+      "category": "subclass",
+      "class": "Null"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "cryokinetic",
+    "name": "Cryokinetic",
+    "summary": "You gain one skill from the crafting group. 1st-level feature Cryokinetic Mastery: whenever you use Inertial Shield, you can then use the Grab maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback targets one more creature and your psionic untyped damage can be cold; at 4, 1 surge the first time on a turn you grab a creature or an enemy moves in your Null Field; at 6, an edge on Grab and Knockback.",
+    "description": "Cryokinetic nulls tap absolute cold and manifest it in their bodies. You gain one skill from the crafting group. 1st-level feature Cryokinetic Mastery: whenever you use Inertial Shield, you can then use the Grab maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback targets one more creature and your psionic untyped damage can be cold; at 4, 1 surge the first time on a turn you grab a creature or an enemy moves in your Null Field; at 6, an edge on Grab and Knockback.",
+    "properties": {
+      "category": "subclass",
+      "class": "Null"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "metakinetic",
+    "name": "Metakinetic",
+    "summary": "You gain one skill from the exploration group. 1st-level feature Metakinetic Mastery: whenever you use Inertial Shield, you can then use the Knockback maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback moves the target extra squares equal to your Intuition score; at 4, 1 surge the first time in a round you take damage or are force moved; at 6, an edge on Grab and Knockback.",
+    "description": "Metakinetic nulls see through the universe's illusions to understand their bodies and psionic potential. You gain one skill from the exploration group. 1st-level feature Metakinetic Mastery: whenever you use Inertial Shield, you can then use the Knockback maneuver as a free triggered action. As your discipline grows you gain more: at 2, Knockback moves the target extra squares equal to your Intuition score; at 4, 1 surge the first time in a round you take damage or are force moved; at 6, an edge on Grab and Knockback.",
+    "properties": {
+      "category": "subclass",
+      "class": "Null"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "college-of-black-ash",
+    "name": "College of Black Ash",
+    "summary": "You have the Magic skill. 1st-level feature Black Ash Teleport: a maneuver to teleport up to 5 squares, with a free Hide and 1 surge if it ends in cover or concealment, and 1 more square per insight spent. Triggered action: In All This Confusion.",
+    "description": "The college that founded the shadow art, known for teleportation, shadows and darkness. You have the Magic skill. 1st-level feature Black Ash Teleport: a maneuver to teleport up to 5 squares, with a free Hide and 1 surge if it ends in cover or concealment, and 1 more square per insight spent. Triggered action: In All This Confusion.",
+    "properties": {
+      "category": "subclass",
+      "class": "Shadow"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "college-of-caustic-alchemy",
+    "name": "College of Caustic Alchemy",
+    "summary": "You have the Alchemy skill. 1st-level features: Coat the Blade, a maneuver that gives you 2 surges which can deal poison damage, and Smoke Bomb, which lets you Hide while observed and shift your Agility score in squares first. Triggered action: Defensive Roll.",
+    "description": "The college of acids, bombs and poisons for exceptional assassins. You have the Alchemy skill. 1st-level features: Coat the Blade, a maneuver that gives you 2 surges which can deal poison damage, and Smoke Bomb, which lets you Hide while observed and shift your Agility score in squares first. Triggered action: Defensive Roll.",
+    "properties": {
+      "category": "subclass",
+      "class": "Shadow"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "college-of-the-harlequin-mask",
+    "name": "College of the Harlequin Mask",
+    "summary": "You have the Lie skill. 1st-level feature I'm No Threat: a maneuver that makes you look harmless, giving your strikes an edge and +1 shift distance on Disengage until you harm or touch a creature. Triggered action: Clever Trick.",
+    "description": "The college of illusion magic for infiltration and orchestrated chaos. You have the Lie skill. 1st-level feature I'm No Threat: a maneuver that makes you look harmless, giving your strikes an edge and +1 shift distance on Disengage until you harm or touch a creature. Triggered action: Clever Trick.",
+    "properties": {
+      "category": "subclass",
+      "class": "Shadow"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "insurgent",
+    "name": "Insurgent",
+    "summary": "You gain a skill from the intrigue group. 1st-level feature Covert Operations: you and allies in your presence gain an edge on intrigue tests, and you can use Lead to assist intrigue tests. Triggered action: Advanced Tactics.",
+    "description": "Insurgents do whatever it takes to keep their allies alive, fair play or not. You gain a skill from the intrigue group. 1st-level feature Covert Operations: you and allies in your presence gain an edge on intrigue tests, and you can use Lead to assist intrigue tests. Triggered action: Advanced Tactics.",
+    "properties": {
+      "category": "subclass",
+      "class": "Tactician"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "mastermind",
+    "name": "Mastermind",
+    "summary": "You gain a skill from the lore group. 1st-level feature Studied Commander: heroes with you treat war or battle Discover Lore projects as one category cheaper, and you can test Reason as a respite activity to learn about an upcoming encounter or negotiation. Triggered action: Overwatch.",
+    "description": "Masterminds treat the battlefield as a game board and think steps ahead. You gain a skill from the lore group. 1st-level feature Studied Commander: heroes with you treat war or battle Discover Lore projects as one category cheaper, and you can test Reason as a respite activity to learn about an upcoming encounter or negotiation. Triggered action: Overwatch.",
+    "properties": {
+      "category": "subclass",
+      "class": "Tactician"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "vanguard",
+    "name": "Vanguard",
+    "summary": "You gain a skill from the interpersonal group. 1st-level feature Commanding Presence: heroes with you treat their Renown as 2 higher in negotiations and have a double edge on tests to stop combat and start a negotiation. Triggered action: Parry.",
+    "description": "Vanguards lead from the front lines by force of will and personality. You gain a skill from the interpersonal group. 1st-level feature Commanding Presence: heroes with you treat their Renown as 2 higher in negotiations and have a double edge on tests to stop combat and start a negotiation. Triggered action: Parry.",
+    "properties": {
+      "category": "subclass",
+      "class": "Tactician"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "chronopathy",
+    "name": "Chronopathy",
+    "summary": "1st-level features: Accelerate, a maneuver that shifts the target your Reason score in squares (2 clarity also lets the target use a maneuver), and Again, a triggered ability that makes a target reroll an ability roll.",
+    "description": "Chronopathy lets a talent view past and future events and manipulate time. 1st-level features: Accelerate, a maneuver that shifts the target your Reason score in squares (2 clarity also lets the target use a maneuver), and Again, a triggered ability that makes a target reroll an ability roll.",
+    "properties": {
+      "category": "subclass",
+      "class": "Talent"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "telekinesis",
+    "name": "Telekinesis",
+    "summary": "1st-level features: Minor Telekinesis, a maneuver that slides a target your Reason score in squares, and Repel, a triggered ability that halves damage or reduces forced movement for you or an ally.",
+    "description": "Telekinesis lets a talent physically move creatures and objects with the mind. 1st-level features: Minor Telekinesis, a maneuver that slides a target your Reason score in squares, and Repel, a triggered ability that halves damage or reduces forced movement for you or an ally.",
+    "properties": {
+      "category": "subclass",
+      "class": "Talent"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "telepathy",
+    "name": "Telepathy",
+    "summary": "1st-level features: Feedback Loop, a triggered ability that deals the attacker psychic damage equal to half the damage it dealt an ally, and Remote Assistance, a maneuver that gives an ally's next ability roll against a target an edge.",
+    "description": "Telepathy lets a talent communicate with, read and influence minds. 1st-level features: Feedback Loop, a triggered ability that deals the attacker psychic damage equal to half the damage it dealt an ally, and Remote Assistance, a maneuver that gives an ally's next ability roll against a target an edge.",
+    "properties": {
+      "category": "subclass",
+      "class": "Talent"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "auteur",
+    "name": "Auteur",
+    "summary": "You have the Brag skill. 1st-level features: Blocking, a performance that teleports creatures in a 2 aura, and Dramatic Monologue, a maneuver granting an ally an edge or a surge, or giving an enemy a bane.",
+    "description": "Auteurs find drama in story and use magic to manipulate events. You have the Brag skill. 1st-level features: Blocking, a performance that teleports creatures in a 2 aura, and Dramatic Monologue, a maneuver granting an ally an edge or a surge, or giving an enemy a bane.",
+    "properties": {
+      "category": "subclass",
+      "class": "Troubadour"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "duelist",
+    "name": "Duelist",
+    "summary": "You have the Gymnastics skill. 1st-level features: Acrobatics, a 5 aura performance that lets you and allies get a tier 3 outcome on one jump, tumble or climb test, and Star Power, a maneuver giving +2 speed and a minimum tier 2 on your next power roll.",
+    "description": "Duelists find drama in movement done in tandem with another. You have the Gymnastics skill. 1st-level features: Acrobatics, a 5 aura performance that lets you and allies get a tier 3 outcome on one jump, tumble or climb test, and Star Power, a maneuver giving +2 speed and a minimum tier 2 on your next power roll.",
+    "properties": {
+      "category": "subclass",
+      "class": "Troubadour"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
+  },
+  {
+    "slug": "virtuoso",
+    "name": "Virtuoso",
+    "summary": "You have the Music skill and can play an instrument. 1st-level features: Power Chord, a 2 burst maneuver that pushes enemies, and Virtuoso Performances, the performances Thunder Mother and Ballad of the Beast.",
+    "description": "Virtuosos find drama in music and song. You have the Music skill and can play an instrument. 1st-level features: Power Chord, a 2 burst maneuver that pushes enemies, and Virtuoso Performances, the performances Thunder Mother and Ballad of the Beast.",
+    "properties": {
+      "category": "subclass",
+      "class": "Troubadour"
+    },
+    "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
   }
 ]
