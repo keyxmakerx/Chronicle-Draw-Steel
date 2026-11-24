@@ -933,6 +933,16 @@ test('still to choose: a conduit\'s second domain and a tactician\'s second kit'
     const linked = Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true, campaignId: 'c1', canEditIdentity: true });
     assert.ok(/One more domain, in Foundry/.test(cs.dashTodoTags(linked, true)), 'the dashboard names it too');
     assert.ok(!/href=[^>]*>One more domain, in Foundry/.test(cs.pIdentityTodo(linked, true)), 'no builder link for a pick Foundry owns');
+    assert.equal(cs.shortOf(linked, 'subclass'), '1 of 2 domains');
+    assert.equal(cs.shortOf(hero({ class: 'Conduit', subclass: 'Life, War', kit: '' }), 'subclass'), '');
+    assert.equal(cs.shortOf(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor' }), 'kit'), '1 of 2 kits');
+    const own = cs.pIdentity(linked);
+    assert.ok(/data-cs-unfin/.test(own) && /is-unfin/.test(own), 'the Unfinished tape for the player and Directors');
+    assert.ok(/class="sh-miss"[^>]*>1 of 2 domains</.test(own), 'the red mark beside the domain');
+    const reader = cs.pIdentity(Object.assign({}, linked, { canEditIdentity: false }));
+    assert.ok(!/data-cs-unfin/.test(reader) && !/sh-miss/.test(reader), 'other readers see neither');
+    const done = cs.pIdentity(Object.assign(hero({ class: 'Conduit', subclass: 'Life, War', kit: '', ancestry: 'Human', culture: 'Urban', career: 'Sage' }), { canEditIdentity: true }));
+    assert.ok(!/data-cs-unfin/.test(done), 'a finished hero has no tape');
   } finally { cs.setEditRefs({}); }
 });
 

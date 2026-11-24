@@ -2435,6 +2435,8 @@
       }
       var tab = t.closest('[data-ds-tab]');
       if (tab) { e.preventDefault(); selectTab(tab.getAttribute('data-ds-tab'), false); return; }
+      var unfin = t.closest('[data-cs-unfin]');
+      if (unfin) { e.preventDefault(); goToMissing(unfin); return; }
       var chip = t.closest('[data-cs-change-image]');
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
       var pick = t.closest('[data-cs-pick]');
@@ -2866,6 +2868,42 @@
     return out;
   }
 
+  // How short a hero is of a pick its class takes several of, in words for
+  // beside the pick itself ("1 of 2 domains"); '' when nothing is short.
+  function shortOf(data, kind) {
+    var cls = originDef(data, 'class'), p = (cls && cls.properties) || {};
+    if (kind === 'subclass') {
+      var have = subclassPicks(data).length, want = typeof p.subclass_count === 'number' ? p.subclass_count : 1;
+      var word = subclassLabel(p.subclass_type).replace(/\s*\(.*\)\s*$/, '').toLowerCase();
+      if (!/s$/.test(word)) word += 's';
+      return have && have < want && Array.isArray(p.subclasses) && p.subclasses.length ? have + ' of ' + want + ' ' + word : '';
+    }
+    var kits = kitNames(data).length;
+    return typeof p.kits === 'number' && p.kits > 1 && kits && kits < p.kits ? kits + ' of ' + p.kits + ' kits' : '';
+  }
+  // The red word beside a short pick. Only the hero's player and Directors
+  // see it, as they do the Unfinished tape that points at it.
+  function missMark(data, kind) {
+    var t = data.canEditIdentity ? shortOf(data, kind) : '';
+    return t ? ' <span class="sh-miss" tabindex="-1">' + esc(t) + '</span>' : '';
+  }
+  // Whether the hero has any class or origin pick still to make, as the
+  // "Still to choose" line counts them.
+  function unfinished(data) {
+    var unused = noKitNote(data);
+    return morePicks(data).length > 0 || ORIGIN_SLOTS.some(function (s) {
+      return !s.optional && !originVal(data, s.key) && !(s.key === 'kit' && unused);
+    });
+  }
+  // A corner of tape across the identity for the hero's player and
+  // Directors. Hovering it makes the red marks pulse; pressing it takes the
+  // reader to the first one.
+  function unfinishedTape(data) {
+    if (!data.canEditIdentity || !unfinished(data)) return '';
+    return '<span class="sh-unfin-c"><button type="button" class="sh-unfin" data-cs-unfin' +
+      ' aria-label="Unfinished: show what is still to choose">Unfinished</button></span>';
+  }
+
   function pIdentityTodo(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
@@ -2876,13 +2914,14 @@
     // A pick that adds to others (a second domain) is made in the hero
     // builder, which keeps the first; the sheet's picker would replace it.
     var builder = canPick && data.campaignId ? '/campaigns/' + encodeURIComponent(data.campaignId) + '/characters' : '';
+    var miss = data.canEditIdentity ? ' sh-miss' : '';
     return '<p class="sh-idtodo sh-fq"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
-        ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
+        ? '<button type="button" class="sh-idpick' + miss + '" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
     }).concat(more.map(function (label) {
-      return builder && !/in Foundry$/.test(label) ? '<a class="sh-idpick" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span>' + esc(label) + '</span>';
+      return builder && !/in Foundry$/.test(label) ? '<a class="sh-idpick' + miss + '" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span class="' + miss.trim() + '" tabindex="-1">' + esc(label) + '</span>';
     })).join('') + '</p>';
   }
 
@@ -2895,10 +2934,11 @@
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
     var more = morePicks(data);
     if (!left.length && !more.length) return '';
+    var miss = data.canEditIdentity ? ' class="sh-miss" tabindex="-1"' : '';
     return '<dl class="sh-idset-todo sh-dq">' + more.map(function (label) {
-      return '<div><dt>' + esc(label) + '</dt><dd>Still to choose</dd></div>';
+      return '<div' + miss + '><dt>' + esc(label) + '</dt><dd>Still to choose</dd></div>';
     }).join('') + left.map(function (s) {
-      return '<div><dt>' + s.label + '</dt><dd>' + (canPick
+      return '<div' + miss + '><dt>' + s.label + '</dt><dd>' + (canPick
         ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">Still to choose</button>'
         : 'Still to choose') + '</dd></div>';
@@ -2923,8 +2963,8 @@
     var line = [
       has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
       '<span class="sh-idval">' + pClass(data, canPick, (className ? esc(className) : '&ndash;') + ' ' + level) + '</span>',
-      subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + '</span>' : '',
-      has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
+      subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + missMark(data, 'subclass') + '</span>' : '',
+      has('kit') ? pOrigin(data, bySlot.kit, canPick) + missMark(data, 'kit') : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
     ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
     var folded = [bySlot.culture, bySlot.career, bySlot.complication].filter(shows);
@@ -2935,7 +2975,7 @@
 
     var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + pClass(data, canPick, className ? esc(className) : 'No class') +
       ' <span class="sh-idlv">level ' + level + '</span></span>' +
-      (subclass ? '<span class="sh-idsub">' + subclassName(data, subclass) + '</span>' : '') +
+      (subclass ? '<span class="sh-idsub">' + subclassName(data, subclass) + missMark(data, 'subclass') + '</span>' : '') +
       (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
     var made = ORIGIN_SLOTS.filter(shows);
     var set = made.length ? '<dl class="sh-idset sh-id-q">' + made.map(function (s) {
@@ -2949,7 +2989,8 @@
 
   function pIdentity(data) {
     var name = data.name || 'Unnamed Hero';
-    return '<section class="sh-id" aria-label="' + escAttr('Who ' + name + ' is') + '">' +
+    var tape = unfinishedTape(data);
+    return '<section class="sh-id' + (tape ? ' is-unfin' : '') + '" aria-label="' + escAttr('Who ' + name + ' is') + '">' + tape +
       '<h2 class="sh-dname sh-dq">' + esc(name) + '</h2>' + dashProg(data) +
       '<div class="sh-idin" data-cs-idin>' + pIdentityInner(data) + '</div>' +
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
@@ -3767,6 +3808,22 @@
     card.style.setProperty('--sc-notch', notch + 'px');
     card.style.setProperty('--ox', (notch + 6) + 'px');
     card.style.setProperty('--oy', '0px');
+  }
+
+  // Pressing the Unfinished tape scrolls to the first red mark the reader can
+  // see (each look hides the others' copies), focuses it and flashes it once.
+  function goToMissing(btn) {
+    var root = btn.closest('[data-sheet]') || btn.closest('.sh-id') || document;
+    var marks = [].slice.call(root.querySelectorAll('.sh-miss')).filter(function (m) { return m.getClientRects().length > 0; });
+    var first = marks[0];
+    if (!first) return;
+    var calm = reducedMotion();
+    try { first.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' }); } catch (e) { first.scrollIntoView(); }
+    try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
+    first.classList.remove('is-found');
+    void first.offsetWidth;
+    first.classList.add('is-found');
+    setTimeout(function () { first.classList.remove('is-found'); }, 1600);
   }
 
   function reducedMotion() {
@@ -6478,6 +6535,19 @@
     var hair = 'color-mix(in srgb,var(--paper-edge) 55%,transparent)';
     return [
       'Q .sh-id-l,P .sh-id-q { display:none; }',
+      // Unfinished: red marks on what is still to choose, and a corner of tape.
+      '[data-sheet] .sh-miss { color:var(--color-danger,#dc2626) !important;font-weight:600;border-radius:4px;outline:2px solid transparent;outline-offset:2px; }',
+      '[data-sheet] .sh-idset-todo > .sh-miss { border-color:var(--color-danger,#dc2626) !important; }',
+      '[data-sheet] .sh-idset-todo > .sh-miss :is(dt,dd,.sh-idpick) { color:var(--color-danger,#dc2626) !important; }',
+      '[data-sheet] .sh-id.is-unfin { position:relative; }',
+      '[data-sheet] .sh-id.is-unfin .sh-dprog { margin-top:44px; }',
+      '[data-sheet] .sh-unfin-c { position:absolute;top:0;right:0;width:104px;height:104px;overflow:hidden;pointer-events:none;z-index:1; }',
+      '[data-sheet] .sh-unfin { pointer-events:auto;position:absolute;top:20px;right:-45px;width:150px;transform:rotate(45deg);padding:4px 0;border:0;cursor:pointer;font:800 calc(10.5px * var(--ts,1)) var(--paper-ui-font,sans-serif);letter-spacing:.1em;text-transform:uppercase;color:#fff;text-shadow:0 0 3px #000,0 0 1px #000;background:repeating-linear-gradient(-45deg,var(--color-danger,#dc2626) 0 8px,#1a1c23 8px 16px);box-shadow:0 1px 3px rgba(0,0,0,.35); }',
+      '[data-sheet] .sh-unfin:focus-visible { outline:2px solid #fff;outline-offset:-4px; }',
+      '@keyframes sh-miss-pulse { 0%,100% { outline-color:transparent;background-color:transparent; } 50% { outline-color:var(--color-danger,#dc2626);background-color:color-mix(in srgb,var(--color-danger,#dc2626) 14%,transparent); } }',
+      '[data-sheet] .sh-id:has(.sh-unfin:is(:hover,:focus-visible)) .sh-miss,[data-sheet] .sh-miss.is-found { animation:sh-miss-pulse 1.1s ease-in-out infinite; }',
+      '@media (prefers-reduced-motion:reduce) { [data-sheet] .sh-id:has(.sh-unfin:is(:hover,:focus-visible)) .sh-miss,[data-sheet] .sh-miss.is-found { animation:none;outline-color:var(--color-danger,#dc2626); } }',
+      '[data-motion="calm"] [data-sheet] .sh-id:has(.sh-unfin:is(:hover,:focus-visible)) .sh-miss,[data-motion="calm"] [data-sheet] .sh-miss.is-found { animation:none;outline-color:var(--color-danger,#dc2626); }',
       '[data-sheet] .sh-idtodo { margin:6px 0 2px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px;font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute); }',
       '[data-sheet] .sh-idtodo-k { font-weight:600;color:var(--paper-ink-soft); }',
       '[data-sheet] .sh-idtodo .sh-idpick { font-weight:600;color:var(--paper-accent); }',
@@ -7736,7 +7806,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, pIdentityTodo: pIdentityTodo, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, pIdentityTodo: pIdentityTodo, shortOf: shortOf, unfinishedTape: unfinishedTape, goToMissing: goToMissing, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
