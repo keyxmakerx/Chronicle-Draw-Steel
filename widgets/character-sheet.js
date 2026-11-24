@@ -4314,12 +4314,15 @@
 
   // The files that say what a hero's kit and origins are. They are read at
   // mount with the rest, so the words are there on first paint.
-  var ORIGIN_FILES = { kit: 'kits.json', ancestry: 'ancestries.json', culture: 'cultures.json', career: 'careers.json', class: 'classes.json' };
-  var ORIGIN_LABELS = { ancestry: 'Ancestry', culture: 'Culture', career: 'Career', class: 'Class' };
+  var ORIGIN_FILES = { kit: 'kits.json', ancestry: 'ancestries.json', culture: 'cultures.json', career: 'careers.json', class: 'classes.json', complication: 'complications.json' };
+  var ORIGIN_LABELS = { ancestry: 'Ancestry', culture: 'Culture', career: 'Career', class: 'Class', complication: 'Complication' };
   var NO_DESC = 'No description yet.';
 
   function originName(data, kind) {
-    return kind === 'kit' ? (kitNames(data)[0] || '') : String(f(data, kind, '') || '').trim();
+    if (kind === 'kit') return kitNames(data)[0] || '';
+    // A complication still named for its empty Foundry item is no choice.
+    if (kind === 'complication') return originVal(data, kind);
+    return String(f(data, kind, '') || '').trim();
   }
   // The pack's entry for the hero's kit or origin, or null when the name is
   // not in the file (a homebrew name, or a file that did not load).
@@ -4409,7 +4412,25 @@
       return '<div class="rule"><b>' + esc(p.name) + '</b>' + (d ? lead + '<p>' + refText(d) + '</p>' : pEmpty(NO_DESC)) + '</div>';
     }).join('');
   }
-  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it', subclass: 'Its rules' };
+  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it', subclass: 'Its rules', complication: 'Its story' };
+
+  // A complication's benefit and drawback, as the pack words them: most
+  // entries have the two apart, a few as one passage. A campaign's own
+  // complication may have neither, and then its description stands in.
+  function complicationTerms(entry) {
+    var p = (entry && entry.properties) || {};
+    var str = function (v) { return typeof v === 'string' ? v.trim() : ''; };
+    if (str(p.benefit) || str(p.drawback)) return [['Benefit', str(p.benefit)], ['Drawback', str(p.drawback)]];
+    if (str(p.benefit_and_drawback)) return [['Benefit and drawback', str(p.benefit_and_drawback)]];
+    return [];
+  }
+  function complicationBody(entry) {
+    var terms = complicationTerms(entry).filter(function (t) { return t[1]; });
+    if (!terms.length) return originPara(entry, 'sh-orig-p');
+    return terms.map(function (t) {
+      return '<p class="sh-orig-p"><b>' + esc(t[0]) + '.</b> ' + refText(t[1]) + '</p>';
+    }).join('');
+  }
   function originRow(label, name, body, kind) {
     return '<div class="sh-orig"><span class="sh-k">' + esc(label) + '</span>' +
       '<div class="sh-orig-b"><b' + (name ? '' : ' class="sh-orig-none"') + '>' + esc(name || 'Still to choose') + '</b>' + body + '</div>' +
@@ -4437,6 +4458,12 @@
         return t ? '<p class="sh-orig-p">' + (subclassPicks(data).length > 1 ? '<b>' + esc(p.name) + ':</b> ' : '') + refText(t) + '</p>' : '';
       }).join('') || pEmpty(NO_DESC);
       rows.push(originRow(subclassLabel(subType), sub, subBody, subclassDescribed(data) && !inPanel ? 'subclass' : ''));
+    }
+    // The complication is optional, so it has a row only once there is one.
+    var comp = originName(data, 'complication');
+    if (comp) {
+      var ce = originDef(data, 'complication');
+      rows.push(originRow(ORIGIN_LABELS.complication, comp, ce ? complicationBody(ce) : pEmpty(NO_DESC), ce && !inPanel ? 'complication' : ''));
     }
     return '<div class="sh-whence">' + rows.join('') + '</div>';
   }
@@ -4479,6 +4506,8 @@
       if (sub) {
         out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' + subclassRules(data) + '</div>';
       }
+    } else if (kind === 'complication') {
+      out += originFacts(complicationTerms(e).concat([['Special', p.special]]));
     } else if (kind === 'culture') {
       out += originFacts([['Language', p.language], ['Environment', p.environment], ['Organization', p.organization], ['Upbringing', p.upbringing],
         ['Skills', p.skill_options], ['Quick build', p.skill_options_quick_build]]);
@@ -4867,7 +4896,7 @@
     list.push({ id: 'features', title: 'Features', kind: name, html: pFeaturesPanel(data) });
     list.push({ id: 'skills', title: 'Skills', kind: name, html: pSkillsPanel(data) });
     if (data.isGm || data.isOwner) list.push({ id: 'notes', title: 'Story', kind: name, size: 'tall', html: pNotesPanel(data) });
-    ['ancestry', 'culture', 'career', 'class'].forEach(function (kind) {
+    ['ancestry', 'culture', 'career', 'class', 'complication'].forEach(function (kind) {
       var e = originDef(data, kind);
       if (e) list.push({ id: 'origin-' + kind, title: e.name, kind: ORIGIN_LABELS[kind], html: originPanelHtml(data, kind) });
     });

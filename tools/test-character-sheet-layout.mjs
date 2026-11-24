@@ -828,7 +828,12 @@ const ORIGIN_REFS = {
   'classes.json': [{ slug: 'tactician', name: 'Tactician', description: 'You lead.\nSecond paragraph.', properties: { heroic_resource: 'Focus', subclass_type: 'tactical doctrine' } }],
   'cultures.json': [{ slug: 'typical-human', name: 'Human (typical ancestry culture)', description: 'Raised among humans.',
     properties: { language: 'Vaslorian', environment: 'Urban', organization: 'Communal', upbringing: 'Labor', skill_options: 'One skill from each aspect.', skill_options_quick_build: 'Nature, Jump, Lift' } }],
-  'kits.json': [{ slug: 'armor', name: 'Armor', description: 'Heavy plates.', properties: { equipment: 'You wear heavy armor.', armor: 'Heavy', weapon: 'Medium', signature_ability: { name: 'Brace' } } }]
+  'kits.json': [{ slug: 'armor', name: 'Armor', description: 'Heavy plates.', properties: { equipment: 'You wear heavy armor.', armor: 'Heavy', weapon: 'Medium', signature_ability: { name: 'Brace' } } }],
+  'complications.json': [
+    { slug: 'amnesia', name: 'Amnesia', description: 'You remember nothing.', properties: { benefit: 'You gain an <edge>.', drawback: 'Your past hunts you.' } },
+    { slug: 'advanced-studies', name: 'Advanced Studies', description: 'A strange notebook.', properties: { benefit_and_drawback: 'Study it as a respite activity.' } },
+    { slug: 'cursed-ring', name: 'Cursed Ring', description: 'A ring that will not come off.', properties: {}, origin: 'own' }
+  ]
 };
 const withRefs = (fn) => { cs.setEditRefs(ORIGIN_REFS); try { return fn(); } finally { cs.setEditRefs({}); } };
 
@@ -849,6 +854,22 @@ test('origins: a name the pack does not have reads "No description yet." and ope
   assert.ok(/<b>Homebrew Elf<\/b><p class="sh-sub sh-empty">No description yet\./.test(html));
   assert.ok(!/origin-ancestry/.test(html));
   assert.ok(!panelIds(cs.paperPanels(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { ancestry: 'Homebrew Elf' }) })).map((p) => '<template data-sheet-panel="' + p.id + '"').join('')).includes('origin-ancestry'));
+}));
+
+test('origins: a complication has a row with its benefit and drawback only once there is one', () => withRefs(() => {
+  const withComp = (name) => Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { complication: name }) });
+  assert.ok(!/Complication/.test(cs.originRows(PAPER)), 'optional: no row without one');
+  assert.ok(!/Complication/.test(cs.originRows(withComp('New Complication'))), 'the empty Foundry item is no choice');
+  const html = cs.originRows(withComp('Amnesia'));
+  assert.ok(/<b>Amnesia<\/b><p class="sh-orig-p"><b>Benefit\.<\/b> You gain an &lt;edge&gt;\.<\/p><p class="sh-orig-p"><b>Drawback\.<\/b> Your past hunts you\./.test(html), html);
+  assert.ok(/data-sheet-open="origin-complication"[^>]*>Its story/.test(html));
+  assert.ok(/<b>Benefit and drawback\.<\/b> Study it/.test(cs.originRows(withComp('Advanced Studies'))), 'one passage when the pack has one');
+  assert.ok(/<b>Cursed Ring<\/b><p class="sh-orig-p">A ring that will not come off\./.test(cs.originRows(withComp('Cursed Ring'))), 'a campaign\'s own reads its description');
+  assert.ok(/<b>Lost Twin<\/b><p class="sh-sub sh-empty">No description yet\./.test(cs.originRows(withComp('Lost Twin'))));
+  const data = withComp('Amnesia');
+  assert.ok(cs.paperPanels(data).map((p) => p.id).includes('origin-complication'));
+  const panel = cs.originPanelHtml(data, 'complication');
+  assert.ok(/You remember nothing\./.test(panel) && /<dt>Benefit<\/dt><dd>You gain/.test(panel) && /<dt>Drawback<\/dt><dd>Your past/.test(panel), panel);
 }));
 
 test('origins: the long entries are panels, with what each origin gives', () => withRefs(() => {
