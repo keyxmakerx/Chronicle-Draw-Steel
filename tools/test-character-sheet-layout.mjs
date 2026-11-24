@@ -972,6 +972,13 @@ test('stat cards: a characteristic rolls a test with edge or bane; anyone else r
   } finally { delete C.powerRoll; }
 });
 
+test('stat cards: the roll names this hero, so Foundry posts it as the hero\'s actor', () => {
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  const roll = src.slice(src.indexOf('function roll()'), src.indexOf('inst._onStatClick'));
+  assert.ok(/body\.characterId = String\(data\.entityId\)/.test(roll), 'the hero\'s page id goes with the roll');
+  assert.ok(/'\/rolls', \{ method: 'POST', body: body \}/.test(roll), 'and that body is what is posted');
+});
+
 test('stat cards: Speed says where it comes from, and what the sheet can\'t name', () => {
   const refs = Object.assign({}, ORIGIN_REFS, { 'kits.json': [{ slug: 'armor', name: 'Armor', properties: { speed_bonus: 0, stability_bonus: 2, disengage_bonus: 1 } }] });
   cs.setEditRefs(refs);

@@ -3752,7 +3752,11 @@
       sc.error = '';
       sc.live.textContent = '';
       draw();
-      Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) + '/rolls', { method: 'POST', body: { formula: p.formula, label: p.label, mode: 'public' } })
+      // characterId makes it this hero's roll: Chronicle checks the roller plays
+      // the hero, and Foundry posts it as the hero's linked actor.
+      var body = { formula: p.formula, label: p.label, mode: 'public' };
+      if (data.entityId) body.characterId = String(data.entityId);
+      Chronicle.apiFetch('/campaigns/' + encodeURIComponent(data.campaignId) + '/rolls', { method: 'POST', body: body })
         .then(function (res) {
           return res.json().catch(function () { return {}; }).then(function (d) { return { ok: res.ok, d: d || {} }; });
         })

@@ -108,7 +108,10 @@ and not the window's). The phone and the paper styles never see it.
   edge or bane first, then Roll asks Chronicle's roll route for the power
   roll the Table would make (`Chronicle.powerRoll.plan` with the campaign's
   rules from `GET /campaigns/:id/rolls/power`), always seen by everyone and
-  under the presser's name, and the card shows the tier. Every card explains
+  under the presser's name, and the card shows the tier. The roll carries the
+  hero's page id (`characterId`), so Foundry posts it as the hero's linked
+  actor; Chronicle keeps the hero only for the hero's player or the
+  Director. Every card explains
   its number from the glossary; speed, stability, disengage and size also list
   the ancestry and kit parts (`statSources`), and speed, stability and
   disengage say when those don't add up to the number shown.
