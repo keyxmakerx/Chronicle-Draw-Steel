@@ -429,3 +429,20 @@ test('every book stat block has its figures and readable ability lists', () => {
     if (p.villain_actions_json) assert.ok(JSON.parse(p.villain_actions_json).every((v) => v.order), it.slug + ': villain action order');
   }
 });
+
+// A campaign's Items take the Item preset's fields when the Director switches
+// to them, and the values copied from a treasure's reference page land in the
+// same keys. So every column the Treasures page shows must be an Item field,
+// and every Item field but the Director's note must be a key the data carries.
+test('the Item preset carries the treasure fields the Treasures page shows', () => {
+  const item = MANIFEST.entity_presets.find((p) => p.category === 'item');
+  assert.ok(item, 'no item preset');
+  const keys = new Set(item.fields.map((f) => f.key));
+  const cat = MANIFEST.categories.find((c) => c.slug === 'treasures');
+  const missing = cat.fields.map((f) => f.key)
+    .filter((k) => !k.endsWith(DERIVED_SUFFIX) && k !== 'provenance_display' && !keys.has(k));
+  assert.deepEqual(missing, [], 'Treasures columns with no Item field');
+  const carried = new Set(load('treasures.json').flatMap((t) => Object.keys(t.properties || {})));
+  const unknown = item.fields.filter((f) => !f.gm_only && !carried.has(f.key)).map((f) => f.key);
+  assert.deepEqual(unknown, [], 'Item fields no treasure carries');
+});
