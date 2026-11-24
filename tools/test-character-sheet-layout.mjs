@@ -1073,6 +1073,36 @@ test('stat cards: Speed says where it comes from, and what the sheet can\'t name
   } finally { cs.setEditRefs({}); }
 });
 
+test('save: the threshold stands alone and the bonus is said as part of the roll', () => {
+  const BASTION = { name: 'Bastion Ward', description: '<p>Your god grants you a holy countenance that protects you at all times. You gain a +1 bonus to saving throws.</p>' };
+  const d = (f) => Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { save_threshold: 6, features_json: JSON.stringify([BASTION]) }, f) });
+  const box = cs.dashBoxes(d({ save_bonus: '1' }));
+  assert.ok(/data-cs-stat="save"[^>]*><span class="sh-dk">Save<\/span><span class="sh-dbig num">6\+<\/span><span class="sh-dsub num">\+1 to roll<\/span>/.test(box), 'the box reads 6+ over "+1 to roll"');
+  assert.ok(!/6\+ \+1/.test(box), 'never "6+ +1"');
+  for (const none of ['', '0', null, '+0']) {
+    assert.ok(!/to roll/.test(cs.dashBoxes(d({ save_bonus: none }))), JSON.stringify(none) + ' is no bonus');
+  }
+  assert.ok(/−1 to roll/.test(cs.dashBoxes(d({ save_bonus: '-1', features_json: '' }))), 'a penalty keeps its sign');
+  assert.equal(cs.saveRollText(d({ save_bonus: '1' })), 'd10 + 1');
+  assert.equal(cs.saveRollText(d({ save_bonus: '+1d4' })), 'd10 + 1d4', 'a formula bonus is shown as written');
+  assert.equal(cs.saveRollText(d({ save_bonus: '1 + 1' })), 'd10 + 2', 'Foundry\'s stacked bonuses are added up');
+  assert.equal(cs.saveRollText(d({ save_bonus: '1 - 1' })), 'd10', 'and can cancel out');
+
+  const card = cs.statCardHtml(d({ save_bonus: '1' }), 'save', {});
+  assert.ok(/<b>Save 6\+<\/b> <span class="sh-sc-f num">d10 \+ 1<\/span>/.test(card), 'the card names the roll');
+  assert.ok(/<dt>Bastion Ward<\/dt><dd class="num">\+1<\/dd>/.test(card), 'and the feature the +1 comes from');
+  assert.ok(/the effect ends on a 5 or higher on the die/.test(card), 'and what that means at the table');
+  assert.ok(/This sheet doesn’t roll saves\. Roll d10 \+ 1 when an effect ends with a save\./.test(card), 'a save is a roll, not "nothing to roll"');
+  assert.ok(!/Nothing to roll/.test(card));
+  assert.ok(!/doesn’t roll saves/.test(cs.statCardHtml(Object.assign(d({ save_bonus: '1' }), { isGm: false, isOwner: false }), 'save', {})), 'only someone who can roll is told where');
+
+  assert.ok(/can’t name where it comes from/.test(cs.saveSources(d({ save_bonus: '1', features_json: '' })).note), 'an unnamed bonus says so');
+  assert.ok(/The other \+1 comes from/.test(cs.saveSources(d({ save_bonus: '2' })).note), 'a partly named bonus says what is left');
+  assert.deepEqual(cs.saveSources(d({ save_bonus: '' })), { rows: [], note: '' }, 'no bonus, no sources');
+  const plain = cs.statCardHtml(d({ save_bonus: '' }), 'save', {});
+  assert.ok(/<b>Save 6\+<\/b> <span class="sh-sc-f num">d10<\/span>/.test(plain) && !/on the die/.test(plain));
+});
+
 test('stat cards: the glossary explains every number the cards read', () => {
   const g = new Set(JSON.parse(readFileSync(new URL('../data/rules-glossary.json', import.meta.url), 'utf8')).map((e) => e.slug));
   for (const s of ['might', 'agility', 'reason', 'intuition', 'presence', 'speed', 'stability', 'disengage', 'size', 'saving-throw', 'fly', 'hover', 'climb-or-swim', 'burrow', 'teleport']) {

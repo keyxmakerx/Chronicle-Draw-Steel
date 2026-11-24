@@ -866,11 +866,9 @@
     if (f(data, 'size', '') !== '') chipList += chip('Size', 'size');
     // Save (roll ≥ threshold to end an effect) — how sticky conditions are on this hero.
     if (isNum(data, 'save_threshold')) {
-      var sb = f(data, 'save_bonus', '');
-      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
+      var sbl = saveBonusLine(data);
       chipList += '<div class="cs-chip"><span class="cs-chip-label">Save</span>' +
-        '<span class="cs-chip-value">' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</span></div>';
+        '<span class="cs-chip-value">' + saveText(data) + (sbl ? ' <small>' + sbl + '</small>' : '') + '</span></div>';
     }
     var chips = '<div class="cs-chip-row">' + chipList + '</div>';
 
@@ -2998,10 +2996,8 @@
       out += '<span>Potency ' + pv('potency_weak') + ' · ' + pv('potency_average') + ' · ' + pv('potency_strong') + '</span>';
     }
     if (isNum(data, 'save_threshold')) {
-      var sb = f(data, 'save_bonus', '');
-      var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-        ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
-      out += '<span>Save<b>' + num(data, 'save_threshold', 6) + '+' + sbTxt + '</b></span>';
+      var sbl = saveBonusLine(data);
+      out += '<span>Save<b>' + saveText(data) + '</b>' + (sbl ? ' <small class="num">' + sbl + '</small>' : '') + '</span>';
     }
     var modes = parseStrList(f(data, 'movement_types', '')).map(function (m) { return String(m).toLowerCase(); })
       .filter(function (m) { return m && m !== 'walk'; });
@@ -3465,19 +3461,89 @@
 
   // A number box. With a stat key it is a button that opens the stat's small
   // card; die marks the five that roll, for a viewer who may roll them.
-  function dashBox(label, value, cls, stat, die) {
-    var inner = '<span class="sh-dk">' + label + '</span><span class="sh-dbig num">' + value + '</span>';
+  function dashBox(label, value, cls, stat, die, sub) {
+    var inner = '<span class="sh-dk">' + label + '</span><span class="sh-dbig num">' + value + '</span>' +
+      (sub ? '<span class="sh-dsub num">' + sub + '</span>' : '');
     if (!stat) return '<div class="sh-dbox' + (cls ? ' ' + cls : '') + '">' + inner + '</div>';
     return '<button type="button" class="sh-dbox sh-dstat' + (cls ? ' ' + cls : '') + '" data-cs-stat="' + stat + '" aria-haspopup="dialog" aria-expanded="false">' +
       inner + (die ? '<span class="sh-ddie">' + fa('dice') + '</span>' : '') + '</button>';
   }
 
-  // The save as the box shows it: the threshold, then any bonus ("6+", "6+ +1").
-  function saveText(data) {
+  // A save is a d10 that has to reach the threshold. Foundry's save bonus is
+  // added to the die, not to the threshold, so the sheet never prints the two
+  // side by side ("6+ +1" read as nonsense): the threshold stands alone and the
+  // bonus is said as part of the roll.
+  function saveText(data) { return num(data, 'save_threshold', 6) + '+'; }
+
+  // The bonus as Foundry reports it, '' for none. Foundry joins stacked
+  // bonuses into one formula ("1 + 1"), so plain whole numbers are summed into
+  // a number; anything else (dice) comes back as its text, without a leading +.
+  function saveBonus(data) {
     var sb = f(data, 'save_bonus', '');
-    var sbTxt = (sb != null && String(sb).trim() !== '' && String(sb) !== '0')
-      ? ' ' + (String(sb).charAt(0) === '-' ? '' : '+') + esc(String(sb).replace(/^\s*\+/, '')) : '';
-    return num(data, 'save_threshold', 6) + '+' + sbTxt;
+    var s = sb == null ? '' : String(scalar(sb)).replace(/−/g, '-').trim();
+    if (/^[+-]?\s*\d+(\s*[+-]\s*\d+)*$/.test(s)) {
+      var n = 0;
+      s.replace(/\s+/g, '').replace(/[+-]?\d+/g, function (t) { n += Number(t); return t; });
+      return n === 0 ? '' : n;
+    }
+    s = s.replace(/^\+\s*/, '');
+    return s;
+  }
+
+  // "+1", "−1", or "+ 1d4" for a formula. Escaped.
+  function saveBonusSigned(b) {
+    if (typeof b === 'number') return signedStat(b);
+    return /^[-−]/.test(b) ? '− ' + esc(b.replace(/^[-−]\s*/, '')) : '+ ' + esc(b);
+  }
+
+  // The roll a save makes: "d10", or "d10 + 1" with a bonus.
+  function saveRollText(data) {
+    var b = saveBonus(data);
+    if (b === '') return 'd10';
+    var sg = saveBonusSigned(b);
+    return 'd10 ' + sg.charAt(0) + ' ' + sg.slice(1).replace(/^\s+/, '');
+  }
+
+  // The line under the threshold: "+1 to roll", '' with no bonus.
+  function saveBonusLine(data) {
+    var b = saveBonus(data);
+    return b === '' ? '' : saveBonusSigned(b) + ' to roll';
+  }
+
+  // Features, titles and treasures whose text grants a bonus to saving
+  // throws, so the card can say where the bonus comes from.
+  var SAVE_BONUS_RE = /([+\-−]\s*\d+)\s+bonus to saving throws/i;
+  function saveSources(data) {
+    var b = saveBonus(data);
+    if (b === '') return { rows: [], note: '' };
+    var rows = [], sum = 0;
+    ['features_json', 'titles_json', 'treasures_json'].forEach(function (k) {
+      parseJson(f(data, k, ''), []).forEach(function (it) {
+        if (!it || typeof it !== 'object') return;
+        var text = String(it.description || '').replace(/<[^>]*>/g, ' ').replace(/\[\[[^\]]*\]\]\{([^}]*)\}/g, '$1');
+        var m = SAVE_BONUS_RE.exec(text);
+        if (!m || !it.name) return;
+        var n = Number(m[1].replace(/\s+/g, '').replace(/^−/, '-'));
+        rows.push([esc(String(it.name)), signedStat(n)]);
+        sum += n;
+      });
+    });
+    var note = '';
+    if (typeof b !== 'number') note = '';
+    else if (!rows.length) note = 'The sheet can’t name where it comes from, such as a feature, a title or a treasure.';
+    else if (sum < b) note = 'The other ' + signedStat(b - sum) + ' comes from something the sheet can’t name, such as a treasure or an effect on the hero.';
+    else if (sum > b) note = 'Not all of these count right now, so the sheet shows the ' + signedStat(b) + ' the hero has.';
+    return { rows: rows, note: note };
+  }
+
+  // What the bonus means at the table: the lowest die face that ends the effect.
+  function saveDieNote(data) {
+    var b = saveBonus(data);
+    if (typeof b !== 'number') return '';
+    var need = num(data, 'save_threshold', 6) - b;
+    if (need <= 1) return 'With the ' + signedStat(b) + ', any roll ends the effect.';
+    if (need > 10) return 'With the ' + signedStat(b) + ', no roll of the die ends the effect.';
+    return 'With the ' + signedStat(b) + ', the effect ends on a ' + need + ' or higher on the die.';
   }
 
   // The hero's movement modes beyond walking, as words.
@@ -3526,7 +3592,7 @@
     var combat = stat('Speed', 'speed') + stat('Stability', 'stability');
     if (isNum(data, 'disengage') || f(data, 'disengage', '') !== '') combat += stat('Disengage', 'disengage');
     if (f(data, 'size', '') !== '') combat += stat('Size', 'size');
-    if (isNum(data, 'save_threshold')) combat += dashBox('Save', saveText(data), '', 'save');
+    if (isNum(data, 'save_threshold')) combat += dashBox('Save', saveText(data), '', 'save', false, saveBonusLine(data));
     var modes = moveModes(data).map(function (m) { return esc(humanizeId(m)); });
     if (modes.length) combat += dashBox('Moves', modes.join(', '), 'sh-dwords', 'moves');
     return '<section class="sh-dboxes sh-dq" aria-label="Characteristics, movement and Stamina">' +
@@ -3656,7 +3722,8 @@
         (names.length ? '<p>' + esc(namesSentence(names)) + (names.length === 1 ? ' rolls it.' : ' roll it.') + '</p>' : '');
     } else {
       var val = key === 'save' ? saveText(data) : key === 'moves' ? '' : esc(String(scalar(f(data, key, '–'))));
-      head = '<p class="sh-sc-h"><b>' + esc(label) + (val ? ' ' + val : '') + '</b></p>';
+      head = '<p class="sh-sc-h"><b>' + esc(label) + (val ? ' ' + val : '') + '</b>' +
+        (key === 'save' ? ' <span class="sh-sc-f num">' + saveRollText(data) + '</span>' : '') + '</p>';
       if (key === 'moves') {
         var seen = {};
         body = moveModes(data).map(function (m) {
@@ -3670,13 +3737,19 @@
         var ge = glossaryEntry(STAT_RULES[key]);
         if (ge) body = '<p>' + refText(ge.summary || ge.description || '') + '</p>';
       }
-      var src = statSources(data, key);
+      var src = key === 'save' ? saveSources(data) : statSources(data, key);
       if (src.rows.length) {
         body += '<dl class="sh-sc-src">' + src.rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd class="num">' + r[1] + '</dd>'; }).join('') + '</dl>';
       }
       if (src.note) body += '<p class="sh-sc-note">' + esc(src.note) + '</p>';
+      if (key === 'save' && saveDieNote(data)) body += '<p>' + esc(saveDieNote(data)) + '</p>';
       if (!body) body = '<p class="sh-sc-note">The rules glossary has not loaded.</p>';
-      if (canRollStats(data)) body += '<hr><p class="sh-sc-note">Nothing to roll here. The five characteristics above roll.</p>';
+      // A save is a roll, just not one this sheet makes; the other boxes roll nothing.
+      if (canRollStats(data)) {
+        body += '<hr><p class="sh-sc-note">' + (key === 'save'
+          ? 'This sheet doesn’t roll saves. Roll ' + saveRollText(data) + ' when an effect ends with a save.'
+          : 'Nothing to roll here. The five characteristics above roll.') + '</p>';
+      }
     }
     return '<span class="sh-sc-notch" aria-hidden="true"></span>' + head + roll + (roll && body ? '<hr>' : '') + (body ? '<div class="sh-sc-body">' + body + '</div>' : '');
   }
@@ -7645,7 +7718,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       setRefRenderer: function (r) { refRenderer = r; }, abilityRulesHtml: abilityRulesHtml,
-      statCardHtml: statCardHtml, statSources: statSources, formulaText: formulaText, canRollStats: canRollStats,
+      statCardHtml: statCardHtml, statSources: statSources, saveSources: saveSources, saveText: saveText, saveRollText: saveRollText, formulaText: formulaText, canRollStats: canRollStats,
       loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey, parseAbilities: parseAbilities,
       jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
