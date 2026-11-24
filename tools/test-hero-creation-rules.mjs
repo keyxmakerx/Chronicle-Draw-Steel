@@ -96,3 +96,17 @@ test('the creator follows the book: order, needed steps, subclass from class, ki
     assert.equal(c.note, 'kit_note');
   }
 });
+
+test('a conduit picks two domains and a tactician two kits, and Foundry syncs every one', () => {
+  assert.equal(byName.Conduit.subclass_count, 2, 'Domains (pick two)');
+  assert.equal(byName.Tactician.kits, 2);
+  for (const k of ['subclass', 'kit']) {
+    assert.equal(field(k).creator.multi, true, k + ' takes several picks');
+    assert.equal(field(k).foundry_item_join, true, k + ' syncs every Foundry item');
+  }
+  assert.deepEqual(field('subclass').creator.count_from, [{ step: 'class', property: 'subclass_count' }]);
+  for (const c of classes) {
+    if (c.name !== 'Conduit') assert.equal(c.properties.subclass_count, undefined, c.name + ' keeps one subclass');
+  }
+  assert.ok(!/keeps one kit/.test(byName.Tactician.kit_note));
+});

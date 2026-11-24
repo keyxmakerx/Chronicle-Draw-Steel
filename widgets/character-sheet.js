@@ -2802,8 +2802,14 @@
         : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + none + '</span>';
     }
     var href = originHref(data, s.key, v);
+    var many = s.key === 'kit' ? kitNames(data) : [];
     // A struck old value stays outside the link: it is not the entry's name.
-    var name = href
+    var name = many.length > 1
+      ? wasHtml(data, s.key) + '<span data-cs-val data-v="origin-' + s.key + '">' + many.map(function (n) {
+          var h = originHref(data, s.key, n);
+          return h ? '<a class="sh-idpick sh-idname" href="' + escAttr(h) + '" data-entry-peek="' + escAttr(h) + '">' + esc(n) + '</a>' : esc(n);
+        }).join(', ') + '</span>'
+      : href
       ? wasHtml(data, s.key) + '<a class="sh-idpick sh-idname" href="' + escAttr(href) + '" data-entry-peek="' + escAttr(href) + '" data-cs-val data-v="origin-' + s.key + '">' + esc(v) + '</a>'
       : '<span data-cs-val data-v="origin-' + s.key + '">' + wasHtml(data, s.key) + esc(v) + '</span>';
     var change = canPick
@@ -3571,7 +3577,7 @@
     var kv = k[key];
     if (kv == null || kv === '') kv = kp[key + '_bonus'];
     var kitBonus = (kv == null || kv === '' || !isFinite(Number(kv))) ? null : Number(kv);
-    var kitName = dashKitName(data);
+    var kitName = kitNames(data)[0] || '';
     var rows = [], sum = 0;
     if (key === 'disengage') { rows.push(['Base', '1']); sum += 1; }
     else if (anc && ap[key] != null && isFinite(Number(ap[key]))) { rows.push(['Ancestry', esc(ancName) + ' ' + Number(ap[key])]); sum += Number(ap[key]); }
@@ -3948,8 +3954,24 @@
   }
 
   function dashKitName(data) {
-    var k = kitObject(data);
-    return f(data, 'kit', '') || (k && k.name) || '';
+    return kitNames(data).join(', ');
+  }
+  // Every kit the hero carries: the kit field's names (a tactician's two are
+  // stored joined with commas) and any other kit Foundry synced details for,
+  // so a second kit set in Foundry shows even when the field names one.
+  function kitNames(data) {
+    var out = [];
+    var add = function (n) {
+      n = String(n || '').trim();
+      if (n && !out.some(function (x) { return x.toLowerCase() === n.toLowerCase(); })) out.push(n);
+    };
+    String(originVal(data, 'kit') || '').split(',').forEach(add);
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : []).forEach(function (k) {
+      var n = k && String(k.name || '').trim();
+      if (n && n.toLowerCase() !== 'kit' && n.toLowerCase() !== 'new kit') add(n);
+    });
+    return out;
   }
 
   function dashRailInner(data) {
@@ -4273,7 +4295,7 @@
   var NO_DESC = 'No description yet.';
 
   function originName(data, kind) {
-    return kind === 'kit' ? dashKitName(data) : String(f(data, kind, '') || '').trim();
+    return kind === 'kit' ? (kitNames(data)[0] || '') : String(f(data, kind, '') || '').trim();
   }
   // The pack's entry for the hero's kit or origin, or null when the name is
   // not in the file (a homebrew name, or a file that did not load).
@@ -4315,12 +4337,15 @@
   // pack's own sentence), and its signature ability by name. The numbers
   // stay where they are.
   function kitWords(data, cls) {
-    var e = originDef(data, 'kit');
-    var p = (e && e.properties) || {};
-    var sig = p.signature_ability && p.signature_ability.name ? String(p.signature_ability.name) : '';
-    return originPara(e, cls) +
-      (p.equipment ? '<p class="' + cls + '">' + refText(String(p.equipment)) + '</p>' : '') +
-      (sig ? '<p class="' + cls + '">Signature ability: <b>' + esc(sig) + '</b></p>' : '');
+    var names = kitNames(data);
+    return names.map(function (name) {
+      var e = originEntry(editRefs[ORIGIN_FILES.kit], name);
+      var p = (e && e.properties) || {};
+      var sig = p.signature_ability && p.signature_ability.name ? String(p.signature_ability.name) : '';
+      return (names.length > 1 ? '<p class="' + cls + '"><b>' + esc(name) + '</b></p>' : '') + originPara(e, cls) +
+        (p.equipment ? '<p class="' + cls + '">' + refText(String(p.equipment)) + '</p>' : '') +
+        (sig ? '<p class="' + cls + '">Signature ability: <b>' + esc(sig) + '</b></p>' : '');
+    }).join('');
   }
 
   // Where the hero comes from, one row per origin: the name, what it is, and
@@ -7582,7 +7607,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, kitNames: kitNames, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,

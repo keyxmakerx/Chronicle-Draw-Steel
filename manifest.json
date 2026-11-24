@@ -481,12 +481,20 @@
             "subclass"
           ],
           "foundry_item_single": true,
+          "foundry_item_join": true,
           "creator": {
             "needed": true,
             "from": {
               "step": "class",
               "property": "subclasses"
-            }
+            },
+            "multi": true,
+            "count_from": [
+              {
+                "step": "class",
+                "property": "subclass_count"
+              }
+            ]
           }
         },
         {
@@ -609,6 +617,7 @@
             "kit"
           ],
           "foundry_item_single": true,
+          "foundry_item_join": true,
           "play": {
             "edit": "owner",
             "kind": "choice",
@@ -638,6 +647,7 @@
             "max_length": 64
           },
           "creator": {
+            "multi": true,
             "count_from": [
               {
                 "step": "class",

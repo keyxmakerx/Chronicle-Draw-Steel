@@ -884,6 +884,19 @@ test('subclass: each pick shows the pack\'s words, opens its rules, and a two-do
   } finally { cs.setEditRefs({}); }
 });
 
+test('kit: a tactician\'s second kit shows, from the joined field or from the kit details Foundry synced', () => {
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'kits.json': ORIGIN_REFS['kits.json'].concat([{ slug: 'spellsword', name: 'Spellsword', description: 'Blade & spell.', properties: { signature_ability: { name: 'Leaping Lightning' } } }]) }));
+  try {
+    const synced = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor', kit_details_json: JSON.stringify([{ name: 'Armor', stamina: 12 }, { name: 'Spellsword', stamina: 6 }]) }) });
+    assert.deepEqual(cs.kitNames(synced), ['Armor', 'Spellsword']);
+    const words = cs.kitWords(synced, 'x');
+    assert.ok(/<b>Armor<\/b>[^]*Heavy plates\.[^]*<b>Spellsword<\/b>[^]*Blade &amp; spell\.[^]*Signature ability: <b>Leaping Lightning<\/b>/.test(words), words);
+    const joined = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor, Spellsword', kit_details_json: '' }) });
+    assert.deepEqual(cs.kitNames(joined), ['Armor', 'Spellsword']);
+    assert.deepEqual(cs.kitNames(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor' }) })), ['Armor'], 'one kit stays one');
+  } finally { cs.setEditRefs({}); }
+});
+
 test('kit: its words, gear and signature ability reach the phone\'s Kit panel and the dashboard', () => withRefs(() => {
   const words = cs.kitWords(PAPER, 'x');
   assert.ok(/Heavy plates\./.test(words) && /You wear heavy armor\./.test(words) && !/Heavy armor/.test(words) && /Signature ability: <b>Brace<\/b>/.test(words));

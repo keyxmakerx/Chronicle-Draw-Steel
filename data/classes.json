@@ -108,6 +108,7 @@
       "skills_quick_build": "Read Person, Religion",
       "skills": "Choose any two skills from the interpersonal or lore skill groups.",
       "subclass_type": "Domains (pick two)",
+      "subclass_count": 2,
       "subclasses": [
         {
           "name": "Creation",
@@ -484,7 +485,7 @@
         }
       ],
       "kits": 2,
-      "kit_note": "Tacticians carry two kits and use both signature abilities. Chronicle keeps one kit here for now.",
+      "kit_note": "Tacticians carry two kits and use both signature abilities.",
       "subclasses_text": "Insurgent, Mastermind, Vanguard"
     },
     "source": "Draw Steel Heroes Book, ch. 5 (mcdm.heroes.v1), via Steel Compendium"
