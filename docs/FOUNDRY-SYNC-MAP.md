@@ -124,7 +124,8 @@ the manifest projects these keys:
 | `powerRollChars` | `system.power.roll.characteristics` (a Set, serialized to an array) |
 | `tiers` | `system.power.effects` (a **collection**, not `tier1/2/3` scalars; serialized to an array) |
 | `trigger` | `system.trigger` |
-| `effectBefore` / `effectAfter` | `system.effect.before` / `system.effect.after` |
+| `effects` | `system.effects` (Draw Steel 1.1+: a **collection** of rules-text entries, each with `description`, `before` and `type`; serialized to an array. The sheet folds it into `effectBefore` / `effectAfter`) |
+| `effectBefore` / `effectAfter` | `system.effect.before` / `system.effect.after` (before Draw Steel 1.1; empty on later versions) |
 | `story` | `system.story` |
 | `damageDisplay` | `system.damageDisplay` |
 

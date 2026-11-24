@@ -40,6 +40,7 @@ test('the shape notes name the keys the sheet reads', () => {
   assert.match(field('treasures_json').format, /leveled, trinket, consumable or artifact/);
   assert.match(field('abilities_json').format, /`powerRollChars`/);
   assert.match(field('abilities_json').format, /Leave `tiers` out/);
+  assert.match(field('abilities_json').format, /`effects`.*`description`.*`before`/, 'the rules text Draw Steel 1.1+ sends');
   assert.match(field('kit_details_json').format, /`meleeDamageT1`/);
 });
 

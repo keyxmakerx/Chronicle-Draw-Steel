@@ -515,6 +515,45 @@ test('the full card and the glossary pass leave no markup in the visible text fo
   }
 });
 
+test('Draw Steel 1.1+ effect lists reach the sheet, and an ability with nothing synced says so', async () => {
+  const pack = JSON.parse(readFileSync(new URL('../data/abilities.json', import.meta.url), 'utf8'));
+  globalThis.window.Chronicle.apiFetch = async () => ({ ok: true, json: async () => pack });
+  await cs.loadAbilityDefs('c3');
+  cs.setRefRenderer(null);
+  const charge = '<p>They move up to their speed, then make a @UUID[Compendium.draw-steel.abilities.Item.wU69Y06G9lYFrvp6]{melee free strike}.</p>';
+  const abilities = [
+    { name: 'Charge', type: 'main', tiers: [], effectBefore: null, effectAfter: null, story: '',
+      effects: [{ _id: 'before0000000000', type: 'base', description: charge, before: true, name: '', img: null, sort: 0 }] },
+    { name: 'Shadowstrike', type: 'main', cost: 5, tiers: [], effectBefore: null, effectAfter: null,
+      story: 'They have no idea what the college taught you.',
+      effects: [{ _id: 'before0000000000', type: 'base', description: '<p>You strike twice, as Foundry words it.</p>', before: true, sort: 0 }] },
+    { name: 'Coat the Blade', type: 'maneuver', tiers: [], effectBefore: null, effectAfter: null, effects: [
+      { type: 'spend', description: '<p>The poison lasts longer.</p>', before: false, sort: 200, resource: { value: 1, multiple: true } },
+      { type: 'base', description: '<p>Your weapon drips with poison.</p>', before: false, sort: 100 },
+    ] },
+    { name: 'Ability', type: 'triggered', tiers: [], effectBefore: null, effectAfter: null, trigger: '', effects: [] },
+    { name: 'Old Style', type: 'main', effectBefore: '<p>Kept.</p>', effects: [{ type: 'base', description: '<p>Not used.</p>', before: true }] },
+  ];
+  const got = cs.parseAbilities({ fields: { abilities_json: JSON.stringify(abilities), heroic_resource_name: 'Insight' } });
+  assert.equal(cs.cleanFoundryText(got[0].effectBefore), 'They move up to their speed, then make a melee free strike.');
+  assert.equal(cs.cleanFoundryText(got[1].effectBefore), 'You strike twice, as Foundry words it.', "Foundry's text beats the package's");
+  assert.equal(got[1].effectAfter, null, 'and the package adds nothing beside it');
+  assert.equal(cs.cleanFoundryText(got[2].effectAfter), 'Your weapon drips with poison. Spend 1+ Insight: The poison lasts longer.', 'sorted, spend heading as Foundry shows it');
+  assert.equal(got[3].effectBefore, null);
+  assert.equal(got[4].effectBefore, '<p>Kept.</p>', 'text in the older fields stays');
+
+  const charged = cs.abilityRulesHtml(got[0]);
+  assert.match(charged, /ds-big__block-k">Effect<\/span><span>They move up to their speed/, 'rules text before the roll reads as an Effect, not flavour');
+  assert.ok(!/No effect text synced/.test(charged));
+  assert.match(cs.abilityRulesHtml(got[3]), /No effect text synced yet\./, 'an empty ability is not a bare name');
+  const sheet = cs.pAbilities({ fields: { abilities_json: JSON.stringify(abilities), heroic_resource_name: 'Insight', heroic_resource_current: 0 } });
+  assert.match(sheet, /You strike twice, as Foundry words it\./, 'the rules, not the flavour line, on the short line');
+  const storyOnly = cs.abilityRulesHtml({ name: 'Quiet', story: 'A hush falls.' });
+  assert.match(storyOnly, /ds-big__flavor">A hush falls\.<\/div><div class="ds-big__block ds-muted">No effect text synced yet\./, 'flavour, then the note');
+  assert.ok(!/ds-big__flavor/.test(charged), 'flavour stays out when there are rules');
+  assert.equal((sheet.match(/No effect text synced yet\./g) || []).length, 1, 'only the empty ability carries the note');
+});
+
 // ── The computer dashboard ─────────────────────────────────────────────────
 
 test('dashboard: its pieces are dashboard-only, and the face parts it replaces are face-only', () => {
