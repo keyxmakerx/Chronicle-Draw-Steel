@@ -123,75 +123,243 @@ pages:
           four domains, or invent a saint or herald by picking two domains
           from a god's list.
       - text: |
-          Tap a domain for its 1st-level feature and skill group, which a
-          censor and a conduit both gain from the domain they pick (a conduit
-          picks one of their two), and for what a conduit prays for. A
-          conduit's prayer effects use the Intuition score.
+          Tap a domain for what it gives. A censor and a conduit both gain
+          its 1st-level feature and a skill from its group (a conduit takes
+          the feature from one of their two domains). Only a conduit gains
+          piety from it and prays for its effect. A censor uses Presence
+          wherever a feature says Intuition.
       - type: flaps
         items:
           - title: Creation
             text: |
-              - **Feature (censor and conduit):** Hands of the Maker, with a skill from the
-                crafting group.
-              - **Conduit prayer:** a wall of stone within 10 squares.
+              The domain of making things, with stone walls and objects
+              conjured from thought.
+
+              - **Feature (censor and conduit):** Hands of the Maker. A
+                maneuver that creates a mundane object of size 1S or
+                smaller, up to your Intuition score of them at once.
+              - **Skill:** one from the crafting group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-hands-of-the-maker|Hands of the Maker]] (1st level),
+                [[@abilities/conduit-statue-of-power-5-piety|Statue of Power]] (2nd level),
+                [[@abilities/conduit-gods-machine-9-piety|Gods' Machine]] (6th level),
+                [[@abilities/conduit-divine-dragon-11-piety|Divine Dragon]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that a creature within 10 squares uses an area
+                ability.
+              - **Conduit prayer:** A wall of stone within 10 squares,
+                size 5 + your Intuition score, lasting to the end of the
+                encounter.
           - title: Death
             text: |
-              - **Feature (censor and conduit):** Grave Speech, with a lore skill.
-              - **Conduit prayer:** a deadly curse on up to two enemies
-                within 10 squares, dealing corruption damage.
+              The domain of the dead and of curses.
+
+              - **Feature (censor and conduit):** Grave Speech. A
+                maneuver to speak with a creature that died in the last
+                24 hours, once per creature.
+              - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-grave-speech|Grave Speech]] (1st level),
+                [[@abilities/conduit-reap-5-piety|Reap]] (2nd level),
+                [[@abilities/conduit-aura-of-souls-9-piety|Aura of Souls]] (6th level),
+                [[@abilities/conduit-word-of-final-redemption-11-piety|Word of Final Redemption]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that a non-minion creature within 10 squares
+                is reduced to 0 Stamina, or a solo creature within 10
+                squares becomes winded.
+              - **Conduit prayer:** Curse up to two enemies within 10
+                squares, each taking corruption damage equal to twice
+                your Intuition score.
           - title: Fate
             text: |
-              - **Feature (censor and conduit):** Oracular Visions, with a lore skill.
-              - **Conduit prayer:** a creature within 10 squares
-                automatically gets a tier 1 or tier 3 outcome (your choice)
-                on its next power roll this encounter.
+              The domain of omens and of nudging how things turn out.
+
+              - **Feature (censor and conduit):** Oracular Visions. You
+                earn fate points equal to the Victories you earn and
+                spend one to grant a creature within 10 squares an edge
+                on a test.
+              - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-blessing-of-fate-and-destiny-5-piety|Blessing of Fate and Destiny]] (2nd level),
+                [[@abilities/conduit-your-story-ends-here-9-piety|Your Story Ends Here]] (6th level),
+                [[@abilities/conduit-bend-fate-11-piety|Bend Fate]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that an ally within 10 squares obtains a tier
+                3 outcome on a power roll, or an enemy within 10 squares
+                obtains a tier 1 outcome.
+              - **Conduit prayer:** A creature within 10 squares
+                automatically gets a tier 1 or tier 3 outcome (your
+                choice) on its next power roll this encounter.
           - title: Knowledge
             text: |
-              - **Feature (censor and conduit):** Blessing of Comprehension, with a lore skill.
-              - **Conduit prayer:** up to five allies within 10 squares gain
-                1 surge each.
+              The domain of learning, lore and comprehension.
+
+              - **Feature (censor and conduit):** Blessing of
+                Comprehension. You count as fluent in all languages for
+                understanding a crafting or research project source.
+              - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-the-gods-command-you-obey-5-piety|The Gods Command You Obey]] (2nd level),
+                [[@abilities/conduit-invocation-of-undoing-9-piety|Invocation of Undoing]] (6th level),
+                [[@abilities/conduit-word-of-weakening-11-piety|Word of Weakening]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that the Director spends Malice.
+              - **Conduit prayer:** Up to five allies within 10 squares,
+                or yourself in place of one ally, each gain 1 surge.
           - title: Life
             text: |
-              - **Feature (censor and conduit):** Revitalizing Ritual, with an exploration skill.
-              - **Conduit prayer:** you or an ally within 10 squares spends a
-                Recovery, ends an effect, or stands up; or gains temporary
+              The domain of healing and recovery.
+
+              - **Feature (censor and conduit):** Revitalizing Ritual.
+                At each respite you give yourself or one ally a bonus to
+                recovery value equal to your level until your next
+                respite.
+              - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-wellspring-of-grace-5-piety|Wellspring of Grace]] (2nd level),
+                [[@abilities/conduit-revitalizing-grace-9-piety|Revitalizing Grace]] (6th level),
+                [[@abilities/conduit-radiance-of-grace-11-piety|Radiance of Grace]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that a creature within 10 squares regains
                 Stamina.
+              - **Conduit prayer:** Yourself or one ally within 10
+                squares spends a Recovery, ends an effect, or stands up;
+                or you or an ally gains temporary Stamina equal to twice
+                your Intuition score.
           - title: Love
             text: |
-              - **Feature (censor and conduit):** Blessing of Compassion, with an interpersonal
-                skill.
-              - **Conduit prayer:** each ally within 10 squares gains
-                temporary Stamina.
+              The domain of compassion and of helping others.
+
+              - **Feature (censor and conduit):** Blessing of
+                Compassion. You gain an edge on tests to assist another
+                creature, and at the start of a negotiation one NPC
+                gains 1 patience (max 5) and the first test to influence
+                them gains an edge.
+              - **Skill:** one from the interpersonal group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-our-hearts-your-strength-5-piety|Our Hearts Your Strength]] (2nd level),
+                [[@abilities/conduit-lauded-by-god-9-piety|Lauded by God]] (6th level),
+                [[@abilities/conduit-guided-to-your-side|Guided to Your Side]] (7th level),
+                [[@abilities/conduit-alacrity-of-the-heart-11-piety|Alacrity of the Heart]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that you or an ally within 10 squares uses the
+                Aid Attack maneuver or an ability that targets an ally.
+              - **Conduit prayer:** Each ally within 10 squares gains
+                temporary Stamina equal to twice your Intuition score.
           - title: Nature
             text: |
-              - **Feature (censor and conduit):** Faithful Friend, with an exploration skill.
-              - **Conduit prayer:** vines grab creatures within 10 squares
-                and you slide them.
+              The domain of beasts, plants and the elements of the wild.
+
+              - **Feature (censor and conduit):** Faithful Friend. A
+                main action ability that conjures an incorporeal animal
+                spirit whose senses you share.
+              - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-faithful-friend|Faithful Friend]] (1st level),
+                [[@abilities/conduit-nature-judges-thee-5-piety|Nature Judges Thee]] (2nd level),
+                [[@abilities/conduit-spirit-stampede-9-piety|Spirit Stampede]] (6th level),
+                [[@abilities/conduit-thorn-cage-11-piety|Thorn Cage]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that you or a creature within 10 squares takes
+                acid, cold, fire, lightning, poison or sonic damage.
+              - **Conduit prayer:** Vines wrap a number of creatures
+                equal to your Intuition score within 10 squares, and you
+                can slide each up to your Intuition score in squares.
           - title: Protection
             text: |
-              - **Feature (censor and conduit):** Protective Circle, with an exploration skill.
-              - **Conduit prayer:** one ally within 10 squares gains
-                temporary Stamina.
+              The domain of wards and of shielding allies.
+
+              - **Feature (censor and conduit):** Protective Circle. 10
+                minutes of work makes a circle that lasts 24 hours, and
+                a creature inside it can't be targeted by strikes.
+              - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-sacred-bond-5-piety|Sacred Bond]] (2nd level),
+                [[@abilities/conduit-cuirass-of-the-gods-9-piety|Cuirass of the Gods]] (6th level),
+                [[@abilities/conduit-blessing-of-the-fortress-11-piety|Blessing of the Fortress]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that you or an ally within 10 squares gains
+                temporary Stamina, or uses a triggered action to reduce
+                incoming damage or impose a bane or double bane on an
+                enemy's power roll.
+              - **Conduit prayer:** One ally within 10 squares gains
+                temporary Stamina equal to four times your Intuition
+                score.
           - title: Storm
             text: |
-              - **Feature (censor and conduit):** Blessing of Fortunate Weather, with an
-                exploration skill.
-              - **Conduit prayer:** lightning damage to each enemy in a
-                3 cube within 10 squares.
+              The domain of weather and lightning.
+
+              - **Feature (censor and conduit):** Blessing of Fortunate
+                Weather. At each respite you choose the weather within
+                100 squares (clear, foggy, overcast or precipitation),
+                each giving you and your allies an edge on certain
+                tests.
+              - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-saints-tempest-5-piety|Saint's Tempest]] (2nd level),
+                [[@abilities/conduit-lightning-lord-9-piety|Lightning Lord]] (6th level),
+                [[@abilities/conduit-godstorm-11-piety|Godstorm]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that an enemy within 10 squares is force
+                moved.
+              - **Conduit prayer:** Each enemy in a 3 cube within 10
+                squares takes lightning damage equal to twice your
+                Intuition score.
           - title: Sun
             text: |
-              - **Feature (censor and conduit):** Inner Light, with a lore skill.
-              - **Conduit prayer:** fire damage to one enemy within 10
-                squares.
+              The domain of light and fire.
+
+              - **Feature (censor and conduit):** Inner Light. At each
+                respite you give yourself or one ally a +1 bonus to
+                saving throws until your next respite.
+              - **Skill:** one from the lore group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-morning-light-5-piety|Morning Light]] (2nd level),
+                [[@abilities/conduit-blessing-of-the-midday-sun-9-piety|Blessing of the Midday Sun]] (6th level),
+                [[@abilities/conduit-solar-flare-11-piety|Solar Flare]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that an enemy within 10 squares takes fire or
+                holy damage.
+              - **Conduit prayer:** One enemy within 10 squares takes
+                fire damage equal to three times your Intuition score.
           - title: Trickery
             text: |
-              - **Feature (censor and conduit):** Inspired Deception, with an intrigue skill.
-              - **Conduit prayer:** you slide a creature within 10 squares.
+              The domain of deceit and thievery.
+
+              - **Feature (censor and conduit):** Inspired Deception.
+                When you test with an intrigue skill you have, you can
+                use Intuition instead of another characteristic.
+              - **Skill:** one from the intrigue group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-divine-comedy-5-piety|Divine Comedy]] (2nd level),
+                [[@abilities/conduit-blessing-of-secrets|Blessing of Secrets]] (4th level),
+                [[@abilities/conduit-invocation-of-mystery-9-piety|Invocation of Mystery]] (6th level),
+                [[@abilities/conduit-trinity-of-trickery-9-piety|Trinity of Trickery]] (7th level),
+                [[@abilities/conduit-night-falls-11-piety|Night Falls]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that you or a creature within 10 squares takes
+                the Aid Attack or Hide maneuver.
+              - **Conduit prayer:** You slide one creature within 10
+                squares up to 5 + your conduit level squares.
           - title: War
             text: |
-              - **Feature (censor and conduit):** Sanctified Weapon, with an exploration skill.
-              - **Conduit prayer:** up to three allies within 10 squares
-                gain 2 surges each.
+              The domain of battle and bloodshed.
+
+              - **Feature (censor and conduit):** Sanctified Weapon. As
+                a respite activity you bless a weapon, giving its
+                wielder +1 rolled damage with its abilities until your
+                next respite.
+              - **Skill:** one from the exploration group.
+              - **Conduit abilities:**
+                [[@abilities/conduit-blessing-of-insight-5-piety|Blessing of Insight]] (2nd level),
+                [[@abilities/conduit-blade-of-the-heavens-9-piety|Blade of the Heavens]] (6th level),
+                [[@abilities/conduit-righteous-phalanx-11-piety|Righteous Phalanx]] (9th level).
+              - **Conduit piety:** You gain 2 piety the first time in an
+                encounter that you or a creature within 10 squares takes
+                damage greater than 10 + your level in a single turn.
+              - **Conduit prayer:** Up to three allies within 10
+                squares, or yourself in place of one ally, each gain 2
+                surges.
   - title: The pantheons
     blocks:
       - text: |

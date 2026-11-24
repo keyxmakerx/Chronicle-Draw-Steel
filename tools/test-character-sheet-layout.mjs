@@ -886,6 +886,53 @@ test('origins: the long entries are panels, with what each origin gives', () => 
   assert.ok(/Second paragraph/.test(cls) && /Focus/.test(cls), 'the class panel has all of it');
 }));
 
+test('subclass: each pick shows the pack\'s words, opens its rules, and a two-domain conduit lists both', () => {
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'classes.json': [{ slug: 'conduit', name: 'Conduit', description: 'Divine.', properties: {
+    subclass_type: 'Domains (pick two)', subclasses: [
+      { name: 'Life', summary: 'Healing & recovery.', description: 'Revitalizing Ritual: a bonus to recovery value.' },
+      { name: 'War', summary: 'Battle.', description: 'Sanctified Weapon.' }] } }] }));
+  try {
+    const data = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { class: 'Conduit', subclass: 'Life, War' }) });
+    const rows = cs.originRows(data);
+    assert.ok(/>Domains<\/span>/.test(rows) && !/pick two/.test(rows), 'the label drops the bracket');
+    assert.ok(/<b>Life:<\/b> Healing &amp; recovery\./.test(rows) && /<b>War:<\/b> Battle\./.test(rows), 'both picks, escaped');
+    assert.ok(/data-sheet-open="origin-subclass"[^>]*>Its rules/.test(rows));
+    const panel = cs.paperPanels(data).filter((p) => p.id === 'origin-subclass')[0];
+    assert.ok(panel && panel.kind === 'Domains' && /Revitalizing Ritual/.test(panel.html) && /Sanctified Weapon/.test(panel.html), 'the rules panel');
+    assert.ok(/Revitalizing Ritual/.test(cs.originPanelHtml(data, 'class')) && !/No description yet/.test(cs.originPanelHtml(data, 'class')), 'the class panel too');
+    const odd = Object.assign({}, data, { fields: Object.assign({}, data.fields, { subclass: 'Homebrew' }) });
+    assert.ok(!cs.paperPanels(odd).some((p) => p.id === 'origin-subclass') && /No description yet/.test(cs.originRows(odd)), 'an unknown name opens nothing');
+  } finally { cs.setEditRefs({}); }
+});
+
+test('kit: a tactician\'s second kit shows, from the joined field or from the kit details Foundry synced', () => {
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'kits.json': ORIGIN_REFS['kits.json'].concat([{ slug: 'spellsword', name: 'Spellsword', description: 'Blade & spell.', properties: { signature_ability: { name: 'Leaping Lightning' } } }]) }));
+  try {
+    const synced = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor', kit_details_json: JSON.stringify([{ name: 'Armor', stamina: 12 }, { name: 'Spellsword', stamina: 6 }]) }) });
+    assert.deepEqual(cs.kitNames(synced), ['Armor', 'Spellsword']);
+    const words = cs.kitWords(synced, 'x');
+    assert.ok(/<b>Armor<\/b>[^]*Heavy plates\.[^]*<b>Spellsword<\/b>[^]*Blade &amp; spell\.[^]*Signature ability: <b>Leaping Lightning<\/b>/.test(words), words);
+    const joined = Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor, Spellsword', kit_details_json: '' }) });
+    assert.deepEqual(cs.kitNames(joined), ['Armor', 'Spellsword']);
+    assert.deepEqual(cs.kitNames(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit: 'Armor' }) })), ['Armor'], 'one kit stays one');
+  } finally { cs.setEditRefs({}); }
+});
+
+test('still to choose: a conduit\'s second domain and a tactician\'s second kit', () => {
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'classes.json': [
+    { slug: 'conduit', name: 'Conduit', properties: { subclass_type: 'Domains (pick two)', subclass_count: 2, kits: 0, subclasses: [{ name: 'Life' }, { name: 'War' }] } },
+    { slug: 'tactician', name: 'Tactician', properties: { subclass_type: 'tactical doctrine', kits: 2, subclasses: [{ name: 'Vanguard' }] } }] }));
+  try {
+    const hero = (fields) => Object.assign({}, PAPER, { foundryLinked: false, fields: Object.assign({}, PAPER.fields, { kit_details_json: '' }, fields) });
+    assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: 'Life', kit: '' })), ['One more domain']);
+    assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: 'Life, War', kit: '' })), []);
+    assert.deepEqual(cs.morePicks(hero({ class: 'Conduit', subclass: '', kit: '' })), ['Domains']);
+    assert.deepEqual(cs.morePicks(Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true })), [], 'Foundry owns the subclass');
+    assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor' })), ['One more kit']);
+    assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor, Spellsword' })), []);
+  } finally { cs.setEditRefs({}); }
+});
+
 test('kit: its words, gear and signature ability reach the phone\'s Kit panel and the dashboard', () => withRefs(() => {
   const words = cs.kitWords(PAPER, 'x');
   assert.ok(/Heavy plates\./.test(words) && /You wear heavy armor\./.test(words) && !/Heavy armor/.test(words) && /Signature ability: <b>Brace<\/b>/.test(words));

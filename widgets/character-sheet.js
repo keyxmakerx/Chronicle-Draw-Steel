@@ -2802,8 +2802,14 @@
         : '<span class="sh-idval" data-cs-val data-v="origin-' + s.key + '">' + none + '</span>';
     }
     var href = originHref(data, s.key, v);
+    var many = s.key === 'kit' ? kitNames(data) : [];
     // A struck old value stays outside the link: it is not the entry's name.
-    var name = href
+    var name = many.length > 1
+      ? wasHtml(data, s.key) + '<span data-cs-val data-v="origin-' + s.key + '">' + many.map(function (n) {
+          var h = originHref(data, s.key, n);
+          return h ? '<a class="sh-idpick sh-idname" href="' + escAttr(h) + '" data-entry-peek="' + escAttr(h) + '">' + esc(n) + '</a>' : esc(n);
+        }).join(', ') + '</span>'
+      : href
       ? wasHtml(data, s.key) + '<a class="sh-idpick sh-idname" href="' + escAttr(href) + '" data-entry-peek="' + escAttr(href) + '" data-cs-val data-v="origin-' + s.key + '">' + esc(v) + '</a>'
       : '<span data-cs-val data-v="origin-' + s.key + '">' + wasHtml(data, s.key) + esc(v) + '</span>';
     var change = canPick
@@ -2811,6 +2817,14 @@
           ' aria-label="' + escAttr('Change ' + s.label.toLowerCase()) + '">Change</button>'
       : '';
     return '<span class="sh-idval">' + name + change + '</span>';
+  }
+
+  // The subclass in the identity line opens its rules panel, and its summary
+  // shows on hover; a name the pack does not describe stays plain text.
+  function subclassName(data, subclass) {
+    if (!subclassDescribed(data)) return esc(subclass);
+    return '<button type="button" class="sh-link sh-idsubopen" data-sheet-open="origin-subclass" aria-expanded="false" title="' +
+      escAttr(subclassHint(data)) + '">' + esc(subclass) + '<span class="sh-sr"> rules</span></button>';
   }
 
   // originHref is the address of the entry a hero's choice names. The sheet
@@ -2836,18 +2850,42 @@
       ' aria-label="' + escAttr(v ? 'Class: ' + v + '. Change' : 'Choose class') + '"><span data-cs-val data-v="origin-class">' + text + '</span></button>';
   }
 
+  // Picks a class takes more of than the hero holds: a conduit's second
+  // domain, a tactician's second kit. The counts are the class entry's own
+  // (subclass_count, kits); a hero with none of them is on the line already.
+  function morePicks(data) {
+    var cls = originDef(data, 'class'), p = (cls && cls.properties) || {}, out = [];
+    var subs = Array.isArray(p.subclasses) ? p.subclasses.length : 0;
+    var haveSub = subclassPicks(data).length, wantSub = typeof p.subclass_count === 'number' ? p.subclass_count : 1;
+    var word = subclassLabel(p.subclass_type).toLowerCase().replace(/s$/, '');
+    // Foundry owns the subclass in a linked world, as it does the class.
+    if (subs && !foundryLinked(data)) {
+      if (!haveSub) out.push(subclassLabel(p.subclass_type));
+      else if (haveSub < wantSub) out.push('One more ' + word);
+    }
+    var haveKit = kitNames(data).length;
+    if (typeof p.kits === 'number' && p.kits > 1 && haveKit && haveKit < p.kits) out.push('One more kit');
+    return out;
+  }
+
   function pIdentityTodo(data, canPick) {
     var slots = ORIGIN_SLOTS.filter(function (s) { return !s.optional; });
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var unused = noKitNote(data);
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
-    if (!left.length) return '';
+    var more = morePicks(data);
+    if (!left.length && !more.length) return '';
+    // A pick that adds to others (a second domain) is made in the hero
+    // builder, which keeps the first; the sheet's picker would replace it.
+    var builder = canPick && data.campaignId ? '/campaigns/' + encodeURIComponent(data.campaignId) + '/characters' : '';
     return '<p class="sh-idtodo sh-fq"><span class="sh-idtodo-k">Still to choose</span>' + left.map(function (s) {
       return canPick
         ? '<button type="button" class="sh-idpick" data-cs-pick="' + s.key + '" data-cs-label="' + s.label + '" aria-expanded="false"' +
             ' aria-label="' + escAttr('Choose ' + s.label.toLowerCase()) + '">' + s.label + '</button>'
         : '<span>' + s.label + '</span>';
-    }).join('') + '</p>';
+    }).concat(more.map(function (label) {
+      return builder ? '<a class="sh-idpick" href="' + escAttr(builder) + '">' + esc(label) + '</a>' : '<span>' + esc(label) + '</span>';
+    })).join('') + '</p>';
   }
 
   // The dashboard names a choice not made yet as a dashed tag beside the
@@ -2884,7 +2922,7 @@
     var line = [
       has('ancestry') ? pOrigin(data, bySlot.ancestry, canPick) : '',
       '<span class="sh-idval">' + pClass(data, canPick, (className ? esc(className) : '&ndash;') + ' ' + level) + '</span>',
-      subclass ? '<span class="sh-idval">' + esc(subclass) + '</span>' : '',
+      subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
     ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
@@ -2896,7 +2934,7 @@
 
     var who = '<p class="sh-idwho sh-id-q"><span class="sh-idcls">' + pClass(data, canPick, className ? esc(className) : 'No class') +
       ' <span class="sh-idlv">level ' + level + '</span></span>' +
-      (subclass ? '<span class="sh-idsub">' + esc(subclass) + '</span>' : '') +
+      (subclass ? '<span class="sh-idsub">' + subclassName(data, subclass) + '</span>' : '') +
       (faction ? '<span class="sh-idsub">' + esc(faction) + '</span>' : '') + '</p>';
     var made = ORIGIN_SLOTS.filter(shows);
     var set = made.length ? '<dl class="sh-idset sh-id-q">' + made.map(function (s) {
@@ -3563,7 +3601,7 @@
     var kv = k[key];
     if (kv == null || kv === '') kv = kp[key + '_bonus'];
     var kitBonus = (kv == null || kv === '' || !isFinite(Number(kv))) ? null : Number(kv);
-    var kitName = dashKitName(data);
+    var kitName = kitNames(data)[0] || '';
     var rows = [], sum = 0;
     if (key === 'disengage') { rows.push(['Base', '1']); sum += 1; }
     else if (anc && ap[key] != null && isFinite(Number(ap[key]))) { rows.push(['Ancestry', esc(ancName) + ' ' + Number(ap[key])]); sum += Number(ap[key]); }
@@ -3940,8 +3978,24 @@
   }
 
   function dashKitName(data) {
-    var k = kitObject(data);
-    return f(data, 'kit', '') || (k && k.name) || '';
+    return kitNames(data).join(', ');
+  }
+  // Every kit the hero carries: the kit field's names (a tactician's two are
+  // stored joined with commas) and any other kit Foundry synced details for,
+  // so a second kit set in Foundry shows even when the field names one.
+  function kitNames(data) {
+    var out = [];
+    var add = function (n) {
+      n = String(n || '').trim();
+      if (n && !out.some(function (x) { return x.toLowerCase() === n.toLowerCase(); })) out.push(n);
+    };
+    String(originVal(data, 'kit') || '').split(',').forEach(add);
+    var arr = parseJson(f(data, 'kit_details_json', ''), []);
+    (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : []).forEach(function (k) {
+      var n = k && String(k.name || '').trim();
+      if (n && n.toLowerCase() !== 'kit' && n.toLowerCase() !== 'new kit') add(n);
+    });
+    return out;
   }
 
   function dashRailInner(data) {
@@ -4265,7 +4319,7 @@
   var NO_DESC = 'No description yet.';
 
   function originName(data, kind) {
-    if (kind === 'kit') return dashKitName(data);
+    if (kind === 'kit') return kitNames(data)[0] || '';
     // A complication still named for its empty Foundry item is no choice.
     if (kind === 'complication') return originVal(data, kind);
     return String(f(data, kind, '') || '').trim();
@@ -4310,22 +4364,55 @@
   // pack's own sentence), and its signature ability by name. The numbers
   // stay where they are.
   function kitWords(data, cls) {
-    var e = originDef(data, 'kit');
-    var p = (e && e.properties) || {};
-    var sig = p.signature_ability && p.signature_ability.name ? String(p.signature_ability.name) : '';
-    return originPara(e, cls) +
-      (p.equipment ? '<p class="' + cls + '">' + refText(String(p.equipment)) + '</p>' : '') +
-      (sig ? '<p class="' + cls + '">Signature ability: <b>' + esc(sig) + '</b></p>' : '');
+    var names = kitNames(data);
+    return names.map(function (name) {
+      var e = originEntry(editRefs[ORIGIN_FILES.kit], name);
+      var p = (e && e.properties) || {};
+      var sig = p.signature_ability && p.signature_ability.name ? String(p.signature_ability.name) : '';
+      return (names.length > 1 ? '<p class="' + cls + '"><b>' + esc(name) + '</b></p>' : '') + originPara(e, cls) +
+        (p.equipment ? '<p class="' + cls + '">' + refText(String(p.equipment)) + '</p>' : '') +
+        (sig ? '<p class="' + cls + '">Signature ability: <b>' + esc(sig) + '</b></p>' : '');
+    }).join('');
   }
 
   // Where the hero comes from, one row per origin: the name, what it is, and
   // a word that opens its long entry. A choice not made yet says so. The
   // class row keeps to its first paragraph; its panel has the rest.
   function subclassLabel(t) {
-    t = String(t || '').trim();
+    t = String(t || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
     return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Subclass';
   }
-  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it', complication: 'Its story' };
+  // The hero's subclass picks, each with the class entry's own words for it.
+  // A class that takes several (a conduit's two domains) stores them in one
+  // field joined with commas; a name the pack does not know keeps a null def.
+  function subclassPicks(data) {
+    var raw = String(f(data, 'subclass', '') || '').trim();
+    if (!raw) return [];
+    var cls = originDef(data, 'class');
+    var list = cls && cls.properties && Array.isArray(cls.properties.subclasses) ? cls.properties.subclasses : [];
+    return raw.split(/\s*,\s*/).filter(Boolean).map(function (name) {
+      var key = name.toLowerCase();
+      var def = list.filter(function (x) { return String(x && x.name || '').trim().toLowerCase() === key; })[0] || null;
+      return { name: name, def: def };
+    });
+  }
+  function subclassDescribed(data) {
+    return subclassPicks(data).some(function (p) { return p.def && (p.def.description || p.def.summary); });
+  }
+  // A one-line hint for a hover: each pick's short summary.
+  function subclassHint(data) {
+    return subclassPicks(data).map(function (p) {
+      return p.def && p.def.summary ? p.name + ': ' + p.def.summary : '';
+    }).filter(Boolean).join(' ');
+  }
+  function subclassRules(data) {
+    return subclassPicks(data).map(function (p) {
+      var d = p.def ? String(p.def.description || p.def.summary || '').trim() : '';
+      var lead = p.def && p.def.summary && p.def.description ? '<p>' + refText(String(p.def.summary)) + '</p>' : '';
+      return '<div class="rule"><b>' + esc(p.name) + '</b>' + (d ? lead + '<p>' + refText(d) + '</p>' : pEmpty(NO_DESC)) + '</div>';
+    }).join('');
+  }
+  var ORIGIN_MORE = { ancestry: 'Its traits', culture: 'What it gave', career: 'What it gave', class: 'All of it', subclass: 'Its rules', complication: 'Its story' };
 
   // A complication's benefit and drawback, as the pack words them: most
   // entries have the two apart, a few as one passage. A campaign's own
@@ -4366,7 +4453,11 @@
     var subType = cls && cls.properties && cls.properties.subclass_type ? String(cls.properties.subclass_type) : '';
     var sub = String(f(data, 'subclass', '') || '').trim();
     if (sub || subType) {
-      rows.push(originRow(subclassLabel(subType), sub, sub ? pEmpty(NO_DESC) : pEmpty('Not chosen yet.'), ''));
+      var subBody = !sub ? pEmpty('Not chosen yet.') : subclassPicks(data).map(function (p) {
+        var t = p.def ? String(p.def.summary || p.def.description || '').trim() : '';
+        return t ? '<p class="sh-orig-p">' + (subclassPicks(data).length > 1 ? '<b>' + esc(p.name) + ':</b> ' : '') + refText(t) + '</p>' : '';
+      }).join('') || pEmpty(NO_DESC);
+      rows.push(originRow(subclassLabel(subType), sub, subBody, subclassDescribed(data) && !inPanel ? 'subclass' : ''));
     }
     // The complication is optional, so it has a row only once there is one.
     var comp = originName(data, 'complication');
@@ -4413,9 +4504,7 @@
         ['Starting Stamina', p.starting_stamina != null ? p.starting_stamina + (p.stamina_per_level != null ? ', +' + p.stamina_per_level + ' per level' : '') : ''],
         ['Recoveries', p.recoveries], ['Skills', p.skills]]);
       if (sub) {
-        // The pack names each subclass and does not describe it yet.
-        out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' +
-          '<div class="rule"><b>' + esc(sub) + '</b>' + pEmpty(NO_DESC) + '</div></div>';
+        out += '<div class="lf-grp"><span class="sh-k">' + esc(subclassLabel(p.subclass_type)) + '</span>' + subclassRules(data) + '</div>';
       }
     } else if (kind === 'complication') {
       out += originFacts(complicationTerms(e).concat([['Special', p.special]]));
@@ -4811,6 +4900,12 @@
       var e = originDef(data, kind);
       if (e) list.push({ id: 'origin-' + kind, title: e.name, kind: ORIGIN_LABELS[kind], html: originPanelHtml(data, kind) });
     });
+    if (subclassDescribed(data)) {
+      var cdef = originDef(data, 'class');
+      list.push({ id: 'origin-subclass', title: String(f(data, 'subclass', '')).trim(),
+        kind: subclassLabel(cdef && cdef.properties && cdef.properties.subclass_type),
+        html: '<div class="lf-grp">' + subclassRules(data) + '</div>' });
+    }
     return list;
   }
 
@@ -6690,6 +6785,7 @@
         '[data-sheet][data-sheet-style]:not([data-sheet-style="modern"]):not([data-sheet-style="starship"]):not([data-sheet-style="neon"]):not([data-sheet-style="runes"]):not([data-sheet-style="brass"]) .only-modern { display:none; }',
       '[data-sheet] .sh-k { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-link { border:0;background:none;padding:0;color:var(--paper-accent);font:600 calc(12.5px * var(--ts)) var(--paper-ui-font); }',
+      '[data-sheet] .sh-link.sh-idsubopen { font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-decoration-color:var(--paper-mute);text-underline-offset:3px; }',
       '[data-sheet] .sh-link:hover { text-decoration:underline; }',
       // Inline editors: a quiet word opens a plain form under it. Colours are
       // the sheet's own tokens with light fallbacks, so dark mode follows the
@@ -7564,7 +7660,7 @@
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
-      originRows: originRows, kitWords: kitWords, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
+      originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
       staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
