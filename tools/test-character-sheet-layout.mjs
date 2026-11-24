@@ -931,7 +931,9 @@ test('still to choose: a conduit\'s second domain and a tactician\'s second kit'
     assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor' })), ['One more kit']);
     assert.deepEqual(cs.morePicks(hero({ class: 'Tactician', subclass: 'Vanguard', kit: 'Armor, Spellsword' })), []);
     const linked = Object.assign(hero({ class: 'Conduit', subclass: 'Life', kit: '' }), { foundryLinked: true, campaignId: 'c1', canEditIdentity: true });
-    assert.ok(/One more domain, in Foundry/.test(cs.dashTodoTags(linked, true)), 'the dashboard names it too');
+    assert.ok(!/One more domain/.test(cs.dashTodoTags(linked, true)) && !/One more domain/.test(cs.pIdentityTodo(linked, true)), 'the red mark beside the domain is the one place it is named');
+    const reading = Object.assign({}, linked, { canEditIdentity: false });
+    assert.ok(/One more domain, in Foundry/.test(cs.dashTodoTags(reading, false)), 'a reader without the mark still sees it listed');
     assert.ok(!/href=[^>]*>One more domain, in Foundry/.test(cs.pIdentityTodo(linked, true)), 'no builder link for a pick Foundry owns');
     assert.equal(cs.shortOf(linked, 'subclass'), '1 of 2 domains');
     assert.equal(cs.shortOf(hero({ class: 'Conduit', subclass: 'Life, War', kit: '' }), 'subclass'), '');
@@ -939,6 +941,9 @@ test('still to choose: a conduit\'s second domain and a tactician\'s second kit'
     const own = cs.pIdentity(linked);
     assert.ok(/data-cs-unfin/.test(own) && /is-unfin/.test(own), 'the Unfinished tape for the player and Directors');
     assert.ok(/class="sh-miss"[^>]*>1 of 2 domains</.test(own), 'the red mark beside the domain');
+    assert.ok(/pick in Foundry/.test(own) && !/<a class="sh-miss"/.test(own), 'a Foundry hero is told where to pick, with no builder link');
+    const local = cs.pIdentity(Object.assign({}, linked, { foundryLinked: false }));
+    assert.ok(/<a class="sh-miss" href="\/campaigns\/c1\/characters"[^>]*>1 of 2 domains</.test(local), 'a Chronicle hero\'s mark opens the hero builder');
     const reader = cs.pIdentity(Object.assign({}, linked, { canEditIdentity: false }));
     assert.ok(!/data-cs-unfin/.test(reader) && !/sh-miss/.test(reader), 'other readers see neither');
     const done = cs.pIdentity(Object.assign(hero({ class: 'Conduit', subclass: 'Life, War', kit: '', ancestry: 'Human', culture: 'Urban', career: 'Sage' }), { canEditIdentity: true }));

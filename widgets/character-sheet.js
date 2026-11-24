@@ -2883,9 +2883,24 @@
   }
   // The red word beside a short pick. Only the hero's player and Directors
   // see it, as they do the Unfinished tape that points at it.
+  // A Foundry-linked hero's subclass and kits are Foundry's: Chronicle never
+  // writes them back there, so the mark says where to pick instead of
+  // linking to the hero builder, which would only be overwritten.
   function missMark(data, kind) {
     var t = data.canEditIdentity ? shortOf(data, kind) : '';
-    return t ? ' <span class="sh-miss" tabindex="-1">' + esc(t) + '</span>' : '';
+    if (!t) return '';
+    if (foundryLinked(data)) {
+      return ' <span class="sh-miss" tabindex="-1" title="' + escAttr('Pick it on the hero\u2019s Foundry sheet; it comes over on the next sync.') + '">' +
+        esc(t) + '<span class="sh-miss-where"> \u00b7 pick in Foundry</span></span>';
+    }
+    var href = data.campaignId ? '/campaigns/' + encodeURIComponent(data.campaignId) + '/characters' : '';
+    return href ? ' <a class="sh-miss" href="' + escAttr(href) + '" title="Pick it in the hero builder">' + esc(t) + '</a>'
+      : ' <span class="sh-miss" tabindex="-1">' + esc(t) + '</span>';
+  }
+  // The extra picks for the to-choose lists, less any the red mark beside
+  // the pick already names.
+  function todoMore(data) {
+    return morePicks(data).filter(function (l) { return !(data.canEditIdentity && /^One more /.test(l)); });
   }
   // Whether the hero has any class or origin pick still to make, as the
   // "Still to choose" line counts them.
@@ -2909,7 +2924,7 @@
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var unused = noKitNote(data);
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
-    var more = morePicks(data);
+    var more = todoMore(data);
     if (!left.length && !more.length) return '';
     // A pick that adds to others (a second domain) is made in the hero
     // builder, which keeps the first; the sheet's picker would replace it.
@@ -2932,7 +2947,7 @@
     if (canPick && !foundryLinked(data)) slots.unshift(CLASS_SLOT);
     var unused = noKitNote(data);
     var left = slots.filter(function (s) { return !originVal(data, s.key) && !(s.key === 'kit' && unused); });
-    var more = morePicks(data);
+    var more = todoMore(data);
     if (!left.length && !more.length) return '';
     var miss = data.canEditIdentity ? ' class="sh-miss" tabindex="-1"' : '';
     return '<dl class="sh-idset-todo sh-dq">' + more.map(function (label) {
@@ -6536,7 +6551,9 @@
     return [
       'Q .sh-id-l,P .sh-id-q { display:none; }',
       // Unfinished: red marks on what is still to choose, and a corner of tape.
-      '[data-sheet] .sh-miss { color:var(--color-danger,#dc2626) !important;font-weight:600;border-radius:4px;outline:2px solid transparent;outline-offset:2px; }',
+      '[data-sheet] .sh-miss { color:var(--color-danger,#dc2626) !important;font-weight:600;border-radius:4px;outline:2px solid transparent;outline-offset:2px;text-decoration:none; }',
+      '[data-sheet] a.sh-miss:hover { text-decoration:underline; }',
+      '[data-sheet] .sh-miss-where { font-weight:500; }',
       '[data-sheet] .sh-idset-todo > .sh-miss { border-color:var(--color-danger,#dc2626) !important; }',
       '[data-sheet] .sh-idset-todo > .sh-miss :is(dt,dd,.sh-idpick) { color:var(--color-danger,#dc2626) !important; }',
       '[data-sheet] .sh-id.is-unfin { position:relative; }',
