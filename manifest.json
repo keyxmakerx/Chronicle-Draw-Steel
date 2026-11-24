@@ -964,7 +964,7 @@
           "label": "Abilities Data",
           "type": "string",
           "json_list": true,
-          "format": "A JSON list as text, one object per ability, as Foundry reports it: `name`; `type` (main, maneuver, freeManeuver, move, triggered or freeTriggered); `category`; `cost`; `keywords` (a list of words); `powerRollChars` (a list of characteristic keys); `trigger`; `effectBefore`; `effectAfter`. Leave `tiers` out: it is Foundry's own nested effect list",
+          "format": "A JSON list as text, one object per ability, as Foundry reports it: `name`; `type` (main, maneuver, freeManeuver, move, triggered or freeTriggered); `category`; `cost`; `keywords` (a list of words); `powerRollChars` (a list of characteristic keys); `trigger`; `effects`, the rules text, one entry per block with `description`, `before` (true above the power roll) and `type` (`spend` adds `resource`), which older Foundry versions send as `effectBefore` and `effectAfter`. Leave `tiers` out: it is Foundry's own nested effect list",
           "foundry_collection": "items",
           "foundry_item_type": [
             "ability"
@@ -987,6 +987,7 @@
             "trigger": "system.trigger",
             "effectBefore": "system.effect.before",
             "effectAfter": "system.effect.after",
+            "effects": "system.effects",
             "story": "system.story",
             "damageDisplay": "system.damageDisplay"
           }

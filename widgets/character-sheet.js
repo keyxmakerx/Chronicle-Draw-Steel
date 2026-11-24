@@ -639,7 +639,46 @@
   // in-box cards' data-ds-ability and the overlay handler MUST agree).
   function parseAbilities(data) {
     var arr = parseJson(f(data, 'abilities_json', ''), []);
-    return Array.isArray(arr) ? arr.map(function (a) { return a && typeof a === 'object' ? fillFromPackage(a) : a; }) : [];
+    var hr = f(data, 'heroic_resource_name', '');
+    return Array.isArray(arr) ? arr.map(function (a) {
+      return a && typeof a === 'object' ? fillFromPackage(fromEffectList(a, hr)) : a;
+    }) : [];
+  }
+
+  // Draw Steel 1.1 and later keep an ability's rules text as a list of
+  // effects, each above or below the power roll, instead of one before and
+  // one after field. fromEffectList folds that list into effectBefore and
+  // effectAfter, so every view reads one shape; text the older fields already
+  // hold is kept. A spend, persistent or strained entry gets the heading
+  // Foundry shows for it.
+  function effectLabel(e, hr) {
+    var type = String(e.type || '');
+    if (type === 'spend') {
+      var r = e.resource || {};
+      var amount = Number(r.value) > 0 ? String(Number(r.value)) : '';
+      return 'Spend ' + (amount ? amount + (r.multiple ? '+' : '') + ' ' : '') + (hr || 'Heroic Resource');
+    }
+    if (type === 'persistent') return 'Persistent' + (Number(e.essence) > 0 ? ' ' + Number(e.essence) : '');
+    if (type === 'strained') return 'Strained';
+    return e.name ? String(e.name) : '';
+  }
+  function fromEffectList(a, hr) {
+    var list = Array.isArray(a.effects) ? a.effects.filter(function (e) {
+      return e && typeof e === 'object' && cleanFoundryText(e.description);
+    }) : [];
+    if (!list.length) return a;
+    list = list.slice().sort(function (x, y) { return (Number(x.sort) || 0) - (Number(y.sort) || 0); });
+    function join(part) {
+      return part.map(function (e) {
+        var label = effectLabel(e, hr);
+        return (label ? '<p>' + esc(label) + ':</p>' : '') + String(e.description);
+      }).join(' ');
+    }
+    var before = list.filter(function (e) { return e.before === true; });
+    var after = list.filter(function (e) { return e.before !== true; });
+    if (before.length && !cleanFoundryText(a.effectBefore)) a.effectBefore = join(before);
+    if (after.length && !cleanFoundryText(a.effectAfter)) a.effectAfter = join(after);
+    return a;
   }
 
   // flag reads a boolean mount attribute defensively: absent means false.
@@ -1761,9 +1800,9 @@
     var bits = '';
     var pr = powerRollLabel(a);
     if (pr) bits += '<div class="ds-card__line"><span class="ds-card__k">Power Roll</span><span>2d10 + ' + esc(pr) + '</span></div>';
-    var eff = cleanFoundryText(a.effectAfter) || (a.story ? cleanFoundryText(a.story) : '') || cleanFoundryText(a.effectBefore);
+    var eff = abilityEffectText(a);
     if (eff) bits += '<div class="ds-card__eff">' + refSynced(teaser(eff, 170)) + '</div>';
-    if (!bits) bits = '<div class="ds-card__eff ds-muted">No detail synced yet.</div>';
+    if (!cleanFoundryText(a.effectAfter) && !cleanFoundryText(a.effectBefore)) bits += '<div class="ds-card__eff ds-muted">' + NO_EFFECT_WORDS + '</div>';
     return bits;
   }
 
@@ -1841,8 +1880,8 @@
     '</div>';
   }
 
-  // The rules part of an ability: keywords, distance/target/roll, flavour, the
-  // tier ladder, trigger and effect. Shared by the big card and the paper list.
+  // The rules part of an ability: keywords, distance/target/roll, the tier
+  // ladder, trigger and effect. Shared by the big card and the paper list.
   function abilityRulesHtml(a) {
     var kw = (Array.isArray(a.keywords) && a.keywords.length)
       ? '<div class="ds-big__kw">' + a.keywords.map(function (k) {
@@ -1850,10 +1889,19 @@
           var tip = (en && en.description) ? ' data-tip="' + escAttr(en.description) + '" tabindex="0"' : '';
           return '<span' + tip + '>' + esc(String(k)) + '</span>';
         }).join('') + '</div>' : '';
-    var effBefore = a.effectBefore ? '<div class="ds-big__flavor">' + refSynced(cleanFoundryText(a.effectBefore)) + '</div>' : '';
+    // Text before the power roll is rules, not flavour (flavour is `story`),
+    // so it reads as an Effect block like the text after it.
+    var before = cleanFoundryText(a.effectBefore), after = cleanFoundryText(a.effectAfter);
+    var effBefore = before ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(before) + '</span></div>' : '';
     var trig = a.trigger ? '<div class="ds-big__block"><span class="ds-big__block-k">Trigger</span><span>' + refSynced(cleanFoundryText(a.trigger)) + '</span></div>' : '';
-    var effAfter = a.effectAfter ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(cleanFoundryText(a.effectAfter)) + '</span></div>' : '';
-    return kw + bigStatRow(a) + effBefore + bigLadderHtml(a, null) + trig + effAfter;
+    var effAfter = after ? '<div class="ds-big__block"><span class="ds-big__block-k">Effect</span><span>' + refSynced(after) + '</span></div>' : '';
+    var ladder = bigLadderHtml(a, null);
+    // With no rules text at all, the flavour line is shown above the note
+    // rather than nothing.
+    var bare = !ladder && !before && !after;
+    var story = bare && a.story ? cleanFoundryText(a.story) : '';
+    var flavour = story ? '<div class="ds-big__flavor">' + refSynced(teaser(story, 420)) + '</div>' : '';
+    return kw + bigStatRow(a) + effBefore + ladder + trig + effAfter + flavour + (bare ? NO_EFFECT_TEXT : '');
   }
 
   // bigCardHtml — the grown two-section card: ① the rules (keywords / distance /
@@ -2991,9 +3039,15 @@
     return t ? teaser(t, 70) : '';
   }
 
+  // The rules text first, either side of the roll; the flavour line only
+  // when Foundry sent no rules text at all.
   function abilityEffectText(a) {
     return cleanFoundryText(a.effectAfter) || cleanFoundryText(a.effectBefore) || (a.story ? cleanFoundryText(a.story) : '');
   }
+  // Said wherever an ability arrives with no tiers and no effect text, so a
+  // gap in what Foundry sent shows instead of a bare name.
+  var NO_EFFECT_WORDS = 'No effect text synced yet.';
+  var NO_EFFECT_TEXT = '<div class="ds-big__block ds-muted">' + NO_EFFECT_WORDS + '</div>';
 
   // One ability as a line that unfolds in place: name, the hero's own result,
   // and under it the distance and the main effect. The cost tag turns into the
@@ -3022,7 +3076,7 @@
     var body = '<div data-cs-short>' + (tiers ? '<div class="sx-tiers">' + tiers + '</div>' : '') +
       (trig ? '<p class="sx-eff"><span class="ds-big__block-k">Trigger</span>' + refSynced(trig) + '</p>' : '') +
       (eff ? '<p class="sx-eff">' + refSynced(teaser(eff, 420)) + '</p>' : '') +
-      ((!tiers && !trig && !eff) ? '<p class="sx-eff ds-muted">No detail synced yet.</p>' : '') + '</div>' +
+      ((!tiers && !cleanFoundryText(a.effectAfter) && !cleanFoundryText(a.effectBefore)) ? '<p class="sx-eff ds-muted">' + NO_EFFECT_WORDS + '</p>' : '') + '</div>' +
       (idx >= 0 ? '<div class="sx-full" data-cs-full hidden></div>' +
         '<button type="button" class="sh-link" data-cs-fullcard="' + idx + '" aria-expanded="false">Full card</button>' : '');
     return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
@@ -7460,7 +7514,7 @@
     module.exports = {
       setRefRenderer: function (r) { refRenderer = r; }, abilityRulesHtml: abilityRulesHtml,
       statCardHtml: statCardHtml, statSources: statSources, formulaText: formulaText, canRollStats: canRollStats,
-      loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey,
+      loadAbilityDefs: loadAbilityDefs, fillFromPackage: fillFromPackage, abilityKey: abilityKey, parseAbilities: parseAbilities,
       jumpTop: jumpTop, groupOf: groupOf, charLabel: charLabel, firstName: firstName, slugify: slugify,
       humanizeId: humanizeId, powerRollLabel: powerRollLabel, distanceLabel: distanceLabel,
       targetLabel: targetLabel, costLabel: costLabel, safeEvalArith: safeEvalArith,
