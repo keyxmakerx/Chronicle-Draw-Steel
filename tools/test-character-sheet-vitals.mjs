@@ -88,7 +88,8 @@ function findBrowser() {
 const B = findBrowser();
 const skip = B ? false : 'playwright-core or Chromium not found';
 
-// Saves are recorded on window.PUTS; window.FAIL makes the next ones fail.
+// Saves are recorded on window.PUTS; window.FAIL makes the next ones fail,
+// and window.DELAY holds each reply back that many milliseconds.
 async function mountAt(browser, width, isOwner) {
   const p = await browser.newPage({ viewport: { width: width + 20, height: 900 } });
   const errors = [];
@@ -96,7 +97,7 @@ async function mountAt(browser, width, isOwner) {
   await p.setContent('<!doctype html><html><head><style>[data-sheet]{container:sheet / inline-size}</style></head><body style="margin:0"><div id="mount" style="width:' + width + 'px"></div><button id="away">away</button></body></html>');
   await p.addScriptTag({ content: `window.PUTS = []; window.Chronicle = { register: function (n, w) { window.W = w; }, escapeHtml: function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); },
     sheetMotion: { mount: function () {}, rescan: function () {}, land: function () {} },
-    apiFetch: function (u, o) { if (o && o.method === 'PUT') { window.PUTS.push(o.body.fields_patch); return Promise.resolve({ ok: !window.FAIL, status: window.FAIL ? 500 : 200 }); } return Promise.reject(new Error('offline')); } };
+    apiFetch: function (u, o) { if (o && o.method === 'PUT') { window.PUTS.push(o.body.fields_patch); var res = { ok: !window.FAIL, status: window.FAIL ? 500 : 200 }; return window.DELAY ? new Promise(function (r) { setTimeout(function () { r(res); }, window.DELAY); }) : Promise.resolve(res); } return Promise.reject(new Error('offline')); } };
     Chronicle.escapeAttr = Chronicle.escapeHtml;` });
   await p.addScriptTag({ content: SRC });
   await p.evaluate(([fields, own]) => {
@@ -124,7 +125,7 @@ test('in a browser: damage, heal, spend and the stepper save and repaint every c
     await p.click('[data-cs-vt-hit="-1"]');
     await p.waitForFunction(() => window.PUTS.length === 1);
     assert.deepEqual((await puts(p))[0], { stamina_current: -13 }, 'damage stops at dead');
-    assert.ok((await shownText(p, 'stamina')).every((t) => t === '-13'), 'every Stamina copy repaints');
+    assert.deepEqual([...new Set(await shownText(p, 'stamina'))], ['\u221213'], 'every Stamina copy repaints, with a true minus');
     await p.fill('[data-cs-vt-amt]', '4');
     await p.click('[data-cs-vt-hit="1"]');
     await p.waitForFunction(() => window.PUTS.length === 2);
@@ -198,6 +199,31 @@ test('in a browser: Damage or a Spend pressed while plus waits builds on it, in 
     await p.waitForTimeout(700);
     assert.deepEqual((await puts(p)).slice(1), [{ recoveries: 4, stamina_current: 24 }], 'the minus and the spend both count');
     assert.ok((await shownText(p, 'rec')).every((t) => t === '4'));
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('in a browser: a second quick Damage or Spend builds on the first while it is still saving', { skip }, async () => {
+  const browser = await B.pw.chromium.launch({ executablePath: B.chrome, args: ['--no-sandbox'] });
+  try {
+    const { p, errors } = await mountAt(browser, 400, true);
+    await p.evaluate(() => { window.DELAY = 150; });
+    await vis(p, '[data-cs-vt="stamina"]').click();
+    await p.fill('[data-cs-vt-amt]', '5');
+    await p.click('[data-cs-vt-hit="-1"]');
+    await p.fill('[data-cs-vt-amt]', '5');
+    await p.click('[data-cs-vt-hit="-1"]');
+    await p.waitForFunction(() => window.PUTS.length === 2);
+    await p.waitForTimeout(400);
+    assert.deepEqual(await puts(p), [{ stamina_current: 14 }, { stamina_current: 9 }]);
+    assert.ok((await shownText(p, 'stamina')).every((t) => t === '9'));
+
+    await vis(p, '[data-cs-vt="rec"]').click();
+    await p.click('[data-cs-vt-spend]');
+    await p.click('[data-cs-vt-spend]');
+    await p.waitForFunction(() => window.PUTS.length === 4);
+    await p.waitForTimeout(400);
+    assert.deepEqual((await puts(p)).slice(2), [{ recoveries: 5, stamina_current: 18 }, { recoveries: 4, stamina_current: 27 }], 'two Recoveries spent');
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });

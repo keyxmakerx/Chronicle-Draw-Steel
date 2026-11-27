@@ -3180,7 +3180,7 @@
     rec: { field: 'recoveries', label: 'Recoveries' }
   };
   function vtLabel(data, k) { return k === 'hr' ? (f(data, 'heroic_resource_name', '') || 'Heroic Resource') : VT[k].label; }
-  function vtShown(k, v) { return k === 'hr' ? signed(v) : String(v); }
+  function vtShown(k, v) { return signed(v); }
   // Stamina stops at minus its Winded value (dead) and at its maximum, and
   // Recoveries at theirs. Some classes take their heroic resource below 0,
   // so it has no floor.
@@ -3238,7 +3238,7 @@
     var sub = winded > 0
       ? '<span class="sh-sub num">Winded ' + winded + ' · Dying at 0 · Dead at −' + winded + '</span>' : '';
     return '<div class="sh-v"><span class="sh-k">Stamina<span data-vt-state>' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span></span>' +
-      '<div class="sh-big"><span class="sh-num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + cur + '</span>') + ' <small>/ ' + max + '</small></span></div>' +
+      '<div class="sh-big"><span class="sh-num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + signed(cur) + '</span>') + ' <small>/ ' + max + '</small></span></div>' +
       bar + sub + '</div>';
   }
 
@@ -3948,7 +3948,7 @@
     if (max > 0) subs.push('<span class="sh-dsub num">Catch Breath heals ' + Math.floor(max / 3) + '</span>');
     var stateHtml = '<span data-vt-state>' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>';
     var inner = '<span class="sh-dstam-n">' + dashLabel(data, 'Stamina' + stateHtml) +
-        '<span class="sh-dbig num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + cur + '</span>') + ' <small>/ ' + wasHtml(data, 'stamina_max') + max + '</small></span></span>' +
+        '<span class="sh-dbig num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + signed(cur) + '</span>') + ' <small>/ ' + wasHtml(data, 'stamina_max') + max + '</small></span></span>' +
       '<span class="sh-drec">' + dashLabel(data, 'Recoveries') + '<span class="sh-dbig num">' + vtNum(data, 'rec', '<span data-v="rec">' + rec + '</span>') +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
         (dots ? '<span class="sh-ddots" aria-hidden="true" data-vt-dots>' + dots + '</span>' : '') + '</span>' +
@@ -6860,6 +6860,10 @@
     var vt = inst._vt = { open: null, btn: null, timer: null, busy: false };
     function pop() { return vt.btn && vt.btn.isConnected ? el.querySelector('[data-cs-vt-pop]') : null; }
     function cur(k) { return num(data, VT[k].field, 0); }
+    // The number last asked for, while its save is on the way, so a quick
+    // second Damage or Spend builds on the first rather than the old number.
+    vt.want = {};
+    function aim(k) { var fk = VT[k].field; return vt.want[fk] != null ? vt.want[fk] : cur(k); }
     function say(text, err) {
       var m = pop() && pop().querySelector('.sh-vt-msg');
       // A save that fails after the controls closed still says so.
@@ -6878,7 +6882,7 @@
         b.disabled = d < 0 ? (lim.min != null && v <= lim.min) : (lim.max != null && v >= lim.max);
       });
       var sp = p.querySelector('[data-cs-vt-spend]');
-      if (sp) sp.disabled = cur('rec') <= 0;
+      if (sp) sp.disabled = aim('rec') <= 0;
     }
     function close(focus) {
       // Minus and plus still waiting for their pause save now.
@@ -6886,7 +6890,7 @@
       vt.pending = null;
       var p = el.querySelector('[data-cs-vt-pop]');
       if (p) {
-        var host = p.closest('.sh-v,.sh-dbox');
+        var host = p.closest('.sh-v,.sh-drec,.sh-dbox');
         if (host) host.classList.remove('is-vt-open', 'is-vt-end');
         p.remove();
       }
@@ -6900,13 +6904,13 @@
     function open(btn) {
       var k = btn.getAttribute('data-cs-vt');
       close(false);
-      var host = btn.closest('.sh-v,.sh-dbox');
+      var host = btn.closest('.sh-v,.sh-drec,.sh-dbox');
       if (!host) return;
       host.insertAdjacentHTML('beforeend', vtPopHtml(data, k));
       host.classList.add('is-vt-open');
-      // Controls that would run past the sheet's right edge open leftward.
-      var sheet = el.querySelector('[data-sheet]') || el, pp = host.querySelector('[data-cs-vt-pop]');
-      host.classList.toggle('is-vt-end', host.getBoundingClientRect().left + pp.offsetWidth > sheet.getBoundingClientRect().right);
+      // Controls that would run past their row's right edge open leftward.
+      var box = (host.parentElement && host.parentElement.closest('.sh-dbox,.sh-turn-top,[data-sheet]')) || el, pp = host.querySelector('[data-cs-vt-pop]');
+      host.classList.toggle('is-vt-end', host.getBoundingClientRect().left + pp.offsetWidth > box.getBoundingClientRect().right);
       btn.setAttribute('aria-expanded', 'true');
       vt.open = k;
       vt.btn = btn;
@@ -6919,7 +6923,7 @@
     function paint() {
       var c = cur('stamina'), max = num(data, 'stamina_max', 0), winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
       var rec = cur('rec'), recMax = num(data, 'recoveries_max', 0), st = staminaState(c, winded, max);
-      var txt = { stamina: String(c), hr: signed(cur('hr')), surges: String(cur('surges')), rec: String(rec) };
+      var txt = { stamina: signed(c), hr: signed(cur('hr')), surges: String(cur('surges')), rec: String(rec) };
       Object.keys(txt).forEach(function (k) {
         [].forEach.call(el.querySelectorAll('[data-v="' + k + '"]'), function (n) {
           var before = n.textContent;
@@ -6950,6 +6954,7 @@
       var was = {};
       Object.keys(patch).forEach(function (fk) { was[fk] = f(data, fk, null); });
       vt.busy = true;
+      Object.keys(patch).forEach(function (fk) { vt.want[fk] = patch[fk]; });
       var slow = setTimeout(function () { if (vt.busy) say('Saving\u2026'); }, 300);
       // One save at a time, in the order made, so a later change always lands last.
       vt.chain = (vt.chain || Promise.resolve()).then(function () { return saveFields(data, patch); });
@@ -6958,7 +6963,7 @@
       mine.then(function () {
         clearTimeout(slow);
         vt.busy = false;
-        Object.keys(patch).forEach(function (fk) { data.fields[fk] = patch[fk]; });
+        Object.keys(patch).forEach(function (fk) { data.fields[fk] = patch[fk]; if (vt.want[fk] === patch[fk]) delete vt.want[fk]; });
         wroteHere(inst, el);
         paint();
         if (vt.open) sync(vt.open, cur(vt.open));
@@ -6966,6 +6971,7 @@
       }, function (err) {
         clearTimeout(slow);
         vt.busy = false;
+        Object.keys(patch).forEach(function (fk) { delete vt.want[fk]; });
         var w = progWhy(progFailKind(err));
         if (vt.open) sync(vt.open, cur(vt.open));
         say('<b>Not saved.</b> ' + w.why + ', so ' + esc(vtLabel(data, k)) + ' is still ' + esc(vtShown(k, cur(k))) + '. ' + w.fix +
@@ -7001,9 +7007,9 @@
     // waiting to save, and take that save over, so neither change is lost.
     function fold(k) {
       var inp = pop() && pop().querySelector('[data-cs-vt-in]');
-      var n = vt.open === k && inp ? vtParse(inp.value) : null;
+      var n = vt.timer && vt.open === k && inp ? vtParse(inp.value) : null;
       if (vt.timer) { clearTimeout(vt.timer); vt.timer = null; vt.pending = null; }
-      return n == null ? cur(k) : vtClamp(n, vtLimits(data, k));
+      return n == null ? aim(k) : vtClamp(n, vtLimits(data, k));
     }
     function hit(sign) {
       var p = pop(), amt = p && p.querySelector('[data-cs-vt-amt]');
@@ -7011,13 +7017,13 @@
       if (n == null || n <= 0) { say('Type how much first.', true); if (amt) amt.focus(); return; }
       var before = fold('stamina'), to = vtClamp(before + sign * n, vtLimits(data, 'stamina'));
       if (amt) amt.value = '';
-      if (to === cur('stamina') && to === before) { say(sign < 0 ? 'Stamina can\u2019t go lower.' : 'Stamina is already full.'); return; }
+      if (to === aim('stamina') && to === before) { say(sign < 0 ? 'Stamina can\u2019t go lower.' : 'Stamina is already full.'); return; }
       save({ stamina_current: to }, 'stamina', (sign < 0 ? 'Took ' + n + ' damage. ' : 'Healed ' + n + '. ') + 'Stamina is ' + vtShown('stamina', to) + '.');
     }
     function spend() {
       var rec = fold('rec'), max = num(data, 'stamina_max', 0);
       if (rec <= 0 || !(max > 0)) return;
-      var to = vtClamp(cur('stamina') + Math.floor(max / 3), vtLimits(data, 'stamina'));
+      var to = vtClamp(aim('stamina') + Math.floor(max / 3), vtLimits(data, 'stamina'));
       save({ recoveries: rec - 1, stamina_current: to }, 'rec', 'Spent a Recovery. Stamina is ' + to + ', ' + (rec - 1) + ' Recoveries left.');
     }
     inst._onVtClick = function (e) {
@@ -8396,16 +8402,17 @@
       '[data-sheet] .sh-vt:hover,[data-sheet] .sh-vt[aria-expanded="true"] { color:var(--paper-accent); }',
       '[data-sheet] .sh-vt:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       '[data-sheet] .is-vt-open { position:relative; }',
-      '[data-sheet] .sh-vt-pop { position:absolute;z-index:30;top:calc(100% + 4px);left:0;width:max-content;max-width:min(300px,calc(100cqw - 16px));display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--paper-edge);border-radius:12px;background:var(--paper-bg, #fff);box-shadow:0 8px 24px rgba(0,0,0,.16);font:500 calc(14px * var(--ts))/1.35 var(--paper-font);color:var(--paper-ink);text-align:left; }',
+      '[data-sheet] .sh-drec.is-vt-open { display:inline-block; }',
+      '[data-sheet] .sh-vt-pop { position:absolute;z-index:30;top:calc(100% + 4px);left:0;width:max-content;max-width:min(300px,calc(100cqw - 16px));display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--paper-edge);border-radius:12px;background:var(--paper, var(--bg-primary, #fff));box-shadow:0 8px 24px rgba(0,0,0,.16);font:500 calc(14px * var(--ts))/1.35 var(--paper-font);color:var(--paper-ink);text-align:left; }',
       '[data-sheet] .is-vt-end > .sh-vt-pop { left:auto;right:0; }',
       '[data-sheet] .sh-vt-step { display:inline-flex;align-items:center;gap:2px;align-self:flex-start;padding:3px;border-radius:10px;background:color-mix(in srgb,var(--paper-accent) 10%,transparent); }',
-      '[data-sheet] .sh-vt-pm { width:40px;height:40px;border:0;border-radius:8px;background:none;color:var(--paper-accent);font:600 22px/1 var(--paper-font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center; }',
+      '[data-sheet] .sh-vt-pm { width:44px;height:44px;border:0;border-radius:8px;background:none;color:var(--paper-accent);font:600 22px/1 var(--paper-font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center; }',
       '[data-sheet] .sh-vt-pm:hover:not(:disabled) { background:color-mix(in srgb,var(--paper-accent) 16%,transparent); }',
       '[data-sheet] .sh-vt-pm:disabled { opacity:.35;cursor:default; }',
-      '[data-sheet] .sh-vt-in,[data-sheet] .sh-vt-amt { width:3.4em;min-height:36px;padding:0 4px;border:1px solid var(--paper-edge);border-radius:7px;background:var(--paper-bg, #fff);color:var(--paper-ink);font:700 calc(18px * var(--ts)) var(--paper-num-font, var(--paper-font));text-align:center; }',
+      '[data-sheet] .sh-vt-in,[data-sheet] .sh-vt-amt { width:3.4em;min-height:44px;padding:0 4px;border:1px solid var(--paper-edge);border-radius:7px;background:var(--paper);color:var(--paper-ink);font:700 calc(18px * var(--ts)) var(--paper-num-font, var(--paper-font));text-align:center; }',
       '[data-sheet] .sh-vt-in:focus,[data-sheet] .sh-vt-amt:focus { outline:2px solid var(--paper-accent);outline-offset:0;border-color:transparent; }',
       '[data-sheet] .sh-vt-acts { display:flex;flex-wrap:wrap;align-items:center;gap:6px; }',
-      '[data-sheet] .sh-vt-act { min-height:36px;padding:0 12px;border:1px solid color-mix(in srgb,var(--paper-accent) 35%,transparent);border-radius:8px;background:color-mix(in srgb,var(--paper-accent) 6%,var(--paper-bg, #fff));color:var(--paper-ink);font:600 calc(14px * var(--ts)) var(--paper-font);cursor:pointer; }',
+      '[data-sheet] .sh-vt-act { min-height:44px;padding:0 12px;border:1px solid color-mix(in srgb,var(--paper-accent) 35%,transparent);border-radius:8px;background:color-mix(in srgb,var(--paper-accent) 6%,var(--paper));color:var(--paper-ink);font:600 calc(14px * var(--ts)) var(--paper-font);cursor:pointer; }',
       '[data-sheet] .sh-vt-act:hover:not(:disabled) { border-color:var(--paper-accent);color:var(--paper-accent); }',
       '[data-sheet] .sh-vt-act:disabled { opacity:.45;cursor:default; }',
       '[data-sheet] .sh-vt-msg:empty { display:none; }',
