@@ -845,7 +845,7 @@
     // count with a single accent pip rather than a pool that implies a cap.
     var hr =
       '<span class="cs-statline-label">' + esc(hrName) + '</span>' +
-      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + hrCur + '</span>' +
+      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + signed(hrCur) + '</span>' +
       '<span class="cs-bar-sub">Heroic resource</span>';
     var surges = isNum(data, 'surges')
       ? '<div class="cs-vit"><span class="cs-statline-label">Surges</span><span class="cs-vit-v">' + num(data, 'surges', 0) + '</span></div>'
@@ -3119,7 +3119,7 @@
     var pips = '';
     for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
     var top = pStamina(cur, max, winded) +
-      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
+      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
       '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
@@ -3204,7 +3204,7 @@
     var cost = Number(a.cost) > 0 ? Number(a.cost) : 0;
     var have = num(data, 'heroic_resource_current', 0);
     var short = cost > 0 && cantPay(a, data);
-    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + have : '')) + '</span>' : '';
+    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + signed(have) : '')) + '</span>' : '';
     var star = g === 'signature' ? '<span class="sx-star" role="img" aria-label="Signature">★</span>' : '';
     var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
     var meta = (result ? [dist, one] : [one]).filter(Boolean).join(' · ');
@@ -4141,7 +4141,7 @@
     var top = topChar(data);
     var pot = potencyOf(data);
     var out = '<button type="button" class="sh-dbox sh-dres" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">' + esc(hrName) + '</span>' +
-      '<span class="sh-dbig num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-dsub">Heroic resource</span></button>';
+      '<span class="sh-dbig num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-dsub">Heroic resource</span></button>';
     if (isNum(data, 'surges')) {
       out += '<button type="button" class="sh-dbox sh-dsurge" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Surges</span>' +
         '<span class="sh-dbig num" data-v="surges">' + num(data, 'surges', 0) + '</span>' +
@@ -4336,7 +4336,7 @@
       '<span class="sh-dpin-who">' + esc(data.name || 'Unnamed Hero') + '</span>' +
       '<span class="sh-dpin-st"><span class="sh-dpin-v num"><span class="sh-dk">Stamina</span>' + cur + ' <small>/ ' + max + '</small></span>' +
         (max > 0 ? '<span class="sh-bar"><span style="width:' + pct + '%"></span>' + (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</span>' : '') + '</span>' +
-      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + num(data, 'heroic_resource_current', 0) + '</span>' +
+      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + signed(num(data, 'heroic_resource_current', 0)) + '</span>' +
       (isNum(data, 'surges') ? '<span class="sh-dpin-v num"><span class="sh-dk">Surges</span>' + num(data, 'surges', 0) + '</span>' : '') +
       '<span class="sh-dpin-v num sh-dpin-rec"><span class="sh-dk">Recoveries</span>' + rec + (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
       '</div></div>';
@@ -4428,7 +4428,7 @@
     var c = abCost(a), have = heroHave(data);
     if (!c) return '<span class="sh-dac"></span>';
     return '<span class="sh-dac num">' + esc(costLabel(a, data)) +
-      (cantPay(a, data) ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
+      (cantPay(a, data) ? '<span class="sh-sr">, you have ' + signed(have) + '</span>' : '') + '</span>';
   }
 
   // The hero's tier results. A main action with no power roll says so, so an

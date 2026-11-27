@@ -804,6 +804,10 @@ test('a Talent\'s clarity reaches below zero: down to minus (1 + Reason)', () =>
   assert.match(card(crush), /<p class="sh-dpay is-short">Costs 6 Clarity\. You have 2 and can go down to −3, so 1 short\.<\/p>/);
   assert.match(card(calm), /<p class="sh-dpay is-short">Costs 3 Clarity\. You have 2, so 1 short\.<\/p>/, 'no negative clarity: the plain limit');
   assert.match(card(abs[3], { heroic_resource_current: 3 }), /<p class="sh-dpay">Costs 3 Clarity\. You have 3\.<\/p>/);
+  // Below zero the count prints a true minus wherever it shows.
+  const low = faceData(abs, { heroic_resource_name: 'Clarity', heroic_resource_current: -2, reason: 2 });
+  assert.match(cs.dashAbilities(low, 1), /<span class="sh-sr">, you have −2<\/span>/);
+  assert.ok(!/you have -2/.test(cs.dashAbilities(low, 1)));
   const awe = { name: 'Awe', category: 'heroic', type: 'action', cost: 3 };
   assert.match(card(awe, { heroic_resource_current: 0 }), /<p class="sh-dpay">Costs 3 Clarity\. You have 0, so you’d go to −3\.<\/p>/);
   assert.match(card(awe, { heroic_resource_current: -2 }),
