@@ -918,6 +918,35 @@ test('kit: a tactician\'s second kit shows, from the joined field or from the ki
   } finally { cs.setEditRefs({}); }
 });
 
+test('kit: a tactician\'s two kits give the higher of each kind of bonus, and the sheet says the other may be taken', () => {
+  const two = [
+    { name: 'Shining Armor', stamina: 12, speed: 0, stability: 1, meleeDamageT1: 1, meleeDamageT2: 1, meleeDamageT3: 1 },
+    { name: 'Spellsword', stamina: 6, speed: 1, meleeDamageT1: 0, meleeDamageT2: 2, meleeDamageT3: 2, rangedDamageT1: 2, rangedDamageT2: 2, rangedDamageT3: 2, rangedDistance: 10 },
+  ];
+  const fields = (extra) => Object.assign({}, PAPER, { campaignId: 'c1', fields: Object.assign({}, PAPER.fields, { kit: 'Shining Armor, Spellsword', kit_details_json: JSON.stringify(two) }, extra) });
+  const k = cs.kitObject(fields({}));
+  assert.equal(k.name, 'Shining Armor, Spellsword');
+  assert.deepEqual([k.stamina, k.speed, k.stability, k.rangedDistance], [12, 1, 1, 10], 'each kind is the higher');
+  assert.deepEqual([k.meleeDamageT1, k.meleeDamageT2, k.meleeDamageT3], [0, 2, 2], 'a damage row comes whole from one kit, never mixed by tier');
+  assert.deepEqual(k.from, { stamina: 'Shining Armor', speed: 'Spellsword', stability: 'Shining Armor', rangedDistance: 'Spellsword', meleeDamage: 'Spellsword', rangedDamage: 'Spellsword' });
+  const panel = cs.pKitPanel(fields({}));
+  assert.ok(/Stamina \+12/.test(panel) && /Speed \+1/.test(panel), panel);
+  assert.ok(/the higher one is shown\. You may take the other kit.s bonus instead until your next respite\./.test(panel), 'the choice the rules leave is said');
+  cs.setEditRefs(Object.assign({}, ORIGIN_REFS));
+  try {
+    const st = cs.statSources(fields({ speed: 6 }), 'speed');
+    assert.deepEqual(st.rows, [['Ancestry', 'Human 5'], ['Kit', 'Spellsword +1']], 'the kit behind the bonus is named');
+    assert.ok(/You may take the other kit/.test(st.note));
+  } finally { cs.setEditRefs({}); }
+  // Typed or imported details may carry numbers as text.
+  const typed = cs.kitObject(fields({ kit_details_json: JSON.stringify([{ name: 'A', speed: '1', stamina: '3' }, { name: 'B', speed: '2', stamina: 'lots' }]) }));
+  assert.deepEqual([typed.speed, typed.stamina, typed.from.speed, typed.from.stamina], [2, 3, 'B', 'A']);
+  // One kit is unchanged: its own values and no note.
+  const one = cs.kitObject(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit_details_json: JSON.stringify([two[1]]) }) }));
+  assert.equal(one.stamina, 6);
+  assert.ok(!one.two && !one.from);
+});
+
 test('still to choose: a conduit\'s second domain and a tactician\'s second kit', () => {
   cs.setEditRefs(Object.assign({}, ORIGIN_REFS, { 'classes.json': [
     { slug: 'conduit', name: 'Conduit', properties: { subclass_type: 'Domains (pick two)', subclass_count: 2, kits: 0, subclasses: [{ name: 'Life' }, { name: 'War' }] } },
