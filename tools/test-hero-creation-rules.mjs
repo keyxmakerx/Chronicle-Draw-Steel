@@ -110,3 +110,43 @@ test('a conduit picks two domains and a tactician two kits, and Foundry syncs ev
   }
   assert.ok(!/keeps one kit/.test(byName.Tactician.kit_note));
 });
+
+// Chronicle's creator reads creator_numbers as written: an array it can't
+// parse, or one the wrong length for the class's fixed characteristics, is
+// dropped and the class offers nothing to place.
+test('the starting numbers come from the class and kit, as the book sets them', () => {
+  const n = hero.creator_numbers, c = n.characteristics;
+  assert.equal(c.step, 'class');
+  assert.equal(c.fixed_value, 2);
+  for (const k of c.fields) assert.equal(field(k)?.type, 'number', k + ' is a number field');
+  const labels = Object.fromEntries(c.fields.map((k) => [field(k).label.toLowerCase(), k]));
+  const parse = (a) => a.replace(/[−–]/g, '-').replace(/\+/g, '').split(',').map((x) => Number(x.trim()));
+  for (const cl of classes) {
+    const p = cl.properties, fixed = p[c.fixed_property];
+    assert.ok(fixed.length >= 1, cl.name);
+    for (const f of fixed) assert.ok(labels[f.toLowerCase()] || c.fields.includes(f.toLowerCase()), cl.name + ': ' + f);
+    const arrays = p[c.arrays_property];
+    assert.ok(arrays.length >= 1, cl.name + ' offers arrays');
+    for (const a of arrays) {
+      const nums = parse(a);
+      assert.ok(nums.every(Number.isInteger), cl.name + ': ' + a);
+      assert.equal(nums.length, c.fields.length - fixed.length, cl.name + ': ' + a);
+    }
+  }
+  const kits = load('data/kits.json');
+  for (const s of n.sums) {
+    for (const k of s.fields) assert.equal(field(k)?.type, 'number', k);
+    for (const part of s.parts) {
+      assert.ok(hero.creator_order.includes(part.step), part.step);
+      const rows = part.step === 'class' ? classes : kits;
+      for (const r of rows) assert.ok(Number.isInteger(r.properties[part.property]), r.name + ' ' + part.property);
+    }
+  }
+  const stamina = n.sums.find((s) => s.fields.includes('stamina_max'));
+  assert.deepEqual(stamina.parts, [{ step: 'class', property: 'starting_stamina' }, { step: 'kit', property: 'stamina_bonus' }]);
+  assert.deepEqual(stamina.fields, ['stamina_max', 'stamina_current']);
+  const winded = n.sums.find((s) => s.fields.includes('winded'));
+  assert.equal(winded.half, true, 'winded is half your Stamina');
+  assert.deepEqual(winded.parts, stamina.parts);
+  assert.deepEqual(n.sums.find((s) => s.fields.includes('recoveries')).parts, [{ step: 'class', property: 'recoveries' }]);
+});
