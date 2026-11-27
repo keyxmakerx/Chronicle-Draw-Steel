@@ -540,7 +540,7 @@
           },
           "foundry_entry_items": {
             "signature_traits": {
-              "type": "feature"
+              "type": "ancestryTrait"
             }
           },
           "play": {
