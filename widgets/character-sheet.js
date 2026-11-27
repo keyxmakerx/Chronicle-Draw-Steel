@@ -535,6 +535,28 @@
     }).catch(function (e) { if (strict) throw e; return none; });
   }
 
+  // fetchCarried reads what the hero carries from the page's links, as this
+  // viewer may see them (Chronicle drops Director-only links and hidden
+  // items), shaped like the mount's children. The sheet asks only when the
+  // host shows no item panel of its own for this viewer and handed no
+  // children; a failed read is an empty list, never a broken sheet.
+  function fetchCarried(cid, eid) {
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/relations';
+    return Chronicle.apiFetch(url).then(function (res) {
+      return res.ok ? res.json() : [];
+    }).then(function (list) {
+      return (Array.isArray(list) ? list : []).filter(function (r) {
+        return r && String(r.relationType || '').toLowerCase() === 'has item' && r.targetEntityId;
+      }).map(function (r) {
+        var meta = r.metadata;
+        if (typeof meta === 'string') meta = parseJson(meta, null);
+        return { relation: { slug: 'has-item' }, entity: { id: r.targetEntityId, name: r.targetEntityName || '' },
+          metadata: meta && typeof meta === 'object' ? meta : {} };
+      });
+    }).catch(function () { return []; });
+  }
+
   function stepLabel(key) {
     var all = ORIGIN_SLOTS.concat([CLASS_SLOT]);
     for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i].label;
@@ -845,7 +867,7 @@
     // count with a single accent pip rather than a pool that implies a cap.
     var hr =
       '<span class="cs-statline-label">' + esc(hrName) + '</span>' +
-      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + hrCur + '</span>' +
+      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + signed(hrCur) + '</span>' +
       '<span class="cs-bar-sub">Heroic resource</span>';
     var surges = isNum(data, 'surges')
       ? '<div class="cs-vit"><span class="cs-statline-label">Surges</span><span class="cs-vit-v">' + num(data, 'surges', 0) + '</span></div>'
@@ -3154,7 +3176,7 @@
     var pips = '';
     for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
     var top = pStamina(cur, max, winded) +
-      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
+      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
       '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
@@ -3238,8 +3260,8 @@
     var trig = a.trigger ? cleanFoundryText(a.trigger) : '';
     var cost = Number(a.cost) > 0 ? Number(a.cost) : 0;
     var have = num(data, 'heroic_resource_current', 0);
-    var short = cost > have;
-    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + have : '')) + '</span>' : '';
+    var short = cost > 0 && cantPay(a, data);
+    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + signed(have) : '')) + '</span>' : '';
     var star = g === 'signature' ? '<span class="sx-star" role="img" aria-label="Signature">★</span>' : '';
     var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
     var meta = (result ? [dist, one] : [one]).filter(Boolean).join(' · ');
@@ -4206,7 +4228,7 @@
     var top = topChar(data);
     var pot = potencyOf(data);
     var out = '<button type="button" class="sh-dbox sh-dres" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">' + esc(hrName) + '</span>' +
-      '<span class="sh-dbig num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-dsub">Heroic resource</span></button>';
+      '<span class="sh-dbig num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-dsub">Heroic resource</span></button>';
     if (isNum(data, 'surges')) {
       out += '<button type="button" class="sh-dbox sh-dsurge" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Surges</span>' +
         '<span class="sh-dbig num" data-v="surges">' + num(data, 'surges', 0) + '</span>' +
@@ -4406,7 +4428,7 @@
       '<span class="sh-dpin-who">' + esc(data.name || 'Unnamed Hero') + '</span>' +
       '<span class="sh-dpin-st"><span class="sh-dpin-v num"><span class="sh-dk">Stamina</span>' + cur + ' <small>/ ' + max + '</small></span>' +
         (max > 0 ? '<span class="sh-bar"><span style="width:' + pct + '%"></span>' + (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</span>' : '') + '</span>' +
-      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + num(data, 'heroic_resource_current', 0) + '</span>' +
+      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + signed(num(data, 'heroic_resource_current', 0)) + '</span>' +
       (isNum(data, 'surges') ? '<span class="sh-dpin-v num"><span class="sh-dk">Surges</span>' + num(data, 'surges', 0) + '</span>' : '') +
       '<span class="sh-dpin-v num sh-dpin-rec"><span class="sh-dk">Recoveries</span>' + rec + (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
       '</div></div>';
@@ -4432,9 +4454,58 @@
       String(a.name || '').trim().toLowerCase() === 'free strike';
   }
   function heroHave(data) { return num(data, 'heroic_resource_current', 0); }
+  // A Talent can spend clarity they don't have, down to minus (1 + Reason)
+  // (the Heroes book's Talent; book/chapters/classes.yaml says the same). An
+  // ability that forbids negative clarity keeps the plain limit.
+  function isClarity(data) {
+    return String(f(data, 'heroic_resource_name', '') || '').trim().toLowerCase() === 'clarity' ||
+      String(f(data, 'class', '') || '').trim().toLowerCase() === 'talent';
+  }
+  function clarityFloor(data) { return Math.max(0, 1 + num(data, 'reason', 0)); }
+  var NO_NEGATIVE = /can(?:'|\u2019|no)?t\s+use\s+this\s+ability\s+if\s+doing\s+so\s+would\s+(?:cause\s+you\s+to\s+)?have\s+negative\s+clarity/i;
+  // Every text the ability carries, as plain words: Foundry's is HTML, with
+  // tags, entities and line breaks anywhere in a sentence.
+  function abilityWords(v, out, depth) {
+    if (depth > 4 || v == null) return out;
+    if (typeof v === 'string') out.push(cleanFoundryText(v));
+    else if (typeof v === 'object') Object.keys(v).forEach(function (k) { abilityWords(v[k], out, depth + 1); });
+    return out;
+  }
+  function forbidsNegative(a) { return NO_NEGATIVE.test(abilityWords(a, [], 0).join(' ')); }
+  // The most this ability's cost may be right now.
+  function heroReach(a, data) {
+    var have = heroHave(data);
+    if (!isClarity(data) || (a && forbidsNegative(a))) return have;
+    return have + clarityFloor(data);
+  }
   // Only a cost can be out of reach: a free ability is always there, even
   // when the resource has gone below zero.
-  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroHave(data); }
+  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroReach(a, data); }
+  // What the hero can pay with, as the switch and the fold line say it:
+  // "Only what 3 Wrath pays for", or for a Talent who may go below zero
+  // "Only what 2 Clarity pays for, down to −3". Every viewer reads it, so it
+  // never says "you".
+  function payWords(data, lead) {
+    var have = signed(heroHave(data)) + ' ' + heroResName(data);
+    var floor = isClarity(data) ? clarityFloor(data) : 0;
+    var below = floor ? ', down to \u2212' + floor : '';
+    if (lead === 'only') return 'Only what ' + have + ' pays for' + below;
+    return 'cost over ' + have + (floor ? ', even down to \u2212' + floor : '');
+  }
+  // A count as the sheet prints it: a true minus sign below zero.
+  function signed(n) { return n < 0 ? '\u2212' + (-n) : String(n); }
+  // An opened ability's cost line, by the same reach as the list: a Talent
+  // who may go below zero is told where the cost leaves them, and is short
+  // only past the floor.
+  function payLine(a, data) {
+    var c = abCost(a), have = heroHave(data), reach = heroReach(a, data), short = c > reach;
+    var head = 'Costs ' + esc(costLabel(a, data)) + '. You have ' + signed(have);
+    var tail;
+    if (reach > have) tail = short ? ' and can go down to \u2212' + (reach - have) + ', so ' + (c - reach) + ' short.' :
+      (c > have ? ', so you\u2019d go to \u2212' + (c - have) + '.' : '.');
+    else tail = short ? ', so ' + (c - have) + ' short.' : '.';
+    return '<p class="sh-dpay' + (short ? ' is-short' : '') + '">' + head + tail + '</p>';
+  }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
   // The first sentence of a text, whole, for the line under a row's name.
@@ -4449,7 +4520,7 @@
     var c = abCost(a), have = heroHave(data);
     if (!c) return '<span class="sh-dac"></span>';
     return '<span class="sh-dac num">' + esc(costLabel(a, data)) +
-      (c > have ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
+      (cantPay(a, data) ? '<span class="sh-sr">, you have ' + signed(have) + '</span>' : '') + '</span>';
   }
 
   // The hero's tier results. A main action with no power roll says so, so an
@@ -4527,9 +4598,7 @@
         '<div class="sh-dodds" aria-hidden="true">' + odds.map(function (o) { return '<i style="flex:' + o + '"></i>'; }).join('') + '</div>' +
         '<dl class="sh-dtier">' + rows + '</dl>';
     }
-    var c = abCost(a), have = heroHave(data);
-    if (c) you += '<p class="sh-dpay' + (c > have ? ' is-short' : '') + '">Costs ' + esc(costLabel(a, data)) + '. You have ' + have +
-      (c > have ? ', so ' + (c - have) + ' short.' : '.') + '</p>';
+    if (abCost(a)) you += payLine(a, data);
     else if (groupOf(a) === 'signature') you += '<p class="sh-dpay">A signature ability. It costs nothing.</p>';
     var who = esc(firstName(data.name));
     return '<div class="sh-darules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
@@ -4547,7 +4616,6 @@
   // A group of rows under its own column headings. What the hero cannot pay
   // for folds into one line that still names each and its cost.
   function dashAbGroup(kind, list, data, all, uid) {
-    var have = heroHave(data);
     var rolled = (kind === 'main' || kind === 'free') &&
       (!list.length || list.some(function (a) { return !!heroResult(a, heroBest(a, data)); }));
     var cols = kind === 'free' ? '<span></span><span>Distance</span><span></span>' : '<span>Cost</span><span>Distance</span><span>Target</span>';
@@ -4558,7 +4626,7 @@
     var cut = '';
     if (short.length) {
       cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
-          ' cost over ' + have + ' ' + esc(heroResName(data)) + '</span><span class="sh-dcut-names">' +
+          ' ' + esc(payWords(data)) + '</span><span class="sh-dcut-names">' +
         short.map(function (a, i) {
           return '<span class="sh-dcut-nm">' + esc(a.name || 'Untitled') + ' <b class="num">' + abCost(a) + '</b>' +
             (i < short.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
@@ -4590,7 +4658,6 @@
   // folds away what the current heroic resource cannot pay for. It is only
   // there when something costs more than the hero has.
   function dashAbFilter(groups, common, own, data) {
-    var have = heroHave(data);
     var can = own.filter(function (a) { return !cantPay(a, data); }).length;
     var btn = function (id, label, n, on) {
       return '<button type="button" data-cs-dfilt="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + label +
@@ -4601,7 +4668,7 @@
     if (common.length) out += btn('every', 'Every hero', common.length, false);
     if (can < own.length) {
       out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
-        '<span>Only what ' + have + ' ' + esc(heroResName(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
+        '<span>' + esc(payWords(data, 'only')) + '<small class="num">' + can + ' of ' + own.length + '</small></span>' +
         '<span class="sh-dsw" aria-hidden="true"></span></button>';
     }
     return '<div class="sh-dfilt" role="group" aria-label="Show abilities">' + out + '</div>';
@@ -5456,7 +5523,7 @@
   // identity band shows the bought traits on first paint.
   var EDIT_FILES = {
     traits: ['ancestries.json'],
-    skills: ['skills.json', 'careers.json', 'cultures.json', 'kits.json'],
+    skills: ['skills.json', 'careers.json', 'cultures.json', 'culture-aspects.json', 'kits.json'],
     perks: ['perks.json', 'careers.json', 'cultures.json', 'kits.json']
   };
 
@@ -5549,7 +5616,11 @@
     var rows = [];
     [['Culture', 'culture', 'cultures.json'], ['Career', 'career', 'careers.json'], ['Kit', 'kit', 'kits.json']].forEach(function (o) {
       var name = f(data, o[1], '');
-      var g = grantsFor(findEntry(editRefs[o[2]], name))[kind];
+      var entry = findEntry(editRefs[o[2]], name);
+      // A hero made before cultures were whole entries may hold one aspect
+      // ("Urban environment") as their culture; it grants its own skill.
+      if (!entry && o[1] === 'culture') entry = findEntry(editRefs['culture-aspects.json'], name);
+      var g = grantsFor(entry)[kind];
       if (name && (g.text || g.quick.length)) rows.push({ label: o[0], name: name, text: g.text, quick: g.quick });
     });
     return rows;
@@ -8618,9 +8689,11 @@
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
         var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId, refresh) : Promise.resolve({ breaks: [], waiting: [] });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
+        var carried = (!data.armoryItems && !data.children.length) ? fetchCarried(campaignId, entityId) : Promise.resolve(null);
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins, carried]).then(function (got) {
           if (gone()) return;
           loaded();
+          if (got[8] && got[8].length) data.children = got[8];
           el._csSeen = seenKey(got[2].lv, got[5], seeded ? null : entity);
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
@@ -8728,7 +8801,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment,
+      wroteHere: wroteHere, fetchCarried: fetchCarried, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment, cantPay: cantPay,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };

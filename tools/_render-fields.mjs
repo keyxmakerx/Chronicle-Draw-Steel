@@ -377,7 +377,7 @@ export const CATEGORIES = [
     icon: 'fa-people-roof',
     columns: [
       ['kind', 'Kind', 'string'],
-      ['language', 'Language', 'string'],
+      ['languages', 'Languages', 'string'],
       ['environment', 'Environment', 'string'],
       ['organization', 'Organization', 'string'],
       ['upbringing', 'Upbringing', 'string'],
