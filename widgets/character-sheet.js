@@ -535,6 +535,28 @@
     }).catch(function (e) { if (strict) throw e; return none; });
   }
 
+  // fetchCarried reads what the hero carries from the page's links, as this
+  // viewer may see them (Chronicle drops Director-only links and hidden
+  // items), shaped like the mount's children. The sheet asks only when the
+  // host shows no item panel of its own for this viewer and handed no
+  // children; a failed read is an empty list, never a broken sheet.
+  function fetchCarried(cid, eid) {
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/relations';
+    return Chronicle.apiFetch(url).then(function (res) {
+      return res.ok ? res.json() : [];
+    }).then(function (list) {
+      return (Array.isArray(list) ? list : []).filter(function (r) {
+        return r && String(r.relationType || '').toLowerCase() === 'has item' && r.targetEntityId;
+      }).map(function (r) {
+        var meta = r.metadata;
+        if (typeof meta === 'string') meta = parseJson(meta, null);
+        return { relation: { slug: 'has-item' }, entity: { id: r.targetEntityId, name: r.targetEntityName || '' },
+          metadata: meta && typeof meta === 'object' ? meta : {} };
+      });
+    }).catch(function () { return []; });
+  }
+
   function stepLabel(key) {
     var all = ORIGIN_SLOTS.concat([CLASS_SLOT]);
     for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i].label;
@@ -8667,9 +8689,11 @@
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
         var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId, refresh) : Promise.resolve({ breaks: [], waiting: [] });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
+        var carried = (!data.armoryItems && !data.children.length) ? fetchCarried(campaignId, entityId) : Promise.resolve(null);
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins, carried]).then(function (got) {
           if (gone()) return;
           loaded();
+          if (got[8] && got[8].length) data.children = got[8];
           el._csSeen = seenKey(got[2].lv, got[5], seeded ? null : entity);
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
@@ -8777,7 +8801,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment, cantPay: cantPay,
+      wroteHere: wroteHere, fetchCarried: fetchCarried, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment, cantPay: cantPay,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
