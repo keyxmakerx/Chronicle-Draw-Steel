@@ -168,7 +168,7 @@
       "icon": "fa-people-roof",
       "fields": [
         { "key": "kind", "label": "Kind", "type": "string" },
-        { "key": "language", "label": "Language", "type": "string" },
+        { "key": "languages", "label": "Languages", "type": "string" },
         { "key": "environment", "label": "Environment", "type": "string" },
         { "key": "organization", "label": "Organization", "type": "string" },
         { "key": "upbringing", "label": "Upbringing", "type": "string" },
