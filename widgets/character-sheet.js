@@ -286,6 +286,30 @@
     return '';                                      // foreign scheme -> reject
   }
 
+  // A hero's art is its page picture (image_path, a bare media id or an older
+  // dated path), the picture Chronicle's upload writes and Foundry's actor
+  // art syncs to; /media/<id> serves it to anyone who may read the page.
+  // portrait_url is the Foundry token art, often a Foundry-world path, so it
+  // is only the fallback for a page with no picture.
+  var MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function mediaSrc(v) {
+    var id = String(v == null ? '' : v).split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+    return MEDIA_ID.test(id) ? '/media/' + id.toLowerCase() : '';
+  }
+  function portraitSrc(data) {
+    return mediaSrc(data && data.imagePath) || safeImgUrl(f(data, 'portrait_url', ''));
+  }
+
+  // portraitAttrs makes the portrait itself the way in: whoever may change
+  // the picture opens the picker, as the Change chip does; anyone else opens
+  // the art full size in a new tab, and an empty portrait does nothing. The
+  // server still refuses an upload from a viewer who may not change it.
+  function portraitAttrs(data, src) {
+    if (data.canChangeImage) return ' data-cs-change-image role="button" tabindex="0" aria-label="Change picture"';
+    if (src) return ' data-cs-portrait-view="' + escAttr(src) + '" role="link" tabindex="0" aria-label="Open the picture full size"';
+    return '';
+  }
+
   // refText escapes THEN resolves {@category term} tokens to ref spans. Safe to
   // call before the glossary loads (renderText degrades to plain text), but the
   // mount is deferred until refRenderer.load() resolves so first paint is lit.
@@ -730,10 +754,10 @@
 
     // portrait_url is user-authored: validate the scheme and escape both
     // attribute values (escAttr, not esc, since escapeHtml leaves quotes).
-    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
+    var safePortrait = portraitSrc(data);
     var portraitHtml = safePortrait
-      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
-      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
+      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, safePortrait) + '>'
+      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait' + portraitAttrs(data, '') + '><i class="fa-solid fa-shield-halved"></i></div>';
     // Whoever may edit identity usually may replace the picture too, but the
     // host decides each separately, so the chip follows its own flag.
     var chip = data.canChangeImage
@@ -2140,6 +2164,11 @@
     }
 
     // The picture upload lives in Chronicle; the widget only asks for it.
+    function openPortrait(node) {
+      var src = node.getAttribute('data-cs-portrait-view');
+      if (src && typeof window !== 'undefined' && window.open) window.open(src, '_blank', 'noopener');
+    }
+
     function requestImageChange(btn) {
       var ev;
       try {
@@ -2439,6 +2468,8 @@
       if (unfin) { e.preventDefault(); goToMissing(unfin); return; }
       var chip = t.closest('[data-cs-change-image]');
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
+      var view = t.closest('[data-cs-portrait-view]');
+      if (view) { e.preventDefault(); openPortrait(view); return; }
       var pick = t.closest('[data-cs-pick]');
       if (pick) { e.preventDefault(); pickOrigin(pick); return; }
       var edOpenBtn = t.closest('[data-cs-ed-open]');
@@ -2515,6 +2546,11 @@
         if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
         return;
       }
+      // The portrait is an img or span standing in for a button or link, so
+      // Enter (and Space, for the button) has to press it by hand.
+      var port = (t && t.matches && (e.key === 'Enter' || e.key === ' ')) ? t : null;
+      if (port && t.matches('[data-cs-change-image]:not(button)')) { e.preventDefault(); requestImageChange(t); return; }
+      if (port && e.key === 'Enter' && t.matches('[data-cs-portrait-view]')) { e.preventDefault(); openPortrait(t); return; }
       var dtEl = (t && t.closest) ? t.closest('[data-cs-dtab]') : null;
       if (dtEl) {
         var shown = [].filter.call(el.querySelectorAll('[data-cs-dtab]'), function (b) { return b.offsetParent !== null; });
@@ -3493,10 +3529,10 @@
 
   function dashPortrait(data) {
     var name = data.name || 'Unnamed Hero';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var pic = src
-      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '">'
-      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
+      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, src) + '>'
+      : '<span class="sh-port-ph" data-cs-portrait' + portraitAttrs(data, '') + '>' + fa('shield-halved') + '</span>';
     // Changing the picture is a quiet word under the picture it changes.
     var chip = data.canChangeImage ? '<button type="button" class="sh-dpicchg sh-dq" data-cs-change-image>Change picture</button>' : '';
     return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>' + chip;
@@ -4229,7 +4265,7 @@
     var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
     var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
     return '<div class="sh-dpin sh-dq" aria-hidden="true"><div class="sh-dpin-in">' +
       (src ? '<span class="sh-dpin-port"><img src="' + escAttr(src) + '" alt=""></span>' : '') +
@@ -6241,6 +6277,7 @@
       '.cs-port { position:relative; flex:none; width:96px; }',
       '.cs-portrait { display:block; width:96px; height:96px; border-radius:12px; object-fit:cover; box-sizing:border-box; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
       '.cs-portrait-placeholder { display:flex; align-items:center; justify-content:center; color:var(--color-text-muted,#9ca3af); font-size:32px; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '.cs-port-chip { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:9999px; border:1px solid var(--color-border,#e5e7eb); background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); font:inherit; font-size:11.5px; font-weight:600; white-space:nowrap; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.12); }',
       '.cs-port-chip:hover, .cs-port-chip:focus-visible { border-color:var(--color-accent,#a855f7); color:var(--color-accent,#a855f7); outline:none; }',
       '.cs-id-main { flex:1; min-width:0; }',
@@ -7089,6 +7126,7 @@
       '[data-sheet] .sh-name h2 { margin:2px 0 0;font:700 calc(32px * var(--ts))/1.05 var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-seal { display:inline-flex;align-items:center;gap:5px;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:3px;padding:0 6px;font:600 calc(10px * var(--ts))/17px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;background:color-mix(in srgb,var(--paper-accent) 7%,transparent);white-space:nowrap; }',
       '[data-sheet] .sh-id { display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:4px 0; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '[data-sheet] .sh-port { position:relative;width:86px;height:86px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--paper-edge); }',
       '[data-sheet] .sh-port img { display:block;width:100%;height:100%; }',
       '[data-sheet] .sh-port button { position:absolute;left:50%;bottom:5px;transform:translateX(-50%);border:1px solid var(--paper-edge);background:var(--paper-cut);color:var(--paper-ink);border-radius:999px;padding:1px 8px;font:600 calc(10.5px * var(--ts)) var(--paper-ui-font);white-space:nowrap;display:inline-flex;gap:4px;align-items:center; }',
@@ -7735,6 +7773,7 @@
           // Reading the wrong key here is what rendered every stat as 0.
           fields: (entity && (entity.fields_data || entity.custom_fields)) || {},
           name: (entity && entity.name) || 'Unnamed Hero',
+          imagePath: (entity && entity.image_path) || '',
           campaignId: campaignId,
           entityId: entityId,
           children: Array.isArray(children) ? children : [],
@@ -7855,7 +7894,7 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, portraitSrc: portraitSrc, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
