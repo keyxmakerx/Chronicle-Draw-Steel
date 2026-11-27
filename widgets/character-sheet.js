@@ -4370,10 +4370,16 @@
       String(f(data, 'class', '') || '').trim().toLowerCase() === 'talent';
   }
   function clarityFloor(data) { return Math.max(0, 1 + num(data, 'reason', 0)); }
-  var NO_NEGATIVE = /can(?:'|\u2019|no)?t use this ability if doing so would (?:cause you to )?have negative clarity/i;
-  function forbidsNegative(a) {
-    try { return NO_NEGATIVE.test(JSON.stringify(a)); } catch (e) { return false; }
+  var NO_NEGATIVE = /can(?:'|\u2019|no)?t\s+use\s+this\s+ability\s+if\s+doing\s+so\s+would\s+(?:cause\s+you\s+to\s+)?have\s+negative\s+clarity/i;
+  // Every text the ability carries, as plain words: Foundry's is HTML, with
+  // tags, entities and line breaks anywhere in a sentence.
+  function abilityWords(v, out, depth) {
+    if (depth > 4 || v == null) return out;
+    if (typeof v === 'string') out.push(cleanFoundryText(v));
+    else if (typeof v === 'object') Object.keys(v).forEach(function (k) { abilityWords(v[k], out, depth + 1); });
+    return out;
   }
+  function forbidsNegative(a) { return NO_NEGATIVE.test(abilityWords(a, [], 0).join(' ')); }
   // The most this ability's cost may be right now.
   function heroReach(a, data) {
     var have = heroHave(data);
@@ -4383,11 +4389,14 @@
   // Only a cost can be out of reach: a free ability is always there, even
   // when the resource has gone below zero.
   function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroReach(a, data); }
-  // What the hero can pay with, in words: "3 Wrath", or for a Talent the
-  // clarity they have and how far below zero they may go.
-  function payWords(data) {
-    var have = heroHave(data);
-    return have + ' ' + heroResName(data) + (isClarity(data) ? ', down to \u2212' + clarityFloor(data) : '');
+  // What the hero can pay with, as the switch and the fold line say it:
+  // "Only what 3 Wrath pays for", or for a Talent who may go below zero
+  // "Only what you can pay for (2 Clarity, down to −3)".
+  function payWords(data, lead) {
+    var have = heroHave(data) + ' ' + heroResName(data);
+    var floor = isClarity(data) ? clarityFloor(data) : 0;
+    if (lead === 'only') return floor ? 'Only what you can pay for (' + have + ', down to \u2212' + floor + ')' : 'Only what ' + have + ' pays for';
+    return floor ? 'cost more than you can pay for (' + have + ', down to \u2212' + floor + ')' : 'cost over ' + have;
   }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
@@ -4511,7 +4520,7 @@
     var cut = '';
     if (short.length) {
       cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
-          ' cost over ' + esc(payWords(data)) + '</span><span class="sh-dcut-names">' +
+          ' ' + esc(payWords(data)) + '</span><span class="sh-dcut-names">' +
         short.map(function (a, i) {
           return '<span class="sh-dcut-nm">' + esc(a.name || 'Untitled') + ' <b class="num">' + abCost(a) + '</b>' +
             (i < short.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
@@ -4553,7 +4562,7 @@
     if (common.length) out += btn('every', 'Every hero', common.length, false);
     if (can < own.length) {
       out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
-        '<span>Only what ' + esc(payWords(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
+        '<span>' + esc(payWords(data, 'only')) + '<small class="num">' + can + ' of ' + own.length + '</small></span>' +
         '<span class="sh-dsw" aria-hidden="true"></span></button>';
     }
     return '<div class="sh-dfilt" role="group" aria-label="Show abilities">' + out + '</div>';
