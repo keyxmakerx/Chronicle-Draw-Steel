@@ -2320,6 +2320,27 @@
       if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === 'kit') inst._panelBody.innerHTML = html;
       var cell = el.querySelector('[data-ds="kit"]');
       if (cell) cell.innerHTML = kitLedgerText(data);
+      // The free strike worked out from the kit, where no synced one stands in.
+      var fs = freeStrikeParts(data);
+      var bonus = fs.bonus ? 'kit ' + esc(fs.bonus) : '';
+      [].forEach.call(el.querySelectorAll('[data-cs-fs]'), function (top) {
+        top.querySelector('.sx-name').textContent = fs.name;
+        top.querySelector('.sx-res').innerHTML = bonus;
+        var meta = top.parentNode.querySelector('.sx-meta');
+        if (meta) meta.textContent = fs.dist;
+        var fold = top.closest('details');
+        var inner = fold && fold.querySelector('.fold-in');
+        if (inner) inner.innerHTML = fs.body;
+      });
+      var row = el.querySelector('[data-cs-dar="-1"]');
+      if (row) {
+        row.querySelector('.sh-dan').textContent = fs.name;
+        row.querySelector('.sh-dad').textContent = fs.dist;
+        row.querySelector('.sh-dadm').innerHTML = bonus;
+        var card = document.getElementById(row.getAttribute('aria-controls'));
+        var rules = card && card.querySelector('.sh-darules');
+        if (rules) rules.innerHTML = fs.body;
+      }
     }
     function refreshDash(kind, from) {
       var ids = { skills: ['skills'], perks: ['features'], backstory: ['story'], about: ['story'] }[kind] || [];
@@ -3335,7 +3356,7 @@
   }
   function freeStrikeLine(data) {
     var p = freeStrikeParts(data);
-    var head = '<span class="sx-top"><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
+    var head = '<span class="sx-top" data-cs-fs><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
       (p.bonus ? 'kit ' + esc(p.bonus) : '') + '</span></span><span class="sx-meta">' + esc(p.dist) + '</span>';
     return foldHtml('sx-line', head, p.body, false);
   }

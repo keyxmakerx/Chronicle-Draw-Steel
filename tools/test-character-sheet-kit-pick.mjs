@@ -114,12 +114,15 @@ test('in a browser: a kit pick redraws the Kit card, the Equipment tab and the K
     el.dataset.isOwner = 'true'; el.dataset.canEditIdentity = 'true';
     el.dataset.campaignId = 'c1'; el.dataset.entityId = 'h1';
     window.W.init.call(window.W, el, {});
-  }, hero('Panther', [PANTHER]).fields);
+  }, Object.assign({}, hero('Panther', [PANTHER]).fields, { abilities_json: JSON.stringify([{ name: 'Spike', category: 'signature', type: 'action' }]) }));
   await p.waitForSelector('[data-cs-drail]', { state: 'attached' });
   const rail = () => p.textContent('[data-cs-drail]');
   const equip = () => p.evaluate(() => document.querySelector('[data-cs-dkit]').textContent);
   const panel = () => p.evaluate(() => document.querySelector('template[data-sheet-panel="kit"]').innerHTML);
   assert.match(await rail(), /Panther/);
+  const fsDash = () => p.evaluate(() => { const n = document.querySelector('[data-cs-dar="-1"] .sh-dadm'); return n ? n.textContent : null; });
+  const fsFace = () => p.evaluate(() => [].map.call(document.querySelectorAll('[data-cs-fs] .sx-res'), (n) => n.textContent).join('|'));
+  assert.match(await fsDash(), /kit \+1/, 'the free strike starts with the old kit\'s bonus');
   await p.evaluate(() => {
     const b = [].filter.call(document.querySelectorAll('[data-cs-pick="kit"]'), (n) => n.offsetParent !== null)[0];
     b.click();
@@ -130,6 +133,8 @@ test('in a browser: a kit pick redraws the Kit card, the Equipment tab and the K
   assert.match(await equip(), /Kit: Mountain/);
   assert.ok(!/Panther/.test(await equip()));
   assert.match(await panel(), /Mountain/);
+  assert.equal(await fsDash(), '', 'the dashboard\'s free strike drops the old kit\'s bonus');
+  assert.ok(!/kit/.test(await fsFace()), 'and so does the face\'s');
   assert.deepEqual(errors, []);
 });
 
