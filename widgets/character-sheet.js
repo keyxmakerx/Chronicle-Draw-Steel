@@ -1065,7 +1065,7 @@
   // the ability cards — a kit is reference stats, not a clickable action.
   function rKit(def, data) {
     var k = kitObject(data);
-    if (!k) return ph(noKitNote(data) || 'No kit equipped.');
+    if (!k) return ph(noKitNote(data) || (kitNumbersPending(data) ? kitNoNumbers(data) : 'No kit equipped.'));
 
     var has = function (v) { return v != null && v !== '' && v !== 0; };
     // H-2: escape the non-numeric branch — kit_details_json values are
@@ -2221,6 +2221,7 @@
         wroteHere(inst, el);
         if (key === 'ancestry' && res.value !== f(data, 'ancestry', '')) delete data.fields.ancestry_choices_json;
         data.fields[key] = res.value;
+        if (key === 'kit') refreshKit();
         // On paper the identity is drawn again: a first choice leaves the
         // "Still to choose" line and takes its place among the values.
         var idin = inst._paper ? el.querySelector('[data-cs-idin]') : null;
@@ -2306,6 +2307,40 @@
         var k = b.getAttribute('data-sheet-open');
         if (old[k]) { b.parentNode.replaceChild(old[k], b); delete old[k]; }
       });
+    }
+    // A kit pick redraws every place the kit shows, beyond the identity line.
+    function refreshKit() {
+      var rail = el.querySelector('[data-cs-drail]');
+      if (rail) redrawKeepingTriggers(rail, dashRailInner(data));
+      var eq = el.querySelector('[data-cs-dkit]');
+      if (eq) redrawKeepingTriggers(eq, dashEquipKit(data));
+      var html = pKitPanel(data);
+      var tpl = el.querySelector('template[data-sheet-panel="kit"]');
+      if (tpl) tpl.innerHTML = html;
+      if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === 'kit') inst._panelBody.innerHTML = html;
+      var cell = el.querySelector('[data-ds="kit"]');
+      if (cell) cell.innerHTML = kitLedgerText(data);
+      // The free strike worked out from the kit, where no synced one stands in.
+      var fs = freeStrikeParts(data);
+      var bonus = fs.bonus ? 'kit ' + esc(fs.bonus) : '';
+      [].forEach.call(el.querySelectorAll('[data-cs-fs]'), function (top) {
+        top.querySelector('.sx-name').textContent = fs.name;
+        top.querySelector('.sx-res').innerHTML = bonus;
+        var meta = top.parentNode.querySelector('.sx-meta');
+        if (meta) meta.textContent = fs.dist;
+        var fold = top.closest('details');
+        var inner = fold && fold.querySelector('.fold-in');
+        if (inner) inner.innerHTML = fs.body;
+      });
+      var row = el.querySelector('[data-cs-dar="-1"]');
+      if (row) {
+        row.querySelector('.sh-dan').textContent = fs.name;
+        row.querySelector('.sh-dad').textContent = fs.dist;
+        row.querySelector('.sh-dadm').innerHTML = bonus;
+        var card = document.getElementById(row.getAttribute('aria-controls'));
+        var rules = card && card.querySelector('.sh-darules');
+        if (rules) rules.innerHTML = fs.body;
+      }
     }
     function refreshDash(kind, from) {
       var ids = { skills: ['skills'], perks: ['features'], backstory: ['story'], about: ['story'] }[kind] || [];
@@ -3223,11 +3258,36 @@
     return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
   }
 
-  // Every kit Foundry synced details for, as raw values.
+  // Every kit Foundry synced details for, as raw values. When the kit field
+  // names kits and every synced kit carries another name, the details are the
+  // old kit's (the kit was picked here since the last sync), so none are used:
+  // the old kit's numbers must never sit under the new kit's name.
   function kitDetailList(data) {
     var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    return (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : [])
+    var list = (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : [])
       .filter(function (k) { return k && typeof k === 'object'; });
+    var named = kitFieldNames(data);
+    if (!named.length || !list.length) return list;
+    var lows = named.map(function (n) { return n.toLowerCase(); });
+    var matches = list.some(function (k) {
+      var n = String(k.name || '').trim().toLowerCase();
+      return !n || n === 'kit' || n === 'new kit' || lows.indexOf(n) !== -1;
+    });
+    return matches ? list : [];
+  }
+  // The kits the kit field names; a tactician's two are joined with commas.
+  function kitFieldNames(data) {
+    return String(originVal(data, 'kit') || '').split(',')
+      .map(function (n) { return n.trim(); }).filter(Boolean);
+  }
+  // The kit field names a kit whose numbers this sheet doesn't have yet.
+  function kitNumbersPending(data) {
+    return kitFieldNames(data).length > 0 && !kitDetailList(data).length;
+  }
+  // What a kit with no numbers says: a kit picked since the last sync gets
+  // them from a linked world's next sync; otherwise none were synced.
+  function kitNoNumbers(data) {
+    return kitNumbersPending(data) && foundryLinked(data) ? 'Its numbers arrive with the next Foundry sync.' : 'No kit details synced.';
   }
 
   // The kit bonuses the hero has, as one kit's raw values. A tactician's two
@@ -3296,7 +3356,7 @@
   }
   function freeStrikeLine(data) {
     var p = freeStrikeParts(data);
-    var head = '<span class="sx-top"><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
+    var head = '<span class="sx-top" data-cs-fs><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
       (p.bonus ? 'kit ' + esc(p.bonus) : '') + '</span></span><span class="sx-meta">' + esc(p.dist) + '</span>';
     return foldHtml('sx-line', head, p.body, false);
   }
@@ -3378,8 +3438,7 @@
     }
     lines.push(['features', 'Features', featuresLine(data)]);
     lines.push(['skills', 'Skills', skillsLine(data)]);
-    var kit = kitFacts(data);
-    lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : (noKitNote(data) ? 'Not used' : 'No kit equipped')]);
+    lines.push(['kit', 'Kit', kitLedgerText(data)]);
     // With the Armory on, the hero's items live in the page's Items tab; this
     // row points there and stays hidden until that tab is on the page.
     if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
@@ -3409,6 +3468,12 @@
       weak: toDamageEntries(f(data, 'weaknesses', '')).map(dmgEntryText).filter(Boolean),
       status: parseStrList(f(data, 'status_immunities', '')).map(humanizeId)
     };
+  }
+
+  // The ledger's Kit row: the kit's name, or why there is none.
+  function kitLedgerText(data) {
+    var kit = kitFacts(data);
+    return kit.name ? esc(kit.name) : (noKitNote(data) ? 'Not used' : 'No kit equipped');
   }
 
   // The kit as the part and its panel both show it: a name, the melee and
@@ -4231,9 +4296,8 @@
       n = String(n || '').trim();
       if (n && !out.some(function (x) { return x.toLowerCase() === n.toLowerCase(); })) out.push(n);
     };
-    String(originVal(data, 'kit') || '').split(',').forEach(add);
-    var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : []).forEach(function (k) {
+    kitFieldNames(data).forEach(add);
+    kitDetailList(data).forEach(function (k) {
       var n = k && String(k.name || '').trim();
       if (n && n.toLowerCase() !== 'kit' && n.toLowerCase() !== 'new kit') add(n);
     });
@@ -4250,7 +4314,7 @@
       '<section class="sh-dcard"><h3 class="sh-dh">Languages<small>' + sl.langs.length + '</small></h3>' + dashLanguages(data) + '</section>' +
       '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : unused ? '<small>Not used</small>' : '') + '</h3>' +
         (kit ? '<div class="sh-dkitw">' + kitWords(data, 'sh-dplain') + '</div>' : '') +
-        (unused ? noKitHtml(unused, 'sh-dplain') : kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
+        (unused ? noKitHtml(unused, 'sh-dplain') : kit || kitRows ? kitRows || pEmpty(kitNoNumbers(data)) : pEmpty('No kit equipped.')) +
         (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '') + '</section>';
   }
 
@@ -4268,14 +4332,20 @@
     return list;
   }
 
-  function dashEquipment(data) {
+  // The Equipment tab's kit part, on its own so a kit pick redraws it
+  // without touching the docked Items piece beside it.
+  function dashEquipKit(data) {
     var kit = dashKitName(data);
     var rows = dashKitRows(data);
     var unused = noKitNote(data);
-    var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : unused ? 'Kit: not used' : 'Kit') + '</h3>' +
+    return '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : unused ? 'Kit: not used' : 'Kit') + '</h3>' +
       (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
-      (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
+      (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty(kitNoNumbers(data))) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
+  }
+
+  function dashEquipment(data) {
+    var out = '<div data-cs-dkit>' + dashEquipKit(data) + '</div>';
     // With the Armory on, a host that docks takes its Items piece into the
     // slot (the hero's pack and money); one that doesn't leaves the pointer
     // to the page's Items tab, which the CSS hides behind a filled slot.
@@ -5111,7 +5181,7 @@
       (k.grid || k.chips.length
         ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') +
           (k.note ? '<p class="sh-sub">' + esc(k.note) + '</p>' : '') + '</div>'
-        : pEmpty('No kit details synced.'));
+        : pEmpty(kitNoNumbers(data)));
   }
 
   function pDamagePanel(data) {
@@ -7554,7 +7624,7 @@
       '  Q .sh-dmain:is([data-dtab="skills"]) > .sh-dpane[data-dpane="skills"],Q .sh-dmain[data-dtab="features"] > .sh-dpane[data-dpane="features"],' +
         'Q .sh-dmain[data-dtab="equipment"] > .sh-dpane[data-dpane="equipment"],Q .sh-dmain[data-dtab="story"] > .sh-dpane[data-dpane="story"] { display:block; }',
       '  Q .sh-dsec { margin:24px 0 0;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
-      '  Q .sh-dpane > .sh-dsec:first-child { margin-top:12px; }',
+      '  Q .sh-dpane > .sh-dsec:first-child,Q .sh-dpane > [data-cs-dkit]:first-child > .sh-dsec:first-child { margin-top:12px; }',
       '  Q .sh-dpara { margin:12px 8px 0;max-width:66ch;font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink-soft); }',
       '  Q .sh-dpane .sh-dmore { margin:10px 8px 0; }',
       // Abilities: a filter row, then one grid per action with its own columns, one line per ability.
