@@ -521,6 +521,23 @@
             "ancestry"
           ],
           "foundry_item_single": true,
+          "foundry_entry_effects": {
+            "speed": {
+              "path": "system.movement.value",
+              "type": "upgrade",
+              "format": "number"
+            },
+            "size": {
+              "path": "system.combat.size",
+              "type": "override",
+              "format": "size"
+            },
+            "stability": {
+              "path": "system.combat.stability",
+              "type": "add",
+              "format": "number"
+            }
+          },
           "play": {
             "edit": "owner",
             "kind": "choice",

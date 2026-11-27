@@ -104,6 +104,19 @@ the same paths as above:
 | `melee_damage_bonus` / `ranged_damage_bonus` (`"+2/+2/+4"`) | `system.bonuses.melee.damage.tier1`–`tier3` / `system.bonuses.ranged.damage.tier1`–`tier3` |
 | `melee_distance_bonus` / `ranged_distance_bonus` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
 
+A campaign's own ancestry is made the same way, and its numbers change the
+hero rather than the item: the ancestry field's `foundry_entry_effects` puts them
+on one Active Effect the made ancestry item carries, as the system's own
+ancestries carry theirs, so the hero loses them when the ancestry goes:
+
+| Entry property | Change to the hero |
+|---|---|
+| `speed` | `system.movement.value`, raised to at least this (upgrade) |
+| `size` (`"1S"`, `"2"`) | `system.combat.size.value`, and `.letter` for size 1 (override) |
+| `stability` | `system.combat.stability`, added |
+
+A size that doesn't read as one ("As your previous ancestry") is left out.
+
 The single-item fields above (class, subclass, ancestry, career, culture, kit
 name, level, heroic resource name) are `foundry_item_single: true`: the adapter
 collapses the matching items to one record, using the first projection field in
