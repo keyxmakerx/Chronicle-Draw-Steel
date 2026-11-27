@@ -8427,7 +8427,7 @@
       '[data-sheet] .sh-vt { font:inherit;color:inherit;background:none;border:0;padding:0;margin:0 0 3px;cursor:pointer;text-decoration:underline dotted var(--paper-accent);text-decoration-thickness:2px;text-underline-offset:2px;border-radius:3px; }',
       '[data-sheet] .sh-vt:hover,[data-sheet] .sh-vt[aria-expanded="true"] { color:var(--paper-accent); }',
       '[data-sheet] .sh-vt { position:relative; }',
-      '[data-sheet] .sh-vt::after { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }',
+      '[data-sheet] .sh-vt::after { content:"";position:absolute;left:0;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translateY(-50%); }',
       '[data-sheet] .sh-vt:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       '[data-sheet] .is-vt-open { position:relative; }',
       '[data-sheet] .sh-drec.is-vt-open { display:inline-block; }',
