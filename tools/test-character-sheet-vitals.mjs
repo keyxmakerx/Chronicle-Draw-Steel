@@ -181,6 +181,27 @@ test('in a browser: a typed number saves on Enter, a press outside closes, a fai
   } finally { await browser.close(); }
 });
 
+test('in a browser: Damage or a Spend pressed while plus waits builds on it, in one save', { skip }, async () => {
+  const browser = await B.pw.chromium.launch({ executablePath: B.chrome, args: ['--no-sandbox'] });
+  try {
+    const { p, errors } = await mountAt(browser, 400, true);
+    await vis(p, '[data-cs-vt="stamina"]').click();
+    await p.click('[data-cs-vt-step="1"]');
+    await p.fill('[data-cs-vt-amt]', '5');
+    await p.click('[data-cs-vt-hit="-1"]');
+    await p.waitForTimeout(700);
+    assert.deepEqual(await puts(p), [{ stamina_current: 15 }], '19 + 1 - 5, and the plus is not saved over it');
+
+    await vis(p, '[data-cs-vt="rec"]').click();
+    await p.click('[data-cs-vt-step="-1"]');
+    await p.click('[data-cs-vt-spend]');
+    await p.waitForTimeout(700);
+    assert.deepEqual((await puts(p)).slice(1), [{ recoveries: 4, stamina_current: 24 }], 'the minus and the spend both count');
+    assert.ok((await shownText(p, 'rec')).every((t) => t === '4'));
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
 test('in a browser: a reader sees no controls', { skip }, async () => {
   const browser = await B.pw.chromium.launch({ executablePath: B.chrome, args: ['--no-sandbox'] });
   try {

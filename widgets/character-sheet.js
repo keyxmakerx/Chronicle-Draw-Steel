@@ -6951,7 +6951,11 @@
       Object.keys(patch).forEach(function (fk) { was[fk] = f(data, fk, null); });
       vt.busy = true;
       var slow = setTimeout(function () { if (vt.busy) say('Saving\u2026'); }, 300);
-      saveFields(data, patch).then(function () {
+      // One save at a time, in the order made, so a later change always lands last.
+      vt.chain = (vt.chain || Promise.resolve()).then(function () { return saveFields(data, patch); });
+      var mine = vt.chain;
+      vt.chain = vt.chain.then(null, function () {});
+      mine.then(function () {
         clearTimeout(slow);
         vt.busy = false;
         Object.keys(patch).forEach(function (fk) { data.fields[fk] = patch[fk]; });
@@ -6993,17 +6997,25 @@
       if (n == null) { say('Type a whole number.', true); return; }
       setTo(k, n, false);
     }
+    // Damage, Heal and Spend start from the number minus and plus are still
+    // waiting to save, and take that save over, so neither change is lost.
+    function fold(k) {
+      var inp = pop() && pop().querySelector('[data-cs-vt-in]');
+      var n = vt.open === k && inp ? vtParse(inp.value) : null;
+      if (vt.timer) { clearTimeout(vt.timer); vt.timer = null; vt.pending = null; }
+      return n == null ? cur(k) : vtClamp(n, vtLimits(data, k));
+    }
     function hit(sign) {
       var p = pop(), amt = p && p.querySelector('[data-cs-vt-amt]');
       var n = amt ? vtParse(amt.value) : null;
       if (n == null || n <= 0) { say('Type how much first.', true); if (amt) amt.focus(); return; }
-      var before = cur('stamina'), to = vtClamp(before + sign * n, vtLimits(data, 'stamina'));
+      var before = fold('stamina'), to = vtClamp(before + sign * n, vtLimits(data, 'stamina'));
       if (amt) amt.value = '';
-      if (to === before) { say(sign < 0 ? 'Stamina can\u2019t go lower.' : 'Stamina is already full.'); return; }
+      if (to === cur('stamina') && to === before) { say(sign < 0 ? 'Stamina can\u2019t go lower.' : 'Stamina is already full.'); return; }
       save({ stamina_current: to }, 'stamina', (sign < 0 ? 'Took ' + n + ' damage. ' : 'Healed ' + n + '. ') + 'Stamina is ' + vtShown('stamina', to) + '.');
     }
     function spend() {
-      var rec = cur('rec'), max = num(data, 'stamina_max', 0);
+      var rec = fold('rec'), max = num(data, 'stamina_max', 0);
       if (rec <= 0 || !(max > 0)) return;
       var to = vtClamp(cur('stamina') + Math.floor(max / 3), vtLimits(data, 'stamina'));
       save({ recoveries: rec - 1, stamina_current: to }, 'rec', 'Spent a Recovery. Stamina is ' + to + ', ' + (rec - 1) + ' Recoveries left.');
