@@ -167,6 +167,16 @@ test('in a browser: on a phone the name gets the line and the boxes sit under it
   });
   assert.ok(starts, 'the identity line shows');
   assert.ok(starts.every((x) => x > 4), 'a dot never starts a line: ' + starts.map(Math.round).join(','));
+  // A part that is a button (the subclass that opens its rules) wraps as one
+  // box; its dot still keeps a place beside it.
+  const besideButton = await p.evaluate(() => {
+    const line = document.querySelector('.sh-idline'), g = [].find.call(line.querySelectorAll('.sh-idgrp'), (x) => /Chronopathy/.test(x.textContent));
+    g.firstChild.innerHTML = '<button type="button" class="sh-link sh-idsubopen">College of the Harlequin Mask of the Many Faced Moon</button>';
+    const b = g.querySelector('button').getBoundingClientRect(), sep = g.querySelector('.sh-idsep').getBoundingClientRect();
+    return { wrapped: b.height > 30, beside: sep.left - line.getBoundingClientRect().left > 4 && sep.top < b.bottom };
+  });
+  assert.ok(besideButton.wrapped, 'the fixture button wraps');
+  assert.ok(besideButton.beside, 'the dot after a wrapped button stays on its line');
   assert.deepEqual(errors, []);
 });
 

@@ -8490,6 +8490,9 @@
       '[data-sheet] .sh-idline { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;min-width:0;font:700 calc(15px * var(--ts))/1.45 var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idval { min-width:0; }',
       '[data-sheet] .sh-idgrp { min-width:0; }',
+      // A button can't flow inline, so one that wraps takes the full width and
+      // pushes its dot to a line of its own; leaving the dot room keeps it beside.
+      '[data-sheet] .sh-idgrp button { max-width:calc(100% - 1.6em);text-align:left; }',
       '[data-sheet] .sh-idsep { margin:0 .45em;color:var(--paper-mute); }',
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
