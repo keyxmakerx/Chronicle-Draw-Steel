@@ -7016,6 +7016,32 @@
     ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
   }
 
+  // The quiet look's heading ladder: a group or box heading sits a step up
+  // the standard's type scale in the campaign's heading face (20 for an
+  // ability group, 18 for a box), with room above it, and the rows under it
+  // step down to reading weight, so size and weight part a heading from its
+  // first row even where colour cannot. The other styles already set their
+  // headings apart in small capitals. Last in the sheet's styles, so it
+  // wins over the dashboard's own sizes.
+  function headingCss() {
+    var Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+    return [
+      'Q .sh-dag { margin-top:32px; }',
+      'Q .sh-dagh { padding-bottom:8px; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 { font-size:calc(20px * var(--ts));font-weight:600;line-height:1.2; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 small { font-size:calc(13px * var(--ts)); }',
+      'Q .sh-devery { margin-top:32px; }',
+      'Q .sh-dan { font-size:calc(14px * var(--ts));font-weight:500; }',
+      'Q .sh-dh { margin-bottom:10px;padding-bottom:10px;font-size:calc(18px * var(--ts)); }',
+      'Q :is(.sh-drows li,.sh-dplain,.sh-dkit dd) { color:var(--paper-ink-soft); }',
+      'Q .sh-dkit dd { font-weight:600; }',
+      // On a phone the group label is a heading, not a field label.
+      'Q .sh-fq .sx-h .paper-kind { font:600 calc(18px * var(--ts))/1.2 var(--font-heading, var(--paper-ui-font));letter-spacing:0;text-transform:none;color:var(--paper-ink); }',
+      'Q .sh-fq .sx-grp + .sx-grp { margin-top:28px; }',
+      'Q .sh-fq .sx-name { font-weight:600;font-size:calc(14px * var(--ts)); }'
+    ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
+  }
+
   function injectPaperStyles() {
     if (document.getElementById('ds-character-sheet-paper-styles')) return;
     var css = [
@@ -7616,7 +7642,7 @@
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
       '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
-    ].concat(quietLookCss(), dashCss()).join('\n');
+    ].concat(quietLookCss(), dashCss(), headingCss()).join('\n');
     var style = document.createElement('style');
     style.id = 'ds-character-sheet-paper-styles';
     style.textContent = css;
@@ -7894,7 +7920,7 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, portraitSrc: portraitSrc, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, portraitSrc: portraitSrc, headingCss: headingCss, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,

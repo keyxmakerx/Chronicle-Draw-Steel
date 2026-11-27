@@ -1143,3 +1143,16 @@ test('origins: a campaign\'s own complication reads as benefit and drawback, and
     assert.ok(/<b>Drawback \(hidden from players\)\.<\/b> The tide calls you home\./.test(html), 'the Director is told which part is hidden');
   } finally { globalThis.window.Chronicle.apiFetch = prev; cs.setEditRefs({}); }
 });
+
+// The quiet look's headings are parted from their rows by size and weight,
+// not colour alone: a group heading at 20, a box heading at 18, and the
+// ability names under them at reading weight.
+test('quiet look heading ladder: headings a step up, rows a step down', () => {
+  const css = cs.headingCss().join('\n');
+  const Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+  assert.ok(cs.headingCss().every((r) => r.startsWith(Q)), 'every rule is scoped to the quiet look');
+  assert.match(css, /:is\(\.sh-dagh,\.sh-devery\) h3 \{ font-size:calc\(20px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dh \{[^}]*font-size:calc\(18px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dan \{ font-size:calc\(14px \* var\(--ts\)\);font-weight:500; \}/);
+  assert.match(css, /\.sh-fq \.sx-h \.paper-kind \{ font:600 calc\(18px \* var\(--ts\)\)\/1\.2 var\(--font-heading/);
+});

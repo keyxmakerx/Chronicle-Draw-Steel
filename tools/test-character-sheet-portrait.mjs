@@ -56,7 +56,10 @@ for (const draw of [
       const empty = draw.html(base);
       const ph = empty.match(/<(?:div|span)[^>]*data-cs-portrait[^>]*>/)[0];
       assert.equal(/data-cs-change-image/.test(ph), r.canChangeImage, 'an empty portrait opens the picker only when allowed');
-      assert.ok(!/data-cs-portrait-view|tabindex/.test(ph) || r.canChangeImage, 'an empty portrait does nothing for anyone else');
+      if (!r.canChangeImage) {
+        assert.ok(!/data-cs-portrait-view/.test(ph), 'an empty portrait opens nothing for anyone else');
+        assert.ok(!/tabindex/.test(ph), 'an empty portrait is not focusable for anyone else');
+      }
     });
   }
 }
