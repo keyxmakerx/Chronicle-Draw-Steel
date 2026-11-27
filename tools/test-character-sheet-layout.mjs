@@ -765,8 +765,53 @@ test('dashboard abilities: a resource below zero still lists everything that cos
     { name: 'Step', type: 'maneuver' }
   ], { heroic_resource_name: 'Clarity', heroic_resource_current: -2 }), 1);
   assert.equal((d.match(/sh-dai is-short/g) || []).length, 1, 'only Grip, which has a cost, is out of reach');
-  assert.ok(/1 more cost over -2 Clarity<\/span>.*Grip <b class="num">5<\/b>/.test(d));
-  assert.ok(/pays for<small class="num">2 of 3<\/small>/.test(d));
+  assert.ok(/1 more cost over −2 Clarity, even down to −\d+<\/span>.*Grip <b class="num">5<\/b>/.test(d));
+  assert.ok(/Only what −2 Clarity pays for, down to −1<small class="num">2 of 3<\/small>/.test(d));
+});
+
+// A Talent can spend clarity they don't have, down to minus (1 + Reason),
+// so an ability costing up to clarity + 1 + Reason is still in reach.
+test('a Talent\'s clarity reaches below zero: down to minus (1 + Reason)', () => {
+  const abs = [
+    { name: 'Spike', category: 'signature', type: 'action' },
+    { name: 'Grip', category: 'heroic', type: 'action', cost: 5 },
+    { name: 'Crush', category: 'heroic', type: 'action', cost: 6 },
+    { name: 'Calm', category: 'heroic', type: 'action', cost: 3, effects: [{ type: 'strained', description: 'You can\'t use this ability if doing so would cause you to have negative clarity.' }] }
+  ];
+  const talent = faceData(abs, { heroic_resource_name: 'Clarity', heroic_resource_current: 2, reason: 2 });
+  const grip = abs[1], crush = abs[2], calm = abs[3];
+  assert.equal(cs.cantPay(grip, talent), false, '5 is within 2 + 1 + 2');
+  assert.equal(cs.cantPay(crush, talent), true, '6 is past the floor of -3');
+  assert.equal(cs.cantPay(calm, talent), true, 'an ability that forbids negative clarity keeps the plain limit');
+  const d = cs.dashAbilities(talent, 1);
+  assert.ok(/Only what 2 Clarity pays for, down to −3<small class="num">2 of 4<\/small>/.test(d), 'the switch says how far below zero');
+  assert.ok(/2 more cost over 2 Clarity, even down to −3<\/span>/.test(d));
+  // A Reason that leaves no room below zero says nothing about it.
+  assert.ok(/Only what 2 Clarity pays for</.test(cs.dashAbilities(faceData(abs, { heroic_resource_name: 'Clarity', heroic_resource_current: 2, reason: -1 }), 1)));
+  // Foundry's text is HTML: line breaks, entities and tags inside the sentence still forbid it.
+  for (const text of ['<p>You can&#39;t use this ability if doing so\nwould cause you to have negative clarity.</p>',
+    'You can&rsquo;t use this ability if <em>doing so</em> would  cause you to have negative clarity.',
+    'You cannot use this ability if doing so would have negative clarity.']) {
+    assert.equal(cs.cantPay({ name: 'X', cost: 3, effects: [{ type: 'strained', description: text }] }, talent), true, text);
+  }
+  // The class names a Talent even when the resource name is missing.
+  assert.equal(cs.cantPay(grip, faceData(abs, { class: 'Talent', heroic_resource_name: '', heroic_resource_current: 2, reason: 2 })), false);
+  // Any other class pays only with what it has.
+  assert.equal(cs.cantPay(grip, faceData(abs, { heroic_resource_current: 2, reason: 2 })), true);
+  // An opened card counts by the same reach as the list.
+  const card = (a, over) => cs.dashAbCard(a, faceData(abs, Object.assign({ heroic_resource_name: 'Clarity', heroic_resource_current: 2, reason: 2 }, over)));
+  assert.match(card(grip), /<p class="sh-dpay">Costs 5 Clarity\. You have 2, so you’d go to −3\.<\/p>/);
+  assert.match(card(crush), /<p class="sh-dpay is-short">Costs 6 Clarity\. You have 2 and can go down to −3, so 1 short\.<\/p>/);
+  assert.match(card(calm), /<p class="sh-dpay is-short">Costs 3 Clarity\. You have 2, so 1 short\.<\/p>/, 'no negative clarity: the plain limit');
+  assert.match(card(abs[3], { heroic_resource_current: 3 }), /<p class="sh-dpay">Costs 3 Clarity\. You have 3\.<\/p>/);
+  // Below zero the count prints a true minus wherever it shows.
+  const low = faceData(abs, { heroic_resource_name: 'Clarity', heroic_resource_current: -2, reason: 2 });
+  assert.match(cs.dashAbilities(low, 1), /<span class="sh-sr">, you have −2<\/span>/);
+  assert.ok(!/you have -2/.test(cs.dashAbilities(low, 1)));
+  const awe = { name: 'Awe', category: 'heroic', type: 'action', cost: 3 };
+  assert.match(card(awe, { heroic_resource_current: 0 }), /<p class="sh-dpay">Costs 3 Clarity\. You have 0, so you’d go to −3\.<\/p>/);
+  assert.match(card(awe, { heroic_resource_current: -2 }),
+    /<p class="sh-dpay is-short">Costs 3 Clarity\. You have −2 and can go down to −3, so 2 short\.<\/p>/);
 });
 
 test('dashboard abilities: a hero with no free strike synced gets the kit\'s line', () => {
@@ -939,7 +984,7 @@ test('kit: a tactician\'s two kits give the higher of each kind of bonus, and th
     assert.ok(/You may take the other kit/.test(st.note));
   } finally { cs.setEditRefs({}); }
   // Typed or imported details may carry numbers as text.
-  const typed = cs.kitObject(fields({ kit_details_json: JSON.stringify([{ name: 'A', speed: '1', stamina: '3' }, { name: 'B', speed: '2', stamina: 'lots' }]) }));
+  const typed = cs.kitObject(fields({ kit: 'A, B', kit_details_json: JSON.stringify([{ name: 'A', speed: '1', stamina: '3' }, { name: 'B', speed: '2', stamina: 'lots' }]) }));
   assert.deepEqual([typed.speed, typed.stamina, typed.from.speed, typed.from.stamina], [2, 3, 'B', 'A']);
   // One kit is unchanged: its own values and no note.
   const one = cs.kitObject(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit_details_json: JSON.stringify([two[1]]) }) }));
@@ -1171,6 +1216,27 @@ test('origins: a campaign\'s own complication reads as benefit and drawback, and
     assert.ok(/<b>Benefit\.<\/b> You breathe water\./.test(html), html);
     assert.ok(/<b>Drawback \(hidden from players\)\.<\/b> The tide calls you home\./.test(html), 'the Director is told which part is hidden');
   } finally { globalThis.window.Chronicle.apiFetch = prev; cs.setEditRefs({}); }
+});
+
+// The quiet look's headings are parted from their rows by size and weight,
+// not colour alone: a group heading at 20, a box heading at 18, and the
+// ability names under them at reading weight.
+test('quiet look heading ladder: headings a step up, rows a step down', () => {
+  const css = cs.headingCss().join('\n');
+  const Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+  assert.ok(cs.headingCss().every((r) => r.startsWith(Q)), 'every rule is scoped to the quiet look');
+  assert.match(css, /:is\(\.sh-dagh,\.sh-devery\) h3 \{ font-size:calc\(20px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dh \{[^}]*font-size:calc\(18px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dan \{ font-size:calc\(14px \* var\(--ts\)\);font-weight:500; \}/);
+  assert.match(css, /\.sh-fq \.sx-h \.paper-kind \{ font:600 calc\(18px \* var\(--ts\)\)\/1\.2 var\(--font-heading/);
+});
+
+// The Kit panel's damage grid is four cells a row; each row's label, Ranged
+// as well as Melee, is left in the label column.
+test('kit damage grid: every row label sits in the label column', () => {
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  assert.match(src, /\[data-sheet\] \.sh-kit span:nth-child\(4n\+1\) \{ text-align:left; \}/);
+  assert.ok(!/\.sh-kit span:nth-child\(5\)/.test(src), 'no rule targets only the first row');
 });
 
 // ── Progression: the game's moments ──────────────────────────────────────

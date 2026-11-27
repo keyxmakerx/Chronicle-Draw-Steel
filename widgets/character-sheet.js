@@ -287,6 +287,30 @@
     return '';                                      // foreign scheme -> reject
   }
 
+  // A hero's art is its page picture (image_path, a bare media id or an older
+  // dated path), the picture Chronicle's upload writes and Foundry's actor
+  // art syncs to; /media/<id> serves it to anyone who may read the page.
+  // portrait_url is the Foundry token art, often a Foundry-world path, so it
+  // is only the fallback for a page with no picture.
+  var MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function mediaSrc(v) {
+    var id = String(v == null ? '' : v).split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+    return MEDIA_ID.test(id) ? '/media/' + id.toLowerCase() : '';
+  }
+  function portraitSrc(data) {
+    return mediaSrc(data && data.imagePath) || safeImgUrl(f(data, 'portrait_url', ''));
+  }
+
+  // portraitAttrs makes the portrait itself the way in: whoever may change
+  // the picture opens the picker, as the Change chip does; anyone else opens
+  // the art full size in a new tab, and an empty portrait does nothing. The
+  // server still refuses an upload from a viewer who may not change it.
+  function portraitAttrs(data, src) {
+    if (data.canChangeImage) return ' data-cs-change-image role="button" tabindex="0" aria-label="Change picture"';
+    if (src) return ' data-cs-portrait-view="' + escAttr(src) + '" role="link" tabindex="0" aria-label="Open the picture full size"';
+    return '';
+  }
+
   // refText escapes THEN resolves {@category term} tokens to ref spans. Safe to
   // call before the glossary loads (renderText degrades to plain text), but the
   // mount is deferred until refRenderer.load() resolves so first paint is lit.
@@ -511,6 +535,28 @@
     }).catch(function (e) { if (strict) throw e; return none; });
   }
 
+  // fetchCarried reads what the hero carries from the page's links, as this
+  // viewer may see them (Chronicle drops Director-only links and hidden
+  // items), shaped like the mount's children. The sheet asks only when the
+  // host shows no item panel of its own for this viewer and handed no
+  // children; a failed read is an empty list, never a broken sheet.
+  function fetchCarried(cid, eid) {
+    if (!cid || !eid || !Chronicle || typeof Chronicle.apiFetch !== 'function') return Promise.resolve([]);
+    var url = '/campaigns/' + encodeURIComponent(cid) + '/entities/' + encodeURIComponent(eid) + '/relations';
+    return Chronicle.apiFetch(url).then(function (res) {
+      return res.ok ? res.json() : [];
+    }).then(function (list) {
+      return (Array.isArray(list) ? list : []).filter(function (r) {
+        return r && String(r.relationType || '').toLowerCase() === 'has item' && r.targetEntityId;
+      }).map(function (r) {
+        var meta = r.metadata;
+        if (typeof meta === 'string') meta = parseJson(meta, null);
+        return { relation: { slug: 'has-item' }, entity: { id: r.targetEntityId, name: r.targetEntityName || '' },
+          metadata: meta && typeof meta === 'object' ? meta : {} };
+      });
+    }).catch(function () { return []; });
+  }
+
   function stepLabel(key) {
     var all = ORIGIN_SLOTS.concat([CLASS_SLOT]);
     for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i].label;
@@ -731,10 +777,10 @@
 
     // portrait_url is user-authored: validate the scheme and escape both
     // attribute values (escAttr, not esc, since escapeHtml leaves quotes).
-    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
+    var safePortrait = portraitSrc(data);
     var portraitHtml = safePortrait
-      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
-      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
+      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, safePortrait) + '>'
+      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait' + portraitAttrs(data, '') + '><i class="fa-solid fa-shield-halved"></i></div>';
     // Whoever may edit identity usually may replace the picture too, but the
     // host decides each separately, so the chip follows its own flag.
     var chip = data.canChangeImage
@@ -821,7 +867,7 @@
     // count with a single accent pip rather than a pool that implies a cap.
     var hr =
       '<span class="cs-statline-label">' + esc(hrName) + '</span>' +
-      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + hrCur + '</span>' +
+      '<span class="cs-vit-v"><span class="cs-hr-pips">&#9670;</span> ' + signed(hrCur) + '</span>' +
       '<span class="cs-bar-sub">Heroic resource</span>';
     var surges = isNum(data, 'surges')
       ? '<div class="cs-vit"><span class="cs-statline-label">Surges</span><span class="cs-vit-v">' + num(data, 'surges', 0) + '</span></div>'
@@ -1041,7 +1087,7 @@
   // the ability cards — a kit is reference stats, not a clickable action.
   function rKit(def, data) {
     var k = kitObject(data);
-    if (!k) return ph(noKitNote(data) || 'No kit equipped.');
+    if (!k) return ph(noKitNote(data) || (kitNumbersPending(data) ? kitNoNumbers(data) : 'No kit equipped.'));
 
     var has = function (v) { return v != null && v !== '' && v !== 0; };
     // H-2: escape the non-numeric branch — kit_details_json values are
@@ -2140,6 +2186,11 @@
     }
 
     // The picture upload lives in Chronicle; the widget only asks for it.
+    function openPortrait(node) {
+      var src = node.getAttribute('data-cs-portrait-view');
+      if (src && typeof window !== 'undefined' && window.open) window.open(src, '_blank', 'noopener');
+    }
+
     function requestImageChange(btn) {
       var ev;
       try {
@@ -2192,6 +2243,7 @@
         wroteHere(inst, el);
         if (key === 'ancestry' && res.value !== f(data, 'ancestry', '')) delete data.fields.ancestry_choices_json;
         data.fields[key] = res.value;
+        if (key === 'kit') refreshKit();
         // On paper the identity is drawn again: a first choice leaves the
         // "Still to choose" line and takes its place among the values.
         var idin = inst._paper ? el.querySelector('[data-cs-idin]') : null;
@@ -2277,6 +2329,40 @@
         var k = b.getAttribute('data-sheet-open');
         if (old[k]) { b.parentNode.replaceChild(old[k], b); delete old[k]; }
       });
+    }
+    // A kit pick redraws every place the kit shows, beyond the identity line.
+    function refreshKit() {
+      var rail = el.querySelector('[data-cs-drail]');
+      if (rail) redrawKeepingTriggers(rail, dashRailInner(data));
+      var eq = el.querySelector('[data-cs-dkit]');
+      if (eq) redrawKeepingTriggers(eq, dashEquipKit(data));
+      var html = pKitPanel(data);
+      var tpl = el.querySelector('template[data-sheet-panel="kit"]');
+      if (tpl) tpl.innerHTML = html;
+      if (inst._panelBody && inst._panelBody.isConnected && inst._panelId === 'kit') inst._panelBody.innerHTML = html;
+      var cell = el.querySelector('[data-ds="kit"]');
+      if (cell) cell.innerHTML = kitLedgerText(data);
+      // The free strike worked out from the kit, where no synced one stands in.
+      var fs = freeStrikeParts(data);
+      var bonus = fs.bonus ? 'kit ' + esc(fs.bonus) : '';
+      [].forEach.call(el.querySelectorAll('[data-cs-fs]'), function (top) {
+        top.querySelector('.sx-name').textContent = fs.name;
+        top.querySelector('.sx-res').innerHTML = bonus;
+        var meta = top.parentNode.querySelector('.sx-meta');
+        if (meta) meta.textContent = fs.dist;
+        var fold = top.closest('details');
+        var inner = fold && fold.querySelector('.fold-in');
+        if (inner) inner.innerHTML = fs.body;
+      });
+      var row = el.querySelector('[data-cs-dar="-1"]');
+      if (row) {
+        row.querySelector('.sh-dan').textContent = fs.name;
+        row.querySelector('.sh-dad').textContent = fs.dist;
+        row.querySelector('.sh-dadm').innerHTML = bonus;
+        var card = document.getElementById(row.getAttribute('aria-controls'));
+        var rules = card && card.querySelector('.sh-darules');
+        if (rules) rules.innerHTML = fs.body;
+      }
     }
     function refreshDash(kind, from) {
       var ids = { skills: ['skills'], perks: ['features'], backstory: ['story'], about: ['story'] }[kind] || [];
@@ -2407,9 +2493,15 @@
       var stuck = !!(bar && under && bar.offsetParent !== null && bar.getBoundingClientRect().top - under.getBoundingClientRect().bottom > 32);
       var main = setDashTab(el, id);
       if (!main || !stuck) return;
-      var pane = id === 'abilities' ? main.querySelector('.sh-body') : main.querySelector('[data-dpane="' + id + '"]');
+      var pane = id === 'abilities' ? main.querySelector('.sh-body') : id === 'dock' ? main.querySelector('[data-sheet-dock-panes]') : main.querySelector('[data-dpane="' + id + '"]');
       if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start' });
     }
+
+    // The host opened one of its docked tabs.
+    inst._onDockOpen = function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-sheet-dock-tabs]')) pickDashTab('dock');
+    };
+    el.addEventListener('chronicle:sheet-dock-open', inst._onDockOpen);
 
     inst._onAbilityClick = function (e) {
       var t = e.target;
@@ -2439,6 +2531,8 @@
       if (unfin) { e.preventDefault(); goToMissing(unfin); return; }
       var chip = t.closest('[data-cs-change-image]');
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
+      var view = t.closest('[data-cs-portrait-view]');
+      if (view) { e.preventDefault(); openPortrait(view); return; }
       var pick = t.closest('[data-cs-pick]');
       if (pick) { e.preventDefault(); pickOrigin(pick); return; }
       var edOpenBtn = t.closest('[data-cs-ed-open]');
@@ -2515,15 +2609,29 @@
         if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
         return;
       }
-      var dtEl = (t && t.closest) ? t.closest('[data-cs-dtab]') : null;
-      if (dtEl) {
-        var shown = [].filter.call(el.querySelectorAll('[data-cs-dtab]'), function (b) { return b.offsetParent !== null; });
+      // The portrait is an img or span standing in for a button or link, so
+      // Enter (and Space, for the button) has to press it by hand.
+      var port = (t && t.matches && (e.key === 'Enter' || e.key === ' ')) ? t : null;
+      if (port && t.matches('[data-cs-change-image]:not(button)')) { e.preventDefault(); requestImageChange(t); return; }
+      if (port && e.key === 'Enter' && t.matches('[data-cs-portrait-view]')) { e.preventDefault(); openPortrait(t); return; }
+      // The row's arrow keys walk every tab in it, the host's docked ones
+      // too; a docked tab is pressed, so its host opens it.
+      var dtEl = (t && t.closest) ? (t.closest('[data-cs-dtab]') || t.closest('[data-sheet-dock-tabs] > [role="tab"]')) : null;
+      var dtBar = dtEl && dtEl.closest('.sh-dtabs');
+      if (dtBar) {
+        var shown = [].filter.call(dtBar.querySelectorAll('[data-cs-dtab],[data-sheet-dock-tabs] > [role="tab"]'), function (b) { return b.offsetParent !== null; });
         var at = shown.indexOf(dtEl), go = -1;
         if (e.key === 'ArrowRight') go = (at + 1) % shown.length;
         else if (e.key === 'ArrowLeft') go = (at + shown.length - 1) % shown.length;
         else if (e.key === 'Home') go = 0;
         else if (e.key === 'End') go = shown.length - 1;
-        if (go >= 0 && shown[go]) { e.preventDefault(); pickDashTab(shown[go].getAttribute('data-cs-dtab')); shown[go].focus(); return; }
+        if (go >= 0 && shown[go]) {
+          e.preventDefault();
+          var own = shown[go].getAttribute('data-cs-dtab');
+          if (own) pickDashTab(own); else shown[go].click();
+          shown[go].focus();
+          return;
+        }
       }
       var tabEl = (t && t.closest) ? t.closest('[data-ds-tab]') : null;
       if (tabEl) {
@@ -2647,27 +2755,74 @@
   // pair (same "one listener on the mount root" approach as attachInteractions)
   // covering every current and future [data-tip]/.ds-ref in the sheet, so box
   // re-renders never need per-node rewiring.
+  // A trigger marked data-tip-delay waits before showing, so tips on a row of
+  // small boxes don't flicker past as the pointer crosses them.
+  var TIP_DELAY_MS = 450;
+  // Puts any tip away and takes off the page-wide listeners a mount added, so
+  // a redraw or destroy never leaves a tip floating or a listener doubled.
+  function dropTips(inst) {
+    if (inst._tipReset) inst._tipReset();
+    if (typeof document === 'undefined') return;
+    if (inst._onTipScroll) document.removeEventListener('scroll', inst._onTipScroll, { capture: true, passive: true });
+    if (inst._onTipOutside) document.removeEventListener('pointerdown', inst._onTipOutside, true);
+  }
   function attachTooltips(inst, el) {
-    var current = null;
+    dropTips(inst);
+    var current = null, timer = null, tapped = null;
+    function cancel() { if (timer) { clearTimeout(timer); timer = null; } }
     inst._onTipShow = function (e) {
       var t = e.target;
       var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
       if (!trigger || !el.contains(trigger) || trigger === current) return;
       current = trigger;
-      showTipFor(trigger);
+      cancel();
+      if (trigger.hasAttribute('data-tip-delay')) timer = setTimeout(function () { timer = null; if (current === trigger) showTipFor(trigger); }, TIP_DELAY_MS);
+      else showTipFor(trigger);
     };
     inst._onTipHide = function (e) {
       var t = e.target;
       var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
       var related = e.relatedTarget;
       if (trigger && related && trigger.contains(related)) return; // stayed within the same trigger
+      if (trigger && trigger === tapped) return; // a tapped tip stays until the next tap
       current = null;
+      cancel();
       hideTipbox();
     };
+    // A tier box sits inside an ability's fold header. A tap on it shows what
+    // it means instead of opening the fold; a second tap, or one elsewhere,
+    // puts the tip away. It listens in the capture phase because the page's
+    // fold motion opens a fold from its own click listener inside the sheet.
+    inst._onTipTap = function (e) {
+      var t = e.target;
+      var box = (t && t.closest) ? t.closest('[data-cs-tier]') : null;
+      if (box && el.contains(box)) {
+        e.preventDefault();
+        e.stopPropagation();
+        cancel();
+        if (tapped === box) { tapped = null; current = null; hideTipbox(); return; }
+        tapped = box; current = box;
+        showTipFor(box);
+        return;
+      }
+      if (tapped) { tapped = null; current = null; hideTipbox(); }
+    };
+    // The tip floats over the page, so a scroll, or a press anywhere outside
+    // the tapped box (the page header, a drawer), puts it away.
+    inst._tipReset = function () { cancel(); tapped = null; current = null; hideTipbox(); };
+    inst._onTipScroll = function () { if (current || timer) inst._tipReset(); };
+    inst._onTipOutside = function (e) {
+      if (tapped && !(e.target && tapped.contains(e.target))) inst._tipReset();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('scroll', inst._onTipScroll, { capture: true, passive: true });
+      document.addEventListener('pointerdown', inst._onTipOutside, true);
+    }
     el.addEventListener('mouseover', inst._onTipShow);
     el.addEventListener('mouseout', inst._onTipHide);
     el.addEventListener('focusin', inst._onTipShow);
     el.addEventListener('focusout', inst._onTipHide);
+    el.addEventListener('click', inst._onTipTap, true);
   }
 
   // ── entrance motion ────────────────────────────────────────────────
@@ -2978,7 +3133,12 @@
       subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + missMark(data, 'subclass') + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) + missMark(data, 'kit') : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
-    ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
+    ].filter(Boolean);
+    // Each dot rides at the end of the part before it, so a wrapped line never
+    // starts with one.
+    line = line.map(function (part, i) {
+      return i < line.length - 1 ? '<span class="sh-idgrp">' + part + '<span class="sh-idsep" aria-hidden="true">\u00b7</span></span>' : part;
+    }).join('');
     var folded = [bySlot.culture, bySlot.career, bySlot.complication].filter(shows);
     var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : folded.map(function (s, i) { return i ? s.label.toLowerCase() : s.label; }).join(', ').replace(/, ([^,]*)$/, ' and $1'),
       folded.map(function (s) {
@@ -3068,7 +3228,7 @@
     var pips = '';
     for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
     var top = pStamina(cur, max, winded) +
-      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-sub">Heroic resource</span></div>' +
+      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-sub">Heroic resource</span></div>' +
       (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
       '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
@@ -3104,9 +3264,9 @@
 
   // The three tier results as one phrase ("4 · 7 · 9 holy"), from the first
   // damage effect. Empty when the ability has no damage roll the sheet can work out.
-  function heroResult(a, best) {
+  function heroTierVals(a, best) {
     var tiers = a && a.tiers;
-    if (best == null || !Array.isArray(tiers)) return '';
+    if (best == null || !Array.isArray(tiers)) return null;
     for (var i = 0; i < tiers.length; i++) {
       var eff = tiers[i];
       if (!eff || !eff.damage || !eff.damage.tier1) continue;
@@ -3114,13 +3274,29 @@
       for (var n = 1; n <= 3; n++) {
         var td = eff.damage['tier' + n];
         var v = td ? safeEvalArith(String(td.value == null ? '' : td.value).replace(/@chr/gi, String(best))) : null;
-        if (v == null) return '';
+        if (v == null) return null;
         vals.push(v);
       }
-      var types = Array.isArray(eff.damage.tier1.types) ? eff.damage.tier1.types.filter(Boolean) : [];
-      return vals.join(' · ') + (types.length ? ' ' + types.map(String).join('/') : '');
+      var types = Array.isArray(eff.damage.tier1.types) ? eff.damage.tier1.types.filter(Boolean).map(String) : [];
+      return { vals: vals, types: types };
     }
-    return '';
+    return null;
+  }
+  function heroResult(a, best) {
+    var t = heroTierVals(a, best);
+    return t ? t.vals.join(' · ') + (t.types.length ? ' ' + t.types.join('/') : '') : '';
+  }
+
+  // On a phone the three results sit under the name as three steps, so a long
+  // name keeps the whole line. Each box says which roll it answers, after a
+  // pause on hover and at once on a tap.
+  var TIER_TIPS = ['Tier 1: a power roll of 11 or less', 'Tier 2: a power roll of 12 to 16', 'Tier 3: a power roll of 17 or more'];
+  function tierBoxesHtml(t) {
+    if (!t) return '';
+    return '<span class="sx-tb">' + t.vals.map(function (v, i) {
+      return '<span class="sx-tbx num" data-tip="' + escAttr(TIER_TIPS[i]) + '" data-tip-delay data-cs-tier>' +
+        '<span class="sh-sr">' + esc(TIER_TIPS[i]) + ': </span>' + esc(String(v)) + '</span>';
+    }).join('') + (t.types.length ? '<span class="sx-tbt">' + esc(t.types.join(', ')) + '</span>' : '') + '</span>';
   }
 
   // The first sentence of an ability's effect, short enough for one line.
@@ -3146,19 +3322,20 @@
     var g = groupOf(a), kind = actionKind(a);
     var name = a.name || 'Untitled';
     var best = heroBest(a, data);
+    var tv = heroTierVals(a, best);
     var result = heroResult(a, best);
     var dist = distanceLabel(a);
     var eff = abilityEffectText(a);
     var trig = a.trigger ? cleanFoundryText(a.trigger) : '';
     var cost = Number(a.cost) > 0 ? Number(a.cost) : 0;
     var have = num(data, 'heroic_resource_current', 0);
-    var short = cost > have;
-    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + have : '')) + '</span>' : '';
+    var short = cost > 0 && cantPay(a, data);
+    var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + signed(have) : '')) + '</span>' : '';
     var star = g === 'signature' ? '<span class="sx-star" role="img" aria-label="Signature">★</span>' : '';
     var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
     var meta = (result ? [dist, one] : [one]).filter(Boolean).join(' · ');
     var head = '<span class="sx-top"><b class="sx-name">' + star + esc(name) + tag + '</b>' +
-      '<span class="sx-res num">' + esc(result || dist) + '</span></span>' +
+      '<span class="sx-res num' + (tv ? ' sx-res-t' : '') + '">' + esc(result || dist) + '</span></span>' + tierBoxesHtml(tv) +
       (meta ? '<span class="sx-meta">' + esc(meta) + '</span>' : '');
     var tiers = tierLinesHtml(a, best);
     // The full card unfolds in the same line, in place of the short one, so it
@@ -3172,11 +3349,36 @@
     return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
   }
 
-  // Every kit Foundry synced details for, as raw values.
+  // Every kit Foundry synced details for, as raw values. When the kit field
+  // names kits and every synced kit carries another name, the details are the
+  // old kit's (the kit was picked here since the last sync), so none are used:
+  // the old kit's numbers must never sit under the new kit's name.
   function kitDetailList(data) {
     var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    return (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : [])
+    var list = (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : [])
       .filter(function (k) { return k && typeof k === 'object'; });
+    var named = kitFieldNames(data);
+    if (!named.length || !list.length) return list;
+    var lows = named.map(function (n) { return n.toLowerCase(); });
+    var matches = list.some(function (k) {
+      var n = String(k.name || '').trim().toLowerCase();
+      return !n || n === 'kit' || n === 'new kit' || lows.indexOf(n) !== -1;
+    });
+    return matches ? list : [];
+  }
+  // The kits the kit field names; a tactician's two are joined with commas.
+  function kitFieldNames(data) {
+    return String(originVal(data, 'kit') || '').split(',')
+      .map(function (n) { return n.trim(); }).filter(Boolean);
+  }
+  // The kit field names a kit whose numbers this sheet doesn't have yet.
+  function kitNumbersPending(data) {
+    return kitFieldNames(data).length > 0 && !kitDetailList(data).length;
+  }
+  // What a kit with no numbers says: a kit picked since the last sync gets
+  // them from a linked world's next sync; otherwise none were synced.
+  function kitNoNumbers(data) {
+    return kitNumbersPending(data) && foundryLinked(data) ? 'Its numbers arrive with the next Foundry sync.' : 'No kit details synced.';
   }
 
   // The kit bonuses the hero has, as one kit's raw values. A tactician's two
@@ -3245,7 +3447,7 @@
   }
   function freeStrikeLine(data) {
     var p = freeStrikeParts(data);
-    var head = '<span class="sx-top"><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
+    var head = '<span class="sx-top" data-cs-fs><b class="sx-name">' + p.name + '</b><span class="sx-res num">' +
       (p.bonus ? 'kit ' + esc(p.bonus) : '') + '</span></span><span class="sx-meta">' + esc(p.dist) + '</span>';
     return foldHtml('sx-line', head, p.body, false);
   }
@@ -3327,8 +3529,7 @@
     }
     lines.push(['features', 'Features', featuresLine(data)]);
     lines.push(['skills', 'Skills', skillsLine(data)]);
-    var kit = kitFacts(data);
-    lines.push(['kit', 'Kit', kit.name ? esc(kit.name) : (noKitNote(data) ? 'Not used' : 'No kit equipped')]);
+    lines.push(['kit', 'Kit', kitLedgerText(data)]);
     // With the Armory on, the hero's items live in the page's Items tab; this
     // row points there and stays hidden until that tab is on the page.
     if (data.armoryItems) lines.push(['items-go', 'Items', 'Pack and money, in the Items tab']);
@@ -3358,6 +3559,12 @@
       weak: toDamageEntries(f(data, 'weaknesses', '')).map(dmgEntryText).filter(Boolean),
       status: parseStrList(f(data, 'status_immunities', '')).map(humanizeId)
     };
+  }
+
+  // The ledger's Kit row: the kit's name, or why there is none.
+  function kitLedgerText(data) {
+    var kit = kitFacts(data);
+    return kit.name ? esc(kit.name) : (noKitNote(data) ? 'Not used' : 'No kit equipped');
   }
 
   // The kit as the part and its panel both show it: a name, the melee and
@@ -3450,8 +3657,9 @@
     var main = el.querySelector('[data-cs-dmain]');
     if (!main) return null;
     var abs = el.querySelector('[data-cs-dabs]');
+    var tab = main.getAttribute('data-dtab');
     return {
-      tab: main.getAttribute('data-dtab'),
+      tab: tab === 'dock' ? 'abilities' : tab,
       filter: abs ? abs.getAttribute('data-dfilter') : null,
       afford: abs ? abs.hasAttribute('data-dafford') : true,
       open: abs ? [].map.call(abs.querySelectorAll('.sh-dar[aria-expanded="true"] .sh-dan'), function (n) { return n.textContent; }) : []
@@ -3537,10 +3745,10 @@
 
   function dashPortrait(data) {
     var name = data.name || 'Unnamed Hero';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var pic = src
-      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '">'
-      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
+      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, src) + '>'
+      : '<span class="sh-port-ph" data-cs-portrait' + portraitAttrs(data, '') + '>' + fa('shield-halved') + '</span>';
     // Changing the picture is a quiet word under the picture it changes.
     var chip = data.canChangeImage ? '<button type="button" class="sh-dpicchg sh-dq" data-cs-change-image>Change picture</button>' : '';
     return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>' + chip;
@@ -4089,7 +4297,7 @@
     var top = topChar(data);
     var pot = potencyOf(data);
     var out = '<button type="button" class="sh-dbox sh-dres" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">' + esc(hrName) + '</span>' +
-      '<span class="sh-dbig num" data-v="hr">' + num(data, 'heroic_resource_current', 0) + '</span><span class="sh-dsub">Heroic resource</span></button>';
+      '<span class="sh-dbig num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-dsub">Heroic resource</span></button>';
     if (isNum(data, 'surges')) {
       out += '<button type="button" class="sh-dbox sh-dsurge" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Surges</span>' +
         '<span class="sh-dbig num" data-v="surges">' + num(data, 'surges', 0) + '</span>' +
@@ -4179,9 +4387,8 @@
       n = String(n || '').trim();
       if (n && !out.some(function (x) { return x.toLowerCase() === n.toLowerCase(); })) out.push(n);
     };
-    String(originVal(data, 'kit') || '').split(',').forEach(add);
-    var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : []).forEach(function (k) {
+    kitFieldNames(data).forEach(add);
+    kitDetailList(data).forEach(function (k) {
       var n = k && String(k.name || '').trim();
       if (n && n.toLowerCase() !== 'kit' && n.toLowerCase() !== 'new kit') add(n);
     });
@@ -4198,7 +4405,7 @@
       '<section class="sh-dcard"><h3 class="sh-dh">Languages<small>' + sl.langs.length + '</small></h3>' + dashLanguages(data) + '</section>' +
       '<section class="sh-dcard"><h3 class="sh-dh">Kit' + (kit ? '<small>' + esc(kit) + '</small>' : unused ? '<small>Not used</small>' : '') + '</h3>' +
         (kit ? '<div class="sh-dkitw">' + kitWords(data, 'sh-dplain') + '</div>' : '') +
-        (unused ? noKitHtml(unused, 'sh-dplain') : kit || kitRows ? kitRows || pEmpty('No kit details synced.') : pEmpty('No kit equipped.')) +
+        (unused ? noKitHtml(unused, 'sh-dplain') : kit || kitRows ? kitRows || pEmpty(kitNoNumbers(data)) : pEmpty('No kit equipped.')) +
         (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '') + '</section>';
   }
 
@@ -4216,20 +4423,29 @@
     return list;
   }
 
-  function dashEquipment(data) {
+  // The Equipment tab's kit part, on its own so a kit pick redraws it
+  // without touching the docked Items piece beside it.
+  function dashEquipKit(data) {
     var kit = dashKitName(data);
     var rows = dashKitRows(data);
     var unused = noKitNote(data);
-    var out = '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : unused ? 'Kit: not used' : 'Kit') + '</h3>' +
+    return '<h3 class="sh-dsec">' + (kit ? 'Kit: ' + esc(kit) : unused ? 'Kit: not used' : 'Kit') + '</h3>' +
       (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
-      (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
+      (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty(kitNoNumbers(data))) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
-    out += '<h3 class="sh-dsec">Items</h3>';
+  }
+
+  function dashEquipment(data) {
+    var out = '<div data-cs-dkit>' + dashEquipKit(data) + '</div>';
+    // With the Armory on, a host that docks takes its Items piece into the
+    // slot (the hero's pack and money); one that doesn't leaves the pointer
+    // to the page's Items tab, which the CSS hides behind a filled slot.
     if (data.armoryItems) {
-      out += '<p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
-        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p>';
+      out += '<div class="sh-dslot" data-sheet-dock-piece="items"><h3 class="sh-dsec">Pack and money</h3></div>' +
+        '<div class="sh-dslotfb"><h3 class="sh-dsec">Items</h3><p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
+        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p></div>';
     } else {
-      out += '<div class="sh-dlist">' + pItemsPanel(data) + '</div>';
+      out += '<h3 class="sh-dsec">Items</h3><div class="sh-dlist">' + pItemsPanel(data) + '</div>';
     }
     return out;
   }
@@ -4256,7 +4472,7 @@
       return '<button type="button" role="tab" class="sh-dtab' + (t.narrow ? ' sh-dnarrow' : '') + '" id="cs-dt-' + uid + '-' + t.id + '"' +
         ' aria-controls="cs-dp-' + uid + '-' + t.id + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-cs-dtab="' + t.id + '">' +
         t.label + (t.n != null ? '<small class="num">' + t.n + '</small>' : '') + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '<span class="sh-dhost" data-sheet-dock-tabs></span></div>';
   }
 
   function dashPanes(data, uid) {
@@ -4274,14 +4490,14 @@
     var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
     var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
     return '<div class="sh-dpin sh-dq" aria-hidden="true"><div class="sh-dpin-in">' +
       (src ? '<span class="sh-dpin-port"><img src="' + escAttr(src) + '" alt=""></span>' : '') +
       '<span class="sh-dpin-who">' + esc(data.name || 'Unnamed Hero') + '</span>' +
       '<span class="sh-dpin-st"><span class="sh-dpin-v num"><span class="sh-dk">Stamina</span>' + cur + ' <small>/ ' + max + '</small></span>' +
         (max > 0 ? '<span class="sh-bar"><span style="width:' + pct + '%"></span>' + (winded > 0 ? '<i class="w" style="left:' + Math.min(100, (winded / max) * 100) + '%"></i>' : '') + '</span>' : '') + '</span>' +
-      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + num(data, 'heroic_resource_current', 0) + '</span>' +
+      '<span class="sh-dpin-v num"><span class="sh-dk">' + esc(hrName) + '</span>' + signed(num(data, 'heroic_resource_current', 0)) + '</span>' +
       (isNum(data, 'surges') ? '<span class="sh-dpin-v num"><span class="sh-dk">Surges</span>' + num(data, 'surges', 0) + '</span>' : '') +
       '<span class="sh-dpin-v num sh-dpin-rec"><span class="sh-dk">Recoveries</span>' + rec + (recMax ? ' <small>/ ' + recMax + '</small>' : '') + '</span>' +
       '</div></div>';
@@ -4307,9 +4523,58 @@
       String(a.name || '').trim().toLowerCase() === 'free strike';
   }
   function heroHave(data) { return num(data, 'heroic_resource_current', 0); }
+  // A Talent can spend clarity they don't have, down to minus (1 + Reason)
+  // (the Heroes book's Talent; book/chapters/classes.yaml says the same). An
+  // ability that forbids negative clarity keeps the plain limit.
+  function isClarity(data) {
+    return String(f(data, 'heroic_resource_name', '') || '').trim().toLowerCase() === 'clarity' ||
+      String(f(data, 'class', '') || '').trim().toLowerCase() === 'talent';
+  }
+  function clarityFloor(data) { return Math.max(0, 1 + num(data, 'reason', 0)); }
+  var NO_NEGATIVE = /can(?:'|\u2019|no)?t\s+use\s+this\s+ability\s+if\s+doing\s+so\s+would\s+(?:cause\s+you\s+to\s+)?have\s+negative\s+clarity/i;
+  // Every text the ability carries, as plain words: Foundry's is HTML, with
+  // tags, entities and line breaks anywhere in a sentence.
+  function abilityWords(v, out, depth) {
+    if (depth > 4 || v == null) return out;
+    if (typeof v === 'string') out.push(cleanFoundryText(v));
+    else if (typeof v === 'object') Object.keys(v).forEach(function (k) { abilityWords(v[k], out, depth + 1); });
+    return out;
+  }
+  function forbidsNegative(a) { return NO_NEGATIVE.test(abilityWords(a, [], 0).join(' ')); }
+  // The most this ability's cost may be right now.
+  function heroReach(a, data) {
+    var have = heroHave(data);
+    if (!isClarity(data) || (a && forbidsNegative(a))) return have;
+    return have + clarityFloor(data);
+  }
   // Only a cost can be out of reach: a free ability is always there, even
   // when the resource has gone below zero.
-  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroHave(data); }
+  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroReach(a, data); }
+  // What the hero can pay with, as the switch and the fold line say it:
+  // "Only what 3 Wrath pays for", or for a Talent who may go below zero
+  // "Only what 2 Clarity pays for, down to −3". Every viewer reads it, so it
+  // never says "you".
+  function payWords(data, lead) {
+    var have = signed(heroHave(data)) + ' ' + heroResName(data);
+    var floor = isClarity(data) ? clarityFloor(data) : 0;
+    var below = floor ? ', down to \u2212' + floor : '';
+    if (lead === 'only') return 'Only what ' + have + ' pays for' + below;
+    return 'cost over ' + have + (floor ? ', even down to \u2212' + floor : '');
+  }
+  // A count as the sheet prints it: a true minus sign below zero.
+  function signed(n) { return n < 0 ? '\u2212' + (-n) : String(n); }
+  // An opened ability's cost line, by the same reach as the list: a Talent
+  // who may go below zero is told where the cost leaves them, and is short
+  // only past the floor.
+  function payLine(a, data) {
+    var c = abCost(a), have = heroHave(data), reach = heroReach(a, data), short = c > reach;
+    var head = 'Costs ' + esc(costLabel(a, data)) + '. You have ' + signed(have);
+    var tail;
+    if (reach > have) tail = short ? ' and can go down to \u2212' + (reach - have) + ', so ' + (c - reach) + ' short.' :
+      (c > have ? ', so you\u2019d go to \u2212' + (c - have) + '.' : '.');
+    else tail = short ? ', so ' + (c - have) + ' short.' : '.';
+    return '<p class="sh-dpay' + (short ? ' is-short' : '') + '">' + head + tail + '</p>';
+  }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
   // The first sentence of a text, whole, for the line under a row's name.
@@ -4324,7 +4589,7 @@
     var c = abCost(a), have = heroHave(data);
     if (!c) return '<span class="sh-dac"></span>';
     return '<span class="sh-dac num">' + esc(costLabel(a, data)) +
-      (c > have ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
+      (cantPay(a, data) ? '<span class="sh-sr">, you have ' + signed(have) + '</span>' : '') + '</span>';
   }
 
   // The hero's tier results. A main action with no power roll says so, so an
@@ -4402,9 +4667,7 @@
         '<div class="sh-dodds" aria-hidden="true">' + odds.map(function (o) { return '<i style="flex:' + o + '"></i>'; }).join('') + '</div>' +
         '<dl class="sh-dtier">' + rows + '</dl>';
     }
-    var c = abCost(a), have = heroHave(data);
-    if (c) you += '<p class="sh-dpay' + (c > have ? ' is-short' : '') + '">Costs ' + esc(costLabel(a, data)) + '. You have ' + have +
-      (c > have ? ', so ' + (c - have) + ' short.' : '.') + '</p>';
+    if (abCost(a)) you += payLine(a, data);
     else if (groupOf(a) === 'signature') you += '<p class="sh-dpay">A signature ability. It costs nothing.</p>';
     var who = esc(firstName(data.name));
     return '<div class="sh-darules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
@@ -4422,7 +4685,6 @@
   // A group of rows under its own column headings. What the hero cannot pay
   // for folds into one line that still names each and its cost.
   function dashAbGroup(kind, list, data, all, uid) {
-    var have = heroHave(data);
     var rolled = (kind === 'main' || kind === 'free') &&
       (!list.length || list.some(function (a) { return !!heroResult(a, heroBest(a, data)); }));
     var cols = kind === 'free' ? '<span></span><span>Distance</span><span></span>' : '<span>Cost</span><span>Distance</span><span>Target</span>';
@@ -4433,7 +4695,7 @@
     var cut = '';
     if (short.length) {
       cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
-          ' cost over ' + have + ' ' + esc(heroResName(data)) + '</span><span class="sh-dcut-names">' +
+          ' ' + esc(payWords(data)) + '</span><span class="sh-dcut-names">' +
         short.map(function (a, i) {
           return '<span class="sh-dcut-nm">' + esc(a.name || 'Untitled') + ' <b class="num">' + abCost(a) + '</b>' +
             (i < short.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
@@ -4465,7 +4727,6 @@
   // folds away what the current heroic resource cannot pay for. It is only
   // there when something costs more than the hero has.
   function dashAbFilter(groups, common, own, data) {
-    var have = heroHave(data);
     var can = own.filter(function (a) { return !cantPay(a, data); }).length;
     var btn = function (id, label, n, on) {
       return '<button type="button" data-cs-dfilt="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + label +
@@ -4476,7 +4737,7 @@
     if (common.length) out += btn('every', 'Every hero', common.length, false);
     if (can < own.length) {
       out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
-        '<span>Only what ' + have + ' ' + esc(heroResName(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
+        '<span>' + esc(payWords(data, 'only')) + '<small class="num">' + can + ' of ' + own.length + '</small></span>' +
         '<span class="sh-dsw" aria-hidden="true"></span></button>';
     }
     return '<div class="sh-dfilt" role="group" aria-label="Show abilities">' + out + '</div>';
@@ -5056,7 +5317,7 @@
       (k.grid || k.chips.length
         ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') +
           (k.note ? '<p class="sh-sub">' + esc(k.note) + '</p>' : '') + '</div>'
-        : pEmpty('No kit details synced.'));
+        : pEmpty(kitNoNumbers(data)));
   }
 
   function pDamagePanel(data) {
@@ -5331,7 +5592,7 @@
   // identity band shows the bought traits on first paint.
   var EDIT_FILES = {
     traits: ['ancestries.json'],
-    skills: ['skills.json', 'careers.json', 'cultures.json', 'kits.json'],
+    skills: ['skills.json', 'careers.json', 'cultures.json', 'culture-aspects.json', 'kits.json'],
     perks: ['perks.json', 'careers.json', 'cultures.json', 'kits.json']
   };
 
@@ -5424,7 +5685,11 @@
     var rows = [];
     [['Culture', 'culture', 'cultures.json'], ['Career', 'career', 'careers.json'], ['Kit', 'kit', 'kits.json']].forEach(function (o) {
       var name = f(data, o[1], '');
-      var g = grantsFor(findEntry(editRefs[o[2]], name))[kind];
+      var entry = findEntry(editRefs[o[2]], name);
+      // A hero made before cultures were whole entries may hold one aspect
+      // ("Urban environment") as their culture; it grants its own skill.
+      if (!entry && o[1] === 'culture') entry = findEntry(editRefs['culture-aspects.json'], name);
+      var g = grantsFor(entry)[kind];
       if (name && (g.text || g.quick.length)) rows.push({ label: o[0], name: name, text: g.text, quick: g.quick });
     });
     return rows;
@@ -6132,7 +6397,8 @@
       '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
       '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
       '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + dashAbilities(data, uid) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) + '</div></div>' +
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) +
+      '<div class="sh-dhostp sh-dq" data-sheet-dock-panes></div></div></div>' +
       pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
@@ -6544,10 +6810,13 @@
     [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
       ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey'],
+      ['chronicle:sheet-dock-open', '_onDockOpen'],
       ['click', '_onPgClick'], ['input', '_onPgInput'], ['focusout', '_onPgLeave']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    if (inst._onTipTap) el.removeEventListener('click', inst._onTipTap, true);
+    dropTips(inst);
     if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
     if (inst._onPgUp && typeof document !== 'undefined') {
@@ -6563,8 +6832,8 @@
       document.removeEventListener('pointerup', inst._onTfUp, true);
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
-    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
-      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
+    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_tipReset', '_onTipScroll', '_onTipOutside', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
+      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
       '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });
   }
@@ -6608,17 +6877,65 @@
   }
 
   // setDashTab opens one of the dashboard's tabs; null when the sheet has no
-  // such tab (Story is a permission gate).
+  // such tab (Story is a permission gate). 'dock' opens the host's pane area
+  // and leaves none of the sheet's own tabs selected, since the host's tab is.
+  // Opening one of its own tells the host, which then lets go of its tab.
   function setDashTab(el, id) {
     var main = el.querySelector('[data-cs-dmain]');
-    if (!main || !main.querySelector('[data-cs-dtab="' + id + '"]')) return null;
+    var sel = id === 'dock' ? '[data-sheet-dock-panes]' : '[data-cs-dtab="' + id + '"]';
+    if (!main || !main.querySelector(sel)) return null;
     main.setAttribute('data-dtab', id);
     [].forEach.call(main.querySelectorAll('[data-cs-dtab]'), function (b) {
       var on = b.getAttribute('data-cs-dtab') === id;
       b.setAttribute('aria-selected', on ? 'true' : 'false');
       b.setAttribute('tabindex', on ? '0' : '-1');
     });
+    if (id !== 'dock') dockSay(el.querySelector('[data-sheet]') || el, 'chronicle:sheet-tab', { tab: id });
     return main;
+  }
+
+  // ── the host dock ──────────────────────────────────────────────────
+  // While the dashboard's tab row is on screen, the page's own pieces
+  // (Chronicle's Trackers, Notes, Files and the rest) can join it: the row
+  // holds an empty [data-sheet-dock-tabs] for their tabs, the tab area an
+  // empty [data-sheet-dock-panes] for their panes, and Equipment a
+  // [data-sheet-dock-piece="items"] for the hero's pack and money. The root
+  // wears data-sheet-dock="open" and says chronicle:sheet-dock while the
+  // slots are there, and chronicle:sheet-undock, synchronously, just before
+  // they go (a redraw, a phone-width sheet, destroy), so the host can take
+  // its nodes back before they are wiped. The host opens one of its tabs by
+  // saying chronicle:sheet-dock-open from inside the slot. Contract:
+  // Chronicle's docs/system-package-rendering.md.
+  function dockSay(node, name, detail) {
+    if (!node || typeof node.dispatchEvent !== 'function' || typeof CustomEvent !== 'function') return;
+    node.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail || null }));
+  }
+  function syncDock(el, on) {
+    var root = el.querySelector ? el.querySelector('[data-sheet]') : null;
+    on = !!on && !!root && !!root.querySelector('[data-sheet-dock-tabs]') && !!root.querySelector('[data-sheet-dock-panes]');
+    var was = el._csDock || null;
+    if (on && was === root) return;
+    if (!on && !was) return;
+    if (was) {
+      el._csDock = null;
+      was.removeAttribute('data-sheet-dock');
+      // A root already gone from the page says it from the mount instead.
+      dockSay(was.isConnected === false ? el : was, 'chronicle:sheet-undock');
+      var main = el.querySelector('[data-cs-dmain]');
+      if (main && main.getAttribute('data-dtab') === 'dock') setDashTab(el, 'abilities');
+    }
+    if (on) {
+      el._csDock = root;
+      root.setAttribute('data-sheet-dock', 'open');
+      dockSay(root, 'chronicle:sheet-dock');
+    }
+  }
+  // The sheet's content width, as the dashboard's container query reads it.
+  function dashWide(el) {
+    var sheet = el.querySelector('.sh-sheet'), root = el.querySelector('[data-sheet]');
+    if (!sheet || !root || !quietLook(root) || typeof getComputedStyle !== 'function') return false;
+    var cs = getComputedStyle(sheet);
+    return sheet.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) >= DASH_AT;
   }
 
   // The widths dashCss's container queries switch at, read from the same box.
@@ -6648,7 +6965,10 @@
     var lastW = 0;
     // A style switch changes the look without a redraw or a resize.
     if (typeof MutationObserver === 'function') {
-      inst._dashMo = new MutationObserver(function () { syncPageHooks(root, quietLook(root) && lastW >= DASH_AT); });
+      inst._dashMo = new MutationObserver(function () {
+        syncPageHooks(root, quietLook(root) && lastW >= DASH_AT);
+        syncDock(el, quietLook(root) && lastW >= DASH_AT);
+      });
       inst._dashMo.observe(root, { attributes: true, attributeFilter: ['data-sheet-style'] });
     }
     syncPageHooks(root, false);
@@ -6656,6 +6976,7 @@
       var w = lastW = entries[entries.length - 1].contentRect.width;
       var dash = quietLook(root) && w >= DASH_AT;
       syncPageHooks(root, dash);
+      syncDock(el, dash);
       if (dash) { body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', tab); }
       else { body.removeAttribute('role'); body.removeAttribute('aria-labelledby'); }
       var main = el.querySelector('[data-cs-dmain]');
@@ -6701,6 +7022,7 @@
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
     var keptView = dashViewToKeep(el);
+    syncDock(el, false);
     el.innerHTML = paperSheetHtml(data);
     // The settle plays from its class; taken off before the first style
     // pass, it never starts.
@@ -6720,11 +7042,15 @@
     attachDashPin(inst, el);
     attachStatCards(inst, el, data);
     showItemsRow(el);
+    // Docked again in the same task as the redraw, so the page never paints
+    // its pieces back under the sheet in between.
+    syncDock(el, dashWide(el));
   }
 
 
   function mountSheet(inst, el, data, still) {
     inst._paper = false;
+    syncDock(el, false);
     releaseHeight(el);
     if (paperAvailable()) { mountPaper(inst, el, data, still); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
@@ -6807,6 +7133,7 @@
       '.cs-port { position:relative; flex:none; width:96px; }',
       '.cs-portrait { display:block; width:96px; height:96px; border-radius:12px; object-fit:cover; box-sizing:border-box; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
       '.cs-portrait-placeholder { display:flex; align-items:center; justify-content:center; color:var(--color-text-muted,#9ca3af); font-size:32px; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '.cs-port-chip { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:9999px; border:1px solid var(--color-border,#e5e7eb); background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); font:inherit; font-size:11.5px; font-weight:600; white-space:nowrap; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.12); }',
       '.cs-port-chip:hover, .cs-port-chip:focus-visible { border-color:var(--color-accent,#a855f7); color:var(--color-accent,#a855f7); outline:none; }',
       '.cs-id-main { flex:1; min-width:0; }',
@@ -7192,7 +7519,9 @@
       'Q .sh-id { padding:0 0 18px;border-bottom:1px solid var(--paper-edge); }',
       'Q .sh-idwho { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;font:700 calc(24px * var(--ts))/1.2 var(--paper-font);letter-spacing:-.01em;color:var(--paper-ink);overflow-wrap:anywhere; }',
       'Q .sh-idlv { font-weight:500;color:var(--paper-ink-soft); }',
-      'Q .sh-idsub { margin-left:14px;padding-left:14px;border-left:1px solid var(--paper-edge);font-weight:500;color:var(--paper-ink-soft); }',
+      // The rule between parts trails the part before it, so a wrapped line never starts with one.
+      'Q .sh-idsub { font-weight:500;color:var(--paper-ink-soft); }',
+      'Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub) { margin-right:14px;padding-right:14px;border-right:1px solid var(--paper-edge); }',
       'Q .sh-idset { display:flex;flex-wrap:wrap;gap:8px 40px;margin:12px 0 0; }',
       'Q .sh-idset dt { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       'Q .sh-idset dd { margin:1px 0 0;font:600 calc(14.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
@@ -7278,8 +7607,9 @@
       '  Q .sh-dname { margin:0;font:700 calc(clamp(26px,3.4cqi,38px) * var(--ts))/1.1 var(--paper-head-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
       '  Q .sh-idwho { margin:4px 0 0;font:600 calc(16px * var(--ts))/1.35 var(--paper-ui-font);letter-spacing:0;color:var(--paper-ink); }',
       '  Q .sh-idlv { font-weight:600;color:var(--paper-ink); }',
-      '  Q .sh-idsub { margin-left:0;padding-left:0;border-left:0;font-weight:400;color:var(--paper-ink-soft); }',
-      '  Q .sh-idsub::before { content:"\\00b7";margin:0 8px;color:var(--paper-mute); }',
+      '  Q .sh-idsub { font-weight:400;color:var(--paper-ink-soft); }',
+      '  Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub) { margin-right:0;padding-right:0;border-right:0; }',
+      '  Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub)::after { content:"\\00b7";margin:0 8px;font-weight:400;color:var(--paper-mute); }',
       '  Q :is(.sh-idset,.sh-idset-todo) { display:inline;margin:0; }',
       '  Q .sh-idset { margin-top:4px; }',
       '  Q :is(.sh-idset,.sh-idset-todo) > div { display:inline-flex;align-items:baseline;gap:8px;margin:8px 8px 0 0;vertical-align:top;padding:4px 10px;border:' + edge + ';border-radius:var(--shape-r-tag,4px);background:var(--paper); }',
@@ -7315,7 +7645,7 @@
       '  Q button.sh-dbox { cursor:pointer;transition:box-shadow var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out); }',
       '  Q button.sh-dbox:hover,Q button.sh-dbox[aria-expanded="true"] { box-shadow:var(--elev-hover,none);border-color:color-mix(in srgb,var(--paper-accent) 55%,var(--paper-edge)); }',
       '  Q button.sh-dbox:active { box-shadow:inset 0 1px 3px rgb(0 0 0 / .18); }',
-      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab,[data-sheet-dock-tabs] > [role="tab"]):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       // A number box opens its small card, which hangs under it over the row
       // below. The five that roll carry a quiet die.
       '  Q .sh-dboxes { position:relative; }',
@@ -7418,6 +7748,20 @@
       '  Q .sh-dtab[aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '  Q .sh-dtab small { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
       '  Q .sh-dtab.sh-dnarrow { display:inline-flex; }',
+      // The host's docked tabs wear the sheet's tab look, after a thin divider.
+      '  Q .sh-dhost { display:contents; }',
+      // Tighter with the host's tabs in, so the joined row fits one line at the sheet's usual width.
+      '  Q .sh-dtabs:has(> .sh-dhost:not(:empty)) { column-gap:22px; }',
+      '  Q .sh-dhost:not(:empty)::before { content:"";align-self:center;width:1px;height:18px;background:var(--paper-edge); }',
+      '  Q .sh-dhost > [role="tab"] { display:inline-flex;align-items:baseline;min-height:44px;margin:0 0 -1px;padding:12px 0 10px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;cursor:pointer;font:600 calc(12px * var(--ts)) var(--paper-ui-font);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:var(--paper-mute);transition:color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dhost > [role="tab"]:hover { color:var(--paper-ink); }',
+      '  Q .sh-dhost > [role="tab"][aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '  Q .sh-dhost > [role="tab"][hidden] { display:none; }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span) { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span):empty { display:none; }',
+      '  Q .sh-dmain:not([data-dtab="dock"]) > [data-sheet-dock-panes] { display:none; }',
+      '  Q .sh-dmain > [data-sheet-dock-panes] { padding-top:8px;scroll-margin-top:110px; }',
+      '  Q [data-sheet-dock-piece]:not([data-docked]),Q [data-sheet-dock-piece][data-docked] + .sh-dslotfb { display:none; }',
       '  Q .sh-dmain > .sh-body { display:block;margin-top:12px;scroll-margin-top:110px; }',
       '  Q .sh-dmain > .sh-body > .sh-col { display:block; }',
       '  Q .sh-dmain:not([data-dtab="abilities"]) > .sh-body { display:none; }',
@@ -7425,7 +7769,7 @@
       '  Q .sh-dmain:is([data-dtab="skills"]) > .sh-dpane[data-dpane="skills"],Q .sh-dmain[data-dtab="features"] > .sh-dpane[data-dpane="features"],' +
         'Q .sh-dmain[data-dtab="equipment"] > .sh-dpane[data-dpane="equipment"],Q .sh-dmain[data-dtab="story"] > .sh-dpane[data-dpane="story"] { display:block; }',
       '  Q .sh-dsec { margin:24px 0 0;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
-      '  Q .sh-dpane > .sh-dsec:first-child { margin-top:12px; }',
+      '  Q .sh-dpane > .sh-dsec:first-child,Q .sh-dpane > [data-cs-dkit]:first-child > .sh-dsec:first-child { margin-top:12px; }',
       '  Q .sh-dpara { margin:12px 8px 0;max-width:66ch;font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink-soft); }',
       '  Q .sh-dpane .sh-dmore { margin:10px 8px 0; }',
       // Abilities: a filter row, then one grid per action with its own columns, one line per ability.
@@ -7541,9 +7885,35 @@
       '  Q .sh-dmain[data-dtab="skills"] > .sh-dpane[data-dpane="skills"] { display:none; }',
       '}',
       '@keyframes sh-dunfold { from { opacity:0;transform:translateY(-4px); } }',
-      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dhost > [role="tab"],.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
       'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dacard { animation:none !important; }',
       '@media (prefers-reduced-motion:reduce) { Q :is(.sh-dar,.sh-dachev,.sh-dsw),Q .sh-dsw::after { transition:none !important; } Q .sh-dacard { animation:none !important; } }'
+    ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
+  }
+
+  // The quiet look's heading ladder: a group or box heading sits a step up
+  // the standard's type scale in the campaign's heading face (20 for an
+  // ability group, 18 for a box), with room above it, and the rows under it
+  // step down to reading weight, so size and weight part a heading from its
+  // first row even where colour cannot. The other styles already set their
+  // headings apart in small capitals. Last in the sheet's styles, so it
+  // wins over the dashboard's own sizes.
+  function headingCss() {
+    var Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+    return [
+      'Q .sh-dag { margin-top:32px; }',
+      'Q .sh-dagh { padding-bottom:8px; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 { font-size:calc(20px * var(--ts));font-weight:600;line-height:1.2; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 small { font-size:calc(13px * var(--ts)); }',
+      'Q .sh-devery { margin-top:32px; }',
+      'Q .sh-dan { font-size:calc(14px * var(--ts));font-weight:500; }',
+      'Q .sh-dh { margin-bottom:10px;padding-bottom:10px;font-size:calc(18px * var(--ts)); }',
+      'Q :is(.sh-drows li,.sh-dplain,.sh-dkit dd) { color:var(--paper-ink-soft); }',
+      'Q .sh-dkit dd { font-weight:600; }',
+      // On a phone the group label is a heading, not a field label.
+      'Q .sh-fq .sx-h .paper-kind { font:600 calc(18px * var(--ts))/1.2 var(--font-heading, var(--paper-ui-font));letter-spacing:0;text-transform:none;color:var(--paper-ink); }',
+      'Q .sh-fq .sx-grp + .sx-grp { margin-top:28px; }',
+      'Q .sh-fq .sx-name { font-weight:600;font-size:calc(14px * var(--ts)); }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
   }
 
@@ -7712,6 +8082,7 @@
       '[data-sheet] .sh-name h2 { margin:2px 0 0;font:700 calc(32px * var(--ts))/1.05 var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-seal { display:inline-flex;align-items:center;gap:5px;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:3px;padding:0 6px;font:600 calc(10px * var(--ts))/17px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;background:color-mix(in srgb,var(--paper-accent) 7%,transparent);white-space:nowrap; }',
       '[data-sheet] .sh-id { display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:4px 0; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '[data-sheet] .sh-port { position:relative;width:86px;height:86px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--paper-edge); }',
       '[data-sheet] .sh-port img { display:block;width:100%;height:100%; }',
       '[data-sheet] .sh-port button { position:absolute;left:50%;bottom:5px;transform:translateX(-50%);border:1px solid var(--paper-edge);background:var(--paper-cut);color:var(--paper-ink);border-radius:999px;padding:1px 8px;font:600 calc(10.5px * var(--ts)) var(--paper-ui-font);white-space:nowrap;display:inline-flex;gap:4px;align-items:center; }',
@@ -7764,7 +8135,8 @@
       '[data-sheet] .sh-sec { display:flex;flex-direction:column;gap:6px;min-width:0; }',
       '[data-sheet] .sh-kit-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-kit { display:grid;grid-template-columns:1fr repeat(3,28px);gap:2px 6px;font:500 calc(12.5px * var(--ts)) var(--paper-font);border-top:1px dashed var(--paper-edge);border-bottom:1px dashed var(--paper-edge);padding:4px 0;text-align:center; }',
-      '[data-sheet] .sh-kit span:first-child,[data-sheet] .sh-kit span:nth-child(5) { text-align:left; }',
+      // Every row's label (the first of each four cells) sits in the label column, not only the first row's.
+      '[data-sheet] .sh-kit span:nth-child(4n+1) { text-align:left; }',
       '[data-sheet] .sh-kit .sh-h { font:600 calc(9.5px * var(--ts)) var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-line { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center; }',
       '[data-sheet] .sh-line b { font:700 calc(13.5px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
@@ -7886,7 +8258,7 @@
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed { font-size:calc(20px * var(--ts));font-weight:500; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed small { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit { font-size:calc(19px * var(--ts));font-weight:500; }',
-      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(4n+5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit-name { font-size:calc(25px * var(--ts));font-weight:700; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd { font-size:calc(18px * var(--ts));font-weight:500;line-height:22px;border-color:var(--pc-lead);border-radius:20px 14px 18px 12px / 14px 18px 12px 20px;background:transparent;color:var(--pc-lead); }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd small { font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);text-shadow:none; }',
@@ -8143,6 +8515,14 @@
       '[data-sheet] .sh-id { display:block;padding:0; }',
       '[data-sheet] .sh-idline { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;min-width:0;font:700 calc(15px * var(--ts))/1.45 var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idval { min-width:0; }',
+      // A button can't flow inline, so one that wraps would take the full width
+      // and push its dot to a line of its own. The group is a row capped at the
+      // line's width: a part keeps its own width and gives way only when part
+      // and dot together don't fit, and the dot never shrinks.
+      '[data-sheet] .sh-idgrp { display:flex;align-items:baseline;min-width:0;max-width:100%; }',
+      '[data-sheet] .sh-idgrp > :not(.sh-idsep) { flex:0 1 auto;min-width:0; }',
+      '[data-sheet] .sh-idgrp > .sh-idsep { flex:none; }',
+      '[data-sheet] .sh-idgrp button { text-align:left; }',
       '[data-sheet] .sh-idsep { margin:0 .45em;color:var(--paper-mute); }',
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
@@ -8174,6 +8554,17 @@
       '[data-sheet] .sx-star { margin-right:4px;color:var(--paper-accent); }',
       '[data-sheet] .sx-cost { margin-left:8px;border:1px solid var(--paper-edge);border-radius:999px;padding:0 7px;color:var(--paper-accent);font:700 calc(10.5px * var(--ts))/16px var(--paper-ui-font);white-space:nowrap; }',
       '[data-sheet] .sx-no .sx-name,[data-sheet] .sx-no .sx-res { color:var(--paper-mute); }',
+      // On a phone the results drop under the name as three tier boxes.
+      '[data-sheet] .sx-tb { display:none; }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet] .sx-res-t { display:none; }',
+      '  [data-sheet] .sx-tb { grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:3px 0 1px; }',
+      '  [data-sheet] .sx-tbx { min-width:28px;box-sizing:border-box;padding:2px 7px;border:1px solid var(--paper-edge);border-radius:5px;background:var(--paper);text-align:center;font:700 calc(12.5px * var(--ts))/18px var(--paper-num-font);color:var(--paper-ink);font-variant-numeric:tabular-nums; }',
+      '  [data-sheet] .sx-tbx:nth-child(2) { border-color:color-mix(in srgb,var(--paper-accent) 35%,var(--paper-edge)); }',
+      '  [data-sheet] .sx-tbx:nth-child(3) { border-color:var(--paper-accent);color:var(--paper-accent); }',
+      '  [data-sheet] .sx-tbt { margin-left:4px;font:500 calc(11.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '  [data-sheet] .sx-no .sx-tbx { color:var(--paper-mute);border-color:var(--paper-edge); }',
+      '}',
       '[data-sheet] .sx-no .sx-cost { color:var(--paper-mute);border-style:dashed; }',
       '[data-sheet] .sx-tiers { padding:0 2px 4px; }',
       '[data-sheet] .sx-eff { margin:2px 2px 8px;font-size:calc(13px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
@@ -8201,7 +8592,7 @@
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
       '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
-    ].concat(quietLookCss(), dashCss()).join('\n');
+    ].concat(quietLookCss(), dashCss(), headingCss()).join('\n');
     var style = document.createElement('style');
     style.id = 'ds-character-sheet-paper-styles';
     style.textContent = css;
@@ -8358,6 +8749,7 @@
           // Reading the wrong key here is what rendered every stat as 0.
           fields: (entity && (entity.fields_data || entity.custom_fields)) || {},
           name: (entity && entity.name) || 'Unnamed Hero',
+          imagePath: (entity && entity.image_path) || '',
           campaignId: campaignId,
           entityId: entityId,
           children: Array.isArray(children) ? children : [],
@@ -8390,9 +8782,11 @@
         var editing = data.canEditIdentity ? ensureEditRefs(campaignId, EDIT_FILES.traits) : Promise.resolve();
         var origins = ensureEditRefs(campaignId, Object.keys(ORIGIN_FILES).map(function (k) { return ORIGIN_FILES[k]; }));
         var rules = (data.isOwner || data.isGm) ? fetchChoiceRules(campaignId, entityId, refresh) : Promise.resolve({ breaks: [], waiting: [] });
-        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins]).then(function (got) {
+        var carried = (!data.armoryItems && !data.children.length) ? fetchCarried(campaignId, entityId) : Promise.resolve(null);
+        Promise.all([loadRef, loadSkillDefs(campaignId), layered, loadPerkDefs(campaignId), editing, rules, loadAbilityDefs(campaignId), origins, carried]).then(function (got) {
           if (gone()) return;
           loaded();
+          if (got[8] && got[8].length) data.children = got[8];
           el._csSeen = seenKey(got[2].lv, got[5], seeded ? null : entity);
           data.choiceBreaks = got[5].breaks;
           data.choiceWaiting = got[5].waiting;
@@ -8441,6 +8835,7 @@
 
     destroy: function (el) {
       keepDashView(el);
+      syncDock(el, false);
       el._csLive = null;
       el._csLoading = null;
       clearTimeout(el._csWait);
@@ -8478,7 +8873,7 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, portraitSrc: portraitSrc, headingCss: headingCss, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel, kitObject: kitObject,
@@ -8499,7 +8894,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere,
+      wroteHere: wroteHere, fetchCarried: fetchCarried, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment, cantPay: cantPay,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };

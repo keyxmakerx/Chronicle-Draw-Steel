@@ -505,12 +505,12 @@ because nothing was watching for it.
 ## The Beastheart and the Summoner
 
 *The Beastheart for Draw Steel* and *The Summoner* are separate MCDM books, not
-chapters of the Heroes book. MCDM's Creator License page (edited June 9, 2026)
-names both in the note at its top, next to the Heroes and Monsters books and the
-two backer packets; it does not name *Encounters*, so nothing from that book is
-here. That reading was made through a tool that summarises pages, so the wording
-is not quoted in `LICENSE` until the maintainer has read the page
-(keyxmakerx/Chronicle-Draw-Steel#179). Until then this content is not released.
+chapters of the Heroes book. MCDM's Creator License names both in the note at
+its top, next to the Heroes and Monsters books and the two backer packets, so
+their rules text is reproduced here under the same licence and notice as the
+rest; `LICENSE` quotes the note's opening and the licence's FAQ line on what
+it covers, and the maintainer has read the note. The licence
+does not name *Encounters*, so nothing from that book is here.
 
 | File | Content | Source |
 |------|---------|--------|
