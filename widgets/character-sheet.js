@@ -28,10 +28,11 @@
  *
  * Foundry is the source of truth when a world is linked. The write paths are
  * the origin picker (ancestry / culture / career / complication / kit, and
- * class when no Foundry world is linked), delegated to Chronicle.pickChoice, and
+ * class when no Foundry world is linked), delegated to Chronicle.pickChoice,
  * the Director's Changes drawer, which puts transformation layers on and
- * takes them off through Chronicle's layer routes; neither writes the
- * Foundry-synced fields themselves.
+ * takes them off through Chronicle's layer routes, and the Progression
+ * panel, where the hero's owner and the Director change Victories, XP,
+ * Renown and Wealth as whole numbers; Foundry takes those on its next sync.
  *
  * LAYOUT: cross-system slot points (character_skills / character_inventory /
  * character_purchase_history) are appended after the surface, inert + hidden
@@ -3456,8 +3457,7 @@
   }
   function pProgPart(data) {
     var cells = '<div><span class="sh-k">Level</span><b>' + num(data, 'level', 1) + '</b></div>' + PROGRESS_KEYS.map(function (p) {
-      var attr = (p[1] === 'victories' || p[1] === 'xp') ? ' data-pv="' + p[1] + '"' : '';
-      return '<div><span class="sh-k">' + p[0] + '</span><b' + attr + '>' + progValue(data, p[1]) + '</b></div>';
+      return '<div><span class="sh-k">' + p[0] + '</span><b data-pv="' + p[1] + '">' + progValue(data, p[1]) + '</b></div>';
     }).join('');
     return '<section class="sh-sec paper-pull sh-o5 sh-fq" data-sheet-section="progression" aria-label="Progression">' +
       pullBtn('progression', '<span class="paper-kind">Progression</span>') + '<div class="sh-dl">' + cells + '</div></section>';
@@ -3599,12 +3599,12 @@
   }
 
   function dashProg(data) {
-    var cells = [['Level', String(num(data, 'level', 1))]].concat(PROGRESS_KEYS.map(function (p) { return [p[0], progValue(data, p[1])]; }));
+    var cells = [['Level', String(num(data, 'level', 1)), '']].concat(PROGRESS_KEYS.map(function (p) { return [p[0], progValue(data, p[1]), p[1]]; }));
     var sync = foundryLinked(data)
       ? '<p class="sh-dsync">' + fa('arrows-rotate') + ' Synced with Foundry. Class and level are set there.</p>' : '';
     return '<div class="sh-dprog sh-dq"><button type="button" class="sh-dprog-b" data-sheet-open="progression" aria-expanded="false">' +
       '<span class="sh-sr">Progression: </span><dl>' + cells.map(function (c) {
-        return '<div><dt>' + c[0] + '</dt><dd class="num">' + c[1] + '</dd></div>';
+        return '<div><dt>' + c[0] + '</dt><dd class="num"' + (c[2] ? ' data-pv="' + c[2] + '"' : '') + '>' + c[1] + '</dd></div>';
       }).join('') + '</dl></button>' + sync + '</div>';
   }
 
@@ -5124,11 +5124,180 @@
       pRuleGroup('How it works', ['damage-immunity', 'damage-weakness']) + pEmpty('Read only. Set in Foundry.');
   }
 
-  function pProgPanel(data) {
-    var row = function (label, html) { return '<div class="lf-money"><span>' + label + ' <b class="num">' + html + '</b></span></div>'; };
-    return '<div class="lf-grp"><span class="sh-k">Now</span>' + row('Level', String(num(data, 'level', 1))) +
-      PROGRESS_KEYS.map(function (p) { return row(p[0], progValue(data, p[1])); }).join('') +
-      '</div>' + pEmpty('Read only. Set in Foundry.');
+  // ── Progression: the game's moments ───────────────────────────────────────
+  // The hero's player and the Director change Victories, XP, Renown and
+  // Wealth here: one press adds a victory, one press banks them at a respite,
+  // and any number can be corrected by typing. Level stays Foundry's, since a
+  // level-up walks through new choices there. Chronicle takes these four from
+  // the hero's owner only as whole numbers from 0, so nothing else is sent.
+  var PROG_LABEL = { victories: 'Victories', xp: 'XP', renown: 'Renown', wealth: 'Wealth' };
+  var PROG_MAX = 1e9;
+
+  function progState() { return { editing: null, draft: '', bad: null, row: {}, pend: {}, seq: {}, err: {}, bank: 'idle', bankErr: '', banked: 0, tally: null, bump: {}, fly: {}, dirty: {} }; }
+
+  function progCanEdit(data) { return !!(data && (data.isOwner || data.isGm) && data.campaignId && data.entityId); }
+
+  // A stored value as a whole number from 0, or null when unset or unreadable.
+  function progNum(data, key) {
+    var v = scalar(f(data, key, null));
+    if (v == null || v === '') return null;
+    var n = Number(v);
+    return isFinite(n) && n >= 0 && n === Math.floor(n) ? n : null;
+  }
+
+  // What the panel shows: a value on its way to Chronicle, else the saved one.
+  function progShown(data, st, key) {
+    if (st && st.tally && Object.prototype.hasOwnProperty.call(st.tally.show, key)) return st.tally.show[key];
+    if (st && st.pend && Object.prototype.hasOwnProperty.call(st.pend, key)) return st.pend[key];
+    return progNum(data, key);
+  }
+
+  // A typed value is taken only as digits making a whole number from 0, so a
+  // sign, a fraction or a word is refused before anything is sent.
+  function progTyped(text) {
+    var t = String(text == null ? '' : text).trim();
+    if (!/^\d+$/.test(t)) return null;
+    var n = Number(t);
+    return n <= PROG_MAX ? n : null;
+  }
+
+  // The respite written out before the press: Victories go to 0 and XP grows
+  // by them.
+  function progRespite(data, st) {
+    var v = progShown(data, st, 'victories') || 0, x = progShown(data, st, 'xp') || 0;
+    return { victories: v, xp: x, xpAfter: x + v };
+  }
+
+  // Banking sends the new totals, never "add 2", so banking here and taking a
+  // respite in Foundry can't count the same victories twice.
+  function progBankPatch(data, st) {
+    var r = progRespite(data, st);
+    return r.victories > 0 ? { victories: 0, xp: r.xpAfter } : null;
+  }
+
+  function progAddPatch(data, st) {
+    var v = progShown(data, st, 'victories') || 0;
+    return v < PROG_MAX ? { victories: v + 1 } : null;
+  }
+
+  // Undo puts both totals back in one save, as they were before banking.
+  function progUndoPatch(before) {
+    return { victories: Number(before.victories) || 0, xp: Number(before.xp) || 0 };
+  }
+
+  // Banking waits while Victories or XP is still on its way to Chronicle.
+  function progHeld(st) { return /^(saving|slow)$/.test(st.row.victories || '') || /^(saving|slow)$/.test(st.row.xp || ''); }
+
+  function progPlural(n) { return n + (n === 1 ? ' victory' : ' victories'); }
+
+  function progHint(data, key) {
+    return {
+      victories: 'One per fight or challenge won', xp: 'Grows when victories are banked',
+      renown: 'Set it when the Director awards renown', wealth: 'Set it when ' + firstName(data.name) + '’s fortunes change'
+    }[key];
+  }
+
+  // A failed save says why and how to fix it. A refusal is not a lost
+  // connection, so it asks for a reload instead.
+  function progWhy(kind) {
+    return kind === 'refused'
+      ? { why: 'Chronicle didn’t take it', fix: 'Reload the page to get the latest numbers, then try again.' }
+      : { why: 'Chronicle didn’t answer', fix: 'Check your connection, then try again.' };
+  }
+
+  function progText(n) { return n == null ? '–' : String(n); }
+
+  function progAddBtn(st) {
+    return '<button type="button" class="sh-pg-add" data-cs-pg-add data-f="addv"' + (st && st.bankBusy ? ' aria-disabled="true"' : '') + '>Add a victory</button>';
+  }
+
+  // One number's row. A reader sees the number only; an editor sees it as a
+  // button that turns into a box to type in, with the row's state under the
+  // label.
+  function progRow(data, st, key, edit, extra) {
+    var label = PROG_LABEL[key], shown = progText(progShown(data, st, key)), rs = st.row[key] || '';
+    var sub = '';
+    if (edit) {
+      if (st.bad === key) sub = '<small class="sh-pg-bad" id="cs-pg-bad-' + key + '">Type a whole number, 0 or more.</small>';
+      else if (rs === 'saved') sub = '<small class="sh-pg-ok">' + fa('check') + ' Saved</small>';
+      else if (rs === 'slow') sub = '<small>Saving…</small>';
+      else sub = '<small>' + esc(progHint(data, key)) + '</small>';
+    }
+    var cell;
+    if (!edit) cell = '<b class="sh-pg-ro num">' + shown + '</b>';
+    else if (st.editing === key) {
+      cell = '<input class="sh-pg-in num" type="text" data-cs-pg-in="' + key + '" data-f="in-' + key + '" value="' + escAttr(st.draft) + '"' +
+        ' inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" aria-label="' + label + '"' +
+        (st.bad === key ? ' aria-invalid="true" aria-describedby="cs-pg-bad-' + key + '"' : '') + '>';
+    } else {
+      cell = '<button type="button" class="sh-pg-val" data-cs-pg-edit="' + key + '" data-f="val-' + key + '" aria-label="' + label + ', ' + shown + '. Press to correct it"' +
+        (st.bankBusy && (key === 'victories' || key === 'xp') ? ' aria-disabled="true"' : '') + '>' +
+        '<span class="num" data-cs-pg-n="' + key + '">' + shown + '</span></button>';
+    }
+    var err = '';
+    if (rs === 'error') {
+      var was = progNum(data, key), w = progWhy(st.err[key]);
+      err = '<div class="sh-pg-err" role="alert"><b>Not saved.</b> ' + w.why + ', so ' + label + ' is still ' + progText(was) + ' there. ' + w.fix +
+        '<span class="sh-pg-acts"><button type="button" class="sh-link" data-cs-pg-retry="' + key + '" data-f="retry-' + key + '">Try again</button>' +
+        '<button type="button" class="sh-link" data-cs-pg-revert="' + key + '" data-f="revert-' + key + '">' + (was == null ? 'Put it back' : 'Put back ' + was) + '</button></span></div>';
+    }
+    return '<div class="sh-pg-row' + (rs === 'error' || st.bad === key ? ' is-err' : '') + '" data-cs-pg-row="' + key + '">' +
+      '<div class="sh-pg-lbl"><b>' + label + '</b>' + sub + '</div><div class="sh-pg-ctl">' + cell + (edit && extra ? extra : '') + '</div>' + err + '</div>';
+  }
+
+  // The respite box: what will happen, written out before the press. While
+  // the numbers count across it keeps showing the sum it started from.
+  function progBank(data, st) {
+    var r = progRespite(data, st), t = st.tally;
+    var v0 = t ? t.v0 : r.victories, x0 = t ? t.x0 : r.xp;
+    var out = '<div class="sh-pg-bank"><b class="sh-pg-bank-h">Finished a respite?</b>' +
+      '<p class="sh-pg-bank-p">Each victory becomes 1 XP, and Victories go back to 0.</p>';
+    if (v0 > 0) {
+      var busy = st.bank === 'working', held = !!t || progHeld(st);
+      out += '<p class="sh-pg-eq num"><span aria-hidden="true"><i>Victories</i>' + v0 + '<em>→</em>0</span><span aria-hidden="true"><i>XP</i>' + x0 + '<em>→</em>' + (x0 + v0) + '</span>' +
+        '<span class="sh-sr">Victories ' + v0 + ' becomes 0, and XP ' + x0 + ' becomes ' + (x0 + v0) + '.</span></p>' +
+        '<button type="button" class="sh-edsave sh-pg-go" data-cs-pg-bank data-f="bank"' + (busy ? ' data-working' : '') + (busy || held ? ' aria-disabled="true"' : '') + '>' +
+        (busy ? 'Banking…' : 'Bank ' + progPlural(v0) + ' into XP') + '</button>';
+    } else {
+      out += '<p class="sh-pg-none">' + (st.banked ? 'Banked ' + progPlural(st.banked) + '. XP is ' + r.xp + '.' : 'No victories to bank yet.') + '</p>';
+    }
+    if (st.bank === 'error') {
+      var w = progWhy(st.bankErr);
+      out += '<div class="sh-pg-err" role="alert"><b>Not banked.</b> ' + w.why + ', so Victories is still ' + progText(progNum(data, 'victories')) +
+        ' and XP still ' + progText(progNum(data, 'xp')) + '. ' + w.fix +
+        '<span class="sh-pg-acts"><button type="button" class="sh-link" data-cs-pg-bank data-f="bank-retry">Try again</button></span></div>';
+    }
+    return out + '</div>';
+  }
+
+  function progFoot(data, edit) {
+    var lines = [];
+    if (!edit) lines.push('<span>' + esc((data.name || 'This hero') + '’s player and the Director change these.') + '</span>');
+    else {
+      if (foundryLinked(data)) lines.push(fa('arrows-rotate') + '<span>Changes reach Foundry on the next sync.</span>');
+      if (data.isOwner && !data.isGm) lines.push(fa('bell') + '<span>Your Director is told when you change these.</span>');
+    }
+    return lines.length ? '<div class="sh-pg-foot">' + lines.map(function (l) { return '<p>' + l + '</p>'; }).join('') + '</div>' : '';
+  }
+
+  // st is the panel's live state; the template is drawn without one. The
+  // body is redrawn on every change, the live region beside it never is, so
+  // a screen reader hears each message once.
+  function pProgPanel(data, st) {
+    return '<div class="sh-pg" data-cs-pg><div data-cs-pg-body>' + progBody(data, st || progState()) + '</div>' +
+      '<p class="sh-sr" role="status" aria-live="polite" data-cs-pg-live></p></div>';
+  }
+
+  function progBody(data, st) {
+    var edit = progCanEdit(data);
+    var add = progAddBtn(st);
+    return '<div class="lf-grp"><span class="sh-k">Now</span><div class="sh-pg-lv"><span class="sh-pg-lbl"><b>Level</b></span><b class="sh-pg-ro num">' + esc(String(num(data, 'level', 1))) + '</b></div>' +
+      '<p class="sh-pg-note">A level-up starts in Foundry, where it walks you through the new choices.</p></div>' +
+      '<div class="lf-grp"><span class="sh-k">Earned in play</span>' + progRow(data, st, 'victories', edit, add) + progRow(data, st, 'xp', edit) +
+      (edit ? progBank(data, st) : '') + '</div>' +
+      '<div class="lf-grp"><span class="sh-k">Standing</span>' + progRow(data, st, 'renown', edit) + progRow(data, st, 'wealth', edit) +
+      (edit ? '<p class="sh-pg-note">Press any number to correct it.</p>' : '') + '</div>' +
+      progFoot(data, edit);
   }
 
   // Every panel the sheet can open, in ledger order. Items and Notes exist
@@ -6057,6 +6226,348 @@
     el.addEventListener('keydown', inst._onPaperKey, true);
   }
 
+  // Chronicle's motion levels: Calm fades only, Off shows the end, and a
+  // device asking for less motion is Off.
+  function progMotion() {
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'off';
+      var r = document.documentElement, m = r.getAttribute('data-motion') || '';
+      if (m === 'off') return 'off';
+      if (m === 'calm' || r.getAttribute('data-view-motion') === 'calm' || r.hasAttribute('data-cz-reduce')) return 'calm';
+    } catch (e) { return 'off'; }
+    return 'full';
+  }
+
+  // A refusal (4xx) is told apart from a save that never arrived.
+  function progFailKind(err) { return /^save 4\d\d$/.test(String(err && err.message)) ? 'refused' : 'lost'; }
+
+  // The Progression panel's wiring. Its body is cloned afresh on every open,
+  // so everything is delegated from el and finds the open body each time.
+  // Only the rows that changed are drawn again, so a press on another row
+  // is never lost under a redraw.
+  function attachProgression(inst, el, data) {
+    var st = inst._pg = progState();
+    if (!progCanEdit(data)) return;
+    function body() {
+      var b = inst._panelBody;
+      return b && b.isConnected && inst._panelId === 'progression' ? b.querySelector('[data-cs-pg-body]') : null;
+    }
+    function find(b, fk) { return fk ? b.querySelector('[data-f="' + fk + '"]') : null; }
+    // Swaps one part for its new drawing, keeping focus, and the caret in a
+    // box being typed in, where they were.
+    function swap(b, sel, html) {
+      var old = b.querySelector(sel);
+      if (!old) return;
+      var a = document.activeElement, fk = a && old.contains(a) ? a.getAttribute('data-f') : null;
+      var caret = fk && a.tagName === 'INPUT' ? [a.selectionStart, a.selectionEnd] : null;
+      var tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      // Taking out a focused box fires focusout; that is not the reader leaving it.
+      st.swapping = true;
+      try { old.parentNode.replaceChild(tmp.firstChild, old); } finally { st.swapping = false; }
+      var n = find(b, fk);
+      if (!n) return;
+      n.focus({ preventScroll: true });
+      if (caret && n.setSelectionRange) n.setSelectionRange(caret[0], caret[1]);
+    }
+    function mark() { for (var i = 0; i < arguments.length; i++) st.dirty[arguments[i]] = true; }
+    function flush() {
+      var b = body(), d = st.dirty;
+      st.dirty = {};
+      if (!b) return;
+      ['victories', 'xp', 'renown', 'wealth'].forEach(function (k) {
+        if (d[k]) swap(b, '[data-cs-pg-row="' + k + '"]', progRow(data, st, k, true, k === 'victories' ? progAddBtn(st) : ''));
+      });
+      if (d.bank) swap(b, '.sh-pg-bank', progBank(data, st));
+      var bump = st.bump || {};
+      st.bump = {};
+      Object.keys(bump).forEach(function (k) {
+        var n = b.querySelector('[data-cs-pg-n="' + k + '"]');
+        if (n && n.textContent !== bump[k] && Chronicle.sheetMotion && Chronicle.sheetMotion.land) Chronicle.sheetMotion.land(n, bump[k]);
+      });
+    }
+    function focusF(fk, select) {
+      var b = body(), n = b && find(b, fk);
+      if (!n) return;
+      n.focus({ preventScroll: true });
+      if (select && n.select) n.select();
+    }
+    function say(text) {
+      var b = inst._panelBody, l = b && b.isConnected ? b.querySelector('[data-cs-pg-live]') : null;
+      if (!l) return;
+      l.textContent = '';
+      setTimeout(function () { l.textContent = text; }, 40);
+    }
+    progActions(inst, el, data, st, { mark: mark, flush: flush, focusF: focusF, say: say, body: body });
+  }
+
+  // The sheet's own progression numbers, and the template the panel opens
+  // from, follow a save even while the panel is put away.
+  function progPaintSheet(el, data, keys) {
+    keys.forEach(function (k) {
+      var txt = progText(progNum(data, k));
+      [].forEach.call(el.querySelectorAll('[data-pv="' + k + '"]'), function (n) {
+        var before = n.textContent;
+        if (before === txt) return;
+        n.textContent = txt;
+        if (Chronicle.sheetMotion && Chronicle.sheetMotion.land) Chronicle.sheetMotion.land(n, before);
+      });
+    });
+    var tpl = el.querySelector('template[data-sheet-panel="progression"]');
+    if (tpl) tpl.innerHTML = pProgPanel(data);
+  }
+
+  function progActions(inst, el, data, st, ui) {
+    if (!progCanEdit(data)) return;
+    var busy = function (k) { return st.bankBusy && (k === 'victories' || k === 'xp'); };
+    // One number goes to Chronicle at a time; a newer value pressed while
+    // one is on its way is sent when that one lands, so the last press wins.
+    function save(k) {
+      if (st.fly[k]) return;
+      var n = st.pend[k], patch = {};
+      patch[k] = n;
+      st.fly[k] = true;
+      st.row[k] = 'saving';
+      ui.mark(k, 'bank');
+      var slow = setTimeout(function () { if (st.row[k] === 'saving') { st.row[k] = 'slow'; ui.mark(k); ui.flush(); } }, 300);
+      saveFields(data, patch).then(function () {
+        clearTimeout(slow);
+        st.fly[k] = false;
+        wroteHere(inst, el);
+        data.fields[k] = n;
+        progPaintSheet(el, data, [k]);
+        if (st.pend[k] !== n) { save(k); ui.flush(); return; }
+        delete st.pend[k];
+        st.row[k] = 'saved';
+        ui.mark(k, 'bank');
+        ui.flush();
+        ui.say(PROG_LABEL[k] + ' saved: ' + n + '.');
+        setTimeout(function () { if (st.row[k] === 'saved') { st.row[k] = ''; ui.mark(k); ui.flush(); } }, 1400);
+      }, function (err) {
+        clearTimeout(slow);
+        st.fly[k] = false;
+        st.row[k] = 'error';
+        st.err[k] = progFailKind(err);
+        ui.mark(k, 'bank');
+        ui.flush();
+      });
+    }
+    function setVal(k, n) {
+      st.bump[k] = progText(progShown(data, st, k));
+      st.pend[k] = n;
+      st.bad = null;
+      st.banked = 0;
+      ui.mark(k, 'bank');
+      save(k);
+    }
+    function startEdit(k) {
+      if (busy(k)) return;
+      var n = progShown(data, st, k);
+      if (st.bad && st.bad !== k) ui.mark(st.bad);
+      st.editing = k;
+      st.bad = null;
+      st.draft = n == null ? '' : String(n);
+      ui.mark(k);
+      ui.flush();
+      ui.focusF('in-' + k, true);
+    }
+    // Enter keeps a refused value in the box to fix; leaving the box puts the
+    // number back and leaves the reason under its name. An empty box changes
+    // nothing.
+    function commit(k, byEnter) {
+      if (st.editing !== k) return;
+      var raw = String(st.draft).trim(), n = progTyped(raw), cur = progShown(data, st, k);
+      if (n === null && raw !== '') {
+        st.bad = k;
+        if (!byEnter) st.editing = null;
+        ui.mark(k);
+        ui.say(PROG_LABEL[k] + ' not changed. Type a whole number, 0 or more.');
+        return;
+      }
+      st.editing = null;
+      st.bad = null;
+      ui.mark(k);
+      if (n !== null && n !== cur) setVal(k, n);
+    }
+    function cancel(k) {
+      st.editing = null;
+      st.bad = null;
+      ui.mark(k);
+      ui.flush();
+      ui.focusF('val-' + k);
+    }
+    progWire(inst, el, data, st, ui, { save: save, setVal: setVal, startEdit: startEdit, commit: commit, cancel: cancel, busy: busy });
+  }
+
+  // The count across after banking, like a game's end-of-match tally: at
+  // most five steps inside 400ms, in Full motion only. Each step grows the
+  // new number in from 70%, transform and opacity only.
+  function progTally(st, ui, before, done) {
+    var v0 = before.victories, x0 = before.xp;
+    if (progMotion() !== 'full' || !ui.body()) { done(false); return; }
+    var steps = Math.min(v0, 5), ms = Math.min(140, Math.floor(400 / steps)), i = 0;
+    var ease = '';
+    try { ease = getComputedStyle(document.documentElement).getPropertyValue('--ease-out').trim(); } catch (e) { ease = ''; }
+    st.tally = { v0: v0, x0: x0, show: { victories: v0, xp: x0 } };
+    (function tick() {
+      i++;
+      var left = Math.round(v0 - v0 * i / steps);
+      st.tally.show = { victories: left, xp: x0 + v0 - left };
+      ui.mark('victories', 'xp', 'bank');
+      ui.flush();
+      var b = ui.body();
+      ['victories', 'xp'].forEach(function (k) {
+        var n = b && b.querySelector('[data-cs-pg-n="' + k + '"]');
+        if (n && n.animate) n.animate([{ transform: 'scale(.7)', opacity: 0.2 }, { transform: 'none', opacity: 1 }], { duration: ms, easing: ease || 'ease-out' });
+      });
+      if (i < steps) setTimeout(tick, ms); else setTimeout(function () { done(true); }, ms);
+    })();
+  }
+
+  function progWire(inst, el, data, st, ui, act) {
+    function shownBoth() { return { victories: progNum(data, 'victories') || 0, xp: progNum(data, 'xp') || 0 }; }
+    // Focus moves only when the bank button took it with it, never away from
+    // something the reader went on to.
+    function lost() {
+      var a = document.activeElement;
+      return !a || a === document.body || a.getAttribute('data-f') === 'bank';
+    }
+    function bank() {
+      var patch = progBankPatch(data, st);
+      if (st.bankBusy || progHeld(st) || !patch) return;
+      var r = progRespite(data, st), before = { victories: r.victories, xp: r.xp };
+      st.bankBusy = true;
+      st.bank = 'idle';
+      ui.mark('victories', 'xp', 'bank');
+      ui.flush();
+      // The working look waits 300ms, so a quick save never flickers it.
+      var slow = setTimeout(function () { if (st.bankBusy) { st.bank = 'working'; ui.mark('bank'); ui.flush(); } }, 300);
+      saveFields(data, patch).then(function () {
+        clearTimeout(slow);
+        wroteHere(inst, el);
+        data.fields.victories = 0;
+        data.fields.xp = patch.xp;
+        delete st.pend.victories; delete st.pend.xp;
+        st.row.victories = st.row.xp = '';
+        st.bank = 'idle';
+        progTally(st, ui, before, function (counted) {
+          st.tally = null;
+          st.bankBusy = false;
+          st.banked = before.victories;
+          st.row.victories = st.row.xp = 'saved';
+          setTimeout(function () {
+            ['victories', 'xp'].forEach(function (k) { if (st.row[k] === 'saved') { st.row[k] = ''; ui.mark(k); } });
+            ui.flush();
+          }, 1400);
+          // A count across has already shown the change; otherwise the
+          // numbers land the way the sheet's style shows a change.
+          if (!counted) {
+            st.bump.victories = String(before.victories);
+            st.bump.xp = String(before.xp);
+          }
+          ui.mark('victories', 'xp', 'bank');
+          ui.flush();
+          progPaintSheet(el, data, ['victories', 'xp']);
+          if (lost()) ui.focusF('val-xp');
+          var msg = 'Banked ' + progPlural(before.victories) + '. XP is ' + patch.xp + '.';
+          if (Chronicle.notify) Chronicle.notify(msg, 'success', { undo: function () { undo(before); } });
+          else ui.say(msg);
+        });
+      }, function (err) {
+        clearTimeout(slow);
+        st.bankBusy = false;
+        st.bank = 'error';
+        st.bankErr = progFailKind(err);
+        ui.mark('victories', 'xp', 'bank');
+        ui.flush();
+        if (lost()) ui.focusF('bank-retry');
+      });
+    }
+    function undo(before) {
+      var patch = progUndoPatch(before), was = shownBoth();
+      saveFields(data, patch).then(function () {
+        wroteHere(inst, el);
+        st.bump.victories = String(was.victories);
+        st.bump.xp = String(was.xp);
+        data.fields.victories = patch.victories;
+        data.fields.xp = patch.xp;
+        delete st.pend.victories; delete st.pend.xp;
+        st.banked = 0;
+        st.bank = 'idle';
+        ui.mark('victories', 'xp', 'bank');
+        ui.flush();
+        progPaintSheet(el, data, ['victories', 'xp']);
+        ui.say('Put back. Victories is ' + patch.victories + ' and XP ' + patch.xp + '.');
+      }, function (err) {
+        var w = progWhy(progFailKind(err));
+        var msg = 'Not undone. ' + w.why + ', so Victories is still ' + was.victories + ' and XP still ' + was.xp +
+          '. Press each number in Progression to set them back to ' + patch.victories + ' and ' + patch.xp + '.';
+        if (Chronicle.notify) Chronicle.notify(msg, 'error'); else ui.say(msg);
+      });
+    }
+    progListen(inst, el, data, st, ui, act, bank);
+  }
+
+  function progListen(inst, el, data, st, ui, act, bank) {
+    var mine = function (t) { var b = ui.body(); return !!(b && t && b.contains(t)); };
+    inst._onPgClick = function (e) {
+      var t = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!t || !mine(t) || t.disabled || t.getAttribute('aria-disabled') === 'true') return;
+      var k;
+      if (t.hasAttribute('data-cs-pg-add')) {
+        var p = !act.busy('victories') && progAddPatch(data, st);
+        if (p) act.setVal('victories', p.victories);
+      } else if (t.hasAttribute('data-cs-pg-bank')) bank();
+      else if ((k = t.getAttribute('data-cs-pg-edit'))) { act.startEdit(k); return; }
+      else if ((k = t.getAttribute('data-cs-pg-retry'))) { act.save(k); ui.focusF('val-' + k); }
+      else if ((k = t.getAttribute('data-cs-pg-revert'))) {
+        st.bump[k] = progText(progShown(data, st, k));
+        delete st.pend[k];
+        st.row[k] = '';
+        ui.mark(k, 'bank');
+        ui.flush();
+        ui.focusF('val-' + k);
+        return;
+      } else return;
+      ui.flush();
+    };
+    // Capture, so Escape in a box puts the box away before the sheet engine
+    // takes it as "close the panel". Only Enter and Escape are read, and only
+    // in the box, so typing is never taken over.
+    inst._onPgKey = function (e) {
+      var t = e.target, k = t && t.getAttribute ? t.getAttribute('data-cs-pg-in') : null;
+      if (!k || !mine(t)) return;
+      if (e.key === 'Enter') { e.preventDefault(); act.commit(k, true); ui.flush(); if (st.editing !== k) ui.focusF('val-' + k); }
+      else if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); e.stopPropagation(); act.cancel(k); }
+    };
+    inst._onPgInput = function (e) {
+      var k = e.target && e.target.getAttribute ? e.target.getAttribute('data-cs-pg-in') : null;
+      if (k && st.editing === k) st.draft = e.target.value;
+    };
+    // Leaving the box keeps what was typed; switching to another window
+    // leaves it open. While a pointer is down the redraw waits for its
+    // click, which a redraw under it would swallow.
+    inst._onPgLeave = function (e) {
+      var k = e.target && e.target.getAttribute ? e.target.getAttribute('data-cs-pg-in') : null;
+      if (!k || st.editing !== k || st.swapping) return;
+      if (!e.relatedTarget && document.hasFocus && !document.hasFocus()) return;
+      act.commit(k, false);
+      if (!st.ptr) setTimeout(ui.flush, 0);
+    };
+    inst._onPgDown = function (e) { if (mine(e.target)) st.ptr = true; };
+    inst._onPgUp = function () {
+      if (!st.ptr) return;
+      setTimeout(function () { st.ptr = false; ui.flush(); }, 0);
+    };
+    el.addEventListener('click', inst._onPgClick);
+    el.addEventListener('keydown', inst._onPgKey, true);
+    el.addEventListener('input', inst._onPgInput);
+    el.addEventListener('focusout', inst._onPgLeave);
+    el.addEventListener('pointerdown', inst._onPgDown, true);
+    document.addEventListener('pointerup', inst._onPgUp, true);
+    document.addEventListener('pointercancel', inst._onPgUp, true);
+  }
+
   // Grow is the contract's move for something drawn out of the thing pressed:
   // the style supplies the look, Calm and Off are enforced by Chronicle.
   function growIn(node) {
@@ -6089,10 +6600,17 @@
     [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
       ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey'],
-      ['chronicle:sheet-dock-open', '_onDockOpen']].forEach(function (p) {
+      ['chronicle:sheet-dock-open', '_onDockOpen'],
+      ['click', '_onPgClick'], ['input', '_onPgInput'], ['focusout', '_onPgLeave']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
+    if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
+    if (inst._onPgUp && typeof document !== 'undefined') {
+      document.removeEventListener('pointerup', inst._onPgUp, true);
+      document.removeEventListener('pointercancel', inst._onPgUp, true);
+    }
     detachStatCards(inst, el);
     if (inst._dashIo) inst._dashIo.disconnect();
     if (inst._dashRo) inst._dashRo.disconnect();
@@ -6104,7 +6622,8 @@
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
-      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo'].forEach(function (k) { inst[k] = null; });
+      '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
+      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -6305,6 +6824,7 @@
     portraitFallback(el);
     attachInteractions(inst, el, data);
     if (root) attachPaperPanels(inst, el, root);
+    if (root) attachProgression(inst, el, data);
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
     attachDashPin(inst, el);
@@ -6835,7 +7355,9 @@
       'Q .sh-foot { margin-top:8px; }',
       // Accent-filled buttons take the page's fill pair, so their words read
       // on whatever colour the campaign picked.
-      'Q :is(.sh-edsave,.sh-tf-pri) { background:var(--color-accent-fill,var(--paper-accent));color:var(--color-accent-on-fill,var(--paper-on-accent)); }'
+      'Q :is(.sh-edsave,.sh-tf-pri) { background:var(--color-accent-fill,var(--paper-accent));color:var(--color-accent-on-fill,var(--paper-on-accent)); }',
+      // The respite box lies on the page colour, a step under the panel's card.
+      'Q .sh-pg-bank { background:var(--color-bg-primary,transparent); }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' ').replace(/P /g, P + ' '); });
   }
 
@@ -7213,6 +7735,61 @@
       '[data-sheet] .sh-ed-total { margin:0;font-weight:600; }',
       '[data-sheet] .sh-grants,[data-sheet] .sh-trl { list-style:none;margin:0;padding:0;display:grid;gap:4px; }',
       '[data-sheet] .sh-traits { margin-top:8px; }',
+      // The Progression panel. Shape and colour come from the sheet's tokens,
+      // so every style dresses it; touch controls are 44 tall.
+      '[data-sheet] :is(.sh-pg-lv,.sh-pg-row) { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:10px 2px;border-bottom:1px solid color-mix(in srgb,var(--paper-edge) 70%,transparent); }',
+      '[data-sheet] .sh-pg-lv { padding:6px 2px 0;border-bottom:0; }',
+      '[data-sheet] .sh-pg-lv .sh-pg-ro { padding:0 2px; }',
+      '[data-sheet] .sh-pg-lbl { min-width:0;display:grid; }',
+      '[data-sheet] .sh-pg-lbl b { font:600 calc(15px * var(--ts))/1.2 var(--paper-head-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-pg-lbl small { font:400 calc(12.5px * var(--ts))/1.35 var(--paper-ui-font);color:var(--paper-mute);margin-top:2px; }',
+      '[data-sheet] .sh-pg-lbl .sh-pg-ok { display:inline-flex;align-items:center;gap:4px;color:var(--paper-bar,#15803d);font-weight:600; }',
+      '[data-sheet] .sh-pg-lbl .sh-pg-bad { color:var(--paper-neg,#b42318);font-weight:600; }',
+      '[data-sheet] .sh-pg-note { margin:4px 2px 0;font:400 calc(12.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .lf-grp > .sh-pg-note:last-child { margin-top:10px; }',
+      '[data-sheet] .sh-pg-lv + .sh-pg-note { padding-bottom:12px;border-bottom:1px solid var(--paper-edge); }',
+      '[data-sheet] .sh-pg-ctl { display:flex;align-items:center;gap:8px; }',
+      '[data-sheet] :is(.sh-pg-ro,.sh-pg-val,.sh-pg-in) { font:700 calc(22px * var(--ts))/1 var(--paper-num-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-pg-ro { min-width:48px;text-align:right;padding:6px 2px; }',
+      '[data-sheet] .sh-pg-val { min-width:48px;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
+        'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
+      '[data-sheet] .sh-pg-val .num { display:inline-block; }',
+      '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under);border-bottom:1px solid var(--paper-accent); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
+      '[data-sheet] .sh-pg-val:active { background:var(--paper-under); }',
+      '[data-sheet] .sh-pg-in { width:64px;min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-bottom:2px solid var(--paper-accent);border-radius:6px 6px 0 0;background:var(--paper-under);text-align:center;outline:none;' +
+        'box-shadow:0 0 0 3px color-mix(in srgb,var(--paper-accent) 22%,transparent); }',
+      '[data-sheet] .sh-pg-row.is-err :is(.sh-pg-val,.sh-pg-in) { border-bottom:2px solid var(--paper-neg,#b42318); }',
+      '[data-sheet] .sh-pg-add { min-height:36px;padding:0 12px;border:1px solid var(--paper-edge);border-radius:var(--shape-r-ctl,8px);background:transparent;color:var(--paper-ink);font:600 calc(13.5px * var(--ts)) var(--paper-ui-font);cursor:pointer;white-space:nowrap;' +
+        'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),transform 200ms var(--ease-out,ease-out); }',
+      '[data-sheet] :is(.sh-pg-add,.sh-pg-go):active { transform:scale(.96);transition-duration:60ms; }',
+      '[data-sheet] :is(.sh-pg-add,.sh-pg-go)[aria-disabled="true"] { opacity:.45;cursor:default;transform:none; }',
+      // A number stays readable while it counts across; it only stops taking presses.
+      '[data-sheet] .sh-pg-val[aria-disabled="true"] { cursor:default;background:none;border-bottom-style:dashed;border-bottom-color:var(--paper-mute); }',
+      '[data-sheet] :is(.sh-pg-val,.sh-pg-add,.sh-pg-go,.sh-pg-acts .sh-link):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '[data-sheet] .sh-pg-bank { margin:12px 0 4px;padding:12px 14px 14px;border:1px solid var(--paper-edge);border-radius:var(--shape-r-panel,12px);background:color-mix(in srgb,var(--paper-under) 45%,transparent); }',
+      '[data-sheet] .sh-pg-bank-h { display:block;font:600 calc(15px * var(--ts))/1.2 var(--paper-head-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-pg-bank-p { margin:2px 0 8px;font:400 calc(13px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-pg-eq { display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 10px;font:700 calc(17px * var(--ts))/1.2 var(--paper-num-font);color:var(--paper-ink); }',
+      '[data-sheet] .sh-pg-eq > span[aria-hidden] { display:inline-flex;align-items:baseline;gap:6px; }',
+      '[data-sheet] .sh-pg-eq i { font:600 calc(11px * var(--ts))/1 var(--paper-ui-font);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--paper-mute);margin-right:2px; }',
+      '[data-sheet] .sh-pg-eq em { font-style:normal;font-weight:400;color:var(--paper-mute); }',
+      '[data-sheet] .sh-pg-none { margin:0;font:400 calc(13.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '[data-sheet] .sh-edsave.sh-pg-go { display:inline-flex;align-items:center;gap:8px;min-height:36px;transition:filter var(--dur-micro,120ms) var(--ease-out,ease-out),transform 200ms var(--ease-out,ease-out); }',
+      '@media (hover:hover) { [data-sheet] .sh-edsave.sh-pg-go:not([aria-disabled="true"]):hover { filter:brightness(1.12); } }',
+      '[data-sheet] .sh-pg-go[data-working] { opacity:1; }',
+      '[data-sheet] .sh-pg-go[data-working]::before { content:"";width:13px;height:13px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:sh-pg-spin .7s linear infinite; }',
+      '@keyframes sh-pg-spin { to { transform:rotate(360deg); } }',
+      'html[data-motion="off"] [data-sheet] .sh-pg-go[data-working]::before { animation:none; }',
+      '@media (prefers-reduced-motion:reduce) { [data-sheet] .sh-pg-go[data-working]::before { animation:none; } [data-sheet] :is(.sh-pg-add,.sh-pg-go):active { transform:none; } }',
+      '[data-sheet] .sh-pg-err { grid-column:1 / -1;margin:8px 0 2px;padding:9px 12px;border-radius:var(--shape-r-ctl,8px);border-left:3px solid var(--paper-neg,#b42318);' +
+        'background:color-mix(in srgb,var(--paper-neg,#b42318) 12%,transparent);color:var(--paper-neg,#b42318);font:400 calc(13px * var(--ts))/1.45 var(--paper-ui-font); }',
+      '[data-sheet] .sh-pg-err b { font-weight:700; }',
+      '[data-sheet] .sh-pg-acts { display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px; }',
+      '[data-sheet] .sh-pg-acts .sh-link { min-height:32px;color:inherit;font-size:calc(13px * var(--ts));text-decoration:underline;text-underline-offset:3px;cursor:pointer; }',
+      '[data-sheet] .sh-pg-foot { margin:14px 0 0;padding-top:12px;border-top:1px solid var(--paper-edge);display:grid;gap:4px; }',
+      '[data-sheet] .sh-pg-foot p { margin:0;display:flex;gap:7px;align-items:flex-start;font:400 calc(12.5px * var(--ts))/1.4 var(--paper-ui-font);color:var(--paper-mute); }',
+      '[data-sheet] .sh-pg-foot i { margin-top:3px;font-size:.9em; }',
+      '@media (pointer:coarse),(max-width:760px) { [data-sheet] :is(.sh-pg-val,.sh-pg-in,.sh-pg-add,.sh-edsave.sh-pg-go,.sh-pg-acts .sh-link) { min-height:44px; } }',
       '@media (pointer:coarse) { [data-sheet] .sh-opt label,[data-sheet] .sh-edopen,[data-sheet] .sh-ed .sh-link { padding:10px 0; } [data-sheet] .sh-edsave { min-height:44px; } }',
       '[data-sheet] .sh-chip { display:inline-flex;align-items:center;gap:4px;border:1px solid var(--paper-edge);border-radius:999px;padding:1px 9px;font:600 calc(11px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);background:rgb(var(--paper-hl) / calc(.3 * var(--hlk))); }',
       '[data-sheet] .num { font-variant-numeric:tabular-nums; }',
@@ -8065,7 +8642,9 @@
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel, kitObject: kitObject,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
-      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
+      pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel, pProgPanel: pProgPanel, pProgPart: pProgPart, dashProg: dashProg,
+      progState: progState, progCanEdit: progCanEdit, progTyped: progTyped, progRespite: progRespite, progBankPatch: progBankPatch,
+      progAddPatch: progAddPatch, progUndoPatch: progUndoPatch, progFailKind: progFailKind, progActions: progActions,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,

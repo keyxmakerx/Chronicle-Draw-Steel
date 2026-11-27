@@ -1193,3 +1193,169 @@ test('kit damage grid: every row label sits in the label column', () => {
   assert.match(src, /\[data-sheet\] \.sh-kit span:nth-child\(4n\+1\) \{ text-align:left; \}/);
   assert.ok(!/\.sh-kit span:nth-child\(5\)/.test(src), 'no rule targets only the first row');
 });
+
+// ── Progression: the game's moments ──────────────────────────────────────
+const PROG = { name: 'Tyne', campaignId: 'camp-1', entityId: 'hero-1', foundryLinked: true, fields: { level: 1, victories: 2, xp: 4, renown: 0, wealth: 1 } };
+const prog = (over) => Object.assign({}, PROG, over, { fields: Object.assign({}, PROG.fields, (over || {}).fields) });
+const CONTROLS = /data-cs-pg-(add|bank|edit)/;
+
+test('progression: the hero\'s player and the Director get the controls; another player sees the numbers only', () => {
+  const owner = cs.pProgPanel(prog({ isOwner: true }));
+  const director = cs.pProgPanel(prog({ isGm: true }));
+  const other = cs.pProgPanel(prog({}));
+  for (const [who, html] of [['owner', owner], ['director', director]]) {
+    assert.ok(/data-cs-pg-add[^>]*>Add a victory</.test(html), who + ': Add a victory');
+    assert.ok(/data-cs-pg-bank[^>]*>Bank 2 victories into XP</.test(html), who + ': the bank button');
+    for (const k of ['victories', 'xp', 'renown', 'wealth']) assert.ok(html.includes('data-cs-pg-edit="' + k + '"'), who + ': ' + k + ' can be corrected');
+    assert.ok(/Press any number to correct it\./.test(html), who);
+  }
+  assert.ok(!CONTROLS.test(other) && !/<button|<input/.test(other), 'another player: no controls at all');
+  assert.ok(!/Finished a respite\?/.test(other) && !/Press any number/.test(other));
+  for (const n of ['2', '4', '0', '1']) assert.ok(other.includes('<b class="sh-pg-ro num">' + n + '</b>'), 'the number ' + n + ' is shown');
+  assert.ok(/Tyne’s player and the Director change these\./.test(other), 'says who changes them');
+  assert.ok(!CONTROLS.test(cs.pProgPanel(prog({ isOwner: true, campaignId: '' }))), 'no campaign to save to: no controls');
+  assert.equal(cs.progCanEdit(prog({ isOwner: true })), true);
+  assert.equal(cs.progCanEdit(prog({ isGm: true })), true);
+  assert.equal(cs.progCanEdit(prog({ canEditIdentity: true })), false, 'only the hero\'s owner and the Director');
+});
+
+test('progression: Level stays read-only with its line; the Foundry and bell lines follow who is looking', () => {
+  const owner = cs.pProgPanel(prog({ isOwner: true, fields: { level: 3 } }));
+  assert.ok(/<b>Level<\/b><\/span><b class="sh-pg-ro num">3<\/b>/.test(owner), 'Level is a plain number');
+  assert.ok(!/data-cs-pg-edit="level"/.test(owner) && !/data-cs-pg-in="level"/.test(owner), 'Level is never editable');
+  assert.ok(/A level-up starts in Foundry, where it walks you through the new choices\./.test(owner));
+  assert.ok(/Changes reach Foundry on the next sync\./.test(owner), 'linked: the sync line');
+  assert.ok(/Your Director is told when you change these\./.test(owner), 'the player is told the Director hears of it');
+  const gm = cs.pProgPanel(prog({ isGm: true }));
+  assert.ok(/Changes reach Foundry on the next sync\./.test(gm) && !/Your Director is told/.test(gm), 'the Director is not told about themself');
+  const unlinked = cs.pProgPanel(prog({ isOwner: true, foundryLinked: false }));
+  assert.ok(!/next sync/.test(unlinked), 'no Foundry world: no sync line');
+  assert.ok(!/Read only\. Set in Foundry\./.test(owner), 'the old read-only line is gone');
+});
+
+test('progression: the respite preview, the bank patch and Add a victory are whole numbers', () => {
+  const d = prog({ isOwner: true });
+  assert.deepEqual(cs.progRespite(d), { victories: 2, xp: 4, xpAfter: 6 });
+  const html = cs.pProgPanel(d);
+  assert.ok(/<i>Victories<\/i>2<em>→<\/em>0<\/span><span aria-hidden="true"><i>XP<\/i>4<em>→<\/em>6</.test(html), 'Victories 2 → 0, XP 4 → 6 before the press');
+  assert.ok(/Victories 2 becomes 0, and XP 4 becomes 6\./.test(html), 'and read out for a screen reader');
+  assert.deepEqual(cs.progBankPatch(d), { victories: 0, xp: 6 }, 'the new totals, never "add 2"');
+  assert.deepEqual(cs.progBankPatch(prog({ fields: { victories: '3', xp: '' } })), { victories: 0, xp: 3 }, 'stored text and an unset XP still give numbers');
+  assert.equal(cs.progBankPatch(prog({ fields: { victories: 0 } })), null, 'nothing to bank');
+  assert.ok(/No victories to bank yet\./.test(cs.pProgPanel(prog({ isOwner: true, fields: { victories: 0 } }))));
+  assert.deepEqual(cs.progAddPatch(d), { victories: 3 });
+  assert.deepEqual(cs.progAddPatch(prog({ fields: { victories: null } })), { victories: 1 }, 'from unset');
+  const st = cs.progState();
+  st.pend.victories = 5;
+  assert.deepEqual(cs.progAddPatch(d, st), { victories: 6 }, 'builds on a value still on its way');
+  assert.deepEqual(cs.progUndoPatch({ victories: 2, xp: 4 }), { victories: 2, xp: 4 }, 'Undo puts both back in one patch');
+});
+
+test('progression: a typed value must be a whole number from 0', () => {
+  for (const ok of [['0', 0], ['7', 7], [' 12 ', 12]]) assert.equal(cs.progTyped(ok[0]), ok[1], ok[0]);
+  for (const bad of ['-1', '2.5', '1e3', 'abc', '3 4', '+2', '', '0x10', '99999999999']) assert.equal(cs.progTyped(bad), null, JSON.stringify(bad));
+  assert.equal(cs.progFailKind(new Error('save 400')), 'refused');
+  assert.equal(cs.progFailKind(new TypeError('Failed to fetch')), 'lost');
+  assert.equal(cs.progFailKind(new Error('save 502')), 'lost', 'a server error is retried like a lost answer');
+});
+
+// The panel's wiring with the page faked: presses go through the real
+// handlers, and every save is caught at Chronicle.apiFetch.
+function progRig(over) {
+  const C = globalThis.window.Chronicle;
+  const saved = { apiFetch: C.apiFetch, notify: C.notify, doc: globalThis.document };
+  const rig = { sent: [], urls: [], toasts: [], fail: false };
+  C.apiFetch = (url, opts) => {
+    rig.urls.push(url);
+    rig.sent.push(opts.body.fields_patch);
+    return rig.fail ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve({ ok: true });
+  };
+  C.notify = (msg, type, opts) => rig.toasts.push({ msg, type, undo: opts && opts.undo });
+  globalThis.document = {
+    addEventListener() {}, removeEventListener() {}, activeElement: null,
+    documentElement: { getAttribute: (n) => (n === 'data-motion' ? 'off' : null), hasAttribute: () => false }
+  };
+  const el = { addEventListener() {}, removeEventListener() {}, querySelectorAll: () => [], querySelector: () => null };
+  rig.inst = {};
+  rig.data = prog(Object.assign({ isOwner: true }, over));
+  rig.st = cs.progState();
+  const ui = { mark() {}, flush() {}, focusF() {}, say(t) { rig.said = t; }, body: () => ({ contains: () => true, querySelector: () => null }) };
+  cs.progActions(rig.inst, el, rig.data, rig.st, ui);
+  const btn = (attr, val) => ({ disabled: false, closest() { return this; },
+    hasAttribute: (a) => a === attr, getAttribute: (a) => (a === attr ? (val || '') : null) });
+  rig.press = (attr, val) => rig.inst._onPgClick({ target: btn(attr, val) });
+  rig.type = (key, text) => {
+    const box = { value: text, getAttribute: (a) => (a === 'data-cs-pg-in' ? key : null) };
+    rig.inst._onPgInput({ target: box });
+    rig.inst._onPgKey({ target: box, key: 'Enter', preventDefault() {}, stopPropagation() {} });
+  };
+  rig.done = () => { Object.assign(C, { apiFetch: saved.apiFetch, notify: saved.notify }); globalThis.document = saved.doc; };
+  return rig;
+}
+const settle = () => new Promise((r) => setTimeout(r, 10));
+
+test('progression wiring: one press banks as one save of the new totals, and Undo puts them back as one save', async () => {
+  const rig = progRig();
+  try {
+    rig.press('data-cs-pg-bank');
+    await settle();
+    assert.deepEqual(rig.sent, [{ victories: 0, xp: 6 }], 'one save of the new totals');
+    assert.equal(typeof rig.sent[0].xp, 'number');
+    assert.equal(rig.urls[0], '/campaigns/camp-1/entities/hero-1/fields');
+    assert.deepEqual([rig.data.fields.victories, rig.data.fields.xp], [0, 6]);
+    assert.equal(rig.toasts[0].msg, 'Banked 2 victories. XP is 6.');
+    assert.ok(/Banked 2 victories\. XP is 6\./.test(cs.pProgPanel(rig.data, rig.st)), 'the box says what was banked');
+    rig.toasts[0].undo();
+    await settle();
+    assert.deepEqual(rig.sent[1], { victories: 2, xp: 4 }, 'Undo is one save of the old totals');
+    assert.deepEqual([rig.data.fields.victories, rig.data.fields.xp], [2, 4]);
+  } finally { rig.done(); }
+});
+
+test('progression wiring: Add a victory sends victories + 1; a typed value that is not a whole number from 0 is never sent', async () => {
+  const rig = progRig();
+  try {
+    rig.press('data-cs-pg-add');
+    await settle();
+    assert.deepEqual(rig.sent, [{ victories: 3 }]);
+    for (const bad of ['-1', '2.5', 'ten']) {
+      rig.press('data-cs-pg-edit', 'renown');
+      rig.type('renown', bad);
+      await settle();
+      assert.equal(rig.st.bad, 'renown', bad + ' is refused');
+      assert.ok(/Type a whole number, 0 or more\./.test(cs.pProgPanel(rig.data, rig.st)), 'and the row says how to fix it');
+    }
+    assert.equal(rig.sent.length, 1, 'nothing more was sent');
+    rig.type('renown', '4');
+    await settle();
+    assert.deepEqual(rig.sent[1], { renown: 4 }, 'a whole number is sent as a number');
+  } finally { rig.done(); }
+});
+
+test('progression wiring: a failed save keeps the saved number and offers Try again and Put back', async () => {
+  const rig = progRig();
+  try {
+    rig.fail = true;
+    rig.press('data-cs-pg-edit', 'wealth');
+    rig.type('wealth', '5');
+    await settle();
+    assert.equal(rig.data.fields.wealth, 1, 'the saved number is unchanged');
+    const html = cs.pProgPanel(rig.data, rig.st);
+    assert.ok(/<b>Not saved\.<\/b> Chronicle didn’t answer, so Wealth is still 1 there\. Check your connection, then try again\./.test(html));
+    assert.ok(/data-cs-pg-retry="wealth"[^>]*>Try again</.test(html) && /data-cs-pg-revert="wealth"[^>]*>Put back 1</.test(html));
+    rig.fail = false;
+    rig.press('data-cs-pg-retry', 'wealth');
+    await settle();
+    assert.deepEqual(rig.sent[1], { wealth: 5 });
+    assert.equal(rig.data.fields.wealth, 5);
+    rig.fail = true;
+    rig.press('data-cs-pg-bank');
+    await settle();
+    assert.ok(/<b>Not banked\.<\/b> Chronicle didn’t answer, so Victories is still 2 and XP still 4\./.test(cs.pProgPanel(rig.data, rig.st)));
+  } finally { rig.done(); }
+});
+
+test('progression wiring: another player\'s view wires nothing', () => {
+  const rig = progRig({ isOwner: false });
+  try { assert.equal(rig.inst._onPgClick, undefined); } finally { rig.done(); }
+});

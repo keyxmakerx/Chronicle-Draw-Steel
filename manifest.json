@@ -766,7 +766,8 @@
           "key": "wealth",
           "label": "Wealth",
           "type": "number",
-          "foundry_path": "system.hero.wealth"
+          "foundry_path": "system.hero.wealth",
+          "play": {"edit": "owner", "kind": "counter", "min": 0, "step": 1, "bell": true}
         },
         {
           "key": "heroic_resource_name",
@@ -836,19 +837,22 @@
           "key": "victories",
           "label": "Victories",
           "type": "number",
-          "foundry_path": "system.hero.victories"
+          "foundry_path": "system.hero.victories",
+          "play": {"edit": "owner", "kind": "counter", "min": 0, "step": 1, "bell": true}
         },
         {
           "key": "renown",
           "label": "Renown",
           "type": "number",
-          "foundry_path": "system.hero.renown"
+          "foundry_path": "system.hero.renown",
+          "play": {"edit": "owner", "kind": "counter", "min": 0, "step": 1, "bell": true}
         },
         {
           "key": "xp",
           "label": "XP",
           "type": "number",
-          "foundry_path": "system.hero.xp"
+          "foundry_path": "system.hero.xp",
+          "play": {"edit": "owner", "kind": "counter", "min": 0, "step": 1, "bell": true}
         },
         {
           "key": "immunities",
