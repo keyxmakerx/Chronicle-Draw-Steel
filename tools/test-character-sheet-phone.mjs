@@ -177,6 +177,15 @@ test('in a browser: on a phone the name gets the line and the boxes sit under it
   });
   assert.ok(besideButton.wrapped, 'the fixture button wraps');
   assert.ok(besideButton.beside, 'the dot after a wrapped button stays on its line');
+  // A short button keeps its own width: making room for a dot never narrows it.
+  const shortButton = await p.evaluate(() => {
+    const g = [].find.call(document.querySelectorAll('.sh-idline .sh-idgrp'), (x) => /Harlequin/.test(x.textContent));
+    g.firstChild.innerHTML = '<button type="button" class="sh-link sh-idsubopen">Shadow 10</button>';
+    const b = g.querySelector('button');
+    return { h: b.getBoundingClientRect().height, w: b.getBoundingClientRect().width, natural: b.scrollWidth, lh: parseFloat(getComputedStyle(b).lineHeight) || 24 };
+  });
+  assert.ok(shortButton.h < shortButton.lh * 1.5, 'a short button stays on one line: ' + JSON.stringify(shortButton));
+  assert.ok(shortButton.w >= shortButton.natural - 1, 'and is not narrowed: ' + JSON.stringify(shortButton));
   assert.deepEqual(errors, []);
 });
 
