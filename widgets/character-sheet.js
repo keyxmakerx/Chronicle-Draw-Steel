@@ -1036,11 +1036,10 @@
 
   // rKit renders the equipped kit's mechanical bonuses as a compact stat box:
   // the melee/ranged damage tier mini-ladder + the flat bonus chips. Reads the
-  // single kit projection (kit_details_json → a one-element array). Distinct from
+  // kit projection (kitObject: one kit, or a tactician's two). Distinct from
   // the ability cards — a kit is reference stats, not a clickable action.
   function rKit(def, data) {
-    var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
+    var k = kitObject(data);
     if (!k) return ph(noKitNote(data) || 'No kit equipped.');
 
     var has = function (v) { return v != null && v !== '' && v !== 0; };
@@ -3172,11 +3171,52 @@
     return foldHtml('sx-line' + (short ? ' sx-no' : ''), head, body, false);
   }
 
-  // The kit as raw values, for the free strike line.
-  function kitObject(data) {
+  // Every kit Foundry synced details for, as raw values.
+  function kitDetailList(data) {
     var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    return Array.isArray(arr) ? (arr[0] || null) : (arr && typeof arr === 'object' ? arr : null);
+    return (Array.isArray(arr) ? arr : arr && typeof arr === 'object' ? [arr] : [])
+      .filter(function (k) { return k && typeof k === 'object'; });
   }
+
+  // The kit bonuses the hero has, as one kit's raw values. A tactician's two
+  // kits give, for each kind of bonus both carry, one kit's bonus until the
+  // next respite, usually the higher (the book's Kits chapter): so each kind
+  // is the higher one, a damage row coming whole from the kit with more.
+  // `from` names the kit behind each bonus; `two` marks a pair.
+  var KIT_FLAT = ['stamina', 'speed', 'stability', 'disengage', 'meleeDistance', 'rangedDistance'];
+  function kitObject(data) {
+    var list = kitDetailList(data);
+    if (list.length < 2) return list[0] || null;
+    var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : null; };
+    var out = {}, from = {};
+    Object.keys(list[0]).forEach(function (key) { out[key] = list[0][key]; });
+    out.name = list.map(function (k) { return String(k.name || '').trim(); }).filter(Boolean).join(', ');
+    KIT_FLAT.forEach(function (key) {
+      var best = null;
+      list.forEach(function (k) {
+        var v = numOf(k[key]);
+        if (v != null && (best == null || v > numOf(best[key]))) best = k;
+      });
+      if (best) { out[key] = best[key]; from[key] = String(best.name || ''); }
+    });
+    ['melee', 'ranged'].forEach(function (p) {
+      var keys = [p + 'DamageT1', p + 'DamageT2', p + 'DamageT3'];
+      var best = null, bestSum = null;
+      list.forEach(function (k) {
+        var vals = keys.map(function (key) { return numOf(k[key]); });
+        if (vals.every(function (v) { return v == null; })) return;
+        var sum = vals.reduce(function (a, v) { return a + (v || 0); }, 0);
+        if (best == null || sum > bestSum) { best = k; bestSum = sum; }
+      });
+      if (best) { keys.forEach(function (key) { out[key] = best[key]; }); from[p + 'Damage'] = String(best.name || ''); }
+    });
+    out.from = from;
+    out.two = true;
+    return out;
+  }
+
+  // The line under a pair of kits' bonuses, saying which one each kind is.
+  var TWO_KIT_NOTE = 'Where both kits give the same kind of bonus, the higher one is shown. You may take the other kit\u2019s until your next respite.';
 
   // A hero with no free strike synced still gets one line, worked out from
   // the kit: its distance and the kit's damage bonus per tier. The base damage
@@ -3318,10 +3358,9 @@
   // ranged damage bonuses per tier, and the flat bonuses. Values are user
   // authored, so a non-numeric one is escaped rather than signed.
   function kitFacts(data) {
-    var arr = parseJson(f(data, 'kit_details_json', ''), []);
-    var k = Array.isArray(arr) ? arr[0] : (arr && typeof arr === 'object' ? arr : null);
+    var k = kitObject(data);
     var name = f(data, 'kit', '') || (k && k.name) || '';
-    if (!k) return { name: name, grid: '', chips: [] };
+    if (!k) return { name: name, grid: '', chips: [], note: '' };
     var has = function (v) { return v != null && v !== '' && v !== 0; };
     var fmt = function (v) { return (v == null || v === '') ? '–' : (v > 0 ? '+' + v : esc(String(v))); };
     var rows = '';
@@ -3336,7 +3375,7 @@
     var chips = [['Stamina', 'stamina'], ['Stability', 'stability'], ['Speed', 'speed'], ['Disengage', 'disengage']]
       .filter(function (b) { return has(k[b[1]]); })
       .map(function (b) { return '<span class="sh-chip">' + b[0] + ' ' + fmt(k[b[1]]) + '</span>'; });
-    return { name: name, grid: grid, chips: chips };
+    return { name: name, grid: grid, chips: chips, note: k.two && (grid || chips.length) ? TWO_KIT_NOTE : '' };
   }
 
   function pDamagePart(data) {
@@ -3723,7 +3762,7 @@
     var kv = k[key];
     if (kv == null || kv === '') kv = kp[key + '_bonus'];
     var kitBonus = (kv == null || kv === '' || !isFinite(Number(kv))) ? null : Number(kv);
-    var kitName = kitNames(data)[0] || '';
+    var kitName = (k.from && k.from[key]) || kitNames(data)[0] || '';
     var rows = [], sum = 0;
     if (key === 'disengage') { rows.push(['Base', '1']); sum += 1; }
     else if (anc && ap[key] != null && isFinite(Number(ap[key]))) { rows.push(['Ancestry', esc(ancName) + ' ' + Number(ap[key])]); sum += Number(ap[key]); }
@@ -3735,6 +3774,7 @@
     if (whole && rows.length && shown != null && shown !== sum) {
       note = 'That makes ' + sum + '. The other ' + signedStat(shown - sum) + ' comes from something the sheet can’t name, such as a feature, a title or a treasure.';
     }
+    if (!note && k.two && kitName && kitBonus) note = TWO_KIT_NOTE;
     return { rows: rows, note: note };
   }
 
@@ -5009,7 +5049,8 @@
     return '<div class="lf-grp"><span class="sh-k">Kit</span><div class="sh-kit-name" style="font-size:19px">' + esc(k.name || 'Kit') + '</div>' +
       (k.name ? '<div class="sh-kitw">' + kitWords(data, 'sh-orig-p') + '</div>' : '') + '</div>' +
       (k.grid || k.chips.length
-        ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') + '</div>'
+        ? '<div class="lf-grp"><span class="sh-k">Bonuses</span>' + k.grid + (k.chips.length ? '<div class="sh-line" style="margin-top:8px">' + k.chips.join('') + '</div>' : '') +
+          (k.note ? '<p class="sh-sub">' + esc(k.note) + '</p>' : '') + '</div>'
         : pEmpty('No kit details synced.'));
   }
 
@@ -7858,7 +7899,7 @@
       esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
-      pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel,
+      pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel, kitObject: kitObject,
       pItemsPanel: pItemsPanel, pFeaturesPanel: pFeaturesPanel, pSkillsPanel: pSkillsPanel,
       pNotesPanel: pNotesPanel, pDamagePanel: pDamagePanel,
       topChar: topChar, potencyOf: potencyOf, dashTabList: dashTabList, dashBoxes: dashBoxes, dashUnder: dashUnder, dashRailInner: dashRailInner,
