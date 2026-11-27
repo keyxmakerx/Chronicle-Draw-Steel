@@ -1185,3 +1185,11 @@ test('quiet look heading ladder: headings a step up, rows a step down', () => {
   assert.match(css, /\.sh-dan \{ font-size:calc\(14px \* var\(--ts\)\);font-weight:500; \}/);
   assert.match(css, /\.sh-fq \.sx-h \.paper-kind \{ font:600 calc\(18px \* var\(--ts\)\)\/1\.2 var\(--font-heading/);
 });
+
+// The Kit panel's damage grid is four cells a row; each row's label, Ranged
+// as well as Melee, is left in the label column.
+test('kit damage grid: every row label sits in the label column', () => {
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  assert.match(src, /\[data-sheet\] \.sh-kit span:nth-child\(4n\+1\) \{ text-align:left; \}/);
+  assert.ok(!/\.sh-kit span:nth-child\(5\)/.test(src), 'no rule targets only the first row');
+});

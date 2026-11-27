@@ -7343,7 +7343,8 @@
       '[data-sheet] .sh-sec { display:flex;flex-direction:column;gap:6px;min-width:0; }',
       '[data-sheet] .sh-kit-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-kit { display:grid;grid-template-columns:1fr repeat(3,28px);gap:2px 6px;font:500 calc(12.5px * var(--ts)) var(--paper-font);border-top:1px dashed var(--paper-edge);border-bottom:1px dashed var(--paper-edge);padding:4px 0;text-align:center; }',
-      '[data-sheet] .sh-kit span:first-child,[data-sheet] .sh-kit span:nth-child(5) { text-align:left; }',
+      // Every row's label (the first of each four cells) sits in the label column, not only the first row's.
+      '[data-sheet] .sh-kit span:nth-child(4n+1) { text-align:left; }',
       '[data-sheet] .sh-kit .sh-h { font:600 calc(9.5px * var(--ts)) var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-line { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center; }',
       '[data-sheet] .sh-line b { font:700 calc(13.5px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
@@ -7465,7 +7466,7 @@
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed { font-size:calc(20px * var(--ts));font-weight:500; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed small { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit { font-size:calc(19px * var(--ts));font-weight:500; }',
-      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(4n+5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit-name { font-size:calc(25px * var(--ts));font-weight:700; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd { font-size:calc(18px * var(--ts));font-weight:500;line-height:22px;border-color:var(--pc-lead);border-radius:20px 14px 18px 12px / 14px 18px 12px 20px;background:transparent;color:var(--pc-lead); }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd small { font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);text-shadow:none; }',
