@@ -94,6 +94,16 @@ Kit details arrive as one projection, `kit_details_json`, from the `kit` item:
 | `meleeDistance` / `rangedDistance` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
 | `stability`, `speed`, `stamina`, `disengage` | `system.bonuses.<name>` |
 
+A campaign's own kit has no Foundry item to copy, so sync makes one. The kit
+field's `foundry_entry_fields` fills that item from the entry's properties, along
+the same paths as above:
+
+| Entry property | Path within the made kit item |
+|---|---|
+| `stamina_bonus`, `speed_bonus`, `stability_bonus`, `disengage_bonus` | `system.bonuses.stamina` / `speed` / `stability` / `disengage` |
+| `melee_damage_bonus` / `ranged_damage_bonus` (`"+2/+2/+4"`) | `system.bonuses.melee.damage.tier1`–`tier3` / `system.bonuses.ranged.damage.tier1`–`tier3` |
+| `melee_distance_bonus` / `ranged_distance_bonus` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
+
 The single-item fields above (class, subclass, ancestry, career, culture, kit
 name, level, heroic resource name) are `foundry_item_single: true`: the adapter
 collapses the matching items to one record, using the first projection field in

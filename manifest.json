@@ -618,6 +618,40 @@
           ],
           "foundry_item_single": true,
           "foundry_item_join": true,
+          "foundry_entry_fields": {
+            "stamina_bonus": {
+              "path": "system.bonuses.stamina",
+              "format": "number"
+            },
+            "speed_bonus": {
+              "path": "system.bonuses.speed",
+              "format": "number"
+            },
+            "stability_bonus": {
+              "path": "system.bonuses.stability",
+              "format": "number"
+            },
+            "disengage_bonus": {
+              "path": "system.bonuses.disengage",
+              "format": "number"
+            },
+            "melee_damage_bonus": {
+              "path": "system.bonuses.melee.damage",
+              "format": "tiers"
+            },
+            "ranged_damage_bonus": {
+              "path": "system.bonuses.ranged.damage",
+              "format": "tiers"
+            },
+            "melee_distance_bonus": {
+              "path": "system.bonuses.melee.distance",
+              "format": "number"
+            },
+            "ranged_distance_bonus": {
+              "path": "system.bonuses.ranged.distance",
+              "format": "number"
+            }
+          },
           "play": {
             "edit": "owner",
             "kind": "choice",
