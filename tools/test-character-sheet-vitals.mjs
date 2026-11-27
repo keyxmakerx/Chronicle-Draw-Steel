@@ -228,6 +228,33 @@ test('in a browser: a second quick Damage or Spend builds on the first while it 
   } finally { await browser.close(); }
 });
 
+test('in a browser: typing while plus waits saves the plus, replaces the box, and Damage uses the saved number', { skip }, async () => {
+  const browser = await B.pw.chromium.launch({ executablePath: B.chrome, args: ['--no-sandbox'] });
+  try {
+    const { p, errors } = await mountAt(browser, 400, true);
+    await p.evaluate(() => { window.DELAY = 150; });
+    await vis(p, '[data-cs-vt="stamina"]').click();
+    await p.click('[data-cs-vt-step="1"]');
+    await p.click('[data-cs-vt-in]');
+    await p.keyboard.type('9');
+    assert.equal(await p.inputValue('[data-cs-vt-in]'), '9', 'the typed digit replaces 20, never "209"');
+    await p.fill('[data-cs-vt-amt]', '5');
+    await p.click('[data-cs-vt-hit="-1"]');
+    await p.waitForFunction(() => window.PUTS.length === 2);
+    await p.waitForTimeout(400);
+    assert.deepEqual(await puts(p), [{ stamina_current: 20 }, { stamina_current: 15 }], 'the plus saved, then 20 - 5; the unsent 9 is not used');
+
+    await p.evaluate(() => { window.DELAY = 0; });
+    await p.fill('[data-cs-vt-in]', '-10');
+    await p.keyboard.press('Enter');
+    await p.waitForFunction(() => window.PUTS.length === 3);
+    await p.click('#away');
+    await vis(p, '[data-cs-vt="stamina"]').click();
+    assert.equal(await p.inputValue('[data-cs-vt-in]'), '\u221210', 'the box shows a true minus too');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
 test('in a browser: a reader sees no controls', { skip }, async () => {
   const browser = await B.pw.chromium.launch({ executablePath: B.chrome, args: ['--no-sandbox'] });
   try {

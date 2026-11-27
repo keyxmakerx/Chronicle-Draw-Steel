@@ -3215,7 +3215,7 @@
     var h = '<div class="sh-vt-pop" data-cs-vt-pop="' + k + '" role="group" aria-label="' + escAttr('Change ' + label) + '">' +
       '<div class="sh-vt-step">' +
         '<button type="button" class="sh-vt-pm" data-cs-vt-step="-1" aria-label="' + escAttr('One less ' + label) + '">\u2212</button>' +
-        '<input class="sh-vt-in num" type="text" data-cs-vt-in value="' + v + '" inputmode="numeric" enterkeyhint="done" autocomplete="off" aria-label="' + escAttr(label) + '">' +
+        '<input class="sh-vt-in num" type="text" data-cs-vt-in value="' + signed(v) + '" inputmode="numeric" enterkeyhint="done" autocomplete="off" aria-label="' + escAttr(label) + '">' +
         '<button type="button" class="sh-vt-pm" data-cs-vt-step="1" aria-label="' + escAttr('One more ' + label) + '">+</button>' +
       '</div>';
     if (k === 'stamina') {
@@ -6876,7 +6876,7 @@
       var p = pop();
       if (!p) return;
       var lim = vtLimits(data, k), inp = p.querySelector('[data-cs-vt-in]');
-      if (inp && document.activeElement !== inp) inp.value = v;
+      if (inp && document.activeElement !== inp) inp.value = signed(v);
       [].forEach.call(p.querySelectorAll('[data-cs-vt-step]'), function (b) {
         var d = Number(b.getAttribute('data-cs-vt-step'));
         b.disabled = d < 0 ? (lim.min != null && v <= lim.min) : (lim.max != null && v >= lim.max);
@@ -6971,7 +6971,7 @@
       }, function (err) {
         clearTimeout(slow);
         vt.busy = false;
-        Object.keys(patch).forEach(function (fk) { delete vt.want[fk]; });
+        Object.keys(patch).forEach(function (fk) { if (vt.want[fk] === patch[fk]) delete vt.want[fk]; });
         var w = progWhy(progFailKind(err));
         if (vt.open) sync(vt.open, cur(vt.open));
         say('<b>Not saved.</b> ' + w.why + ', so ' + esc(vtLabel(data, k)) + ' is still ' + esc(vtShown(k, cur(k))) + '. ' + w.fix +
@@ -6983,7 +6983,8 @@
       n = vtClamp(n, vtLimits(data, k));
       sync(k, n);
       var inp = pop() && pop().querySelector('[data-cs-vt-in]');
-      if (inp) inp.value = n;
+      // Selected, so typing next replaces the stepped number rather than adding to it.
+      if (inp) { inp.value = signed(n); if (document.activeElement === inp) inp.select(); }
       clearTimeout(vt.timer);
       vt.timer = null;
       var go = function () {
@@ -7051,6 +7052,25 @@
       if (e.target.hasAttribute('data-cs-vt-in')) { e.preventDefault(); typed(vt.open); }
       else if (e.target.hasAttribute('data-cs-vt-amt')) { e.preventDefault(); say('Press Damage or Heal.'); }
     };
+    // Typing a new number saves the minus or plus still waiting first; the
+    // typed number then waits for Enter, and Damage meanwhile uses the saved one.
+    // Entering the box selects its number, so what is typed replaces it.
+    inst._onVtFocus = function (e) {
+      var t = e.target;
+      if (!t || !t.hasAttribute || !t.hasAttribute('data-cs-vt-in')) return;
+      t.select();
+      vt.selUp = t;
+    };
+    inst._onVtUp = function (e) {
+      if (vt.selUp && e.target === vt.selUp) e.preventDefault();
+      vt.selUp = null;
+    };
+    inst._onVtInput = function (e) {
+      if (!vt.timer || !e.target || !e.target.hasAttribute || !e.target.hasAttribute('data-cs-vt-in')) return;
+      clearTimeout(vt.timer); vt.timer = null;
+      var go = vt.pending; vt.pending = null;
+      if (go) go();
+    };
     inst._onVtOutside = function (e) {
       if (!vt.open) return;
       var p = pop();
@@ -7065,6 +7085,9 @@
     };
     el.addEventListener('click', inst._onVtClick);
     el.addEventListener('keydown', inst._onVtKey, true);
+    el.addEventListener('input', inst._onVtInput);
+    el.addEventListener('focusin', inst._onVtFocus);
+    el.addEventListener('mouseup', inst._onVtUp);
     document.addEventListener('pointerdown', inst._onVtOutside, true);
   }
 
@@ -7109,6 +7132,9 @@
     dropTips(inst);
     if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
     if (inst._onVtKey) el.removeEventListener('keydown', inst._onVtKey, true);
+    if (inst._onVtInput) el.removeEventListener('input', inst._onVtInput);
+    if (inst._onVtFocus) el.removeEventListener('focusin', inst._onVtFocus);
+    if (inst._onVtUp) el.removeEventListener('mouseup', inst._onVtUp);
     if (inst._onVtOutside && typeof document !== 'undefined') document.removeEventListener('pointerdown', inst._onVtOutside, true);
     if (inst._vt) clearTimeout(inst._vt.timer);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
@@ -7128,7 +7154,7 @@
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_tipReset', '_onTipScroll', '_onTipOutside', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
-      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp', '_onVtClick', '_onVtKey', '_onVtOutside', '_vt'].forEach(function (k) { inst[k] = null; });
+      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp', '_onVtClick', '_onVtKey', '_onVtInput', '_onVtFocus', '_onVtUp', '_onVtOutside', '_vt'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -8400,6 +8426,8 @@
       // clear of the recovery dots below.
       '[data-sheet] .sh-vt { font:inherit;color:inherit;background:none;border:0;padding:0;margin:0 0 3px;cursor:pointer;text-decoration:underline dotted var(--paper-accent);text-decoration-thickness:2px;text-underline-offset:2px;border-radius:3px; }',
       '[data-sheet] .sh-vt:hover,[data-sheet] .sh-vt[aria-expanded="true"] { color:var(--paper-accent); }',
+      '[data-sheet] .sh-vt { position:relative; }',
+      '[data-sheet] .sh-vt::after { content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%); }',
       '[data-sheet] .sh-vt:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       '[data-sheet] .is-vt-open { position:relative; }',
       '[data-sheet] .sh-drec.is-vt-open { display:inline-block; }',
