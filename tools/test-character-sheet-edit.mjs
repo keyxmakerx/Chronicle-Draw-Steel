@@ -20,7 +20,8 @@ const load = (f) => JSON.parse(readFileSync(new URL('../data/' + f, import.meta.
 
 const REFS = {
   'ancestries.json': load('ancestries.json'), 'skills.json': load('skills.json'), 'perks.json': load('perks.json'),
-  'careers.json': load('careers.json'), 'cultures.json': load('cultures.json'), 'kits.json': load('kits.json')
+  'careers.json': load('careers.json'), 'cultures.json': load('cultures.json'), 'kits.json': load('kits.json'),
+  'culture-aspects.json': load('culture-aspects.json')
 };
 const HERO = (fields, extra) => Object.assign({
   name: 'Bren', campaignId: 'c1', entityId: 'e1', canEditIdentity: true, isOwner: true, foundryLinked: false, fields
@@ -147,10 +148,20 @@ test('grants: a career, culture and kit show their own text and suggested picks'
   assert.deepEqual(cs.grantRows(hero, 'languages').map((r) => r.text), ['Caelian, plus one language that fits the culture', 'Two languages']);
 });
 
+test('grants: a hero holding a single culture aspect gets that aspect\'s skill suggestion', () => {
+  const rows = cs.grantRows(HERO({ culture: 'Nomadic environment' }), 'skills');
+  const culture = rows.find((r) => r.label === 'Culture');
+  assert.ok(culture, 'the aspect is found');
+  assert.deepEqual(culture.quick, ['Navigate']);
+  assert.match(culture.text, /exploration or interpersonal/);
+  // A whole culture still wins over an aspect of the same name.
+  assert.deepEqual(cs.grantRows(HERO({ culture: 'Pirate crew' }), 'skills').find((r) => r.label === 'Culture').quick, ['Navigate', 'Jump', 'Sneak']);
+});
+
 test('every suggested skill and perk in the data names something the editors can tick', () => {
   const skills = REFS['skills.json'], perks = REFS['perks.json'].map((p) => p.name.toLowerCase());
   const miss = [];
-  for (const file of ['careers.json', 'cultures.json']) {
+  for (const file of ['careers.json', 'cultures.json', 'culture-aspects.json']) {
     for (const e of REFS[file]) {
       const g = cs.grantsFor(e);
       g.skills.quick.forEach((n) => { if (!cs.skillSlug(n, skills)) miss.push(e.name + ': skill ' + n); });
