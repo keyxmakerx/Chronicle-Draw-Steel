@@ -2436,9 +2436,15 @@
       var stuck = !!(bar && under && bar.offsetParent !== null && bar.getBoundingClientRect().top - under.getBoundingClientRect().bottom > 32);
       var main = setDashTab(el, id);
       if (!main || !stuck) return;
-      var pane = id === 'abilities' ? main.querySelector('.sh-body') : main.querySelector('[data-dpane="' + id + '"]');
+      var pane = id === 'abilities' ? main.querySelector('.sh-body') : id === 'dock' ? main.querySelector('[data-sheet-dock-panes]') : main.querySelector('[data-dpane="' + id + '"]');
       if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start' });
     }
+
+    // The host opened one of its docked tabs.
+    inst._onDockOpen = function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-sheet-dock-tabs]')) pickDashTab('dock');
+    };
+    el.addEventListener('chronicle:sheet-dock-open', inst._onDockOpen);
 
     inst._onAbilityClick = function (e) {
       var t = e.target;
@@ -2551,15 +2557,24 @@
       var port = (t && t.matches && (e.key === 'Enter' || e.key === ' ')) ? t : null;
       if (port && t.matches('[data-cs-change-image]:not(button)')) { e.preventDefault(); requestImageChange(t); return; }
       if (port && e.key === 'Enter' && t.matches('[data-cs-portrait-view]')) { e.preventDefault(); openPortrait(t); return; }
-      var dtEl = (t && t.closest) ? t.closest('[data-cs-dtab]') : null;
-      if (dtEl) {
-        var shown = [].filter.call(el.querySelectorAll('[data-cs-dtab]'), function (b) { return b.offsetParent !== null; });
+      // The row's arrow keys walk every tab in it, the host's docked ones
+      // too; a docked tab is pressed, so its host opens it.
+      var dtEl = (t && t.closest) ? (t.closest('[data-cs-dtab]') || t.closest('[data-sheet-dock-tabs] > [role="tab"]')) : null;
+      var dtBar = dtEl && dtEl.closest('.sh-dtabs');
+      if (dtBar) {
+        var shown = [].filter.call(dtBar.querySelectorAll('[data-cs-dtab],[data-sheet-dock-tabs] > [role="tab"]'), function (b) { return b.offsetParent !== null; });
         var at = shown.indexOf(dtEl), go = -1;
         if (e.key === 'ArrowRight') go = (at + 1) % shown.length;
         else if (e.key === 'ArrowLeft') go = (at + shown.length - 1) % shown.length;
         else if (e.key === 'Home') go = 0;
         else if (e.key === 'End') go = shown.length - 1;
-        if (go >= 0 && shown[go]) { e.preventDefault(); pickDashTab(shown[go].getAttribute('data-cs-dtab')); shown[go].focus(); return; }
+        if (go >= 0 && shown[go]) {
+          e.preventDefault();
+          var own = shown[go].getAttribute('data-cs-dtab');
+          if (own) pickDashTab(own); else shown[go].click();
+          shown[go].focus();
+          return;
+        }
       }
       var tabEl = (t && t.closest) ? t.closest('[data-ds-tab]') : null;
       if (tabEl) {
@@ -3442,8 +3457,9 @@
     var main = el.querySelector('[data-cs-dmain]');
     if (!main) return null;
     var abs = el.querySelector('[data-cs-dabs]');
+    var tab = main.getAttribute('data-dtab');
     return {
-      tab: main.getAttribute('data-dtab'),
+      tab: tab === 'dock' ? 'abilities' : tab,
       filter: abs ? abs.getAttribute('data-dfilter') : null,
       afford: abs ? abs.hasAttribute('data-dafford') : true,
       open: abs ? [].map.call(abs.querySelectorAll('.sh-dar[aria-expanded="true"] .sh-dan'), function (n) { return n.textContent; }) : []
@@ -4215,12 +4231,15 @@
       (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
       (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
-    out += '<h3 class="sh-dsec">Items</h3>';
+    // With the Armory on, a host that docks takes its Items piece into the
+    // slot (the hero's pack and money); one that doesn't leaves the pointer
+    // to the page's Items tab, which the CSS hides behind a filled slot.
     if (data.armoryItems) {
-      out += '<p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
-        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p>';
+      out += '<div class="sh-dslot" data-sheet-dock-piece="items"><h3 class="sh-dsec">Pack and money</h3></div>' +
+        '<div class="sh-dslotfb"><h3 class="sh-dsec">Items</h3><p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
+        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p></div>';
     } else {
-      out += '<div class="sh-dlist">' + pItemsPanel(data) + '</div>';
+      out += '<h3 class="sh-dsec">Items</h3><div class="sh-dlist">' + pItemsPanel(data) + '</div>';
     }
     return out;
   }
@@ -4247,7 +4266,7 @@
       return '<button type="button" role="tab" class="sh-dtab' + (t.narrow ? ' sh-dnarrow' : '') + '" id="cs-dt-' + uid + '-' + t.id + '"' +
         ' aria-controls="cs-dp-' + uid + '-' + t.id + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-cs-dtab="' + t.id + '">' +
         t.label + (t.n != null ? '<small class="num">' + t.n + '</small>' : '') + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '<span class="sh-dhost" data-sheet-dock-tabs></span></div>';
   }
 
   function dashPanes(data, uid) {
@@ -5953,7 +5972,8 @@
       '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
       '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
       '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + dashAbilities(data, uid) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) + '</div></div>' +
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) +
+      '<div class="sh-dhostp sh-dq" data-sheet-dock-panes></div></div></div>' +
       pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
@@ -6022,7 +6042,8 @@
   function detachListeners(inst, el) {
     [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
-      ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey']].forEach(function (p) {
+      ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey'],
+      ['chronicle:sheet-dock-open', '_onDockOpen']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
@@ -6036,7 +6057,7 @@
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
-      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
+      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo'].forEach(function (k) { inst[k] = null; });
   }
 
@@ -6079,17 +6100,65 @@
   }
 
   // setDashTab opens one of the dashboard's tabs; null when the sheet has no
-  // such tab (Story is a permission gate).
+  // such tab (Story is a permission gate). 'dock' opens the host's pane area
+  // and leaves none of the sheet's own tabs selected, since the host's tab is.
+  // Opening one of its own tells the host, which then lets go of its tab.
   function setDashTab(el, id) {
     var main = el.querySelector('[data-cs-dmain]');
-    if (!main || !main.querySelector('[data-cs-dtab="' + id + '"]')) return null;
+    var sel = id === 'dock' ? '[data-sheet-dock-panes]' : '[data-cs-dtab="' + id + '"]';
+    if (!main || !main.querySelector(sel)) return null;
     main.setAttribute('data-dtab', id);
     [].forEach.call(main.querySelectorAll('[data-cs-dtab]'), function (b) {
       var on = b.getAttribute('data-cs-dtab') === id;
       b.setAttribute('aria-selected', on ? 'true' : 'false');
       b.setAttribute('tabindex', on ? '0' : '-1');
     });
+    if (id !== 'dock') dockSay(el.querySelector('[data-sheet]') || el, 'chronicle:sheet-tab', { tab: id });
     return main;
+  }
+
+  // ── the host dock ──────────────────────────────────────────────────
+  // While the dashboard's tab row is on screen, the page's own pieces
+  // (Chronicle's Trackers, Notes, Files and the rest) can join it: the row
+  // holds an empty [data-sheet-dock-tabs] for their tabs, the tab area an
+  // empty [data-sheet-dock-panes] for their panes, and Equipment a
+  // [data-sheet-dock-piece="items"] for the hero's pack and money. The root
+  // wears data-sheet-dock="open" and says chronicle:sheet-dock while the
+  // slots are there, and chronicle:sheet-undock, synchronously, just before
+  // they go (a redraw, a phone-width sheet, destroy), so the host can take
+  // its nodes back before they are wiped. The host opens one of its tabs by
+  // saying chronicle:sheet-dock-open from inside the slot. Contract:
+  // Chronicle's docs/system-package-rendering.md.
+  function dockSay(node, name, detail) {
+    if (!node || typeof node.dispatchEvent !== 'function' || typeof CustomEvent !== 'function') return;
+    node.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail || null }));
+  }
+  function syncDock(el, on) {
+    var root = el.querySelector ? el.querySelector('[data-sheet]') : null;
+    on = !!on && !!root && !!root.querySelector('[data-sheet-dock-tabs]') && !!root.querySelector('[data-sheet-dock-panes]');
+    var was = el._csDock || null;
+    if (on && was === root) return;
+    if (!on && !was) return;
+    if (was) {
+      el._csDock = null;
+      was.removeAttribute('data-sheet-dock');
+      // A root already gone from the page says it from the mount instead.
+      dockSay(was.isConnected === false ? el : was, 'chronicle:sheet-undock');
+      var main = el.querySelector('[data-cs-dmain]');
+      if (main && main.getAttribute('data-dtab') === 'dock') setDashTab(el, 'abilities');
+    }
+    if (on) {
+      el._csDock = root;
+      root.setAttribute('data-sheet-dock', 'open');
+      dockSay(root, 'chronicle:sheet-dock');
+    }
+  }
+  // The sheet's content width, as the dashboard's container query reads it.
+  function dashWide(el) {
+    var sheet = el.querySelector('.sh-sheet'), root = el.querySelector('[data-sheet]');
+    if (!sheet || !root || !quietLook(root) || typeof getComputedStyle !== 'function') return false;
+    var cs = getComputedStyle(sheet);
+    return sheet.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) >= DASH_AT;
   }
 
   // The widths dashCss's container queries switch at, read from the same box.
@@ -6119,7 +6188,10 @@
     var lastW = 0;
     // A style switch changes the look without a redraw or a resize.
     if (typeof MutationObserver === 'function') {
-      inst._dashMo = new MutationObserver(function () { syncPageHooks(root, quietLook(root) && lastW >= DASH_AT); });
+      inst._dashMo = new MutationObserver(function () {
+        syncPageHooks(root, quietLook(root) && lastW >= DASH_AT);
+        syncDock(el, quietLook(root) && lastW >= DASH_AT);
+      });
       inst._dashMo.observe(root, { attributes: true, attributeFilter: ['data-sheet-style'] });
     }
     syncPageHooks(root, false);
@@ -6127,6 +6199,7 @@
       var w = lastW = entries[entries.length - 1].contentRect.width;
       var dash = quietLook(root) && w >= DASH_AT;
       syncPageHooks(root, dash);
+      syncDock(el, dash);
       if (dash) { body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', tab); }
       else { body.removeAttribute('role'); body.removeAttribute('aria-labelledby'); }
       var main = el.querySelector('[data-cs-dmain]');
@@ -6172,6 +6245,7 @@
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
     var keptView = dashViewToKeep(el);
+    syncDock(el, false);
     el.innerHTML = paperSheetHtml(data);
     // The settle plays from its class; taken off before the first style
     // pass, it never starts.
@@ -6190,11 +6264,15 @@
     attachDashPin(inst, el);
     attachStatCards(inst, el, data);
     showItemsRow(el);
+    // Docked again in the same task as the redraw, so the page never paints
+    // its pieces back under the sheet in between.
+    syncDock(el, dashWide(el));
   }
 
 
   function mountSheet(inst, el, data, still) {
     inst._paper = false;
+    syncDock(el, false);
     releaseHeight(el);
     if (paperAvailable()) { mountPaper(inst, el, data, still); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
@@ -6784,7 +6862,7 @@
       '  Q button.sh-dbox { cursor:pointer;transition:box-shadow var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out); }',
       '  Q button.sh-dbox:hover,Q button.sh-dbox[aria-expanded="true"] { box-shadow:var(--elev-hover,none);border-color:color-mix(in srgb,var(--paper-accent) 55%,var(--paper-edge)); }',
       '  Q button.sh-dbox:active { box-shadow:inset 0 1px 3px rgb(0 0 0 / .18); }',
-      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab,[data-sheet-dock-tabs] > [role="tab"]):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       // A number box opens its small card, which hangs under it over the row
       // below. The five that roll carry a quiet die.
       '  Q .sh-dboxes { position:relative; }',
@@ -6887,6 +6965,20 @@
       '  Q .sh-dtab[aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '  Q .sh-dtab small { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
       '  Q .sh-dtab.sh-dnarrow { display:inline-flex; }',
+      // The host's docked tabs wear the sheet's tab look, after a thin divider.
+      '  Q .sh-dhost { display:contents; }',
+      // Tighter with the host's tabs in, so the joined row fits one line at the sheet's usual width.
+      '  Q .sh-dtabs:has(> .sh-dhost:not(:empty)) { column-gap:22px; }',
+      '  Q .sh-dhost:not(:empty)::before { content:"";align-self:center;width:1px;height:18px;background:var(--paper-edge); }',
+      '  Q .sh-dhost > [role="tab"] { display:inline-flex;align-items:baseline;min-height:44px;margin:0 0 -1px;padding:12px 0 10px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;cursor:pointer;font:600 calc(12px * var(--ts)) var(--paper-ui-font);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:var(--paper-mute);transition:color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dhost > [role="tab"]:hover { color:var(--paper-ink); }',
+      '  Q .sh-dhost > [role="tab"][aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '  Q .sh-dhost > [role="tab"][hidden] { display:none; }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span) { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span):empty { display:none; }',
+      '  Q .sh-dmain:not([data-dtab="dock"]) > [data-sheet-dock-panes] { display:none; }',
+      '  Q .sh-dmain > [data-sheet-dock-panes] { padding-top:8px;scroll-margin-top:110px; }',
+      '  Q [data-sheet-dock-piece]:not([data-docked]),Q [data-sheet-dock-piece][data-docked] + .sh-dslotfb { display:none; }',
       '  Q .sh-dmain > .sh-body { display:block;margin-top:12px;scroll-margin-top:110px; }',
       '  Q .sh-dmain > .sh-body > .sh-col { display:block; }',
       '  Q .sh-dmain:not([data-dtab="abilities"]) > .sh-body { display:none; }',
@@ -7010,7 +7102,7 @@
       '  Q .sh-dmain[data-dtab="skills"] > .sh-dpane[data-dpane="skills"] { display:none; }',
       '}',
       '@keyframes sh-dunfold { from { opacity:0;transform:translateY(-4px); } }',
-      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dhost > [role="tab"],.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
       'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dacard { animation:none !important; }',
       '@media (prefers-reduced-motion:reduce) { Q :is(.sh-dar,.sh-dachev,.sh-dsw),Q .sh-dsw::after { transition:none !important; } Q .sh-dacard { animation:none !important; } }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
@@ -7883,6 +7975,7 @@
 
     destroy: function (el) {
       keepDashView(el);
+      syncDock(el, false);
       el._csLive = null;
       el._csLoading = null;
       clearTimeout(el._csWait);
@@ -7939,7 +8032,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere,
+      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
