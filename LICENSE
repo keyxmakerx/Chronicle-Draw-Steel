@@ -80,6 +80,14 @@ mechanics, and game rules". It also says: "You can share raw text from the
 listed products but not screenshots of the pages or artwork." This package
 copies no art and no page images.
 
+Which books it covers: the note at the top of the licence begins "This
+license applies to DRAW STEEL Backer Packet #1, Draw Steel Backer Packet #2,"
+and goes on to name Draw Steel: Heroes, Draw Steel: Monsters, The Beastheart
+for Draw Steel and The Summoner. The maintainer has read that note and
+confirmed both class books are on it. The licence's FAQ says: "This license
+only covers the Documents as stated at the top of the license." Draw Steel:
+Encounters is not named, so nothing from it is in this package.
+
 Not separately confirmed: whether offering this package's own work under
 CC-BY-4.0 alongside the rules text fits the licence's terms. Treat section 2
 as this project's good-faith position on that point, not as legal advice.
