@@ -3221,7 +3221,7 @@
   }
 
   // The line under a pair of kits' bonuses, saying which one each kind is.
-  var TWO_KIT_NOTE = 'Where both kits give the same kind of bonus, the higher one is shown. You may take the other kit\u2019s until your next respite.';
+  var TWO_KIT_NOTE = 'Where both kits give the same kind of bonus, the higher one is shown. You may take the other kit\u2019s bonus instead until your next respite.';
 
   // A hero with no free strike synced still gets one line, worked out from
   // the kit: its distance and the kit's damage bonus per tier. The base damage

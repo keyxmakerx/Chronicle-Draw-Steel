@@ -931,7 +931,7 @@ test('kit: a tactician\'s two kits give the higher of each kind of bonus, and th
   assert.deepEqual(k.from, { stamina: 'Shining Armor', speed: 'Spellsword', stability: 'Shining Armor', rangedDistance: 'Spellsword', meleeDamage: 'Spellsword', rangedDamage: 'Spellsword' });
   const panel = cs.pKitPanel(fields({}));
   assert.ok(/Stamina \+12/.test(panel) && /Speed \+1/.test(panel), panel);
-  assert.ok(/the higher one is shown\. You may take the other kit.s until your next respite\./.test(panel), 'the choice the rules leave is said');
+  assert.ok(/the higher one is shown\. You may take the other kit.s bonus instead until your next respite\./.test(panel), 'the choice the rules leave is said');
   cs.setEditRefs(Object.assign({}, ORIGIN_REFS));
   try {
     const st = cs.statSources(fields({ speed: 6 }), 'speed');
