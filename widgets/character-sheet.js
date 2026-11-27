@@ -3203,7 +3203,7 @@
     var trig = a.trigger ? cleanFoundryText(a.trigger) : '';
     var cost = Number(a.cost) > 0 ? Number(a.cost) : 0;
     var have = num(data, 'heroic_resource_current', 0);
-    var short = cost > have;
+    var short = cost > 0 && cantPay(a, data);
     var tag = cost ? '<span class="sx-cost">' + esc(costLabel(a, data) + (short ? ', you have ' + have : '')) + '</span>' : '';
     var star = g === 'signature' ? '<span class="sx-star" role="img" aria-label="Signature">★</span>' : '';
     var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
@@ -4362,9 +4362,33 @@
       String(a.name || '').trim().toLowerCase() === 'free strike';
   }
   function heroHave(data) { return num(data, 'heroic_resource_current', 0); }
+  // A Talent can spend clarity they don't have, down to minus (1 + Reason)
+  // (the Heroes book's Talent; book/chapters/classes.yaml says the same). An
+  // ability that forbids negative clarity keeps the plain limit.
+  function isClarity(data) {
+    return String(f(data, 'heroic_resource_name', '') || '').trim().toLowerCase() === 'clarity' ||
+      String(f(data, 'class', '') || '').trim().toLowerCase() === 'talent';
+  }
+  function clarityFloor(data) { return Math.max(0, 1 + num(data, 'reason', 0)); }
+  var NO_NEGATIVE = /can(?:'|\u2019|no)?t use this ability if doing so would (?:cause you to )?have negative clarity/i;
+  function forbidsNegative(a) {
+    try { return NO_NEGATIVE.test(JSON.stringify(a)); } catch (e) { return false; }
+  }
+  // The most this ability's cost may be right now.
+  function heroReach(a, data) {
+    var have = heroHave(data);
+    if (!isClarity(data) || (a && forbidsNegative(a))) return have;
+    return have + clarityFloor(data);
+  }
   // Only a cost can be out of reach: a free ability is always there, even
   // when the resource has gone below zero.
-  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroHave(data); }
+  function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroReach(a, data); }
+  // What the hero can pay with, in words: "3 Wrath", or for a Talent the
+  // clarity they have and how far below zero they may go.
+  function payWords(data) {
+    var have = heroHave(data);
+    return have + ' ' + heroResName(data) + (isClarity(data) ? ', down to \u2212' + clarityFloor(data) : '');
+  }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
   // The first sentence of a text, whole, for the line under a row's name.
@@ -4379,7 +4403,7 @@
     var c = abCost(a), have = heroHave(data);
     if (!c) return '<span class="sh-dac"></span>';
     return '<span class="sh-dac num">' + esc(costLabel(a, data)) +
-      (c > have ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
+      (cantPay(a, data) ? '<span class="sh-sr">, you have ' + have + '</span>' : '') + '</span>';
   }
 
   // The hero's tier results. A main action with no power roll says so, so an
@@ -4477,7 +4501,6 @@
   // A group of rows under its own column headings. What the hero cannot pay
   // for folds into one line that still names each and its cost.
   function dashAbGroup(kind, list, data, all, uid) {
-    var have = heroHave(data);
     var rolled = (kind === 'main' || kind === 'free') &&
       (!list.length || list.some(function (a) { return !!heroResult(a, heroBest(a, data)); }));
     var cols = kind === 'free' ? '<span></span><span>Distance</span><span></span>' : '<span>Cost</span><span>Distance</span><span>Target</span>';
@@ -4488,7 +4511,7 @@
     var cut = '';
     if (short.length) {
       cut = '<p class="sh-dcut"><span class="sh-dcut-lead">' + short.length + (short.length < list.length ? ' more' : '') +
-          ' cost over ' + have + ' ' + esc(heroResName(data)) + '</span><span class="sh-dcut-names">' +
+          ' cost over ' + esc(payWords(data)) + '</span><span class="sh-dcut-names">' +
         short.map(function (a, i) {
           return '<span class="sh-dcut-nm">' + esc(a.name || 'Untitled') + ' <b class="num">' + abCost(a) + '</b>' +
             (i < short.length - 1 ? '<span class="sh-dsep" aria-hidden="true">·</span>' : '') + '</span>';
@@ -4520,7 +4543,6 @@
   // folds away what the current heroic resource cannot pay for. It is only
   // there when something costs more than the hero has.
   function dashAbFilter(groups, common, own, data) {
-    var have = heroHave(data);
     var can = own.filter(function (a) { return !cantPay(a, data); }).length;
     var btn = function (id, label, n, on) {
       return '<button type="button" data-cs-dfilt="' + id + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + label +
@@ -4531,7 +4553,7 @@
     if (common.length) out += btn('every', 'Every hero', common.length, false);
     if (can < own.length) {
       out += '<button type="button" class="sh-dafford" role="switch" aria-checked="true" data-cs-dafford>' +
-        '<span>Only what ' + have + ' ' + esc(heroResName(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
+        '<span>Only what ' + esc(payWords(data)) + ' pays for<small class="num">' + can + ' of ' + own.length + '</small></span>' +
         '<span class="sh-dsw" aria-hidden="true"></span></button>';
     }
     return '<div class="sh-dfilt" role="group" aria-label="Show abilities">' + out + '</div>';
@@ -8658,7 +8680,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment,
+      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment, cantPay: cantPay,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };

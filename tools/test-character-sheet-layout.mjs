@@ -765,8 +765,31 @@ test('dashboard abilities: a resource below zero still lists everything that cos
     { name: 'Step', type: 'maneuver' }
   ], { heroic_resource_name: 'Clarity', heroic_resource_current: -2 }), 1);
   assert.equal((d.match(/sh-dai is-short/g) || []).length, 1, 'only Grip, which has a cost, is out of reach');
-  assert.ok(/1 more cost over -2 Clarity<\/span>.*Grip <b class="num">5<\/b>/.test(d));
+  assert.ok(/1 more cost over -2 Clarity, down to −\d+<\/span>.*Grip <b class="num">5<\/b>/.test(d));
   assert.ok(/pays for<small class="num">2 of 3<\/small>/.test(d));
+});
+
+// A Talent can spend clarity they don't have, down to minus (1 + Reason),
+// so an ability costing up to clarity + 1 + Reason is still in reach.
+test('a Talent\'s clarity reaches below zero: down to minus (1 + Reason)', () => {
+  const abs = [
+    { name: 'Spike', category: 'signature', type: 'action' },
+    { name: 'Grip', category: 'heroic', type: 'action', cost: 5 },
+    { name: 'Crush', category: 'heroic', type: 'action', cost: 6 },
+    { name: 'Calm', category: 'heroic', type: 'action', cost: 3, effects: [{ type: 'strained', description: 'You can\'t use this ability if doing so would cause you to have negative clarity.' }] }
+  ];
+  const talent = faceData(abs, { heroic_resource_name: 'Clarity', heroic_resource_current: 2, reason: 2 });
+  const grip = abs[1], crush = abs[2], calm = abs[3];
+  assert.equal(cs.cantPay(grip, talent), false, '5 is within 2 + 1 + 2');
+  assert.equal(cs.cantPay(crush, talent), true, '6 is past the floor of -3');
+  assert.equal(cs.cantPay(calm, talent), true, 'an ability that forbids negative clarity keeps the plain limit');
+  const d = cs.dashAbilities(talent, 1);
+  assert.ok(/Only what 2 Clarity, down to −3 pays for<small class="num">2 of 4<\/small>/.test(d), 'the switch says how far below zero');
+  assert.ok(/2 more cost over 2 Clarity, down to −3<\/span>/.test(d));
+  // The class names a Talent even when the resource name is missing.
+  assert.equal(cs.cantPay(grip, faceData(abs, { class: 'Talent', heroic_resource_name: '', heroic_resource_current: 2, reason: 2 })), false);
+  // Any other class pays only with what it has.
+  assert.equal(cs.cantPay(grip, faceData(abs, { heroic_resource_current: 2, reason: 2 })), true);
 });
 
 test('dashboard abilities: a hero with no free strike synced gets the kit\'s line', () => {
