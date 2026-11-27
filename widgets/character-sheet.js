@@ -3168,7 +3168,67 @@
       '<div class="sh-fold" data-cs-pick-fold tabindex="-1"></div></section>';
   }
 
-  function pStamina(cur, max, winded) {
+  // ── Vitals: Stamina, the heroic resource, Surges and Recoveries ───────────
+  // The hero's player and the Director press one of these numbers to change
+  // it: a box to type the new value with minus and plus beside it, and for
+  // Stamina a damage or healing amount, for Recoveries one press that spends
+  // one and heals. Anyone else sees the number alone.
+  var VT = {
+    stamina: { field: 'stamina_current', label: 'Stamina' },
+    hr: { field: 'heroic_resource_current' },
+    surges: { field: 'surges', label: 'Surges' },
+    rec: { field: 'recoveries', label: 'Recoveries' }
+  };
+  function vtLabel(data, k) { return k === 'hr' ? (f(data, 'heroic_resource_name', '') || 'Heroic Resource') : VT[k].label; }
+  function vtShown(k, v) { return k === 'hr' ? signed(v) : String(v); }
+  // Stamina stops at minus its Winded value (dead) and at its maximum, and
+  // Recoveries at theirs. Some classes take their heroic resource below 0,
+  // so it has no floor.
+  function vtLimits(data, k) {
+    var max = num(data, 'stamina_max', 0), winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
+    if (k === 'stamina') return { min: winded > 0 ? -winded : null, max: max > 0 ? max : null };
+    if (k === 'rec') { var rm = num(data, 'recoveries_max', 0); return { min: 0, max: rm > 0 ? rm : null }; }
+    if (k === 'surges') return { min: 0, max: null };
+    return { min: null, max: null };
+  }
+  function vtClamp(n, lim) {
+    if (lim.min != null && n < lim.min) n = lim.min;
+    if (lim.max != null && n > lim.max) n = lim.max;
+    return n;
+  }
+  // A whole number from what was typed, with a minus sign or an en dash for
+  // negatives; null for anything else.
+  function vtParse(s) {
+    var t = String(s == null ? '' : s).replace(/[\u2212\u2013]/g, '-').replace(/\s+/g, '');
+    return /^[+-]?\d+$/.test(t) ? Number(t) : null;
+  }
+  // The number as the sheet shows it; for an editor, a button that opens
+  // the controls. inner holds the data-v span.
+  function vtNum(data, k, inner) {
+    if (!progCanEdit(data)) return inner;
+    var v = num(data, VT[k].field, 0);
+    return '<button type="button" class="sh-vt num" data-cs-vt="' + k + '" aria-expanded="false" aria-label="' +
+      escAttr(vtLabel(data, k) + ', ' + vtShown(k, v) + '. Press to change it') + '">' + inner + '</button>';
+  }
+  function vtPopHtml(data, k) {
+    var v = num(data, VT[k].field, 0), label = vtLabel(data, k);
+    var h = '<div class="sh-vt-pop" data-cs-vt-pop="' + k + '" role="group" aria-label="' + escAttr('Change ' + label) + '">' +
+      '<div class="sh-vt-step">' +
+        '<button type="button" class="sh-vt-pm" data-cs-vt-step="-1" aria-label="' + escAttr('One less ' + label) + '">\u2212</button>' +
+        '<input class="sh-vt-in num" type="text" data-cs-vt-in value="' + v + '" inputmode="numeric" enterkeyhint="done" autocomplete="off" aria-label="' + escAttr(label) + '">' +
+        '<button type="button" class="sh-vt-pm" data-cs-vt-step="1" aria-label="' + escAttr('One more ' + label) + '">+</button>' +
+      '</div>';
+    if (k === 'stamina') {
+      h += '<div class="sh-vt-acts"><input class="sh-vt-amt num" type="text" data-cs-vt-amt inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="0" aria-label="Damage or healing">' +
+        '<button type="button" class="sh-vt-act" data-cs-vt-hit="-1">Damage</button><button type="button" class="sh-vt-act" data-cs-vt-hit="1">Heal</button></div>';
+    } else if (k === 'rec') {
+      var heal = Math.floor(num(data, 'stamina_max', 0) / 3);
+      if (heal > 0) h += '<div class="sh-vt-acts"><button type="button" class="sh-vt-act" data-cs-vt-spend>Spend one, heal ' + heal + '</button></div>';
+    }
+    return h + '<p class="sh-vt-msg" role="status" aria-live="polite"></p></div>';
+  }
+
+  function pStamina(cur, max, winded, data) {
     var st = staminaState(cur, winded, max);
     var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
     var bar = max > 0
@@ -3177,8 +3237,8 @@
       : '';
     var sub = winded > 0
       ? '<span class="sh-sub num">Winded ' + winded + ' · Dying at 0 · Dead at −' + winded + '</span>' : '';
-    return '<div class="sh-v"><span class="sh-k">Stamina' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>' +
-      '<div class="sh-big"><span class="sh-num"><span data-v="stamina">' + cur + '</span> <small>/ ' + max + '</small></span></div>' +
+    return '<div class="sh-v"><span class="sh-k">Stamina<span data-vt-state>' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span></span>' +
+      '<div class="sh-big"><span class="sh-num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + cur + '</span>') + ' <small>/ ' + max + '</small></span></div>' +
       bar + sub + '</div>';
   }
 
@@ -3227,12 +3287,12 @@
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var pips = '';
     for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '●' : '○';
-    var top = pStamina(cur, max, winded) +
-      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-sub">Heroic resource</span></div>' +
-      (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num" data-v="surges">' + num(data, 'surges', 0) + '</span></div>' : '') +
-      '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num"><span data-v="rec">' + rec + '</span>' +
+    var top = pStamina(cur, max, winded, data) +
+      '<div class="sh-v"><span class="sh-k">' + esc(hrName) + '</span><span class="sh-num">' + vtNum(data, 'hr', '<span data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span>') + '</span><span class="sh-sub">Heroic resource</span></div>' +
+      (isNum(data, 'surges') ? '<div class="sh-v"><span class="sh-k">Surges</span><span class="sh-num">' + vtNum(data, 'surges', '<span data-v="surges">' + num(data, 'surges', 0) + '</span>') + '</span></div>' : '') +
+      '<div class="sh-v"><span class="sh-k">Recoveries</span><span class="sh-num">' + vtNum(data, 'rec', '<span data-v="rec">' + rec + '</span>') +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
-        (pips ? '<span class="sh-pips" aria-hidden="true">' + pips + '</span>' : '') +
+        (pips ? '<span class="sh-pips" aria-hidden="true" data-vt-pips>' + pips + '</span>' : '') +
         (max > 0 ? '<span class="sh-sub">Catch Breath heals ' + Math.floor(max / 3) + '</span>' : '') + '</div>';
     return '<section class="sh-turn paper-pull sh-fq" data-sheet-section="turn" aria-label="This turn">' +
       '<div class="sh-turnhead">' + pullBtn('turn', '<span class="paper-kind">This turn</span>') + '</div>' +
@@ -3859,6 +3919,18 @@
     return modes;
   }
 
+  // A vitals box opens Rules at hand when pressed. For an editor the numbers
+  // inside are buttons of their own, so the box is not one: its label opens
+  // the rules instead.
+  function vitalsBox(data, cls, inner) {
+    if (!progCanEdit(data)) return '<button type="button" class="sh-dbox ' + cls + '" data-sheet-open="turn" aria-expanded="false">' + inner + '</button>';
+    return '<div class="sh-dbox sh-dbox--vt ' + cls + '">' + inner + '</div>';
+  }
+  function dashLabel(data, html) {
+    if (!progCanEdit(data)) return '<span class="sh-dk">' + html + '</span>';
+    return '<button type="button" class="sh-dk sh-dk-open" data-sheet-open="turn" aria-expanded="false">' + html + '<span class="sh-sr">, rules at hand</span></button>';
+  }
+
   function dashStamina(data) {
     var cur = num(data, 'stamina_current', 0), max = num(data, 'stamina_max', 0);
     var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
@@ -3874,13 +3946,14 @@
     var subs = [];
     if (winded > 0) subs.push('<span class="sh-dsub num">Winded ' + winded + ' · Dying 0 · Dead −' + winded + '</span>');
     if (max > 0) subs.push('<span class="sh-dsub num">Catch Breath heals ' + Math.floor(max / 3) + '</span>');
-    return '<button type="button" class="sh-dbox sh-dstam" data-sheet-open="turn" aria-expanded="false">' +
-      '<span class="sh-dstam-n"><span class="sh-dk">Stamina' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>' +
-        '<span class="sh-dbig num"><span data-v="stamina">' + cur + '</span> <small>/ ' + wasHtml(data, 'stamina_max') + max + '</small></span></span>' +
-      '<span class="sh-drec"><span class="sh-dk">Recoveries</span><span class="sh-dbig num"><span data-v="rec">' + rec + '</span>' +
+    var stateHtml = '<span data-vt-state>' + (st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '') + '</span>';
+    var inner = '<span class="sh-dstam-n">' + dashLabel(data, 'Stamina' + stateHtml) +
+        '<span class="sh-dbig num">' + vtNum(data, 'stamina', '<span data-v="stamina">' + cur + '</span>') + ' <small>/ ' + wasHtml(data, 'stamina_max') + max + '</small></span></span>' +
+      '<span class="sh-drec">' + dashLabel(data, 'Recoveries') + '<span class="sh-dbig num">' + vtNum(data, 'rec', '<span data-v="rec">' + rec + '</span>') +
         (recMax ? ' <small>/ ' + wasHtml(data, 'recoveries_max') + recMax + '</small>' : '') + '</span>' +
-        (dots ? '<span class="sh-ddots" aria-hidden="true">' + dots + '</span>' : '') + '</span>' +
-      '<span class="sh-dstam-b">' + bar + (subs.length ? '<span class="sh-dsubs">' + subs.join('') + '</span>' : '') + '</span></button>';
+        (dots ? '<span class="sh-ddots" aria-hidden="true" data-vt-dots>' + dots + '</span>' : '') + '</span>' +
+      '<span class="sh-dstam-b">' + bar + (subs.length ? '<span class="sh-dsubs">' + subs.join('') + '</span>' : '') + '</span>';
+    return vitalsBox(data, 'sh-dstam', inner);
   }
 
   // Characteristics, the static combat numbers and Stamina, as one row of boxes.
@@ -4296,12 +4369,12 @@
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
     var top = topChar(data);
     var pot = potencyOf(data);
-    var out = '<button type="button" class="sh-dbox sh-dres" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">' + esc(hrName) + '</span>' +
-      '<span class="sh-dbig num" data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span><span class="sh-dsub">Heroic resource</span></button>';
+    var out = vitalsBox(data, 'sh-dres', dashLabel(data, esc(hrName)) +
+      '<span class="sh-dbig num">' + vtNum(data, 'hr', '<span data-v="hr">' + signed(num(data, 'heroic_resource_current', 0)) + '</span>') + '</span><span class="sh-dsub">Heroic resource</span>');
     if (isNum(data, 'surges')) {
-      out += '<button type="button" class="sh-dbox sh-dsurge" data-sheet-open="turn" aria-expanded="false"><span class="sh-dk">Surges</span>' +
-        '<span class="sh-dbig num" data-v="surges">' + num(data, 'surges', 0) + '</span>' +
-        (top != null && top > 0 ? '<span class="sh-dsub">+' + top + ' damage each</span>' : '') + '</button>';
+      out += vitalsBox(data, 'sh-dsurge', dashLabel(data, 'Surges') +
+        '<span class="sh-dbig num">' + vtNum(data, 'surges', '<span data-v="surges">' + num(data, 'surges', 0) + '</span>') + '</span>' +
+        (top != null && top > 0 ? '<span class="sh-dsub">+' + top + ' damage each</span>' : ''));
     }
     if (pot) {
       var pv = function (v) { return v == null ? '–' : String(v); };
@@ -6778,6 +6851,205 @@
     document.addEventListener('pointercancel', inst._onPgUp, true);
   }
 
+  // The vitals controls (see VT). One set is open at a time, under the number
+  // pressed; a press outside, Escape, or the number again puts it away. Each
+  // change saves at once, as Progression's do; minus and plus wait for a
+  // short pause so a run of presses is one save.
+  function attachVitals(inst, el, data) {
+    if (!progCanEdit(data)) return;
+    var vt = inst._vt = { open: null, btn: null, timer: null, busy: false };
+    function pop() { return vt.btn && vt.btn.isConnected ? el.querySelector('[data-cs-vt-pop]') : null; }
+    function cur(k) { return num(data, VT[k].field, 0); }
+    function say(text, err) {
+      var m = pop() && pop().querySelector('.sh-vt-msg');
+      // A save that fails after the controls closed still says so.
+      if (!m) { if (err && Chronicle.notify) Chronicle.notify(text.replace(/<[^>]+>/g, '').replace(/\s*Try again$/, ''), 'error'); return; }
+      m.className = 'sh-vt-msg' + (err ? ' is-err' : '');
+      m.innerHTML = text;
+    }
+    // Minus and plus grey out at a limit; the box shows the number to change.
+    function sync(k, v) {
+      var p = pop();
+      if (!p) return;
+      var lim = vtLimits(data, k), inp = p.querySelector('[data-cs-vt-in]');
+      if (inp && document.activeElement !== inp) inp.value = v;
+      [].forEach.call(p.querySelectorAll('[data-cs-vt-step]'), function (b) {
+        var d = Number(b.getAttribute('data-cs-vt-step'));
+        b.disabled = d < 0 ? (lim.min != null && v <= lim.min) : (lim.max != null && v >= lim.max);
+      });
+      var sp = p.querySelector('[data-cs-vt-spend]');
+      if (sp) sp.disabled = cur('rec') <= 0;
+    }
+    function close(focus) {
+      // Minus and plus still waiting for their pause save now.
+      if (vt.timer) { clearTimeout(vt.timer); vt.timer = null; if (vt.pending) vt.pending(); }
+      vt.pending = null;
+      var p = el.querySelector('[data-cs-vt-pop]');
+      if (p) {
+        var host = p.closest('.sh-v,.sh-dbox');
+        if (host) host.classList.remove('is-vt-open', 'is-vt-end');
+        p.remove();
+      }
+      if (vt.btn) {
+        vt.btn.setAttribute('aria-expanded', 'false');
+        if (focus && vt.btn.isConnected) vt.btn.focus();
+      }
+      vt.open = null;
+      vt.btn = null;
+    }
+    function open(btn) {
+      var k = btn.getAttribute('data-cs-vt');
+      close(false);
+      var host = btn.closest('.sh-v,.sh-dbox');
+      if (!host) return;
+      host.insertAdjacentHTML('beforeend', vtPopHtml(data, k));
+      host.classList.add('is-vt-open');
+      // Controls that would run past the sheet's right edge open leftward.
+      var sheet = el.querySelector('[data-sheet]') || el, pp = host.querySelector('[data-cs-vt-pop]');
+      host.classList.toggle('is-vt-end', host.getBoundingClientRect().left + pp.offsetWidth > sheet.getBoundingClientRect().right);
+      btn.setAttribute('aria-expanded', 'true');
+      vt.open = k;
+      vt.btn = btn;
+      sync(k, cur(k));
+      var inp = host.querySelector('[data-cs-vt-in]');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+    // Every copy of a number on the sheet follows a save: the turn panel, the
+    // dashboard boxes, the Stamina bar and state, the recovery dots.
+    function paint() {
+      var c = cur('stamina'), max = num(data, 'stamina_max', 0), winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
+      var rec = cur('rec'), recMax = num(data, 'recoveries_max', 0), st = staminaState(c, winded, max);
+      var txt = { stamina: String(c), hr: signed(cur('hr')), surges: String(cur('surges')), rec: String(rec) };
+      Object.keys(txt).forEach(function (k) {
+        [].forEach.call(el.querySelectorAll('[data-v="' + k + '"]'), function (n) {
+          var before = n.textContent;
+          if (before === txt[k]) return;
+          n.textContent = txt[k];
+          if (Chronicle.sheetMotion && Chronicle.sheetMotion.land) Chronicle.sheetMotion.land(n, before);
+        });
+      });
+      [].forEach.call(el.querySelectorAll('[data-cs-vt]'), function (b) {
+        var k = b.getAttribute('data-cs-vt');
+        b.setAttribute('aria-label', vtLabel(data, k) + ', ' + vtShown(k, cur(k)) + '. Press to change it');
+      });
+      if (max > 0) {
+        var pct = Math.max(0, Math.min(100, (c / max) * 100));
+        [].forEach.call(el.querySelectorAll('.sh-bar > span'), function (n) { n.style.width = pct + '%'; });
+      }
+      [].forEach.call(el.querySelectorAll('[data-vt-state]'), function (n) {
+        n.innerHTML = st ? ' <span class="sh-state ' + st[0] + '">' + st[1] + '</span>' : '';
+      });
+      var pips = '';
+      for (var i = 0; i < Math.min(recMax, 24); i++) pips += i < rec ? '\u25cf' : '\u25cb';
+      [].forEach.call(el.querySelectorAll('[data-vt-pips]'), function (n) { n.textContent = pips; });
+      [].forEach.call(el.querySelectorAll('[data-vt-dots]'), function (n) {
+        [].forEach.call(n.children, function (d, j) { d.className = j < rec ? '' : 'off'; });
+      });
+    }
+    function save(patch, k, done) {
+      var was = {};
+      Object.keys(patch).forEach(function (fk) { was[fk] = f(data, fk, null); });
+      vt.busy = true;
+      var slow = setTimeout(function () { if (vt.busy) say('Saving\u2026'); }, 300);
+      saveFields(data, patch).then(function () {
+        clearTimeout(slow);
+        vt.busy = false;
+        Object.keys(patch).forEach(function (fk) { data.fields[fk] = patch[fk]; });
+        wroteHere(inst, el);
+        paint();
+        if (vt.open) sync(vt.open, cur(vt.open));
+        say(done || 'Saved');
+      }, function (err) {
+        clearTimeout(slow);
+        vt.busy = false;
+        var w = progWhy(progFailKind(err));
+        if (vt.open) sync(vt.open, cur(vt.open));
+        say('<b>Not saved.</b> ' + w.why + ', so ' + esc(vtLabel(data, k)) + ' is still ' + esc(vtShown(k, cur(k))) + '. ' + w.fix +
+          ' <button type="button" class="sh-link" data-cs-vt-retry>Try again</button>', true);
+        vt.retry = function () { save(patch, k, done); };
+      });
+    }
+    function setTo(k, n, wait) {
+      n = vtClamp(n, vtLimits(data, k));
+      sync(k, n);
+      var inp = pop() && pop().querySelector('[data-cs-vt-in]');
+      if (inp) inp.value = n;
+      clearTimeout(vt.timer);
+      vt.timer = null;
+      var go = function () {
+        vt.timer = null;
+        vt.pending = null;
+        if (n === cur(k)) return;
+        var patch = {};
+        patch[VT[k].field] = n;
+        save(patch, k);
+      };
+      if (wait) { vt.pending = go; vt.timer = setTimeout(go, 450); } else go();
+    }
+    function typed(k) {
+      var inp = pop() && pop().querySelector('[data-cs-vt-in]');
+      if (!inp) return;
+      var n = vtParse(inp.value);
+      if (n == null) { say('Type a whole number.', true); return; }
+      setTo(k, n, false);
+    }
+    function hit(sign) {
+      var p = pop(), amt = p && p.querySelector('[data-cs-vt-amt]');
+      var n = amt ? vtParse(amt.value) : null;
+      if (n == null || n <= 0) { say('Type how much first.', true); if (amt) amt.focus(); return; }
+      var before = cur('stamina'), to = vtClamp(before + sign * n, vtLimits(data, 'stamina'));
+      if (amt) amt.value = '';
+      if (to === before) { say(sign < 0 ? 'Stamina can\u2019t go lower.' : 'Stamina is already full.'); return; }
+      save({ stamina_current: to }, 'stamina', (sign < 0 ? 'Took ' + n + ' damage. ' : 'Healed ' + n + '. ') + 'Stamina is ' + vtShown('stamina', to) + '.');
+    }
+    function spend() {
+      var rec = cur('rec'), max = num(data, 'stamina_max', 0);
+      if (rec <= 0 || !(max > 0)) return;
+      var to = vtClamp(cur('stamina') + Math.floor(max / 3), vtLimits(data, 'stamina'));
+      save({ recoveries: rec - 1, stamina_current: to }, 'rec', 'Spent a Recovery. Stamina is ' + to + ', ' + (rec - 1) + ' Recoveries left.');
+    }
+    inst._onVtClick = function (e) {
+      var t = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!t || !el.contains(t) || t.disabled) return;
+      if (t.hasAttribute('data-cs-vt')) {
+        if (vt.btn === t) close(true); else open(t);
+        return;
+      }
+      if (!vt.open || !pop() || !pop().contains(t)) return;
+      if (t.hasAttribute('data-cs-vt-step')) {
+        var from = vtParse(pop().querySelector('[data-cs-vt-in]').value);
+        setTo(vt.open, (from == null ? cur(vt.open) : from) + Number(t.getAttribute('data-cs-vt-step')), true);
+      }
+      else if (t.hasAttribute('data-cs-vt-hit')) hit(Number(t.getAttribute('data-cs-vt-hit')));
+      else if (t.hasAttribute('data-cs-vt-spend')) spend();
+      else if (t.hasAttribute('data-cs-vt-retry') && vt.retry) vt.retry();
+    };
+    // Capture, so Escape puts the controls away before the sheet engine takes
+    // it as "close the panel".
+    inst._onVtKey = function (e) {
+      if (!vt.open || !pop() || !pop().contains(e.target)) return;
+      if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); e.stopPropagation(); close(true); return; }
+      if (e.key !== 'Enter') return;
+      if (e.target.hasAttribute('data-cs-vt-in')) { e.preventDefault(); typed(vt.open); }
+      else if (e.target.hasAttribute('data-cs-vt-amt')) { e.preventDefault(); say('Press Damage or Heal.'); }
+    };
+    inst._onVtOutside = function (e) {
+      if (!vt.open) return;
+      var p = pop();
+      if ((p && p.contains(e.target)) || (vt.btn && vt.btn.contains(e.target))) return;
+      // Another number: its click swaps the controls over. Closing here would
+      // move it out from under the pointer before the click lands.
+      var other = e.target && e.target.closest ? e.target.closest('[data-cs-vt]') : null;
+      if (other && el.contains(other)) return;
+      var box = p && p.querySelector('[data-cs-vt-in]');
+      if (box && vtParse(box.value) != null && vtParse(box.value) !== cur(vt.open) && !vt.timer) typed(vt.open);
+      close(false);
+    };
+    el.addEventListener('click', inst._onVtClick);
+    el.addEventListener('keydown', inst._onVtKey, true);
+    document.addEventListener('pointerdown', inst._onVtOutside, true);
+  }
+
   // Grow is the contract's move for something drawn out of the thing pressed:
   // the style supplies the look, Calm and Off are enforced by Chronicle.
   function growIn(node) {
@@ -6811,13 +7083,16 @@
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
       ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey'],
       ['chronicle:sheet-dock-open', '_onDockOpen'],
-      ['click', '_onPgClick'], ['input', '_onPgInput'], ['focusout', '_onPgLeave']].forEach(function (p) {
+      ['click', '_onPgClick'], ['input', '_onPgInput'], ['focusout', '_onPgLeave'], ['click', '_onVtClick']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
     if (inst._onTipTap) el.removeEventListener('click', inst._onTipTap, true);
     dropTips(inst);
     if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
+    if (inst._onVtKey) el.removeEventListener('keydown', inst._onVtKey, true);
+    if (inst._onVtOutside && typeof document !== 'undefined') document.removeEventListener('pointerdown', inst._onVtOutside, true);
+    if (inst._vt) clearTimeout(inst._vt.timer);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
     if (inst._onPgUp && typeof document !== 'undefined') {
       document.removeEventListener('pointerup', inst._onPgUp, true);
@@ -6835,7 +7110,7 @@
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_tipReset', '_onTipScroll', '_onTipOutside', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
-      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });
+      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp', '_onVtClick', '_onVtKey', '_onVtOutside', '_vt'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -7037,6 +7312,7 @@
     attachInteractions(inst, el, data);
     if (root) attachPaperPanels(inst, el, root);
     if (root) attachProgression(inst, el, data);
+    attachVitals(inst, el, data);
     attachTooltips(inst, el);
     attachChanges(inst, el, data);
     attachDashPin(inst, el);
@@ -8102,6 +8378,30 @@
       '[data-sheet] .sh-big { display:flex;align-items:baseline;gap:6px;flex-wrap:wrap; }',
       '[data-sheet] .sh-num { font:700 calc(23px * var(--ts))/1.1 var(--paper-font);color:var(--paper-ink);font-variant-numeric:tabular-nums;border:0;background:none;padding:0;position:relative; }',
       '[data-sheet] button.sh-num { border-bottom:1px dashed var(--paper-accent);cursor:pointer; }',
+      // A number an editor can change: a dotted line tight under the digits,
+      // clear of the recovery dots below.
+      '[data-sheet] .sh-vt { font:inherit;color:inherit;background:none;border:0;padding:0;margin:0 0 3px;cursor:pointer;text-decoration:underline dotted var(--paper-accent);text-decoration-thickness:2px;text-underline-offset:2px;border-radius:3px; }',
+      '[data-sheet] .sh-vt:hover,[data-sheet] .sh-vt[aria-expanded="true"] { color:var(--paper-accent); }',
+      '[data-sheet] .sh-vt:focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '[data-sheet] .is-vt-open { position:relative; }',
+      '[data-sheet] .sh-vt-pop { position:absolute;z-index:30;top:calc(100% + 4px);left:0;width:max-content;max-width:min(300px,calc(100cqw - 16px));display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--paper-edge);border-radius:12px;background:var(--paper-bg, #fff);box-shadow:0 8px 24px rgba(0,0,0,.16);font:500 calc(14px * var(--ts))/1.35 var(--paper-font);color:var(--paper-ink);text-align:left; }',
+      '[data-sheet] .is-vt-end > .sh-vt-pop { left:auto;right:0; }',
+      '[data-sheet] .sh-vt-step { display:inline-flex;align-items:center;gap:2px;align-self:flex-start;padding:3px;border-radius:10px;background:color-mix(in srgb,var(--paper-accent) 10%,transparent); }',
+      '[data-sheet] .sh-vt-pm { width:40px;height:40px;border:0;border-radius:8px;background:none;color:var(--paper-accent);font:600 22px/1 var(--paper-font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center; }',
+      '[data-sheet] .sh-vt-pm:hover:not(:disabled) { background:color-mix(in srgb,var(--paper-accent) 16%,transparent); }',
+      '[data-sheet] .sh-vt-pm:disabled { opacity:.35;cursor:default; }',
+      '[data-sheet] .sh-vt-in,[data-sheet] .sh-vt-amt { width:3.4em;min-height:36px;padding:0 4px;border:1px solid var(--paper-edge);border-radius:7px;background:var(--paper-bg, #fff);color:var(--paper-ink);font:700 calc(18px * var(--ts)) var(--paper-num-font, var(--paper-font));text-align:center; }',
+      '[data-sheet] .sh-vt-in:focus,[data-sheet] .sh-vt-amt:focus { outline:2px solid var(--paper-accent);outline-offset:0;border-color:transparent; }',
+      '[data-sheet] .sh-vt-acts { display:flex;flex-wrap:wrap;align-items:center;gap:6px; }',
+      '[data-sheet] .sh-vt-act { min-height:36px;padding:0 12px;border:1px solid color-mix(in srgb,var(--paper-accent) 35%,transparent);border-radius:8px;background:color-mix(in srgb,var(--paper-accent) 6%,var(--paper-bg, #fff));color:var(--paper-ink);font:600 calc(14px * var(--ts)) var(--paper-font);cursor:pointer; }',
+      '[data-sheet] .sh-vt-act:hover:not(:disabled) { border-color:var(--paper-accent);color:var(--paper-accent); }',
+      '[data-sheet] .sh-vt-act:disabled { opacity:.45;cursor:default; }',
+      '[data-sheet] .sh-vt-msg:empty { display:none; }',
+      '[data-sheet] .sh-vt-msg { margin:0;font-size:calc(13px * var(--ts));color:var(--paper-mute); }',
+      '[data-sheet] .sh-vt-msg.is-err { color:var(--paper-ink); }',
+      '[data-sheet] .sh-dbox--vt { cursor:default; }',
+      '[data-sheet] .sh-dk-open { font:inherit;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer; }',
+      '[data-sheet] .sh-dk-open:hover { color:var(--paper-accent); }',
       '[data-sheet] button.sh-num:hover { color:var(--paper-accent); }',
       '[data-sheet] .sh-num small,[data-sheet] .sh-big small { font:500 calc(13px * var(--ts)) var(--paper-font);color:var(--paper-mute); }',
       '[data-sheet] .sh-state { font:700 calc(10px * var(--ts))/16px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;border-radius:3px;padding:0 6px;color:var(--paper-on-accent);background:var(--paper-neg); }',
@@ -8885,7 +9185,7 @@
       dashPaneHtml: dashPaneHtml, dashTodoTags: dashTodoTags, setDashTab: setDashTab, keepDashView: keepDashView, dashViewToKeep: dashViewToKeep, holdKeptHeight: holdKeptHeight, applyDashView: applyDashView, dashCss: dashCss,
       dashAbilities: dashAbilities, dashAbCard: dashAbCard, setDashFilter: setDashFilter, setDashAfford: setDashAfford,
       originRows: originRows, kitWords: kitWords, kitNames: kitNames, morePicks: morePicks, pIdentityTodo: pIdentityTodo, shortOf: shortOf, unfinishedTape: unfinishedTape, goToMissing: goToMissing, noKitNote: noKitNote, originPanelHtml: originPanelHtml, syncPageHooks: syncPageHooks,
-      staminaState: staminaState, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
+      staminaState: staminaState, vtLimits: vtLimits, vtClamp: vtClamp, vtParse: vtParse, vtPopHtml: vtPopHtml, mountSheet: mountSheet, shutCommonFolds: shutCommonFolds,
       Layers: Layers, withLayers: withLayers, fetchLayers: fetchLayers,
       presetLayer: presetLayer, oldAncestryTraits: oldAncestryTraits, originEntry: originEntry, pChanges: pChanges, tfPreview: tfPreview,
       tfState: tfState, quickPicks: quickPicks, attachChanges: attachChanges, loadTransformData: loadTransformData,
