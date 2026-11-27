@@ -7603,7 +7603,7 @@
       '  Q .sh-dmain:is([data-dtab="skills"]) > .sh-dpane[data-dpane="skills"],Q .sh-dmain[data-dtab="features"] > .sh-dpane[data-dpane="features"],' +
         'Q .sh-dmain[data-dtab="equipment"] > .sh-dpane[data-dpane="equipment"],Q .sh-dmain[data-dtab="story"] > .sh-dpane[data-dpane="story"] { display:block; }',
       '  Q .sh-dsec { margin:24px 0 0;padding:0 8px 6px;border-bottom:var(--shape-rule,1px) solid var(--paper-edge);font:600 calc(16px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink); }',
-      '  Q .sh-dpane > .sh-dsec:first-child { margin-top:12px; }',
+      '  Q .sh-dpane > .sh-dsec:first-child,Q .sh-dpane > [data-cs-dkit]:first-child > .sh-dsec:first-child { margin-top:12px; }',
       '  Q .sh-dpara { margin:12px 8px 0;max-width:66ch;font:400 calc(14px * var(--ts))/1.5 var(--paper-ui-font);color:var(--paper-ink-soft); }',
       '  Q .sh-dpane .sh-dmore { margin:10px 8px 0; }',
       // Abilities: a filter row, then one grid per action with its own columns, one line per ability.
