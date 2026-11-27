@@ -2733,27 +2733,54 @@
   // pair (same "one listener on the mount root" approach as attachInteractions)
   // covering every current and future [data-tip]/.ds-ref in the sheet, so box
   // re-renders never need per-node rewiring.
+  // A trigger marked data-tip-delay waits before showing, so tips on a row of
+  // small boxes don't flicker past as the pointer crosses them.
+  var TIP_DELAY_MS = 450;
   function attachTooltips(inst, el) {
-    var current = null;
+    var current = null, timer = null, tapped = null;
+    function cancel() { if (timer) { clearTimeout(timer); timer = null; } }
     inst._onTipShow = function (e) {
       var t = e.target;
       var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
       if (!trigger || !el.contains(trigger) || trigger === current) return;
       current = trigger;
-      showTipFor(trigger);
+      cancel();
+      if (trigger.hasAttribute('data-tip-delay')) timer = setTimeout(function () { timer = null; if (current === trigger) showTipFor(trigger); }, TIP_DELAY_MS);
+      else showTipFor(trigger);
     };
     inst._onTipHide = function (e) {
       var t = e.target;
       var trigger = (t && t.closest) ? t.closest(TIP_SELECTOR) : null;
       var related = e.relatedTarget;
       if (trigger && related && trigger.contains(related)) return; // stayed within the same trigger
+      if (trigger && trigger === tapped) return; // a tapped tip stays until the next tap
       current = null;
+      cancel();
       hideTipbox();
+    };
+    // A tier box sits inside an ability's fold header. A tap on it shows what
+    // it means instead of opening the fold; a second tap, or one elsewhere,
+    // puts the tip away. It listens in the capture phase because the page's
+    // fold motion opens a fold from its own click listener inside the sheet.
+    inst._onTipTap = function (e) {
+      var t = e.target;
+      var box = (t && t.closest) ? t.closest('[data-cs-tier]') : null;
+      if (box && el.contains(box)) {
+        e.preventDefault();
+        e.stopPropagation();
+        cancel();
+        if (tapped === box) { tapped = null; current = null; hideTipbox(); return; }
+        tapped = box; current = box;
+        showTipFor(box);
+        return;
+      }
+      if (tapped) { tapped = null; current = null; hideTipbox(); }
     };
     el.addEventListener('mouseover', inst._onTipShow);
     el.addEventListener('mouseout', inst._onTipHide);
     el.addEventListener('focusin', inst._onTipShow);
     el.addEventListener('focusout', inst._onTipHide);
+    el.addEventListener('click', inst._onTipTap, true);
   }
 
   // ── entrance motion ────────────────────────────────────────────────
@@ -3064,7 +3091,12 @@
       subclass ? '<span class="sh-idval">' + subclassName(data, subclass) + missMark(data, 'subclass') + '</span>' : '',
       has('kit') ? pOrigin(data, bySlot.kit, canPick) + missMark(data, 'kit') : '',
       faction ? '<span class="sh-idval">' + esc(faction) + '</span>' : ''
-    ].filter(Boolean).join('<span class="sh-idsep" aria-hidden="true"> \u00b7 </span>');
+    ].filter(Boolean);
+    // Each dot rides at the end of the part before it, so a wrapped line never
+    // starts with one.
+    line = line.map(function (part, i) {
+      return i < line.length - 1 ? '<span class="sh-idgrp">' + part + '<span class="sh-idsep" aria-hidden="true">\u00b7</span></span>' : part;
+    }).join('');
     var folded = [bySlot.culture, bySlot.career, bySlot.complication].filter(shows);
     var more = folded.length ? foldHtml('sh-origins sh-id-l', folded.length === 1 ? folded[0].label : folded.map(function (s, i) { return i ? s.label.toLowerCase() : s.label; }).join(', ').replace(/, ([^,]*)$/, ' and $1'),
       folded.map(function (s) {
@@ -3190,9 +3222,9 @@
 
   // The three tier results as one phrase ("4 · 7 · 9 holy"), from the first
   // damage effect. Empty when the ability has no damage roll the sheet can work out.
-  function heroResult(a, best) {
+  function heroTierVals(a, best) {
     var tiers = a && a.tiers;
-    if (best == null || !Array.isArray(tiers)) return '';
+    if (best == null || !Array.isArray(tiers)) return null;
     for (var i = 0; i < tiers.length; i++) {
       var eff = tiers[i];
       if (!eff || !eff.damage || !eff.damage.tier1) continue;
@@ -3200,13 +3232,29 @@
       for (var n = 1; n <= 3; n++) {
         var td = eff.damage['tier' + n];
         var v = td ? safeEvalArith(String(td.value == null ? '' : td.value).replace(/@chr/gi, String(best))) : null;
-        if (v == null) return '';
+        if (v == null) return null;
         vals.push(v);
       }
-      var types = Array.isArray(eff.damage.tier1.types) ? eff.damage.tier1.types.filter(Boolean) : [];
-      return vals.join(' · ') + (types.length ? ' ' + types.map(String).join('/') : '');
+      var types = Array.isArray(eff.damage.tier1.types) ? eff.damage.tier1.types.filter(Boolean).map(String) : [];
+      return { vals: vals, types: types };
     }
-    return '';
+    return null;
+  }
+  function heroResult(a, best) {
+    var t = heroTierVals(a, best);
+    return t ? t.vals.join(' · ') + (t.types.length ? ' ' + t.types.join('/') : '') : '';
+  }
+
+  // On a phone the three results sit under the name as three steps, so a long
+  // name keeps the whole line. Each box says which roll it answers, after a
+  // pause on hover and at once on a tap.
+  var TIER_TIPS = ['Tier 1: a power roll of 11 or less', 'Tier 2: a power roll of 12 to 16', 'Tier 3: a power roll of 17 or more'];
+  function tierBoxesHtml(t) {
+    if (!t) return '';
+    return '<span class="sx-tb">' + t.vals.map(function (v, i) {
+      return '<span class="sx-tbx num" data-tip="' + escAttr(TIER_TIPS[i]) + '" data-tip-delay data-cs-tier>' +
+        '<span class="sh-sr">' + esc(TIER_TIPS[i]) + ': </span>' + esc(String(v)) + '</span>';
+    }).join('') + (t.types.length ? '<span class="sx-tbt">' + esc(t.types.join(', ')) + '</span>' : '') + '</span>';
   }
 
   // The first sentence of an ability's effect, short enough for one line.
@@ -3232,6 +3280,7 @@
     var g = groupOf(a), kind = actionKind(a);
     var name = a.name || 'Untitled';
     var best = heroBest(a, data);
+    var tv = heroTierVals(a, best);
     var result = heroResult(a, best);
     var dist = distanceLabel(a);
     var eff = abilityEffectText(a);
@@ -3244,7 +3293,7 @@
     var one = effectSnippet(kind === 'triggered' && trig ? trig : eff);
     var meta = (result ? [dist, one] : [one]).filter(Boolean).join(' · ');
     var head = '<span class="sx-top"><b class="sx-name">' + star + esc(name) + tag + '</b>' +
-      '<span class="sx-res num">' + esc(result || dist) + '</span></span>' +
+      '<span class="sx-res num' + (tv ? ' sx-res-t' : '') + '">' + esc(result || dist) + '</span></span>' + tierBoxesHtml(tv) +
       (meta ? '<span class="sx-meta">' + esc(meta) + '</span>' : '');
     var tiers = tierLinesHtml(a, best);
     // The full card unfolds in the same line, in place of the short one, so it
@@ -6720,6 +6769,7 @@
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
+    if (inst._onTipTap) el.removeEventListener('click', inst._onTipTap, true);
     if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
     if (inst._onPgUp && typeof document !== 'undefined') {
@@ -6735,7 +6785,7 @@
       document.removeEventListener('pointerup', inst._onTfUp, true);
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
-    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
+    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
       '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });
@@ -7422,7 +7472,9 @@
       'Q .sh-id { padding:0 0 18px;border-bottom:1px solid var(--paper-edge); }',
       'Q .sh-idwho { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;font:700 calc(24px * var(--ts))/1.2 var(--paper-font);letter-spacing:-.01em;color:var(--paper-ink);overflow-wrap:anywhere; }',
       'Q .sh-idlv { font-weight:500;color:var(--paper-ink-soft); }',
-      'Q .sh-idsub { margin-left:14px;padding-left:14px;border-left:1px solid var(--paper-edge);font-weight:500;color:var(--paper-ink-soft); }',
+      // The rule between parts trails the part before it, so a wrapped line never starts with one.
+      'Q .sh-idsub { font-weight:500;color:var(--paper-ink-soft); }',
+      'Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub) { margin-right:14px;padding-right:14px;border-right:1px solid var(--paper-edge); }',
       'Q .sh-idset { display:flex;flex-wrap:wrap;gap:8px 40px;margin:12px 0 0; }',
       'Q .sh-idset dt { font:600 calc(10px * var(--ts)) var(--paper-ui-font);letter-spacing:.1em;text-transform:uppercase;color:var(--paper-mute); }',
       'Q .sh-idset dd { margin:1px 0 0;font:600 calc(14.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
@@ -7508,8 +7560,9 @@
       '  Q .sh-dname { margin:0;font:700 calc(clamp(26px,3.4cqi,38px) * var(--ts))/1.1 var(--paper-head-font);letter-spacing:-.02em;color:var(--paper-ink);overflow-wrap:anywhere; }',
       '  Q .sh-idwho { margin:4px 0 0;font:600 calc(16px * var(--ts))/1.35 var(--paper-ui-font);letter-spacing:0;color:var(--paper-ink); }',
       '  Q .sh-idlv { font-weight:600;color:var(--paper-ink); }',
-      '  Q .sh-idsub { margin-left:0;padding-left:0;border-left:0;font-weight:400;color:var(--paper-ink-soft); }',
-      '  Q .sh-idsub::before { content:"\\00b7";margin:0 8px;color:var(--paper-mute); }',
+      '  Q .sh-idsub { font-weight:400;color:var(--paper-ink-soft); }',
+      '  Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub) { margin-right:0;padding-right:0;border-right:0; }',
+      '  Q :is(.sh-idcls,.sh-idsub):has(+ .sh-idsub)::after { content:"\\00b7";margin:0 8px;font-weight:400;color:var(--paper-mute); }',
       '  Q :is(.sh-idset,.sh-idset-todo) { display:inline;margin:0; }',
       '  Q .sh-idset { margin-top:4px; }',
       '  Q :is(.sh-idset,.sh-idset-todo) > div { display:inline-flex;align-items:baseline;gap:8px;margin:8px 8px 0 0;vertical-align:top;padding:4px 10px;border:' + edge + ';border-radius:var(--shape-r-tag,4px);background:var(--paper); }',
@@ -8415,6 +8468,7 @@
       '[data-sheet] .sh-id { display:block;padding:0; }',
       '[data-sheet] .sh-idline { margin:0;display:flex;flex-wrap:wrap;align-items:baseline;min-width:0;font:700 calc(15px * var(--ts))/1.45 var(--paper-font);color:var(--paper-ink);overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idval { min-width:0; }',
+      '[data-sheet] .sh-idgrp { min-width:0; }',
       '[data-sheet] .sh-idsep { margin:0 .45em;color:var(--paper-mute); }',
       '[data-sheet] .sh-idpick { border:0;border-bottom:1px dashed transparent;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere; }',
       '[data-sheet] .sh-idpick:hover,[data-sheet] .sh-idpick[aria-expanded="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
@@ -8446,6 +8500,17 @@
       '[data-sheet] .sx-star { margin-right:4px;color:var(--paper-accent); }',
       '[data-sheet] .sx-cost { margin-left:8px;border:1px solid var(--paper-edge);border-radius:999px;padding:0 7px;color:var(--paper-accent);font:700 calc(10.5px * var(--ts))/16px var(--paper-ui-font);white-space:nowrap; }',
       '[data-sheet] .sx-no .sx-name,[data-sheet] .sx-no .sx-res { color:var(--paper-mute); }',
+      // On a phone the results drop under the name as three tier boxes.
+      '[data-sheet] .sx-tb { display:none; }',
+      '@container sheet (max-width:600px) {',
+      '  [data-sheet] .sx-res-t { display:none; }',
+      '  [data-sheet] .sx-tb { grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:3px 0 1px; }',
+      '  [data-sheet] .sx-tbx { min-width:28px;box-sizing:border-box;padding:2px 7px;border:1px solid var(--paper-edge);border-radius:5px;background:var(--paper);text-align:center;font:700 calc(12.5px * var(--ts))/18px var(--paper-num-font);color:var(--paper-ink);font-variant-numeric:tabular-nums; }',
+      '  [data-sheet] .sx-tbx:nth-child(2) { border-color:color-mix(in srgb,var(--paper-accent) 35%,var(--paper-edge)); }',
+      '  [data-sheet] .sx-tbx:nth-child(3) { border-color:var(--paper-accent);color:var(--paper-accent); }',
+      '  [data-sheet] .sx-tbt { margin-left:4px;font:500 calc(11.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft); }',
+      '  [data-sheet] .sx-no .sx-tbx { color:var(--paper-mute);border-color:var(--paper-edge); }',
+      '}',
       '[data-sheet] .sx-no .sx-cost { color:var(--paper-mute);border-style:dashed; }',
       '[data-sheet] .sx-tiers { padding:0 2px 4px; }',
       '[data-sheet] .sx-eff { margin:2px 2px 8px;font-size:calc(13px * var(--ts));line-height:1.5;color:var(--paper-ink-soft); }',
