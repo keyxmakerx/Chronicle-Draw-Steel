@@ -1173,6 +1173,27 @@ test('origins: a campaign\'s own complication reads as benefit and drawback, and
   } finally { globalThis.window.Chronicle.apiFetch = prev; cs.setEditRefs({}); }
 });
 
+// The quiet look's headings are parted from their rows by size and weight,
+// not colour alone: a group heading at 20, a box heading at 18, and the
+// ability names under them at reading weight.
+test('quiet look heading ladder: headings a step up, rows a step down', () => {
+  const css = cs.headingCss().join('\n');
+  const Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+  assert.ok(cs.headingCss().every((r) => r.startsWith(Q)), 'every rule is scoped to the quiet look');
+  assert.match(css, /:is\(\.sh-dagh,\.sh-devery\) h3 \{ font-size:calc\(20px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dh \{[^}]*font-size:calc\(18px \* var\(--ts\)\)/);
+  assert.match(css, /\.sh-dan \{ font-size:calc\(14px \* var\(--ts\)\);font-weight:500; \}/);
+  assert.match(css, /\.sh-fq \.sx-h \.paper-kind \{ font:600 calc\(18px \* var\(--ts\)\)\/1\.2 var\(--font-heading/);
+});
+
+// The Kit panel's damage grid is four cells a row; each row's label, Ranged
+// as well as Melee, is left in the label column.
+test('kit damage grid: every row label sits in the label column', () => {
+  const src = readFileSync(new URL('../widgets/character-sheet.js', import.meta.url), 'utf8');
+  assert.match(src, /\[data-sheet\] \.sh-kit span:nth-child\(4n\+1\) \{ text-align:left; \}/);
+  assert.ok(!/\.sh-kit span:nth-child\(5\)/.test(src), 'no rule targets only the first row');
+});
+
 // ── Progression: the game's moments ──────────────────────────────────────
 const PROG = { name: 'Tyne', campaignId: 'camp-1', entityId: 'hero-1', foundryLinked: true, fields: { level: 1, victories: 2, xp: 4, renown: 0, wealth: 1 } };
 const prog = (over) => Object.assign({}, PROG, over, { fields: Object.assign({}, PROG.fields, (over || {}).fields) });

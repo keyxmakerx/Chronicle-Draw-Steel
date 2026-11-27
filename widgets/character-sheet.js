@@ -287,6 +287,30 @@
     return '';                                      // foreign scheme -> reject
   }
 
+  // A hero's art is its page picture (image_path, a bare media id or an older
+  // dated path), the picture Chronicle's upload writes and Foundry's actor
+  // art syncs to; /media/<id> serves it to anyone who may read the page.
+  // portrait_url is the Foundry token art, often a Foundry-world path, so it
+  // is only the fallback for a page with no picture.
+  var MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function mediaSrc(v) {
+    var id = String(v == null ? '' : v).split('/').pop().replace(/\.[a-z0-9]+$/i, '');
+    return MEDIA_ID.test(id) ? '/media/' + id.toLowerCase() : '';
+  }
+  function portraitSrc(data) {
+    return mediaSrc(data && data.imagePath) || safeImgUrl(f(data, 'portrait_url', ''));
+  }
+
+  // portraitAttrs makes the portrait itself the way in: whoever may change
+  // the picture opens the picker, as the Change chip does; anyone else opens
+  // the art full size in a new tab, and an empty portrait does nothing. The
+  // server still refuses an upload from a viewer who may not change it.
+  function portraitAttrs(data, src) {
+    if (data.canChangeImage) return ' data-cs-change-image role="button" tabindex="0" aria-label="Change picture"';
+    if (src) return ' data-cs-portrait-view="' + escAttr(src) + '" role="link" tabindex="0" aria-label="Open the picture full size"';
+    return '';
+  }
+
   // refText escapes THEN resolves {@category term} tokens to ref spans. Safe to
   // call before the glossary loads (renderText degrades to plain text), but the
   // mount is deferred until refRenderer.load() resolves so first paint is lit.
@@ -731,10 +755,10 @@
 
     // portrait_url is user-authored: validate the scheme and escape both
     // attribute values (escAttr, not esc, since escapeHtml leaves quotes).
-    var safePortrait = safeImgUrl(f(data, 'portrait_url', ''));
+    var safePortrait = portraitSrc(data);
     var portraitHtml = safePortrait
-      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '">'
-      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait><i class="fa-solid fa-shield-halved"></i></div>';
+      ? '<img class="cs-portrait" data-cs-portrait src="' + escAttr(safePortrait) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, safePortrait) + '>'
+      : '<div class="cs-portrait cs-portrait-placeholder" data-cs-portrait' + portraitAttrs(data, '') + '><i class="fa-solid fa-shield-halved"></i></div>';
     // Whoever may edit identity usually may replace the picture too, but the
     // host decides each separately, so the chip follows its own flag.
     var chip = data.canChangeImage
@@ -2140,6 +2164,11 @@
     }
 
     // The picture upload lives in Chronicle; the widget only asks for it.
+    function openPortrait(node) {
+      var src = node.getAttribute('data-cs-portrait-view');
+      if (src && typeof window !== 'undefined' && window.open) window.open(src, '_blank', 'noopener');
+    }
+
     function requestImageChange(btn) {
       var ev;
       try {
@@ -2407,9 +2436,15 @@
       var stuck = !!(bar && under && bar.offsetParent !== null && bar.getBoundingClientRect().top - under.getBoundingClientRect().bottom > 32);
       var main = setDashTab(el, id);
       if (!main || !stuck) return;
-      var pane = id === 'abilities' ? main.querySelector('.sh-body') : main.querySelector('[data-dpane="' + id + '"]');
+      var pane = id === 'abilities' ? main.querySelector('.sh-body') : id === 'dock' ? main.querySelector('[data-sheet-dock-panes]') : main.querySelector('[data-dpane="' + id + '"]');
       if (pane && pane.scrollIntoView) pane.scrollIntoView({ block: 'start' });
     }
+
+    // The host opened one of its docked tabs.
+    inst._onDockOpen = function (e) {
+      if (e.target && e.target.closest && e.target.closest('[data-sheet-dock-tabs]')) pickDashTab('dock');
+    };
+    el.addEventListener('chronicle:sheet-dock-open', inst._onDockOpen);
 
     inst._onAbilityClick = function (e) {
       var t = e.target;
@@ -2439,6 +2474,8 @@
       if (unfin) { e.preventDefault(); goToMissing(unfin); return; }
       var chip = t.closest('[data-cs-change-image]');
       if (chip) { e.preventDefault(); requestImageChange(chip); return; }
+      var view = t.closest('[data-cs-portrait-view]');
+      if (view) { e.preventDefault(); openPortrait(view); return; }
       var pick = t.closest('[data-cs-pick]');
       if (pick) { e.preventDefault(); pickOrigin(pick); return; }
       var edOpenBtn = t.closest('[data-cs-ed-open]');
@@ -2515,15 +2552,29 @@
         if (openBig) { e.preventDefault(); selectAbility(parseInt(openBig.getAttribute('data-ds-collapse'), 10)); }
         return;
       }
-      var dtEl = (t && t.closest) ? t.closest('[data-cs-dtab]') : null;
-      if (dtEl) {
-        var shown = [].filter.call(el.querySelectorAll('[data-cs-dtab]'), function (b) { return b.offsetParent !== null; });
+      // The portrait is an img or span standing in for a button or link, so
+      // Enter (and Space, for the button) has to press it by hand.
+      var port = (t && t.matches && (e.key === 'Enter' || e.key === ' ')) ? t : null;
+      if (port && t.matches('[data-cs-change-image]:not(button)')) { e.preventDefault(); requestImageChange(t); return; }
+      if (port && e.key === 'Enter' && t.matches('[data-cs-portrait-view]')) { e.preventDefault(); openPortrait(t); return; }
+      // The row's arrow keys walk every tab in it, the host's docked ones
+      // too; a docked tab is pressed, so its host opens it.
+      var dtEl = (t && t.closest) ? (t.closest('[data-cs-dtab]') || t.closest('[data-sheet-dock-tabs] > [role="tab"]')) : null;
+      var dtBar = dtEl && dtEl.closest('.sh-dtabs');
+      if (dtBar) {
+        var shown = [].filter.call(dtBar.querySelectorAll('[data-cs-dtab],[data-sheet-dock-tabs] > [role="tab"]'), function (b) { return b.offsetParent !== null; });
         var at = shown.indexOf(dtEl), go = -1;
         if (e.key === 'ArrowRight') go = (at + 1) % shown.length;
         else if (e.key === 'ArrowLeft') go = (at + shown.length - 1) % shown.length;
         else if (e.key === 'Home') go = 0;
         else if (e.key === 'End') go = shown.length - 1;
-        if (go >= 0 && shown[go]) { e.preventDefault(); pickDashTab(shown[go].getAttribute('data-cs-dtab')); shown[go].focus(); return; }
+        if (go >= 0 && shown[go]) {
+          e.preventDefault();
+          var own = shown[go].getAttribute('data-cs-dtab');
+          if (own) pickDashTab(own); else shown[go].click();
+          shown[go].focus();
+          return;
+        }
       }
       var tabEl = (t && t.closest) ? t.closest('[data-ds-tab]') : null;
       if (tabEl) {
@@ -3450,8 +3501,9 @@
     var main = el.querySelector('[data-cs-dmain]');
     if (!main) return null;
     var abs = el.querySelector('[data-cs-dabs]');
+    var tab = main.getAttribute('data-dtab');
     return {
-      tab: main.getAttribute('data-dtab'),
+      tab: tab === 'dock' ? 'abilities' : tab,
       filter: abs ? abs.getAttribute('data-dfilter') : null,
       afford: abs ? abs.hasAttribute('data-dafford') : true,
       open: abs ? [].map.call(abs.querySelectorAll('.sh-dar[aria-expanded="true"] .sh-dan'), function (n) { return n.textContent; }) : []
@@ -3537,10 +3589,10 @@
 
   function dashPortrait(data) {
     var name = data.name || 'Unnamed Hero';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var pic = src
-      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '">'
-      : '<span class="sh-port-ph" data-cs-portrait>' + fa('shield-halved') + '</span>';
+      ? '<img data-cs-portrait src="' + escAttr(src) + '" alt="' + escAttr(name) + '"' + portraitAttrs(data, src) + '>'
+      : '<span class="sh-port-ph" data-cs-portrait' + portraitAttrs(data, '') + '>' + fa('shield-halved') + '</span>';
     // Changing the picture is a quiet word under the picture it changes.
     var chip = data.canChangeImage ? '<button type="button" class="sh-dpicchg sh-dq" data-cs-change-image>Change picture</button>' : '';
     return '<div class="sh-port sh-dport sh-dq">' + pic + '</div>' + chip;
@@ -4224,12 +4276,15 @@
       (kit ? '<div class="sh-dkitw sh-dpw">' + kitWords(data, 'sh-dpara') + '</div>' : '') +
       (unused ? noKitHtml(unused, 'sh-dpara') : kit || rows ? (rows || pEmpty('No kit details synced.')) : pEmpty('No kit equipped.')) +
       (kit ? '<p class="sh-dmore"><button type="button" class="sh-link" data-sheet-open="kit" aria-expanded="false">Kit details</button></p>' : '');
-    out += '<h3 class="sh-dsec">Items</h3>';
+    // With the Armory on, a host that docks takes its Items piece into the
+    // slot (the hero's pack and money); one that doesn't leaves the pointer
+    // to the page's Items tab, which the CSS hides behind a filled slot.
     if (data.armoryItems) {
-      out += '<p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
-        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p>';
+      out += '<div class="sh-dslot" data-sheet-dock-piece="items"><h3 class="sh-dsec">Pack and money</h3></div>' +
+        '<div class="sh-dslotfb"><h3 class="sh-dsec">Items</h3><p class="sh-dpara">Pack and money live in the page’s Items tab.</p>' +
+        '<p class="sh-dmore" data-cs-items-row hidden><button type="button" class="sh-link" data-cs-go-items>Go to items ' + fa('arrow-down') + '</button></p></div>';
     } else {
-      out += '<div class="sh-dlist">' + pItemsPanel(data) + '</div>';
+      out += '<h3 class="sh-dsec">Items</h3><div class="sh-dlist">' + pItemsPanel(data) + '</div>';
     }
     return out;
   }
@@ -4256,7 +4311,7 @@
       return '<button type="button" role="tab" class="sh-dtab' + (t.narrow ? ' sh-dnarrow' : '') + '" id="cs-dt-' + uid + '-' + t.id + '"' +
         ' aria-controls="cs-dp-' + uid + '-' + t.id + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-cs-dtab="' + t.id + '">' +
         t.label + (t.n != null ? '<small class="num">' + t.n + '</small>' : '') + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '<span class="sh-dhost" data-sheet-dock-tabs></span></div>';
   }
 
   function dashPanes(data, uid) {
@@ -4274,7 +4329,7 @@
     var winded = num(data, 'winded', max ? Math.floor(max / 2) : 0);
     var pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
     var hrName = f(data, 'heroic_resource_name', '') || 'Heroic Resource';
-    var src = safeImgUrl(f(data, 'portrait_url', ''));
+    var src = portraitSrc(data);
     var rec = num(data, 'recoveries', 0), recMax = num(data, 'recoveries_max', 0);
     return '<div class="sh-dpin sh-dq" aria-hidden="true"><div class="sh-dpin-in">' +
       (src ? '<span class="sh-dpin-port"><img src="' + escAttr(src) + '" alt=""></span>' : '') +
@@ -6132,7 +6187,8 @@
       '<div class="sh-dgrid"><aside class="sh-drail sh-dq" aria-label="Skills, languages and kit" data-cs-drail>' + dashRailInner(data) + '</aside>' +
       '<div class="sh-dmain" data-cs-dmain data-dtab="abilities">' + dashUnder(data) + dashTabs(data, uid) +
       '<div class="sh-body" id="cs-dp-' + uid + '-abilities"><div class="sh-col">' + pAbilities(data) + dashAbilities(data, uid) + paperLedger(data) + '</div>' +
-      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) + '</div></div>' +
+      '<div class="sh-col">' + pCharacteristics(data) + pDamagePart(data) + pProgPart(data) + '</div></div>' + dashPanes(data, uid) +
+      '<div class="sh-dhostp sh-dq" data-sheet-dock-panes></div></div></div>' +
       pFoot(data) + '</article>';
     return '<div class="sh-root" data-sheet>' +
       '<div class="sh-settle paper-settle" data-move="settle"><div class="sh-folio" data-sheet-folio><div class="paper-stack sh-stack">' + sheet + '</div></div></div>' +
@@ -6544,6 +6600,7 @@
     [['click', '_onAbilityClick'], ['keydown', '_onAbilityKey'], ['input', '_onAbilityInput'],
       ['mouseover', '_onTipShow'], ['focusin', '_onTipShow'], ['mouseout', '_onTipHide'], ['focusout', '_onTipHide'],
       ['click', '_onTfClick'], ['change', '_onTfChange'], ['change', '_onEdChange'], ['input', '_onTfInput'], ['focusout', '_onTfLeave'], ['keydown', '_onTfKey'],
+      ['chronicle:sheet-dock-open', '_onDockOpen'],
       ['click', '_onPgClick'], ['input', '_onPgInput'], ['focusout', '_onPgLeave']].forEach(function (p) {
       if (inst[p[1]]) el.removeEventListener(p[0], inst[p[1]]);
     });
@@ -6564,7 +6621,7 @@
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
-      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp',
+      '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
       '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });
   }
@@ -6608,17 +6665,65 @@
   }
 
   // setDashTab opens one of the dashboard's tabs; null when the sheet has no
-  // such tab (Story is a permission gate).
+  // such tab (Story is a permission gate). 'dock' opens the host's pane area
+  // and leaves none of the sheet's own tabs selected, since the host's tab is.
+  // Opening one of its own tells the host, which then lets go of its tab.
   function setDashTab(el, id) {
     var main = el.querySelector('[data-cs-dmain]');
-    if (!main || !main.querySelector('[data-cs-dtab="' + id + '"]')) return null;
+    var sel = id === 'dock' ? '[data-sheet-dock-panes]' : '[data-cs-dtab="' + id + '"]';
+    if (!main || !main.querySelector(sel)) return null;
     main.setAttribute('data-dtab', id);
     [].forEach.call(main.querySelectorAll('[data-cs-dtab]'), function (b) {
       var on = b.getAttribute('data-cs-dtab') === id;
       b.setAttribute('aria-selected', on ? 'true' : 'false');
       b.setAttribute('tabindex', on ? '0' : '-1');
     });
+    if (id !== 'dock') dockSay(el.querySelector('[data-sheet]') || el, 'chronicle:sheet-tab', { tab: id });
     return main;
+  }
+
+  // ── the host dock ──────────────────────────────────────────────────
+  // While the dashboard's tab row is on screen, the page's own pieces
+  // (Chronicle's Trackers, Notes, Files and the rest) can join it: the row
+  // holds an empty [data-sheet-dock-tabs] for their tabs, the tab area an
+  // empty [data-sheet-dock-panes] for their panes, and Equipment a
+  // [data-sheet-dock-piece="items"] for the hero's pack and money. The root
+  // wears data-sheet-dock="open" and says chronicle:sheet-dock while the
+  // slots are there, and chronicle:sheet-undock, synchronously, just before
+  // they go (a redraw, a phone-width sheet, destroy), so the host can take
+  // its nodes back before they are wiped. The host opens one of its tabs by
+  // saying chronicle:sheet-dock-open from inside the slot. Contract:
+  // Chronicle's docs/system-package-rendering.md.
+  function dockSay(node, name, detail) {
+    if (!node || typeof node.dispatchEvent !== 'function' || typeof CustomEvent !== 'function') return;
+    node.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail || null }));
+  }
+  function syncDock(el, on) {
+    var root = el.querySelector ? el.querySelector('[data-sheet]') : null;
+    on = !!on && !!root && !!root.querySelector('[data-sheet-dock-tabs]') && !!root.querySelector('[data-sheet-dock-panes]');
+    var was = el._csDock || null;
+    if (on && was === root) return;
+    if (!on && !was) return;
+    if (was) {
+      el._csDock = null;
+      was.removeAttribute('data-sheet-dock');
+      // A root already gone from the page says it from the mount instead.
+      dockSay(was.isConnected === false ? el : was, 'chronicle:sheet-undock');
+      var main = el.querySelector('[data-cs-dmain]');
+      if (main && main.getAttribute('data-dtab') === 'dock') setDashTab(el, 'abilities');
+    }
+    if (on) {
+      el._csDock = root;
+      root.setAttribute('data-sheet-dock', 'open');
+      dockSay(root, 'chronicle:sheet-dock');
+    }
+  }
+  // The sheet's content width, as the dashboard's container query reads it.
+  function dashWide(el) {
+    var sheet = el.querySelector('.sh-sheet'), root = el.querySelector('[data-sheet]');
+    if (!sheet || !root || !quietLook(root) || typeof getComputedStyle !== 'function') return false;
+    var cs = getComputedStyle(sheet);
+    return sheet.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) >= DASH_AT;
   }
 
   // The widths dashCss's container queries switch at, read from the same box.
@@ -6648,7 +6753,10 @@
     var lastW = 0;
     // A style switch changes the look without a redraw or a resize.
     if (typeof MutationObserver === 'function') {
-      inst._dashMo = new MutationObserver(function () { syncPageHooks(root, quietLook(root) && lastW >= DASH_AT); });
+      inst._dashMo = new MutationObserver(function () {
+        syncPageHooks(root, quietLook(root) && lastW >= DASH_AT);
+        syncDock(el, quietLook(root) && lastW >= DASH_AT);
+      });
       inst._dashMo.observe(root, { attributes: true, attributeFilter: ['data-sheet-style'] });
     }
     syncPageHooks(root, false);
@@ -6656,6 +6764,7 @@
       var w = lastW = entries[entries.length - 1].contentRect.width;
       var dash = quietLook(root) && w >= DASH_AT;
       syncPageHooks(root, dash);
+      syncDock(el, dash);
       if (dash) { body.setAttribute('role', 'tabpanel'); body.setAttribute('aria-labelledby', tab); }
       else { body.removeAttribute('role'); body.removeAttribute('aria-labelledby'); }
       var main = el.querySelector('[data-cs-dmain]');
@@ -6701,6 +6810,7 @@
       (kept = kept || {})[d.getAttribute('data-cs-common')] = d.classList.contains('is-in');
     });
     var keptView = dashViewToKeep(el);
+    syncDock(el, false);
     el.innerHTML = paperSheetHtml(data);
     // The settle plays from its class; taken off before the first style
     // pass, it never starts.
@@ -6720,11 +6830,15 @@
     attachDashPin(inst, el);
     attachStatCards(inst, el, data);
     showItemsRow(el);
+    // Docked again in the same task as the redraw, so the page never paints
+    // its pieces back under the sheet in between.
+    syncDock(el, dashWide(el));
   }
 
 
   function mountSheet(inst, el, data, still) {
     inst._paper = false;
+    syncDock(el, false);
     releaseHeight(el);
     if (paperAvailable()) { mountPaper(inst, el, data, still); return; }
     // The dynamic-surface frame is a core widget loaded before system widgets,
@@ -6807,6 +6921,7 @@
       '.cs-port { position:relative; flex:none; width:96px; }',
       '.cs-portrait { display:block; width:96px; height:96px; border-radius:12px; object-fit:cover; box-sizing:border-box; border:2px solid var(--color-border,#e5e7eb); background:var(--color-bg-tertiary,#f3f4f6); }',
       '.cs-portrait-placeholder { display:flex; align-items:center; justify-content:center; color:var(--color-text-muted,#9ca3af); font-size:32px; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '.cs-port-chip { position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); display:inline-flex; align-items:center; gap:5px; height:24px; padding:0 10px; border-radius:9999px; border:1px solid var(--color-border,#e5e7eb); background:var(--color-card-bg,#fff); color:var(--color-text-primary,#111827); font:inherit; font-size:11.5px; font-weight:600; white-space:nowrap; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.12); }',
       '.cs-port-chip:hover, .cs-port-chip:focus-visible { border-color:var(--color-accent,#a855f7); color:var(--color-accent,#a855f7); outline:none; }',
       '.cs-id-main { flex:1; min-width:0; }',
@@ -7315,7 +7430,7 @@
       '  Q button.sh-dbox { cursor:pointer;transition:box-shadow var(--dur-micro) var(--ease-out),border-color var(--dur-micro) var(--ease-out); }',
       '  Q button.sh-dbox:hover,Q button.sh-dbox[aria-expanded="true"] { box-shadow:var(--elev-hover,none);border-color:color-mix(in srgb,var(--paper-accent) 55%,var(--paper-edge)); }',
       '  Q button.sh-dbox:active { box-shadow:inset 0 1px 3px rgb(0 0 0 / .18); }',
-      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
+      '  Q :is(button.sh-dbox,.sh-dprog-b,.sh-dtab,[data-sheet-dock-tabs] > [role="tab"]):focus-visible { outline:2px solid var(--paper-accent);outline-offset:2px; }',
       // A number box opens its small card, which hangs under it over the row
       // below. The five that roll carry a quiet die.
       '  Q .sh-dboxes { position:relative; }',
@@ -7418,6 +7533,20 @@
       '  Q .sh-dtab[aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
       '  Q .sh-dtab small { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
       '  Q .sh-dtab.sh-dnarrow { display:inline-flex; }',
+      // The host's docked tabs wear the sheet's tab look, after a thin divider.
+      '  Q .sh-dhost { display:contents; }',
+      // Tighter with the host's tabs in, so the joined row fits one line at the sheet's usual width.
+      '  Q .sh-dtabs:has(> .sh-dhost:not(:empty)) { column-gap:22px; }',
+      '  Q .sh-dhost:not(:empty)::before { content:"";align-self:center;width:1px;height:18px;background:var(--paper-edge); }',
+      '  Q .sh-dhost > [role="tab"] { display:inline-flex;align-items:baseline;min-height:44px;margin:0 0 -1px;padding:12px 0 10px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;cursor:pointer;font:600 calc(12px * var(--ts)) var(--paper-ui-font);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:var(--paper-mute);transition:color var(--dur-micro) var(--ease-out); }',
+      '  Q .sh-dhost > [role="tab"]:hover { color:var(--paper-ink); }',
+      '  Q .sh-dhost > [role="tab"][aria-selected="true"] { color:var(--paper-accent);border-bottom-color:var(--paper-accent); }',
+      '  Q .sh-dhost > [role="tab"][hidden] { display:none; }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span) { margin-left:5px;font-size:calc(11px * var(--ts));font-weight:500;letter-spacing:0;color:var(--paper-mute); }',
+      '  Q .sh-dhost > [role="tab"] > :is(small,span):empty { display:none; }',
+      '  Q .sh-dmain:not([data-dtab="dock"]) > [data-sheet-dock-panes] { display:none; }',
+      '  Q .sh-dmain > [data-sheet-dock-panes] { padding-top:8px;scroll-margin-top:110px; }',
+      '  Q [data-sheet-dock-piece]:not([data-docked]),Q [data-sheet-dock-piece][data-docked] + .sh-dslotfb { display:none; }',
       '  Q .sh-dmain > .sh-body { display:block;margin-top:12px;scroll-margin-top:110px; }',
       '  Q .sh-dmain > .sh-body > .sh-col { display:block; }',
       '  Q .sh-dmain:not([data-dtab="abilities"]) > .sh-body { display:none; }',
@@ -7541,9 +7670,35 @@
       '  Q .sh-dmain[data-dtab="skills"] > .sh-dpane[data-dpane="skills"] { display:none; }',
       '}',
       '@keyframes sh-dunfold { from { opacity:0;transform:translateY(-4px); } }',
-      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
+      'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q :is(.sh-dpin-in,.sh-dbox,.sh-dtab,.sh-dhost > [role="tab"],.sh-dprog-b,.sh-dar,.sh-dachev,.sh-dsw),html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dsw::after { transition:none !important; }',
       'html:is([data-motion="calm"],[data-motion="off"],[data-view-motion="calm"],[data-cz-reduce]) Q .sh-dacard { animation:none !important; }',
       '@media (prefers-reduced-motion:reduce) { Q :is(.sh-dar,.sh-dachev,.sh-dsw),Q .sh-dsw::after { transition:none !important; } Q .sh-dacard { animation:none !important; } }'
+    ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
+  }
+
+  // The quiet look's heading ladder: a group or box heading sits a step up
+  // the standard's type scale in the campaign's heading face (20 for an
+  // ability group, 18 for a box), with room above it, and the rows under it
+  // step down to reading weight, so size and weight part a heading from its
+  // first row even where colour cannot. The other styles already set their
+  // headings apart in small capitals. Last in the sheet's styles, so it
+  // wins over the dashboard's own sizes.
+  function headingCss() {
+    var Q = '[data-sheet]:is([data-sheet-style="modern"],:not([data-sheet-style]))';
+    return [
+      'Q .sh-dag { margin-top:32px; }',
+      'Q .sh-dagh { padding-bottom:8px; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 { font-size:calc(20px * var(--ts));font-weight:600;line-height:1.2; }',
+      'Q :is(.sh-dagh,.sh-devery) h3 small { font-size:calc(13px * var(--ts)); }',
+      'Q .sh-devery { margin-top:32px; }',
+      'Q .sh-dan { font-size:calc(14px * var(--ts));font-weight:500; }',
+      'Q .sh-dh { margin-bottom:10px;padding-bottom:10px;font-size:calc(18px * var(--ts)); }',
+      'Q :is(.sh-drows li,.sh-dplain,.sh-dkit dd) { color:var(--paper-ink-soft); }',
+      'Q .sh-dkit dd { font-weight:600; }',
+      // On a phone the group label is a heading, not a field label.
+      'Q .sh-fq .sx-h .paper-kind { font:600 calc(18px * var(--ts))/1.2 var(--font-heading, var(--paper-ui-font));letter-spacing:0;text-transform:none;color:var(--paper-ink); }',
+      'Q .sh-fq .sx-grp + .sx-grp { margin-top:28px; }',
+      'Q .sh-fq .sx-name { font-weight:600;font-size:calc(14px * var(--ts)); }'
     ].map(function (r) { return r.replace(/Q /g, Q + ' '); });
   }
 
@@ -7712,6 +7867,7 @@
       '[data-sheet] .sh-name h2 { margin:2px 0 0;font:700 calc(32px * var(--ts))/1.05 var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-seal { display:inline-flex;align-items:center;gap:5px;border:1px solid var(--paper-accent);color:var(--paper-accent);border-radius:3px;padding:0 6px;font:600 calc(10px * var(--ts))/17px var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;background:color-mix(in srgb,var(--paper-accent) 7%,transparent);white-space:nowrap; }',
       '[data-sheet] .sh-id { display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;padding:4px 0; }',
+      '[data-cs-portrait][data-cs-change-image], [data-cs-portrait-view] { cursor:pointer; } [data-cs-portrait][data-cs-change-image]:focus-visible, [data-cs-portrait-view]:focus-visible { outline:2px solid var(--color-accent,#6366f1); outline-offset:2px; }',
       '[data-sheet] .sh-port { position:relative;width:86px;height:86px;border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px var(--paper-edge); }',
       '[data-sheet] .sh-port img { display:block;width:100%;height:100%; }',
       '[data-sheet] .sh-port button { position:absolute;left:50%;bottom:5px;transform:translateX(-50%);border:1px solid var(--paper-edge);background:var(--paper-cut);color:var(--paper-ink);border-radius:999px;padding:1px 8px;font:600 calc(10.5px * var(--ts)) var(--paper-ui-font);white-space:nowrap;display:inline-flex;gap:4px;align-items:center; }',
@@ -7764,7 +7920,8 @@
       '[data-sheet] .sh-sec { display:flex;flex-direction:column;gap:6px;min-width:0; }',
       '[data-sheet] .sh-kit-name { font:700 calc(15px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-kit { display:grid;grid-template-columns:1fr repeat(3,28px);gap:2px 6px;font:500 calc(12.5px * var(--ts)) var(--paper-font);border-top:1px dashed var(--paper-edge);border-bottom:1px dashed var(--paper-edge);padding:4px 0;text-align:center; }',
-      '[data-sheet] .sh-kit span:first-child,[data-sheet] .sh-kit span:nth-child(5) { text-align:left; }',
+      // Every row's label (the first of each four cells) sits in the label column, not only the first row's.
+      '[data-sheet] .sh-kit span:nth-child(4n+1) { text-align:left; }',
       '[data-sheet] .sh-kit .sh-h { font:600 calc(9.5px * var(--ts)) var(--paper-ui-font);letter-spacing:.08em;text-transform:uppercase;color:var(--paper-mute); }',
       '[data-sheet] .sh-line { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center; }',
       '[data-sheet] .sh-line b { font:700 calc(13.5px * var(--ts)) var(--paper-font);color:var(--paper-ink); }',
@@ -7886,7 +8043,7 @@
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed { font-size:calc(20px * var(--ts));font-weight:500; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-fixed small { font:500 calc(12.5px * var(--ts)) var(--paper-ui-font);color:var(--paper-mute);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit { font-size:calc(19px * var(--ts));font-weight:500; }',
-      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
+      '[data-sheet][data-sheet-style="pencil"] .sh-kit .sh-h,[data-sheet][data-sheet-style="pencil"] .sh-kit span:nth-child(4n+5) { font-family:var(--paper-ui-font);color:var(--pc-rule);text-shadow:none; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-kit-name { font-size:calc(25px * var(--ts));font-weight:700; }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd { font-size:calc(18px * var(--ts));font-weight:500;line-height:22px;border-color:var(--pc-lead);border-radius:20px 14px 18px 12px / 14px 18px 12px 20px;background:transparent;color:var(--pc-lead); }',
       '[data-sheet][data-sheet-style="pencil"] .sh-cnd small { font:500 calc(12px * var(--ts)) var(--paper-ui-font);color:var(--paper-ink-soft);text-shadow:none; }',
@@ -8201,7 +8358,7 @@
       '.ds-tipbox { box-sizing: border-box; position: fixed; z-index: 9999; width: max-content; max-width: 280px; white-space: normal; padding: 8px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 500; line-height: 1.45; color: #f1f5f9; background: #1e293b; border: 1px solid rgba(168, 85, 247, 0.45); box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55); pointer-events: none; opacity: 0; visibility: hidden; }',
       '.ds-tipbox--measuring { left: -9999px; top: -9999px; }',
       '.ds-tipbox--visible { visibility: visible; opacity: 1; }'
-    ].concat(quietLookCss(), dashCss()).join('\n');
+    ].concat(quietLookCss(), dashCss(), headingCss()).join('\n');
     var style = document.createElement('style');
     style.id = 'ds-character-sheet-paper-styles';
     style.textContent = css;
@@ -8358,6 +8515,7 @@
           // Reading the wrong key here is what rendered every stat as 0.
           fields: (entity && (entity.fields_data || entity.custom_fields)) || {},
           name: (entity && entity.name) || 'Unnamed Hero',
+          imagePath: (entity && entity.image_path) || '',
           campaignId: campaignId,
           entityId: entityId,
           children: Array.isArray(children) ? children : [],
@@ -8441,6 +8599,7 @@
 
     destroy: function (el) {
       keepDashView(el);
+      syncDock(el, false);
       el._csLive = null;
       el._csLoading = null;
       clearTimeout(el._csWait);
@@ -8478,7 +8637,7 @@
       classifyFeature: classifyFeature, htmlToText: htmlToText,
       stripEnrichers: stripEnrichers, cleanFoundryText: cleanFoundryText,
       cleanFoundryProse: cleanFoundryProse, SKILL_TO_GROUP: SKILL_TO_GROUP,
-      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
+      esc: esc, escAttr: escAttr, safeImgUrl: safeImgUrl, portraitSrc: portraitSrc, headingCss: headingCss, rIdentity: rIdentity, buildSchema: buildSchema, rVitals: rVitals, rAbilities: rAbilities, rKit: rKit,
       clampTooltipPos: clampTooltipPos, fetchEntity: fetchEntity,
       paperAvailable: paperAvailable, paperSheetHtml: paperSheetHtml, paperPanels: paperPanels,
       pIdentity: pIdentity, pIdentityInner: pIdentityInner, pTurn: pTurn, pAbilities: pAbilities, actionKind: actionKind, isCommonAbility: isCommonAbility, COMMON_ABILITIES: COMMON_ABILITIES, heroBest: heroBest, heroResult: heroResult, pKitPanel: pKitPanel, kitObject: kitObject,
@@ -8499,7 +8658,7 @@
       ancestryPurchase: ancestryPurchase, grantsFor: grantsFor, grantRows: grantRows, skillSlug: skillSlug, cleanList: cleanList,
       listProblem: listProblem, featureOf: featureOf, pTraits: pTraits, edBackstoryHtml: edBackstoryHtml, edAboutHtml: edAboutHtml, pAbout: pAbout, edTraitsHtml: edTraitsHtml,
       edSkillsHtml: edSkillsHtml, edPerksHtml: edPerksHtml, collectEditor: collectEditor, canEditLists: canEditLists,
-      wroteHere: wroteHere,
+      wroteHere: wroteHere, syncDock: syncDock, dashTabs: dashTabs, dashEquipment: dashEquipment,
       loadOwnEntries: loadOwnEntries,
       setEditRefs: function (refs, perks) { editRefs = refs || {}; perkDefs = perks || null; }
     };
