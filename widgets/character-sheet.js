@@ -2736,7 +2736,16 @@
   // A trigger marked data-tip-delay waits before showing, so tips on a row of
   // small boxes don't flicker past as the pointer crosses them.
   var TIP_DELAY_MS = 450;
+  // Puts any tip away and takes off the page-wide listeners a mount added, so
+  // a redraw or destroy never leaves a tip floating or a listener doubled.
+  function dropTips(inst) {
+    if (inst._tipReset) inst._tipReset();
+    if (typeof document === 'undefined') return;
+    if (inst._onTipScroll) document.removeEventListener('scroll', inst._onTipScroll, { capture: true, passive: true });
+    if (inst._onTipOutside) document.removeEventListener('pointerdown', inst._onTipOutside, true);
+  }
   function attachTooltips(inst, el) {
+    dropTips(inst);
     var current = null, timer = null, tapped = null;
     function cancel() { if (timer) { clearTimeout(timer); timer = null; } }
     inst._onTipShow = function (e) {
@@ -2776,6 +2785,17 @@
       }
       if (tapped) { tapped = null; current = null; hideTipbox(); }
     };
+    // The tip floats over the page, so a scroll, or a press anywhere outside
+    // the tapped box (the page header, a drawer), puts it away.
+    inst._tipReset = function () { cancel(); tapped = null; current = null; hideTipbox(); };
+    inst._onTipScroll = function () { if (current || timer) inst._tipReset(); };
+    inst._onTipOutside = function (e) {
+      if (tapped && !(e.target && tapped.contains(e.target))) inst._tipReset();
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('scroll', inst._onTipScroll, { capture: true, passive: true });
+      document.addEventListener('pointerdown', inst._onTipOutside, true);
+    }
     el.addEventListener('mouseover', inst._onTipShow);
     el.addEventListener('mouseout', inst._onTipHide);
     el.addEventListener('focusin', inst._onTipShow);
@@ -6770,6 +6790,7 @@
     });
     if (inst._onPaperKey) el.removeEventListener('keydown', inst._onPaperKey, true);
     if (inst._onTipTap) el.removeEventListener('click', inst._onTipTap, true);
+    dropTips(inst);
     if (inst._onPgKey) el.removeEventListener('keydown', inst._onPgKey, true);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
     if (inst._onPgUp && typeof document !== 'undefined') {
@@ -6785,7 +6806,7 @@
       document.removeEventListener('pointerup', inst._onTfUp, true);
       document.removeEventListener('pointercancel', inst._onTfUp, true);
     }
-    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
+    ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_tipReset', '_onTipScroll', '_onTipOutside', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
       '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp'].forEach(function (k) { inst[k] = null; });

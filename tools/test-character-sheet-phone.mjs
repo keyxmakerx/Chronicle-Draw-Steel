@@ -141,6 +141,22 @@ test('in a browser: on a phone the name gets the line and the boxes sit under it
   assert.equal(await p.evaluate(() => !!document.querySelector('.ds-tipbox--visible')), false, 'the next tap put the tip away');
   assert.equal(await p.evaluate(() => document.querySelector('.sx-tbx').closest('details').open), true, 'and a tap on the name still opens it');
 
+  // The tip floats over the page: a scroll, a press outside the sheet, or a
+  // redraw puts it away.
+  const tipUp = () => p.evaluate(() => !!document.querySelector('.ds-tipbox--visible'));
+  await p.evaluate(() => document.querySelector('.sx-tbx').click());
+  assert.equal(await tipUp(), true);
+  await p.evaluate(() => document.dispatchEvent(new Event('scroll')));
+  assert.equal(await tipUp(), false, 'a scroll puts the tip away');
+  await p.evaluate(() => document.querySelector('.sx-tbx').click());
+  await p.evaluate(() => { const o = document.createElement('div'); o.id = 'out'; document.body.appendChild(o); o.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+  assert.equal(await tipUp(), false, 'a press outside the sheet puts it away');
+  await p.evaluate(() => document.querySelector('.sx-tbx').click());
+  await p.evaluate(() => window.W.destroy.call(window.W, document.getElementById('mount')));
+  assert.equal(await tipUp(), false, 'taking the sheet down leaves no tip behind');
+  await p.evaluate((fields) => { const el = document.getElementById('mount'); el.dataset.fieldsData = JSON.stringify({ name: 'Ysolde', fields_data: fields }); window.W.init.call(window.W, el, {}); }, FIELDS);
+  await p.waitForSelector('.sx-tbx', { state: 'attached' });
+
   // The identity line: no wrapped line starts with a dot.
   const starts = await p.evaluate(() => {
     document.querySelector('[data-sheet]').setAttribute('data-sheet-style', 'ledger');
