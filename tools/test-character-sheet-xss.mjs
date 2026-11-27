@@ -132,3 +132,22 @@ test('paper: the story and children items escape their text', () => {
   ] }));
   assertNoInjection(assert, items, 'paper items');
 });
+
+test('paper: the Progression panel escapes the hero name, stored values and a typed draft', () => {
+  const f = { victories: XSS, xp: BREAKOUT, renown: XSS, wealth: XSS, level: XSS };
+  for (const who of [{ isOwner: true, isGm: false }, { isOwner: false, isGm: false }]) {
+    const d = PX(f, Object.assign({ campaignId: 'c', entityId: 'e' }, who));
+    const html = cs.pProgPanel(d);
+    assertNoInjection(assert, html, 'progression ' + JSON.stringify(who));
+    assertNoAttrBreakout(assert, html, 'progression attrs');
+    const st = cs.progState();
+    st.editing = 'renown';
+    st.draft = BREAKOUT;
+    st.bad = 'renown';
+    const editing = cs.pProgPanel(d, st);
+    assertNoAttrBreakout(assert, editing, 'progression draft');
+    if (who.isOwner) assert.ok(/value="x&quot; onerror=/.test(editing), 'the draft is attribute-escaped');
+  }
+  const named = cs.pProgPanel(PX({}, { campaignId: 'c', entityId: 'e', isOwner: false, isGm: false }));
+  assert.ok(/&lt;img src=x onerror=alert\(document\.cookie\)&gt;’s player and the Director change these\./.test(named));
+});

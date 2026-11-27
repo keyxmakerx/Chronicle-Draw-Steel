@@ -66,6 +66,20 @@ Career, Kit) opens across the full width under the identity row. Layout rules li
 `[data-sheet][data-sheet-style=...]` and reading `--paper-*` tokens. Without
 `sheetMotion` the box render is used unchanged.
 
+The Progression panel (`pProgPanel`) is where the hero's owner and the
+Director (`isOwner` or `isGm`) change Victories, XP, Renown and Wealth; anyone
+else sees the numbers only. "Add a victory" adds one; "Finished a respite?"
+writes out Victories 2 → 0, XP 4 → 6 before the press and saves the new totals
+as one patch (`{victories: 0, xp: 6}`, never an increment), then offers Undo
+in Chronicle's toast, which saves the old totals as one patch. Any of the four
+can be corrected by pressing it and typing a whole number from 0; anything
+else is refused before a save. Level stays read-only, since a level-up starts
+in Foundry. Saves go through `saveFields`, the manifest's play blocks let the
+owner write these four, and Chronicle rings the Director's bell itself. Only
+the changed rows are drawn again (`attachProgression`), and the sheet's own
+progression numbers (`data-pv`) follow each save. The count across after
+banking plays in Full motion only, inside 400ms.
+
 On paper the sheet's face is the hero's turn: Hero · Draw Steel, an identity
 line (ancestry, class and level, subclass, kit; Culture and career are one fold
 away and keep their pickers), the This turn part, then the abilities. On a
