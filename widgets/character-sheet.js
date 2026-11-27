@@ -3187,7 +3187,12 @@
   function kitObject(data) {
     var list = kitDetailList(data);
     if (list.length < 2) return list[0] || null;
-    var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : null; };
+    // Hand-typed or imported details may hold "2" for 2.
+    var numOf = function (v) {
+      if (v == null || v === '' || typeof v === 'boolean') return null;
+      var n = Number(v);
+      return isFinite(n) ? n : null;
+    };
     var out = {}, from = {};
     Object.keys(list[0]).forEach(function (key) { out[key] = list[0][key]; });
     out.name = list.map(function (k) { return String(k.name || '').trim(); }).filter(Boolean).join(', ');
@@ -3197,7 +3202,7 @@
         var v = numOf(k[key]);
         if (v != null && (best == null || v > numOf(best[key]))) best = k;
       });
-      if (best) { out[key] = best[key]; from[key] = String(best.name || ''); }
+      if (best) { out[key] = numOf(best[key]); from[key] = String(best.name || ''); }
     });
     ['melee', 'ranged'].forEach(function (p) {
       var keys = [p + 'DamageT1', p + 'DamageT2', p + 'DamageT3'];
@@ -3208,7 +3213,7 @@
         var sum = vals.reduce(function (a, v) { return a + (v || 0); }, 0);
         if (best == null || sum > bestSum) { best = k; bestSum = sum; }
       });
-      if (best) { keys.forEach(function (key) { out[key] = best[key]; }); from[p + 'Damage'] = String(best.name || ''); }
+      if (best) { keys.forEach(function (key) { out[key] = numOf(best[key]); }); from[p + 'Damage'] = String(best.name || ''); }
     });
     out.from = from;
     out.two = true;

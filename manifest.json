@@ -924,7 +924,7 @@
           "label": "Kit Details Data",
           "type": "string",
           "json_list": true,
-          "format": "A JSON list as text holding one object, the kit's bonuses: `name`; `meleeDamageT1`, `meleeDamageT2`, `meleeDamageT3` and the same three for `ranged`; `meleeDistance`, `rangedDistance`; `stability`, `speed`, `stamina`, `disengage`",
+          "format": "A JSON list as text holding one object per kit the hero carries (a tactician carries two), each the kit's bonuses: `name`; `meleeDamageT1`, `meleeDamageT2`, `meleeDamageT3` and the same three for `ranged`; `meleeDistance`, `rangedDistance`; `stability`, `speed`, `stamina`, `disengage`",
           "foundry_collection": "items",
           "foundry_item_type": [
             "kit"

@@ -938,6 +938,9 @@ test('kit: a tactician\'s two kits give the higher of each kind of bonus, and th
     assert.deepEqual(st.rows, [['Ancestry', 'Human 5'], ['Kit', 'Spellsword +1']], 'the kit behind the bonus is named');
     assert.ok(/You may take the other kit/.test(st.note));
   } finally { cs.setEditRefs({}); }
+  // Typed or imported details may carry numbers as text.
+  const typed = cs.kitObject(fields({ kit_details_json: JSON.stringify([{ name: 'A', speed: '1', stamina: '3' }, { name: 'B', speed: '2', stamina: 'lots' }]) }));
+  assert.deepEqual([typed.speed, typed.stamina, typed.from.speed, typed.from.stamina], [2, 3, 'B', 'A']);
   // One kit is unchanged: its own values and no note.
   const one = cs.kitObject(Object.assign({}, PAPER, { fields: Object.assign({}, PAPER.fields, { kit_details_json: JSON.stringify([two[1]]) }) }));
   assert.equal(one.stamina, 6);
