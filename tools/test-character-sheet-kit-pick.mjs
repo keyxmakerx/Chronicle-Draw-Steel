@@ -132,3 +132,7 @@ test('in a browser: a kit pick redraws the Kit card, the Equipment tab and the K
   assert.match(await panel(), /Mountain/);
   assert.deepEqual(errors, []);
 });
+
+test('the Equipment tab\'s Kit heading keeps the first heading\'s 12px top inside its wrapper', () => {
+  assert.match(SRC, /Q \.sh-dpane > \.sh-dsec:first-child,Q \.sh-dpane > \[data-cs-dkit\]:first-child > \.sh-dsec:first-child \{ margin-top:12px; \}/);
+});
