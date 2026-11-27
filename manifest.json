@@ -805,7 +805,6 @@
           "play": {
             "edit": "owner",
             "kind": "resource",
-            "min": 0,
             "step": 1
           }
         },

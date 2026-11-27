@@ -44,6 +44,10 @@ test('the play fields the hero declares are the ones the rules let a player chan
   assert.equal(field('stamina_current').play.max_field, 'stamina_max');
   assert.equal(field('recoveries').play.max_field, 'recoveries_max');
   assert.equal(field('surges').play.max, undefined, 'no surge cap is published');
+  // A Talent spends clarity below zero, down to minus (1 + Reason), and a
+  // play block's bound can't follow the class, so the resource has none: the
+  // sheet shows each class's own floor.
+  assert.equal(field('heroic_resource_current').play.min, undefined, 'a Talent\u2019s clarity goes below zero');
   assert.equal(field('conditions_json').play.to_foundry, true);
 });
 
