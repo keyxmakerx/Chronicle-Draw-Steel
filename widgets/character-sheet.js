@@ -4391,12 +4391,28 @@
   function cantPay(a, data) { var c = abCost(a); return c > 0 && c > heroReach(a, data); }
   // What the hero can pay with, as the switch and the fold line say it:
   // "Only what 3 Wrath pays for", or for a Talent who may go below zero
-  // "Only what you can pay for (2 Clarity, down to −3)".
+  // "Only what 2 Clarity pays for, down to −3". Every viewer reads it, so it
+  // never says "you".
   function payWords(data, lead) {
-    var have = heroHave(data) + ' ' + heroResName(data);
+    var have = signed(heroHave(data)) + ' ' + heroResName(data);
     var floor = isClarity(data) ? clarityFloor(data) : 0;
-    if (lead === 'only') return floor ? 'Only what you can pay for (' + have + ', down to \u2212' + floor + ')' : 'Only what ' + have + ' pays for';
-    return floor ? 'cost more than you can pay for (' + have + ', down to \u2212' + floor + ')' : 'cost over ' + have;
+    var below = floor ? ', down to \u2212' + floor : '';
+    if (lead === 'only') return 'Only what ' + have + ' pays for' + below;
+    return 'cost over ' + have + (floor ? ', even down to \u2212' + floor : '');
+  }
+  // A count as the sheet prints it: a true minus sign below zero.
+  function signed(n) { return n < 0 ? '\u2212' + (-n) : String(n); }
+  // An opened ability's cost line, by the same reach as the list: a Talent
+  // who may go below zero is told where the cost leaves them, and is short
+  // only past the floor.
+  function payLine(a, data) {
+    var c = abCost(a), have = heroHave(data), reach = heroReach(a, data), short = c > reach;
+    var head = 'Costs ' + esc(costLabel(a, data)) + '. You have ' + signed(have);
+    var tail;
+    if (reach > have) tail = short ? ' and can go down to \u2212' + (reach - have) + ', so ' + (c - reach) + ' short.' :
+      (c > have ? ', so you\u2019d go to \u2212' + (c - have) + '.' : '.');
+    else tail = short ? ', so ' + (c - have) + ' short.' : '.';
+    return '<p class="sh-dpay' + (short ? ' is-short' : '') + '">' + head + tail + '</p>';
   }
   function heroResName(data) { return f(data, 'heroic_resource_name', '') || 'Heroic Resource'; }
 
@@ -4490,9 +4506,7 @@
         '<div class="sh-dodds" aria-hidden="true">' + odds.map(function (o) { return '<i style="flex:' + o + '"></i>'; }).join('') + '</div>' +
         '<dl class="sh-dtier">' + rows + '</dl>';
     }
-    var c = abCost(a), have = heroHave(data);
-    if (c) you += '<p class="sh-dpay' + (c > have ? ' is-short' : '') + '">Costs ' + esc(costLabel(a, data)) + '. You have ' + have +
-      (c > have ? ', so ' + (c - have) + ' short.' : '.') + '</p>';
+    if (abCost(a)) you += payLine(a, data);
     else if (groupOf(a) === 'signature') you += '<p class="sh-dpay">A signature ability. It costs nothing.</p>';
     var who = esc(firstName(data.name));
     return '<div class="sh-darules">' + (abilityRulesHtml(a) || fallbackBodyHtml(a)) + '</div>' +
