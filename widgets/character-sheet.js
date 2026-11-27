@@ -5501,7 +5501,7 @@
   // identity band shows the bought traits on first paint.
   var EDIT_FILES = {
     traits: ['ancestries.json'],
-    skills: ['skills.json', 'careers.json', 'cultures.json', 'kits.json'],
+    skills: ['skills.json', 'careers.json', 'cultures.json', 'culture-aspects.json', 'kits.json'],
     perks: ['perks.json', 'careers.json', 'cultures.json', 'kits.json']
   };
 
@@ -5594,7 +5594,11 @@
     var rows = [];
     [['Culture', 'culture', 'cultures.json'], ['Career', 'career', 'careers.json'], ['Kit', 'kit', 'kits.json']].forEach(function (o) {
       var name = f(data, o[1], '');
-      var g = grantsFor(findEntry(editRefs[o[2]], name))[kind];
+      var entry = findEntry(editRefs[o[2]], name);
+      // A hero made before cultures were whole entries may hold one aspect
+      // ("Urban environment") as their culture; it grants its own skill.
+      if (!entry && o[1] === 'culture') entry = findEntry(editRefs['culture-aspects.json'], name);
+      var g = grantsFor(entry)[kind];
       if (name && (g.text || g.quick.length)) rows.push({ label: o[0], name: name, text: g.text, quick: g.quick });
     });
     return rows;
