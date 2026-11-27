@@ -538,6 +538,11 @@
               "format": "number"
             }
           },
+          "foundry_entry_items": {
+            "signature_traits": {
+              "type": "feature"
+            }
+          },
           "play": {
             "edit": "owner",
             "kind": "choice",

@@ -128,6 +128,10 @@ ancestries carry theirs, so the hero loses them when the ancestry goes:
 
 A size that doesn't read as one ("As your previous ancestry") is left out.
 
+Its signature traits become `feature` items on the hero (`foundry_entry_items`),
+one per trait with its description, as a printed ancestry's advancement grants
+them; they follow the entry and go when the ancestry goes.
+
 The single-item fields above (class, subclass, ancestry, career, culture, kit
 name, level, heroic resource name) are `foundry_item_single: true`: the adapter
 collapses the matching items to one record, using the first projection field in
