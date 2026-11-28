@@ -588,6 +588,22 @@
             "career"
           ],
           "foundry_item_single": true,
+          "foundry_entry_fields": {
+            "project_points": {
+              "path": "system.projectPoints",
+              "format": "number"
+            },
+            "renown": {
+              "path": "system.renown",
+              "format": "number",
+              "once": true
+            },
+            "wealth": {
+              "path": "system.wealth",
+              "format": "number",
+              "once": true
+            }
+          },
           "play": {
             "edit": "owner",
             "kind": "choice",

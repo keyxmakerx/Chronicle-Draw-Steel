@@ -104,6 +104,17 @@ the same paths as above:
 | `melee_damage_bonus` / `ranged_damage_bonus` (`"+2/+2/+4"`) | `system.bonuses.melee.damage.tier1`–`tier3` / `system.bonuses.ranged.damage.tier1`–`tier3` |
 | `melee_distance_bonus` / `ranged_distance_bonus` | `system.bonuses.melee.distance` / `system.bonuses.ranged.distance` |
 
+A campaign's own career is made the same way, its numbers written on the item:
+
+| Entry property | Path within the made career item |
+|---|---|
+| `project_points` | `system.projectPoints` |
+| `renown`, `wealth` | `system.renown` / `system.wealth`, only when the item is made (`once`) |
+
+The system adds a career's renown and wealth to the hero when the item is
+created and subtracts the item's amounts when it is deleted, so those two are
+never rewritten when the entry changes later; a hero keeps what the career gave.
+
 A campaign's own ancestry is made the same way, and its numbers change the
 hero rather than the item: the ancestry field's `foundry_entry_effects` puts them
 on one Active Effect the made ancestry item carries, as the system's own
