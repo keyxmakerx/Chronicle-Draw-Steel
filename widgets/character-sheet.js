@@ -8286,7 +8286,9 @@
       '[data-sheet] .sh-pg-ctl { display:flex;align-items:center;gap:8px; }',
       '[data-sheet] :is(.sh-pg-ro,.sh-pg-val,.sh-pg-in) { font:700 calc(22px * var(--ts))/1 var(--paper-num-font);color:var(--paper-ink); }',
       '[data-sheet] .sh-pg-ro { min-width:48px;text-align:right;padding:6px 2px; }',
-      '[data-sheet] .sh-pg-val { min-width:48px;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
+      // The number and the box it turns into share one width, so pressing it
+      // doesn't rewrap the hint beside it.
+      '[data-sheet] .sh-pg-val { width:64px;box-sizing:border-box;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
         'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
       '[data-sheet] .sh-pg-val .num { display:inline-block; }',
       '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under);border-bottom:1px solid var(--paper-accent); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
