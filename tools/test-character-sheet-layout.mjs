@@ -1324,7 +1324,7 @@ function progRig(over) {
   rig.inst = {};
   rig.data = prog(Object.assign({ isOwner: true }, over));
   rig.st = cs.progState();
-  const ui = { mark() {}, flush() {}, focusF() {}, say(t) { rig.said = t; }, body: () => ({ contains: () => true, querySelector: () => null }) };
+  const ui = { mark() {}, flush() {}, focusF() {}, say(t) { rig.said = t; }, body: () => ({ contains: () => true, querySelector: () => rig.box || null }) };
   cs.progActions(rig.inst, el, rig.data, rig.st, ui);
   const btn = (attr, val) => ({ disabled: false, closest() { return this; },
     hasAttribute: (a) => a === attr, getAttribute: (a) => (a === attr ? (val || '') : null) });
@@ -1374,6 +1374,31 @@ test('progression wiring: Add a victory sends victories + 1; a typed value that 
     rig.type('renown', '4');
     await settle();
     assert.deepEqual(rig.sent[1], { renown: 4 }, 'a whole number is sent as a number');
+  } finally { rig.done(); }
+});
+
+test('progression: minus and plus step the open box by one, never below 0, and save only on Enter or leaving', async () => {
+  const rig = progRig();
+  try {
+    rig.press('data-cs-pg-edit', 'renown');
+    const html = cs.pProgPanel(rig.data, rig.st);
+    assert.ok(/data-cs-pg-step="-1" data-k="renown"/.test(html) && /data-cs-pg-step="1" data-k="renown"/.test(html), 'the open box has minus and plus');
+    assert.ok(!/data-cs-pg-step="1" data-k="wealth"/.test(html), 'a closed number has none');
+    assert.ok(/tabindex="-1" data-cs-pg-step/.test(html), 'they stay out of the tab order');
+    rig.box = { value: '1', focus() {} };
+    const step = (by) => rig.inst._onPgClick({ target: { disabled: false, closest() { return this; },
+      hasAttribute: (a) => a === 'data-cs-pg-step', getAttribute: (a) => ({ 'data-cs-pg-step': String(by), 'data-k': 'renown' })[a] ?? null } });
+    step(1); step(1);
+    assert.equal(rig.box.value, '3');
+    step(-1); step(-1); step(-1); step(-1);
+    assert.equal(rig.box.value, '0', 'never below 0');
+    rig.inst._onPgKey({ target: { getAttribute: (a) => (a === 'data-cs-pg-in' ? 'renown' : null) }, key: 'ArrowUp', preventDefault() {} });
+    assert.equal(rig.box.value, '1', 'ArrowUp steps too');
+    await settle();
+    assert.equal(rig.sent.length, 0, 'a step alone saves nothing');
+    rig.type('renown', rig.box.value);
+    await settle();
+    assert.deepEqual(rig.sent, [{ renown: 1 }]);
   } finally { rig.done(); }
 });
 
