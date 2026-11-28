@@ -8288,12 +8288,12 @@
       '[data-sheet] .sh-pg-ro { min-width:48px;text-align:right;padding:6px 2px; }',
       // The number and the box it turns into share one width, so pressing it
       // doesn't rewrap the hint beside it; both grow with the text size.
-      '[data-sheet] .sh-pg-val { width:calc(64px * var(--ts));box-sizing:border-box;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
+      '[data-sheet] .sh-pg-val { width:calc(64px * var(--ts,1));box-sizing:border-box;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
         'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
       '[data-sheet] .sh-pg-val .num { display:inline-block; }',
       '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under);border-bottom:1px solid var(--paper-accent); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
       '[data-sheet] .sh-pg-val:active { background:var(--paper-under); }',
-      '[data-sheet] .sh-pg-in { width:calc(64px * var(--ts));min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-bottom:2px solid var(--paper-accent);border-radius:6px 6px 0 0;background:var(--paper-under);text-align:center;outline:none;' +
+      '[data-sheet] .sh-pg-in { width:calc(64px * var(--ts,1));min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-bottom:2px solid var(--paper-accent);border-radius:6px 6px 0 0;background:var(--paper-under);text-align:center;outline:none;' +
         'box-shadow:0 0 0 3px color-mix(in srgb,var(--paper-accent) 22%,transparent); }',
       '[data-sheet] .sh-pg-row.is-err :is(.sh-pg-val,.sh-pg-in) { border-bottom:2px solid var(--paper-neg,#b42318); }',
       '[data-sheet] .sh-pg-add { min-height:36px;padding:0 12px;border:1px solid var(--paper-edge);border-radius:var(--shape-r-ctl,8px);background:transparent;color:var(--paper-ink);font:600 calc(13.5px * var(--ts)) var(--paper-ui-font);cursor:pointer;white-space:nowrap;' +
