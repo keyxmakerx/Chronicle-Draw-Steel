@@ -5486,6 +5486,11 @@
 
   function progText(n) { return n == null ? '–' : String(n); }
 
+  function progStep(key, by, label) {
+    return '<button type="button" class="sh-pg-step" tabindex="-1" data-cs-pg-step="' + by + '" data-k="' + key + '" data-f="step' + (by > 0 ? 'up' : 'down') + '-' + key + '"' +
+      ' aria-label="' + (by > 0 ? 'Add one to ' : 'Take one from ') + label + '">' + (by > 0 ? '+' : '−') + '</button>';
+  }
+
   function progAddBtn(st) {
     return '<button type="button" class="sh-pg-add" data-cs-pg-add data-f="addv"' + (st && st.bankBusy ? ' aria-disabled="true"' : '') + '>Add a victory</button>';
   }
@@ -5508,6 +5513,9 @@
       cell = '<input class="sh-pg-in num" type="text" data-cs-pg-in="' + key + '" data-f="in-' + key + '" value="' + escAttr(st.draft) + '"' +
         ' inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" aria-label="' + label + '"' +
         (st.bad === key ? ' aria-invalid="true" aria-describedby="cs-pg-bad-' + key + '"' : '') + '>';
+      // Minus and plus float over whatever is beside the box, so the row
+      // never moves; they stay out of the tab order (arrow keys step too).
+      cell = '<span class="sh-pg-cell">' + progStep(key, -1, label) + cell + progStep(key, 1, label) + '</span>';
     } else {
       cell = '<button type="button" class="sh-pg-val" data-cs-pg-edit="' + key + '" data-f="val-' + key + '" aria-label="' + label + ', ' + shown + '. Press to correct it"' +
         (st.bankBusy && (key === 'victories' || key === 'xp') ? ' aria-disabled="true"' : '') + '>' +
@@ -5521,7 +5529,7 @@
         '<button type="button" class="sh-link" data-cs-pg-revert="' + key + '" data-f="revert-' + key + '">' + (was == null ? 'Put it back' : 'Put back ' + was) + '</button></span></div>';
     }
     return '<div class="sh-pg-row' + (rs === 'error' || st.bad === key ? ' is-err' : '') + '" data-cs-pg-row="' + key + '">' +
-      '<div class="sh-pg-lbl"><b>' + label + '</b>' + sub + '</div><div class="sh-pg-ctl">' + cell + (edit && extra ? extra : '') + '</div>' + err + '</div>';
+      '<div class="sh-pg-lbl"><b>' + label + '</b>' + sub + '</div><div class="sh-pg-ctl">' + cell + (edit && extra && st.editing !== key ? extra : '') + '</div>' + err + '</div>';
   }
 
   // The respite box: what will happen, written out before the press. While
@@ -6793,10 +6801,20 @@
 
   function progListen(inst, el, data, st, ui, act, bank) {
     var mine = function (t) { var b = ui.body(); return !!(b && t && b.contains(t)); };
+    // A step changes the box's text only; the save comes when the box is
+    // left or Enter is pressed, as for typing.
+    var step = function (k, by) {
+      var box = k && st.editing === k ? ui.body().querySelector('[data-cs-pg-in="' + k + '"]') : null;
+      if (!box) return;
+      var n = /^\s*\d+\s*$/.test(box.value) ? Number(box.value) : progNum(data, k) || 0;
+      box.value = st.draft = String(Math.max(0, n + by));
+      box.focus();
+    };
     inst._onPgClick = function (e) {
       var t = e.target && e.target.closest ? e.target.closest('button') : null;
       if (!t || !mine(t) || t.disabled || t.getAttribute('aria-disabled') === 'true') return;
       var k;
+      if (t.hasAttribute('data-cs-pg-step')) { step(t.getAttribute('data-k'), Number(t.getAttribute('data-cs-pg-step'))); return; }
       if (t.hasAttribute('data-cs-pg-add')) {
         var p = !act.busy('victories') && progAddPatch(data, st);
         if (p) act.setVal('victories', p.victories);
@@ -6820,6 +6838,7 @@
     inst._onPgKey = function (e) {
       var t = e.target, k = t && t.getAttribute ? t.getAttribute('data-cs-pg-in') : null;
       if (!k || !mine(t)) return;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); step(k, e.key === 'ArrowUp' ? 1 : -1); return; }
       if (e.key === 'Enter') { e.preventDefault(); act.commit(k, true); ui.flush(); if (st.editing !== k) ui.focusF('val-' + k); }
       else if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); e.stopPropagation(); act.cancel(k); }
     };
@@ -6838,6 +6857,8 @@
       if (!st.ptr) setTimeout(ui.flush, 0);
     };
     inst._onPgDown = function (e) { if (mine(e.target)) st.ptr = true; };
+    // Pressing a step must not take focus from the box, which would save it.
+    inst._onPgStepDown = function (e) { if (e.target && e.target.closest && e.target.closest('[data-cs-pg-step]') && mine(e.target)) e.preventDefault(); };
     inst._onPgUp = function () {
       if (!st.ptr) return;
       setTimeout(function () { st.ptr = false; ui.flush(); }, 0);
@@ -6847,6 +6868,7 @@
     el.addEventListener('input', inst._onPgInput);
     el.addEventListener('focusout', inst._onPgLeave);
     el.addEventListener('pointerdown', inst._onPgDown, true);
+    el.addEventListener('mousedown', inst._onPgStepDown);
     document.addEventListener('pointerup', inst._onPgUp, true);
     document.addEventListener('pointercancel', inst._onPgUp, true);
   }
@@ -7138,6 +7160,7 @@
     if (inst._onVtOutside && typeof document !== 'undefined') document.removeEventListener('pointerdown', inst._onVtOutside, true);
     if (inst._vt) clearTimeout(inst._vt.timer);
     if (inst._onPgDown) el.removeEventListener('pointerdown', inst._onPgDown, true);
+    if (inst._onPgStepDown) el.removeEventListener('mousedown', inst._onPgStepDown);
     if (inst._onPgUp && typeof document !== 'undefined') {
       document.removeEventListener('pointerup', inst._onPgUp, true);
       document.removeEventListener('pointercancel', inst._onPgUp, true);
@@ -7154,7 +7177,7 @@
     ['_onAbilityClick', '_onAbilityKey', '_onAbilityInput', '_onTipShow', '_onTipHide', '_onTipTap', '_tipReset', '_onTipScroll', '_onTipOutside', '_onTfClick', '_onTfChange', '_onEdChange', '_onTfInput',
       '_onTfLeave', '_onTfKey', '_onTfDown', '_onTfUp', '_onDockOpen',
       '_onPaperKey', '_onPanelReady', '_onPanelClose', '_panelBody', '_panelId', '_closeEditor', '_dashIo', '_dashRo', '_dashMo',
-      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgUp', '_onVtClick', '_onVtKey', '_onVtInput', '_onVtFocus', '_onVtUp', '_onVtOutside', '_vt'].forEach(function (k) { inst[k] = null; });
+      '_onPgClick', '_onPgKey', '_onPgInput', '_onPgLeave', '_onPgDown', '_onPgStepDown', '_onPgUp', '_onVtClick', '_onVtKey', '_onVtInput', '_onVtFocus', '_onVtUp', '_onVtOutside', '_vt'].forEach(function (k) { inst[k] = null; });
   }
 
   // The quiet look has a heading on the common-abilities fold, so it starts
@@ -8288,13 +8311,20 @@
       '[data-sheet] .sh-pg-ro { min-width:48px;text-align:right;padding:6px 2px; }',
       // The number and the box it turns into share one width, so pressing it
       // doesn't rewrap the hint beside it; both grow with the text size.
-      '[data-sheet] .sh-pg-val { width:calc(64px * var(--ts,1));box-sizing:border-box;min-height:36px;padding:0 6px;border:0;border-bottom:1px dashed var(--paper-mute);border-radius:6px 6px 0 0;background:none;cursor:text;text-align:center;' +
-        'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
+      '[data-sheet] .sh-pg-val { width:calc(64px * var(--ts,1));box-sizing:border-box;min-height:36px;padding:0 6px;border:0;border-radius:6px;background:none;cursor:text;text-align:center;' +
+        'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
       '[data-sheet] .sh-pg-val .num { display:inline-block; }',
-      '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under);border-bottom:1px solid var(--paper-accent); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
+      '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
       '[data-sheet] .sh-pg-val:active { background:var(--paper-under); }',
-      '[data-sheet] .sh-pg-in { width:calc(64px * var(--ts,1));min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-bottom:2px solid var(--paper-accent);border-radius:6px 6px 0 0;background:var(--paper-under);text-align:center;outline:none;' +
-        'box-shadow:0 0 0 3px color-mix(in srgb,var(--paper-accent) 22%,transparent); }',
+      '[data-sheet] .sh-pg-in { width:calc(64px * var(--ts,1));min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-radius:6px;background:none;text-align:center;outline:none;caret-color:var(--paper-accent); }',
+      '[data-sheet] .sh-pg-cell { position:relative;display:inline-block; }',
+      '[data-sheet] .sh-pg-step { position:absolute;top:50%;z-index:2;width:44px;height:44px;margin-top:-22px;padding:0;border:1px solid transparent;border-radius:8px;cursor:pointer;' +
+        'background:color-mix(in srgb,var(--paper-accent) 12%,color-mix(in srgb,var(--paper, var(--bg-primary,#fff)) 80%,transparent));color:var(--paper-accent);font:600 22px/1 var(--paper-ui-font);' +
+        'transition:border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',
+      '[data-sheet] .sh-pg-step[data-cs-pg-step="-1"] { right:calc(100% + 2px); }',
+      '[data-sheet] .sh-pg-step[data-cs-pg-step="1"] { left:calc(100% + 2px); }',
+      '@media (hover:hover) { [data-sheet] .sh-pg-step:hover { border-color:var(--paper-accent); } }',
+      '[data-sheet] .sh-pg-step:active { border-color:var(--paper-accent); }',
       '[data-sheet] .sh-pg-row.is-err :is(.sh-pg-val,.sh-pg-in) { border-bottom:2px solid var(--paper-neg,#b42318); }',
       '[data-sheet] .sh-pg-add { min-height:36px;padding:0 12px;border:1px solid var(--paper-edge);border-radius:var(--shape-r-ctl,8px);background:transparent;color:var(--paper-ink);font:600 calc(13.5px * var(--ts)) var(--paper-ui-font);cursor:pointer;white-space:nowrap;' +
         'transition:background-color var(--dur-micro,120ms) var(--ease-out,ease-out),transform 200ms var(--ease-out,ease-out); }',
