@@ -5529,7 +5529,7 @@
         '<button type="button" class="sh-link" data-cs-pg-revert="' + key + '" data-f="revert-' + key + '">' + (was == null ? 'Put it back' : 'Put back ' + was) + '</button></span></div>';
     }
     return '<div class="sh-pg-row' + (rs === 'error' || st.bad === key ? ' is-err' : '') + '" data-cs-pg-row="' + key + '">' +
-      '<div class="sh-pg-lbl"><b>' + label + '</b>' + sub + '</div><div class="sh-pg-ctl">' + cell + (edit && extra && st.editing !== key ? extra : '') + '</div>' + err + '</div>';
+      '<div class="sh-pg-lbl"><b>' + label + '</b>' + sub + '</div><div class="sh-pg-ctl' + (edit && !extra ? ' sh-pg-room' : '') + (st.editing === key ? ' is-open' : '') + '">' + cell + (edit && extra ? extra : '') + '</div>' + err + '</div>';
   }
 
   // The respite box: what will happen, written out before the press. While
@@ -8317,7 +8317,13 @@
       '@media (hover:hover) { [data-sheet] .sh-pg-val:hover { background:var(--paper-under); } [data-sheet] .sh-pg-add:hover { background:var(--paper-under); } }',
       '[data-sheet] .sh-pg-val:active { background:var(--paper-under); }',
       '[data-sheet] .sh-pg-in { width:calc(64px * var(--ts,1));min-height:36px;box-sizing:border-box;padding:0 6px;border:0;border-radius:6px;background:none;text-align:center;outline:none;caret-color:var(--paper-accent); }',
+      '[data-sheet] .sh-pg-in:focus { outline:none;border-color:transparent;box-shadow:none; }',
       '[data-sheet] .sh-pg-cell { position:relative;display:inline-block; }',
+      // The plus needs room to float in: a row with nothing beside its number
+      // keeps that room always, and Victories keeps Add a victory's space
+      // (hidden while the box is open), so opening the box never moves the row.
+      '[data-sheet] .sh-pg-room { padding-right:46px; }',
+      '[data-sheet] .sh-pg-ctl.is-open .sh-pg-add { visibility:hidden; }',
       '[data-sheet] .sh-pg-step { position:absolute;top:50%;z-index:2;width:44px;height:44px;margin-top:-22px;padding:0;border:1px solid transparent;border-radius:8px;cursor:pointer;' +
         'background:color-mix(in srgb,var(--paper-accent) 12%,color-mix(in srgb,var(--paper, var(--bg-primary,#fff)) 80%,transparent));color:var(--paper-accent);font:600 22px/1 var(--paper-ui-font);' +
         'transition:border-color var(--dur-micro,120ms) var(--ease-out,ease-out); }',

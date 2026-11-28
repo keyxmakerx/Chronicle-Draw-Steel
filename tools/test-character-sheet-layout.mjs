@@ -1385,6 +1385,10 @@ test('progression: minus and plus step the open box by one, never below 0, and s
     assert.ok(/data-cs-pg-step="-1" data-k="renown"/.test(html) && /data-cs-pg-step="1" data-k="renown"/.test(html), 'the open box has minus and plus');
     assert.ok(!/data-cs-pg-step="1" data-k="wealth"/.test(html), 'a closed number has none');
     assert.ok(/tabindex="-1" data-cs-pg-step/.test(html), 'they stay out of the tab order');
+    assert.ok(/class="sh-pg-ctl sh-pg-room is-open"><span class="sh-pg-cell">[^]*data-k="renown"/.test(html), 'a row with nothing beside its number keeps room for the plus');
+    rig.press('data-cs-pg-edit', 'victories');
+    assert.ok(/class="sh-pg-ctl is-open">[^]*data-cs-pg-add/.test(cs.pProgPanel(rig.data, rig.st)), 'Add a victory keeps its place while Victories is open, so the row never moves');
+    rig.press('data-cs-pg-edit', 'renown');
     rig.box = { value: '1', focus() {} };
     const step = (by) => rig.inst._onPgClick({ target: { disabled: false, closest() { return this; },
       hasAttribute: (a) => a === 'data-cs-pg-step', getAttribute: (a) => ({ 'data-cs-pg-step': String(by), 'data-k': 'renown' })[a] ?? null } });
