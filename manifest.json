@@ -538,6 +538,11 @@
               "format": "number"
             }
           },
+          "foundry_entry_items": {
+            "signature_traits": {
+              "type": "ancestryTrait"
+            }
+          },
           "play": {
             "edit": "owner",
             "kind": "choice",
